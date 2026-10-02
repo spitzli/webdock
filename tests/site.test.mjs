@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 const origin = process.env.TEST_BASE_URL || 'http://localhost:3101';
-test('Landingpage liefert Inhalt, konsistente FAQ-Daten und SEO-Dateien aus', async () => {
+test('Landing page serves English content, matching FAQ data and SEO assets', async () => {
   const response = await fetch(origin);
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /<html[^>]+lang="de"/);
+  assert.match(html, /<html[^>]+lang="en"/);
   assert.match(html, /<link rel="canonical" href="https:\/\/webdock.dev"/);
   assert.match(html, /href="https:\/\/spitzli.dev"/);
   assert.match(html, /mailto:dominik@spitzli.dev/);

@@ -1,9 +1,9 @@
-export const contact = 'mailto:dominik@spitzli.dev?subject=Mein%20Projekt%20mit%20Webdock';
+export const contact = 'mailto:dominik@spitzli.dev?subject=My%20project%20with%20Webdock';
 export const faqs = [
-  { question: 'Was ist Webdock?', answer: 'Webdock ist die Projekt-Heimat von Spitzli Development. Hier bekommen Vorschauseiten und Kundenwebsites eine eigene Adresse unter webdock.dev. Entwicklung und persönliche Betreuung laufen über Spitzli.' },
-  { question: 'Brauche ich eine eigene Domain?', answer: 'Nein. Dein Projekt kann unter einer Subdomain wie dein-projekt.webdock.dev erreichbar sein. Wenn du eine eigene Domain nutzen möchtest, wird die passende Anbindung für dein Projekt abgestimmt.' },
-  { question: 'Wie bekomme ich eine Webdock-Subdomain?', answer: 'Schreib Dominik von Spitzli Development mit deiner Projektidee. Name, technische Umsetzung und Bereitstellung werden gemeinsam abgestimmt. Eine automatische Registrierung gibt es derzeit nicht.' },
-  { question: 'Sind Vorschauseiten öffentlich?', answer: 'Das hängt von der Einrichtung des jeweiligen Projekts ab. Eine Subdomain allein ist kein Zugriffsschutz. Wenn eine Vorschau vertraulich bleiben soll, wird der passende Zugangsschutz separat vereinbart.' },
-  { question: 'Laufen alle Projekte auf Vercel?', answer: 'Derzeit läuft ein Großteil der Projekte auf Vercel. Webdock ist aber nicht auf einen Hosting-Anbieter festgelegt. Die technische Umgebung richtet sich nach dem jeweiligen Projekt.' },
-  { question: 'Gibt es schon eine Kunden-Console?', answer: 'Noch nicht. Eine eigene Console für die Verwaltung von Projekten ist als nächste Ausbaustufe geplant. Bis dahin ist Dominik dein direkter Ansprechpartner.' },
+  { question: 'What is Webdock?', answer: 'Webdock is the project home of Spitzli Development. It gives project previews and client websites their own address under webdock.dev. Development and personal support are handled by Spitzli.' },
+  { question: 'Do I need my own domain?', answer: 'No. Your project can live on a subdomain such as your-project.webdock.dev. If you would like to use your own domain, we will work out the right setup for your project.' },
+  { question: 'How do I get a Webdock subdomain?', answer: 'Contact Dominik at Spitzli Development with your project idea. We will agree on the name, technical setup and deployment together. Automated registration is not available at this stage.' },
+  { question: 'Are project previews public?', answer: 'That depends on how each project is configured. A subdomain alone does not restrict access. If a preview needs to stay private, access protection is arranged separately.' },
+  { question: 'Does every project run on Vercel?', answer: 'Most projects currently run on Vercel, but Webdock is not tied to a single hosting provider. The technical environment is chosen to suit each project.' },
+  { question: 'Is there a client console yet?', answer: 'Not yet. A dedicated console for managing projects is planned for a future release. Until then, Dominik is your direct point of contact.' },
 ];
