@@ -1,0 +1,38 @@
+:root {
+  color-scheme: light;
+  --color-navy: oklch(24% .047 254);
+  --color-on-navy: oklch(87% .018 254);
+  --color-paper: oklch(98% .007 90);
+  --color-ink: oklch(24% .047 254);
+  --color-muted: oklch(48% .03 254);
+  --color-orange: oklch(73% .18 43);
+  --color-orange-hover: oklch(79% .14 43);
+  --color-line: oklch(87% .018 254);
+  --color-blue: oklch(94% .019 240);
+  --color-white: oklch(100% 0 0);
+  --color-sea: oklch(65% .04 235);
+  --color-night-line: oklch(39% .035 254);
+  --font-display: var(--font-space), sans-serif;
+  --font-body: Arial, Helvetica, sans-serif;
+  --space-sm: 8px; --space-md: 16px; --space-lg: 24px; --space-xl: 48px; --space-section: 112px;
+  --ease-out: cubic-bezier(.2,.8,.2,1); --ease-in: cubic-bezier(.4,0,1,1); --ease-in-out: cubic-bezier(.4,0,.2,1);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: oklch(19% .025 254);
+  --color-ink: oklch(94% .012 240);
+  --color-muted: oklch(74% .025 254);
+  --color-line: oklch(35% .025 254);
+  --color-blue: oklch(25% .032 254);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  color-scheme: dark;
+  --color-paper: oklch(19% .025 254);
+  --color-ink: oklch(94% .012 240);
+  --color-muted: oklch(74% .025 254);
+  --color-line: oklch(35% .025 254);
+  --color-blue: oklch(25% .032 254);
+  }
+}
