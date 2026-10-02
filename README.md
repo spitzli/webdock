@@ -59,6 +59,6 @@ The authenticated check temporarily updates a hero note and restores it. Run it 
 
 ## Deployment
 
-After migration and verification, push `main` to trigger the linked Vercel deployment. Ensure all `.env.example` keys are configured in the target environment. Set `NEXT_PUBLIC_SERVER_URL=https://www.webdock.dev` for production so admin links and password-reset URLs use the correct host.
+After migration and verification, push `main` to trigger the linked Vercel deployment. Ensure all `.env.example` keys are configured in the target environment. Set `NEXT_PUBLIC_SERVER_URL=https://webdock.dev` for production so admin links and password-reset URLs use the correct host.
 
 The SVG logo, dock illustration, social image and local font remain in `public/`. Legal/operator content and the backlink from spitzli.dev remain separate follow-up work.
