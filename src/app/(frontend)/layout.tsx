@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
-import './globals.css';
+import '../globals.css';
 import { themeScript } from '@/lib/theme';
-const space = localFont({ src: '../../public/fonts/space-grotesk.ttf', variable: '--font-space', display: 'swap' });
+const space = localFont({ src: '../../../public/fonts/space-grotesk.ttf', variable: '--font-space', display: 'swap' });
 export const metadata: Metadata = {
   metadataBase: new URL('https://webdock.dev'),
   title: 'Webdock — Project previews & client websites by Spitzli',

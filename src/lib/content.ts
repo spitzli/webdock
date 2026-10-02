@@ -1,4 +1,3 @@
-export const contact = 'mailto:dominik@spitzli.dev?subject=My%20project%20with%20Webdock';
 export const faqs = [
   { question: 'What is Webdock?', answer: 'Webdock is the project home of Spitzli Development. It gives project previews and client websites their own address under webdock.dev. Development and personal support are handled by Spitzli.' },
   { question: 'Do I need my own domain?', answer: 'No. Your project can live on a subdomain such as your-project.webdock.dev. If you would like to use your own domain, we will work out the right setup for your project.' },
