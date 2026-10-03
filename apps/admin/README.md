@@ -13,4 +13,4 @@ Run commands from the monorepo root with `npm run <command> -w @webdock/admin`, 
 - `scripts/provision.mjs` is an offline operator tool. It takes an explicit owner env-file path and writes private `.env.instance` credentials. Owner credentials must never be deployed.
 - `scripts/seed.ts` requires either a local test password or an explicit source operator connection. No production account has been seeded pending the auth decision.
 
-The current password-preservation seed path belongs to the development Payload-auth approach. Do not run it for a future Neon Auth deployment without updating the identity design first. External auth-provider IDs should be linked to platform Snowflake IDs, not rewritten.
+The current password-preservation seed path belongs to the development Payload-auth approach. Do not run it for a future Better Auth deployment without updating the identity design first. External auth-provider IDs should be linked to platform Snowflake IDs, not rewritten.

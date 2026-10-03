@@ -79,3 +79,7 @@ Confirmed target: a common login covering the Webdock operator workspace, future
 Sources checked: https://neon.com/docs/auth/overview , https://neon.com/docs/auth/guides/plugins/organization , https://neon.com/docs/auth/roadmap .
 
 WorkOS references checked: https://workos.com/docs/authkit/applications , https://workos.com/docs/authkit/connect , https://workos.com/pricing . No WorkOS account, subscription or production integration has been created.
+
+## Selected identity direction
+
+The owner selected **self-hosted Better Auth with Neon** and confirmed a common login for Webdock, the future customer panel and all Payload admins. See [the central identity/SSO design](../superpowers/specs/2026-10-03-central-auth.md). Prior provider comparisons above are historical context; no production auth service or SSO rollout has happened yet.
