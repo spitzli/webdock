@@ -17,14 +17,14 @@ export default async function Home() {
   const structuredData = { '@context': 'https://schema.org', '@graph': [
     { '@type': 'Organization', '@id': 'https://spitzli.dev/#organization', name: 'Spitzli Development', url: 'https://spitzli.dev' },
     { '@type': 'WebSite', '@id': 'https://webdock.dev/#website', name: 'Webdock', url: 'https://webdock.dev', inLanguage: 'en', description: page.seoDescription, publisher: { '@id': 'https://spitzli.dev/#organization' } },
-    { '@type': 'FAQPage', '@id': 'https://webdock.dev/#faq', mainEntity: faqs.map(({ question, answer }) => ({ '@type': 'Question', name: question, acceptedAnswer: { '@type': 'Answer', text: answer } })) },
+    ...(faqs.length ? [{ '@type': 'FAQPage', '@id': 'https://webdock.dev/#faq', mainEntity: faqs.map(({ question, answer }) => ({ '@type': 'Question', name: question, acceptedAnswer: { '@type': 'Answer', text: answer } })) }] : []),
   ] };
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }}/>
     <a className="skip-link" href="#content">Skip to content</a>
     <header className="site-header wrap flex items-center justify-between">
       <a href="#" className="brand" aria-label="Webdock home"><Mark/>webdock<span className="brand-period">.</span></a>
-      <nav aria-label="Main navigation" className="flex items-center gap-8"><a className="nav-section" href="#concept">The idea</a><a className="nav-section" href="#faq">FAQ</a><a className="nav-contact" href={contact}>Start a project <span aria-hidden="true">↗</span></a></nav>
+      <nav aria-label="Main navigation" className="flex items-center gap-8"><a className="nav-section" href="#concept">The idea</a>{faqs.length > 0 && <a className="nav-section" href="#faq">FAQ</a>}<a className="nav-contact" href={contact}>Start a project <span aria-hidden="true">↗</span></a></nav>
     </header>
     <main id="content">
       <section className="hero wrap">
@@ -42,7 +42,7 @@ export default async function Home() {
         <div className="use-cases">{page.useCases.map((item, index) => <article key={item.id}><span className="case-icon" aria-hidden="true">{['▧', '⌁', '↗'][index % 3]}</span><div><h3>{item.title}</h3><p>{item.description}</p></div></article>)}</div>
       </section>
       <section className="spitzli-section"><div className="wrap spitzli-inner"><div className="spitzli-symbol" aria-hidden="true">s<span>.</span></div><div><p className="subtle-label">Webdock × Spitzli Development</p><h2 className="whitespace-pre-line">{page.aboutTitle}</h2></div><div className="spitzli-copy"><p>{page.aboutDescription}</p><a className="text-link" href="https://spitzli.dev" target="_blank" rel="noopener noreferrer">Meet Spitzli <span aria-hidden="true">↗</span></a></div></div></section>
-      <section id="faq" className="faq wrap section-space"><div><h2 className="whitespace-pre-line">{page.faqTitle}</h2><p className="section-intro">Something else on your mind?<br/><a href={contact}>Just ask.</a></p></div><div className="faq-list">{faqs.map(({question, answer}) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></section>
+      {faqs.length > 0 && <section id="faq" className="faq wrap section-space"><div><h2 className="whitespace-pre-line">{page.faqTitle}</h2><p className="section-intro">Something else on your mind?<br/><a href={contact}>Just ask.</a></p></div><div className="faq-list">{faqs.map(({question, answer}) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></section>}
       <section className="outlook wrap"><span className="outlook-icon" aria-hidden="true">⌘</span><div><h3>{page.outlookTitle}</h3><p>{page.outlookDescription}</p></div><span className="planned">Planned</span></section>
       <section className="closing wrap"><p>Got something in mind?</p><h2 className="whitespace-pre-line">{page.closingTitle}</h2><a className="button" href={contact}>{page.closingButton} <span aria-hidden="true">↗</span></a><span className="closing-mark" aria-hidden="true"><Mark/></span></section>
     </main>

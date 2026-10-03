@@ -20,7 +20,7 @@ npx vercel env pull .env.local
 npm run dev -- --port 3104
 ```
 
-Required runtime variables: `CMS_URL`, `CMS_TENANT_ID`, `CMS_API_KEY` (see `.env.example`). For local integration with the sibling CMS, set `CMS_URL=http://localhost:3105` when starting the frontend. No database or SMTP credentials are used by this app.
+Required runtime variables: `CMS_URL`, `CMS_SITE_KEY`, `CMS_API_KEY` (see `.env.example`). For local integration with the sibling CMS, set `CMS_URL=http://localhost:3105` when starting the frontend. No database or SMTP credentials are used by this app.
 
 ```bash
 npm run lint
