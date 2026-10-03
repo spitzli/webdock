@@ -7,13 +7,19 @@ import {
   archiveRecord,
 } from "../../../../../lib/actions";
 import { requireOperator } from "../../../../../lib/server";
-import { relatedID, date } from "../../../../../lib/presentation";
+import {
+  relatedID,
+  date,
+  hostname,
+  validRecordID,
+} from "../../../../../lib/presentation";
 export default async function Project({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  if (!validRecordID(id)) notFound();
   const { payload, user } = await requireOperator();
   const project = await payload.findByID({
     collection: "projects",
@@ -24,7 +30,7 @@ export default async function Project({
     disableErrors: true,
   });
   if (!project) notFound();
-  const [instances, events] = await Promise.all([
+  const [instances, events, customers] = await Promise.all([
     payload.find({
       collection: "cms-instances",
       where: { project: { equals: id } },
@@ -35,12 +41,31 @@ export default async function Project({
     }),
     payload.find({
       collection: "audit-events",
-      where: { targetID: { equals: id } },
+      where: {
+        and: [
+          { targetID: { equals: id } },
+          { targetCollection: { equals: "projects" } },
+        ],
+      },
       limit: 5,
       sort: "-createdAt",
       user,
       overrideAccess: false,
       depth: 0,
+    }),
+    payload.find({
+      collection: "customers",
+      where: {
+        or: [
+          { status: { equals: "active" } },
+          { id: { equals: relatedID(project.customer) } },
+        ],
+      },
+      pagination: false,
+      sort: "name",
+      depth: 0,
+      user,
+      overrideAccess: false,
     }),
   ]);
   const instance = instances.docs[0];
@@ -53,9 +78,11 @@ export default async function Project({
         <div>
           <h1>{project.name}</h1>
           <p>
-            {typeof project.customer === "object"
-              ? project.customer.name
-              : "Customer"}{" "}
+            <Link href={"/customers/" + relatedID(project.customer)}>
+              {typeof project.customer === "object"
+                ? project.customer.name
+                : "Customer"}
+            </Link>{" "}
             <span className="badge">{project.status}</span>
           </p>
         </div>
@@ -70,6 +97,37 @@ export default async function Project({
           </a>
         )}
       </div>
+      <div className="project-overview">
+        <div>
+          <span>Website</span>
+          {project.url ? (
+            <a href={project.url} target="_blank" rel="noreferrer">
+              {hostname(project.url)} ↗
+            </a>
+          ) : (
+            <strong>No website linked</strong>
+          )}
+        </div>
+        <div>
+          <span>Repository</span>
+          {project.repositoryURL ? (
+            <a href={project.repositoryURL} target="_blank" rel="noreferrer">
+              Open repository ↗
+            </a>
+          ) : (
+            <strong>No repository linked</strong>
+          )}
+        </div>
+        <div>
+          <span>Last updated</span>
+          <strong>{date(project.updatedAt)}</strong>
+        </div>
+      </div>
+      {project.status === "archived" && (
+        <p className="status-notice">
+          This project is archived. Restore it to manage its CMS connection.
+        </p>
+      )}
       <div className="detail-grid">
         <div>
           <section className="panel">
@@ -89,15 +147,12 @@ export default async function Project({
                   type: "select",
                   required: true,
                   value: relatedID(project.customer),
-                  options: [
-                    {
-                      value: relatedID(project.customer),
-                      label:
-                        typeof project.customer === "object"
-                          ? project.customer.name
-                          : "Customer",
-                    },
-                  ],
+                  options: customers.docs.map((customer) => ({
+                    value: customer.id,
+                    label:
+                      customer.name +
+                      (customer.status === "archived" ? " (archived)" : ""),
+                  })),
                 },
                 {
                   name: "url",
@@ -121,7 +176,15 @@ export default async function Project({
             />
           </section>
           <section className="panel">
-            <h2>Recent changes</h2>
+            <div className="section-heading">
+              <h2>Recent changes</h2>
+              <Link
+                className="small-link"
+                href={"/activity?collection=projects&target=" + id}
+              >
+                View full history
+              </Link>
+            </div>
             {events.docs.map((e) => (
               <div className="activity-row" key={e.id}>
                 <span>{e.summary}</span>
@@ -140,15 +203,15 @@ export default async function Project({
                 "badge " + (instance?.status === "active" ? "connected" : "")
               }
             >
-              {instance ? "CMS connected" : "CMS not enabled"}
+              {instance ? `CMS ${instance.status}` : "No CMS linked"}
             </span>
             <h2>{instance ? instance.label : "A CMS is optional."}</h2>
             <p>
               {instance
-                ? "Content is managed in this project’s independent admin."
+                ? "This is the recorded connection to the project’s independent content admin. Its live availability has not been checked."
                 : "This project can run without Payload. You can link a CMS that has already been deployed."}
             </p>
-            {instance && (
+            {instance && instance.status !== "retired" && (
               <a
                 className="button"
                 href={instance.adminURL}
@@ -160,6 +223,18 @@ export default async function Project({
             )}
             {instance && (
               <dl>
+                <dt>Admin</dt>
+                <dd>{hostname(instance.adminURL)}</dd>
+                <dt>Hosting</dt>
+                <dd>Vercel</dd>
+                <dt>Project ID</dt>
+                <dd>
+                  <code>{instance.providerProjectID}</code>
+                </dd>
+                <dt>Database schema</dt>
+                <dd>
+                  <code>{instance.schemaName}</code>
+                </dd>
                 <dt>Template</dt>
                 <dd>{instance.template}</dd>
                 <dt>Payload</dt>
@@ -201,12 +276,14 @@ export default async function Project({
                       label: "Database schema",
                       required: true,
                       value: instance?.schemaName,
+                      hint: "The isolated schema used by this deployed CMS.",
                     },
                     {
                       name: "providerProjectID",
                       label: "Vercel project ID",
                       required: true,
                       value: instance?.providerProjectID,
+                      hint: "The existing Vercel project ID, starting with prj_.",
                     },
                     {
                       name: "template",
@@ -229,6 +306,7 @@ export default async function Project({
                     {
                       name: "status",
                       label: "Recorded status",
+                      hint: "Inventory only. Changing this does not change the running CMS.",
                       type: "select",
                       required: true,
                       value: instance?.status || "active",
@@ -260,6 +338,7 @@ export default async function Project({
           <section className="record-meta">
             <p>
               Project ID<code>{id}</code>
+              <small>Created {date(project.createdAt)}</small>
             </p>
             <ArchiveButton
               action={archiveRecord.bind(null, "projects", id)}

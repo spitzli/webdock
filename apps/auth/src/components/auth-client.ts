@@ -8,8 +8,10 @@ import {
   twoFactorClient,
 } from "better-auth/client/plugins";
 import { oauthProviderClient } from "@better-auth/oauth-provider/client";
+import { passkeyClient } from "@better-auth/passkey/client";
 
 const identityPlugins = [
+  passkeyClient(),
   inferAdditionalFields({
     user: {
       role: { type: ["operator", "user"], required: false, input: false },

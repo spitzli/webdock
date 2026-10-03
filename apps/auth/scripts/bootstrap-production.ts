@@ -11,7 +11,7 @@ const email = process.env.OPERATOR_EMAIL || "dominik@spitzli.dev";
 const apps = [
   {
     key: "admin",
-    origin: "https://admin.webdock.dev",
+    origin: "https://studio.webdock.dev",
     logout: "/login",
     dir: "../admin",
   },

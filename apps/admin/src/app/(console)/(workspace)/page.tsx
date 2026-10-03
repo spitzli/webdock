@@ -1,90 +1,150 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import type { Where } from "payload";
 import { requireOperator } from "../../../lib/server";
-import { relatedID, date, hostname } from "../../../lib/presentation";
+import {
+  relatedID,
+  date,
+  hostname,
+  validRecordID,
+} from "../../../lib/presentation";
+import {
+  listQuery,
+  listURL,
+  queryText,
+  type SearchParams,
+} from "../../../lib/list-query";
+import { ListControls, Pagination } from "../../../components/list-controls";
 export default async function Projects({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; status?: string }>;
+  searchParams: Promise<SearchParams>;
 }) {
   const { payload, user } = await requireOperator();
-  const query = await searchParams;
-  const page = Math.max(1, Number.parseInt(query.page || "1") || 1);
-  const archived = query.status === "archived";
-  const [projects, customers, instances] = await Promise.all([
+  const params = await searchParams;
+  const query = listQuery(params);
+  const rawCustomer = queryText(params.customer);
+  const customer = validRecordID(rawCustomer) ? rawCustomer : "";
+  const where: Where = {
+    and: [
+      ...(query.status === "all" ? [] : [{ status: { equals: query.status } }]),
+      ...(customer ? [{ customer: { equals: customer } }] : []),
+      ...(query.q
+        ? [
+            {
+              or: [
+                { name: { contains: query.q } },
+                { url: { contains: query.q } },
+                { "customer.name": { contains: query.q } },
+              ],
+            },
+          ]
+        : []),
+    ],
+  };
+  const [projects, active, archived, cmsCount] = await Promise.all([
     payload.find({
       collection: "projects",
-      where: { status: { equals: archived ? "archived" : "active" } },
-      limit: 25,
-      page,
+      where,
+      limit: 20,
+      page: query.page,
       depth: 1,
       user,
       overrideAccess: false,
-      sort: "-updatedAt",
+      sort: query.sort,
     }),
     payload.count({
-      collection: "customers",
+      collection: "projects",
       where: { status: { equals: "active" } },
       user,
       overrideAccess: false,
     }),
-    payload.find({
+    payload.count({
+      collection: "projects",
+      where: { status: { equals: "archived" } },
+      user,
+      overrideAccess: false,
+    }),
+    payload.count({
       collection: "cms-instances",
-      limit: 1000,
-      depth: 0,
+      where: { status: { equals: "active" } },
       user,
       overrideAccess: false,
     }),
   ]);
+  if (query.page > Math.max(1, projects.totalPages))
+    redirect(
+      listURL("/", {
+        ...query,
+        customer,
+        page: Math.max(1, projects.totalPages),
+      }),
+    );
+  const instances = projects.docs.length
+    ? await payload.find({
+        collection: "cms-instances",
+        where: { project: { in: projects.docs.map((p) => p.id) } },
+        pagination: false,
+        depth: 0,
+        user,
+        overrideAccess: false,
+      })
+    : { docs: [] };
   const cms = new Map(instances.docs.map((i) => [relatedID(i.project), i]));
   return (
     <>
       <div className="page-heading">
         <div>
           <h1>Projects</h1>
-          <p>A clear view of what you’re building and managing.</p>
+          <p>Websites, customers and content systems, in one place.</p>
         </div>
         <Link className="button" href="/projects/new">
-          New project <span>+</span>
+          New project +
         </Link>
       </div>
       <div className="overview-line">
+        <Link href="/?status=active">
+          <strong>{active.totalDocs}</strong> Active projects
+        </Link>
+        <Link href="/?status=archived">
+          <strong>{archived.totalDocs}</strong> Archived projects
+        </Link>
         <span>
-          <strong>{projects.totalDocs}</strong>{" "}
-          {archived ? "archived" : "active"} projects
-        </span>
-        <span>
-          <strong>{customers.totalDocs}</strong> customers
-        </span>
-        <span>
-          <strong>
-            {instances.docs.filter((i) => i.status === "active").length}
-          </strong>{" "}
-          CMS connections
+          <strong>{cmsCount.totalDocs}</strong> Active CMS records
         </span>
       </div>
-      <div className="section-heading">
-        <h2>Your workspace</h2>
-        <div className="tabs">
-          <Link aria-current={!archived ? "page" : undefined} href="/">
-            Active
+      <ListControls
+        path="/"
+        q={query.q}
+        status={query.status}
+        sort={query.sort}
+        placeholder="Project, customer or domain"
+        extra={
+          customer ? (
+            <input type="hidden" name="customer" value={customer} />
+          ) : undefined
+        }
+      />
+      {customer && (
+        <p className="filter-context">
+          Showing projects for one customer.{" "}
+          <Link href={listURL("/", { ...query, page: 1 })}>
+            Show all customers
           </Link>
-          <Link
-            aria-current={archived ? "page" : undefined}
-            href="/?status=archived"
-          >
-            Archived
-          </Link>
-        </div>
-      </div>
+        </p>
+      )}
       <div className="table-wrap">
         <table>
+          <caption className="sr-only">
+            Projects matching the selected filters
+          </caption>
           <thead>
             <tr>
-              <th>Project</th>
-              <th>Customer</th>
-              <th>CMS</th>
-              <th>Updated</th>
-              <th>
+              <th scope="col">Project</th>
+              <th scope="col">Customer</th>
+              <th scope="col">CMS record</th>
+              <th scope="col">Updated</th>
+              <th scope="col">
                 <span className="sr-only">Manage</span>
               </th>
             </tr>
@@ -99,12 +159,17 @@ export default async function Projects({
                   >
                     {project.name}
                   </Link>
-                  <small>{hostname(project.url)}</small>
+                  <small>
+                    {hostname(project.url)}
+                    {project.status === "archived" && " · Archived"}
+                  </small>
                 </td>
                 <td>
-                  {typeof project.customer === "object"
-                    ? project.customer.name
-                    : "Customer"}
+                  <Link href={"/customers/" + relatedID(project.customer)}>
+                    {typeof project.customer === "object"
+                      ? project.customer.name
+                      : "Customer"}
+                  </Link>
                 </td>
                 <td>
                   <span
@@ -115,14 +180,14 @@ export default async function Projects({
                         : "")
                     }
                   >
-                    {cms.has(project.id)
-                      ? cms.get(project.id)?.status === "active"
-                        ? "Connected"
-                        : cms.get(project.id)?.status
-                      : "Not enabled"}
+                    {cms.get(project.id)?.status || "Not linked"}
                   </span>
                 </td>
-                <td className="muted">{date(project.updatedAt)}</td>
+                <td className="muted">
+                  <time dateTime={project.updatedAt}>
+                    {date(project.updatedAt)}
+                  </time>
+                </td>
                 <td>
                   <Link
                     className="row-link"
@@ -136,46 +201,47 @@ export default async function Projects({
             ))}
           </tbody>
         </table>
-        {projects.totalDocs === 0 && (
+        {!projects.totalDocs && (
           <div className="empty">
             <h3>
-              {archived
-                ? "No archived projects."
-                : "Your next project starts here."}
+              {query.q || customer
+                ? "No matching projects"
+                : query.status === "archived"
+                  ? "No archived projects"
+                  : "Make room for your next project"}
             </h3>
             <p>
-              Create a customer, then add a project. A CMS is always optional.
+              {query.q || customer
+                ? "Try a different name or domain, or reset your filters."
+                : "Add a customer and a project to keep its website and CMS details together."}
             </p>
-            <Link href="/customers/new">Add a customer</Link>
+            <Link
+              className="button secondary"
+              href={query.q || customer ? "/" : "/projects/new"}
+            >
+              {query.q || customer ? "Reset filters" : "Create a project"}
+            </Link>
           </div>
         )}
       </div>
-      <div className="pagination">
-        {projects.hasPrevPage && (
-          <Link
-            href={`/?page=${page - 1}&status=${archived ? "archived" : "active"}`}
-          >
-            Previous
-          </Link>
-        )}
-        <span>
-          Page {page} of {Math.max(1, projects.totalPages)}
-        </span>
-        {projects.hasNextPage && (
-          <Link
-            href={`/?page=${page + 1}&status=${archived ? "archived" : "active"}`}
-          >
-            Next
-          </Link>
-        )}
-      </div>
+      <Pagination
+        path="/"
+        query={{ ...query, customer }}
+        page={query.page}
+        totalPages={projects.totalPages}
+        totalDocs={projects.totalDocs}
+        limit={20}
+      />
       <aside className="note">
-        <span className="note-mark">↳</span>
+        <span className="note-mark" aria-hidden="true">
+          ↳
+        </span>
         <div>
-          <h3>Each project gets its own space.</h3>
+          <h3>Independent websites. A shared workspace.</h3>
           <p>
-            Websites keep their own design, content and admin. Adding a project
-            here doesn’t automatically create a CMS.
+            Each project keeps its own design and content. CMS statuses are
+            recorded inventory, not live health checks. Link a deployed CMS when
+            your project needs one.
           </p>
         </div>
       </aside>

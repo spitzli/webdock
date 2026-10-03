@@ -8,4 +8,6 @@ Production requires HTTPS, __Host- cookies and an exact registered app origin/ca
 
 Native Payload authentication must be disabled for an SSO-only cutover. `disableLocalStrategy: {enableFields:true, optionalPassword:true}` preserves the existing schema but rejects old passwords, recovery and JWTs. An explicit temporary compatibility flag on old sites is rollout support, not central-policy enforcement.
 
+Enforced native admin entry points use `adminSSORedirect` to send login/recovery requests straight to the SSO endpoint and keep local user/account management out of the UI. `returnTo` accepts only normalized `/admin` paths, rejects external destinations and authentication routes, and travels inside the encrypted login flow. Callback query parameters cannot change it. `protectUsers` hides projections and denies normal create/update/delete/unlock access while enforcement is enabled; trusted server-side operations may still use `overrideAccess`.
+
 Run `npm run test:sso` from the monorepo root. External website repositories vendor this file and carry the same protocol and actual-Payload policy tests. Keep them synchronized deliberately.

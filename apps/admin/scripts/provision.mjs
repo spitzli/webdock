@@ -59,7 +59,7 @@ try {
     DATABASE_URL_UNPOOLED: direct.toString(),
     PAYLOAD_SECRET: crypto.randomBytes(48).toString("base64url"),
     OPERATOR_EMAIL: "dominik@spitzli.dev",
-    NEXT_PUBLIC_SERVER_URL: "https://admin.webdock.dev",
+    NEXT_PUBLIC_SERVER_URL: "https://studio.webdock.dev",
   };
   for (const key of [
     "SMTP_HOST",

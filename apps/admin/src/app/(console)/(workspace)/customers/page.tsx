@@ -1,23 +1,53 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import type { Where } from "payload";
 import { requireOperator } from "../../../../lib/server";
+import { date } from "../../../../lib/presentation";
+import {
+  listQuery,
+  listURL,
+  type SearchParams,
+} from "../../../../lib/list-query";
+import { ListControls, Pagination } from "../../../../components/list-controls";
 export default async function Customers({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; status?: string }>;
+  searchParams: Promise<SearchParams>;
 }) {
   const { payload, user } = await requireOperator();
-  const q = await searchParams;
-  const page = Math.max(1, Number.parseInt(q.page || "1") || 1);
-  const archived = q.status === "archived";
+  const query = listQuery(await searchParams, "name");
+  const where: Where = {
+    and: [
+      ...(query.status === "all" ? [] : [{ status: { equals: query.status } }]),
+      ...(query.q
+        ? [
+            {
+              or: [
+                { name: { contains: query.q } },
+                { contactName: { contains: query.q } },
+                { contactEmail: { contains: query.q } },
+              ],
+            },
+          ]
+        : []),
+    ],
+  };
   const customers = await payload.find({
     collection: "customers",
-    where: { status: { equals: archived ? "archived" : "active" } },
-    page,
-    limit: 25,
-    sort: "name",
+    where,
+    page: query.page,
+    limit: 20,
+    sort: query.sort,
     overrideAccess: false,
     user,
   });
+  if (query.page > Math.max(1, customers.totalPages))
+    redirect(
+      listURL("/customers", {
+        ...query,
+        page: Math.max(1, customers.totalPages),
+      }),
+    );
   return (
     <>
       <div className="page-heading">
@@ -29,30 +59,27 @@ export default async function Customers({
           New customer +
         </Link>
       </div>
-      <div className="section-heading">
-        <h2>
-          {customers.totalDocs} {archived ? "archived" : "active"} customers
-        </h2>
-        <div className="tabs">
-          <Link href="/customers" aria-current={!archived ? "page" : undefined}>
-            Active
-          </Link>
-          <Link
-            href="/customers?status=archived"
-            aria-current={archived ? "page" : undefined}
-          >
-            Archived
-          </Link>
-        </div>
-      </div>
+      <ListControls
+        path="/customers"
+        q={query.q}
+        status={query.status}
+        sort={query.sort}
+        placeholder="Name, contact or email"
+      />
       <div className="table-wrap">
         <table>
+          <caption className="sr-only">
+            Customers matching the selected filters
+          </caption>
           <thead>
             <tr>
-              <th>Customer</th>
-              <th>Contact</th>
-              <th>Email</th>
-              <th />
+              <th scope="col">Customer</th>
+              <th scope="col">Contact</th>
+              <th scope="col">Status</th>
+              <th scope="col">Updated</th>
+              <th scope="col">
+                <span className="sr-only">Manage</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -63,8 +90,26 @@ export default async function Customers({
                     {c.name}
                   </Link>
                 </td>
-                <td>{c.contactName || "—"}</td>
-                <td>{c.contactEmail || "—"}</td>
+                <td>
+                  {c.contactName || "No contact person"}
+                  <small>
+                    {c.contactEmail ? (
+                      <a href={"mailto:" + c.contactEmail}>{c.contactEmail}</a>
+                    ) : (
+                      "No email recorded"
+                    )}
+                  </small>
+                </td>
+                <td>
+                  <span
+                    className={
+                      "badge " + (c.status === "active" ? "connected" : "")
+                    }
+                  >
+                    {c.status}
+                  </span>
+                </td>
+                <td className="muted">{date(c.updatedAt)}</td>
                 <td>
                   <Link
                     className="row-link"
@@ -80,30 +125,35 @@ export default async function Customers({
         </table>
         {!customers.totalDocs && (
           <div className="empty">
-            <h3>No customers yet.</h3>
-            <p>Add your first customer to start organising projects.</p>
+            <h3>
+              {query.q
+                ? "No matching customers"
+                : query.status === "archived"
+                  ? "No archived customers"
+                  : "Your first customer starts here"}
+            </h3>
+            <p>
+              {query.q
+                ? "Try another name, contact or email address."
+                : "Customer records keep contact details and related projects together."}
+            </p>
+            <Link
+              className="button secondary"
+              href={query.q ? "/customers" : "/customers/new"}
+            >
+              {query.q ? "Reset filters" : "Create a customer"}
+            </Link>
           </div>
         )}
       </div>
-      <div className="pagination">
-        {customers.hasPrevPage && (
-          <Link
-            href={`?page=${page - 1}&status=${archived ? "archived" : "active"}`}
-          >
-            Previous
-          </Link>
-        )}
-        <span>
-          Page {page} of {Math.max(1, customers.totalPages)}
-        </span>
-        {customers.hasNextPage && (
-          <Link
-            href={`?page=${page + 1}&status=${archived ? "archived" : "active"}`}
-          >
-            Next
-          </Link>
-        )}
-      </div>
+      <Pagination
+        path="/customers"
+        query={query}
+        page={query.page}
+        totalPages={customers.totalPages}
+        totalDocs={customers.totalDocs}
+        limit={20}
+      />
     </>
   );
 }

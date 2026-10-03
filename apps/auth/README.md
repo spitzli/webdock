@@ -25,3 +25,32 @@ Credentials and recovery material are not committed. Initial operator credential
 Relying apps use `@webdock/payload-sso` or a pinned vendored copy. The new management app is SSO-only whenever configured. Existing websites initially keep an explicit temporary legacy-compatible rollout; set `WEBDOCK_SSO_ENFORCE=true` only after account mapping and human enrollment. This disables local Payload password/recovery/JWT authentication while retaining fields/history. A site with legacy compatibility is not a completed SSO-only cutover.
 
 Auth/admin production credentials are not provisioned to Vercel previews; automatic Git deployment is main-only until isolated preview identity resources are configured. Public website rendering has no dependency on a central login session. No customer-facing panel, automatic CMS provisioner or impersonation UI is shipped here.
+
+## Passkeys
+
+Accounts can add named passkeys in `/account` after completing security setup,
+and use them at `/sign-in`. The pinned `@better-auth/passkey` plugin is **1.7.7**.
+RP ID is the hostname of `BETTER_AUTH_URL`, and the permitted WebAuthn origin is
+its exact origin. Production enrollment requires HTTPS; use `localhost` for
+local development. Keep the production identity hostname stable: passkeys cannot
+be moved to an unrelated RP ID.
+
+Device verification (PIN or biometrics) is enforced on the server for both
+registration and sign-in. Better Auth 1.7.7 does not require this by default.
+Its existing TOTP sign-in hook is also applied to passkey authentication, so an
+MFA-enabled user still completes TOTP or a recovery-code challenge before any
+usable session is returned. Keep this behavior covered when upgrading Better
+Auth. Passkeys do not replace the operator password-change or MFA enrollment
+gates. Registration requires a fresh authenticated session; deletion requires
+that the account retain its provisioned password fallback.
+
+Before enabling the new build in production, run the existing explicit
+`scripts/migrate.ts` command with the intended auth migration environment. It
+creates Better Auth's `webdock_auth.passkey` table and installs its Snowflake
+ID default. No users, authenticator secrets or recovery codes need modification.
+The passkey table was migrated in production during the 2026-10-03 Studio rollout.
+
+The isolated `node --import tsx --test tests/passkeys.test.ts` suite generates
+local WebAuthn registrations/assertions and checks origin/device verification,
+MFA session withholding, setup restrictions, listing and safe deletion. It uses
+an in-memory database and never reads real MFA material or resets a local DB.

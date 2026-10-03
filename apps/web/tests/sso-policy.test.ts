@@ -21,6 +21,15 @@ test('enforced SSO rejects native login, recovery and existing Payload JWTs with
   const payload = await getPayload({ config, disableDBConnect: true, disableOnInit: true });
   try {
     const users = payload.collections.users.config;
+    assert.equal(users.admin.hidden, true);
+    for (const role of ['operator', 'admin', 'editor', 'reader']) {
+      const req = { payload, user: { id: 'mapped-user', collection: 'users', role }, context: { bootstrap: true, instanceImport: true } };
+      for (const operation of ['create', 'update', 'delete', 'unlock'] as const) {
+        assert.equal(await users.access[operation]!({ req } as never), false, `${role}:${operation}`);
+      }
+      assert.ok(await users.access.read!({ req } as never));
+      assert.equal(await users.access.admin!({ req } as never), true);
+    }
     assert.deepEqual(users.auth.disableLocalStrategy, { enableFields: true, optionalPassword: true });
     assert.ok(payload.authStrategies.every(strategy => strategy.name !== 'local-jwt'));
     const fields = users.fields.flatMap(field => 'name' in field ? [field.name] : []);

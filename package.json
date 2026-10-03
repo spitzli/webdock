@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "npm run dev -w @webdock/web",
     "dev:admin": "npm run dev -w @webdock/admin",
-    "build": "npm run build -w @webdock/web && npm run build -w @webdock/admin && npm run build -w @webdock/cms",
+    "build": "npm run build -w @webdock/web && npm run build -w @webdock/admin && npm run build -w @webdock/auth && npm run build -w @webdock/cms",
     "build:web": "npm run build -w @webdock/web",
     "build:admin": "npm run build -w @webdock/admin",
     "lint": "npm run lint --workspaces --if-present",

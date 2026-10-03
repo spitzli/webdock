@@ -18,7 +18,7 @@ export default async function Layout({
         <Link href="/" className="brand">
           webdock<span>.</span>
         </Link>
-        <p className="workspace-label">Project workspace</p>
+        <p className="workspace-label">Operator studio</p>
         <Navigation />
         <div className="sidebar-bottom">
           <p className="operator">
@@ -41,7 +41,7 @@ export default async function Layout({
         </header>
         <main id="main">{children}</main>
         <footer className="workspace-footer">
-          Webdock Admin<span>One workspace. Independent websites.</span>
+          Webdock Studio<span>One workspace. Independent websites.</span>
         </footer>
       </div>
     </div>

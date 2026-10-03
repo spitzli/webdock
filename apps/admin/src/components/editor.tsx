@@ -1,5 +1,5 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useId } from "react";
 import type { FormState } from "../lib/actions";
 export type EditorField = {
   name: string;
@@ -21,11 +21,18 @@ export function Editor({
   submit?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  const formID = useId();
   return (
-    <form action={formAction} className="editor">
+    <form action={formAction} className="editor" aria-busy={pending}>
+      <p className="form-instructions">Fields marked * are required.</p>
       {state.error && (
         <p role="alert" className="error">
           {state.error}
+        </p>
+      )}
+      {state.success && (
+        <p role="status" className="success">
+          {state.success}
         </p>
       )}
       {fields.map((f) => (
@@ -33,21 +40,25 @@ export function Editor({
           className={"field " + (f.type === "textarea" ? "wide" : "")}
           key={f.name}
         >
-          <label htmlFor={f.name}>
+          <label htmlFor={`${formID}-${f.name}`}>
             {f.label}
             {f.required && <span aria-hidden="true"> *</span>}
           </label>
           {f.type === "textarea" ? (
             <textarea
-              id={f.name}
+              id={`${formID}-${f.name}`}
+              aria-describedby={f.hint ? `${formID}-${f.name}-hint` : undefined}
               name={f.name}
               rows={4}
+              required={f.required}
+              readOnly={f.readOnly}
               maxLength={3000}
               defaultValue={state.values?.[f.name] ?? f.value}
             />
           ) : f.type === "select" ? (
             <select
-              id={f.name}
+              id={`${formID}-${f.name}`}
+              aria-describedby={f.hint ? `${formID}-${f.name}-hint` : undefined}
               name={f.name}
               required={f.required}
               defaultValue={state.values?.[f.name] ?? f.value ?? ""}
@@ -60,16 +71,18 @@ export function Editor({
             </select>
           ) : f.type === "checkbox" ? (
             <input
-              id={f.name}
+              id={`${formID}-${f.name}`}
+              aria-describedby={f.hint ? `${formID}-${f.name}-hint` : undefined}
               name={f.name}
               type="checkbox"
               value="yes"
               required={f.required}
-              defaultChecked={state.values?.[f.name] === "yes"}
+              defaultChecked={(state.values?.[f.name] ?? f.value) === "yes"}
             />
           ) : (
             <input
-              id={f.name}
+              id={`${formID}-${f.name}`}
+              aria-describedby={f.hint ? `${formID}-${f.name}-hint` : undefined}
               name={f.name}
               type={f.type || "text"}
               required={f.required}
@@ -78,7 +91,7 @@ export function Editor({
               defaultValue={state.values?.[f.name] ?? f.value ?? ""}
             />
           )}
-          {f.hint && <small>{f.hint}</small>}
+          {f.hint && <small id={`${formID}-${f.name}-hint`}>{f.hint}</small>}
         </div>
       ))}
       <div className="form-footer">
@@ -100,9 +113,21 @@ export function ArchiveButton({
   return (
     <form action={formAction}>
       <input type="hidden" name="restore" value={String(archived)} />
-      <button className="text-button" disabled={pending}>
-        {archived ? "Restore record" : "Archive record"}
-      </button>
+      <details className="archive-controls" key={String(archived)}>
+        <summary>{archived ? "Restore record" : "Archive record"}</summary>
+        <p>
+          {archived
+            ? "Return this record to your active workspace."
+            : "Keep this record and its history, and remove it from the active list. You can restore it later."}
+        </p>
+        <button className="button secondary" disabled={pending}>
+          {pending
+            ? "Saving…"
+            : archived
+              ? "Confirm restore"
+              : "Confirm archive"}
+        </button>
+      </details>
       {state.error && (
         <p role="alert" className="error">
           {state.error}

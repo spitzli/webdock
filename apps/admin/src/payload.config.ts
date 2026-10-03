@@ -22,7 +22,7 @@ export default buildConfig({
   admin: {
     user: "users",
     importMap: { baseDir: dirname },
-    meta: { titleSuffix: "— Webdock Admin" },
+    meta: { titleSuffix: "— Webdock Studio" },
   },
   collections: [Users, Customers, Projects, Instances, Audit],
   jobs: { access: { run: isOperator, queue: isOperator, cancel: isOperator } },

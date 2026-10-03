@@ -61,7 +61,9 @@ const audit: CollectionAfterChangeHook = async ({
   const changes = Object.keys(doc).filter(
     (key) =>
       !["id", "updatedAt", "createdAt"].includes(key) &&
-      JSON.stringify(doc[key]) !== JSON.stringify(previousDoc?.[key]),
+      (["customer", "project"].includes(key)
+        ? relationID(doc[key]) !== relationID(previousDoc?.[key])
+        : JSON.stringify(doc[key]) !== JSON.stringify(previousDoc?.[key])),
   );
   await req.payload.create({
     collection: "audit-events",
@@ -91,7 +93,7 @@ const protectedUsers = protectUsers(
 );
 export const Users: CollectionConfig = {
   ...protectedUsers,
-  access: { ...protectedUsers.access, admin: isOperator, create: isOperator },
+  access: { ...protectedUsers.access, admin: isOperator, create: process.env.WEBDOCK_SSO_ENFORCE === "true" ? () => false : isOperator },
 };
 const base = {
   access,

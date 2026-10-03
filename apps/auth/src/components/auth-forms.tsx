@@ -4,6 +4,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { accountClient, authClient, goToAccount } from "./auth-client";
+import { Passkeys } from "./passkeys";
 
 function Notice({
   message,
@@ -92,7 +93,7 @@ export function SignInForm() {
   return (
     <AuthPanel title="Sign in to Webdock">
       <p className="muted">One account for your workspace and websites.</p>
-      <form onSubmit={submit} aria-busy={busy}>
+      <form method="post" onSubmit={submit} aria-busy={busy}>
         <Field
           label="Email address"
           name="email"
@@ -109,6 +110,41 @@ export function SignInForm() {
           {busy ? "Signing in…" : "Sign in"}
         </button>
       </form>
+      <button
+        type="button"
+        className="button secondary"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setError("");
+          try {
+            if (!window.PublicKeyCredential)
+              throw new Error(
+                "This browser does not support passkeys. Sign in with your password.",
+              );
+            const result = await authClient.signIn.passkey();
+            if (result.error)
+              setError(
+                result.error.message ||
+                  "Passkey sign-in was cancelled. Try again or use your password.",
+              );
+            else goToAccount(result.data);
+          } catch (cause) {
+            setError(
+              cause instanceof Error
+                ? cause.message
+                : "Passkey sign-in failed. Try again or use your password.",
+            );
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        Sign in with a passkey
+      </button>
+      <p className="help">
+        You can add a passkey in your account after signing in.
+      </p>
       <Link href="/forgot-password">Forgot your password?</Link>
       <p className="help">
         Access is by invitation. If you need access or help with your account,
@@ -152,7 +188,7 @@ export function TwoFactorForm() {
           ? "Enter one of the recovery codes you saved. Each code works once."
           : "Enter the six-digit code from your authenticator app."}
       </p>
-      <form onSubmit={submit} aria-busy={busy}>
+      <form method="post" onSubmit={submit} aria-busy={busy}>
         <label className="field">
           {recovery ? "Recovery code" : "Authenticator code"}
           <input
@@ -297,6 +333,7 @@ export function Account() {
             : "Use a unique password with at least 12 characters."}
         </p>
         <form
+          method="post"
           onSubmit={(event) => {
             event.preventDefault();
             const form = event.currentTarget;
@@ -353,6 +390,7 @@ export function Account() {
             </p>
             {!setup ? (
               <form
+                method="post"
                 onSubmit={(event) => {
                   event.preventDefault();
                   const form = event.currentTarget;
@@ -426,6 +464,7 @@ export function Account() {
                   </ul>
                 )}
                 <form
+                  method="post"
                   onSubmit={(event) => {
                     event.preventDefault();
                     const code = String(
@@ -475,6 +514,17 @@ export function Account() {
           </>
         )}
       </section>
+      {needsSetup ? (
+        <section className="account-section">
+          <h2>Passkeys</h2>
+          <p className="muted">
+            Complete your password and authenticator setup before adding a
+            passkey.
+          </p>
+        </section>
+      ) : (
+        <Passkeys disabled={busy} />
+      )}
       <section className="account-section">
         <h2>Continue to your workspace</h2>
         <p className="muted">
@@ -489,7 +539,7 @@ export function Account() {
               if (!new URLSearchParams(window.location.search).has("sig")) {
                 window.location.assign(
                   process.env.NEXT_PUBLIC_ADMIN_URL ||
-                    "https://admin.webdock.dev",
+                    "https://studio.webdock.dev",
                 );
                 return;
               }
@@ -541,7 +591,7 @@ export function ForgotPasswordForm() {
           <p className="muted">
             Enter your account’s email address to request a reset link.
           </p>
-          <form onSubmit={submit} aria-busy={busy}>
+          <form method="post" onSubmit={submit} aria-busy={busy}>
             <Field
               label="Email address"
               name="email"
@@ -619,7 +669,7 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
           <p className="muted">
             Use a unique password with at least 12 characters.
           </p>
-          <form onSubmit={submit} aria-busy={busy}>
+          <form method="post" onSubmit={submit} aria-busy={busy}>
             <Field
               label="New password"
               name="newPassword"

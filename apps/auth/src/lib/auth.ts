@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { admin, organization, twoFactor, jwt } from "better-auth/plugins";
+import { admin, organization, jwt } from "better-auth/plugins";
 import { adminAc, userAc } from "better-auth/plugins/admin/access";
 import { oauthProvider } from "@better-auth/oauth-provider";
 import {
@@ -12,6 +12,8 @@ import { cookiePolicy } from "./cookie-policy";
 import { offlineProvisioning } from "./offline";
 import { currentClaims } from "./authorization";
 import { sendAuthMail } from "./mail";
+import { passkeySecurity, twoFactorWithPasskeys } from "./passkeys";
+import { mcpResource, mcpScopes, currentMCPClaims } from "./mcp";
 const baseURL = process.env.BETTER_AUTH_URL || "http://localhost:3125";
 export const auth = betterAuth({
   appName: "Webdock",
@@ -139,12 +141,15 @@ export const auth = betterAuth({
           text: `You have been invited to ${data.organization.name}.\n${baseURL}/invitation?id=${encodeURIComponent(data.id)}`,
         }),
     }),
-    twoFactor({ issuer: "Webdock", skipVerificationOnEnable: false }),
+    twoFactorWithPasskeys(),
+    passkeySecurity(baseURL),
     jwt({ jwks: { keyPairConfig: { alg: "RS256" } } }),
     oauthProvider({
       loginPage: "/sign-in",
       consentPage: "/consent",
-      scopes: ["openid", "profile", "email"],
+      scopes: ["openid", "profile", "email", ...mcpScopes],
+      resources: [{ identifier: mcpResource, name: "Webdock Studio", allowedScopes: [...mcpScopes], accessTokenTtl: 300 }],
+      enforcePerClientResources: true,
       grantTypes: ["authorization_code"],
       allowDynamicClientRegistration: false,
       allowUnauthenticatedClientRegistration: false,
@@ -174,7 +179,9 @@ export const auth = betterAuth({
         return id;
       },
       customAccessTokenClaims: ({ user, metadata }) =>
-        currentClaims(user?.id, metadata?.webdock_binding),
+        metadata?.webdock_mcp === true
+          ? currentMCPClaims(user?.id)
+          : currentClaims(user?.id, metadata?.webdock_binding),
     }),
   ],
 });

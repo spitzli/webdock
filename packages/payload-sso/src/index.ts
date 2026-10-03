@@ -6,13 +6,40 @@ const roles = ['reader', 'editor', 'admin', 'operator'] as const
 type Role = typeof roles[number]
 type Identity = { sub: string; role: Role; exp: number }
 type Session = { kind: 'session'; accessToken: string; sub: string; exp: number; idToken?: string }
-type Flow = { kind: 'flow'; verifier: string; state: string; nonce: string; exp: number }
+type Flow = { kind: 'flow'; verifier: string; state: string; nonce: string; exp: number; returnTo?: string }
 const SESSION_AGE = 8 * 60 * 60
 const FLOW_AGE = 300
 const now = () => Math.floor(Date.now() / 1000)
 const record = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
 const nonempty = (value: unknown): value is string => typeof value === 'string' && value.length > 0
 const role = (value: unknown): value is Role => roles.includes(value as Role)
+
+const nativeAuthRoutes = ['login', 'logout', 'forgot', 'reset', 'create-first-user', 'unauthorized']
+
+/** Return only normalized admin paths; never accept another origin or an auth loop. */
+export function safeAdminReturnTo(value: unknown): string | null {
+  if (typeof value !== 'string' || value.length > 2048 || !value.startsWith('/admin')
+    || /[\\\u0000-\u0020]/.test(value)) return null
+  try {
+    const url = new URL(value, 'https://admin.invalid')
+    // Reject encoded separators and double encoding before checking the route boundary.
+    if (url.origin !== 'https://admin.invalid' || url.pathname.includes('//') || /%(?:2f|5c|25)/i.test(url.pathname)) return null
+    const pathname = decodeURIComponent(url.pathname)
+    if (/[\\\u0000-\u0020]/.test(pathname) || (pathname !== '/admin' && !pathname.startsWith('/admin/'))
+      || nativeAuthRoutes.includes(pathname.split('/')[2]?.toLowerCase() ?? '')) return null
+    return `${url.pathname}${url.search}${url.hash}`
+  } catch { return null }
+}
+
+/** Payload preserves deep links in `redirect` when sending anonymous requests to login. */
+export function adminSSORedirect(enforced: boolean, segments: string[] = [], searchParams: Record<string, unknown> = {}): string | null {
+  if (!enforced) return null
+  if (segments[0] === 'account' || (segments[0] === 'collections' && segments[1] === 'users')) return '/admin'
+  if (!['login', 'forgot', 'reset', 'create-first-user'].includes(segments[0] ?? '')) return null
+  const requested = searchParams.redirect
+  const returnTo = safeAdminReturnTo(typeof requested === 'string' && requested.startsWith('?') ? `/admin${requested}` : requested) ?? '/admin'
+  return `/api/sso/login?${new URLSearchParams({ returnTo })}`
+}
 
 /** Permission claims are current introspection results, never cached ID-token claims. */
 export function validateIdentity(value: unknown, clientId: string, timestamp = now()): Identity | null {
@@ -39,7 +66,7 @@ export type PayloadSSOOptions = {
   clientSecret?: string
   cookieSecret?: string
   appOrigin?: string
-  /** Fixed application paths; query parameters cannot override these. */
+  /** Default destination; login may supply a validated admin-only returnTo path. */
   successPath?: string
   logoutPath?: string
   /** Enable only after registering appOrigin + logoutPath with the provider. */
@@ -165,7 +192,8 @@ export function configurePayloadSSO(options: PayloadSSOOptions) {
       if (request.method !== 'GET') return respond(405)
       try {
         const verifier = oidc.randomPKCECodeVerifier()
-        const flow: Flow = { kind: 'flow', verifier, state: oidc.randomState(), nonce: oidc.randomNonce(), exp: now() + FLOW_AGE }
+        const flow: Flow = { kind: 'flow', verifier, state: oidc.randomState(), nonce: oidc.randomNonce(), exp: now() + FLOW_AGE,
+          returnTo: safeAdminReturnTo(new URL(request.url).searchParams.get('returnTo')) ?? undefined }
         const url = oidc.buildAuthorizationUrl(await configuration(), {
           response_type: 'code', redirect_uri: callbackURL, scope: 'openid profile email',
           code_challenge: await oidc.calculatePKCECodeChallenge(verifier), code_challenge_method: 'S256',
@@ -203,7 +231,8 @@ export function configurePayloadSSO(options: PayloadSSOOptions) {
         }
         const stored: Session = { kind: 'session', accessToken: tokens.access_token, sub: identity.sub, exp: identity.exp }
         if (options.centralLogout) stored.idToken = tokens.id_token
-        response = respond(302, null, successURL)
+        const returnTo = safeAdminReturnTo(flow.returnTo)
+        response = respond(302, null, returnTo ? appURL(returnTo) : successURL)
         clear(response, 'payload-token')
         response.headers.append('Set-Cookie', cookie(SESSION, await sealData(stored, { password, ttl: SESSION_AGE }), identity.exp - now()))
       } catch (error) {

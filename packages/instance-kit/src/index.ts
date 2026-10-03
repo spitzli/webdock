@@ -30,6 +30,7 @@ export function protectUsers(
   collection: CollectionConfig,
   operatorEmail: string,
 ): CollectionConfig {
+  const centrallyManaged = process.env.WEBDOCK_SSO_ENFORCE === "true";
   // Private, single-use markers: only real Payload recovery operations can set them.
   // They are never accepted from req.context or a caller-supplied request body.
   const recoveryRequests = new WeakMap<
@@ -41,24 +42,25 @@ export function protectUsers(
   return {
     ...collection,
     versions: false,
+    admin: { ...collection.admin, ...(centrallyManaged ? { hidden: true } : {}) },
     access: {
       ...collection.access,
       admin: ({ req }) => actor(req)?.collection === "users",
-      create: canManageUsers,
+      create: centrallyManaged ? () => false : canManageUsers,
       read: ({ req }): AccessResult =>
         canManageUsers({ req })
           ? true
           : actor(req)?.collection === "users"
             ? { id: { equals: actor(req)?.id } }
             : false,
-      update: customerRecord,
-      delete: ({ req }): AccessResult =>
+      update: centrallyManaged ? () => false : customerRecord,
+      delete: centrallyManaged ? () => false : ({ req }): AccessResult =>
         canManageUsers({ req })
           ? {
               and: [{ role: { not_equals: "operator" } }, { email: { not_equals: operatorEmail } }],
             }
           : false,
-      unlock: customerRecord,
+      unlock: centrallyManaged ? () => false : customerRecord,
     },
     fields: [
       ...collection.fields.filter((f) => !("name" in f && f.name === "role")),

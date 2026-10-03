@@ -12,7 +12,7 @@ Object.assign(process.env, {
   WEBDOCK_SSO_COOKIE_SECRET: 'test-cookie-secret-longer-than-thirty-two',
   WEBDOCK_SSO_APP_ORIGIN: 'https://cms.example.test',
   WEBDOCK_SSO_ALLOW_LOCAL_HTTP: 'false',
-  WEBDOCK_SSO_ENFORCE: 'false',
+  WEBDOCK_SSO_ENFORCE: 'true',
 });
 
 test('enforced SSO rejects native login, recovery and existing Payload JWTs without removing auth fields', async () => {
@@ -21,6 +21,11 @@ test('enforced SSO rejects native login, recovery and existing Payload JWTs with
   const payload = await getPayload({ config, disableDBConnect: true, disableOnInit: true });
   try {
     const users = payload.collections.users.config;
+    assert.equal(users.admin.hidden, true);
+    for (const operation of ['create', 'update', 'delete', 'unlock'] as const) {
+      const access = users.access[operation];
+      if (typeof access === 'function') assert.equal(await access({ req: { payload, user: { id: '123', collection: 'users', role: 'operator' } } } as never), false);
+    }
     assert.deepEqual(users.auth.disableLocalStrategy, { enableFields: true, optionalPassword: true });
     assert.ok(payload.authStrategies.every(strategy => strategy.name !== 'local-jwt'));
     const fields = users.fields.flatMap(field => 'name' in field ? [field.name] : []);

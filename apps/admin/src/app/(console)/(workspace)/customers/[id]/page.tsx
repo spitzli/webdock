@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Editor, ArchiveButton } from "../../../../../components/editor";
 import { saveCustomer, archiveRecord } from "../../../../../lib/actions";
+import { date, validRecordID } from "../../../../../lib/presentation";
 import { requireOperator } from "../../../../../lib/server";
 export default async function Customer({
   params,
@@ -9,6 +10,7 @@ export default async function Customer({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  if (!validRecordID(id)) notFound();
   const { payload, user } = await requireOperator();
   const customer = await payload.findByID({
     collection: "customers",
@@ -21,7 +23,8 @@ export default async function Customer({
   const projects = await payload.find({
     collection: "projects",
     where: { customer: { equals: id } },
-    limit: 100,
+    limit: 8,
+    sort: "-updatedAt",
     user,
     overrideAccess: false,
     depth: 0,
@@ -78,7 +81,12 @@ export default async function Customer({
         </section>
         <aside>
           <section className="panel">
-            <h2>Projects</h2>
+            <div className="section-heading">
+              <h2>Projects ({projects.totalDocs})</h2>
+              <Link className="small-link" href={"/?status=all&customer=" + id}>
+                View all
+              </Link>
+            </div>
             {projects.docs.map((p) => (
               <Link
                 className="related-project"
@@ -86,7 +94,13 @@ export default async function Customer({
                 href={"/projects/" + p.id}
               >
                 {p.name}
-                <span>↗</span>
+                <span
+                  className={
+                    "badge " + (p.status === "active" ? "connected" : "")
+                  }
+                >
+                  {p.status}
+                </span>
               </Link>
             ))}
             {!projects.totalDocs && <p className="muted">No projects yet.</p>}
@@ -94,6 +108,18 @@ export default async function Customer({
           <section className="record-meta">
             <p>
               Customer ID <code>{id}</code>
+              <small>
+                Created {date(customer.createdAt)} · Updated{" "}
+                {date(customer.updatedAt)}
+              </small>
+            </p>
+            <p>
+              <Link
+                className="small-link"
+                href={"/activity?collection=customers&target=" + id}
+              >
+                View customer history
+              </Link>
             </p>
             <ArchiveButton
               action={archiveRecord.bind(null, "customers", id)}

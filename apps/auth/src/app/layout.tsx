@@ -25,7 +25,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <Link className="brand" href="/">
             webdock<span>.</span>
           </Link>
-          <span>Account</span>
+          <nav aria-label="Account"><Link href="/account">Account</Link>{" · "}<Link href="/connections">Connections</Link></nav>
         </header>
         <main id="main">{children}</main>
         <footer className="site-footer">

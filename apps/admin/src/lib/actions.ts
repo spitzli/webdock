@@ -1,9 +1,11 @@
 "use server";
 import { APIError } from "payload";
+import { ZodError } from "zod";
+import { writeCustomer, writeProject, writeInstance, setArchived } from "./registry";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireOperator } from "./server";
-export type FormState = { error?: string; values?: Record<string, string> };
+export type FormState = { error?: string; success?: string; values?: Record<string, string> };
 const values = (form: FormData) =>
   Object.fromEntries(
     [...form.entries()]
@@ -12,7 +14,7 @@ const values = (form: FormData) =>
   );
 const fail = (error: unknown, data: Record<string, string>): FormState => ({
   error:
-    error instanceof APIError && error.isPublic
+    error instanceof ZodError ? error.issues.map(issue => `${issue.path.join(".")}: ${issue.message}`).join("; ") : error instanceof APIError && error.isPublic
       ? error.message
       : "The change could not be saved. Please try again.",
   values: data,
@@ -35,25 +37,13 @@ export async function saveCustomer(
       contactEmail: raw.contactEmail || null,
       notes: raw.notes || null,
     };
-    const saved = id
-      ? await payload.update({
-          collection: "customers",
-          id,
-          data,
-          user,
-          overrideAccess: false,
-        })
-      : await payload.create({
-          collection: "customers",
-          data: { ...data, status: "active" },
-          user,
-          overrideAccess: false,
-        });
+    const saved = await writeCustomer({ payload, user }, id, data);
     savedID = saved.id;
   } catch (e) {
     return fail(e, raw);
   }
   revalidatePath("/customers");
+  if (id) { revalidatePath("/customers/" + savedID); return { success: "Customer saved." }; }
   redirect("/customers/" + savedID);
 }
 export async function saveProject(
@@ -73,25 +63,13 @@ export async function saveProject(
       repositoryURL: raw.repositoryURL || null,
       notes: raw.notes || null,
     };
-    const saved = id
-      ? await payload.update({
-          collection: "projects",
-          id,
-          data,
-          user,
-          overrideAccess: false,
-        })
-      : await payload.create({
-          collection: "projects",
-          data: { ...data, status: "active" },
-          user,
-          overrideAccess: false,
-        });
+    const saved = await writeProject({ payload, user }, id, data);
     savedID = saved.id;
   } catch (e) {
     return fail(e, raw);
   }
   revalidatePath("/");
+  if (id) { revalidatePath("/projects/" + savedID); return { success: "Project saved." }; }
   redirect("/projects/" + savedID);
 }
 export async function archiveRecord(
@@ -103,13 +81,7 @@ export async function archiveRecord(
   const { payload, user } = await requireOperator();
   try {
     if (!validID(id)) throw new APIError("Invalid record.", 400);
-    await payload.update({
-      collection,
-      id,
-      data: { status: form.get("restore") === "true" ? "active" : "archived" },
-      overrideAccess: false,
-      user,
-    });
+    await setArchived({ payload, user }, collection, id, form.get("restore") !== "true");
   } catch (e) {
     return fail(e, {});
   }
@@ -146,24 +118,11 @@ export async function saveInstance(
       status: raw.status as "active" | "suspended" | "retired",
       notes: raw.notes || null,
     };
-    if (instanceID)
-      await payload.update({
-        collection: "cms-instances",
-        id: instanceID,
-        data,
-        overrideAccess: false,
-        user,
-      });
-    else
-      await payload.create({
-        collection: "cms-instances",
-        data,
-        overrideAccess: false,
-        user,
-      });
+    await writeInstance({ payload, user }, instanceID, data, raw.confirmExisting === "yes");
   } catch (e) {
     return fail(e, raw);
   }
   revalidatePath("/");
-  redirect("/projects/" + projectID);
+  revalidatePath("/projects/" + projectID);
+  return { success: "CMS connection saved." };
 }

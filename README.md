@@ -5,7 +5,7 @@ Public source monorepo for Webdock, maintained by Spitzli Development. Applicati
 | Workspace | Purpose | Status |
 | --- | --- | --- |
 | `apps/web` (`@webdock/web`) | English landing page and its own Payload CMS | https://webdock.dev |
-| `apps/admin` (`@webdock/admin`) | Operator workspace for customers, projects and CMS inventory | https://admin.webdock.dev |
+| `apps/admin` (`@webdock/admin`) | Operator workspace for customers, projects and CMS inventory | https://studio.webdock.dev |
 | `apps/auth` (`@webdock/auth`) | Better Auth identity, MFA and OIDC provider | https://auth.webdock.dev |
 | `apps/cms` (`@webdock/cms`) | Retired shared-CMS notice and offline migration/verification tools | https://cms.webdock.dev |
 | `packages/instance-kit` | Shared protected operator policy | Used by the Webdock applications |
@@ -27,7 +27,7 @@ npm run lint
 
 Each app owns its environment files. See its `.env.example`; never place production credentials in committed files. `.env*`, backups, dependencies and local tooling are excluded from Git and deployment uploads. The management runtime uses a separate restricted `webdock_admin` PostgreSQL schema/login; it cannot read the website schemas.
 
-The management app uses central Better Auth on Neon. Operators enroll MFA before access. Existing website CMS logins have an explicit gradual SSO rollout; legacy-compatible mode must be disabled per site after its users are enrolled. See [identity operations](apps/auth/README.md) and [the SSO adapter](packages/payload-sso/README.md).
+The management app uses central Better Auth on Neon. Operators enroll MFA before access. Website CMS logins use enforced central SSO after identity mapping and operator enrollment; local Payload credentials are disabled. See [identity operations](apps/auth/README.md) and [the SSO adapter](packages/payload-sso/README.md).
 
 The management registry supports customers, projects, existing CMS connection records and immutable audit events. New projects do not provision a CMS. Editing a connection record changes inventory only. Automated provisioning, the customer panel, a collection designer and a shared page builder are not implemented.
 
@@ -47,6 +47,8 @@ Run each app's migration command explicitly with its own credentials. Automatic 
 - [Management implementation plan](docs/superpowers/plans/2026-10-03-webdock-admin.md)
 - [Independent instance cutover](docs/superpowers/plans/2026-10-03-isolated-instances.md)
 
-Spitzli and Stall stay in their own repositories. Their CMS instances can be listed here without merging their content, accounts or website design into this application. Per-site Plausible tracking remains planned.
+Spitzli and Stall stay in their own repositories. Their CMS instances are listed here without merging their content or website design into this application; central identities map to protected local Payload projections. Per-site Plausible tracking remains planned.
 
 See [current rollout status](docs/architecture/auth-rollout-status.md) and [requested next changes](TODO.md).
+
+See [Studio MCP, GitHub and passkeys](docs/architecture/studio-integrations.md) for integration setup and access rules.

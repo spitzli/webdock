@@ -13,3 +13,6 @@ export const hostname = (value?: string | null) => {
     return "No domain yet";
   }
 };
+
+export const validRecordID = (id: string) =>
+  /^[1-9][0-9]{0,18}$/.test(id) && BigInt(id) <= 9223372036854775807n;

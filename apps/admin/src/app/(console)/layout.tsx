@@ -7,7 +7,7 @@ const space = localFont({
   display: "swap",
 });
 export const metadata: Metadata = {
-  title: { default: "Webdock Admin", template: "%s — Webdock" },
+  title: { default: "Webdock Studio", template: "%s — Webdock" },
   robots: { index: false, follow: false },
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
