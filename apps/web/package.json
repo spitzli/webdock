@@ -10,7 +10,8 @@
     "test": "node --test tests/*.test.mjs",
     "payload": "node --env-file=.env.instance ../../node_modules/payload/bin.js",
     "cms:types": "npm run payload -- generate:types",
-    "cms:migrate": "PAYLOAD_MIGRATING=true npm run payload -- migrate"
+    "cms:migrate": "PAYLOAD_MIGRATING=true npm run payload -- migrate",
+    "test:sso-policy": "node --import tsx --test tests/sso-policy.test.ts"
   },
   "dependencies": {
     "next": "16.3.8",
@@ -24,7 +25,8 @@
     "nodemailer": "10.0.13",
     "graphql": "16.14.2",
     "sharp": "0.35.5",
-    "@webdock/instance-kit": "*"
+    "@webdock/instance-kit": "*",
+    "@webdock/payload-sso": "*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

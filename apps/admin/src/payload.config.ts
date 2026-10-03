@@ -12,6 +12,7 @@ import {
   Audit,
 } from "./cms/collections";
 import { isOperator } from "./lib/instance-users";
+export { sso } from "./lib/sso";
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const serverURL = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3120";
 export default buildConfig({

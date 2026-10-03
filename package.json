@@ -18,7 +18,11 @@
     "build:admin": "npm run build -w @webdock/admin",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test -w @webdock/admin",
-    "test:web": "npm run test -w @webdock/web"
+    "test:web": "npm run test -w @webdock/web",
+    "dev:auth": "npm run dev -w @webdock/auth",
+    "build:auth": "npm run build -w @webdock/auth",
+    "test:auth": "npm run test -w @webdock/auth",
+    "test:sso": "node --experimental-strip-types --test packages/payload-sso/src/index.test.ts"
   },
   "overrides": {
     "nodemailer": "10.0.13"

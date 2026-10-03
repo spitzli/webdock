@@ -1,3 +1,4 @@
+import { sso } from "@payload-config";
 import Link from "next/link";
 import { requireOperator } from "../../../lib/server";
 import { Navigation, Appearance, Logout } from "../../../components/navigation";
@@ -25,7 +26,7 @@ export default async function Layout({
             <small>System operator</small>
           </p>
           <Appearance />
-          <Logout />
+          <Logout ssoEnabled={Boolean(sso)} />
         </div>
       </aside>
       <div className="main-wrap">

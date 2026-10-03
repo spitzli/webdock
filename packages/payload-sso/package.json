@@ -1,0 +1,1 @@
+{"name":"@webdock/payload-sso","version":"0.1.0","private":true,"type":"module","exports":"./src/index.ts","peerDependencies":{"payload":"4.0.0-canary.37"},"dependencies":{"openid-client":"6.8.8","iron-session":"^8.0.4"}}

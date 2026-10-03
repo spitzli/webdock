@@ -1,0 +1,11 @@
+# Payload SSO adapter
+
+Authorization Code + PKCE/OIDC via openid-client, using encrypted, host-only browser cookies. Each protected request introspects the opaque token, checks its client binding, and intersects its current central role with the local projection. Local users are matched only by immutable `authSubject`. No email-based linking or user creation occurs during login.
+
+`configurePayloadSSO` returns the strategy, login/callback/logout/refresh handlers and Payload hooks. Add `authSubjectField` and the hooks to the Users collection. Success clears any previous native Payload cookie. Refresh never mints a native JWT or extends the original eight-hour expiry. Logout clears local credentials even when the provider is unavailable. Global sign-out is available at the central account page.
+
+Production requires HTTPS, __Host- cookies and an exact registered app origin/callback. Gated localhost HTTP exists only for development and is rejected in production. Callback URLs are reconstructed from trusted configuration to tolerate Next.js internal proxy URLs; raw Host or request URL host must match, and forwarded-host claims are not trusted.
+
+Native Payload authentication must be disabled for an SSO-only cutover. `disableLocalStrategy: {enableFields:true, optionalPassword:true}` preserves the existing schema but rejects old passwords, recovery and JWTs. An explicit temporary compatibility flag on old sites is rollout support, not central-policy enforcement.
+
+Run `npm run test:sso` from the monorepo root. External website repositories vendor this file and carry the same protocol and actual-Payload policy tests. Keep them synchronized deliberately.

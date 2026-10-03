@@ -67,10 +67,15 @@ export function Appearance() {
     </label>
   );
 }
-export function Logout() {
+export function Logout({ ssoEnabled = false }: { ssoEnabled?: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
+  if (ssoEnabled) return (
+    <form action="/api/sso/logout" method="post">
+      <button className="text-button" type="submit">Sign out</button>
+    </form>
+  );
   return (
     <>
       <button

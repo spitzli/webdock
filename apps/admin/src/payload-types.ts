@@ -13,53 +13,53 @@
  * via the `definition` "supportedTimezones".
  */
 export type SupportedTimezones =
-  | "Pacific/Midway"
-  | "Pacific/Niue"
-  | "Pacific/Honolulu"
-  | "Pacific/Rarotonga"
-  | "America/Anchorage"
-  | "Pacific/Gambier"
-  | "America/Los_Angeles"
-  | "America/Tijuana"
-  | "America/Denver"
-  | "America/Phoenix"
-  | "America/Chicago"
-  | "America/Guatemala"
-  | "America/New_York"
-  | "America/Bogota"
-  | "America/Caracas"
-  | "America/Santiago"
-  | "America/Buenos_Aires"
-  | "America/Sao_Paulo"
-  | "Atlantic/South_Georgia"
-  | "Atlantic/Azores"
-  | "Atlantic/Cape_Verde"
-  | "Europe/London"
-  | "Europe/Berlin"
-  | "Africa/Lagos"
-  | "Europe/Athens"
-  | "Africa/Cairo"
-  | "Europe/Moscow"
-  | "Asia/Riyadh"
-  | "Asia/Dubai"
-  | "Asia/Baku"
-  | "Asia/Karachi"
-  | "Asia/Tashkent"
-  | "Asia/Calcutta"
-  | "Asia/Dhaka"
-  | "Asia/Almaty"
-  | "Asia/Jakarta"
-  | "Asia/Bangkok"
-  | "Asia/Shanghai"
-  | "Asia/Singapore"
-  | "Asia/Tokyo"
-  | "Asia/Seoul"
-  | "Australia/Brisbane"
-  | "Australia/Sydney"
-  | "Pacific/Guam"
-  | "Pacific/Noumea"
-  | "Pacific/Auckland"
-  | "Pacific/Fiji";
+  | 'Pacific/Midway'
+  | 'Pacific/Niue'
+  | 'Pacific/Honolulu'
+  | 'Pacific/Rarotonga'
+  | 'America/Anchorage'
+  | 'Pacific/Gambier'
+  | 'America/Los_Angeles'
+  | 'America/Tijuana'
+  | 'America/Denver'
+  | 'America/Phoenix'
+  | 'America/Chicago'
+  | 'America/Guatemala'
+  | 'America/New_York'
+  | 'America/Bogota'
+  | 'America/Caracas'
+  | 'America/Santiago'
+  | 'America/Buenos_Aires'
+  | 'America/Sao_Paulo'
+  | 'Atlantic/South_Georgia'
+  | 'Atlantic/Azores'
+  | 'Atlantic/Cape_Verde'
+  | 'Europe/London'
+  | 'Europe/Berlin'
+  | 'Africa/Lagos'
+  | 'Europe/Athens'
+  | 'Africa/Cairo'
+  | 'Europe/Moscow'
+  | 'Asia/Riyadh'
+  | 'Asia/Dubai'
+  | 'Asia/Baku'
+  | 'Asia/Karachi'
+  | 'Asia/Tashkent'
+  | 'Asia/Calcutta'
+  | 'Asia/Dhaka'
+  | 'Asia/Almaty'
+  | 'Asia/Jakarta'
+  | 'Asia/Bangkok'
+  | 'Asia/Shanghai'
+  | 'Asia/Singapore'
+  | 'Asia/Tokyo'
+  | 'Asia/Seoul'
+  | 'Australia/Brisbane'
+  | 'Australia/Sydney'
+  | 'Pacific/Guam'
+  | 'Pacific/Noumea'
+  | 'Pacific/Auckland'
+  | 'Pacific/Fiji';
 
 export interface Config {
   auth: {
@@ -70,30 +70,24 @@ export interface Config {
     users: User;
     customers: Customer;
     projects: Project;
-    "cms-instances": CmsInstance;
-    "audit-events": AuditEvent;
-    "payload-kv": PayloadKv;
-    "payload-locked-documents": PayloadLockedDocument;
-    "payload-preferences": PayloadPreference;
-    "payload-migrations": PayloadMigration;
+    'cms-instances': CmsInstance;
+    'audit-events': AuditEvent;
+    'payload-kv': PayloadKv;
+    'payload-locked-documents': PayloadLockedDocument;
+    'payload-preferences': PayloadPreference;
+    'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     customers: CustomersSelect<false> | CustomersSelect<true>;
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
-    "cms-instances": CmsInstancesSelect<false> | CmsInstancesSelect<true>;
-    "audit-events": AuditEventsSelect<false> | AuditEventsSelect<true>;
-    "payload-kv": PayloadKvSelect<false> | PayloadKvSelect<true>;
-    "payload-locked-documents":
-      | PayloadLockedDocumentsSelect<false>
-      | PayloadLockedDocumentsSelect<true>;
-    "payload-preferences":
-      | PayloadPreferencesSelect<false>
-      | PayloadPreferencesSelect<true>;
-    "payload-migrations":
-      | PayloadMigrationsSelect<false>
-      | PayloadMigrationsSelect<true>;
+    'cms-instances': CmsInstancesSelect<false> | CmsInstancesSelect<true>;
+    'audit-events': AuditEventsSelect<false> | AuditEventsSelect<true>;
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
+    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
+    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
     defaultIDType: number;
@@ -104,7 +98,7 @@ export interface Config {
   locale: null;
   widgets: {
     collections: CollectionsWidget;
-    "collection-query": CollectionQueryWidget;
+    'collection-query': CollectionQueryWidget;
     activity: ActivityWidget;
   };
   user: User;
@@ -137,11 +131,12 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: string;
+  authSubject?: string | null;
   name: string;
   /**
    * The system operator is managed by Webdock, not by customer administrators.
    */
-  role: "operator" | "admin" | "editor" | "reader";
+  role: 'operator' | 'admin' | 'editor' | 'reader';
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -160,7 +155,7 @@ export interface User {
       }[]
     | null;
   password?: string | null;
-  collection: "users";
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -172,7 +167,7 @@ export interface Customer {
   contactName?: string | null;
   contactEmail?: string | null;
   notes?: string | null;
-  status: "active" | "archived";
+  status: 'active' | 'archived';
   updatedAt: string;
   createdAt: string;
 }
@@ -187,7 +182,7 @@ export interface Project {
   url?: string | null;
   repositoryURL?: string | null;
   notes?: string | null;
-  status: "active" | "archived";
+  status: 'active' | 'archived';
   updatedAt: string;
   createdAt: string;
 }
@@ -203,15 +198,11 @@ export interface CmsInstance {
   project: string | Project;
   adminURL: string;
   schemaName: string;
-  provider: "vercel" | "other";
+  provider: 'vercel' | 'other';
   providerProjectID: string;
-  template:
-    | "webdock-landing"
-    | "spitzli-portfolio"
-    | "stall-business"
-    | "custom";
+  template: 'webdock-landing' | 'spitzli-portfolio' | 'stall-business' | 'custom';
   payloadVersion?: string | null;
-  status: "active" | "suspended" | "retired";
+  status: 'active' | 'suspended' | 'retired';
   notes?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -225,7 +216,7 @@ export interface CmsInstance {
 export interface AuditEvent {
   id: string;
   actor: string | User;
-  action: "create" | "update";
+  action: 'create' | 'update';
   targetCollection: string;
   targetID: string;
   summary: string;
@@ -258,28 +249,28 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: "users";
+        relationTo: 'users';
         value: string | User;
       } | null)
     | ({
-        relationTo: "customers";
+        relationTo: 'customers';
         value: string | Customer;
       } | null)
     | ({
-        relationTo: "projects";
+        relationTo: 'projects';
         value: string | Project;
       } | null)
     | ({
-        relationTo: "cms-instances";
+        relationTo: 'cms-instances';
         value: string | CmsInstance;
       } | null)
     | ({
-        relationTo: "audit-events";
+        relationTo: 'audit-events';
         value: string | AuditEvent;
       } | null);
   globalSlug?: string | null;
   user: {
-    relationTo: "users";
+    relationTo: 'users';
     value: string | User;
   };
   updatedAt: string;
@@ -292,7 +283,7 @@ export interface PayloadLockedDocument {
 export interface PayloadPreference {
   id: number;
   user: {
-    relationTo: "users";
+    relationTo: 'users';
     value: string | User;
   };
   key?: string | null;
@@ -325,6 +316,7 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   id?: T;
+  authSubject?: T;
   name?: T;
   role?: T;
   updatedAt?: T;
@@ -456,7 +448,7 @@ export interface CollectionsWidget {
   data?: {
     [k: string]: unknown;
   };
-  width: "full";
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -465,12 +457,7 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection:
-      | "users"
-      | "customers"
-      | "projects"
-      | "cms-instances"
-      | "audit-events";
+    relatedCollection: 'users' | 'customers' | 'projects' | 'cms-instances' | 'audit-events';
     where?:
       | {
           [k: string]: unknown;
@@ -481,10 +468,10 @@ export interface CollectionQueryWidget {
       | boolean
       | null;
     sortField?: string | null;
-    sortDirection?: ("asc" | "desc") | null;
+    sortDirection?: ('asc' | 'desc') | null;
     limit?: number | null;
   };
-  width: "x-small" | "small" | "medium" | "large" | "x-large" | "full";
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -492,17 +479,9 @@ export interface CollectionQueryWidget {
  */
 export interface ActivityWidget {
   data?: {
-    excludedCollections?:
-      | (
-          | "users"
-          | "customers"
-          | "projects"
-          | "cms-instances"
-          | "audit-events"
-        )[]
-      | null;
+    excludedCollections?: ('users' | 'customers' | 'projects' | 'cms-instances' | 'audit-events')[] | null;
   };
-  width: "x-small" | "small" | "medium" | "large" | "x-large" | "full";
+  width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -512,6 +491,7 @@ export interface Auth {
   [k: string]: unknown;
 }
 
-declare module "payload" {
+
+declare module 'payload' {
   export interface GeneratedTypes extends Config {}
 }

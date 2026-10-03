@@ -5,6 +5,8 @@ import {
   type CollectionAfterChangeHook,
   type Field,
 } from "payload";
+import { authSubjectField } from "@webdock/payload-sso";
+import { sso } from "../lib/sso";
 import { isOperator, protectUsers } from "../lib/instance-users";
 import { nextSnowflake } from "../lib/snowflake";
 const access = {
@@ -80,10 +82,10 @@ const audit: CollectionAfterChangeHook = async ({
 const protectedUsers = protectUsers(
   {
     slug: "users",
-    auth: { maxLoginAttempts: 5, lockTime: 600000 },
+    auth: { maxLoginAttempts: 5, lockTime: 600000, strategies: sso ? [sso.strategy] : [], disableLocalStrategy: (sso || process.env.WEBDOCK_SSO_ENFORCE === "true") ? { enableFields: true, optionalPassword: true } : undefined },
     admin: { useAsTitle: "email" },
-    fields: [id, { name: "name", type: "text", required: true }],
-    hooks: { beforeValidate: [assignID] },
+    fields: [id, authSubjectField, { name: "name", type: "text", required: true }],
+    hooks: { ...sso?.hooks, beforeValidate: [assignID] },
   },
   process.env.OPERATOR_EMAIL || "dominik@spitzli.dev",
 );

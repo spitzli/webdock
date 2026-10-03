@@ -30,7 +30,9 @@
     "graphql": "16.14.2",
     "sharp": "0.35.5",
     "pg": "8.16.3",
-    "@webdock/instance-kit": "*"
+    "@webdock/instance-kit": "*",
+    "@webdock/snowflake": "*",
+    "@webdock/payload-sso": "*"
   },
   "devDependencies": {
     "@types/node": "^24",

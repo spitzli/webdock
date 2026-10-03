@@ -1,0 +1,11 @@
+**/.env*
+**/.backups/**
+**/.agents/**
+**/.git/**
+**/node_modules/**
+**/.next/**
+**/.vercel/**
+**/.migration*
+**/.spitzli-source.json
+**/test-results/**
+**/playwright-report/**

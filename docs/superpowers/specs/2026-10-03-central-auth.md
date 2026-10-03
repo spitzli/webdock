@@ -1,6 +1,6 @@
 # Central Webdock identity and SSO design
 
-Status: provider and common-login goal selected by the owner. This specifies the integration boundary; the new production login has not been implemented or deployed. Better Auth runs in our application infrastructure, with Neon as PostgreSQL storage. The managed Neon Auth service and WorkOS are not selected.
+Status: provider and common-login goal selected by the owner. This specifies the integration boundary. The implementation now includes the central auth service and relying-app adapters; production enrollment and per-site legacy cutover are separate operational steps. Better Auth runs in our application infrastructure, with Neon as PostgreSQL storage. The managed Neon Auth service and WorkOS are not selected.
 
 ## Goals and boundaries
 
@@ -66,3 +66,11 @@ Primary references checked on 2026-10-03:
 - https://better-auth.com/docs/plugins/organization
 - https://better-auth.com/docs/plugins/2fa
 - https://neon.com/docs/auth/overview (managed service comparison)
+
+## Implementation rulings
+
+- Native Better Auth 1.7.7 OAuth Provider plus openid-client 6.8.8; no custom OAuth server.
+- Eight-hour **opaque** access tokens are verified through introspection on every protected request, including fresh grants/membership/ban state. ID tokens remain five minutes. This avoids periodic editor logout and refresh-token races while preserving immediate effective revocation. These are not offline JWT permissions.
+- Auth Snowflake node1 and management node0 use separate coordinators/namespaces. Production cookie names use __Host- (not only __Secure-) to prevent sibling-domain cookie injection.
+- New management app is SSO-only. Existing sites retain explicit temporary legacy compatibility until their real users are enrolled; do not claim complete SSO-only enforcement while that flag remains false.
+- Central sign-out invalidates central-session-backed opaque tokens. App-local sign-out closes that app's session.

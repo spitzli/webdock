@@ -4,6 +4,9 @@ import { buildConfig } from 'payload';
 import { postgresAdapter } from '@payloadcms/db-postgres';
 import nodemailer from 'nodemailer';
 import { nodemailerAdapter } from '@payloadcms/email-nodemailer';
+import { authSubjectField } from '@webdock/payload-sso';
+import { sso } from './lib/sso';
+export { sso } from './lib/sso';
 import { LandingPage } from './cms/landing';
 import { protectUsers, protectContent, isOperator } from './lib/instance-users';
 
@@ -13,13 +16,14 @@ const serverURL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3114';
 export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || '',
   serverURL,
-  admin: { user: 'users', importMap: { baseDir: dirname } },
+  admin: { user: 'users', importMap: { baseDir: dirname }, components: { beforeLogin: ['/components/sso-login#SSOLogin'] } },
   collections: [protectUsers({
     slug: 'users',
     admin: { useAsTitle: 'email' },
-    auth: { maxLoginAttempts: 5, lockTime: 600000 },
+    auth: { maxLoginAttempts: 5, lockTime: 600000, strategies: sso ? [sso.strategy] : [], disableLocalStrategy: process.env.WEBDOCK_SSO_ENFORCE === 'true' ? { enableFields: true, optionalPassword: true } : undefined },
+    hooks: sso?.hooks,
     access: {},
-    fields: [{ name: 'name', type: 'text' }],
+    fields: [authSubjectField, { name: 'name', type: 'text' }],
   }, process.env.OPERATOR_EMAIL || 'dominik@spitzli.dev')],
   globals: [protectContent(LandingPage)],
   jobs: { access: { run: isOperator, queue: isOperator, cancel: isOperator } },

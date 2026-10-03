@@ -1,6 +1,4 @@
 import { getPayload } from "payload";
-import crypto from "node:crypto";
-import { Pool } from "pg";
 import config from "../src/payload.config";
 import { closeSnowflakePool } from "../src/lib/snowflake";
 const p = await getPayload({ config });
@@ -16,50 +14,34 @@ try {
   ).docs[0];
   if (!operator) {
     if (
-      !process.env.OPERATOR_SOURCE_DATABASE_URL &&
+      !process.env.OPERATOR_AUTH_SUBJECT &&
       !process.env.LOCAL_OPERATOR_PASSWORD
     )
-      throw Error(
-        "Supply source credentials or a local test password before seeding",
-      );
+      throw Error("Provide an approved SSO subject or a local test password");
     operator = await p.create({
       collection: "users",
       data: {
         name: "Dominik",
         email,
         role: "operator",
-        password:
-          process.env.LOCAL_OPERATOR_PASSWORD ||
-          crypto.randomBytes(40).toString("base64url"),
+        ...(process.env.OPERATOR_AUTH_SUBJECT
+          ? { authSubject: process.env.OPERATOR_AUTH_SUBJECT }
+          : { password: process.env.LOCAL_OPERATOR_PASSWORD }),
       },
       overrideAccess: true,
       context: { bootstrap: true },
     });
-    if (process.env.OPERATOR_SOURCE_DATABASE_URL) {
-      const source = new Pool({
-        connectionString: process.env.OPERATOR_SOURCE_DATABASE_URL,
-        max: 1,
-      });
-      try {
-        const record = (
-          await source.query(
-            "SELECT hash,salt FROM webdock.users WHERE email=$1 AND role=$2",
-            [email, "operator"],
-          )
-        ).rows[0];
-        if (!record?.hash || !record.salt)
-          throw Error("Source operator not found");
-        await p.db.pool.query(
-          "UPDATE webdock_admin.users SET hash=$1,salt=$2 WHERE id=$3",
-          [record.hash, record.salt, operator.id],
-        );
-      } finally {
-        await source.end();
-      }
-    } else if (!process.env.LOCAL_OPERATOR_PASSWORD)
-      throw Error(
-        "Supply source credentials or a local test password before seeding",
-      );
+  }
+  if (
+    process.env.OPERATOR_AUTH_SUBJECT &&
+    operator.authSubject !== process.env.OPERATOR_AUTH_SUBJECT
+  ) {
+    if (operator.authSubject) throw Error("Existing subject mapping differs");
+    await p.db.pool.query(
+      "UPDATE webdock_admin.users SET auth_subject=$1 WHERE id=$2",
+      [process.env.OPERATOR_AUTH_SUBJECT, operator.id],
+    );
+    operator.authSubject = process.env.OPERATOR_AUTH_SUBJECT;
   }
   const user = { ...operator, collection: "users" as const };
   const customer = async (name: string) => {

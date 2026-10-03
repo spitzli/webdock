@@ -127,6 +127,7 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  authSubject?: string | null;
   name?: string | null;
   /**
    * The system operator is managed by Webdock, not by customer administrators.
@@ -226,6 +227,7 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  authSubject?: T;
   name?: T;
   role?: T;
   updatedAt?: T;

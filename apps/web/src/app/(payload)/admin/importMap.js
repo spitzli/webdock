@@ -1,3 +1,4 @@
+import { SSOLogin as SSOLogin_a10fd9a49c2e91687e245046be60aa82 } from '../../../components/sso-login'
 import { CollectionCards as CollectionCards_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 import { CollectionQueryWidget as CollectionQueryWidget_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 import { QueryPresetsWhereField as QueryPresetsWhereField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
@@ -7,6 +8,7 @@ import { RecentlyViewedCollectionsField as RecentlyViewedCollectionsField_3817bf
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "/components/sso-login#SSOLogin": SSOLogin_a10fd9a49c2e91687e245046be60aa82,
   "@payloadcms/ui/rsc#CollectionCards": CollectionCards_ab83ff7e88da8d3530831f296ec4756a,
   "@payloadcms/ui/rsc#CollectionQueryWidget": CollectionQueryWidget_ab83ff7e88da8d3530831f296ec4756a,
   "@payloadcms/ui#QueryPresetsWhereField": QueryPresetsWhereField_3817bf644402e67bfe6577f60ef982de,
