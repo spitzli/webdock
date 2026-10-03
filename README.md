@@ -1,41 +1,31 @@
-# Webdock frontend
+# Webdock
 
-English Next.js 16 / React 19 / Tailwind 4 landing page at **https://webdock.dev**. Content comes from the separate multi-tenant Payload CMS at **https://cms.webdock.dev**.
+English Next.js 16 / React 19 / Tailwind 4 website and independent Payload 4 Canary CMS at **https://webdock.dev**. Edit content at **https://webdock.dev/admin**.
 
 ## Architecture
 
-- This repository is the public frontend only. `/admin` and CMS `/api` routes return 404; there are no redirects to the CMS.
-- The CMS has its own Vercel project, repository (`spitzli/webdock-cms`) and Neon database.
-- Webdock is the first tenant. Spitzli and Stall Eichenbruch have not been migrated.
-- `src/lib/landing.ts` fetches the tenant's unique landing page server-side using a dedicated read-only API key. The key is never public or passed to browser components.
-- The visual design, English copy, native FAQ, local font and system/light/dark appearance remain unchanged. Saved CMS changes appear on the next request.
+This Vercel project runs its own Payload admin, authentication, API and frontend. It uses the `webdock` schema in the shared Webdock CMS PostgreSQL database, with a dedicated `webdock_runtime` login that cannot access the other applications' schemas. There is no runtime dependency on the former multi-tenant CMS.
 
-## Run
+The visible **System operator (Webdock)** account is managed by the platform owner. Customer accounts cannot modify/delete it or grant themselves its role. Existing user passwords were preserved. Each instance has its own sessions and Payload secret.
 
-```bash
-nvm use
-npm ci
-npx vercel link --scope spitzli --project webdock
-npx vercel env pull .env.local
-npm run dev -- --port 3104
-```
+Landing page copy, SEO and FAQ are editable in Payload. The public website reads its local Global server-side. English copy, local assets and system/light/dark appearance remain intact.
 
-Required runtime variables: `CMS_URL`, `CMS_SITE_KEY`, `CMS_API_KEY` (see `.env.example`). For local integration with the sibling CMS, set `CMS_URL=http://localhost:3105` when starting the frontend. No database or SMTP credentials are used by this app.
+## Development
 
-```bash
+Use Node 24. Copy `.env.example` to `.env.local` and supply this instance's credentials, then run `npm ci` and `npm run dev`. Never use the database owner credentials in the application. Environment files are ignored by Git.
+
+For migration tooling, put credentials in `.env.instance`. `npm run cms:migrate` runs checked-in schema migrations from `src/migrations-instance`; automatic schema push is disabled. Run migrations explicitly before deploying a schema change. Existing framework IDs and references are preserved; the future platform ULID/Snowflake decision is separate.
+
+```sh
 npm run lint
 npm run build
 npm run start -- --port 3104
-# Separate terminal:
+# Another terminal:
 TEST_BASE_URL=http://localhost:3104 npm test
 ```
 
-## Editing
+## Operations and rollback
 
-Open https://cms.webdock.dev, select the **Webdock** tenant and edit **Landing page**. Website content and SEO are editable there. The public frontend retains its own components; adding another customer does not require sharing this design.
+The previous central database's `public` schema, private export and backup are retained. Imported content and history came from the latest central export; do not rerun the one-time import against an edited instance. Rollback requires reconciling changes since cutover before restoring the old deployment/environment. Never point this app's migrations at another site's schema.
 
-## Migration / rollback
-
-The source standalone CMS database was retained, not deleted. Commit `ae49dde` contains the previous Payload application and its migration scripts. The central CMS imported the latest saved content before cutover. Restore the old application plus its original Vercel environment configuration only if rollback is required; reconcile any newer CMS edits first. Do not run old migrations against the central CMS database.
-
-Static branding assets are in `public/`; frontend tokens are in `tokens.css`. Legal/operator content and the backlink from spitzli.dev remain follow-up work.
+Each website keeps its own frontend and `/admin`. The future Webdock management panel will register customers/projects and optionally provision CMS instances; CMS activation defaults off. That customer-facing panel is not built here. Per-site Plausible tracking remains planned.

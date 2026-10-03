@@ -44,3 +44,5 @@ next-env.d.ts
 # Locally installed provider skills
 .agents/
 skills-lock.json
+
+.backups/
