@@ -83,7 +83,7 @@ test("MCP OAuth: PKCE, consent, resource audience and live authorization/revocat
       metadata.revocation_endpoint_auth_methods_supported,
       confidentialMethods,
     );
-    assert.deepEqual(metadata.grant_types_supported, ["authorization_code"]);
+    assert.deepEqual(metadata.grant_types_supported, ["authorization_code", "refresh_token"]);
     assert.equal(metadata.registration_endpoint, undefined);
   }
   const registration = await fixture.handler(
@@ -163,7 +163,7 @@ test("MCP OAuth: PKCE, consent, resource audience and live authorization/revocat
           redirect_uris: ["https://client.example/callback"],
           application_type: "web",
           scope,
-          grant_types: ["authorization_code"],
+          grant_types: ["authorization_code", "refresh_token"],
           response_types: ["code"],
           token_endpoint_auth_method: confidential
             ? "client_secret_post"
@@ -341,6 +341,10 @@ test("MCP OAuth: PKCE, consent, resource audience and live authorization/revocat
     (await (await introspect(wrongAudience.token)).json()).active,
     false,
   );
+  const sessionlessClaims = { ...decodeJwt(tokens.access_token) };
+  delete sessionlessClaims.sid;
+  const sessionless = await fixture.api.signJWT({ body: { payload: sessionlessClaims } });
+  assert.equal((await (await introspect(sessionless.token)).json()).active, false, "MCP never accepts a token without a session binding");
   const expired = await fixture.api.signJWT({
     body: {
       payload: {
@@ -390,7 +394,46 @@ test("MCP OAuth: PKCE, consent, resource audience and live authorization/revocat
   issuingClient.disabled = true;
   assert.equal((await (await introspect()).json()).active, false);
   issuingClient.disabled = false;
+  const remote = await createClient({ webdock_mcp: true }, "webdock:read offline_access", false);
+  await fixture.api.adminLinkClientResource({ headers, params: { identifier: mcpResource, client_id: remote.client_id } });
+  const remoteQuery = query();
+  remoteQuery.set("client_id", remote.client_id);
+  remoteQuery.set("scope", "webdock:read offline_access");
+  const remoteConsent = await authorize(remoteQuery);
+  const approved = await call("/oauth2/consent", { accept: true, oauth_query: remoteConsent.search.slice(1) });
+  const remoteCode = new URL((await approved.json()).url).searchParams.get("code")!;
+  const exchange = async (body: Record<string, string>) => fixture.handler(new Request(origin + "/api/auth/oauth2/token", {
+    method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ client_id: remote.client_id, resource: mcpResource, ...body }),
+  }));
+  const firstResponse = await exchange({ grant_type: "authorization_code", code: remoteCode, code_verifier: verifier, redirect_uri: "https://client.example/callback" });
+  assert.equal(firstResponse.status, 200);
+  const first = await firstResponse.json();
+  assert.ok(first.refresh_token);
+  assert.equal((await exchange({ grant_type: "refresh_token", refresh_token: first.refresh_token, scope: "webdock:read webdock:write" })).status, 400);
+  const renewedResponse = await exchange({ grant_type: "refresh_token", refresh_token: first.refresh_token });
+  assert.equal(renewedResponse.status, 200);
+  const renewed = await renewedResponse.json();
+  assert.ok(renewed.refresh_token && renewed.refresh_token !== first.refresh_token);
+  assert.equal(renewed.expires_in, 300);
+  assert.equal((await (await introspect(renewed.access_token)).json()).active, true);
+  data.user[0].banned = true;
+  assert.equal((await exchange({ grant_type: "refresh_token", refresh_token: renewed.refresh_token })).status, 403);
+  data.user[0].banned = false;
+  const remoteClient = data.oauthClient.find(row => row.clientId === remote.client_id)!;
+  remoteClient.disabled = true;
+  assert.equal((await (await introspect(renewed.access_token)).json()).active, false);
+  assert.ok((await exchange({ grant_type: "refresh_token", refresh_token: renewed.refresh_token })).status >= 400);
+  remoteClient.disabled = false;
   await call("/sign-out", {});
+  assert.equal((await (await introspect(renewed.access_token)).json()).active, false);
+  // PostgreSQL ON DELETE SET NULL detaches offline refresh tokens on logout.
+  // The memory adapter does not emulate foreign-key actions.
+  for (const row of data.oauthRefreshToken) row.sessionId = null;
+  const afterLogout = await exchange({ grant_type: "refresh_token", refresh_token: renewed.refresh_token });
+  assert.equal(afterLogout.status, 403, "Renewal must reject a refresh token detached from its deleted session");
+  const replay = await exchange({ grant_type: "refresh_token", refresh_token: first.refresh_token });
+  assert.equal(replay.status, 400, "Rotated refresh tokens cannot be replayed");
   claims = await (await introspect()).json();
   assert.equal(
     claims.active,

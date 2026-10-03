@@ -8,6 +8,8 @@ export function ClientForm() {
     <label htmlFor="client-callback">Exact callback URL</label><input id="client-callback" name="redirectURI" type="url" required placeholder="https://client.example/oauth/callback" />
     <p className="muted">Copy this URL from your MCP client. Wildcards are not supported.</p>
     <label className="check"><input name="write" type="checkbox" value="yes" /> Allow registry changes</label>
+    <label className="check"><input name="offline" type="checkbox" value="yes" /> Allow automatic token renewal for remote work</label>
+    <p className="muted">Optional: stay connected during your working session. Signing out of Webdock or disabling this client stops access.</p>
     <label className="check"><input name="confidential" type="checkbox" value="yes" /> This client can securely store a client secret</label>
     <p className="muted">Desktop and public clients normally use PKCE without a secret. You will still approve access during sign-in.</p>
     {state.error && <p role="alert">{state.error}</p>}

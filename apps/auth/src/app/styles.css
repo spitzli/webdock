@@ -71,3 +71,16 @@ code { overflow-wrap: anywhere; }
   .account-heading { flex-wrap: wrap; }
   .account-section { padding: 24px 0; }
 }
+
+@media (max-width: 600px) {
+  .site-header { flex-wrap: wrap; gap: 12px; }
+  .site-header nav { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .site-header nav a { display: inline-flex; align-items: center; min-height: 44px; }
+  input, select, textarea { font-size: 16px; min-width: 0; }
+  .auth-panel, .account-section, .passkey-list li > div, form { min-width: 0; overflow-wrap: anywhere; }
+  .button { max-width: 100%; text-align: center; overflow-wrap: anywhere; }
+  .actions > .button { flex: 1 1 150px; }
+  .recovery-codes { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; }
+  .check { min-height: 44px; align-items: center; }
+  .setup img, .setup svg { max-width: 100%; height: auto; }
+}

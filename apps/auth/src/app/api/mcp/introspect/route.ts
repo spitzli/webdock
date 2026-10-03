@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   if (!result.ok) return result;
   const token = await result.json();
   const audiences = Array.isArray(token.aud) ? token.aud : [token.aud];
-  if (!token.active || !audiences.includes(mcpResource) || typeof token.sub !== "string")
+  if (!token.active || typeof token.sid !== "string" || !token.sid || !audiences.includes(mcpResource) || typeof token.sub !== "string")
     return Response.json({ active: false }, { headers: { "Cache-Control": "no-store" } });
   const { rows } = await database.query('SELECT metadata FROM webdock_auth."oauthClient" WHERE "clientId"=$1 AND NOT disabled', [token.client_id]);
   const metadata = typeof rows[0]?.metadata === "string" ? JSON.parse(rows[0].metadata) : rows[0]?.metadata;

@@ -4,7 +4,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createRegistryMCP } from "../src/lib/mcp-server";
 import { validateMCPToken } from "../src/lib/mcp-auth";
-import { customerInput, projectInput, instanceInput, listInput, writeCustomer, type RegistryActor } from "../src/lib/registry";
+import { customerInput, projectInput, instanceInput, listInput, listRecords, writeCustomer, type RegistryActor } from "../src/lib/registry";
 const resource = "https://studio.webdock.dev/api/mcp", issuer = "https://auth.webdock.dev/api/auth";
 test("MCP accepts only current operator bearer claims for its exact issuer and resource", () => {
   const valid = { active: true, disabled: false, webdock_role: "operator", iss: issuer, aud: resource, sub: "123", exp: Date.now() / 1000 + 60, scope: "webdock:read", token_type: "Bearer" };
@@ -39,4 +39,18 @@ test("MCP read/write scopes change available tools, writes retain access checks 
   assert.equal(calls[0].overrideAccess, false);
   assert.equal(calls[0].user, actor.user);
   assert.deepEqual(calls[0].data, { name: "Test", status: "active" });
+});
+
+test("Registry filters related records and activity with validated sorts", async () => {
+  const calls: Record<string, unknown>[] = [];
+  const actor = { user: { id: "123", collection: "users", role: "operator" }, payload: { find: async (args: Record<string, unknown>) => { calls.push(args); return { docs: [], page: 1, totalPages: 1, totalDocs: 0 }; } } } as unknown as RegistryActor;
+  await listRecords(actor, { collection: "projects", customer: "123", sort: "name" });
+  assert.deepEqual(calls[0].where, { and: [{ customer: { equals: "123" } }] });
+  assert.equal(calls[0].sort, "name");
+  await listRecords(actor, { collection: "cms-instances", project: "456" });
+  assert.deepEqual(calls[1].where, { and: [{ project: { equals: "456" } }] });
+  await listRecords(actor, { collection: "audit-events", targetCollection: "projects", targetID: "456" });
+  assert.deepEqual(calls[2].where, { and: [{ targetCollection: { equals: "projects" } }, { targetID: { equals: "456" } }] });
+  for (const input of [{ collection: "customers", project: "123" }, { collection: "projects", sort: "password" }, { collection: "audit-events", status: "active" }, { collection: "customers", status: "retired" }]) await assert.rejects(listRecords(actor, input as never));
+  assert.equal(calls.length, 3);
 });

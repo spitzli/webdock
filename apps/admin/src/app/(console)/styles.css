@@ -1128,3 +1128,29 @@ td small {
     margin-left: 0;
   }
 }
+
+/* Keep the full record readable without horizontal table scrolling on phones. */
+@media (max-width: 700px) {
+  input, select, textarea { font-size: 16px; min-width: 0; }
+  .sidebar nav a, .text-button, .appearance select, .pagination a, summary, .back { min-height: 44px; }
+  .sidebar nav a { display: flex; align-items: center; }
+  .sidebar { grid-template-columns: minmax(0, 1fr) auto; }
+  .sidebar-bottom { min-width: 0; }
+  .topbar { flex-wrap: wrap; gap: 8px; padding-block: 8px; }
+  .button { white-space: normal; text-align: center; overflow-wrap: anywhere; }
+  .form-footer { flex-wrap: wrap; gap: 12px; }
+  .list-controls .search-field { min-width: 0; }
+  .cms-panel dl { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .cms-panel dd { text-align: left; margin-bottom: 12px; }
+  .panel, .field, .account, .detail-grid > * { min-width: 0; overflow-wrap: anywhere; }
+  .related-project { gap: 12px; }
+  .records-table, .records-table tbody { display: block; width: 100%; white-space: normal; }
+  .records-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .records-table tr { display: grid; grid-template-columns: minmax(0, 1fr) 44px; padding: 16px; gap: 10px; }
+  .records-table tr + tr { border-top: 1px solid var(--line); }
+  .records-table td { display: block; grid-column: 1; padding: 0; border: 0; min-width: 0; overflow-wrap: anywhere; }
+  .records-table td:not(:first-child):not(:last-child)::before { content: attr(data-label); display: block; font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+  .records-table td:last-child { grid-column: 2; grid-row: 1; }
+  .records-table .project-name { display: inline-flex; align-items: center; min-height: 44px; }
+  .records-table .row-link { width: 44px; height: 44px; }
+}

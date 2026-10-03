@@ -729,7 +729,7 @@ export function ConsentForm({
       <h2>Requested permissions</h2>
       <ul>
         {scopes.map((scope) => (
-          <li key={scope}>{scope}</li>
+          <li key={scope}>{({ "webdock:read": "Read customers, projects, CMS connections and activity", "webdock:write": "Create and update registry records", offline_access: "Automatically renew access during your working session" } as Record<string, string>)[scope] || scope}</li>
         ))}
       </ul>
       {claims.length > 0 && (

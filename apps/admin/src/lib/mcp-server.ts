@@ -9,7 +9,7 @@ export function createRegistryMCP(actor: RegistryActor, canWrite: boolean) {
     try { const data = await run(); return { content: [{ type: "text" as const, text: JSON.stringify(data) }] }; }
     catch (error) { return { isError: true, content: [{ type: "text" as const, text: error instanceof APIError && error.isPublic ? error.message : error instanceof z.ZodError ? error.issues.map(i => i.message).join("; ") : "The operation failed. No change was confirmed." }] }; }
   };
-  server.registerTool("list_records", { description: "List Webdock customers, projects, CMS inventory or audit activity. Paginated; no secrets or user accounts.", inputSchema: listInput.shape, annotations: { readOnlyHint: true, openWorldHint: false } }, input => result(() => listRecords(actor, input)));
+  server.registerTool("list_records", { description: "List Webdock customers, projects, CMS inventory or audit activity. Filter projects by customer, CMS inventory by project, and activity by targetCollection/targetID. Search, sort and paginate; no secrets or user accounts.", inputSchema: listInput.shape, annotations: { readOnlyHint: true, openWorldHint: false } }, input => result(() => listRecords(actor, input)));
   server.registerTool("get_record", { description: "Read one registry record by its string Snowflake ID.", inputSchema: { collection: collectionName, id: recordID }, annotations: { readOnlyHint: true, openWorldHint: false } }, ({ collection, id }) => result(() => getRecord(actor, collection, id)));
   if (canWrite) {
     const annotations = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false };

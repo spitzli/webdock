@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import crypto from "node:crypto";
 import { getPayload } from "payload";
+import { handleRegistryRequest } from "../src/lib/registry-api";
+import { listRecords } from "../src/lib/registry";
 import config from "../src/payload.config";
 import { closeSnowflakePool } from "../src/lib/snowflake";
 const url = new URL(process.env.DATABASE_URL!);
@@ -259,6 +261,25 @@ test("Registry authorizes operators, preserves ownership and records atomic immu
         user: untrusted,
       }),
     );
+    await p.db.pool.query("UPDATE webdock_admin.users SET auth_subject=$1 WHERE id=$2", ["api-test-operator", operator.id]);
+    const api = (path: string[], method = "GET", body?: unknown) => handleRegistryRequest(new Request("http://localhost:3120/api/registry/" + path.join("/"), {
+      method, headers: { Authorization: "Bearer test", "Content-Type": "application/json" }, ...(body ? { body: JSON.stringify(body) } : {}),
+    }), path, { getCMS: async () => p, authenticate: async () => ({ subject: "api-test-operator", scopes: new Set(["webdock:read", "webdock:write"]) }) });
+    const apiCustomerResponse = await api(["customers"], "POST", { name: "API customer" });
+    assert.equal(apiCustomerResponse.status, 201);
+    const apiCustomer = await apiCustomerResponse.json();
+    const apiProjectResponse = await api(["projects"], "POST", { name: "API project", customer: apiCustomer.id });
+    assert.equal(apiProjectResponse.status, 201);
+    const apiProject = await apiProjectResponse.json();
+    assert.equal((await api(["customers", apiCustomer.id], "PATCH", { archived: true })).status, 400, "Active projects prevent archiving through the HTTP API");
+    const related = await listRecords({ payload: p, user: actor }, { collection: "projects", customer: apiCustomer.id });
+    assert.deepEqual(related.docs.map(doc => doc.id), [apiProject.id]);
+    const events = await listRecords({ payload: p, user: actor }, { collection: "audit-events", targetCollection: "projects", targetID: apiProject.id });
+    assert.equal(events.totalDocs, 1);
+    assert.equal((events.docs[0] as { actor: string }).actor, actor.id);
+    assert.equal((await api(["projects", apiProject.id], "PATCH", { archived: true })).status, 200);
+    assert.equal((await api(["customers", apiCustomer.id], "PATCH", { archived: true })).status, 200);
+
   } finally {
     await p.destroy();
     await closeSnowflakePool();

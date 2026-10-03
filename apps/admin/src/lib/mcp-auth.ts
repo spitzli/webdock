@@ -1,3 +1,5 @@
+import type { Payload } from "payload";
+import type { RegistryActor } from "./registry";
 export const mcpOrigin = () => process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3120";
 export const mcpResource = () => `${mcpOrigin()}/api/mcp`;
 export const mcpIssuer = () => process.env.WEBDOCK_AUTH_ISSUER || "https://auth.webdock.dev/api/auth";
@@ -19,4 +21,19 @@ export async function authenticateMCP(request: Request) {
   const response = await fetch(new URL("/api/mcp/introspect", mcpIssuer()), { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ token: authorization.slice(7), client_id: clientID, client_secret: secret }), cache: "no-store", signal: AbortSignal.timeout(10000) });
   if (!response.ok) return null;
   return validateMCPToken(await response.json(), mcpResource(), mcpIssuer());
+}
+
+export async function authorizeRegistry(request: Request, write: boolean, dependencies: { getCMS: () => Promise<Payload>; authenticate?: typeof authenticateMCP }) {
+  const origin = request.headers.get("origin");
+  if (origin && origin !== mcpOrigin()) return Response.json({ error: "Invalid origin" }, { status: 403, headers: { "Cache-Control": "no-store" } });
+  let identity;
+  try { identity = await (dependencies.authenticate || authenticateMCP)(request); }
+  catch { return Response.json({ error: "Authorization unavailable" }, { status: 503, headers: { "Cache-Control": "no-store" } }); }
+  if (!identity) return challenge(401);
+  if (!identity.scopes.has("webdock:read") || (write && !identity.scopes.has("webdock:write"))) return challenge(403, write ? "webdock:read webdock:write" : "webdock:read");
+  const payload = await dependencies.getCMS();
+  const matches = await payload.find({ collection: "users", where: { authSubject: { equals: identity.subject } }, limit: 1, depth: 0, overrideAccess: true });
+  const user = matches.docs[0];
+  if (!user || user.role !== "operator") return Response.json({ error: "Operator access required" }, { status: 403, headers: { "Cache-Control": "no-store" } });
+  return { actor: { payload, user: { ...user, collection: "users" } } as RegistryActor, canWrite: identity.scopes.has("webdock:write") };
 }

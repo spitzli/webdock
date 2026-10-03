@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { User } from "../payload-types";
 
 export type RegistryActor = { payload: Payload; user: User & { collection: "users" } };
-export const recordID = z.string().regex(/^[1-9][0-9]{0,18}$/).refine(v => BigInt(v) <= 9223372036854775807n, "Invalid ID");
+export const recordID = z.string().regex(/^[1-9][0-9]{0,18}$/).refine(v => /^[1-9][0-9]{0,18}$/.test(v) && BigInt(v) <= 9223372036854775807n, "Invalid ID");
 export const collectionName = z.enum(["customers", "projects", "cms-instances", "audit-events"]);
 const text = z.string().trim().max(160);
 const optionalText = text.nullable().optional();
@@ -36,14 +36,17 @@ export async function setArchived(actor: RegistryActor, collection: "customers" 
   if (collection !== "customers" && collection !== "projects") throw new APIError("Invalid collection.", 400);
   return actor.payload.update({ collection, id: recordID.parse(id), data: { status: archived ? "archived" : "active" }, user: actor.user, overrideAccess: false });
 }
-export const listInput = z.object({ collection: collectionName, search: z.string().trim().max(160).optional(), page: z.number().int().min(1).max(10000).default(1), limit: z.number().int().min(1).max(50).default(20), status: z.enum(["active", "archived", "suspended", "retired"]).optional() }).strict();
+export const listInput = z.object({ collection: collectionName, search: z.string().trim().max(160).optional(), page: z.number().int().min(1).max(10000).default(1), limit: z.number().int().min(1).max(50).default(20), status: z.enum(["active", "archived", "suspended", "retired"]).optional(), customer: recordID.optional(), project: recordID.optional(), targetCollection: z.enum(["customers", "projects", "cms-instances"]).optional(), targetID: recordID.optional(), sort: z.enum(["name", "-name", "label", "-label", "-updatedAt", "-createdAt", "createdAt"]).default("-updatedAt") }).strict();
 export async function listRecords(actor: RegistryActor, input: z.input<typeof listInput>) {
   authorize(actor);
-  const { collection, search, page, limit, status } = listInput.parse(input);
+  const { collection, search, page, limit, status, customer, project, targetCollection, targetID, sort } = listInput.parse(input);
+  if ((customer && collection !== "projects") || (project && collection !== "cms-instances") || ((targetCollection || targetID) && collection !== "audit-events") || (sort.includes("name") && !["customers", "projects"].includes(collection)) || (sort.includes("label") && collection !== "cms-instances")) throw new APIError("Filter or sort is not available for this collection.", 400);
+  if (status && (collection === "audit-events" || !(collection === "cms-instances" ? ["active", "suspended", "retired"] : ["active", "archived"]).includes(status))) throw new APIError("Invalid status for this collection.", 400);
   const and: Where[] = [];
+  for (const [field, value] of Object.entries({ customer, project, targetCollection, targetID })) if (value) and.push({ [field]: { equals: value } });
   if (search) and.push({ [collection === "audit-events" ? "summary" : collection === "cms-instances" ? "label" : "name"]: { contains: search } });
   if (status && collection !== "audit-events") and.push({ status: { equals: status } });
-  const result = await actor.payload.find({ collection, where: and.length ? { and } : undefined, page, limit, depth: 0, sort: "-updatedAt", user: actor.user, overrideAccess: false });
+  const result = await actor.payload.find({ collection, where: and.length ? { and } : undefined, page, limit, depth: 0, sort, user: actor.user, overrideAccess: false });
   return { docs: result.docs, page: result.page, totalPages: result.totalPages, totalDocs: result.totalDocs };
 }
 export async function getRecord(actor: RegistryActor, collection: z.infer<typeof collectionName>, id: string) {

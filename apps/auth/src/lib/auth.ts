@@ -147,10 +147,11 @@ export const auth = betterAuth({
     oauthProvider({
       loginPage: "/sign-in",
       consentPage: "/consent",
-      scopes: ["openid", "profile", "email", ...mcpScopes],
-      resources: [{ identifier: mcpResource, name: "Webdock Studio", allowedScopes: [...mcpScopes], accessTokenTtl: 300 }],
+      scopes: ["openid", "profile", "email", "offline_access", ...mcpScopes],
+      resources: [{ identifier: mcpResource, name: "Webdock Studio", allowedScopes: [...mcpScopes, "offline_access"], accessTokenTtl: 300 }],
       enforcePerClientResources: true,
-      grantTypes: ["authorization_code"],
+      grantTypes: ["authorization_code", "refresh_token"],
+      refreshTokenExpiresIn: 60 * 60 * 8,
       // 1.7.7 discovers public PKCE support from this flag, even for manually
       // provisioned clients. Keep this false/true pair: DCR remains disabled
       // (checked first by /register), while discovery correctly advertises none.
@@ -180,6 +181,23 @@ export const auth = betterAuth({
               "Clients are registered through the operator provisioning tool.",
           });
         return id;
+      },
+      extensions: [{ claims: { accessToken: async ({ ctx, metadata, grantType, sessionId, user }) => {
+        if (metadata?.webdock_mcp === true && grantType) {
+          // Offline refresh tokens survive session deletion with a NULL FK.
+          // Never let renewal turn session-bound access into sessionless access.
+          const session = sessionId ? await ctx.context.adapter.findOne<{ userId: string; expiresAt: Date }>({
+            model: "session", where: [{ field: "id", value: sessionId }],
+          }) : null;
+          if (!session || session.userId !== user?.id || new Date(session.expiresAt).getTime() <= Date.now())
+            throw new APIError("FORBIDDEN", { message: "Sign in again to reconnect this client." });
+        }
+        return {};
+      } } }],
+      customTokenResponseFields: async ({ metadata, user }) => {
+        if (metadata?.webdock_mcp === true && (await currentMCPClaims(user?.id)).disabled)
+          throw new APIError("FORBIDDEN", { message: "Current operator authorization is required." });
+        return {};
       },
       customAccessTokenClaims: ({ user, metadata }) =>
         metadata?.webdock_mcp === true

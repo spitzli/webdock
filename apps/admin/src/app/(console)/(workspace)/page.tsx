@@ -134,7 +134,7 @@ export default async function Projects({
         </p>
       )}
       <div className="table-wrap">
-        <table>
+        <table className="records-table" role="table">
           <caption className="sr-only">
             Projects matching the selected filters
           </caption>
@@ -152,7 +152,7 @@ export default async function Projects({
           <tbody>
             {projects.docs.map((project) => (
               <tr key={project.id}>
-                <td>
+                <td data-label="Project">
                   <Link
                     className="project-name"
                     href={"/projects/" + project.id}
@@ -164,14 +164,14 @@ export default async function Projects({
                     {project.status === "archived" && " · Archived"}
                   </small>
                 </td>
-                <td>
+                <td data-label="Customer">
                   <Link href={"/customers/" + relatedID(project.customer)}>
                     {typeof project.customer === "object"
                       ? project.customer.name
                       : "Customer"}
                   </Link>
                 </td>
-                <td>
+                <td data-label="CMS record">
                   <span
                     className={
                       "badge " +
@@ -183,12 +183,12 @@ export default async function Projects({
                     {cms.get(project.id)?.status || "Not linked"}
                   </span>
                 </td>
-                <td className="muted">
+                <td className="muted" data-label="Updated">
                   <time dateTime={project.updatedAt}>
                     {date(project.updatedAt)}
                   </time>
                 </td>
-                <td>
+                <td data-label="Manage">
                   <Link
                     className="row-link"
                     href={"/projects/" + project.id}

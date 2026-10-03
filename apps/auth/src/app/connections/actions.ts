@@ -21,9 +21,10 @@ export async function registerClient(_state: ClientState, form: FormData): Promi
     if (!name || name.length > 100 || (uri.protocol !== "https:" && !loopback) || uri.username || uri.password || uri.hash) return { error: "Use a name and an exact HTTPS callback URL (HTTP is allowed only on loopback)." };
     const id = (await database.query("SELECT webdock_auth.next_snowflake() AS id")).rows[0].id;
     const confidential = form.get("confidential") === "yes";
-    const scope = form.get("write") === "yes" ? "webdock:read webdock:write" : "webdock:read";
+    const offline = form.get("offline") === "yes";
+    const scope = (form.get("write") === "yes" ? "webdock:read webdock:write" : "webdock:read") + (offline ? " offline_access" : "");
     // Private context is entered only after a fresh central operator/MFA check.
-    const client = await offlineProvisioning.run({ clientID: id }, () => auth.api.adminCreateOAuthClient({ headers: requestHeaders, body: { client_name: name, redirect_uris: [uri.toString()], application_type: loopback ? "native" : "web", scope, grant_types: ["authorization_code"], response_types: ["code"], token_endpoint_auth_method: confidential ? "client_secret_post" : "none", require_pkce: true, skip_consent: false, metadata: { webdock_mcp: true } } }));
+    const client = await offlineProvisioning.run({ clientID: id }, () => auth.api.adminCreateOAuthClient({ headers: requestHeaders, body: { client_name: name, redirect_uris: [uri.toString()], application_type: loopback ? "native" : "web", scope, grant_types: offline ? ["authorization_code", "refresh_token"] : ["authorization_code"], response_types: ["code"], token_endpoint_auth_method: confidential ? "client_secret_post" : "none", require_pkce: true, skip_consent: false, metadata: { webdock_mcp: true } } }));
     try {
       await auth.api.adminLinkClientResource({ headers: requestHeaders, params: { identifier: mcpResource, client_id: client.client_id } });
     } catch (error) {

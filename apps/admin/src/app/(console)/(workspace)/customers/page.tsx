@@ -67,7 +67,7 @@ export default async function Customers({
         placeholder="Name, contact or email"
       />
       <div className="table-wrap">
-        <table>
+        <table className="records-table" role="table">
           <caption className="sr-only">
             Customers matching the selected filters
           </caption>
@@ -85,12 +85,12 @@ export default async function Customers({
           <tbody>
             {customers.docs.map((c) => (
               <tr key={c.id}>
-                <td>
+                <td data-label="Customer">
                   <Link className="project-name" href={"/customers/" + c.id}>
                     {c.name}
                   </Link>
                 </td>
-                <td>
+                <td data-label="Contact">
                   {c.contactName || "No contact person"}
                   <small>
                     {c.contactEmail ? (
@@ -100,7 +100,7 @@ export default async function Customers({
                     )}
                   </small>
                 </td>
-                <td>
+                <td data-label="Status">
                   <span
                     className={
                       "badge " + (c.status === "active" ? "connected" : "")
@@ -109,8 +109,8 @@ export default async function Customers({
                     {c.status}
                   </span>
                 </td>
-                <td className="muted">{date(c.updatedAt)}</td>
-                <td>
+                <td className="muted" data-label="Updated">{date(c.updatedAt)}</td>
+                <td data-label="Manage">
                   <Link
                     className="row-link"
                     aria-label={"Manage " + c.name}

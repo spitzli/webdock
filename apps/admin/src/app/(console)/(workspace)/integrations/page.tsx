@@ -301,6 +301,8 @@ export default async function Integrations({
                   {mcpResource()}
                 </code>
               </dd>
+              <dt>HTTP API</dt>
+              <dd><code>{new URL("/api/registry", mcpResource()).href}</code></dd>
               <dt>Read scope</dt>
               <dd>
                 <code>webdock:read</code> — browse customers, projects, CMS
@@ -318,7 +320,7 @@ export default async function Integrations({
               Manage connections
             </a>
             <p>
-              Only operators can access the registry. Changes made through
+              Enable automatic token renewal when registering a client for remote work. Interactive sign-in and consent still require your browser. Only operators can access the registry. Changes made through
               integrations appear in Activity.
             </p>
           </section>
