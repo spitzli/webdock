@@ -58,6 +58,49 @@ test("MCP OAuth: PKCE, consent, resource audience and live authorization/revocat
       };
     throw new Error(`Unexpected SQL in isolated test: ${sql}`);
   });
+  for (const path of [
+    "/api/auth/.well-known/openid-configuration",
+    "/api/auth/.well-known/oauth-authorization-server",
+    "/.well-known/oauth-authorization-server/api/auth",
+  ]) {
+    const response = await fixture.handler(new Request(origin + path));
+    assert.equal(response.status, 200);
+    const metadata = await response.json();
+    const confidentialMethods = [
+      "client_secret_basic",
+      "client_secret_post",
+      "private_key_jwt",
+    ];
+    assert.deepEqual(metadata.token_endpoint_auth_methods_supported, [
+      "none",
+      ...confidentialMethods,
+    ]);
+    assert.deepEqual(
+      metadata.introspection_endpoint_auth_methods_supported,
+      confidentialMethods,
+    );
+    assert.deepEqual(
+      metadata.revocation_endpoint_auth_methods_supported,
+      confidentialMethods,
+    );
+    assert.deepEqual(metadata.grant_types_supported, ["authorization_code"]);
+    assert.equal(metadata.registration_endpoint, undefined);
+  }
+  const registration = await fixture.handler(
+    new Request(origin + "/api/auth/oauth2/register", {
+      method: "POST",
+      headers: { Origin: origin, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        redirect_uris: ["https://client.example/callback"],
+        token_endpoint_auth_method: "none",
+      }),
+    }),
+  );
+  assert.equal(
+    registration.status,
+    403,
+    "Discovery must not enable dynamic client registration",
+  );
   t.mock.method(auth, "handler", fixture.handler);
   const ctx = await fixture.$context;
   const user = await ctx.internalAdapter.createUser(

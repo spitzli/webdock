@@ -151,8 +151,11 @@ export const auth = betterAuth({
       resources: [{ identifier: mcpResource, name: "Webdock Studio", allowedScopes: [...mcpScopes], accessTokenTtl: 300 }],
       enforcePerClientResources: true,
       grantTypes: ["authorization_code"],
+      // 1.7.7 discovers public PKCE support from this flag, even for manually
+      // provisioned clients. Keep this false/true pair: DCR remains disabled
+      // (checked first by /register), while discovery correctly advertises none.
       allowDynamicClientRegistration: false,
-      allowUnauthenticatedClientRegistration: false,
+      allowUnauthenticatedClientRegistration: true,
       accessTokenExpiresIn: 28800,
       idTokenExpiresIn: 300,
       rateLimit: { introspect: { window: 60, max: 600 } },
