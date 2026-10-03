@@ -48,3 +48,5 @@ Run each app's migration command explicitly with its own credentials. Automatic 
 - [Independent instance cutover](docs/superpowers/plans/2026-10-03-isolated-instances.md)
 
 Spitzli and Stall stay in their own repositories. Their CMS instances can be listed here without merging their content, accounts or website design into this application. Per-site Plausible tracking remains planned.
+
+See [current rollout status](docs/architecture/auth-rollout-status.md) and [requested next changes](TODO.md).
