@@ -1,0 +1,46 @@
+{
+  "name": "@webdock/admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "next dev --port 3120",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "check": "tsc --noEmit",
+    "test": "node --env-file=.env.test.local --import tsx --test --test-concurrency=1 tests/*.test.ts",
+    "payload": "node --env-file=.env.local ../../node_modules/payload/bin.js",
+    "cms:types": "npm run payload -- generate:types",
+    "cms:migrate": "PAYLOAD_MIGRATING=true npm run payload -- migrate"
+  },
+  "dependencies": {
+    "next": "16.3.8",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "payload": "4.0.0-canary.37",
+    "@payloadcms/next": "4.0.0-canary.37",
+    "@payloadcms/ui": "4.0.0-canary.37",
+    "@payloadcms/db-postgres": "4.0.0-canary.37",
+    "@payloadcms/email-nodemailer": "4.0.0-canary.37",
+    "nodemailer": "10.0.13",
+    "graphql": "16.14.2",
+    "sharp": "0.35.5",
+    "pg": "8.16.3",
+    "@webdock/instance-kit": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/nodemailer": "^8",
+    "@types/pg": "^8",
+    "typescript": "^5",
+    "tsx": "^4.23.15",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.8"
+  }
+}

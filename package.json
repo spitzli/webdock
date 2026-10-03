@@ -2,45 +2,24 @@
   "name": "webdock",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "test": "node --test tests/*.test.mjs",
-    "payload": "node --env-file=.env.instance node_modules/payload/bin.js",
-    "cms:types": "npm run payload -- generate:types",
-    "cms:migrate": "PAYLOAD_MIGRATING=true npm run payload -- migrate"
-  },
-  "dependencies": {
-    "next": "16.3.8",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "payload": "4.0.0-canary.37",
-    "@payloadcms/next": "4.0.0-canary.37",
-    "@payloadcms/ui": "4.0.0-canary.37",
-    "@payloadcms/db-postgres": "4.0.0-canary.37",
-    "@payloadcms/email-nodemailer": "4.0.0-canary.37",
-    "nodemailer": "10.0.13",
-    "graphql": "16.14.2",
-    "sharp": "0.35.5"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.8",
-    "tailwindcss": "^4",
-    "typescript": "^5",
-    "tsx": "^4.23.15",
-    "@types/nodemailer": "^8.0.2"
-  },
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "engines": {
     "node": "24.x"
   },
-  "type": "module",
+  "scripts": {
+    "dev": "npm run dev -w @webdock/web",
+    "dev:admin": "npm run dev -w @webdock/admin",
+    "build": "npm run build -w @webdock/web && npm run build -w @webdock/admin && npm run build -w @webdock/cms",
+    "build:web": "npm run build -w @webdock/web",
+    "build:admin": "npm run build -w @webdock/admin",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test -w @webdock/admin",
+    "test:web": "npm run test -w @webdock/web"
+  },
   "overrides": {
     "nodemailer": "10.0.13"
   }

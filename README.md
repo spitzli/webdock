@@ -1,31 +1,49 @@
 # Webdock
 
-English Next.js 16 / React 19 / Tailwind 4 website and independent Payload 4 Canary CMS at **https://webdock.dev**. Edit content at **https://webdock.dev/admin**.
+Public source monorepo for Webdock, maintained by Spitzli Development. Applications deploy independently; customer websites keep their own repositories and Payload instances.
 
-## Architecture
+| Workspace | Purpose | Status |
+| --- | --- | --- |
+| `apps/web` (`@webdock/web`) | English landing page and its own Payload CMS | https://webdock.dev |
+| `apps/admin` (`@webdock/admin`) | Operator workspace for customers, projects and CMS inventory | Development only; central authentication design under discussion |
+| `apps/cms` (`@webdock/cms`) | Retired shared-CMS notice and offline migration/verification tools | https://cms.webdock.dev |
+| `packages/instance-kit` | Shared protected operator policy | Used by the Webdock applications |
 
-This Vercel project runs its own Payload admin, authentication, API and frontend. It uses the `webdock` schema in the shared Webdock CMS PostgreSQL database, with a dedicated `webdock_runtime` login that cannot access the other applications' schemas. There is no runtime dependency on the former multi-tenant CMS.
-
-The visible **System operator (Webdock)** account is managed by the platform owner. Customer accounts cannot modify/delete it or grant themselves its role. Existing user passwords were preserved. Each instance has its own sessions and Payload secret.
-
-Landing page copy, SEO and FAQ are editable in Payload. The public website reads its local Global server-side. English copy, local assets and system/light/dark appearance remain intact.
+There is one npm lockfile. No build orchestration service is required. Vercel projects use `apps/web`, `apps/admin` and `apps/cms` as their respective root directories. The admin project is **not connected for automatic deployment** while authentication is being reviewed.
 
 ## Development
 
-Use Node 24. Copy `.env.example` to `.env.local` and supply this instance's credentials, then run `npm ci` and `npm run dev`. Never use the database owner credentials in the application. Environment files are ignored by Git.
-
-For migration tooling, put credentials in `.env.instance`. `npm run cms:migrate` runs checked-in schema migrations from `src/migrations-instance`; automatic schema push is disabled. Run migrations explicitly before deploying a schema change. Existing framework IDs and references are preserved; the future platform ULID/Snowflake decision is separate.
+Use Node 24 and install from the repository root:
 
 ```sh
+npm ci
+npm run dev             # website
+npm run dev:admin       # operator workspace, port 3120
+npm run build:web
+npm run build:admin
 npm run lint
-npm run build
-npm run start -- --port 3104
-# Another terminal:
-TEST_BASE_URL=http://localhost:3104 npm test
 ```
 
-## Operations and rollback
+Each app owns its environment files. See its `.env.example`; never place production credentials in committed files. `.env*`, backups, dependencies and local tooling are excluded from Git and deployment uploads. The management runtime uses a separate restricted `webdock_admin` PostgreSQL schema/login; it cannot read the website schemas.
 
-The previous central database's `public` schema, private export and backup are retained. Imported content and history came from the latest central export; do not rerun the one-time import against an edited instance. Rollback requires reconciling changes since cutover before restoring the old deployment/environment. Never point this app's migrations at another site's schema.
+`apps/admin` currently has a tested Payload-auth development implementation. It is not the final identity architecture and has not been deployed. Neon Managed Better Auth and organisation/SSO boundaries are being evaluated before a production authentication choice. Existing live website CMS logins are unaffected.
 
-Each website keeps its own frontend and `/admin`. The future Webdock management panel will register customers/projects and optionally provision CMS instances; CMS activation defaults off. That customer-facing panel is not built here. Per-site Plausible tracking remains planned.
+The management registry supports customers, projects, existing CMS connection records and immutable audit events. New projects do not provision a CMS. Editing a connection record changes inventory only. Automated provisioning, the customer panel, a collection designer and a shared page builder are not implemented.
+
+## Identifiers
+
+Platform-owned IDs use **Snowflake**, selected on 2026-10-03: a 2026-01-01 epoch, 41 timestamp bits, node 0 in 10 bits and a 12-bit sequence. PostgreSQL coordinates allocation across serverless instances; IDs remain decimal strings in JavaScript, JSON and Payload fields. Failed business transactions do not reuse allocated IDs. Do not allocate node 0 from another independent database for the same ID namespace. Framework/provider-issued IDs remain provider references.
+
+## Tests and migrations
+
+The admin tests require a disposable local PostgreSQL database named `webdock_admin_test`; they refuse remote hosts. Supply `apps/admin/.env.test.local`, provision its schema and apply the checked-in migration before `npm test`. Registry tests reset only that disposable management schema. They cover authorization, relationships, optional CMS, transaction rollback, immutable audit records and Snowflake concurrency/clock behavior.
+
+Run each app's migration command explicitly with its own credentials. Automatic schema push is disabled. `apps/cms/scripts` contains historical offline migration tools; these must never target the management schema. Private source snapshots and original databases are retained outside Git.
+
+## Architecture
+
+- [Control-plane design](docs/architecture/webdock-control-plane.md)
+- [Management implementation plan](docs/superpowers/plans/2026-10-03-webdock-admin.md)
+- [Independent instance cutover](docs/superpowers/plans/2026-10-03-isolated-instances.md)
+
+Spitzli and Stall stay in their own repositories. Their CMS instances can be listed here without merging their content, accounts or website design into this application. Per-site Plausible tracking remains planned.

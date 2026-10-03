@@ -1,0 +1,65 @@
+import { moduleAccess, siteFields, validateSite } from '../../cms/site-access';
+import type { CollectionConfig } from "payload";
+
+export const WebsiteSettings: CollectionConfig = {
+  slug: "website-settings",
+  labels: { singular: "Website settings", plural: "Website settings" },
+  versions: false,
+  access: { read: moduleAccess('site-settings'), create: moduleAccess('site-settings', true), update: moduleAccess('site-settings', true), delete: () => false },
+  hooks: { beforeValidate: [validateSite('site-settings')] },
+  fields: [
+    ...siteFields('site-settings', true),
+    {
+      name: "name",
+      label: "Company name",
+      type: "text",
+      required: true,
+      defaultValue: "Spitzli Development",
+    },
+    {
+      name: "owner",
+      label: "Owner",
+      type: "text",
+      required: true,
+      defaultValue: "Dominik Spitzli",
+    },
+    {
+      name: "email",
+      label: "Public contact email / form recipient",
+      type: "email",
+      required: true,
+      defaultValue: "info@spitzli.dev",
+    },
+    { name: "street", label: "Street and house number", type: "text", required: true },
+    { name: "postcode", label: "Postal code", type: "text", required: true },
+    { name: "city", label: "City", type: "text", required: true },
+    {
+      name: "country",
+      label: "Country",
+      type: "text",
+      required: true,
+      defaultValue: "Deutschland",
+    },
+    { name: "phone", label: "Phone", type: "text" },
+    { name: "vatID", label: "VAT identification number", type: "text" },
+    { name: "businessID", label: "Business identification number", type: "text" },
+    { name: "register", label: "Register information", type: "text" },
+    { name: "databaseProvider", label: "Database provider", type: "text" },
+    { name: "databaseRegion", label: "Database region", type: "text" },
+    { name: "logRetention", label: "Log retention period", type: "text" },
+    { name: "mailProvider", label: "Mailbox provider", type: "text" },
+    { name: "transfers", label: "Safeguards for international data transfers", type: "textarea" },
+    {
+      name: "legalReviewed",
+      label: "Legal notice reviewed and approved",
+      type: "checkbox",
+      defaultValue: false,
+    },
+    {
+      name: "privacyReviewed",
+      label: "Privacy notice reviewed and approved",
+      type: "checkbox",
+      defaultValue: false,
+    },
+  ],
+};
