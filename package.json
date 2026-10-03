@@ -7,42 +7,25 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test tests/*.test.mjs",
-    "payload": "node --env-file=.env.local node_modules/payload/bin.js",
-    "cms:types": "npm run payload -- generate:types",
-    "cms:migrate": "PAYLOAD_MIGRATING=true npm run payload -- migrate",
-    "cms:seed": "node --env-file=.env.local --env-file=.env.bootstrap --import tsx scripts/seed.ts"
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
-    "@payloadcms/db-postgres": "4.0.0-canary.37",
-    "@payloadcms/email-nodemailer": "4.0.0-canary.37",
-    "@payloadcms/next": "4.0.0-canary.37",
-    "@payloadcms/ui": "4.0.0-canary.37",
-    "graphql": "16.14.2",
     "next": "16.3.8",
-    "nodemailer": "10.0.13",
-    "payload": "4.0.0-canary.37",
     "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "sharp": "0.35.5"
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "tailwindcss": "^4",
-    "tsx": "^4.23.15",
     "typescript": "^5"
   },
   "engines": {
     "node": "24.x"
   },
-  "type": "module",
-  "overrides": {
-    "nodemailer": "10.0.13"
-  }
+  "type": "module"
 }

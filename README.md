@@ -1,64 +1,41 @@
-# Webdock
+# Webdock frontend
 
-English landing page and standalone Payload CMS **4.0.0-canary.37**, built with Next.js 16, React 19 and Tailwind CSS 4. The public site retains its own design and system/light/dark theme; `/admin` uses Payload's separate UI.
+English Next.js 16 / React 19 / Tailwind 4 landing page at **https://webdock.dev**. Content comes from the separate multi-tenant Payload CMS at **https://cms.webdock.dev**.
 
-## Services
+## Architecture
 
-- Vercel project: `spitzli/webdock`.
-- Neon Postgres: `webdock-payload`, Frankfurt, free plan.
-- TurboSMTP: `pro.eu.turbo-smtp.com:465`, implicit TLS, sender `noreply@webdock.dev`.
-- Secrets are stored in Vercel environment variables and ignored local env files.
-- No multi-tenancy, public registration, customer console, media uploads or public contact form.
+- This repository is the public frontend only. `/admin` and CMS `/api` routes return 404; there are no redirects to the CMS.
+- The CMS has its own Vercel project, repository (`spitzli/webdock-cms`) and Neon database.
+- Webdock is the first tenant. Spitzli and Stall Eichenbruch have not been migrated.
+- `src/lib/landing.ts` fetches the tenant's unique landing page server-side using a dedicated read-only API key. The key is never public or passed to browser components.
+- The visual design, English copy, native FAQ, local font and system/light/dark appearance remain unchanged. Saved CMS changes appear on the next request.
 
-## Local development
+## Run
 
 ```bash
 nvm use
 npm ci
 npx vercel link --scope spitzli --project webdock
 npx vercel env pull .env.local
-NEXT_PUBLIC_SERVER_URL=http://localhost:3104 npm run dev -- --port 3104
+npm run dev -- --port 3104
 ```
 
-Use the keys listed in `.env.example` for a separate installation. Never commit real values. Payload packages are pinned together because v4 is a pre-release. Nodemailer is overridden to 10.0.13 to avoid vulnerabilities in the adapter's older dependency.
-
-## Content and access
-
-`/admin` provides **Landing page** tabs for SEO/contact, hero, concept/use cases, about, FAQ and closing copy. Public pages read from Postgres on each request, so saved changes appear without redeployment. The same FAQ data drives visible answers and JSON-LD.
-
-Users are CMS administrators; only authenticated admins can access CMS data or create further users. There is no customer registration. The initial account is `dominik@spitzli.dev`; its generated password is in the local ignored `.env.bootstrap` file. Use the account screen to change it, or initiate a password reset yourself. SMTP connection/authentication has been verified; no test message is sent automatically.
-
-## Schema and initial content
-
-Schema push is disabled in every environment. Migrations are committed under `src/migrations` and run explicitly, using the direct Postgres URL:
-
-```bash
-npm run payload -- migrate:create descriptive_name
-npm run cms:migrate
-npm run cms:types
-npm run payload -- generate:importmap
-```
-
-For a **new database only**, create an ignored `.env.bootstrap` with `BOOTSTRAP_EMAIL` and a strong `BOOTSTRAP_PASSWORD`, then run `npm run cms:seed`. Seeding preserves existing users and saved landing-page content. Run it before exposing a fresh deployment publicly.
-
-The provisioned integration currently connects the same initial database to production, preview and development. Use an isolated Neon branch/database before testing future destructive schema or content changes. Do not run schema migrations automatically during parallel preview builds.
-
-## Verification
+Required runtime variables: `CMS_URL`, `CMS_TENANT_ID`, `CMS_API_KEY` (see `.env.example`). For local integration with the sibling CMS, set `CMS_URL=http://localhost:3105` when starting the frontend. No database or SMTP credentials are used by this app.
 
 ```bash
 npm run lint
 npm run build
-NEXT_PUBLIC_SERVER_URL=http://localhost:3104 npm run start -- --port 3104
-# In another terminal:
+npm run start -- --port 3104
+# Separate terminal:
 TEST_BASE_URL=http://localhost:3104 npm test
-# Optional local admin write/read/restore check:
-TEST_BASE_URL=http://localhost:3104 node --env-file=.env.bootstrap --test tests/*.test.mjs
 ```
 
-The authenticated check temporarily updates a hero note and restores it. Run it against a test environment. Other checks cover anonymous access denial, blocked account creation, metadata, assets and theme initialization.
+## Editing
 
-## Deployment
+Open https://cms.webdock.dev, select the **Webdock** tenant and edit **Landing page**. Website content and SEO are editable there. The public frontend retains its own components; adding another customer does not require sharing this design.
 
-After migration and verification, push `main` to trigger the linked Vercel deployment. Ensure all `.env.example` keys are configured in the target environment. Set `NEXT_PUBLIC_SERVER_URL=https://webdock.dev` for production so admin links and password-reset URLs use the correct host.
+## Migration / rollback
 
-The SVG logo, dock illustration, social image and local font remain in `public/`. Legal/operator content and the backlink from spitzli.dev remain separate follow-up work.
+The source standalone CMS database was retained, not deleted. Commit `ae49dde` contains the previous Payload application and its migration scripts. The central CMS imported the latest saved content before cutover. Restore the old application plus its original Vercel environment configuration only if rollback is required; reconcile any newer CMS edits first. Do not run old migrations against the central CMS database.
+
+Static branding assets are in `public/`; frontend tokens are in `tokens.css`. Legal/operator content and the backlink from spitzli.dev remain follow-up work.
