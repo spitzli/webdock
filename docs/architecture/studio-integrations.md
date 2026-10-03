@@ -72,3 +72,7 @@ curl --fail-with-body \
   -H "Authorization: Bearer $WEBDOCK_ACCESS_TOKEN" \
   'https://studio.webdock.dev/api/registry/projects?customer=123&status=active&sort=name'
 ```
+
+### Upgrading an existing auth deployment
+
+The OAuth provider seeds resources in insert-only mode, so adding `offline_access` to code does not update an existing resource policy. After deploying, run `node --env-file=.env.instance --import tsx scripts/enable-mcp-renewal.ts` from `apps/auth` using the intended environment. This idempotent update appends only `offline_access` to the existing enabled Webdock resource and leaves registered clients, their granted scopes and all other resource settings unchanged. No schema migration is required.
