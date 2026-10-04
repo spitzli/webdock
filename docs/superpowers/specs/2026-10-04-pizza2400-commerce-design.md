@@ -1,6 +1,6 @@
 # Pizza2400: eigenständiger Webdock-Mandant mit Commerce
 
-Status: konkreter Designvorschlag zur Durchsicht. Recherche vom 04.10.2026; noch keine Website, Infrastruktur oder Zahlungsanbindung umgesetzt. Der Nutzer hat Pizza2400 in Rastede bestätigt. Die erste Veröffentlichung soll eine Demo mit simulierten Zahlungen sein.
+Status: vom Nutzer am 04.10.2026 freigegeben und als eigenständige Demo umgesetzt. Live-Zahlungen bleiben bewusst deaktiviert. Der Nutzer hat Pizza2400 in Rastede bestätigt. Die erste Veröffentlichung soll eine Demo mit simulierten Zahlungen sein.
 
 ## Ziel
 
@@ -130,3 +130,12 @@ Echte Stripe-Zahlungen sind ein separater nächster Release nach Betreiberabnahm
 - [Polar Checkout API](https://polar.sh/docs/api-reference/checkouts/create-session) und [Customer Sessions](https://polar.sh/docs/api-reference/customer-portal/sessions/create) — organisationsgebundene API und Portalzugriff.
 - [Stripe: Save payment details during payment](https://docs.stripe.com/payments/checkout/save-during-payment) — offizieller Einstieg in gespeicherte Zahlungsmittel.
 - Lokale Implementierung: `README.md`, `apps/admin/src/lib/registry.ts`, `apps/admin/src/cms/collections.ts`, `apps/auth/src/lib/tenant-schema.ts`, `apps/auth/src/lib/tenants.ts`, `packages/instance-kit/README.md`, `docs/superpowers/specs/2026-10-04-tenant-plans-usage-design.md`.
+
+## Ergänzungen aus der Umsetzung (04.10.2026)
+
+- Hell/Dunkel folgt standardmäßig dem System; manuelle Auswahl ist lokal gespeichert.
+- Angemeldete Endkunden landen serverseitig direkt in der Speisekarte. Login wechselt unmittelbar zur Bestellung.
+- Beispiel-Tagesaktion in Payload: mindestens zwei Pizzen, günstigste Grundpizza einmal zum halben Preis, Extras ausgenommen. Zeitraum Europe/Berlin, initial 04.–11.10.2026. Rabatt wird serverseitig berechnet und in Bestellungen gespeichert.
+- Eigenes Repository `pizza2400`, Vercel-Projekt und `pizza2400.webdock.dev`; Registry-Kunde, Projekt und tatsächliche CMS-Verbindung angelegt. Eigener Datenbank-Login/Schema und Blob-Store; CMS via Webdock SSO.
+- 7 lokale Unit-/Integrationsprüfungen, zusätzlicher HTTP-Test für Verifikation/Login/Adressspeicherung und angemeldete Menü-Startansicht, TypeScript und Produktionsbuild.
+- Weitere Inhaltsseiten/Blockbaukasten, echte Stripe-/Polar-Adapter und BYOK-Konfigurationsoberfläche sind kein Bestandteil dieser Demo. Das wiederverwendbare Commerce-Modell liegt zunächst als unabhängiges Modul im Website-Repository; vor einem zweiten Kunden kann es in ein gepinntes gemeinsames Paket übernommen werden.
