@@ -2,11 +2,22 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { adminSSORedirect, safeAdminReturnTo, configurePayloadSSO, intersectRoles, validateIdentity } from './index.ts'
 
+test('Studio return paths are explicitly allowed without widening ordinary CMS redirects', () => {
+  const paths = ['/tenants/123/mail', '/offers/opaque-token', '/people?q=person'];
+  for (const path of paths) {
+    assert.equal(safeAdminReturnTo(path), null);
+    assert.equal(safeAdminReturnTo(path, ['/tenants', '/offers', '/people']), path);
+  }
+  for (const path of ['//evil.test', '/tenants-evil', '/tenants/../api/auth', '/offers/%2f%2fevil.test', '/api/sso/login']) {
+    assert.equal(safeAdminReturnTo(path, ['/tenants', '/offers']), null);
+  }
+});
+
 test('admin return targets reject external URLs, encoded escapes and native auth loops', () => {
-  for (const path of ['/admin', '/admin/collections/pages/42?locale=de&depth=0', '/admin/globals/settings#title']) {
+  for (const path of ['/cms', '/cms?module=pages&id=42', '/system/collections/pages/42', '/admin', '/admin/collections/pages/42?locale=de&depth=0', '/admin/globals/settings#title']) {
     assert.equal(safeAdminReturnTo(path), path)
   }
-  for (const path of [undefined, [], 'https://evil.test/admin', '//evil.test/admin', '/administrator',
+  for (const path of [undefined, [], '/cms-evil', '/cms/../../outside', '/system/login', '/cms/%2f/evil', 'https://evil.test/admin', '//evil.test/admin', '/administrator',
     '/admin//login', '/admin/../../outside', '/admin/../login', '/admin\\evil', '/admin/%2f/evil', '/admin/%5cevil',
     '/admin/%252flogin', '/admin/%00', '/admin/%', '/admin/login', '/admin/%6cogin',
     '/admin/login/nested?redirect=/admin', '/admin/logout', '/admin/reset/token', '/admin/forgot',
@@ -96,6 +107,7 @@ test('OIDC flow verifies signed identity, introspects every request, and never l
   let subject = 'subject-123'
   let extraClaims: Record<string, unknown> = {}
   let mapped = true
+  let centralRole = claims.webdock_role
   const issuer = options.issuer
   const json = (value: object) => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } })
   t.mock.method(globalThis, 'fetch', async (input: Request | URL | string, init?: RequestInit) => {
@@ -123,7 +135,7 @@ test('OIDC flow verifies signed identity, introspects every request, and never l
       const body = new URLSearchParams(String(init?.body))
       assert.equal(body.get('client_id'), options.clientId)
       assert.equal(body.get('client_secret'), options.clientSecret)
-      return json({ ...claims, active, sub: subject, email: 'same-email@example.test', exp: Math.floor(Date.now() / 1000) + 300 })
+      return json({ ...claims, active, sub: subject, webdock_role: centralRole, email: 'same-email@example.test', exp: Math.floor(Date.now() / 1000) + 300 })
     }
     throw new Error(`Unexpected test provider URL: ${url}`)
   })
@@ -132,8 +144,8 @@ test('OIDC flow verifies signed identity, introspects every request, and never l
     return { docs: mapped ? [{ id: 'local-123', email: 'different@example.test', authSubject: subject, role: 'editor' }] : [] }
   } } as never
   const sso = configurePayloadSSO({ ...options, getPayload: async () => payload })
-  const begin = async (returnTo = '') => {
-    const login = await sso.login(new Request(`${options.appOrigin}/api/sso/login?${new URLSearchParams({ returnTo })}`))
+  const begin = async (returnTo = '', instance = sso) => {
+    const login = await instance.login(new Request(`${options.appOrigin}/api/sso/login?${new URLSearchParams({ returnTo })}`))
     assert.equal(login.status, 302)
     const location = new URL(login.headers.get('location')!)
     assert.equal(location.searchParams.get('code_challenge_method'), 'S256')
@@ -183,6 +195,19 @@ test('OIDC flow verifies signed identity, introspects every request, and never l
   assert.equal((await sso.strategy.authenticate({ headers: duplicateHeaders, payload })).user, null)
   mapped = false
   assert.equal((await sso.callback(await begin())).status, 401)
+  const portal = configurePayloadSSO({ ...options, getPayload: async () => payload, allowUnmappedPortalUsers: true, returnToPrefixes: ['/offers', '/tenants'] })
+  assert.equal((await portal.callback(await begin('/offers/test-token', portal))).status, 401, 'operators still require their local mapping')
+  centralRole = 'reader'
+  const portalCallback = await portal.callback(await begin('/offers/test-token', portal))
+  assert.equal(portalCallback.status, 302)
+  assert.equal(portalCallback.headers.get('location'), `${options.appOrigin}/offers/test-token`)
+  const portalHeaders = new Headers({ cookie: portalCallback.headers.getSetCookie().find(value => value.startsWith('__Host-webdock-sso='))!.split(';')[0]! })
+  assert.equal((await portal.getDelegatedSession(portalHeaders))?.subject, 'subject-123')
+  assert.equal((await portal.strategy.authenticate({ headers: portalHeaders, payload })).user, null, 'portal identity cannot bypass native Payload mapping')
+  active = false
+  assert.equal(await portal.getDelegatedSession(portalHeaders), null)
+  active = true
+  centralRole = claims.webdock_role
   mapped = true
   subject = 'wrong-subject'
   assert.equal((await sso.callback(await begin())).status, 401)

@@ -25,6 +25,8 @@ button, summary { cursor: pointer; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
 .site-header { margin: 0 auto; max-width: 1200px; padding: 32px 40px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .site-header > span { color: var(--muted); font-size: 13px; }
+.site-header nav { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; }
+.site-header nav a { display: inline-flex; align-items: center; min-height: 44px; }
 .brand { font-size: 32px; letter-spacing: -1.9px; font-weight: 700; line-height: 1; text-decoration: none; }
 .brand span { color: var(--accent); }
 #main { min-height: calc(100dvh - 180px); padding: 50px 24px 70px; }
@@ -33,6 +35,8 @@ button, summary { cursor: pointer; }
 .help { font-size: 13px; margin: 24px 0 0; }
 form { display: grid; gap: 20px; margin: 26px 0; }
 .field { display: grid; gap: 8px; font-size: 13px; font-weight: 600; }
+.field textarea { width: 100%; min-height: 100px; resize: vertical; padding: 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); color: inherit; font: inherit; }
+progress { width: 100%; height: 12px; accent-color: var(--accent, #2f7567); }
 input { width: 100%; min-height: 44px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); }
 input[readonly] { font-weight: 400; }
 .button { display: inline-flex; justify-content: center; align-items: center; min-height: 44px; padding: 11px 18px; background: var(--ink); color: var(--panel); border: 1px solid transparent; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; }
@@ -84,3 +88,15 @@ code { overflow-wrap: anywhere; }
   .check { min-height: 44px; align-items: center; }
   .setup img, .setup svg { max-width: 100%; height: auto; }
 }
+.access-page { max-width: 1080px; margin: 0 auto; }
+.access-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 24px; align-items: start; }
+.access-grid > .auth-panel { max-width: none; width: 100%; min-width: 0; margin: 0; }
+.access-record { padding: 20px; margin-bottom: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); min-width: 0; overflow-wrap: anywhere; }
+.access-record h3 { margin-top: 0; }
+.access-form { gap: 14px; margin: 18px 0; }
+.access-form:last-child { margin-bottom: 0; }
+.access-form select { font: inherit; min-height: 44px; width: 100%; min-width: 0; padding: 10px; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 7px; }
+.access-search { display: flex; align-items: end; flex-wrap: wrap; gap: 14px; margin-top: 32px; }
+.access-search .field { flex: 1; min-width: 180px; }
+.access-event { padding-block: 12px; border-bottom: 1px solid var(--line); font-size: 13px; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .access-grid { grid-template-columns: minmax(0,1fr); } .access-form select { font-size: 16px; } }

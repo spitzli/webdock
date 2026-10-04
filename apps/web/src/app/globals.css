@@ -108,3 +108,12 @@ nav a:hover,.text-link:hover,.site-footer a:hover { text-decoration: underline; 
 .theme-picker { display: flex; align-items: center; gap: 8px; color: var(--color-muted); font-size: 12px; white-space: nowrap; }
 .theme-picker select { min-height: 44px; padding: 8px; border: 1px solid var(--color-line); border-radius: 5px; background: var(--color-paper); color: var(--color-ink); font: inherit; cursor: pointer; }
 .theme-picker select:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 4px; }
+
+.legal-copy { max-width: 760px; padding-block: 40px 80px; overflow-wrap: anywhere; }
+.legal-copy h1 { font-size: clamp(36px, 7vw, 64px); letter-spacing: -2px; margin-bottom: 28px; }
+.legal-copy h2 { font-size: 24px; letter-spacing: -.5px; margin: 36px 0 12px; }
+.legal-copy p { line-height: 1.85; margin-bottom: 16px; }
+.legal-copy ol { padding-left: 24px; list-style: decimal; line-height: 1.85; }
+.legal-copy li { padding-left: 6px; margin-bottom: 12px; }
+.legal-copy a { text-decoration: underline; text-underline-offset: 3px; }
+.site-footer nav { display: flex; flex-wrap: wrap; gap: 20px; }

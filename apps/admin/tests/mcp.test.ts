@@ -38,7 +38,7 @@ test("MCP read/write scopes change available tools, writes retain access checks 
   assert.equal(calls.length, 1);
   assert.equal(calls[0].overrideAccess, false);
   assert.equal(calls[0].user, actor.user);
-  assert.deepEqual(calls[0].data, { name: "Test", status: "active" });
+  assert.deepEqual(calls[0].data, { name: "Test", customerType: "company", status: "active" });
 });
 
 test("Registry filters related records and activity with validated sorts", async () => {
@@ -53,4 +53,14 @@ test("Registry filters related records and activity with validated sorts", async
   assert.deepEqual(calls[2].where, { and: [{ targetCollection: { equals: "projects" } }, { targetID: { equals: "456" } }] });
   for (const input of [{ collection: "customers", project: "123" }, { collection: "projects", sort: "password" }, { collection: "audit-events", status: "active" }, { collection: "customers", status: "retired" }]) await assert.rejects(listRecords(actor, input as never));
   assert.equal(calls.length, 3);
+});
+
+
+test("Customer profiles normalize country codes, bound personal data and preserve optional updates", () => {
+  assert.equal(customerInput.parse({ name: " Person ", customerType: "person", country: " de " }).country, "DE");
+  assert.deepEqual(customerInput.parse({ name: "Company" }), { name: "Company" });
+  assert.equal(customerInput.parse({ name: "Person", phone: null, country: null }).country, null);
+  for (const invalid of [{ customerType: "operator" }, { country: "DEU" }, { country: "1!" }, { firstName: "x".repeat(161) }, { companyName: "x".repeat(161) }, { phone: "x".repeat(51) }, { postalCode: "x".repeat(33) }, { addressLine1: "x".repeat(161) }]) {
+    assert.equal(customerInput.safeParse({ name: "Test", ...invalid }).success, false);
+  }
 });

@@ -1,0 +1,1 @@
+{"name":"@webdock/cms-ui","version":"0.1.0","private":true,"type":"module","exports":{"./server":"./src/server.ts","./client":"./src/client.tsx","./styles.css":"./src/styles.css","./types":"./src/types.ts"},"peerDependencies":{"payload":"4.0.0-canary.37","react":">=19","next":">=16"}}

@@ -1,3 +1,4 @@
+import { customerFields } from "../../../../../lib/customer-fields";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Editor, ArchiveButton } from "../../../../../components/editor";
@@ -52,34 +53,26 @@ export default async function Customer({
           <h2>Customer details</h2>
           <Editor
             action={saveCustomer.bind(null, id)}
-            fields={[
-              {
-                name: "name",
-                label: "Customer name",
-                required: true,
-                value: customer.name,
-              },
-              {
-                name: "contactName",
-                label: "Contact person",
-                value: customer.contactName || "",
-              },
-              {
-                name: "contactEmail",
-                label: "Contact email",
-                type: "email",
-                value: customer.contactEmail || "",
-              },
-              {
-                name: "notes",
-                label: "Notes",
-                type: "textarea",
-                value: customer.notes || "",
-              },
-            ]}
+            fields={customerFields(customer)}
           />
         </section>
         <aside>
+          <section className="panel">
+            <h2>Customer tenant</h2>
+            <p>
+              Manage this customer’s members and invite-only access. Contact
+              details alone do not grant access.
+            </p>
+            <Link className="button" href={`/tenants/${id}`}>
+              Tenant &amp; invitations
+            </Link>
+            <Link className="button secondary" href={`/tenants/${id}/usage`}>
+              Plan &amp; usage
+            </Link>
+            <Link className="button secondary" href={`/tenants/${id}/mail`}>
+              Mail &amp; domains
+            </Link>
+          </section>
           <section className="panel">
             <div className="section-heading">
               <h2>Projects ({projects.totalDocs})</h2>

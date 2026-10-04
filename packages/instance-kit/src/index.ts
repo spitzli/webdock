@@ -7,12 +7,18 @@ import {
   type PayloadRequest,
 } from "payload";
 
-type Account = { id?: number | string; email?: string; role?: string; collection?: string };
+type Account = {
+  id?: number | string;
+  email?: string;
+  role?: string;
+  collection?: string;
+};
 const actor = (req: PayloadRequest) => req.user as Account | null;
 export const isOperator = ({ req }: { req: PayloadRequest }) =>
   actor(req)?.collection === "users" && actor(req)?.role === "operator";
 export const canManageUsers = ({ req }: { req: PayloadRequest }) =>
-  actor(req)?.collection === "users" && ["operator", "admin"].includes(actor(req)?.role || "");
+  actor(req)?.collection === "users" &&
+  ["operator", "admin"].includes(actor(req)?.role || "");
 export const canEditContent = ({ req }: { req: PayloadRequest }) =>
   actor(req)?.collection === "users" &&
   ["operator", "admin", "editor"].includes(actor(req)?.role || "");
@@ -35,14 +41,19 @@ export function protectUsers(
   // They are never accepted from req.context or a caller-supplied request body.
   const recoveryRequests = new WeakMap<
     PayloadRequest,
-    { operation: "forgotPassword"; email: string } | { operation: "resetPassword"; token: string }
+    | { operation: "forgotPassword"; email: string }
+    | { operation: "resetPassword"; token: string }
   >();
   const protectedRecord = (doc: Account) =>
-    doc.role === "operator" || doc.email?.toLowerCase() === operatorEmail.toLowerCase();
+    doc.role === "operator" ||
+    doc.email?.toLowerCase() === operatorEmail.toLowerCase();
   return {
     ...collection,
     versions: false,
-    admin: { ...collection.admin, ...(centrallyManaged ? { hidden: true } : {}) },
+    admin: {
+      ...collection.admin,
+      ...(centrallyManaged ? { hidden: true } : {}),
+    },
     access: {
       ...collection.access,
       admin: ({ req }) => actor(req)?.collection === "users",
@@ -54,12 +65,17 @@ export function protectUsers(
             ? { id: { equals: actor(req)?.id } }
             : false,
       update: centrallyManaged ? () => false : customerRecord,
-      delete: centrallyManaged ? () => false : ({ req }): AccessResult =>
-        canManageUsers({ req })
-          ? {
-              and: [{ role: { not_equals: "operator" } }, { email: { not_equals: operatorEmail } }],
-            }
-          : false,
+      delete: centrallyManaged
+        ? () => false
+        : ({ req }): AccessResult =>
+            canManageUsers({ req })
+              ? {
+                  and: [
+                    { role: { not_equals: "operator" } },
+                    { email: { not_equals: operatorEmail } },
+                  ],
+                }
+              : false,
       unlock: centrallyManaged ? () => false : customerRecord,
     },
     fields: [
@@ -78,7 +94,8 @@ export function protectUsers(
         ],
         access: { create: isOperator, update: isOperator },
         admin: {
-          description: "The system operator is managed by Webdock, not by customer administrators.",
+          description:
+            "The system operator is managed by Webdock, not by customer administrators.",
         },
       },
     ],
@@ -87,7 +104,10 @@ export function protectUsers(
       beforeOperation: [
         ({ operation, req, args }) => {
           if (operation === "forgotPassword")
-            recoveryRequests.set(req, { operation, email: args.data.email.toLowerCase().trim() });
+            recoveryRequests.set(req, {
+              operation,
+              email: args.data.email.toLowerCase().trim(),
+            });
           else if (operation === "resetPassword")
             recoveryRequests.set(req, { operation, token: args.data.token });
           if (
@@ -96,7 +116,10 @@ export function protectUsers(
             !req.context.instanceImport &&
             !req.context.bootstrap
           )
-            throw new APIError("Accounts are provisioned by an administrator.", 403);
+            throw new APIError(
+              "Accounts are provisioned by an administrator.",
+              403,
+            );
         },
         ...(collection.hooks?.beforeOperation || []),
       ],
@@ -112,7 +135,11 @@ export function protectUsers(
             typeof data?.resetPasswordExpiration === "string" &&
             Object.keys(data).every(
               (key) =>
-                ["resetPasswordToken", "resetPasswordExpiration", "updatedAt"].includes(key) ||
+                [
+                  "resetPasswordToken",
+                  "resetPasswordExpiration",
+                  "updatedAt",
+                ].includes(key) ||
                 JSON.stringify(data[key]) === JSON.stringify(originalDoc[key]),
             )
           )
@@ -131,9 +158,20 @@ export function protectUsers(
               data?.role === "operator" ||
               data?.email?.toLowerCase() === operatorEmail.toLowerCase())
           )
-            throw new APIError("The system operator account is protected.", 403);
-          if (originalDoc && protectedRecord(originalDoc) && data?.role && data.role !== "operator")
-            throw new APIError("The system operator role cannot be removed.", 403);
+            throw new APIError(
+              "The system operator account is protected.",
+              403,
+            );
+          if (
+            originalDoc &&
+            protectedRecord(originalDoc) &&
+            data?.role &&
+            data.role !== "operator"
+          )
+            throw new APIError(
+              "The system operator role cannot be removed.",
+              403,
+            );
           return data;
         },
         ...(collection.hooks?.beforeValidate || []),
@@ -155,7 +193,10 @@ export function protectUsers(
             req,
           });
           if (protectedRecord(doc))
-            throw new APIError("The system operator cannot be deleted through the CMS.", 403);
+            throw new APIError(
+              "The system operator cannot be deleted through the CMS.",
+              403,
+            );
         },
         ...(collection.hooks?.beforeDelete || []),
       ],
@@ -164,14 +205,38 @@ export function protectUsers(
 }
 
 /** Keep each collection's existing public read rules; block read-only accounts from writes. */
-export function protectContent<T extends CollectionConfig | GlobalConfig>(config: T): T {
+export function protectContent<T extends CollectionConfig | GlobalConfig>(
+  config: T,
+): T {
   const access = { ...config.access };
   for (const operation of ["create", "update", "delete"] as const) {
     const existing =
       (access as Record<string, Access>)[operation] ||
       (({ req }: { req: PayloadRequest }) => Boolean(req.user));
     (access as Record<string, Access>)[operation] = (args) =>
-      actor(args.req)?.role === "reader" ? false : existing(args);
+      actor(args.req)?.collection === "users" &&
+      (operation === "delete"
+        ? ["admin", "operator"]
+        : ["editor", "admin", "operator"]
+      ).includes(actor(args.req)?.role || "")
+        ? existing(args)
+        : false;
   }
-  return { ...config, access };
+  return {
+    ...config,
+    access,
+    hooks: {
+      ...config.hooks,
+      beforeOperation: [
+        ({ operation, req }: { operation: string; req: PayloadRequest }) => {
+          if (operation === "restoreVersion" && !canManageUsers({ req }))
+            throw new APIError(
+              "An administrator is required to restore content versions.",
+              403,
+            );
+        },
+        ...(config.hooks?.beforeOperation || []),
+      ],
+    },
+  } as T;
 }

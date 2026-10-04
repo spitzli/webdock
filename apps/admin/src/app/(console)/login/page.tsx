@@ -1,7 +1,11 @@
 import { sso } from "@payload-config";
+import { redirect } from "next/navigation";
 import LoginForm from "../../../components/login-form";
 import { Appearance } from "../../../components/navigation";
+export const dynamic = "force-dynamic";
+
 export default function Login() {
+  if (sso) redirect("/api/sso/login");
   return (
     <main className="login">
       <section className="login-story">
@@ -23,11 +27,7 @@ export default function Login() {
           <p className="muted">Webdock Admin</p>
           <h2>Welcome back.</h2>
           <p>Sign in to manage your customers and projects.</p>
-          {sso ? (
-            <form action="/api/sso/login" method="get">
-              <button className="button" type="submit">Sign in with Webdock</button>
-            </form>
-          ) : <LoginForm />}
+          <LoginForm />
           <Appearance />
         </div>
       </section>

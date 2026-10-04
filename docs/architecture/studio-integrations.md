@@ -29,7 +29,7 @@ Configuration uses production-only `WEBDOCK_GITHUB_CLIENT_ID`, `WEBDOCK_GITHUB_C
 
 ## Passkeys
 
-Passkeys are enrolled and removed at https://auth.webdock.dev/account and can initiate central sign-in. They are scoped to auth.webdock.dev. Device PIN/biometric verification is required on both registration and assertion. Existing MFA remains required after passkey sign-in; recovery/password methods remain available. Payload never stores these credentials.
+Passkeys are enrolled and removed at https://auth.webdock.dev/account and can initiate central sign-in. They are scoped to auth.webdock.dev. Device PIN/biometric verification is required on both registration and assertion. A verified passkey completes sign-in without an additional OTP challenge. Password sign-in still requires the configured MFA; recovery methods and the operator MFA-enrollment requirement remain available. Payload never stores these credentials.
 
 ## Sources
 
@@ -76,3 +76,39 @@ curl --fail-with-body \
 ### Upgrading an existing auth deployment
 
 The OAuth provider seeds resources in insert-only mode, so adding `offline_access` to code does not update an existing resource policy. After deploying, run `node --env-file=.env.instance --import tsx scripts/enable-mcp-renewal.ts` from `apps/auth` using the intended environment. This idempotent update appends only `offline_access` to the existing enabled Webdock resource and leaves registered clients, their granted scopes and all other resource settings unchanged. No schema migration is required.
+
+## Accounts, customer invitations and website access
+
+Studio navigation provides **My account** and **People & access**, using the configured central auth issuer. Operators manage people at `/people` on that auth service; customer users cannot open or execute its administration actions. Account shortcuts and `/sites` let each customer discover only their own authorized content managers.
+
+For an existing website, select the customer, enter the person's name/email, choose Reader, Editor or Administrator and send the invitation. New accounts receive a one-time password-setup email. Successful redemption proves mailbox ownership and completes initial password setup; sign-in returns to the pending invitation. The recipient must accept it before customer membership is active. Existing accounts receive a normal invitation. Existing customer-group members receive the new website grant immediately plus a notification email. Public sign-up remains closed.
+
+Website roles do not grant Studio or platform access. Each CMS still introspects current account state, customer membership and the specific website grant. Revoking a grant or suspending an account removes effective access on the next protected request. Operators can restore customer accounts, change or revoke individual website roles, resend pending invitations and cancel invitations created by another operator. Cancelling a pending customer-group invitation also withdraws its pending website grants atomically, preventing a later invitation from activating abandoned access. Operator accounts cannot be suspended or assigned customer roles through this interface.
+
+Customer groups here are identity/permission groups, not new Studio registry records. Existing website-to-group assignments are preserved; changing ownership requires a separate reviewed operation. This release does not create a customer self-service console, provision CMS instances or invite real customers automatically.
+
+Before deploying the first build with `/people`, run `node --env-file=.env.instance --import tsx scripts/migrate-access.ts` from `apps/auth`. It adds only the `access_event` audit table. Actions record actor, operation, target and outcome, never passwords, tokens or email bodies. Native identity/email operations can partially complete if delivery fails; the UI tells the operator to review state and resend rather than claiming a rollback. Tests use local synthetic accounts and a captured mail outbox.
+
+## CMS product interface
+
+The customer product is **CMS**. Webdock, Spitzli and Stall serve a shared, mobile-friendly editor at `/cms`, backed by each website's independent content store. Legacy `/admin` links redirect there. The upstream technical interface moves to `/system` and requires a platform operator on pages, metadata and server functions. Customers manage their account through Webdock; roles/invitations remain in People & access rather than a local Users collection.
+
+Content modules are explicitly allowlisted per site. Common fields, arrays, page blocks, media and relationships use the shared UI; Stall supplies a lossless rich-text adapter using its already-installed editor. Existing localized content, draft/public separation and native validation are retained. Saved-draft previews require instance authentication. Language editing does not imply a new public-language frontend: the Stall frontend still serves its existing default-language presentation.
+
+Reader can view content. Editor can create, edit and publish. Administrator can additionally delete content and restore versions. These restrictions apply both to the CMS adapter and native content operations. Conflicting writes fail instead of overwriting another editor's changes. No content schema migration or live-content rewrite is needed for this rollout.
+
+## Vercel live information
+
+The private Vercel integration uses the classic connectable-account OAuth flow and exactly four scopes: `read:integration-configuration`, `read:project`, `read:deployment`, `read:domain`. It cannot deploy, change project settings, edit domains or read environment variable endpoints. The ordinary central Webdock login remains unchanged.
+
+Configure `WEBDOCK_VERCEL_CLIENT_ID`, `WEBDOCK_VERCEL_CLIENT_SECRET`, `WEBDOCK_VERCEL_INTEGRATION_SLUG`, `WEBDOCK_VERCEL_TEAM_ID`, and `WEBDOCK_VERCEL_TEAM_SLUG` (required for the private dashboard installation URL) on Studio. Its callback is `https://studio.webdock.dev/api/vercel/callback`. Before deployment run `node --env-file=.env.instance --import tsx scripts/migrate-vercel.ts` from `apps/admin`; this adds only the connection and project-reference tables.
+
+Start installation from Studio → Integrations after signing in as an operator. The encrypted ten-minute flow cookie binds the callback to that operator, team, app and origin. Code exchange verifies the returned installation and its exact read scopes. The persistent access token is encrypted using a purpose-separated key derived from Studio's SSO cookie secret and is never returned to browser JavaScript, MCP or the registry API. Secret rotation therefore requires reconnecting. Installation revocation and denied provider access produce a visible connection error.
+
+Project pages fetch current production assignment, the five latest deployments, Git metadata, framework/runtime and domains. Results display their check time, support manual refresh and are streamed separately from the normal registry view. Production is read from Vercel's actual production target, never inferred from the latest successful build. No secret/environment fields or raw provider error bodies are exposed.
+
+Existing CMS `providerProjectID` references are used as a fallback. Explicit project links work independently of whether a project has a CMS and are verified against Vercel before saving. Connection/link mutations are committed together with immutable audit entries. Disconnecting deletes Studio's stored credential while preserving project links; revoke provider permission separately by removing the integration in Vercel.
+
+The same status is available read-only through MCP `get_hosting_status` (`projectID`) and `GET /api/registry/projects/{id}/hosting`, with the registry's existing operator/scope checks. Provider fetches use fixed API origins, bounded responses and a finite timeout. A provider outage never grants extra access or turns a read into a mutation.
+
+Production verification (2026-10-04): private Webdock Studio integration installed for Spitzli Development with the four read scopes above. The user selected All Projects; Studio lists 16 authorised Vercel projects. Live project panels verified for Webdock, Spitzli and Stall. Public integration documentation, terms and privacy notice are available under `https://webdock.dev/integrations/vercel`, `/terms` and `/privacy`. The installation starts at the team dashboard URL because private integrations return 404 through the public marketplace entry.

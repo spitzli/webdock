@@ -37,11 +37,11 @@ be moved to an unrelated RP ID.
 
 Device verification (PIN or biometrics) is enforced on the server for both
 registration and sign-in. Better Auth 1.7.7 does not require this by default.
-Its existing TOTP sign-in hook is also applied to passkey authentication, so an
-MFA-enabled user still completes TOTP or a recovery-code challenge before any
-usable session is returned. Keep this behavior covered when upgrading Better
-Auth. Passkeys do not replace the operator password-change or MFA enrollment
-gates. Registration requires a fresh authenticated session; deletion requires
+A passkey assertion with verified device confirmation creates a usable session
+directly, without an additional OTP challenge. Password sign-in retains Better
+Auth's native TOTP/recovery-code challenge. Keep both paths covered when
+upgrading Better Auth. Passkeys do not replace the operator password-change or
+MFA enrollment gates. Registration requires a fresh authenticated session; deletion requires
 that the account retain its provisioned password fallback.
 
 Before enabling the new build in production, run the existing explicit
@@ -52,5 +52,6 @@ The passkey table was migrated in production during the 2026-10-03 Studio rollou
 
 The isolated `node --import tsx --test tests/passkeys.test.ts` suite generates
 local WebAuthn registrations/assertions and checks origin/device verification,
-MFA session withholding, setup restrictions, listing and safe deletion. It uses
+direct passkey sessions, password MFA session withholding, setup restrictions,
+listing and safe deletion. It uses
 an in-memory database and never reads real MFA material or resets a local DB.

@@ -15,5 +15,5 @@ export default async function ResetPassword({
     query.token.length <= 512
       ? query.token
       : null;
-  return <ResetPasswordForm token={token} />;
+  return <ResetPasswordForm token={token} invitation={typeof query.invitation === "string" && /^[1-9][0-9]{0,18}$/.test(query.invitation) ? query.invitation : undefined} />;
 }

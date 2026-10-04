@@ -37,7 +37,8 @@ export function Passkeys({ disabled }: { disabled: boolean }) {
       <h2>Passkeys</h2>
       <p className="muted">
         Sign in using your device PIN, fingerprint, face or security key. Your
-        password remains available, and your authenticator is still required
+        device confirmation completes sign-in without an extra authenticator
+        code. Signing in with your password still requires your authenticator
         when enabled.
       </p>
       {error && (

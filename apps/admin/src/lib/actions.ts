@@ -33,6 +33,17 @@ export async function saveCustomer(
     if (id && !validID(id)) throw new APIError("Invalid customer.", 400);
     const data = {
       name: raw.name,
+      customerType: raw.customerType || undefined,
+      firstName: raw.firstName || null,
+      lastName: raw.lastName || null,
+      companyName: raw.companyName || null,
+      phone: raw.phone || null,
+      addressLine1: raw.addressLine1 || null,
+      addressLine2: raw.addressLine2 || null,
+      postalCode: raw.postalCode || null,
+      city: raw.city || null,
+      region: raw.region || null,
+      country: raw.country || null,
       contactName: raw.contactName || null,
       contactEmail: raw.contactEmail || null,
       notes: raw.notes || null,

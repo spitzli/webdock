@@ -9,7 +9,23 @@ const text = z.string().trim().max(160);
 const optionalText = text.nullable().optional();
 const notes = z.string().trim().max(3000).nullable().optional();
 const url = z.string().url().refine(v => { const u = new URL(v); return u.protocol === "https:" && !u.username && !u.password; }, "Use an HTTPS URL without credentials").nullable().optional();
-export const customerInput = z.object({ name: text.min(1), contactName: optionalText, contactEmail: z.string().email().nullable().optional(), notes }).strict();
+export const customerInput = z.object({
+  name: text.min(1),
+  customerType: z.enum(["person", "company"]).optional(),
+  firstName: optionalText,
+  lastName: optionalText,
+  companyName: optionalText,
+  contactName: optionalText,
+  contactEmail: z.string().trim().max(254).email().nullable().optional(),
+  phone: z.string().trim().max(50).nullable().optional(),
+  addressLine1: optionalText,
+  addressLine2: optionalText,
+  postalCode: z.string().trim().max(32).nullable().optional(),
+  city: optionalText,
+  region: optionalText,
+  country: z.string().trim().toUpperCase().regex(/^[A-Z]{2}$/, "Use a two-letter ISO country code").nullable().optional(),
+  notes,
+}).strict();
 export const projectInput = z.object({ name: text.min(1), customer: recordID, url, repositoryURL: url, notes }).strict();
 export const instanceInput = z.object({ project: recordID, label: text.min(1), adminURL: url.unwrap().unwrap(), schemaName: z.string().regex(/^[a-z][a-z0-9_]{0,62}$/), providerProjectID: text.min(1), provider: z.enum(["vercel", "other"]), template: z.enum(["webdock-landing", "spitzli-portfolio", "stall-business", "custom"]), payloadVersion: z.string().max(64).nullable().optional(), status: z.enum(["active", "suspended", "retired"]), notes }).strict();
 function authorize(actor: RegistryActor) {
@@ -18,7 +34,7 @@ function authorize(actor: RegistryActor) {
 export async function writeCustomer(actor: RegistryActor, id: string | null, input: unknown) {
   authorize(actor);
   const data = customerInput.parse(input);
-  return id ? actor.payload.update({ collection: "customers", id: recordID.parse(id), data, user: actor.user, overrideAccess: false }) : actor.payload.create({ collection: "customers", data: { ...data, status: "active" }, user: actor.user, overrideAccess: false });
+  return id ? actor.payload.update({ collection: "customers", id: recordID.parse(id), data, user: actor.user, overrideAccess: false }) : actor.payload.create({ collection: "customers", data: { ...data, customerType: data.customerType ?? "company", status: "active" }, user: actor.user, overrideAccess: false });
 }
 export async function writeProject(actor: RegistryActor, id: string | null, input: unknown) {
   authorize(actor);

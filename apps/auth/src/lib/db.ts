@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { attachDatabasePool } from "@vercel/functions";
 export const database = new Pool({
   connectionString:
     process.env.AUTH_MIGRATING === "true"
@@ -12,5 +13,7 @@ export const database = new Pool({
     ? { options: "-c search_path=webdock_auth,pg_catalog" }
     : {}),
   connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 10000,
+  idleTimeoutMillis: 5000,
 });
+// Let idle sockets close before Fluid Compute suspends this function instance.
+attachDatabasePool(database);

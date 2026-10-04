@@ -26,7 +26,8 @@
     "graphql": "16.14.2",
     "sharp": "0.35.5",
     "@webdock/instance-kit": "*",
-    "@webdock/payload-sso": "*"
+    "@webdock/payload-sso": "*",
+    "@webdock/cms-ui": "*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

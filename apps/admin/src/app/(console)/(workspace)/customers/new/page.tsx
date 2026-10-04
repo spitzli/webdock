@@ -1,3 +1,4 @@
+import { customerFields } from "../../../../../lib/customer-fields";
 import Link from "next/link";
 import { Editor } from "../../../../../components/editor";
 import { saveCustomer } from "../../../../../lib/actions";
@@ -11,7 +12,7 @@ export default function NewCustomer() {
         <div>
           <h1>New customer</h1>
           <p>
-            A customer can have any number of projects, with or without a CMS.
+            Each customer gets a tenant for their projects. Access is invite-only; add members after creating the customer.
           </p>
         </div>
       </div>
@@ -19,12 +20,7 @@ export default function NewCustomer() {
         <Editor
           action={saveCustomer.bind(null, null)}
           submit="Create customer"
-          fields={[
-            { name: "name", label: "Customer name", required: true },
-            { name: "contactName", label: "Contact person" },
-            { name: "contactEmail", label: "Contact email", type: "email" },
-            { name: "notes", label: "Notes", type: "textarea" },
-          ]}
+          fields={customerFields()}
         />
       </section>
     </>

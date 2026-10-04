@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { VercelIntegration } from "../../../../components/vercel-integration";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { requireOperator } from "../../../../lib/server";
@@ -105,6 +107,23 @@ export default async function Integrations({
           {notice}
         </p>
       )}
+      <Suspense
+        fallback={
+          <section className="panel">
+            <h2>Vercel</h2>
+            <p role="status">Loading connection…</p>
+          </section>
+        }
+      >
+        <VercelIntegration
+          status={typeof query.vercel === "string" ? query.vercel : undefined}
+          cursor={
+            typeof query.vercelCursor === "string"
+              ? query.vercelCursor
+              : undefined
+          }
+        />
+      </Suspense>
       <div className="detail-grid">
         <section className="panel" aria-labelledby="github-heading">
           <div className="section-heading">
@@ -302,7 +321,9 @@ export default async function Integrations({
                 </code>
               </dd>
               <dt>HTTP API</dt>
-              <dd><code>{new URL("/api/registry", mcpResource()).href}</code></dd>
+              <dd>
+                <code>{new URL("/api/registry", mcpResource()).href}</code>
+              </dd>
               <dt>Read scope</dt>
               <dd>
                 <code>webdock:read</code> — browse customers, projects, CMS
@@ -320,8 +341,10 @@ export default async function Integrations({
               Manage connections
             </a>
             <p>
-              Enable automatic token renewal when registering a client for remote work. Interactive sign-in and consent still require your browser. Only operators can access the registry. Changes made through
-              integrations appear in Activity.
+              Enable automatic token renewal when registering a client for
+              remote work. Interactive sign-in and consent still require your
+              browser. Only operators can access the registry. Changes made
+              through integrations appear in Activity.
             </p>
           </section>
         </aside>

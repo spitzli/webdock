@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Link from "next/link";
 import "./styles.css";
+import { publicPlatformSettings } from "@/lib/platform";
+import { studioURL } from "@/lib/studio-links";
+
+export const dynamic = "force-dynamic";
 
 const space = localFont({
   src: "../../public/fonts/space-grotesk.ttf",
@@ -14,7 +18,8 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default async function Layout({ children }: { children: React.ReactNode }) {
+  const platform = await publicPlatformSettings();
   return (
     <html lang="en" className={space.variable}>
       <body>
@@ -23,13 +28,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </a>
         <header className="site-header">
           <Link className="brand" href="/">
-            webdock<span>.</span>
+            {platform.name}<span>.</span>
           </Link>
-          <nav aria-label="Account"><Link href="/account">Account</Link>{" · "}<Link href="/connections">Connections</Link></nav>
+          <nav aria-label="Account">
+            <Link href="/account">Account &amp; security</Link>
+            <Link href="/connections">Connected apps</Link>
+            <a href={studioURL()}>Open Studio</a>
+          </nav>
         </header>
         <main id="main">{children}</main>
         <footer className="site-footer">
-          Your Webdock account. Your workspace and websites.
+          Your {platform.name} sign-in and account security.{" "}
+          <a href={`mailto:${platform.supportEmail}`}>Support</a>{" · "}
+          <a href="https://webdock.dev/privacy">Privacy</a>
         </footer>
       </body>
     </html>

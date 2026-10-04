@@ -46,6 +46,6 @@ export default async function Home() {
       <section className="outlook wrap"><span className="outlook-icon" aria-hidden="true">⌘</span><div><h3>{page.outlookTitle}</h3><p>{page.outlookDescription}</p></div><span className="planned">Planned</span></section>
       <section className="closing wrap"><p>Got something in mind?</p><h2 className="whitespace-pre-line">{page.closingTitle}</h2><a className="button" href={contact}>{page.closingButton} <span aria-hidden="true">↗</span></a><span className="closing-mark" aria-hidden="true"><Mark/></span></section>
     </main>
-    <footer className="wrap site-footer"><a className="brand" href="#" aria-label="Webdock home"><Mark/>webdock.</a><p>A project by <a href="https://spitzli.dev" target="_blank" rel="noopener noreferrer">Spitzli Development</a></p><a href={`mailto:${page.contactEmail}`}>{page.contactEmail} <span aria-hidden="true">↗</span></a><ThemePicker/></footer>
+    <footer className="wrap site-footer"><a className="brand" href="#" aria-label="Webdock home"><Mark/>webdock.</a><p>A project by <a href="https://spitzli.dev" target="_blank" rel="noopener noreferrer">Spitzli Development</a></p><a href={`mailto:${page.contactEmail}`}>{page.contactEmail} <span aria-hidden="true">↗</span></a><nav aria-label="Legal"><a href="/terms">Terms of use</a><a href="/privacy">Privacy</a></nav><ThemePicker/></footer>
   </>;
 }

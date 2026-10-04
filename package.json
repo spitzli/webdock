@@ -22,7 +22,9 @@
     "dev:auth": "npm run dev -w @webdock/auth",
     "build:auth": "npm run build -w @webdock/auth",
     "test:auth": "npm run test -w @webdock/auth",
-    "test:sso": "node --experimental-strip-types --test packages/payload-sso/src/index.test.ts"
+    "test:sso": "node --experimental-strip-types --test packages/payload-sso/src/index.test.ts",
+    "test:cms-ui": "node --import tsx --test packages/cms-ui/src/server.test.ts",
+    "test:cms-integration": "node --env-file=apps/admin/.env.test.local --import tsx --test packages/cms-ui/src/integration.test.ts"
   },
   "overrides": {
     "nodemailer": "10.0.13"

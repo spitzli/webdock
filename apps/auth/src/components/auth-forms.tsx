@@ -221,7 +221,7 @@ export function TwoFactorForm() {
   );
 }
 
-export function Account() {
+export function Account({ links }: { links: { tenants: string; sites: string; people: string; admin: string; studio: string } }) {
   const {
     data: session,
     isPending,
@@ -317,6 +317,7 @@ export function Account() {
           Sign out
         </button>
       </header>
+      <nav className="actions" aria-label="Workspace shortcuts"><a className="button secondary" href={links.tenants}>My tenants</a><a className="button secondary" href={links.sites}>My websites</a>{session.user.role === "operator" && <><a className="button secondary" href={links.people}>People &amp; access</a><a className="button secondary" href={links.admin}>Webdock administration</a></>}</nav>
       {needsSetup && (
         <p className="notice">
           Complete your account security setup before continuing to your
@@ -538,8 +539,7 @@ export function Account() {
             void act(async () => {
               if (!new URLSearchParams(window.location.search).has("sig")) {
                 window.location.assign(
-                  process.env.NEXT_PUBLIC_ADMIN_URL ||
-                    "https://studio.webdock.dev",
+                  session.user.role === "operator" ? links.studio : links.tenants,
                 );
                 return;
               }
@@ -610,7 +610,7 @@ export function ForgotPasswordForm() {
   );
 }
 
-export function ResetPasswordForm({ token }: { token: string | null }) {
+export function ResetPasswordForm({ token, invitation }: { token: string | null; invitation?: string }) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
@@ -650,7 +650,7 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
       {done ? (
         <>
           <Notice message="Your password has been updated and your previous sessions have been signed out. Sign in with your new password." />
-          <Link className="button" href="/sign-in">
+          <Link className="button" href={invitation ? `/sign-in?invitation=${encodeURIComponent(invitation)}` : "/sign-in"}>
             Sign in
           </Link>
         </>

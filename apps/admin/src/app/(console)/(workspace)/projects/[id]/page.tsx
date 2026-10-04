@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { VercelProjectPanel } from "../../../../../components/vercel-panel";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Editor, ArchiveButton } from "../../../../../components/editor";
@@ -97,6 +99,17 @@ export default async function Project({
           </a>
         )}
       </div>
+      <nav className="record-actions" aria-label="Customer services">
+        <Link href={`/tenants/${relatedID(project.customer)}`}>
+          Tenant & people
+        </Link>
+        <Link href={`/tenants/${relatedID(project.customer)}/usage`}>
+          Plan & usage
+        </Link>
+        <Link href={`/tenants/${relatedID(project.customer)}/mail`}>
+          Mail & domains
+        </Link>
+      </nav>
       <div className="project-overview">
         <div>
           <span>Website</span>
@@ -128,6 +141,16 @@ export default async function Project({
           This project is archived. Restore it to manage its CMS connection.
         </p>
       )}
+      <Suspense
+        fallback={
+          <section className="panel">
+            <h2>Vercel</h2>
+            <p role="status">Loading deployment information…</p>
+          </section>
+        }
+      >
+        <VercelProjectPanel projectID={id} />
+      </Suspense>
       <div className="detail-grid">
         <div>
           <section className="panel">
@@ -209,7 +232,7 @@ export default async function Project({
             <p>
               {instance
                 ? "This is the recorded connection to the project’s independent content admin. Its live availability has not been checked."
-                : "This project can run without Payload. You can link a CMS that has already been deployed."}
+                : "This project can run without a CMS. You can link a CMS that has already been deployed."}
             </p>
             {instance && instance.status !== "retired" && (
               <a
@@ -237,7 +260,7 @@ export default async function Project({
                 </dd>
                 <dt>Template</dt>
                 <dd>{instance.template}</dd>
-                <dt>Payload</dt>
+                <dt>CMS engine</dt>
                 <dd>{instance.payloadVersion || "Not recorded"}</dd>
                 <dt>Recorded status</dt>
                 <dd>{instance.status}</dd>
@@ -300,7 +323,7 @@ export default async function Project({
                     },
                     {
                       name: "payloadVersion",
-                      label: "Payload version",
+                      label: "CMS engine version",
                       value: instance?.payloadVersion || "",
                     },
                     {

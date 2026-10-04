@@ -8,7 +8,7 @@ import {
 } from "node:crypto";
 import { betterAuth } from "better-auth";
 import { memoryAdapter } from "better-auth/adapters/memory";
-import { passkeySecurity, twoFactorWithPasskeys } from "../src/lib/passkeys";
+import { passkeySecurity, passwordTwoFactor } from "../src/lib/passkeys";
 
 const origin = "http://localhost:3125";
 const password = "Local disposable password 123!";
@@ -38,7 +38,7 @@ async function fixture() {
         },
       },
     },
-    plugins: [twoFactorWithPasskeys(), passkeySecurity(origin)],
+    plugins: [passwordTwoFactor(), passkeySecurity(origin)],
   });
   let cookies = new Map<string, string>();
   const call = async (path: string, body?: unknown) => {
@@ -231,7 +231,7 @@ test("signed passkey assertions enforce origin and user verification", async () 
   assert.equal((await f.authenticate()).status, 403);
 });
 
-test("passkey sign-in revokes the preliminary session and requires the existing MFA challenge", async () => {
+test("verified passkeys sign in directly while passwords still require MFA", async () => {
   const f = await fixture();
   // Use real enrollment to obtain disposable encrypted recovery codes.
   const enrollment = await (
@@ -241,9 +241,20 @@ test("passkey sign-in revokes the preliminary session and requires the existing 
   f.data.user[0].twoFactorEnabled = true;
   f.data.twoFactor[0].verified = true;
   f.clearCookies();
+  f.data.user[0].role = "operator";
+  assert.equal((await f.authenticate(false)).status, 403);
+  assert.equal(await (await f.call("/get-session")).json(), null);
   const response = await f.authenticate();
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), {
+  assert.equal((await response.json()).twoFactorRedirect, undefined);
+  const session = await (await f.call("/get-session")).json();
+  assert.equal(session.user.id, f.data.user[0].id);
+  assert.equal(session.user.twoFactorEnabled, true);
+  await f.call("/sign-out", {});
+  f.clearCookies();
+  const passwordResponse = await f.call("/sign-in/email", { email: "passkey@example.invalid", password });
+  assert.equal(passwordResponse.status, 200);
+  assert.deepEqual(await passwordResponse.json(), {
     twoFactorRedirect: true,
     twoFactorMethods: ["totp"],
   });

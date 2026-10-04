@@ -1,14 +1,16 @@
 "use client";
-import { useActionState, useId } from "react";
+import { Fragment, useActionState, useId } from "react";
 import type { FormState } from "../lib/actions";
 export type EditorField = {
   name: string;
   label: string;
-  type?: "text" | "email" | "url" | "textarea" | "select" | "checkbox";
+  type?: "text" | "email" | "tel" | "url" | "textarea" | "select" | "checkbox";
   required?: boolean;
   value?: string;
   options?: { value: string; label: string }[];
   hint?: string;
+  group?: string;
+  maxLength?: number;
   readOnly?: boolean;
 };
 export function Editor({
@@ -36,63 +38,65 @@ export function Editor({
         </p>
       )}
       {fields.map((f) => (
-        <div
-          className={"field " + (f.type === "textarea" ? "wide" : "")}
-          key={f.name}
-        >
-          <label htmlFor={`${formID}-${f.name}`}>
-            {f.label}
-            {f.required && <span aria-hidden="true"> *</span>}
-          </label>
-          {f.type === "textarea" ? (
-            <textarea
-              id={`${formID}-${f.name}`}
-              aria-describedby={f.hint ? `${formID}-${f.name}-hint` : undefined}
-              name={f.name}
-              rows={4}
-              required={f.required}
-              readOnly={f.readOnly}
-              maxLength={3000}
-              defaultValue={state.values?.[f.name] ?? f.value}
-            />
-          ) : f.type === "select" ? (
-            <select
-              id={`${formID}-${f.name}`}
-              aria-describedby={f.hint ? `${formID}-${f.name}-hint` : undefined}
-              name={f.name}
-              required={f.required}
-              defaultValue={state.values?.[f.name] ?? f.value ?? ""}
-            >
-              {f.options?.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          ) : f.type === "checkbox" ? (
-            <input
-              id={`${formID}-${f.name}`}
-              aria-describedby={f.hint ? `${formID}-${f.name}-hint` : undefined}
-              name={f.name}
-              type="checkbox"
-              value="yes"
-              required={f.required}
-              defaultChecked={(state.values?.[f.name] ?? f.value) === "yes"}
-            />
-          ) : (
-            <input
-              id={`${formID}-${f.name}`}
-              aria-describedby={f.hint ? `${formID}-${f.name}-hint` : undefined}
-              name={f.name}
-              type={f.type || "text"}
-              required={f.required}
-              readOnly={f.readOnly}
-              maxLength={f.type === "url" ? 2048 : 160}
-              defaultValue={state.values?.[f.name] ?? f.value ?? ""}
-            />
-          )}
-          {f.hint && <small id={`${formID}-${f.name}-hint`}>{f.hint}</small>}
-        </div>
+        <Fragment key={f.name}>
+          {f.group && <h3 className="editor-section">{f.group}</h3>}
+          <div
+            className={"field " + (f.type === "textarea" ? "wide" : "")}
+          >
+            <label htmlFor={`${formID}-${f.name}`}>
+              {f.label}
+              {f.required && <span aria-hidden="true"> *</span>}
+            </label>
+            {f.type === "textarea" ? (
+              <textarea
+                id={`${formID}-${f.name}`}
+                aria-describedby={f.hint ? `${formID}-${f.name}-hint` : undefined}
+                name={f.name}
+                rows={4}
+                required={f.required}
+                readOnly={f.readOnly}
+                maxLength={3000}
+                defaultValue={state.values?.[f.name] ?? f.value}
+              />
+            ) : f.type === "select" ? (
+              <select
+                id={`${formID}-${f.name}`}
+                aria-describedby={f.hint ? `${formID}-${f.name}-hint` : undefined}
+                name={f.name}
+                required={f.required}
+                defaultValue={state.values?.[f.name] ?? f.value ?? ""}
+              >
+                {f.options?.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            ) : f.type === "checkbox" ? (
+              <input
+                id={`${formID}-${f.name}`}
+                aria-describedby={f.hint ? `${formID}-${f.name}-hint` : undefined}
+                name={f.name}
+                type="checkbox"
+                value="yes"
+                required={f.required}
+                defaultChecked={(state.values?.[f.name] ?? f.value) === "yes"}
+              />
+            ) : (
+              <input
+                id={`${formID}-${f.name}`}
+                aria-describedby={f.hint ? `${formID}-${f.name}-hint` : undefined}
+                name={f.name}
+                type={f.type || "text"}
+                required={f.required}
+                readOnly={f.readOnly}
+                maxLength={f.maxLength ?? (f.type === "url" ? 2048 : 160)}
+                defaultValue={state.values?.[f.name] ?? f.value ?? ""}
+              />
+            )}
+            {f.hint && <small id={`${formID}-${f.name}-hint`}>{f.hint}</small>}
+          </div>
+        </Fragment>
       ))}
       <div className="form-footer">
         <button className="button" disabled={pending}>

@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { lazyAuth } from "./lazy-auth";
 import { admin, organization, jwt } from "better-auth/plugins";
 import { adminAc, userAc } from "better-auth/plugins/admin/access";
 import { oauthProvider } from "@better-auth/oauth-provider";
@@ -8,14 +9,15 @@ import {
   getSessionFromCtx,
 } from "better-auth/api";
 import { database } from "./db";
+import { guardOrganizationRequest } from "./tenant-policy";
 import { cookiePolicy } from "./cookie-policy";
 import { offlineProvisioning } from "./offline";
 import { currentClaims } from "./authorization";
 import { sendAuthMail } from "./mail";
-import { passkeySecurity, twoFactorWithPasskeys } from "./passkeys";
+import { passkeySecurity, passwordTwoFactor } from "./passkeys";
 import { mcpResource, mcpScopes, currentMCPClaims } from "./mcp";
 const baseURL = process.env.BETTER_AUTH_URL || "http://localhost:3125";
-export const auth = betterAuth({
+export const auth = lazyAuth(() => betterAuth({
   appName: "Webdock",
   baseURL,
   basePath: "/api/auth",
@@ -51,11 +53,15 @@ export const auth = betterAuth({
     minPasswordLength: 12,
     maxPasswordLength: 128,
     revokeSessionsOnPasswordReset: true,
+    onPasswordReset: async ({ user }) => {
+      // The one-time reset link proves mailbox access for a provisioned invitee.
+      await database.query('UPDATE webdock_auth."user" SET "emailVerified"=true,"mustChangePassword"=false WHERE id=$1 AND "mustChangePassword"=true', [user.id]);
+    },
     sendResetPassword: async ({ user, url }) =>
       sendAuthMail({
         to: user.email,
-        subject: "Reset your Webdock password",
-        text: `Reset your password using this link:\n${url}\nIf you did not request this, you can ignore this message.`,
+        subject: "mustChangePassword" in user && user.mustChangePassword === true ? "Set up your Webdock account" : "Reset your Webdock password",
+        text: "mustChangePassword" in user && user.mustChangePassword === true ? `Your Webdock administrator has invited you. Choose your password to set up your account:\n${url}\nIf you were not expecting an invitation, you can ignore this message.` : `Reset your Webdock password using this link:\n${url}\nIf you did not request this, you can ignore this message.`,
       }),
   },
   emailVerification: {
@@ -84,6 +90,7 @@ export const auth = betterAuth({
         !offlineProvisioning.getStore()
       ) {
         const session = await getSessionFromCtx(ctx);
+        await guardOrganizationRequest(ctx.path, ctx.body, ctx.query, session?.user.id);
         if (
           (ctx.path.startsWith("/admin/") &&
             (!session || session.user.role !== "operator")) ||
@@ -134,14 +141,18 @@ export const auth = betterAuth({
       },
       disableOrganizationDeletion: true,
       requireEmailVerificationOnInvitation: true,
-      sendInvitationEmail: async (data) =>
-        sendAuthMail({
+      sendInvitationEmail: async (data) => {
+        const user = (await database.query('SELECT "mustChangePassword","emailVerified" FROM webdock_auth."user" WHERE lower(email)=lower($1)', [data.email])).rows[0];
+        if (user?.mustChangePassword && !user.emailVerified) {
+          await auth.api.requestPasswordReset({ body: { email: data.email, redirectTo: `${baseURL}/reset-password?invitation=${encodeURIComponent(data.id)}` } });
+        } else await sendAuthMail({
           to: data.email,
           subject: `Invitation to ${data.organization.name} on Webdock`,
           text: `You have been invited to ${data.organization.name}.\n${baseURL}/invitation?id=${encodeURIComponent(data.id)}`,
-        }),
+        });
+      },
     }),
-    twoFactorWithPasskeys(),
+    passwordTwoFactor(),
     passkeySecurity(baseURL),
     jwt({ jwks: { keyPairConfig: { alg: "RS256" } } }),
     oauthProvider({
@@ -205,4 +216,4 @@ export const auth = betterAuth({
           : currentClaims(user?.id, metadata?.webdock_binding),
     }),
   ],
-});
+}));

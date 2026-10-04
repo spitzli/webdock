@@ -6,5 +6,7 @@ export const sso: ReturnType<typeof configurePayloadSSO> | null = process.env.WE
       getPayload: async () => getPayload({ config: (await import('../payload.config')).default }),
       successPath: '/',
       logoutPath: '/login',
+      allowUnmappedPortalUsers: true,
+      returnToPrefixes: ['/tenants', '/offers', '/people', '/sites', '/customers', '/projects', '/activity', '/integrations'],
     })
   : null;

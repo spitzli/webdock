@@ -16,10 +16,11 @@ const serverURL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3114';
 export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || '',
   serverURL,
-  admin: { user: 'users', importMap: { baseDir: dirname }, components: { beforeLogin: ['/components/sso-login#SSOLogin'] } },
+  routes: { admin: "/system" },
+  admin: { user: 'users', importMap: { baseDir: dirname, importMapFile: path.resolve(dirname, "app/(payload)/system/importMap.js") }, components: { beforeLogin: ['/components/sso-login#SSOLogin'] } },
   collections: [protectUsers({
     slug: 'users',
-    admin: { useAsTitle: 'email' },
+  admin: { useAsTitle: 'email' },
     auth: { maxLoginAttempts: 5, lockTime: 600000, strategies: sso ? [sso.strategy] : [], disableLocalStrategy: process.env.WEBDOCK_SSO_ENFORCE === 'true' ? { enableFields: true, optionalPassword: true } : undefined },
     hooks: sso?.hooks,
     access: {},

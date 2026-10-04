@@ -164,8 +164,22 @@ export interface User {
 export interface Customer {
   id: string;
   name: string;
+  customerType?: ('person' | 'company') | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  companyName?: string | null;
+  phone?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  postalCode?: string | null;
+  city?: string | null;
+  region?: string | null;
+  country?: string | null;
   contactName?: string | null;
   contactEmail?: string | null;
+  /**
+   * Private operator notes. Never shared with tenant members.
+   */
   notes?: string | null;
   status: 'active' | 'archived';
   updatedAt: string;
@@ -344,6 +358,17 @@ export interface UsersSelect<T extends boolean = true> {
 export interface CustomersSelect<T extends boolean = true> {
   id?: T;
   name?: T;
+  customerType?: T;
+  firstName?: T;
+  lastName?: T;
+  companyName?: T;
+  phone?: T;
+  addressLine1?: T;
+  addressLine2?: T;
+  postalCode?: T;
+  city?: T;
+  region?: T;
+  country?: T;
   contactName?: T;
   contactEmail?: T;
   notes?: T;

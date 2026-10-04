@@ -1,0 +1,10 @@
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const target=process.argv[2];
+if(!target)throw Error('Usage: node packages/cms-ui/sync.mjs /path/to/site-repository');
+const root=path.resolve(target),manifest=path.join(root,'package.json');
+if(!existsSync(manifest)||!JSON.parse(readFileSync(manifest,'utf8')).dependencies?.payload)throw Error('Expected an existing CMS site repository.');
+const destination=path.join(root,'src','webdock-cms');mkdirSync(destination,{recursive:true});
+for(const file of ['server.ts','schema.ts','types.ts','client.tsx','styles.css'])copyFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)),'src',file),path.join(destination,file));
+console.log(`Shared CMS source synchronized to ${destination}`);

@@ -265,9 +265,24 @@ test("Registry authorizes operators, preserves ownership and records atomic immu
     const api = (path: string[], method = "GET", body?: unknown) => handleRegistryRequest(new Request("http://localhost:3120/api/registry/" + path.join("/"), {
       method, headers: { Authorization: "Bearer test", "Content-Type": "application/json" }, ...(body ? { body: JSON.stringify(body) } : {}),
     }), path, { getCMS: async () => p, authenticate: async () => ({ subject: "api-test-operator", scopes: new Set(["webdock:read", "webdock:write"]) }) });
-    const apiCustomerResponse = await api(["customers"], "POST", { name: "API customer" });
+    const profile = {
+      name: "API customer", customerType: "person", firstName: "Ada", lastName: "Lovelace",
+      companyName: "Example Ltd", contactName: "Ada Lovelace", contactEmail: "ada@example.invalid",
+      phone: "+49 123 456", addressLine1: "Example Street 1", addressLine2: "Floor 2",
+      postalCode: "01234", city: "Berlin", region: "Berlin", country: "de", notes: "Operator only",
+    };
+    const apiCustomerResponse = await api(["customers"], "POST", profile);
     assert.equal(apiCustomerResponse.status, 201);
     const apiCustomer = await apiCustomerResponse.json();
+    const persistedProfile = await (await api(["customers", apiCustomer.id])).json();
+    for (const [key, value] of Object.entries(profile)) assert.equal(persistedProfile[key], key === "country" ? "DE" : value);
+    assert.equal((await api(["customers", apiCustomer.id], "PUT", { name: profile.name, phone: null, addressLine2: null })).status, 200);
+    const updatedProfile = await (await api(["customers", apiCustomer.id])).json();
+    assert.equal(updatedProfile.customerType, "person", "Omitting the type preserves a personal customer");
+    assert.equal(updatedProfile.firstName, "Ada");
+    assert.equal(updatedProfile.phone, null);
+    assert.equal(updatedProfile.addressLine2, null);
+    assert.equal(customer.customerType, "company", "Legacy customer creation defaults to company");
     const apiProjectResponse = await api(["projects"], "POST", { name: "API project", customer: apiCustomer.id });
     assert.equal(apiProjectResponse.status, 201);
     const apiProject = await apiProjectResponse.json();

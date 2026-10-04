@@ -24,6 +24,9 @@ export default async function Customers({
             {
               or: [
                 { name: { contains: query.q } },
+                { firstName: { contains: query.q } },
+                { lastName: { contains: query.q } },
+                { companyName: { contains: query.q } },
                 { contactName: { contains: query.q } },
                 { contactEmail: { contains: query.q } },
               ],
@@ -53,7 +56,7 @@ export default async function Customers({
       <div className="page-heading">
         <div>
           <h1>Customers</h1>
-          <p>The people and organisations behind your projects.</p>
+          <p>Each customer has a tenant for their projects, with access by invitation.</p>
         </div>
         <Link className="button" href="/customers/new">
           New customer +
@@ -89,6 +92,7 @@ export default async function Customers({
                   <Link className="project-name" href={"/customers/" + c.id}>
                     {c.name}
                   </Link>
+                  <small>{c.customerType === "person" ? "Person" : "Company"} · Tenant</small>
                 </td>
                 <td data-label="Contact">
                   {c.contactName || "No contact person"}

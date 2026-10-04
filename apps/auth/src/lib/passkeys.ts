@@ -6,19 +6,10 @@ import {
 } from "better-auth/api";
 import { twoFactor } from "better-auth/plugins";
 
-export function twoFactorWithPasskeys() {
-  const plugin = twoFactor({
-    issuer: "Webdock",
-    skipVerificationOnEnable: false,
-  });
-  // Better Auth only challenges password sign-ins by default. Reuse its entire
-  // challenge handler, including session deletion, recovery and attempt limits.
-  for (const hook of plugin.hooks.after) {
-    const matches = hook.matcher;
-    hook.matcher = (ctx) =>
-      ctx.path === "/passkey/verify-authentication" || matches(ctx);
-  }
-  return plugin;
+// Password sign-ins use Better Auth's native MFA challenge. Passkey sign-ins
+// instead require cryptographically verified device confirmation below.
+export function passwordTwoFactor() {
+  return twoFactor({ issuer: "Webdock", skipVerificationOnEnable: false });
 }
 
 export function passkeySecurity(baseURL: string) {

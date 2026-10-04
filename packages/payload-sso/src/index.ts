@@ -17,15 +17,17 @@ const role = (value: unknown): value is Role => roles.includes(value as Role)
 const nativeAuthRoutes = ['login', 'logout', 'forgot', 'reset', 'create-first-user', 'unauthorized']
 
 /** Return only normalized admin paths; never accept another origin or an auth loop. */
-export function safeAdminReturnTo(value: unknown): string | null {
-  if (typeof value !== 'string' || value.length > 2048 || !value.startsWith('/admin')
+export function safeAdminReturnTo(value: unknown, extraPrefixes: readonly string[] = []): string | null {
+  const prefixes = ['/admin', '/cms', '/system', ...extraPrefixes]
+  const allowed = (pathname: string) => prefixes.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`))
+  if (typeof value !== 'string' || value.length > 2048 || !value.startsWith('/')
     || /[\\\u0000-\u0020]/.test(value)) return null
   try {
     const url = new URL(value, 'https://admin.invalid')
     // Reject encoded separators and double encoding before checking the route boundary.
     if (url.origin !== 'https://admin.invalid' || url.pathname.includes('//') || /%(?:2f|5c|25)/i.test(url.pathname)) return null
     const pathname = decodeURIComponent(url.pathname)
-    if (/[\\\u0000-\u0020]/.test(pathname) || (pathname !== '/admin' && !pathname.startsWith('/admin/'))
+    if (/[\\\u0000-\u0020]/.test(pathname) || !allowed(pathname)
       || nativeAuthRoutes.includes(pathname.split('/')[2]?.toLowerCase() ?? '')) return null
     return `${url.pathname}${url.search}${url.hash}`
   } catch { return null }
@@ -73,6 +75,10 @@ export type PayloadSSOOptions = {
   centralLogout?: boolean
   /** Development only: both issuer and application must be HTTP loopback origins. */
   allowLocalHTTP?: boolean
+  /** Studio portal only; unmapped customers never gain native Payload access. */
+  allowUnmappedPortalUsers?: boolean
+  /** Explicit application-owned path prefixes, in addition to CMS return paths. */
+  returnToPrefixes?: readonly string[]
 }
 
 export function configurePayloadSSO(options: PayloadSSOOptions) {
@@ -105,6 +111,7 @@ export function configurePayloadSSO(options: PayloadSSOOptions) {
   const callbackURL = appURL('/api/sso/callback')
   const successURL = appURL(options.successPath ?? '/admin')
   const logoutURL = appURL(options.logoutPath ?? '/login')
+  const returnPath = (value: unknown) => safeAdminReturnTo(value, options.returnToPrefixes)
   let discovery: Promise<oidc.Configuration> | undefined
   const configuration = () => discovery ??= oidc.discovery(issuer, clientId, clientSecret, oidc.ClientSecretPost(clientSecret), {
     timeout: 5, execute: localHTTP ? [oidc.allowInsecureRequests, oidc.enableNonRepudiationChecks] : [oidc.enableNonRepudiationChecks],
@@ -181,6 +188,16 @@ export function configurePayloadSSO(options: PayloadSSOOptions) {
     strategy: { name: 'webdock-sso', authenticate },
     hooks,
     hasSessionCookie: (headers: Headers) => (headers.get('cookie') ?? '').split(';').some(part => part.trim().startsWith(`${SESSION}=`)),
+    /** Server-only delegation. Never serialize this value into browser props. */
+    async getDelegatedSession(headers: Headers) {
+      const stored = await session(headers)
+      if (!stored) return null
+      const identity = await introspect(stored.accessToken)
+      if (!identity || identity.sub !== stored.sub) return null
+      if ((!options.allowUnmappedPortalUsers || identity.role === 'operator')
+        && !await findUser(await options.getPayload(), identity)) return null
+      return { subject: identity.sub, role: identity.role, accessToken: stored.accessToken, expiresAt: Math.min(stored.exp, identity.exp) }
+    },
     async refresh(request: Request): Promise<Response> {
       if (request.method !== 'POST') return respond(405)
       const { user } = await authenticate({ headers: request.headers, payload: await options.getPayload() })
@@ -193,7 +210,7 @@ export function configurePayloadSSO(options: PayloadSSOOptions) {
       try {
         const verifier = oidc.randomPKCECodeVerifier()
         const flow: Flow = { kind: 'flow', verifier, state: oidc.randomState(), nonce: oidc.randomNonce(), exp: now() + FLOW_AGE,
-          returnTo: safeAdminReturnTo(new URL(request.url).searchParams.get('returnTo')) ?? undefined }
+          returnTo: returnPath(new URL(request.url).searchParams.get('returnTo')) ?? undefined }
         const url = oidc.buildAuthorizationUrl(await configuration(), {
           response_type: 'code', redirect_uri: callbackURL, scope: 'openid profile email',
           code_challenge: await oidc.calculatePKCECodeChallenge(verifier), code_challenge_method: 'S256',
@@ -226,12 +243,12 @@ export function configurePayloadSSO(options: PayloadSSOOptions) {
         stage='introspection'
         const identity = await introspect(tokens.access_token)
         stage='mapping'
-        if (!identity || tokens.claims()?.sub !== identity.sub || !await findUser(await options.getPayload(), identity)) {
+        if (!identity || tokens.claims()?.sub !== identity.sub || ((!options.allowUnmappedPortalUsers || identity.role === 'operator') && !await findUser(await options.getPayload(), identity))) {
           throw new Error('No mapped application access')
         }
         const stored: Session = { kind: 'session', accessToken: tokens.access_token, sub: identity.sub, exp: identity.exp }
         if (options.centralLogout) stored.idToken = tokens.id_token
-        const returnTo = safeAdminReturnTo(flow.returnTo)
+        const returnTo = returnPath(flow.returnTo)
         response = respond(302, null, returnTo ? appURL(returnTo) : successURL)
         clear(response, 'payload-token')
         response.headers.append('Set-Cookie', cookie(SESSION, await sealData(stored, { password, ttl: SESSION_AGE }), identity.exp - now()))

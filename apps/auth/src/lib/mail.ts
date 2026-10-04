@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { publicPlatformSettings } from "./platform";
 export const testOutbox: { to: string; subject: string; text: string }[] = [];
 export async function sendAuthMail(message: {
   to: string;
@@ -29,11 +30,13 @@ export async function sendAuthMail(message: {
     connectionTimeout: 10000,
     socketTimeout: 15000,
   });
+  const platform = await publicPlatformSettings();
   await transport.sendMail({
     ...message,
     from: {
-      name: "Webdock",
+      name: platform.name,
       address: process.env.SMTP_FROM || "noreply@webdock.dev",
     },
+    replyTo: platform.supportEmail,
   });
 }

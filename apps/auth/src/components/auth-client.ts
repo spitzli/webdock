@@ -9,6 +9,7 @@ import {
 } from "better-auth/client/plugins";
 import { oauthProviderClient } from "@better-auth/oauth-provider/client";
 import { passkeyClient } from "@better-auth/passkey/client";
+import { accountContinuation } from "../lib/account-continuation";
 
 const identityPlugins = [
   passkeyClient(),
@@ -44,5 +45,10 @@ export function goToAccount(data: unknown) {
       ("twoFactorRedirect" in data && data.twoFactorRedirect))
   )
     return;
+  const continuation = accountContinuation(window.location.search);
+  if (continuation) {
+    window.location.assign(continuation);
+    return;
+  }
   window.location.assign(`/account${window.location.search}`);
 }

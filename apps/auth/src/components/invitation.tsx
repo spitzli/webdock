@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { accountClient } from "./auth-client";
 import { AuthPanel } from "./auth-forms";
 
-export function Invitation({ id }: { id: string }) {
+export function Invitation({ id, tenantsURL }: { id: string; tenantsURL: string }) {
   const [invitation, setInvitation] = useState<{
     organizationName: string;
     email: string;
@@ -52,7 +51,7 @@ export function Invitation({ id }: { id: string }) {
     {decision ? <>
       <p className="notice" role="status">{decision === "accepted" ? `You have joined ${invitation?.organizationName}.` : "You have declined this invitation."}</p>
       {decision === "accepted" && <p className="muted">Your administrator manages access to individual projects and websites.</p>}
-      <Link className="button" href="/account">Go to your account</Link>
+      <a className="button" href={tenantsURL}>Go to your tenants</a>
     </> : invitation && <>
       <p>You have been invited to join <strong>{invitation.organizationName}</strong>.</p>
       <p className="muted">For {invitation.email}<br />Organization role: {invitation.role}</p>
