@@ -20,6 +20,7 @@ const unavailable = () =>
 const conflict = () =>
   new HostingError(409, "Git deployment changed. Refresh and try again.");
 type SourceRow = {
+  health_path: string;
   id: string; customer_id: string; project_id: string; connection_id: string;
   repository_id: string; branch: string; root_directory: string; recipe: string;
   build_provider: string; workflow_path: string; artifact_prefix: string; target_id: string;

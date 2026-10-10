@@ -229,7 +229,7 @@ export function createGitVercelObserver(
         );
         const hosts: string[] = Array.isArray(aliases.aliases)
           ? aliases.aliases
-              .map((alias: any) => alias.alias)
+              .map((alias: unknown) => alias && typeof alias === "object" && "alias" in alias ? alias.alias : undefined)
               .filter(
                 (host: unknown): host is string =>
                   typeof host === "string" &&
@@ -241,14 +241,14 @@ export function createGitVercelObserver(
           .slice(0, 3)) {
           const path = "/v4/aliases/" + encodeURIComponent(host);
           const before = await json(path, credential.token, credential.teamID);
-          const matches = (alias: any) =>
+          const matches = (alias: Record<string, unknown>) =>
             alias.alias === host &&
             alias.projectId === credential.projectID &&
             alias.deploymentId === identity.deploymentID &&
             !alias.deletedAt &&
             !alias.redirect &&
             (!alias.deployment ||
-              alias.deployment.id === identity.deploymentID) &&
+              (typeof alias.deployment === "object" && "id" in alias.deployment && alias.deployment.id === identity.deploymentID)) &&
             typeof alias.uid === "string" &&
             Number.isSafeInteger(alias.updatedAt);
           if (!matches(before) || !(await probe("https://" + host))) continue;
