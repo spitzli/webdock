@@ -12,6 +12,7 @@ import {
   registerGitConnection,
   enrollGitWorker,
   claimGitBuild,
+  prepareGitActionsArtifact,
   completeGitBuild,
   receiveGitEvent,
   processGitChecks,
@@ -832,6 +833,219 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
   const replacementPublication = await claimGitRelease(enrolled.credential);
   assert.equal(replacementPublication?.releaseID, replacementDone.release!.id);
   await completeGitRelease(enrolled.credential, { releaseID: replacementPublication!.releaseID, generation: replacementPublication!.generation, status: "failed" });
+  // Actions receipts preserve connection authority and cannot be claimed by source executors.
+  await database.query(
+    "UPDATE webdock_auth.git_connection SET permissions=permissions || jsonb_build_object('actions','read') WHERE id=$1",
+    [connection.id],
+  );
+  await database.query(
+    "UPDATE webdock_auth.git_source SET build_environment_encrypted=NULL WHERE project_id=$1",
+    [project],
+  );
+  const actionsSource = await call({
+    action: "git.source.configure",
+    projectID: project,
+    connectionID: connection.id,
+    repositoryID: binding.repositoryID,
+    branch: "main",
+    rootDirectory: ".",
+    recipe: "dockerfile",
+    targetID: replacementApp,
+    revision: 5,
+    buildProvider: "github-actions",
+  });
+  assert.equal(actionsSource.buildProvider, "github-actions");
+  await assert.rejects(
+    call({
+      action: "git.builds.request",
+      projectID: project,
+      idempotencyKey: key(),
+    }),
+    /configured workflow/,
+  );
+  const publisher = await enrollGitWorker(actor, {
+    country: "DE",
+    isolation: "artifact-only",
+    evidence: "Fixture trusted artifact publisher; no source execution",
+    capacity: 1,
+  });
+  const artifact = {
+    id: "123456",
+    name: "webdock-" + "a".repeat(40),
+    sizeBytes: 123,
+    digest: "sha256:" + "f".repeat(64),
+    downloadURL: "https://productionresultssa0.blob.core.windows.net/fixture",
+  };
+  const verified = {
+    runID: "123",
+    runAttempt: 1,
+    workflowID: "456",
+    workflowPath: ".github/workflows/webdock.yml",
+    repositoryID: binding.repositoryID,
+    sha: "a".repeat(40),
+    branch: "main",
+    createdAt: new Date(Date.now() + 1000).toISOString(),
+    artifact,
+  };
+  const actionsProvider = {
+    ...fake,
+    verifyActionsRun: async () => verified,
+  } as unknown as ReturnType<typeof createGitHubProvider>;
+  const actionsEvent = {
+    deliveryID: key(),
+    event: "workflow_run",
+    installationID: binding.installationID,
+    repositoryID: binding.repositoryID,
+    branch: "main",
+    sha: "a".repeat(40),
+    runID: "123",
+    runAttempt: 1,
+    workflowPath: verified.workflowPath,
+    conclusion: "success",
+    action: "completed",
+  };
+  await receiveGitEvent(actionsEvent);
+  assert.equal((await processGitEvents(actionsProvider)).queued, 1);
+  assert.equal(
+    (
+      await database.query(
+        "SELECT state FROM webdock_auth.git_connection WHERE id=$1",
+        [connection.id],
+      )
+    ).rows[0].state,
+    "active",
+  );
+  await receiveGitEvent({ ...actionsEvent, deliveryID: key() });
+  assert.equal((await processGitEvents(actionsProvider)).queued, 0);
+  assert.equal(await claimGitBuild(enrolled.credential), null);
+  const importJob = await claimGitBuild(publisher.credential);
+  assert.equal(importJob?.buildProvider, "github-actions");
+  const importRow = (
+    await database.query(
+      "SELECT b.*,s.build_provider,s.workflow_path,s.artifact_prefix,s.branch,s.repository_id,c.installation_id FROM webdock_auth.git_build b JOIN webdock_auth.git_source s ON s.id=b.source_id JOIN webdock_auth.git_connection c ON c.id=s.connection_id WHERE b.id=$1",
+      [importJob!.buildID],
+    )
+  ).rows[0];
+  assert.equal(importRow.actions_provenance.artifact.downloadURL, undefined);
+  assert.deepEqual(
+    await prepareGitActionsArtifact(importRow, actionsProvider),
+    artifact,
+  );
+  await assert.rejects(
+    prepareGitActionsArtifact(importRow, {
+      ...actionsProvider,
+      verifyActionsRun: async () => ({
+        ...verified,
+        artifact: { ...artifact, id: "999" },
+      }),
+    } as unknown as ReturnType<typeof createGitHubProvider>),
+  );
+  await assert.rejects(
+    prepareGitActionsArtifact(importRow, {
+      ...actionsProvider,
+      resolveSource: async () => ({ sha: "b".repeat(40) }),
+    } as unknown as ReturnType<typeof createGitHubProvider>),
+  );
+  await assert.rejects(
+    completeGitBuild(
+      publisher.credential,
+      {
+        buildID: importJob!.buildID,
+        generation: importJob!.generation,
+        status: "succeeded",
+        logs: "",
+        artifact: {
+          kind: "oci",
+          digest: "sha256:" + "f".repeat(64),
+          storageKey: `${customer}/${importJob!.buildID}/${importJob!.generation}/${"f".repeat(64)}.tar`,
+          sizeBytes: 123,
+        },
+      },
+      {
+        ...actionsProvider,
+        resolveSource: async () => ({ sha: "b".repeat(40) }),
+      } as unknown as ReturnType<typeof createGitHubProvider>,
+    ),
+  );
+  const imported = await completeGitBuild(
+    publisher.credential,
+    {
+      buildID: importJob!.buildID,
+      generation: importJob!.generation,
+      status: "succeeded",
+      logs: "",
+      artifact: {
+        kind: "oci",
+        digest: "sha256:" + "f".repeat(64),
+        storageKey: `${customer}/${importJob!.buildID}/${importJob!.generation}/${"f".repeat(64)}.tar`,
+        sizeBytes: 123,
+      },
+    },
+    actionsProvider,
+  );
+  assert.equal(imported.release!.status, "awaiting-approval");
+  await call({
+    action: "git.releases.approve",
+    projectID: project,
+    releaseID: imported.release!.id,
+    revision: 1,
+    idempotencyKey: key(),
+  });
+  assert.equal(await claimGitRelease(enrolled.credential), null);
+  const importedRelease = await claimGitRelease(publisher.credential);
+  assert.equal(importedRelease?.releaseID, imported.release!.id);
+  await completeGitRelease(publisher.credential, {
+    releaseID: importedRelease!.releaseID,
+    generation: importedRelease!.generation,
+    status: "failed",
+  });
+  await assert.rejects(
+    call({
+      action: "git.source.configure",
+      projectID: project,
+      connectionID: connection.id,
+      repositoryID: binding.repositoryID,
+      branch: "main",
+      rootDirectory: ".",
+      recipe: "dockerfile",
+      targetID: replacementApp,
+      revision: 6,
+      buildProvider: "github-actions",
+      buildEnvironment: [{ name: "BUILD_SECRET", value: "no-export" }],
+    }),
+    /build variables/,
+  );
+  await receiveGitEvent({ ...actionsEvent, deliveryID: key(), runID: "124" });
+  assert.equal(
+    (
+      await processGitEvents({
+        ...actionsProvider,
+        verifyActionsRun: async () => ({
+          ...verified,
+          runID: "124",
+          createdAt: "2000-01-01T00:00:00Z",
+        }),
+      } as unknown as ReturnType<typeof createGitHubProvider>)
+    ).queued,
+    0,
+  );
+  // Delayed completion for the same SHA cannot make an older run the desired build.
+  for (const older of [
+    { runID: "122", createdAt: verified.createdAt },
+    { runID: "125", createdAt: new Date(Date.parse(verified.createdAt) - 100).toISOString() },
+  ]) {
+    await receiveGitEvent({ ...actionsEvent, deliveryID: key(), runID: older.runID });
+    assert.equal((await processGitEvents({ ...actionsProvider, verifyActionsRun: async () => ({ ...verified, ...older }) } as unknown as ReturnType<typeof createGitHubProvider>)).queued, 0);
+    assert.equal((await database.query("SELECT latest_build_id FROM webdock_auth.git_source WHERE project_id=$1", [project])).rows[0].latest_build_id, importJob!.buildID);
+  }
+  for (const override of [
+    { runAttempt: 2 },
+    { workflowPath: ".github/workflows/other.yml" },
+    { sha: "b".repeat(40) },
+  ]) {
+    await receiveGitEvent({ ...actionsEvent, ...override, deliveryID: key() });
+    assert.equal((await processGitEvents(actionsProvider)).queued, 0);
+  }
   // GitHub revocation prevents new writes, but must still allow historical observation.
   await database.query("UPDATE webdock_auth.git_release SET status='needs-reconciliation' WHERE id=$1", [registryFailure.id]);
   const currentConnection = (await database.query("SELECT revision FROM webdock_auth.git_connection WHERE id=$1", [connection.id])).rows[0];

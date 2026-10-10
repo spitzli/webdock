@@ -8,10 +8,10 @@ import worker
 class RealVercelOutputTests(unittest.TestCase):
     def output(self, directory):
         root=Path(directory)
-        (root/'config.json').write_text(json.dumps({'version':3,'routes':[],'crons':[]}))
+        (root/'config.json').write_text(json.dumps({'version':3,'routes':[],'crons':[],'framework':{'slug':'nextjs','version':'16.3.8'}}))
         (root/'builds.json').write_text(json.dumps({'target':'production','cliVersion':'63.1.2','builds':[]}))
         fn=root/'functions/api/health.func';fn.mkdir(parents=True)
-        config={'handler':'api/health.js','runtime':'nodejs24.x','architecture':'x86_64','environment':{},'shouldDisableAutomaticFetchInstrumentation':False,'launcherType':'Nodejs','shouldAddHelpers':True,'shouldAddSourcemapSupport':False,'awsLambdaHandler':''}
+        config={'operationType':'API','supportsMultiPayloads':True,'experimentalAllowBundling':False,'framework':{'slug':'nextjs','version':'16.3.8'},'handler':'api/health.js','runtime':'nodejs24.x','architecture':'x86_64','environment':{},'shouldDisableAutomaticFetchInstrumentation':False,'launcherType':'Nodejs','shouldAddHelpers':True,'shouldAddSourcemapSupport':False,'awsLambdaHandler':''}
         (fn/'.vc-config.json').write_text(json.dumps(config))
         return root,fn,config
     def test_real_cli_output_uses_trusted_publisher_default_region(self):
@@ -33,3 +33,9 @@ class RealVercelOutputTests(unittest.TestCase):
                 root,_,_=self.output(directory)
                 (root/'builds.json').write_text(json.dumps(metadata))
                 with self.assertRaises(worker.Rejected):worker.validate_vercel(root)
+
+    def test_artifact_cannot_enable_local_bundling(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root,fn,config=self.output(directory);config['experimentalAllowBundling']=True
+            (fn/'.vc-config.json').write_text(json.dumps(config))
+            with self.assertRaises(worker.Rejected):worker.validate_vercel(root)

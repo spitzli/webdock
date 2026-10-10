@@ -218,11 +218,12 @@ export async function prepareGitVercelBuild(
     throw missing(
       "Disconnect native Vercel Git builds before enabling Webdock publication.",
     );
+  const resourceConfig = project.resourceConfig ?? project;
   if (
-    !Array.isArray(project.functionDefaultRegions) ||
-    project.functionDefaultRegions.length !== 1 ||
-    project.functionDefaultRegions[0] !== "fra1" ||
-    project.functionZeroConfigFailover !== false
+    !Array.isArray(resourceConfig.functionDefaultRegions) ||
+    resourceConfig.functionDefaultRegions.length !== 1 ||
+    resourceConfig.functionDefaultRegions[0] !== "fra1" ||
+    resourceConfig.functionZeroConfigFailover !== false
   )
     throw missing(
       "Configure Frankfurt Functions and disable cross-region failover before publication.",

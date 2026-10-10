@@ -1,0 +1,26 @@
+[Unit]
+Description=Webdock GitHub Actions artifact importer and publisher
+After=network-online.target
+
+[Service]
+Type=simple
+User=webdock-publisher
+Group=webdock-publisher
+ExecStart=/usr/bin/python3 /opt/webdock-build-worker/worker.py --config /etc/webdock-artifact-publisher/config.json
+Restart=on-failure
+RestartSec=10
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/webdock-artifact-publisher
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryMax=4G
+TasksMax=128
+CPUQuota=200%
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

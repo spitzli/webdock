@@ -17,6 +17,9 @@ type Source = {
   revision: number;
   enabled: boolean;
   autoPublish: boolean;
+  buildProvider: "isolated" | "github-actions";
+  workflowPath: string;
+  artifactPrefix: string;
   buildEnvironmentNames: string[];
 };
 type Connection = {
@@ -247,6 +250,11 @@ export default async function GitDeployments({
                 revision: source?.revision ?? 0,
                 enabled: source?.enabled ?? true,
                 autoPublish: source?.autoPublish ?? false,
+                buildProvider: source?.buildProvider ?? "github-actions",
+                workflowPath:
+                  source?.workflowPath ??
+                  ".github/workflows/production-build.yml",
+                artifactPrefix: source?.artifactPrefix ?? "webdock",
               }}
               label={t("Save deployment source")}
             >
@@ -287,6 +295,44 @@ export default async function GitDeployments({
                   defaultValue={source?.rootDirectory ?? "."}
                 />
               </label>
+              <label className="field">
+                {t("Build provider")}
+                <select
+                  name="buildProvider"
+                  defaultValue={source?.buildProvider ?? "github-actions"}
+                >
+                  <option value="github-actions">GitHub Actions</option>
+                  <option value="isolated">
+                    {t("Isolated Webdock worker")}
+                  </option>
+                </select>
+              </label>
+              <label className="field">
+                {t("GitHub Actions workflow")}
+                <input
+                  name="workflowPath"
+                  defaultValue={
+                    source?.workflowPath ??
+                    ".github/workflows/production-build.yml"
+                  }
+                  maxLength={240}
+                  required
+                />
+              </label>
+              <label className="field">
+                {t("Artifact name prefix")}
+                <input
+                  name="artifactPrefix"
+                  defaultValue={source?.artifactPrefix ?? "webdock"}
+                  maxLength={80}
+                  required
+                />
+              </label>
+              <p>
+                {t(
+                  "GitHub builds the artifact. Webdock verifies and publishes it. Artifact names end with the exact commit SHA.",
+                )}
+              </p>
               <label className="field">
                 {t("Build recipe")}
                 <select
@@ -352,15 +398,24 @@ export default async function GitDeployments({
       </section>
       <section className="panel">
         <h2>{t("Builds")}</h2>
-        {source?.enabled && data.canManage && (
-          <HostingForm
-            command={{
-              action: "git.builds.request",
-              projectID,
-              idempotencyKey: randomUUID(),
-            }}
-            label={t("Build latest commit")}
-          />
+        {source?.enabled &&
+          data.canManage &&
+          source.buildProvider !== "github-actions" && (
+            <HostingForm
+              command={{
+                action: "git.builds.request",
+                projectID,
+                idempotencyKey: randomUUID(),
+              }}
+              label={t("Build latest commit")}
+            />
+          )}
+        {source?.buildProvider === "github-actions" && (
+          <p>
+            {t(
+              "Push to the configured branch or start a new workflow in GitHub Actions. Re-running an existing run is not supported.",
+            )}
+          </p>
         )}
         <HostingTable
           rows={builds.docs}

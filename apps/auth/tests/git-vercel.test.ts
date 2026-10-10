@@ -193,3 +193,29 @@ test("platform credential requires a matching persisted tenant/project target bi
     }
   }
 });
+test("reads real project resourceConfig and rejects unsafe nested settings without legacy fallback", async () => {
+  const { functionDefaultRegions, functionZeroConfigFailover, ...actualProject } = project;
+  const input = { buildEnvironment: {}, allowedBuildVariables: [] };
+  const resourceConfig = { functionDefaultRegions, functionZeroConfigFailover };
+  const nested = await prepareGitVercelBuild(credential, input, fake({
+    "/v9/projects/prj_app": { ...actualProject, resourceConfig },
+  }));
+  const legacy = await prepareGitVercelBuild(credential, input, fake());
+  assert.deepEqual(nested.vercelSettings, legacy.vercelSettings);
+  assert.equal(nested.configurationChecksum, legacy.configurationChecksum);
+  for (const unsafe of [
+    {},
+    { functionDefaultRegions: ["iad1"], functionZeroConfigFailover: false },
+    { functionDefaultRegions: ["fra1", "iad1"], functionZeroConfigFailover: false },
+    { functionDefaultRegions: ["fra1"], functionZeroConfigFailover: true },
+    { functionDefaultRegions: ["fra1"] },
+  ]) {
+    await assert.rejects(prepareGitVercelBuild(credential, input, fake({
+      "/v9/projects/prj_app": { ...project, resourceConfig: unsafe },
+    })), /Frankfurt/);
+  }
+  for (const wrongIdentity of [{ id: "prj_other" }, { accountId: "team_other" }])
+    await assert.rejects(prepareGitVercelBuild(credential, input, fake({
+      "/v9/projects/prj_app": { ...actualProject, resourceConfig, ...wrongIdentity },
+    })), /could not be verified/);
+});

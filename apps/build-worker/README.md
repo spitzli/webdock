@@ -3,7 +3,9 @@
 This worker is **disabled until provisioned and independently verified**. Unit tests use
 fake commands; the opt-in local KVM acceptance below executes real disposable guests.
 Neither establishes EU placement, registry permissions, or a successful Vercel
-deployment. Never run it on a production application/control node.
+deployment. Never run the QEMU build mode on a production application/control node.
+The separate artifact-only mode below performs no customer code execution and may
+run as an unprivileged service on an existing application node.
 
 EU placement is preferred, not an enrollment requirement. Record the actual uppercase
 two-letter country code. For an unknown location use `ZZ` and explicitly include
@@ -180,3 +182,43 @@ Input uses a **read-only virtio block disk** with serial `webdock-input`, and th
 root disk has an explicit boot index. Bulk fw_cfg sysfs reads proved prohibitively
 slow on real KVM. The guest loops over short virtio-serial writes; a single raw
 write can accept only 32 KiB and silently truncate a larger artifact.
+
+## GitHub Actions artifact-only importer and publisher
+
+Set `isolation` to `artifact-only` and enroll the matching artifact-only worker role.
+Use `webdock-artifact-publisher.service` with a dedicated `webdock-publisher` user,
+root-owned configuration/credential, private `/var/lib/webdock-artifact-publisher/artifacts`,
+and the same pinned Vercel CLI 63.1.2 and skopeo required for publication. No KVM,
+VM image, Docker socket, build tools or dependency proxy is required. Configuration
+still records `country`, `locationEvidence`, `isolationEvidence` (describe the
+artifact-only boundary), and `storageEvidence`; it must also include `controlURL`,
+`credentialFile`, `artifactRoot`, and any operator-owned `registryProjects` policy.
+The service uses `/etc/webdock-artifact-publisher/config.json`.
+
+This mode leases only GitHub Actions imports through the existing claim/complete
+protocol, alternates imports with approved publication, and retains local artifact
+ownership for rollback/retention. Unexpected build providers fail closed without
+source download or VM execution. The control service verifies repository access,
+workflow identity, successful run attempt 1, exact source commit and configured
+artifact name before issuing a short-lived download descriptor. GitHub App and
+publisher credentials are never forwarded to artifact storage.
+
+The downloaded ZIP must contain exactly `manifest.json` and `artifact.tar`.
+The importer compares the GitHub archive SHA-256/size, then the manifest's
+repository, commit, ref, workflow, run ID/attempt and inner TAR SHA-256. ZIP links,
+extra/duplicate entries, encrypted files, traversal and oversized members fail closed.
+Only GitHub Actions result hosts and `productionresultssa*.blob.core.windows.net`
+HTTPS hosts are allowed, without redirects or Authorization headers. ZIP is limited
+to 513 MiB, manifest to 64 KiB and TAR to 512 MiB; existing TAR path/type/count limits
+apply. Keep at least several GiB of staging space available for nested validation.
+
+Bot TARs contain only `image.tar`, validated recursively as single-platform OCI.
+Panel TARs contain `.vercel/output`, `.vercel/project.json`, and trusted
+`vercel.json` containing only Frankfurt regions. Panel manifest `vercel` metadata
+must match CLI 63.1.2, Node 24, production target, configured source directory and
+trusted project/org/settings. Project settings normalize `rootDirectory` to null
+because Actions builds inside that source directory. The importer discards the
+project configuration and stores only validated Build Output API output. Local
+publication recreates its own trusted project configuration. Customer scripts,
+package hooks, source configuration and artifact functions are never executed by
+this service. The supported Next.js output metadata cannot enable local bundling.

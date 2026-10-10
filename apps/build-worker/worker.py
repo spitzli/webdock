@@ -115,9 +115,14 @@ def private_file(path):
 
 def validate_config(config):
     try:
-        if not re.fullmatch(r'[A-Z]{2}',config['country']) or (config['country']=='ZZ' and not re.search(r'\bunverified\b',config['locationEvidence'],re.I)) or config['isolation']!='qemu-kvm' or not config['locationEvidence'] or not config['isolationEvidence'] or not config['storageEvidence']:
+        if not re.fullmatch(r'[A-Z]{2}',config['country']) or (config['country']=='ZZ' and not re.search(r'\bunverified\b',config['locationEvidence'],re.I)) or config['isolation'] not in ('qemu-kvm','artifact-only') or not config['locationEvidence'] or not config['isolationEvidence'] or not config['storageEvidence']:
             raise Rejected('setup_required')
         if not re.fullmatch(r'https://[^/?#]+(?:/[^?#]*)?',config['controlURL']):raise Rejected('setup_required')
+        if config['isolation']=='artifact-only':
+            private_file(config['credentialFile'])
+            store=Path(config['artifactRoot'])
+            if not store.is_absolute() or store.is_symlink() or store.stat().st_mode & 0o077:raise Rejected('unsafe_store')
+            return
         if not re.fullmatch(r'[0-9a-f]{64}',config['imageSHA256']):raise Rejected('setup_required')
         if not Path('/dev/kvm').exists():raise Rejected('kvm_required')
         base=private_file(config['image'])
@@ -281,7 +286,9 @@ def validate_oci(path):
 def validate_vercel(output):
     tree_size(output)
     config=json.loads((output/'config.json').read_text())
-    if config.get('version')!=3 or set(config)-{'version','routes','images','wildcard','overrides','cache','crons','regions'}:raise Rejected('invalid_vercel_output')
+    if config.get('version')!=3 or set(config)-{'version','routes','images','wildcard','overrides','cache','crons','regions','framework'}:raise Rejected('invalid_vercel_output')
+    framework=config.get('framework')
+    if framework is not None and (not isinstance(framework,dict) or set(framework)-{'slug','version'} or any(not isinstance(v,str) or len(v)>200 for v in framework.values())):raise Rejected('invalid_vercel_output')
     for key,value in config.get('overrides',{}).items():
         safe_path(key)
         if 'path' in value:safe_path(value['path'])
@@ -289,9 +296,13 @@ def validate_vercel(output):
     # Edge execution cannot satisfy verified Frankfurt functions.
     for path in output.rglob('.vc-config.json'):
         value=json.loads(path.read_text())
-        allowed={'runtime','handler','launcherType','shouldAddHelpers','shouldAddSourceMapSupport','shouldAddSourcemapSupport','shouldDisableAutomaticFetchInstrumentation','awsLambdaHandler','regions','memory','maxDuration','environment','filePathMap','architecture','experimentalResponseStreaming','supportsResponseStreaming'}
+        allowed={'runtime','handler','launcherType','shouldAddHelpers','shouldAddSourceMapSupport','shouldAddSourcemapSupport','shouldDisableAutomaticFetchInstrumentation','awsLambdaHandler','regions','memory','maxDuration','environment','filePathMap','architecture','experimentalResponseStreaming','supportsResponseStreaming','operationType','supportsMultiPayloads','framework','experimentalAllowBundling'}
         if not isinstance(value,dict) or set(value)-allowed:raise Rejected('unsupported_function_config')
-        for flag in ('shouldAddSourcemapSupport','shouldDisableAutomaticFetchInstrumentation'):
+        if value.get('operationType','API') not in ('API','Page','ISR'):raise Rejected('invalid_function_config')
+        if value.get('experimentalAllowBundling',False) is not False:raise Rejected('invalid_function_config')
+        framework=value.get('framework')
+        if framework is not None and (not isinstance(framework,dict) or set(framework)-{'slug','version'} or any(not isinstance(v,str) or len(v)>200 for v in framework.values())):raise Rejected('invalid_function_config')
+        for flag in ('shouldAddSourcemapSupport','shouldDisableAutomaticFetchInstrumentation','supportsMultiPayloads'):
             if flag in value and not isinstance(value[flag],bool):raise Rejected('invalid_function_config')
         if 'handler' in value:safe_path(value['handler'])
         mapping=value.get('filePathMap',{})
@@ -361,17 +372,23 @@ def run_once(config):
     if not job:return False
     result={'buildID':job['buildID'],'generation':job['generation']}
     try:
-        guest_request(job)
-        expires=datetime.datetime.fromisoformat(job['leaseUntil'].replace('Z','+00:00'))
-        if (expires-datetime.datetime.now(datetime.timezone.utc)).total_seconds()<job['limits']['durationSeconds']+60:raise Rejected('lease_too_short')
-        descriptor=control.request(f"/builds/{job['buildID']}/source?generation={job['generation']}")
-        source=download_source(descriptor,job)
-        def check_lease():
-            try:
-                active=control.request(f"/builds/{job['buildID']}/lease?generation={job['generation']}",timeout=5)
-                if active!={'active':True}:raise LeaseLost('build_lease_lost')
-            except Exception:raise LeaseLost('build_lease_lost') from None
-        artifact,logs=execute_vm(config,job,source,lease_check=check_lease)
+        if config.get('isolation')=='artifact-only':
+            import actions_import
+            if job.get('buildProvider')!='github-actions':raise Rejected('build_provider_denied')
+            artifact,logs=actions_import.import_artifact(config,job)
+        else:
+            if job.get('buildProvider')=='github-actions':raise Rejected('build_provider_denied')
+            guest_request(job)
+            expires=datetime.datetime.fromisoformat(job['leaseUntil'].replace('Z','+00:00'))
+            if (expires-datetime.datetime.now(datetime.timezone.utc)).total_seconds()<job['limits']['durationSeconds']+60:raise Rejected('lease_too_short')
+            descriptor=control.request(f"/builds/{job['buildID']}/source?generation={job['generation']}")
+            source=download_source(descriptor,job)
+            def check_lease():
+                try:
+                    active=control.request(f"/builds/{job['buildID']}/lease?generation={job['generation']}",timeout=5)
+                    if active!={'active':True}:raise LeaseLost('build_lease_lost')
+                except Exception:raise LeaseLost('build_lease_lost') from None
+            artifact,logs=execute_vm(config,job,source,lease_check=check_lease)
         result.update(status='succeeded',artifact=artifact,logs=logs)
     except LeaseLost:
         return True

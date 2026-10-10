@@ -70,6 +70,15 @@ export const gitCommands = [
       branch: gitBranch,
       rootDirectory: gitRootDirectory,
       recipe: z.enum(["dockerfile", "vercel"]),
+      buildProvider: z.enum(["isolated", "github-actions"]).default("isolated"),
+      workflowPath: z
+        .string()
+        .regex(/^\.github\/workflows\/[A-Za-z0-9_-]+\.ya?ml$/)
+        .default(".github/workflows/webdock.yml"),
+      artifactPrefix: z
+        .string()
+        .regex(/^[A-Za-z0-9_-]{1,80}$/)
+        .default("webdock"),
       targetID: z.string().regex(/^(?:[1-9][0-9]{0,18}|prj_[A-Za-z0-9]+)$/),
       revision,
       enabled: z.boolean().default(true),

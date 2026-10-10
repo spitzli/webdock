@@ -31,6 +31,9 @@ const sourceView = (r: any) =>
         branch: r.branch,
         rootDirectory: r.root_directory,
         recipe: r.recipe,
+        buildProvider: r.build_provider,
+        workflowPath: r.workflow_path,
+        artifactPrefix: r.artifact_prefix,
         targetID: r.target_id,
         revision: r.revision,
         enabled: r.enabled,
@@ -50,6 +53,14 @@ const buildView = (r: any) => ({
   createdAt: r.created_at,
   finishedAt: r.finished_at,
   logs: r.logs,
+  actionsRunURL:
+    r.actions_provenance?.artifact?.repository &&
+    /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(
+      r.actions_provenance.artifact.repository,
+    ) &&
+    /^[1-9][0-9]*$/.test(r.actions_provenance.runID)
+      ? `https://github.com/${r.actions_provenance.artifact.repository}/actions/runs/${r.actions_provenance.runID}`
+      : null,
   failureCode: r.failure_code,
 });
 const releaseView = (r: any) => ({
@@ -363,8 +374,10 @@ export async function executeGitDeployment(
           access.operator && access.project?.provider === "vercel",
         blockers: [
           ...(!process.env.WEBDOCK_GITHUB_APP_ID ||
-          !(process.env.WEBDOCK_GITHUB_APP_PRIVATE_KEY ||
-            process.env.WEBDOCK_GITHUB_PRIVATE_KEY)
+          !(
+            process.env.WEBDOCK_GITHUB_APP_PRIVATE_KEY ||
+            process.env.WEBDOCK_GITHUB_PRIVATE_KEY
+          )
             ? [
                 "Configure the GitHub App ID and private key in the private Auth environment.",
               ]
@@ -376,11 +389,18 @@ export async function executeGitDeployment(
             : []),
           ...(!(
             await db.query(
-              "SELECT id FROM webdock_auth.git_worker WHERE enabled LIMIT 1",
+              "SELECT id FROM webdock_auth.git_worker WHERE enabled AND isolation=$1 LIMIT 1",
+              [
+                s?.build_provider === "github-actions"
+                  ? "artifact-only"
+                  : "microvm",
+              ],
             )
           ).rows.length
             ? [
-                "Enroll verified isolated build capacity before requesting a build.",
+                s?.build_provider === "github-actions"
+                  ? "Enroll a trusted artifact publisher before importing Actions builds."
+                  : "Enroll verified isolated build capacity before requesting a build.",
               ]
             : []),
           ...(access.project?.provider === "k3s" &&
@@ -391,6 +411,33 @@ export async function executeGitDeployment(
       };
     }
     if (cmd.action === "git.source.configure") {
+      if (cmd.buildProvider === "github-actions") {
+        const environment = patchEnvironment(
+          s
+            ? openEnvironment(
+                "git-build:" + s.id,
+                s.build_environment_encrypted,
+              )
+            : {},
+          cmd.buildEnvironment ?? [],
+        );
+        if (Object.keys(environment).length)
+          throw new HostingError(
+            422,
+            "Configure build variables in GitHub Actions before using external builds.",
+          );
+        const permissions = (
+          await db.query(
+            "SELECT permissions FROM webdock_auth.git_connection WHERE id=$1 AND customer_id=$2",
+            [cmd.connectionID, access.customerID],
+          )
+        ).rows[0]?.permissions;
+        if (!["read", "write"].includes(permissions?.actions))
+          throw new HostingError(
+            422,
+            "Accept the GitHub App Actions read permission first.",
+          );
+      }
       if ((s?.revision ?? 0) !== cmd.revision) throw conflict();
       const c = (
         await db.query(
@@ -424,7 +471,7 @@ export async function executeGitDeployment(
       }
       const r = (
         await db.query(
-          `INSERT INTO webdock_auth.git_source(customer_id,project_id,connection_id,repository_id,branch,root_directory,recipe,target_id,enabled,auto_publish,policy_subject,policy_revision) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,1) ON CONFLICT(project_id) DO UPDATE SET connection_id=$3,repository_id=$4,branch=$5,root_directory=$6,recipe=$7,target_id=$8,enabled=$9,auto_publish=$10,policy_subject=$11,policy_revision=git_source.revision+1,revision=git_source.revision+1,latest_build_id=NULL RETURNING *`,
+          `INSERT INTO webdock_auth.git_source(customer_id,project_id,connection_id,repository_id,branch,root_directory,recipe,target_id,enabled,auto_publish,policy_subject,policy_revision,build_provider,workflow_path,artifact_prefix) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,1,$12,$13,$14) ON CONFLICT(project_id) DO UPDATE SET connection_id=$3,repository_id=$4,branch=$5,root_directory=$6,recipe=$7,target_id=$8,enabled=$9,auto_publish=$10,policy_subject=$11,policy_revision=git_source.revision+1,revision=git_source.revision+1,latest_build_id=NULL,build_provider=$12,workflow_path=$13,artifact_prefix=$14,actions_configured_at=now() RETURNING *`,
           [
             access.customerID,
             cmd.projectID,
@@ -437,6 +484,9 @@ export async function executeGitDeployment(
             cmd.enabled,
             cmd.autoPublish,
             actor.subject,
+            cmd.buildProvider,
+            cmd.workflowPath,
+            cmd.artifactPrefix,
           ],
         )
       ).rows[0];
@@ -516,6 +566,11 @@ export async function executeGitDeployment(
     }
     if (cmd.action === "git.builds.request") {
       active(s);
+      if (s.build_provider === "github-actions")
+        throw new HostingError(
+          422,
+          "Run the configured workflow in GitHub Actions. Webdock imports successful builds automatically.",
+        );
       const existing = (
         await db.query(
           "SELECT * FROM webdock_auth.git_build WHERE project_id=$1 AND idempotency_key=$2",
@@ -638,7 +693,7 @@ export async function enrollGitWorker(
   actor: HostingActor,
   input: {
     country: string;
-    isolation: "microvm";
+    isolation: "microvm" | "artifact-only";
     evidence: string;
     capacity: number;
   },
@@ -648,13 +703,16 @@ export async function enrollGitWorker(
     if (
       !/^[A-Z]{2}$/.test(input.country) ||
       (input.country === "ZZ" && !/\bunverified\b/i.test(input.evidence)) ||
-      input.isolation !== "microvm" ||
+      !["microvm", "artifact-only"].includes(input.isolation) ||
       input.evidence.length < 20 ||
       !Number.isInteger(input.capacity) ||
       input.capacity < 1 ||
       input.capacity > 32
     )
-      throw new HostingError(400, "Verified isolated build capacity is required.");
+      throw new HostingError(
+        400,
+        "Verified build or artifact publisher capacity is required.",
+      );
     const credential = randomBytes(32).toString("base64url");
     const r = (
       await db.query(
@@ -704,7 +762,8 @@ export async function claimGitBuild(credential: string) {
     if (n >= w.capacity) return null;
     const b = (
       await db.query(
-        `SELECT b.id FROM webdock_auth.git_build b JOIN webdock_auth.git_source s ON s.id=b.source_id JOIN webdock_auth.git_connection c ON c.id=s.connection_id WHERE (b.status='queued' OR (b.status='running' AND b.lease_until<now())) AND c.state='active' AND s.enabled AND c.generation=b.connection_generation AND s.revision=b.source_revision ORDER BY b.created_at FOR UPDATE OF b SKIP LOCKED LIMIT 1`,
+        `SELECT b.id FROM webdock_auth.git_build b JOIN webdock_auth.git_source s ON s.id=b.source_id JOIN webdock_auth.git_connection c ON c.id=s.connection_id WHERE (b.status='queued' OR (b.status='running' AND b.lease_until<now())) AND c.state='active' AND s.enabled AND c.generation=b.connection_generation AND s.revision=b.source_revision AND ((s.build_provider='isolated' AND $1='microvm') OR (s.build_provider='github-actions' AND $1='artifact-only' AND b.actions_provenance IS NOT NULL)) ORDER BY b.created_at FOR UPDATE OF b SKIP LOCKED LIMIT 1`,
+        [w.isolation],
       )
     ).rows[0];
     if (!b) return null;
@@ -731,6 +790,7 @@ export async function claimGitBuild(credential: string) {
       installationID: s.installation_id,
       rootDirectory: s.root_directory,
       recipe: s.recipe,
+      buildProvider: s.build_provider,
       environmentRevision: r.environment_revision,
       leaseUntil: r.lease_until,
       buildEnvironment: openEnvironment(
@@ -747,6 +807,43 @@ export async function claimGitBuild(credential: string) {
     };
   });
 }
+/** Refresh a short-lived download capability only for the fenced, immutable artifact. */
+export async function prepareGitActionsArtifact(
+  build: any,
+  provider = createGitHubProvider(),
+) {
+  const provenance = build.actions_provenance;
+  if (
+    build.build_provider !== "github-actions" ||
+    !provenance ||
+    provenance.runAttempt !== 1
+  )
+    throw conflict();
+  const head = await provider.resolveSource({
+    installationID: build.installation_id,
+    repositoryID: build.repository_id,
+    branch: build.branch,
+  });
+  if (head.sha !== build.source_sha) throw conflict();
+  const verified = await provider.verifyActionsRun({
+    installationID: build.installation_id,
+    repositoryID: build.repository_id,
+    workflowPath: build.workflow_path,
+    runID: provenance.runID,
+    runAttempt: provenance.runAttempt,
+    branch: build.branch,
+    sha: build.source_sha,
+    artifactName: build.artifact_prefix + "-" + build.source_sha,
+  });
+  if (
+    verified.artifact.id !== provenance.artifact.id ||
+    verified.artifact.digest !== provenance.artifact.digest ||
+    verified.artifact.sizeBytes !== provenance.artifact.sizeBytes
+  )
+    throw conflict();
+  return verified.artifact;
+}
+
 export type GitBuildCompletion = {
   buildID: string;
   generation: number;
@@ -763,6 +860,7 @@ export type GitBuildCompletion = {
 export async function completeGitBuild(
   credential: string,
   result: GitBuildCompletion,
+  provider = createGitHubProvider(),
 ) {
   return transaction(async (db) => {
     const w = await authenticateGitWorker(db, credential);
@@ -789,6 +887,17 @@ export async function completeGitBuild(
     )
       throw conflict();
     let release;
+    if (
+      result.status === "succeeded" &&
+      s.build_provider === "github-actions"
+    ) {
+      const head = await provider.resolveSource({
+        installationID: s.installation_id,
+        repositoryID: s.repository_id,
+        branch: s.branch,
+      });
+      if (head.sha !== b.source_sha) throw conflict();
+    }
     if (result.status === "succeeded") {
       const a = result.artifact,
         prefix = `${b.customer_id}/${b.id}/${b.generation}/`;
@@ -931,6 +1040,10 @@ export async function receiveGitEvent(event: {
   sha?: string;
   deleted?: boolean;
   action?: string;
+  runID?: string;
+  runAttempt?: number;
+  workflowPath?: string;
+  conclusion?: string | null;
 }) {
   return transaction(async (db) => {
     if (!/^[A-Za-z0-9_-]{1,100}$/.test(event.deliveryID))
@@ -939,6 +1052,12 @@ export async function receiveGitEvent(event: {
       repositoryID: event.repositoryID,
       branch: event.branch,
       deleted: event.deleted,
+      sha: event.sha,
+      runID: event.runID,
+      runAttempt: event.runAttempt,
+      workflowPath: event.workflowPath,
+      conclusion: event.conclusion,
+      action: event.action,
     };
     const receipt = await db.query(
       "INSERT INTO webdock_auth.git_receipt(delivery_id,event,installation_id,event_data) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING RETURNING delivery_id",
@@ -950,7 +1069,7 @@ export async function receiveGitEvent(event: {
       ],
     );
     if (!receipt.rowCount) return { duplicate: true, queued: 0 };
-    if (event.event !== "push") {
+    if (event.event !== "push" && event.event !== "workflow_run") {
       await db.query(
         "UPDATE webdock_auth.git_connection SET state='revalidation-required',generation=generation+1,revision=revision+1 WHERE installation_id=$1",
         [event.installationID],
@@ -987,27 +1106,112 @@ export async function processGitEvents(
               [e.installation_id, data.repositoryID, data.branch],
             )
           ).rows;
+      let queued = 0;
       for (const s of sources) {
-        const pinned = await (provider ?? createGitHubProvider()).resolveSource(
-          {
+        const github = provider ?? createGitHubProvider();
+        if (s.build_provider === "github-actions") {
+          if (
+            e.event !== "workflow_run" ||
+            data.action !== "completed" ||
+            data.conclusion !== "success" ||
+            data.runAttempt !== 1 ||
+            data.workflowPath !== s.workflow_path
+          )
+            continue;
+          if (
+            Object.keys(
+              openEnvironment(
+                "git-build:" + s.id,
+                s.build_environment_encrypted,
+              ),
+            ).length
+          )
+            continue;
+          const pinned = await github.resolveSource({
             installationID: s.installation_id,
             repositoryID: s.repository_id,
             branch: s.branch,
-          },
-        );
-        await queue(
-          db,
-          s,
-          pinned.sha,
-          "github:" + e.installation_id,
-          "webhook:" + e.delivery_id,
-        );
+          });
+          if (pinned.sha !== data.sha) continue;
+          const verified = await github.verifyActionsRun({
+            installationID: s.installation_id,
+            repositoryID: s.repository_id,
+            workflowPath: s.workflow_path,
+            runID: data.runID,
+            runAttempt: data.runAttempt,
+            branch: s.branch,
+            sha: pinned.sha,
+            artifactName: s.artifact_prefix + "-" + pinned.sha,
+          });
+          // Configuration made after a run began cannot authorize that older build.
+          if (
+            !Number.isFinite(Date.parse(verified.createdAt)) ||
+            Date.parse(verified.createdAt) <
+              new Date(s.actions_configured_at).getTime()
+          )
+            continue;
+          if (s.latest_build_id) {
+            const latest = (
+              await db.query(
+                "SELECT actions_provenance FROM webdock_auth.git_build WHERE id=$1 AND source_id=$2",
+                [s.latest_build_id, s.id],
+              )
+            ).rows[0]?.actions_provenance;
+            if (latest) {
+              const currentTime = Date.parse(verified.createdAt);
+              const latestTime = Date.parse(latest.createdAt);
+              // Completion delivery order must not reorder runs of the same commit.
+              if (
+                !Number.isFinite(latestTime) ||
+                currentTime < latestTime ||
+                (currentTime === latestTime &&
+                  BigInt(verified.runID) <= BigInt(latest.runID))
+              )
+                continue;
+            }
+          }
+          const key = "actions:" + data.runID + ":" + data.runAttempt;
+          const prior = (
+            await db.query(
+              "SELECT id FROM webdock_auth.git_build WHERE source_id=$1 AND actions_provenance->>'runID'=$2 AND actions_provenance->>'runAttempt'=$3",
+              [s.id, String(data.runID), String(data.runAttempt)],
+            )
+          ).rows[0];
+          if (prior) continue;
+          const build = await queue(
+            db,
+            s,
+            pinned.sha,
+            "github:" + e.installation_id,
+            key,
+          );
+          const { downloadURL: _downloadURL, ...artifact } = verified.artifact;
+          await db.query(
+            "UPDATE webdock_auth.git_build SET actions_provenance=$2 WHERE id=$1",
+            [build.id, JSON.stringify({ ...verified, artifact })],
+          );
+          queued++;
+        } else if (e.event === "push") {
+          const pinned = await github.resolveSource({
+            installationID: s.installation_id,
+            repositoryID: s.repository_id,
+            branch: s.branch,
+          });
+          await queue(
+            db,
+            s,
+            pinned.sha,
+            "github:" + e.installation_id,
+            "webhook:" + e.delivery_id,
+          );
+          queued++;
+        }
       }
       await db.query(
         "UPDATE webdock_auth.git_receipt SET processed_at=now() WHERE delivery_id=$1",
         [e.delivery_id],
       );
-      return { processed: true, queued: sources.length };
+      return { processed: true, queued };
     });
   } catch {
     if (deliveryID)
@@ -1190,7 +1394,7 @@ export async function inspectGitBuildLease(
     const w = await authenticateGitWorker(db, credential);
     const b = (
       await db.query(
-        "SELECT b.*,s.repository_id,s.root_directory,s.recipe,s.target_id,c.installation_id FROM webdock_auth.git_build b JOIN webdock_auth.git_source s ON s.id=b.source_id JOIN webdock_auth.git_connection c ON c.id=s.connection_id WHERE b.id=$1 AND b.generation=$2 AND b.worker_id=$3 AND b.worker_generation=$4 AND b.status='running' AND b.lease_until>now() AND c.state='active' AND c.generation=b.connection_generation AND s.revision=b.source_revision",
+        "SELECT b.*,s.repository_id,s.root_directory,s.recipe,s.target_id,s.build_provider,s.workflow_path,s.artifact_prefix,s.branch,c.installation_id FROM webdock_auth.git_build b JOIN webdock_auth.git_source s ON s.id=b.source_id JOIN webdock_auth.git_connection c ON c.id=s.connection_id WHERE b.id=$1 AND b.generation=$2 AND b.worker_id=$3 AND b.worker_generation=$4 AND b.status='running' AND b.lease_until>now() AND c.state='active' AND c.generation=b.connection_generation AND s.revision=b.source_revision",
         [buildID, generation, w.id, w.generation],
       )
     ).rows[0];

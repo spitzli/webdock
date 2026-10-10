@@ -18,15 +18,39 @@ test("OAuth permits loopback callbacks only outside production", async () => {
   const previous = process.env.NODE_ENV;
   try {
     Object.assign(process.env, { NODE_ENV: "development" });
-    const f = fake({ "/login/oauth/access_token": { access_token: "user-token", token_type: "bearer" } });
+    const f = fake({
+      "/login/oauth/access_token": {
+        access_token: "user-token",
+        token_type: "bearer",
+      },
+    });
     const provider = createGitHubProvider(config, f.fetcher);
-    assert.equal(await provider.exchangeOAuthCode("code", "http://localhost:3120/api/hosting/git/callback"), "user-token");
-    await assert.rejects(provider.exchangeOAuthCode("code", "http://evil.example/callback"));
-    await assert.rejects(provider.exchangeOAuthCode("code", "http://user:pass@localhost:3120/callback"));
+    assert.equal(
+      await provider.exchangeOAuthCode(
+        "code",
+        "http://localhost:3120/api/hosting/git/callback",
+      ),
+      "user-token",
+    );
+    await assert.rejects(
+      provider.exchangeOAuthCode("code", "http://evil.example/callback"),
+    );
+    await assert.rejects(
+      provider.exchangeOAuthCode(
+        "code",
+        "http://user:pass@localhost:3120/callback",
+      ),
+    );
     Object.assign(process.env, { NODE_ENV: "production" });
-    await assert.rejects(provider.exchangeOAuthCode("code", "http://localhost:3120/api/hosting/git/callback"));
+    await assert.rejects(
+      provider.exchangeOAuthCode(
+        "code",
+        "http://localhost:3120/api/hosting/git/callback",
+      ),
+    );
   } finally {
-    if (previous === undefined) delete (process.env as Record<string, string | undefined>).NODE_ENV;
+    if (previous === undefined)
+      delete (process.env as Record<string, string | undefined>).NODE_ENV;
     else Object.assign(process.env, { NODE_ENV: previous });
   }
 });
@@ -411,20 +435,186 @@ test("reconciles an ambiguous check creation before any repeated write", async (
 });
 
 test("default configuration accepts canonical App private key and legacy fallback", async () => {
-  const keys = ["WEBDOCK_GITHUB_APP_ID", "WEBDOCK_GITHUB_APP_PRIVATE_KEY", "WEBDOCK_GITHUB_PRIVATE_KEY"] as const;
+  const keys = [
+    "WEBDOCK_GITHUB_APP_ID",
+    "WEBDOCK_GITHUB_APP_PRIVATE_KEY",
+    "WEBDOCK_GITHUB_PRIVATE_KEY",
+  ] as const;
   const previous = keys.map((key) => process.env[key]);
   try {
     process.env.WEBDOCK_GITHUB_APP_ID = config.appID;
     process.env.WEBDOCK_GITHUB_APP_PRIVATE_KEY = privateKey;
-    process.env.WEBDOCK_GITHUB_PRIVATE_KEY = "invalid legacy key must not override canonical";
-    await createGitHubProvider(undefined, fake().fetcher).revalidateRepository("9", "42");
+    process.env.WEBDOCK_GITHUB_PRIVATE_KEY =
+      "invalid legacy key must not override canonical";
+    await createGitHubProvider(undefined, fake().fetcher).revalidateRepository(
+      "9",
+      "42",
+    );
     delete process.env.WEBDOCK_GITHUB_APP_PRIVATE_KEY;
     process.env.WEBDOCK_GITHUB_PRIVATE_KEY = privateKey;
-    await createGitHubProvider(undefined, fake().fetcher).revalidateRepository("9", "42");
+    await createGitHubProvider(undefined, fake().fetcher).revalidateRepository(
+      "9",
+      "42",
+    );
   } finally {
     keys.forEach((key, i) => {
       if (previous[i] === undefined) delete process.env[key];
       else process.env[key] = previous[i];
     });
   }
+});
+
+test("Actions artifacts bind exact workflow, repository, successful first attempt and immutable digest", async () => {
+  const revision = "a".repeat(40),
+    workflowPath = ".github/workflows/production-build.yml";
+  const input = {
+    installationID: "9",
+    repositoryID: "42",
+    workflowPath,
+    runID: "81",
+    runAttempt: 1,
+    branch: "main",
+    sha: revision,
+    artifactName: "lunares-bot-" + revision,
+  };
+  const run = {
+    id: 81,
+    run_attempt: 1,
+    workflow_id: 71,
+    path: workflowPath,
+    repository: { id: 42 },
+    head_repository: { id: 42 },
+    head_branch: "main",
+    head_sha: revision,
+    event: "push",
+    status: "completed",
+    conclusion: "success",
+    created_at: "2026-10-10T10:00:00Z",
+  };
+  const artifact = {
+    id: 91,
+    name: input.artifactName,
+    expired: false,
+    digest: "sha256:" + "b".repeat(64),
+    size_in_bytes: 100,
+    created_at: "2026-10-10T10:01:00Z",
+    workflow_run: {
+      id: 81,
+      repository_id: 42,
+      head_repository_id: 42,
+      head_sha: revision,
+    },
+  };
+  function provider(
+    runChanges = {},
+    artifactChanges = {},
+    redirect = "https://productionresult.blob.core.windows.net/secret?sig=capability",
+  ) {
+    const f = fake({
+      "/app/installations/9": {
+        ...installation,
+        permissions: { ...installation.permissions, actions: "read" },
+      },
+      "/app/installations/9/access_tokens": {
+        token: "actions-secret",
+        expires_at: new Date(Date.now() + 3600000).toISOString(),
+        permissions: { metadata: "read", actions: "read" },
+        repositories: [repo],
+      },
+      "/repos/owner/repo/actions/workflows/production-build.yml": {
+        id: 71,
+        path: workflowPath,
+        state: "active",
+      },
+      "/repos/owner/repo/actions/runs/81/attempts/1": { ...run, ...runChanges },
+      "/repos/owner/repo/actions/runs/81": { ...run, ...runChanges },
+      "/repos/owner/repo/actions/runs/81/artifacts": {
+        artifacts: [{ ...artifact, ...artifactChanges }],
+      },
+    });
+    return {
+      calls: f.calls,
+      api: createGitHubProvider(config, async (url, init) =>
+        new URL(String(url)).pathname.endsWith("/91/zip")
+          ? new Response(null, { status: 302, headers: { location: redirect } })
+          : f.fetcher(url, init),
+      ),
+    };
+  }
+  const valid = provider();
+  const verified = await valid.api.verifyActionsRun(input);
+  assert.equal(verified.artifact.id, "91");
+  assert.equal(verified.artifact.repository, "owner/repo");
+  const tokenRequest = valid.calls.find((c) =>
+    c.path.endsWith("/access_tokens"),
+  )!;
+  assert.deepEqual(JSON.parse(String(tokenRequest.init.body)).permissions, {
+    actions: "read",
+    metadata: "read",
+  });
+  for (const change of [
+    { head_repository: { id: 99 } },
+    { head_sha: "c".repeat(40) },
+    { event: "pull_request" },
+    { run_attempt: 2 },
+    { workflow_id: 72 },
+    { conclusion: "failure" },
+  ])
+    await assert.rejects(provider(change).api.verifyActionsRun(input));
+  for (const change of [
+    { expired: true },
+    { digest: null },
+    { workflow_run: { ...artifact.workflow_run, repository_id: 99 } },
+    { size_in_bytes: 700_000_000 },
+  ])
+    await assert.rejects(provider({}, change).api.verifyActionsRun(input));
+  await assert.rejects(
+    provider({}, {}, "https://evil.example/artifact").api.verifyActionsRun(
+      input,
+    ),
+  );
+  await assert.rejects(
+    provider().api.verifyActionsRun({ ...input, runAttempt: 2 }),
+  );
+});
+
+test("signed workflow completion is parsed independently from installation changes", () => {
+  const payload = {
+    action: "completed",
+    installation: { id: 9 },
+    repository: { id: 42 },
+    workflow_run: {
+      id: 81,
+      run_attempt: 1,
+      path: ".github/workflows/production-build.yml",
+      conclusion: "success",
+      head_repository: { id: 42 },
+      head_branch: "main",
+      head_sha: "a".repeat(40),
+    },
+  };
+  const raw = Buffer.from(JSON.stringify(payload));
+  const headers = new Headers({
+    "x-github-event": "workflow_run",
+    "x-github-delivery": "workflow-81",
+    "x-hub-signature-256":
+      "sha256=" + createHmac("sha256", "secret").update(raw).digest("hex"),
+  });
+  const event = parseGitHubWebhook(raw, headers, "secret");
+  assert.equal(event.event, "workflow_run");
+  assert.equal("runID" in event && event.runID, "81");
+});
+
+test("repository binding persists granted Actions permission without breaking metadata connections", async () => {
+  const f = fake({
+    "/app/installations/9": {
+      ...installation,
+      permissions: { ...installation.permissions, actions: "read" },
+    },
+  });
+  const binding = await createGitHubProvider(
+    config,
+    f.fetcher,
+  ).verifyRepository("user-token", "9", "42");
+  assert.equal(binding.permissions.actions, "read");
 });

@@ -311,6 +311,9 @@
   "Accept offer and assign plan": [
     "Angebot annehmen und Tarif zuweisen"
   ],
+  "Accept the GitHub App Actions read permission first.": [
+    "Akzeptiere zuerst die Actions-Leseberechtigung der GitHub-App."
+  ],
   "Accept your invitation or ask for access to a website.": [
     "Nimm Deine Einladung an oder lass dir Zugriff auf eine Website geben."
   ],
@@ -394,6 +397,9 @@
   ],
   "Actions": [
     "Aktionen"
+  ],
+  "Actions imports cannot request source archives.": [
+    "Actions-Importe dürfen keine Quellcode-Archive anfordern."
   ],
   "Active": [
     "Aktiv"
@@ -803,6 +809,9 @@
   "Artifact": [
     "Artefakt"
   ],
+  "Artifact name prefix": [
+    "Präfix des Artefaktnamens"
+  ],
   "Ask your operator to review the tracking domain count.": [
     "Bitte deinen Betreiber, die Anzahl der Tracking-Domains zu prüfen."
   ],
@@ -1012,6 +1021,9 @@
   ],
   "Build pages": [
     "Build-Seiten"
+  ],
+  "Build provider": [
+    "Build-Anbieter"
   ],
   "Build pushes automatically": [
     "Pushes automatisch bauen"
@@ -1447,6 +1459,9 @@
   ],
   "Configure an explicitly bound platform Vercel deployment credential.": [
     "Konfiguriere ausdrücklich zugeordnete Zugangsdaten für Vercel-Deployments der Plattform."
+  ],
+  "Configure build variables in GitHub Actions before using external builds.": [
+    "Konfiguriere Build-Variablen in GitHub Actions, bevor du externe Builds verwendest."
   ],
   "Configure the GitHub App ID and private key in the private Auth environment.": [
     "Konfiguriere die GitHub-App-ID und den privaten Schlüssel in der privaten Auth-Umgebung."
@@ -2592,6 +2607,9 @@
   "English": [
     "Englisch"
   ],
+  "Enroll a trusted artifact publisher before importing Actions builds.": [
+    "Registriere einen vertrauenswürdigen Artefakt-Publisher, bevor Actions-Builds importiert werden."
+  ],
   "Enroll verified EU isolated build capacity before requesting a build.": [
     "Registriere überprüfte, isolierte EU-Build-Kapazität, bevor du einen Build anforderst."
   ],
@@ -2778,6 +2796,9 @@
   "Explore project data with Tabularis.": [
     "Projektdaten mit Tabularis erkunden."
   ],
+  "External build variables are unsupported.": [
+    "Externe Build-Variablen werden nicht unterstützt."
+  ],
   "Extract the archive, run the installer and enter the one-time token when prompted.": [
     "Entpacke das Archiv, starte die Installation und gib den einmaligen Verbindungscode auf Nachfrage ein."
   ],
@@ -2925,6 +2946,9 @@
   "GitHub": [
     "GitHub"
   ],
+  "GitHub Actions workflow": [
+    "GitHub-Actions-Workflow"
+  ],
   "GitHub App authorization documentation": [
     "Dokumentation zur Autorisierung der GitHub-App"
   ],
@@ -2951,6 +2975,9 @@
   ],
   "GitHub authorization was already used.": [
     "Die GitHub-Autorisierung wurde bereits verwendet."
+  ],
+  "GitHub builds the artifact. Webdock verifies and publishes it. Artifact names end with the exact commit SHA.": [
+    "GitHub baut das Artefakt. Webdock prüft und veröffentlicht es. Artefaktnamen enden mit dem exakten Commit-SHA."
   ],
   "GitHub check reconciliation exceeds the supported limit.": [
     "Der Abgleich der GitHub-Prüfungen überschreitet die unterstützte Grenze."
@@ -3611,6 +3638,9 @@
   ],
   "Invite to a website": [
     "Zu einer Website einladen"
+  ],
+  "Isolated Webdock worker": [
+    "Isolierter Webdock-Worker"
   ],
   "Item {number}": [
     "Eintrag {number}"
@@ -5301,6 +5331,9 @@
   "Published: {address}": [
     "Veröffentlicht: {address}"
   ],
+  "Push to the configured branch or start a new workflow in GitHub Actions. Re-running an existing run is not supported.": [
+    "Pushe auf den konfigurierten Branch oder starte einen neuen Workflow in GitHub Actions. Das Wiederholen eines bestehenden Laufs wird nicht unterstützt."
+  ],
   "Pushes build the configured branch. Production publication requires approval of an exact artifact.": [
     "Pushes bauen den konfigurierten Branch. Die Veröffentlichung in Produktion erfordert die Freigabe eines bestimmten Artefakts."
   ],
@@ -5849,6 +5882,9 @@
   ],
   "Root directory": [
     "Stammverzeichnis"
+  ],
+  "Run the configured workflow in GitHub Actions. Webdock imports successful builds automatically.": [
+    "Starte den konfigurierten Workflow in GitHub Actions. Webdock importiert erfolgreiche Builds automatisch."
   ],
   "Runtime configuration changed. Build again before publication.": [
     "Die Laufzeitkonfiguration wurde geändert. Erstelle vor der Veröffentlichung einen neuen Build."
@@ -7731,6 +7767,9 @@
   "Verified EU microVM capacity is required.": [
     "Überprüfte MicroVM-Kapazität in der EU ist erforderlich."
   ],
+  "Verified build or artifact publisher capacity is required.": [
+    "Überprüfte Build- oder Artefakt-Publisher-Kapazität ist erforderlich."
+  ],
   "Verified isolated build capacity is required.": [
     "Überprüfte, isolierte Build-Kapazität ist erforderlich."
   ],
@@ -7790,6 +7829,9 @@
   ],
   "View as customer": [
     "Als Kunde ansehen"
+  ],
+  "View build logs in GitHub Actions": [
+    "Build-Logs in GitHub Actions öffnen"
   ],
   "View customer history": [
     "Kundenverlauf ansehen"
