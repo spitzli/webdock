@@ -1,6 +1,6 @@
 # Webdock observation and managed execution bridge
 
-Source update, 2026-10-09: optional fixed-size persistent app storage is implemented and verified locally, but not installed on production Contabo. See [storage operation and installation boundary](../../docs/architecture/persistent-app-storage.md). The normal agent keeps its existing sandbox; `storage_client.py` talks to the separately installed root-only `storage_service.py`. Customer BYOK installation does not install or enable that privileged helper. The standalone SSH bridge includes the client dependency in its transmitted code.
+Source update, 2026-10-10: fixed-size persistent app storage and the native Mail provisioning profile are installed on production Contabo. See [storage operation and installation boundary](../../docs/architecture/persistent-app-storage.md). The normal agent keeps its existing sandbox; `storage_client.py` talks to the separately installed root-only `storage_service.py`. Customer BYOK installation does not install or enable that privileged helper. The standalone SSH bridge includes the client dependency in its transmitted code.
 
 Use `--manage` to process authenticated Webdock app operations in addition to node observations. Without that flag, the bridge remains read-only. Active mode accepts only the fixed typed executor protocol: controlled namespace/Pod/Service manifests, safety dry-runs, revision/lease/ownership checks, rollout observation, bounded logs and confirmed application deletion. It has no arbitrary tenant shell or YAML interface.
 
@@ -16,7 +16,7 @@ python3 apps/hosting-agent/connect.py \
 
 HTTPS is mandatory except for explicit local `--allow-loopback` verification. Credentials must have mode 0600 and stay outside Git. Operations are sent through the authenticated Webdock service; never call the executor directly as a substitute for Webdock deletion authorization and its journal.
 
-Supported now: cached immutable HTTP images, positive CPU/RAM/ephemeral quotas, restricted Pods, temporary /tmp, controlled ClusterIP services. Persistent PVCs and external registry pulls are disabled. New managed project/validation namespaces are distinct from the server baseline namespaces.
+Supported now: cached immutable HTTP images, positive CPU/RAM/ephemeral quotas, restricted Pods, temporary /tmp, controlled ClusterIP services. Persistent PVCs require the enforcing storage helper; external image pulls require the operator-installed registry allowlist. New managed project/validation namespaces are distinct from the server baseline namespaces.
 
 Managed apply operations observe readiness for at most 180 seconds. Both executor
 transports allow 260 seconds for preparation and observation; the Auth operation
@@ -51,7 +51,7 @@ HTTPS is required except for explicit local testing with `--allow-loopback` and 
 
 The original connection was local-only; the owner subsequently requested and authorized production rollout while retaining Studio/Auth on Vercel. Server location evidence and local-path storage limitations are documented in `docs/architecture/hosting-control-plane.md`.
 
-## Native Mail agent profile (source implemented; not deployed)
+## Native Mail agent profile
 
 Managed Mail uses the same authenticated daemon, with `mail-claim`,
 `mail-checkpoint` and `mail-complete`. Only platform-owned k3s clusters participate.
@@ -89,3 +89,12 @@ explicit Unix Docker socket; it only creates isolated disposable fixtures:
 WEBDOCK_MAIL_DOCKER_TEST=1 DOCKER_HOST=unix:///var/run/docker.sock \
   python3 -m unittest discover -s apps/hosting-agent -p test_mail_client.py -v
 ```
+
+The private Mail profile was deployed on 2026-10-10 and verified through Studio
+activation, suspension and resume for the platform-owned Spitzli customer. See
+[production evidence](../../docs/verification/2026-10-10-native-mail-rollout.json).
+Both running and stopped Deployments use the same server-side-apply manager;
+using plain `kubectl replace` transfers replica ownership and breaks resume.
+Previously verified instances in `needs_review` can be retried explicitly by a
+current platform operator through Studio. Unknown first bootstrap outcomes stay
+blocked for manual recovery; they are never automatically replayed.

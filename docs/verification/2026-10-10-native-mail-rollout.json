@@ -1,0 +1,120 @@
+{
+  "checkedAt": "2026-10-10T14:12:28.896Z",
+  "sourceCommit": "5b8c8e7d9832079f30303ebb638a8f625ed8ca55",
+  "pullRequest": "https://github.com/spitzli/webdock/pull/5",
+  "deployments": {
+    "auth": {
+      "id": "dpl_tCGDj7T8nEn8hiiMweRLbRRQFB4n",
+      "url": "https://auth.webdock.dev",
+      "artifact": "https://webdock-auth-abhbyhbds-spitzli.vercel.app",
+      "regions": [
+        "fra1"
+      ],
+      "productionAssigned": true
+    },
+    "studio": {
+      "id": "dpl_HVay6CQuuPtgjH51terFDMeqM2ed",
+      "url": "https://studio.webdock.dev",
+      "artifact": "https://webdock-admin-bwx7bqyos-spitzli.vercel.app",
+      "regions": [
+        "fra1"
+      ],
+      "productionAssigned": true
+    }
+  },
+  "agent": {
+    "release": "/opt/webdock-hosting-agent-releases/mail-d00d15c",
+    "commit": "d00d15cdcc0940f9ee9f8979b9a627e4630137b5",
+    "node": "vmd208517",
+    "image": "webdock.local/mail-stalwart@sha256:09460db6473d8d7103836c806603096bc6d9b59ad3d90ce8276d553e88e2c1ad"
+  },
+  "service": {
+    "customer_id": "99868132637671424",
+    "host_id": "101775802667896832",
+    "state": "ready",
+    "revision": "6",
+    "applied_revision": "6",
+    "verified_at": "2026-10-10T14:06:12.860Z",
+    "demand": {
+      "apps": 1,
+      "memoryBytes": 1073741824,
+      "volumeBytes": 10737418240,
+      "cpuMillicores": 500,
+      "ephemeralBytes": 268435456,
+      "replicasPerApp": 1,
+      "concurrentDeployments": 1
+    }
+  },
+  "operations": [
+    {
+      "revision": "1",
+      "state": "succeeded",
+      "created_at": "2026-10-10T13:42:47.758Z",
+      "finished_at": "2026-10-10T13:44:09.770Z"
+    },
+    {
+      "revision": "2",
+      "state": "succeeded",
+      "created_at": "2026-10-10T13:45:37.624Z",
+      "finished_at": "2026-10-10T13:48:24.819Z"
+    },
+    {
+      "revision": "3",
+      "state": "superseded",
+      "created_at": "2026-10-10T13:49:35.569Z",
+      "finished_at": "2026-10-10T13:50:03.152Z"
+    },
+    {
+      "revision": "4",
+      "state": "succeeded",
+      "created_at": "2026-10-10T14:01:45.982Z",
+      "finished_at": "2026-10-10T14:02:22.951Z"
+    },
+    {
+      "revision": "5",
+      "state": "succeeded",
+      "created_at": "2026-10-10T14:03:39.441Z",
+      "finished_at": "2026-10-10T14:04:06.358Z"
+    },
+    {
+      "revision": "6",
+      "state": "succeeded",
+      "created_at": "2026-10-10T14:05:28.152Z",
+      "finished_at": "2026-10-10T14:06:12.860Z"
+    }
+  ],
+  "kubernetes": {
+    "namespace": "wd-mail-99868132637671424",
+    "deploymentUID": "b70784cb-ed2d-41f1-a68d-70e5cd4995bc",
+    "pvcUID": "2760e9e1-1936-46a6-afc5-5f3bd47b4151",
+    "volumePreserved": true,
+    "replicas": 1,
+    "replicaOwner": "webdock:Apply",
+    "temporaryCredentialSecretRemoved": true,
+    "recoveryEnvironmentRemoved": true,
+    "nonRootUID": 65532,
+    "readOnlyRootFilesystem": true,
+    "healthStatus": 200,
+    "tlsSmtpEhloStatus": 250,
+    "publicIngressConfigured": false
+  },
+  "http": {
+    "oidcDiscovery": 200,
+    "anonymousAgentClaim": 401,
+    "studioLogin": 307
+  },
+  "remaining": [
+    "Public SMTP ingress and production mail TLS",
+    "Managed/BYOK relay, domain/mailbox/grant administration",
+    "Forwarding, budgets/events and native Webmail",
+    "Restore/load testing and backup service"
+  ],
+  "dependencyAdvisories": {
+    "critical": 0,
+    "high": 12,
+    "moderate": 5,
+    "low": 0,
+    "patched": "DOMPurify 3.4.16",
+    "note": "Remaining upstream transitive tooling advisories; no audit-clean claim."
+  }
+}

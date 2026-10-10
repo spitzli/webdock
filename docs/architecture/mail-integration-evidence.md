@@ -1,6 +1,6 @@
 # Webdock Mail integration evidence
 
-Date: 2026-10-10. Status: **local CE and managed-agent foundation verified; public delivery and the complete Mail product are not ready for production.**
+Date: 2026-10-10. Status: **private CE provisioning foundation deployed and live-tested on Contabo; public delivery and the complete Mail product remain unfinished.**
 
 Owner decision: [CE per customer with activated email](mail-deployment-decision.md). Reproduction: `npm run test:integration -w @webdock/mail` on the documented local Linux/Node 24 environment.
 
@@ -26,7 +26,7 @@ A Docker idle snapshot of two bootstrapped instances with a test account reporte
 
 ## Still unverified / not implemented
 
-- Real Kubernetes rollout of the new agent profile, admission/network integration, production monitoring and operator reconciliation UI. Activation registry/UI, capacity reservation and typed agent orchestration are now implemented and tested locally.
+- Public ingress/network integration, production monitoring, restore/load testing and recovery for unknown first-bootstrap outcomes. The private Kubernetes rollout and explicit retries for previously verified instances are implemented and live-tested.
 - Public recipient-aware SMTP ingress, instance routing for client protocols, production TLS and relay egress rules.
 - TLS relay to Turbo, BYOK credentials, exact downstream event correlation and webhook reconciliation.
 - Visible From-header policy; the passing SMTP test covers the envelope only.
@@ -38,16 +38,21 @@ No claim of those remaining gates passing is implied by the local tests. In part
 
 ## Managed-agent verification (2026-10-10 continuation)
 
-- Auth tests: **94/94 passed**, including activation, capacity races/retained storage, tenant-preview restrictions, assigned-cluster claim/checkpoint/completion, agent-generation fencing and duplicate completion rejection.
-- Hosting agent: **35 tests passed, one opt-in Docker test skipped in the normal suite**. The real Docker test was run separately and passed.
+- Auth tests: **135/135 passed**, including activation, capacity races/retained storage, tenant-preview restrictions, assigned-cluster claim/checkpoint/completion, agent-generation fencing and duplicate completion rejection.
+- Hosting agent: **48 tests passed, one opt-in Docker test skipped in the normal suite**. The real Docker test was run separately and passed.
 - Real restricted-container test: pinned CE derivative runs as UID/GID 65532, read-only root, no capabilities; bootstrap to permanent credentials; explicit private listeners 8080/2525/2465/1993; health checks before/after bootstrap; normal administrator verified and temporary administrator rejected after restart. Data survives container recreation; TLS SMTP submission answers EHLO on port 2465.
 - Auth and Mail TypeScript checks pass. The full Auth suite required the baseline tenant-preview schema in the dedicated disposable local PostgreSQL database; no production DB configuration was copied.
 - Credential checkpoint, final instance registration, lifecycle completion and resource accounting are transactionally fenced. New agent registrations cannot continue old leases. Unknown external writes are not replayed.
 - `MAIL_MANAGED_CLUSTER_ID` selects the existing platform k3s cluster. Docker worker execution is explicitly restricted to local integration mode.
 
-These checks do not establish a real Kubernetes rollout, public TLS/SMTP ingress,
-provider relay delivery, backups/restores or a complete user-facing Webmail flow.
-No new Mail resources have been created on the production Contabo node.
+The live Kubernetes rollout is recorded in [production evidence](../verification/2026-10-10-native-mail-rollout.json).
+One explicitly activated Spitzli instance was provisioned; its original PVC survived
+suspension and resume. Revision 6 is ready, temporary recovery access is removed,
+and the private TLS submission endpoint answers EHLO. Auth and Studio run with
+verified Frankfurt Functions, built locally and deployed prebuilt. Vercel packaging,
+CDN and control-plane services remain global; this is not a complete EU-only claim.
+Public TLS/SMTP ingress, provider relay delivery, backups/restores and a complete
+user-facing Webmail flow are not established by these checks.
 
 ## Review corrections
 
@@ -57,3 +62,15 @@ activation intent reached revision 3 before any provisioning, while existing
 instances retain the missing-disk protection; unsafe optional Mail configuration
 now suppresses only the Mail capability and does not interrupt ordinary hosting.
 The shared storage adapter preserves the actual Kubernetes resource revision.
+
+A live resume test exposed a Kubernetes replica ownership conflict. Suspension now
+uses the same server-side-apply path as provisioning. The regression was reproduced
+and fixed, and a subsequent live suspend/resume completed on the same PVC. A narrowly
+fenced one-time correction repaired only the confirmed field ownership on the test
+instance; the operator then requeued verification through Studio, not a database
+status reset. Tests, lint, Auth/Studio/Mail typechecks and builds pass.
+
+Dependency audit: DOMPurify was patched to 3.4.16. Seventeen transitive advisories
+remain (12 high, five moderate), primarily the unpatched braces toolchain and old
+Drizzle/esbuild tooling. No unsafe major-version downgrade or audit-clean claim is
+made. Existing public Mail and native Webmail implementation gaps remain above.

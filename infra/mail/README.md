@@ -1,6 +1,6 @@
 # Webdock Mail integration lab
 
-This is the first implementation increment, not a production Mail deployment. The selected architecture is [one CE instance per email-enabled customer](../../docs/architecture/mail-deployment-decision.md). Tenant activation and the managed-agent foundation are implemented separately. Production ingress, provider routing and Webmail remain in progress; the fixture does not enable any real customer.
+This Compose lab is a disposable integration fixture, not a production deployment template. The selected architecture is [one CE instance per email-enabled customer](../../docs/architecture/mail-deployment-decision.md). Tenant activation and the managed-agent foundation are implemented separately. Production ingress, provider routing and Webmail remain in progress; the fixture does not enable any real customer.
 
 ## Run
 
@@ -59,4 +59,4 @@ docker build --network none -f infra/mail/Dockerfile -t webdock.local/mail-stalw
 ```
 
 Production configuration uses the resulting immutable repository digest, never
-this mutable build tag. See the [Mail agent setup](../../apps/hosting-agent/README.md#native-mail-agent-profile-source-implemented-not-deployed).
+this mutable build tag. See the [Mail agent setup](../../apps/hosting-agent/README.md#native-mail-agent-profile).

@@ -1,6 +1,6 @@
 # Mail deployment decision
 
-Status: selected by the owner on 2026-10-10; implementation started, not deployed.
+Status: selected by the owner on 2026-10-10; private provisioning foundation deployed and verified on the managed cluster. Public email delivery and native Webmail remain pending. See [rollout evidence](../verification/2026-10-10-native-mail-rollout.json).
 
 ## Binding decision
 
@@ -18,7 +18,7 @@ Public SMTP reception cannot be routed by TLS SNI alone: the receiving domain ap
 
 The owner confirmed on 2026-10-10 that Managed Mail runs on the existing **Webdock Kubernetes cluster**, currently with one Contabo node. Read-only SSH verified node `vmd208517`, k3s `v1.36.5+k3s1`. The local `webdock-byok-test` kubecontext is an unrelated/unreachable local fixture, not this production cluster.
 
-Production must reuse the existing Webdock hosting-agent authorization, lease, ownership, resource reservation and retained-storage boundaries. DockerMailRuntime is a local integration adapter, not the production deployment path. Respect the installed Restricted Pod Security, read-only root filesystem, positive resource budgets, ClusterIP-only services and default-deny networking. The official image has a file capability; the restricted runtime image must remove it and use explicit high ports. No new production resource has been created during this read-only inspection.
+Production must reuse the existing Webdock hosting-agent authorization, lease, ownership, resource reservation and retained-storage boundaries. DockerMailRuntime is a local integration adapter, not the production deployment path. Respect the installed Restricted Pod Security, read-only root filesystem, positive resource budgets, ClusterIP-only services and default-deny networking. The official image has a file capability; the restricted runtime image must remove it and use explicit high ports. The initial inspection was read-only; the subsequent explicitly authorized private rollout is recorded in the verification evidence above.
 
 ## Cost comparison, not a changed decision
 
