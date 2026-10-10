@@ -6,7 +6,7 @@ import {
 import { authorizeHosting, type Connection } from "./authorization";
 import { transaction, audit } from "./db";
 import { resolveGitVercelCredential } from "./git-vercel";
-import { createGitVercelObserver } from "./git-vercel-publication";
+import { createGitVercelObserver, gitReleaseHealthPath } from "./git-vercel-publication";
 type Observation = {
   status: "ready" | "failed" | "superseded" | "needs-reconciliation";
   providerDeploymentID?: string;
@@ -58,7 +58,7 @@ const observe: Observer = async (db, r) => {
   const observed = await provider.observeDeployment({
     deploymentID,
     releaseID: r.id,
-    healthPath: "/",
+    healthPath: gitReleaseHealthPath(r.publication_target),
   });
   return {
     status:

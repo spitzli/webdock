@@ -12,6 +12,7 @@ type Source = {
   repositoryID: string;
   branch: string;
   rootDirectory: string;
+  healthPath: string;
   recipe: "dockerfile" | "vercel";
   targetID: string;
   revision: number;
@@ -245,6 +246,7 @@ export default async function GitDeployments({
                   "1",
                 branch: source?.branch ?? "main",
                 rootDirectory: source?.rootDirectory ?? ".",
+                healthPath: source?.healthPath ?? "/",
                 recipe: source?.recipe ?? "dockerfile",
                 targetID: source?.targetID ?? data.targets[0]?.id ?? "1",
                 revision: source?.revision ?? 0,
@@ -295,6 +297,20 @@ export default async function GitDeployments({
                   defaultValue={source?.rootDirectory ?? "."}
                 />
               </label>
+              <label className="field">
+                {t("Vercel healthcheck path")}
+                <input
+                  name="healthPath"
+                  defaultValue={source?.healthPath ?? "/"}
+                  maxLength={160}
+                  required
+                />
+              </label>
+              <p>
+                {t(
+                  "Use a public health endpoint that returns HTTP 200 without a redirect.",
+                )}
+              </p>
               <label className="field">
                 {t("Build provider")}
                 <select

@@ -75,3 +75,12 @@ test("Actions sources bind a bounded workflow path and artifact prefix", () => {
       false,
     );
 });
+
+test("source health paths are bounded same-origin paths with a historical root default", () => {
+  const parsed = gitCommandSchema.parse(source);
+  assert.ok(parsed.action === "git.source.configure");
+  assert.equal(parsed.healthPath, "/");
+  assert.equal(gitCommandSchema.safeParse({ ...source, healthPath: "/api/health" }).success, true);
+  for (const healthPath of ["", "https://evil.test/", "//evil", "/../health", "/health?token=x", "/health#fragment", "/a\\b", "/%2f%2fevil", "/" + "a".repeat(160)])
+    assert.equal(gitCommandSchema.safeParse({ ...source, healthPath }).success, false, healthPath);
+});

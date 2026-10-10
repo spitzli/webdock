@@ -34,6 +34,7 @@ const sourceView = (r: any) =>
         buildProvider: r.build_provider,
         workflowPath: r.workflow_path,
         artifactPrefix: r.artifact_prefix,
+        healthPath: r.health_path,
         targetID: r.target_id,
         revision: r.revision,
         enabled: r.enabled,
@@ -471,7 +472,7 @@ export async function executeGitDeployment(
       }
       const r = (
         await db.query(
-          `INSERT INTO webdock_auth.git_source(customer_id,project_id,connection_id,repository_id,branch,root_directory,recipe,target_id,enabled,auto_publish,policy_subject,policy_revision,build_provider,workflow_path,artifact_prefix) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,1,$12,$13,$14) ON CONFLICT(project_id) DO UPDATE SET connection_id=$3,repository_id=$4,branch=$5,root_directory=$6,recipe=$7,target_id=$8,enabled=$9,auto_publish=$10,policy_subject=$11,policy_revision=git_source.revision+1,revision=git_source.revision+1,latest_build_id=NULL,build_provider=$12,workflow_path=$13,artifact_prefix=$14,actions_configured_at=now() RETURNING *`,
+          `INSERT INTO webdock_auth.git_source(customer_id,project_id,connection_id,repository_id,branch,root_directory,recipe,target_id,enabled,auto_publish,policy_subject,policy_revision,build_provider,workflow_path,artifact_prefix,health_path) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,1,$12,$13,$14,$15) ON CONFLICT(project_id) DO UPDATE SET connection_id=$3,repository_id=$4,branch=$5,root_directory=$6,recipe=$7,target_id=$8,enabled=$9,auto_publish=$10,policy_subject=$11,policy_revision=git_source.revision+1,revision=git_source.revision+1,latest_build_id=NULL,build_provider=$12,workflow_path=$13,artifact_prefix=$14,health_path=$15,actions_configured_at=now() RETURNING *`,
           [
             access.customerID,
             cmd.projectID,
@@ -487,6 +488,7 @@ export async function executeGitDeployment(
             cmd.buildProvider,
             cmd.workflowPath,
             cmd.artifactPrefix,
+            cmd.healthPath,
           ],
         )
       ).rows[0];
@@ -942,7 +944,7 @@ export async function completeGitBuild(
         )
       ).rows[0];
       await db.query(
-        `UPDATE webdock_auth.git_release r SET publication_target=jsonb_build_object('recipe',s.recipe,'targetID',s.target_id,'teamID',t.team_id)
+        `UPDATE webdock_auth.git_release r SET publication_target=jsonb_build_object('recipe',s.recipe,'targetID',s.target_id,'teamID',t.team_id,'healthPath',s.health_path)
         FROM webdock_auth.git_source s LEFT JOIN webdock_auth.git_vercel_target t ON t.project_id=s.project_id AND t.customer_id=s.customer_id AND t.target_id=s.target_id
         WHERE r.id=$1 AND s.id=$2`,
         [release.id, s.id],

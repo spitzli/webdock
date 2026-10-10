@@ -7590,6 +7590,9 @@
   "Use a name and an exact HTTPS callback URL (HTTP is allowed only on loopback).": [
     "Gib einen Namen und eine exakte HTTPS-Callback-URL an. HTTP ist nur für lokale Loopback-Adressen erlaubt."
   ],
+  "Use a public health endpoint that returns HTTP 200 without a redirect.": [
+    "Verwende einen öffentlichen Healthcheck-Endpunkt, der HTTP 200 ohne Weiterleitung zurückgibt."
+  ],
   "Use a recovery code": [
     "Wiederherstellungscode verwenden"
   ],
@@ -7715,6 +7718,9 @@
   ],
   "Vercel encryption is not configured.": [
     "Die Vercel-Verschlüsselung ist nicht eingerichtet."
+  ],
+  "Vercel healthcheck path": [
+    "Vercel-Healthcheck-Pfad"
   ],
   "Vercel integration — Webdock Studio": [
     "Vercel-Integration — Webdock Studio"

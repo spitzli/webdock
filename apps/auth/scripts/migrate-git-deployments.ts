@@ -7,7 +7,7 @@ try {
   await client.query("SET LOCAL statement_timeout='60s'");
   await client.query(gitDeploymentSchemaSQL);
   await client.query("COMMIT");
-  console.log("Git deployments schema ready; workers remain disabled.");
+  console.log("Git deployments schema ready; worker enrollment settings unchanged.");
 } catch (error) {
   await client.query("ROLLBACK");
   throw error;
