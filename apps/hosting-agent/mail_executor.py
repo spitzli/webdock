@@ -88,6 +88,17 @@ def bootstrap_secret(packet):
     }}
 
 
+def mail_gateway_policy(packet):
+    deployment, _ = mail_manifests(packet)
+    return {'apiVersion': 'networking.k8s.io/v1', 'kind': 'NetworkPolicy',
+            'metadata': {**deployment['metadata'], 'name': 'webdock-mail-gateway'},
+            'spec': {'podSelector': {'matchLabels': {'webdock.dev/mail-customer-id': packet['customerID']}},
+                     'policyTypes': ['Ingress'], 'ingress': [{'from': [{
+                         'namespaceSelector': {'matchLabels': {'kubernetes.io/metadata.name': 'webdock-mail-gateway'}},
+                         'podSelector': {'matchLabels': {'app': 'mail-gateway'}}}],
+                         'ports': [{'protocol': 'TCP', 'port': 8080}]}]}}
+
+
 def execute_mail(packet, checkpoint):
     """Provision one fixed profile; checkpoint credentials before removing recovery access."""
     import copy
@@ -167,6 +178,7 @@ def execute_mail(packet, checkpoint):
             # Known instances must never silently receive an empty replacement disk.
             storage_client.retained(p)
         prepare_namespace(p, namespace)
+        apply(mail_gateway_policy(packet), p)
         prepare_storage(p, initial_allocation=not bool(packet['credentials'].get('username')))
         renew()
         deployment, service = mail_manifests(packet)
@@ -217,6 +229,6 @@ def mail_capability(nodes):
         result = subprocess.run(['k3s', 'crictl', 'inspecti', config['image']], capture_output=True, text=True, check=True, timeout=15)
         if len(result.stdout) > 1048576 or config['image'] not in json.loads(result.stdout).get('status', {}).get('repoDigests', []):
             return None
-        return {'version': 1, 'image': config['image']}
+        return {'version': 1, 'image': config['image'], 'configurationVersion': 1}
     except (OSError, ValueError, KeyError, TypeError, StorageError, subprocess.SubprocessError):
         return None

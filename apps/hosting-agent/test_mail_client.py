@@ -29,7 +29,7 @@ class MailClientIntegrationTests(unittest.TestCase):
             docker('run', '-d', '--name', name, '--network', name, '--user', '65532:65532', '--cap-drop', 'ALL',
                    '--security-opt', 'no-new-privileges', '--read-only', '--memory', '1g', '--cpus', '1',
                    '--tmpfs', '/tmp', '--mount', 'type=volume,src=' + name + ',dst=/data',
-                   '--env', 'STALWART_PUBLIC_URL=https://mail.example.com',
+                   '--env', 'STALWART_PUBLIC_URL=https://mail-123.example.com',
                    *(['--env', 'STALWART_RECOVERY_MODE=1', '--env', 'STALWART_RECOVERY_ADMIN=admin:local-fixture-only'] if recovery else []), image)
             address = json.loads(docker('inspect', name))[0]['NetworkSettings']['Networks'][name]['IPAddress']
             return 'http://' + address + ':8080'
@@ -49,7 +49,7 @@ class MailClientIntegrationTests(unittest.TestCase):
             eventually(lambda: client.call('x:Bootstrap/get', {'ids': ['singleton']}))
             with client.opener.open(Request(client.url + '/healthz/live'), timeout=5) as response:
                 self.assertEqual(response.status, 200)
-            credentials = client.bootstrap('mail.example.com')
+            credentials = client.bootstrap('mail-123.example.com')
             docker('restart', name)
             eventually(lambda: client.call('x:NetworkListener/get', {'ids': None}))
             client.configure_listeners()
@@ -65,6 +65,23 @@ class MailClientIntegrationTests(unittest.TestCase):
             self.assertFalse(any(v.startswith('STALWART_RECOVERY') for v in json.loads(docker('inspect', name))[0]['Config']['Env']))
             with self.assertRaises(ValueError):
                 MailClient(permanent.url, 'admin', 'local-fixture-only').verify()
+            from mail_configuration import apply_configuration
+            from test_mail_configuration import packet
+            config = packet()
+            proof = apply_configuration(permanent, config, lambda: None)
+            self.assertEqual(apply_configuration(permanent, config, lambda: None), proof)
+            identity = config['identities'][0]
+            member = MailClient(permanent.url, identity['username'], identity['password'])
+            def jmap(method, account_id, capabilities):
+                return member.request('/jmap', {'using': ['urn:ietf:params:jmap:core', *capabilities],
+                    'methodCalls': [[method, {'accountId': account_id, 'ids': None}, 'fixture']]})['methodResponses'][0][0]
+            self.assertEqual(jmap('Mailbox/get', proof['mailboxes']['22'], ['urn:ietf:params:jmap:mail']), 'Mailbox/get')
+            self.assertEqual(jmap('Calendar/get', proof['identities']['33'], ['urn:ietf:params:jmap:calendars']), 'error')
+            identity['enabled'] = False; identity['mailboxIds'] = []
+            apply_configuration(permanent, config, lambda: None)
+            with self.assertRaises(ValueError):
+                jmap('Mailbox/get', proof['mailboxes']['22'], ['urn:ietf:params:jmap:mail'])
+
         finally:
             for args in [('rm', '-f', name), ('volume', 'rm', name), ('network', 'rm', name)]:
                 subprocess.run(['docker', '--host', endpoint, *args], env=env, capture_output=True, timeout=30)

@@ -69,6 +69,8 @@ def run_once(path):
     if not operation:
         mail = run_mail_once(path, state, observation)
         if mail is not None: return mail
+        configuration = run_mail_configuration(path, state, observation)
+        if configuration is not None: return configuration
         return {'event':'heartbeat','clusterID':state['clusterID'],'nodes':len(observation['nodes'])}
     packet=operation.get('desired')
     valid=packet and packet.get('clusterID')==state['clusterID'] and packet.get('operationID')==operation.get('id') and packet.get('generation')==operation.get('generation')
@@ -108,6 +110,25 @@ def run_mail_once(path, state, observation):
     heartbeat(path, state)
     agent_request(state['endpoint'], state, 'mail-complete', {**identity, **outcome})
     return {'event': 'mail-operation', 'id': packet['operationID'], 'outcome': outcome['outcome']}
+
+
+def run_mail_configuration(path, state, observation):
+    capability = observation.get('capabilities', {}).get('nativeMail', {})
+    if capability.get('configurationVersion') != 1:
+        return None
+    from mail_configuration import execute_configuration, validate_configuration
+    packet = agent_request(state['endpoint'],state,'mail-configuration-claim',{})
+    if packet is None: return None
+    validate_configuration(packet)
+    if packet['clusterID']!=state['clusterID'] or packet['generation']!=state['generation']:
+        raise ValueError('Mail configuration belongs to another agent')
+    identity={key:packet[key] for key in ['operationID','generation','leaseToken']}
+    def checkpoint():return agent_request(state['endpoint'],state,'mail-configuration-checkpoint',identity)
+    try:outcome={'outcome':'succeeded','proof':execute_configuration(packet,checkpoint)}
+    except Exception:outcome={'outcome':'needs_review'}
+    heartbeat(path,state)
+    agent_request(state['endpoint'],state,'mail-configuration-complete',{**identity,**outcome})
+    return {'event':'mail-configuration','id':packet['operationID'],'outcome':outcome['outcome']}
 
 
 def run_byok_once(path,allow_loopback=False):

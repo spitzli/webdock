@@ -1,3 +1,5 @@
+import { getTenantMailboxes, manageTenantMailboxes } from "./mailboxes";
+import { launchTenantWebmail } from "./mail-sessions";
 // Server-only delegation boundary: native cookies never leave this module.
 import { APIError, serializeSignedCookie } from "better-call";
 import { auth } from "./auth";
@@ -32,6 +34,8 @@ const shapes: Record<string, ((value: unknown) => boolean)[]> = {
   listTenants: [], listTenantInvitations: [], getTenant: [isString], manageTenant: [isString, isInput],
   getPlans: [], getTenantPlan: [isString], managePlans: [isInput], getOffer: [isString], acceptOffer: [isString],
   getTenantMail: [isString], manageTenantMail: [isString, isInput],
+  getTenantMailboxes: [isString], manageTenantMailboxes: [isString, isInput],
+  launchTenantWebmail: [isString, isString],
   getTenantMailService: [isString], manageTenantMailService: [isString, isInput],
   getTenantSenderDomains: [isString], manageTenantSenderDomain: [isString, value => isInput(value) && ["register", "refresh", "unregister"].includes(value.action) && isString(value.domainID)],
   getTenantMailKeys: [isString], manageTenantMailKeys: [isString, isMailKeyInput],
@@ -119,6 +123,9 @@ async function dispatch(operation: string, args: unknown[], headers: Headers, sa
     case "getOffer": return getOffer(headers, text);
     case "acceptOffer": return acceptOffer(headers, text);
     case "getTenantMail": return getTenantMail(headers, text);
+    case "getTenantMailboxes": return getTenantMailboxes(headers, text);
+    case "launchTenantWebmail": return launchTenantWebmail(headers, text, args[1] as string);
+    case "manageTenantMailboxes": return manageTenantMailboxes(headers, text, tenantInput);
     case "getTenantMailService": return getTenantMailService(headers, text);
     case "manageTenantMailService": return manageTenantMailService(headers, text, tenantInput);
     case "manageTenantMail": return manageTenantMail(headers, text, tenantInput);

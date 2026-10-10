@@ -1,5 +1,17 @@
 # Isolated integration lab, never a production deployment template.
 services:
+  policy:
+    image: node:24-bookworm-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20
+    command: ["node", "/fixture/policy.mjs"]
+    user: "65532:65532"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - ../../apps/mail/tests/integration/policy-fixture.mjs:/fixture/policy.mjs:ro
+    networks: [customer-a]
+    mem_limit: 128m
+    cpus: 0.25
   customer-a:
     image: stalwartlabs/stalwart:v0.16.25@sha256:74e5a7d55303ba525d939c6bf97ed4e010df7521f52d80afc22a815b66bd53f3
     environment:

@@ -18,21 +18,21 @@ const completion = lease.extend({ outcome: z.enum(["succeeded", "needs_review"])
   edition: z.literal("community"), recoveryDisabled: z.literal(true),
 }).strict().optional() }).strict();
 function conflict(): never { throw new HostingError(409, "Mail operation is no longer available to this agent."); }
-function config() {
+export function mailAgentConfig() {
   const key = process.env.MAIL_ENCRYPTION_KEY || "", image = process.env.MAIL_STALWART_IMAGE || "", suffix = process.env.MAIL_HOSTNAME_SUFFIX || "";
   if (!/^[A-Za-z0-9.:-]+\/[A-Za-z0-9_./-]+@sha256:[a-f0-9]{64}$/.test(image) || suffix.length > 220 ||
       !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(suffix)) throw new HostingError(503, "Managed Mail is not configured.");
   sealSecret({}, "configuration-check", key);
   return { key, image, suffix };
 }
-async function verify(db: Connection, agent: Agent) {
+export async function verifyMailAgent(db: Connection, agent: Agent) {
   const observed = await verifyAgent(db, agent);
   const c = (await db.query("SELECT ownership,provider,verified FROM webdock_auth.hosting_cluster WHERE id=$1 FOR SHARE", [agent.clusterID])).rows[0];
   if (!c || c.ownership !== "platform" || !/^v[0-9][^,]*\+k3s[0-9]+$/.test(observed.observation?.version || "") || !c.verified) conflict();
   return observed;
 }
 async function operation(db: Connection, agent: Agent, input: z.infer<typeof lease>): Promise<MailOperation> {
-  await verify(db, agent);
+  await verifyMailAgent(db, agent);
   if (input.generation !== agent.generation) conflict();
   // Match the core lock order: service before operation.
   const s = (await db.query(`SELECT s.* FROM webdock_mail.service s JOIN webdock_mail.operation o ON o.customer_id=s.customer_id
@@ -54,15 +54,15 @@ async function saveCredentials(db: Connection, id: string, value: Credentials, k
 }
 export async function claimNativeMail(agent: Agent) {
   if (process.env.WEBDOCK_NATIVE_MAIL_ENABLED !== "true") return null;
-  const settings = config();
+  const settings = mailAgentConfig();
   await transaction(async db => {
-    const a = await verify(db, agent);
+    const a = await verifyMailAgent(db, agent);
     if (a.observation?.capabilities?.nativeMail?.version !== 1 || a.observation?.capabilities?.nativeMail?.image !== settings.image || a.observation?.capabilities?.storageVersion !== 1) conflict();
   });
   const job = await claimMailOperation(database, agent.clusterID);
   if (!job) return null;
   return transaction(async db => {
-    await verify(db, agent);
+    await verifyMailAgent(db, agent);
     await db.query("SELECT customer_id FROM webdock_mail.service WHERE customer_id=$1 FOR UPDATE", [job.customerID]);
     await db.query("UPDATE webdock_mail.operation SET agent_generation=$3 WHERE id=$1 AND lease_token=$2 AND agent_generation IS NULL AND state='running'", [job.id, job.leaseToken, agent.generation]);
     await operation(db, agent, { operationID: job.id, leaseToken: job.leaseToken, generation: agent.generation });
@@ -86,7 +86,7 @@ export async function checkpointNativeMail(agent: Agent, input: unknown) {
     const job = await operation(db, agent, parsed);
     if (parsed.credentials) {
       if (!job.enabled) conflict();
-      const { key } = config(), previous = await readCredentials(db, job.customerID, key);
+      const { key } = mailAgentConfig(), previous = await readCredentials(db, job.customerID, key);
       // Retransmission is safe; replacing persisted permanent credentials is not.
       if (previous.username && (previous.username !== parsed.credentials.username || previous.password !== parsed.credentials.password)) conflict();
       await saveCredentials(db, job.customerID, { ...previous, ...parsed.credentials }, key);
@@ -103,7 +103,7 @@ export async function completeNativeMail(agent: Agent, input: unknown) {
       const p = parsed.proof;
       if (!p || p.namespace !== `wd-mail-${job.customerID}` || String(p.revision) !== job.revision || p.running !== job.enabled) conflict();
       if (job.enabled) {
-        const { key, suffix } = config(), value = await readCredentials(db, job.customerID, key);
+        const { key, suffix } = mailAgentConfig(), value = await readCredentials(db, job.customerID, key);
         if (!value.username || !value.password) conflict();
         await saveCredentials(db, job.customerID, { username: value.username, password: value.password }, key);
         await db.query("UPDATE webdock_mail.instance SET internal_url=$2,public_url=$3,verified_at=now() WHERE customer_id=$1", [job.customerID,

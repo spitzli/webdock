@@ -1,7 +1,7 @@
 import copy
 import unittest
 from datetime import datetime, timezone, timedelta
-from mail_executor import mail_manifests, validate_mail_packet
+from mail_executor import mail_manifests, validate_mail_packet, mail_gateway_policy
 
 
 class MailExecutorTests(unittest.TestCase):
@@ -38,6 +38,13 @@ class MailExecutorTests(unittest.TestCase):
         self.assertEqual(container['startupProbe']['httpGet']['path'], '/healthz/live')
         self.assertNotIn('bootstrapPassword', str(deployment))
         self.assertNotIn('b' * 43, str(deployment))
+
+    def test_mail_gateway_can_reach_only_the_private_http_listener(self):
+        policy = mail_gateway_policy(self.packet())
+        self.assertEqual(policy['metadata']['namespace'], 'wd-mail-123')
+        self.assertEqual(policy['spec']['podSelector'], {'matchLabels': {'webdock.dev/mail-customer-id': '123'}})
+        self.assertEqual(policy['spec']['ingress'], [{'from': [{'namespaceSelector': {'matchLabels': {'kubernetes.io/metadata.name': 'webdock-mail-gateway'}}, 'podSelector': {'matchLabels': {'app': 'mail-gateway'}}}], 'ports': [{'protocol': 'TCP', 'port': 8080}]}])
+        self.assertNotIn('egress', policy['spec'])
 
     def test_wrong_customer_hostname_unsafe_image_expired_lease_and_extra_arguments_are_rejected(self):
         for patch in [{'customerID': '../other'}, {'hostname': 'mail-999.mail.webdock.dev'},
@@ -76,7 +83,7 @@ class MailCapabilityTests(unittest.TestCase):
             config.write_text(json.dumps({'image': image, 'node': 'fixture-node'}))
             with patch('storage.private', return_value=config), patch('subprocess.run') as run:
                 run.return_value.stdout = json.dumps({'status': {'repoDigests': [image]}})
-                self.assertEqual(mail_capability(['fixture-node']), {'version': 1, 'image': image})
+                self.assertEqual(mail_capability(['fixture-node']), {'version': 1, 'image': image, 'configurationVersion': 1})
                 self.assertIsNone(mail_capability(['other-node']))
                 self.assertIsNone(mail_capability(['fixture-node', 'another-node']))
                 run.return_value.stdout = json.dumps({'status': {'repoDigests': []}})

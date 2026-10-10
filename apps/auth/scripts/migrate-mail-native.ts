@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
 import { Pool } from "pg";
+import { mailboxSchemaSQL, mailboxGrants } from "../src/lib/mailbox-schema";
 import { nativeMailSchemaSQL, nativeMailClusterSchemaSQL, nativeMailGrants } from "@webdock/mail-core/schema";
 
 // Explicit offline migration after migrate.ts and migrate-tenants.ts.
@@ -16,6 +17,8 @@ try {
   await database.query(nativeMailSchemaSQL);
   await database.query(nativeMailClusterSchemaSQL);
   await database.query(grants);
+  await database.query(mailboxSchemaSQL);
+  await database.query(mailboxGrants(env.AUTH_DB_ROLE || "webdock_auth_runtime"));
   await database.query("COMMIT");
   console.log("Native Mail activation registry, operation queue and scoped runtime grants ready.");
 } catch (error) {

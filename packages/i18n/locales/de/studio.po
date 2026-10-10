@@ -7616,3 +7616,216 @@ msgstr "Vercel-Healthcheck-Pfad"
 
 msgid "Use a public health endpoint that returns HTTP 200 without a redirect."
 msgstr "Verwende einen öffentlichen Healthcheck-Endpunkt, der HTTP 200 ohne Weiterleitung zurückgibt."
+
+msgid "Mailboxes"
+msgstr "Postfächer"
+
+msgid "Manage mailboxes"
+msgstr "Postfächer verwalten"
+
+msgid "Mailbox access is unavailable in customer preview."
+msgstr "Postfachzugriff ist in der Kundenvorschau nicht verfügbar."
+
+msgid "Mailbox management is not available yet."
+msgstr "Die Postfachverwaltung ist noch nicht verfügbar."
+
+msgid "Mail addresses and explicit access for your team."
+msgstr "E-Mail-Adressen und gezielte Zugriffsfreigaben für dein Team."
+
+msgid "Mailbox changes are being applied."
+msgstr "Postfachänderungen werden übernommen."
+
+msgid "Your mailboxes"
+msgstr "Deine Postfächer"
+
+msgid "No mailboxes are available for your account."
+msgstr "Für dein Konto sind keine Postfächer verfügbar."
+
+msgid "Mailbox"
+msgstr "Postfach"
+
+msgid "Storage limit"
+msgstr "Speicherlimit"
+
+msgid "Open mailbox"
+msgstr "Postfach öffnen"
+
+msgid "No mailbox access assigned"
+msgstr "Kein Postfachzugriff zugewiesen"
+
+msgid "Enable a mailbox domain"
+msgstr "Domain für Postfächer aktivieren"
+
+msgid "Verify domain ownership under Mail & Domains first."
+msgstr "Bestätige zuerst den Domainbesitz unter E-Mail & Domains."
+
+msgid "Enable domain"
+msgstr "Domain aktivieren"
+
+msgid "Create mailbox"
+msgstr "Postfach erstellen"
+
+msgid "Address before @"
+msgstr "Adresse vor dem @"
+
+msgid "Storage limit (MiB)"
+msgstr "Speicherlimit (MiB)"
+
+msgid "Grant mailbox access"
+msgstr "Postfachzugriff gewähren"
+
+msgid "Access allows reading, organizing and sending from this mailbox. Administration alone does not grant access."
+msgstr "Die Freigabe erlaubt das Lesen, Organisieren und Senden über dieses Postfach. Administrationsrechte allein gewähren keinen Zugriff."
+
+msgid "Grant access"
+msgstr "Zugriff gewähren"
+
+msgid "Mailbox access"
+msgstr "Postfachzugriff"
+
+msgid "Unavailable account"
+msgstr "Nicht verfügbares Konto"
+
+msgid "Webmail"
+msgstr "Webmail"
+
+msgid "Connecting to mailbox…"
+msgstr "Verbindung zum Postfach wird hergestellt…"
+
+msgid "New message"
+msgstr "Neue Nachricht"
+
+msgid "Mail folders"
+msgstr "E-Mail-Ordner"
+
+msgid "Inbox"
+msgstr "Posteingang"
+
+msgid "Drafts"
+msgstr "Entwürfe"
+
+msgid "Sent"
+msgstr "Gesendet"
+
+msgid "Trash"
+msgstr "Papierkorb"
+
+msgid "Junk"
+msgstr "Spam"
+
+msgid "Archive"
+msgstr "Archiv"
+
+msgid "Search messages"
+msgstr "Nachrichten suchen"
+
+msgid "No subject"
+msgstr "Kein Betreff"
+
+msgid "Attachments"
+msgstr "Anhänge"
+
+msgid "No messages in this view."
+msgstr "Keine Nachrichten in dieser Ansicht."
+
+msgid "To"
+msgstr "An"
+
+msgid "Subject"
+msgstr "Betreff"
+
+msgid "Sending…"
+msgstr "Wird gesendet…"
+
+msgid "Send message"
+msgstr "Nachricht senden"
+
+msgid "Discard this unsaved message?"
+msgstr "Diese ungespeicherte Nachricht verwerfen?"
+
+msgid "Close draft"
+msgstr "Entwurf schließen"
+
+msgid "The result is unknown. Check Drafts and Sent before composing this message again."
+msgstr "Das Ergebnis ist unklar. Prüfe Entwürfe und Gesendet, bevor du diese Nachricht erneut verfasst."
+
+msgid "Reply"
+msgstr "Antworten"
+
+msgid "Move to trash"
+msgstr "In den Papierkorb verschieben"
+
+msgid "This message has no plain-text body."
+msgstr "Diese Nachricht enthält keinen Textteil."
+
+msgid "Select a message to read it."
+msgstr "Wähle eine Nachricht zum Lesen aus."
+
+msgid "Message accepted for delivery."
+msgstr "Nachricht zum Versand angenommen."
+
+msgid "Message accepted for delivery. Filing in Sent needs review."
+msgstr "Nachricht zum Versand angenommen. Die Ablage unter Gesendet muss geprüft werden."
+
+msgid "Mail connection interrupted. Check the mailbox before repeating a change."
+msgstr "E-Mail-Verbindung unterbrochen. Prüfe das Postfach, bevor du eine Änderung wiederholst."
+
+msgid "Mail request failed."
+msgstr "Die E-Mail-Anfrage ist fehlgeschlagen."
+
+msgid "Mail session expired. Reload to reconnect."
+msgstr "Die Postfachsitzung ist abgelaufen. Lade die Seite neu, um die Verbindung wiederherzustellen."
+
+msgid "Mail session required."
+msgstr "Eine Postfachsitzung ist erforderlich."
+
+msgid "Mail access is unavailable."
+msgstr "Der Postfachzugriff ist nicht verfügbar."
+
+msgid "Mail access expired or was revoked."
+msgstr "Der Postfachzugriff ist abgelaufen oder wurde entzogen."
+
+msgid "Mail change outcome is unknown. Check the mailbox before taking further action."
+msgstr "Das Ergebnis der Änderung ist unklar. Prüfe zuerst das Postfach."
+
+msgid "Mail change outcome could not be recorded. Do not repeat it."
+msgstr "Das Ergebnis konnte nicht gespeichert werden. Wiederhole die Änderung nicht."
+
+msgid "Mail change was rejected."
+msgstr "Die E-Mail-Änderung wurde abgelehnt."
+
+msgid "Mailbox change queued. Access is enabled only after server verification."
+msgstr "Postfachänderung vorgemerkt. Der Zugriff wird erst nach der Serverprüfung aktiviert."
+
+msgid "Mail & Domains"
+msgstr "E-Mail & Domains"
+
+msgid "External images and active content are blocked."
+msgstr "Externe Bilder und aktive Inhalte sind blockiert."
+
+msgid "Message content"
+msgstr "Nachrichteninhalt"
+
+msgid "Attachments (up to 10 MiB)"
+msgstr "Anhänge (bis zu 10 MiB)"
+
+msgid "Remove attachment"
+msgstr "Anhang entfernen"
+
+msgid "This message is truncated."
+msgstr "Diese Nachricht wird gekürzt angezeigt."
+
+msgid "Attachment"
+msgstr "Anhang"
+
+msgid "Choose up to 10 attachments, totaling at most 10 MiB."
+msgstr "Wähle bis zu 10 Anhänge mit insgesamt höchstens 10 MiB."
+
+msgid "Attachment upload failed."
+msgstr "Der Anhang konnte nicht hochgeladen werden."
+
+msgid "Attachment download failed."
+msgstr "Der Anhang konnte nicht heruntergeladen werden."
+
+msgid "Mail sending is not available yet."
+msgstr "Der E-Mail-Versand ist noch nicht verfügbar."

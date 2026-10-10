@@ -24,8 +24,9 @@ def agent_request(origin, state, route, payload):
     with urllib.request.build_opener(NoRedirect()).open(request, timeout=20) as response:
         if response.status != 200:
             raise ValueError('Agent request rejected')
-        data=response.read(65537)
-        if len(data)>65536:raise ValueError('Agent response too large')
+        limit=524288 if route=='mail-configuration-claim' else 65536
+        data=response.read(limit+1)
+        if len(data)>limit:raise ValueError('Agent response too large')
         return json.loads(data)
 
 

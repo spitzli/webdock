@@ -2047,3 +2047,7 @@ td small {
 .customer-tenant-card > .tenant-preview-start { margin: 0; }
 .customer-tenant-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 12px; }
 .customer-tenant-actions > .button { margin: 0; white-space: normal; text-align: center; }
+
+.studio-portal .mailbox-form fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 1rem; min-width: 0; }
+.studio-portal .mailbox-form label { display: grid; gap: .45rem; }
+.studio-portal .mailbox-form button { justify-self: start; }

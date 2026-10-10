@@ -18,7 +18,6 @@
     "cms:migrate": "PAYLOAD_MIGRATING=true npm run payload -- migrate"
   },
   "dependencies": {
-    "@webdock/mail-core": "*",
     "@modelcontextprotocol/sdk": "1.32.0",
     "@payloadcms/db-postgres": "4.0.0-canary.37",
     "@payloadcms/email-nodemailer": "4.0.0-canary.37",
@@ -29,10 +28,12 @@
     "@webdock/hosting-contracts": "*",
     "@webdock/i18n": "*",
     "@webdock/instance-kit": "*",
+    "@webdock/mail-core": "*",
     "@webdock/page-builder": "*",
     "@webdock/payload-sso": "*",
     "@webdock/search": "*",
     "@webdock/snowflake": "*",
+    "dompurify": "^3.4.16",
     "graphql": "16.14.2",
     "iron-session": "8.0.4",
     "next": "16.3.8",

@@ -62,3 +62,13 @@ export type StorageView = {
   stores: { id: string; label: string; environment: "production" | "preview"; prefix: string; storeID: string; bytes: number | null; objects: number | null; checkedAt: string | null; error: string | null }[];
   productionBytes: number | null; previewBytes: number | null;
 };
+
+export type NativeMailboxesView = {
+  customerID: string; operator: boolean; canManage: boolean; canConfigure: boolean;
+  configuration: { revision: string; appliedRevision: string; state: string } | null;
+  mailboxes: { id: string; name: string; address: string; state: string; enabled: boolean; quotaBytes: string; canOpen: boolean }[];
+  domains: { id: string; name: string; state: string }[];
+  verifiedDomains: { id: string; domain: string }[];
+  people: { id: string; name: string; email: string }[];
+  grants: { mailboxID: string; subject: string; enabled: boolean; revision: string }[];
+};
