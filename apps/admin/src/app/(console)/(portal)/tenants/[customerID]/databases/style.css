@@ -1,0 +1,33 @@
+.database-directory { padding-block: 0; }
+.database-row { padding-block: 20px; border-bottom: 1px solid var(--line); }
+.database-row:last-child { border-bottom: 0; }
+.database-row-heading { display: flex; align-items: center; gap: 24px; }
+.database-row-heading > div:first-child { flex: 1; }
+.database-row-heading p { margin: 4px 0 0; }
+.database-access { margin-top: 16px; }
+.database-access > .hosting-form { max-width: 640px; margin-block: 16px; }
+/* The frame stays mounted in normal, focused and browser fullscreen modes. */
+.database-workspace-frame { display: flex; flex-direction: column; min-width: 0; height: calc(100dvh - 190px); min-height: 520px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.database-workspace-heading { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.database-workspace-heading h1 { margin: 0; font-size: 17px; line-height: 1.3; }
+.database-workspace-identity { min-width: 0; flex: 1; }
+.database-workspace-identity h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.database-workspace-identity > div { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 3px; color: var(--muted); font-size: 12px; }
+.database-permission { border-left: 1px solid var(--line); padding-left: 12px; }
+.database-back, .database-display-controls button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; border: 1px solid var(--line); border-radius: 5px; color: inherit; background: transparent; padding: 7px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+.database-display-controls { display: flex; gap: 6px; }
+.database-display-controls button:hover, .database-back:hover, .database-display-controls button[aria-pressed="true"] { background: var(--bg); }
+.database-display-controls button:focus-visible, .database-back:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.database-workspace-content { flex: 1; min-height: 0; min-width: 0; }
+.database-workspace-content > p { padding: 20px; }
+.database-workbench { height: 100%; min-height: 0; min-width: 0; }
+.database-workspace-frame.is-expanded { position: fixed; inset: 0; width: 100%; height: 100dvh; min-height: 0; z-index: 1000; border: 0; border-radius: 0; }
+.database-workspace-frame:fullscreen { width: 100%; height: 100dvh; min-height: 0; border: 0; border-radius: 0; }
+@media (max-width: 700px) {
+  .database-row-heading { flex-wrap: wrap; gap: 12px; }
+  .database-row-heading > div:first-child { flex-basis: 100%; }
+  .database-workspace-frame { height: calc(100dvh - 180px); min-height: 420px; }
+  .database-workspace-heading { padding: 8px; gap: 8px; }
+  .database-display-controls button { width: 36px; padding: 8px; }
+  .database-display-controls button span { display: none; }
+}

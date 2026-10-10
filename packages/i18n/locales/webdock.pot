@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-10 14:27+0200\n"
+"POT-Creation-Date: 2026-10-10 14:47+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -652,6 +652,7 @@ msgstr ""
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:68
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:112
+#: apps/admin/src/components/databases/forms.tsx:23
 #: apps/admin/src/components/hosting/own-infrastructure.tsx:146
 #: apps/admin/src/lib/ui-labels.ts:15
 #: apps/auth/src/app/tenants/[customerID]/page.tsx:34
@@ -1090,6 +1091,27 @@ msgstr ""
 #: apps/admin/src/lib/customer-fields.ts:18 apps/admin/src/lib/tenants.ts:14
 #: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:157
 msgid "Postal code"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:13
+#: apps/admin/src/components/navigation.tsx:103
+msgid "Databases"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:13
+msgid "Explore project data with Tabularis."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:15
+msgid "No databases are available for your account."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:18
+msgid "No access assigned"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:19
+msgid "Open database"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/keys/form.tsx:132
@@ -1539,6 +1561,116 @@ msgstr ""
 msgid "Local changes discarded."
 msgstr ""
 
+#: apps/admin/src/components/databases/forms.tsx:14
+#: apps/admin/src/components/hosting/form.tsx:56
+#: apps/auth/src/app/admin/form.tsx:43 apps/auth/src/app/admin/form.tsx:57
+#: apps/auth/src/app/admin/plans/form.tsx:12
+#: apps/auth/src/app/people/form.tsx:32 apps/auth/src/app/tenants/form.tsx:15
+#: packages/cms-ui/src/client.tsx:942
+msgid "Saving…"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:20
+msgid "Register database"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:22
+#: apps/admin/src/components/hosting/customer.tsx:127
+#: apps/admin/src/components/hosting/customer.tsx:200
+#: apps/admin/src/components/hosting/customer.tsx:248
+#: apps/admin/src/lib/ui-labels.ts:10 apps/admin/src/lib/ui-labels.ts:15
+msgid "Project"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:24
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
+msgid "Environment"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:24
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
+#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:31
+#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
+#: apps/auth/src/lib/i18n-labels.ts:6
+msgid "Production"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:24
+msgid "Staging"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:24
+msgid "Development"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:30
+#: apps/admin/src/lib/customer-fields.ts:9
+#: apps/auth/src/app/tenants/[customerID]/page.tsx:24
+#: apps/auth/src/app/tenants/[customerID]/page.tsx:27
+msgid "Person"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:31
+msgid "Manage database access"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:32
+msgid "Assign a dedicated Tabularis runtime with a verified database role for this person."
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:33
+msgid "Save access"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:35
+msgid "Database permission"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:35
+#: packages/cms-ui/src/client.tsx:768
+msgid "Read only"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:35
+msgid "Edit data"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:35
+msgid "Manage schema"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:36
+msgid "Runtime origin"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:37
+msgid "Tabularis connection ID"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:38
+msgid "Runtime proxy secret"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:39
+msgid "This runtime and its storage are isolated for this person and database."
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:40
+msgid "The database role enforces the selected permission and denies other tenants."
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:42
+msgid "Revoke access"
+msgstr ""
+
+#: apps/admin/src/components/databases/workspace-frame.tsx:51
+msgid "Database workspace"
+msgstr ""
+
+#: apps/admin/src/components/databases/workspace-frame.tsx:53
+msgid "Back to databases"
+msgstr ""
+
 #: apps/admin/src/components/editor.tsx:22 packages/cms-ui/src/client.tsx:945
 msgid "Save changes"
 msgstr ""
@@ -1660,13 +1792,6 @@ msgstr ""
 
 #: apps/admin/src/components/hosting/customer.tsx:124
 msgid "No hosting projects assigned."
-msgstr ""
-
-#: apps/admin/src/components/hosting/customer.tsx:127
-#: apps/admin/src/components/hosting/customer.tsx:200
-#: apps/admin/src/components/hosting/customer.tsx:248
-#: apps/admin/src/lib/ui-labels.ts:10 apps/admin/src/lib/ui-labels.ts:15
-msgid "Project"
 msgstr ""
 
 #: apps/admin/src/components/hosting/customer.tsx:132
@@ -1828,14 +1953,6 @@ msgstr ""
 
 #: apps/admin/src/components/hosting/form.tsx:52
 msgid "Open cluster enrollment"
-msgstr ""
-
-#: apps/admin/src/components/hosting/form.tsx:56
-#: apps/auth/src/app/admin/form.tsx:43 apps/auth/src/app/admin/form.tsx:57
-#: apps/auth/src/app/admin/plans/form.tsx:12
-#: apps/auth/src/app/people/form.tsx:32 apps/auth/src/app/tenants/form.tsx:15
-#: packages/cms-ui/src/client.tsx:942
-msgid "Saving…"
 msgstr ""
 
 #: apps/admin/src/components/hosting/form.tsx:71
@@ -2155,7 +2272,7 @@ msgstr ""
 msgid "My websites"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:103
+#: apps/admin/src/components/navigation.tsx:104
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:13
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:24
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:33
@@ -2163,11 +2280,11 @@ msgstr ""
 msgid "Mail"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:104
+#: apps/admin/src/components/navigation.tsx:105
 msgid "Credentials"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:104
+#: apps/admin/src/components/navigation.tsx:105
 msgid "Tracking"
 msgstr ""
 
@@ -2405,12 +2522,6 @@ msgstr ""
 #: apps/auth/src/app/tenants/[customerID]/page.tsx:24
 #: apps/auth/src/app/tenants/[customerID]/page.tsx:27
 msgid "Company"
-msgstr ""
-
-#: apps/admin/src/lib/customer-fields.ts:9
-#: apps/auth/src/app/tenants/[customerID]/page.tsx:24
-#: apps/auth/src/app/tenants/[customerID]/page.tsx:27
-msgid "Person"
 msgstr ""
 
 #: apps/admin/src/lib/customer-fields.ts:10 apps/admin/src/lib/tenants.ts:12
@@ -4801,17 +4912,6 @@ msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:44
 msgid "Connect each Blob store or a tenant’s exclusive path prefix. Credentials are saved privately and are never displayed. Production and preview storage are measured separately."
-msgstr ""
-
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
-msgid "Environment"
-msgstr ""
-
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
-#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:31
-#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
-#: apps/auth/src/lib/i18n-labels.ts:6
-msgid "Production"
 msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
@@ -7485,10 +7585,6 @@ msgstr ""
 
 #: packages/cms-ui/src/client.tsx:765
 msgid "Administrator"
-msgstr ""
-
-#: packages/cms-ui/src/client.tsx:768
-msgid "Read only"
 msgstr ""
 
 #: packages/cms-ui/src/client.tsx:775

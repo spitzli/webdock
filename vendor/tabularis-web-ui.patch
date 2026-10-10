@@ -1,0 +1,2256 @@
+From fdd6c0a6f979ede0acb38415fa12b25c04aa9c4e Mon Sep 17 00:00:00 2001
+From: NewtTheWolf <dominik@spitzli.dev>
+Date: Sat, 10 Oct 2026 14:14:08 +0200
+Subject: [PATCH] feat(web): export an isolated embeddable database workspace
+
+---
+ .gitignore                                    |   1 +
+ eslint.config.js                              |   1 +
+ packages/web-ui/LICENSE                       | 201 +++++++++++++++
+ packages/web-ui/README.md                     |  22 ++
+ packages/web-ui/package.json                  |  30 ++-
+ packages/web-ui/scripts/checkLibrary.mjs      |  16 ++
+ packages/web-ui/scripts/scopeWorkspaceCss.ts  |  22 ++
+ .../src/api/transports/httpTransport.ts       |   6 +-
+ .../notebook/NotebookCellHeader.tsx           |   4 +-
+ .../web-ui/src/components/ui/EnumSetInput.tsx |   4 +-
+ packages/web-ui/src/components/ui/Modal.tsx   |   4 +-
+ .../src/components/ui/PageSizeSelector.tsx    |   4 +-
+ packages/web-ui/src/components/ui/Select.tsx  |   4 +-
+ .../src/components/ui/UpdateTooltip.tsx       |   4 +-
+ .../web-ui/src/contexts/DatabaseProvider.tsx  |   5 +-
+ .../src/contexts/PluginModalProvider.tsx      |   4 +-
+ .../web-ui/src/contexts/UiStateContext.ts     |   5 +
+ .../web-ui/src/contexts/UiStateProvider.tsx   |   3 +-
+ .../src/contexts/WorkspaceRootContext.ts      |   4 +
+ .../web-ui/src/embed/TabularisWorkspace.tsx   |  21 ++
+ .../web-ui/src/embed/WorkspaceAppearance.tsx  |  53 ++++
+ packages/web-ui/src/embed/WorkspaceLayout.tsx |  20 ++
+ .../web-ui/src/embed/WorkspaceRuntime.tsx     |  57 +++++
+ packages/web-ui/src/embed/index.ts            |   9 +
+ packages/web-ui/src/embed/platform.ts         |  18 ++
+ packages/web-ui/src/embed/polyfills.ts        |   7 +
+ packages/web-ui/src/embed/types.ts            |  15 ++
+ packages/web-ui/src/hooks/useUiState.ts       |  12 +-
+ packages/web-ui/src/hooks/useWorkspaceRoot.ts |   6 +
+ packages/web-ui/src/i18n/locales/de.json      | 115 ++++++++-
+ packages/web-ui/src/i18n/locales/en.json      | 116 ++++++++-
+ packages/web-ui/src/pages/Editor.tsx          | 230 ++++++------------
+ packages/web-ui/src/themes/themeUtils.ts      |   9 +-
+ packages/web-ui/src/types/editor.ts           |   1 +
+ packages/web-ui/src/utils/gridMutations.ts    |  26 ++
+ packages/web-ui/src/utils/startupConfig.ts    |  12 +-
+ packages/web-ui/src/utils/uiStateStore.ts     |  13 +-
+ packages/web-ui/src/utils/workspace.ts        |   3 +
+ .../api/transports/httpTransport.test.ts      |   8 +
+ .../tests/contexts/DatabaseProvider.test.tsx  |  20 ++
+ .../tests/contexts/ThemeProvider.test.tsx     |   2 +-
+ .../web-ui/tests/embed/hostBoundary.test.tsx  |  35 +++
+ .../web-ui/tests/embed/isolation.test.tsx     |  41 ++++
+ packages/web-ui/tests/embed/styles.test.ts    |  20 ++
+ .../web-ui/tests/embed/workspace.test.tsx     |  35 +++
+ .../web-ui/tests/utils/gridMutations.test.ts  |  27 ++
+ .../web-ui/tests/utils/startupConfig.test.ts  |  11 +
+ packages/web-ui/tsconfig.library.json         |  14 ++
+ packages/web-ui/vite.library.config.ts        |  37 +++
+ pnpm-lock.yaml                                |  13 +
+ 50 files changed, 1156 insertions(+), 194 deletions(-)
+ create mode 100644 packages/web-ui/LICENSE
+ create mode 100644 packages/web-ui/README.md
+ create mode 100644 packages/web-ui/scripts/checkLibrary.mjs
+ create mode 100644 packages/web-ui/scripts/scopeWorkspaceCss.ts
+ create mode 100644 packages/web-ui/src/contexts/UiStateContext.ts
+ create mode 100644 packages/web-ui/src/contexts/WorkspaceRootContext.ts
+ create mode 100644 packages/web-ui/src/embed/TabularisWorkspace.tsx
+ create mode 100644 packages/web-ui/src/embed/WorkspaceAppearance.tsx
+ create mode 100644 packages/web-ui/src/embed/WorkspaceLayout.tsx
+ create mode 100644 packages/web-ui/src/embed/WorkspaceRuntime.tsx
+ create mode 100644 packages/web-ui/src/embed/index.ts
+ create mode 100644 packages/web-ui/src/embed/platform.ts
+ create mode 100644 packages/web-ui/src/embed/polyfills.ts
+ create mode 100644 packages/web-ui/src/embed/types.ts
+ create mode 100644 packages/web-ui/src/hooks/useWorkspaceRoot.ts
+ create mode 100644 packages/web-ui/src/utils/gridMutations.ts
+ create mode 100644 packages/web-ui/src/utils/workspace.ts
+ create mode 100644 packages/web-ui/tests/embed/hostBoundary.test.tsx
+ create mode 100644 packages/web-ui/tests/embed/isolation.test.tsx
+ create mode 100644 packages/web-ui/tests/embed/styles.test.ts
+ create mode 100644 packages/web-ui/tests/embed/workspace.test.tsx
+ create mode 100644 packages/web-ui/tests/utils/gridMutations.test.ts
+ create mode 100644 packages/web-ui/tsconfig.library.json
+ create mode 100644 packages/web-ui/vite.library.config.ts
+
+diff --git a/.gitignore b/.gitignore
+index 24649611..250bab33 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -40,3 +40,4 @@ AGENTS.override.md
+ .claude/*
+ !.claude/skills/
+ !.claude/skills/**
++packages/web-ui/lib/
+diff --git a/eslint.config.js b/eslint.config.js
+index 7a9c060d..364958e2 100644
+--- a/eslint.config.js
++++ b/eslint.config.js
+@@ -22,6 +22,7 @@ export default defineConfig([
+   globalIgnores([
+     "dist",
+     "packages/create-plugin/dist",
++    "packages/web-ui/lib/**",
+     "packages/web-ui/tests",
+     "web-ui-project/tests",
+     "tests",
+diff --git a/packages/web-ui/LICENSE b/packages/web-ui/LICENSE
+new file mode 100644
+index 00000000..df351848
+--- /dev/null
++++ b/packages/web-ui/LICENSE
+@@ -0,0 +1,201 @@
++                                 Apache License
++                           Version 2.0, January 2004
++                        http://www.apache.org/licenses/
++
++   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
++
++   1. Definitions.
++
++      "License" shall mean the terms and conditions for use, reproduction,
++      and distribution as defined by Sections 1 through 9 of this document.
++
++      "Licensor" shall mean the copyright owner or entity authorized by
++      the copyright owner that is granting the License.
++
++      "Legal Entity" shall mean the union of the acting entity and all
++      other entities that control, are controlled by, or are under common
++      control with that entity. For the purposes of this definition,
++      "control" means (i) the power, direct or indirect, to cause the
++      direction or management of such entity, whether by contract or
++      otherwise, or (ii) ownership of fifty percent (50%) or more of the
++      outstanding shares, or (iii) beneficial ownership of such entity.
++
++      "You" (or "Your") shall mean an individual or Legal Entity
++      exercising permissions granted by this License.
++
++      "Source" form shall mean the preferred form for making modifications,
++      including but not limited to software source code, documentation
++      source, and configuration files.
++
++      "Object" form shall mean any form resulting from mechanical
++      transformation or translation of a Source form, including but
++      not limited to compiled object code, generated documentation,
++      and conversions to other media types.
++
++      "Work" shall mean the work of authorship, whether in Source or
++      Object form, made available under the License, as indicated by a
++      copyright notice that is included in or attached to the work
++      (an example is provided in the Appendix below).
++
++      "Derivative Works" shall mean any work, whether in Source or Object
++      form, that is based on (or derived from) the Work and for which the
++      editorial revisions, annotations, elaborations, or other modifications
++      represent, as a whole, an original work of authorship. For the purposes
++      of this License, Derivative Works shall not include works that remain
++      separable from, or merely link (or bind by name) to the interfaces of,
++      the Work and Derivative Works thereof.
++
++      "Contribution" shall mean any work of authorship, including
++      the original version of the Work and any modifications or additions
++      to that Work or Derivative Works thereof, that is intentionally
++      submitted to Licensor for inclusion in the Work by the copyright owner
++      or by an individual or Legal Entity authorized to submit on behalf of
++      the copyright owner. For the purposes of this definition, "submitted"
++      means any form of electronic, verbal, or written communication sent
++      to the Licensor or its representatives, including but not limited to
++      communication on electronic mailing lists, source code control systems,
++      and issue tracking systems that are managed by, or on behalf of, the
++      Licensor for the purpose of discussing and improving the Work, but
++      excluding communication that is conspicuously marked or otherwise
++      designated in writing by the copyright owner as "Not a Contribution."
++
++      "Contributor" shall mean Licensor and any individual or Legal Entity
++      on behalf of whom a Contribution has been received by Licensor and
++      subsequently incorporated within the Work.
++
++   2. Grant of Copyright License. Subject to the terms and conditions of
++      this License, each Contributor hereby grants to You a perpetual,
++      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
++      copyright license to reproduce, prepare Derivative Works of,
++      publicly display, publicly perform, sublicense, and distribute the
++      Work and such Derivative Works in Source or Object form.
++
++   3. Grant of Patent License. Subject to the terms and conditions of
++      this License, each Contributor hereby grants to You a perpetual,
++      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
++      (except as stated in this section) patent license to make, have made,
++      use, offer to sell, sell, import, and otherwise transfer the Work,
++      where such license applies only to those patent claims licensable
++      by such Contributor that are necessarily infringed by their
++      Contribution(s) alone or by combination of their Contribution(s)
++      with the Work to which such Contribution(s) was submitted. If You
++      institute patent litigation against any entity (including a
++      cross-claim or counterclaim in a lawsuit) alleging that the Work
++      or a Contribution incorporated within the Work constitutes direct
++      or contributory patent infringement, then any patent licenses
++      granted to You under this License for that Work shall terminate
++      as of the date such litigation is filed.
++
++   4. Redistribution. You may reproduce and distribute copies of the
++      Work or Derivative Works thereof in any medium, with or without
++      modifications, and in Source or Object form, provided that You
++      meet the following conditions:
++
++      (a) You must give any other recipients of the Work or
++          Derivative Works a copy of this License; and
++
++      (b) You must cause any modified files to carry prominent notices
++          stating that You changed the files; and
++
++      (c) You must retain, in the Source form of any Derivative Works
++          that You distribute, all copyright, patent, trademark, and
++          attribution notices from the Source form of the Work,
++          excluding those notices that do not pertain to any part of
++          the Derivative Works; and
++
++      (d) If the Work includes a "NOTICE" text file as part of its
++          distribution, then any Derivative Works that You distribute must
++          include a readable copy of the attribution notices contained
++          within such NOTICE file, excluding those notices that do not
++          pertain to any part of the Derivative Works, in at least one
++          of the following places: within a NOTICE text file distributed
++          as part of the Derivative Works; within the Source form or
++          documentation, if provided along with the Derivative Works; or,
++          within a display generated by the Derivative Works, if and
++          wherever such third-party notices normally appear. The contents
++          of the NOTICE file are for informational purposes only and
++          do not modify the License. You may add Your own attribution
++          notices within Derivative Works that You distribute, alongside
++          or as an addendum to the NOTICE text from the Work, provided
++          that such additional attribution notices cannot be construed
++          as modifying the License.
++
++      You may add Your own copyright statement to Your modifications and
++      may provide additional or different license terms and conditions
++      for use, reproduction, or distribution of Your modifications, or
++      for any such Derivative Works as a whole, provided Your use,
++      reproduction, and distribution of the Work otherwise complies with
++      the conditions stated in this License.
++
++   5. Submission of Contributions. Unless You explicitly state otherwise,
++      any Contribution intentionally submitted for inclusion in the Work
++      by You to the Licensor shall be under the terms and conditions of
++      this License, without any additional terms or conditions.
++      Notwithstanding the above, nothing herein shall supersede or modify
++      the terms of any separate license agreement you may have executed
++      with Licensor regarding such Contributions.
++
++   6. Trademarks. This License does not grant permission to use the trade
++      names, trademarks, service marks, or product names of the Licensor,
++      except as required for reasonable and customary use in describing the
++      origin of the Work and reproducing the content of the NOTICE file.
++
++   7. Disclaimer of Warranty. Unless required by applicable law or
++      agreed to in writing, Licensor provides the Work (and each
++      Contributor provides its Contributions) on an "AS IS" BASIS,
++      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
++      implied, including, without limitation, any warranties or conditions
++      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
++      PARTICULAR PURPOSE. You are solely responsible for determining the
++      appropriateness of using or redistributing the Work and assume any
++      risks associated with Your exercise of permissions under this License.
++
++   8. Limitation of Liability. In no event and under no legal theory,
++      whether in tort (including negligence), contract, or otherwise,
++      unless required by applicable law (such as deliberate and grossly
++      negligent acts) or agreed to in writing, shall any Contributor be
++      liable to You for damages, including any direct, indirect, special,
++      incidental, or consequential damages of any character arising as a
++      result of this License or out of the use or inability to use the
++      Work (including but not limited to damages for loss of goodwill,
++      work stoppage, computer failure or malfunction, or any and all
++      other commercial damages or losses), even if such Contributor
++      has been advised of the possibility of such damages.
++
++   9. Accepting Warranty or Additional Liability. While redistributing
++      the Work or Derivative Works thereof, You may choose to offer,
++      and charge a fee for, acceptance of support, warranty, indemnity,
++      or other liability obligations and/or rights consistent with this
++      License. However, in accepting such obligations, You may act only
++      on Your own behalf and on Your sole responsibility, not on behalf
++      of any other Contributor, and only if You agree to indemnify,
++      defend, and hold each Contributor harmless for any liability
++      incurred by, or claims asserted against, such Contributor by reason
++      of your accepting any such warranty or additional liability.
++
++   END OF TERMS AND CONDITIONS
++
++   APPENDIX: How to apply the Apache License to your work.
++
++      To apply the Apache License to your work, attach the following
++      boilerplate notice, with the fields enclosed by brackets "[]"
++      replaced with your own identifying information. (Don't include
++      the brackets!)  The text should be enclosed in the appropriate
++      comment syntax for the file format. We also recommend that a
++      file or class name and description of purpose be included on the
++      same "printed page" as the copyright notice for easier
++      identification within third-party archives.
++
++   Copyright 2026 Andrea Debernardi
++
++   Licensed under the Apache License, Version 2.0 (the "License");
++   you may not use this file except in compliance with the License.
++   You may obtain a copy of the License at
++
++       http://www.apache.org/licenses/LICENSE-2.0
++
++   Unless required by applicable law or agreed to in writing, software
++   distributed under the License is distributed on an "AS IS" BASIS,
++   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++   See the License for the specific language governing permissions and
++   limitations under the License.
+\ No newline at end of file
+diff --git a/packages/web-ui/README.md b/packages/web-ui/README.md
+new file mode 100644
+index 00000000..20c88ab5
+--- /dev/null
++++ b/packages/web-ui/README.md
+@@ -0,0 +1,22 @@
++# @tabularis/web-ui
++
++The existing Tabularis explorer, SQL editor and result grid, embedded in a React host. This branch builds on Tabularis Web PR #676; it is not a published release.
++
++```tsx
++import { TabularisWorkspace, TabularisClient, HttpTransport } from '@tabularis/web-ui';
++import '@tabularis/web-ui/workspace.css';
++
++const transport = new HttpTransport({ baseUrl: 'https://database.example/s/123' });
++const client = new TabularisClient(transport);
++
++<TabularisWorkspace client={client} scopeId="authorization-session-123"
++  connectionId="123" locale="en" theme="light" />;
++```
++
++Mount in a container with an explicit height. Load this browser-only component lazily with SSR disabled in Next.js. The library externalizes React/React DOM. Its stylesheet uses CSS `@scope`, requiring a browser with support for that feature.
++
++Keep `client` stable across appearance updates. Change `scopeId` whenever the authorized session, database or grant changes. Internal routing does not change the host URL. Workspace preferences and appearance are isolated from document styling and the standalone browser cache. Host navigation and plugin extension loading are omitted. The current embedded locale choices are English and German.
++
++The host owns authentication, transport disposal and backend authorization. UI visibility is not a security boundary. A gateway must constrain every command to authorized connections, prevent arbitrary connection configuration and enforce database privileges with actual database roles. The desktop `database` authorization tier includes writes and is not tenant isolation. Saved queries and editor state require the same backend scope as database execution.
++
++Build an installable local artifact with `pnpm --filter @tabularis/web-ui build:library`, then `pnpm --filter @tabularis/web-ui pack`. Both normal `pnpm build` and desktop entry points remain available.
+diff --git a/packages/web-ui/package.json b/packages/web-ui/package.json
+index d9fa4e85..c513eeac 100644
+--- a/packages/web-ui/package.json
++++ b/packages/web-ui/package.json
+@@ -3,15 +3,37 @@
+   "private": true,
+   "version": "0.27.0",
+   "type": "module",
++  "license": "Apache-2.0",
++  "files": [
++    "lib",
++    "README.md",
++    "LICENSE"
++  ],
++  "sideEffects": [
++    "**/*.css"
++  ],
++  "exports": {
++    ".": {
++      "types": "./lib/types/index.d.ts",
++      "import": "./lib/index.js"
++    },
++    "./workspace.css": "./lib/workspace.css"
++  },
++  "peerDependencies": {
++    "react": "^19.2.0",
++    "react-dom": "^19.2.0"
++  },
+   "scripts": {
+     "dev": "vite",
+     "build": "tsc -b && vite build",
++    "build:library": "tsc --noEmit -p tsconfig.app.json && vite build --config vite.library.config.ts && tsup src/embed/index.ts --dts-only --dts-resolve --format esm --out-dir lib/types --tsconfig tsconfig.library.json --no-config --external react --external react-dom --external @xyflow/react && node scripts/checkLibrary.mjs",
+     "lint": "cd ../.. && eslint . && node scripts/check-theme-tokens.mjs",
+     "preview": "vite preview",
+     "test": "cd ../.. && vitest --config packages/web-ui/vitest.config.ts",
+     "test:contract": "cd ../.. && vitest --config packages/web-ui/vitest.config.ts run packages/web-ui/tests/api/dualTransportContract.test.ts",
+     "typecheck": "tsc --noEmit -p tsconfig.app.json",
+-    "test:coverage": "cd ../.. && vitest --config packages/web-ui/vitest.config.ts run --coverage"
++    "test:coverage": "cd ../.. && vitest --config packages/web-ui/vitest.config.ts run --coverage",
++    "prepack": "pnpm run build:library"
+   },
+   "devDependencies": {
+     "@tailwindcss/postcss": "^4.2.2",
+@@ -24,6 +46,10 @@
+     "postcss": "^8.5.8",
+     "typescript": "~5.9.3",
+     "vite": "^7.3.1",
+-    "vitest": "^4.1.2"
++    "vitest": "^4.1.2",
++    "tsup": "8.5.1"
++  },
++  "dependencies": {
++    "@xyflow/react": "^12.10.2"
+   }
+ }
+diff --git a/packages/web-ui/scripts/checkLibrary.mjs b/packages/web-ui/scripts/checkLibrary.mjs
+new file mode 100644
+index 00000000..be312f51
+--- /dev/null
++++ b/packages/web-ui/scripts/checkLibrary.mjs
+@@ -0,0 +1,16 @@
++import assert from "node:assert/strict";
++import { readFile, readdir, access } from "node:fs/promises";
++const manifest = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
++for (const entry of [manifest.exports["."].import, manifest.exports["."].types, manifest.exports["./workspace.css"]]) {
++  await access(new URL("../"+entry, import.meta.url));
++}
++const root = new URL("../lib/", import.meta.url);
++const css = await readFile(new URL("workspace.css", root), "utf8");
++assert.ok(css.includes("@scope (.tabularis-workspace)"), "Library stylesheet must be scoped after CSS emission");
++assert.ok(!css.includes("../fonts/"), "Library must include its fonts");
++for (const name of await readdir(root)) {
++  if (!name.endsWith(".js")) continue;
++  const source = await readFile(new URL(name, root), "utf8");
++  assert.ok(!/["']\/assets\//.test(source), `${name}: worker/assets must be relative to the library`);
++}
++console.log("Library exports, scoped styles, fonts and relative assets verified.");
+diff --git a/packages/web-ui/scripts/scopeWorkspaceCss.ts b/packages/web-ui/scripts/scopeWorkspaceCss.ts
+new file mode 100644
+index 00000000..00460409
+--- /dev/null
++++ b/packages/web-ui/scripts/scopeWorkspaceCss.ts
+@@ -0,0 +1,22 @@
++import postcss from "postcss";
++
++/** Library CSS must never reset the embedding application's document. */
++export function scopeWorkspaceCss(source: string): string {
++  const css = postcss.parse(source);
++  css.walkAtRules("layer", rule => {
++    if (rule.nodes) rule.replaceWith(...rule.nodes);
++    else rule.remove();
++  });
++  css.walkRules(rule => {
++    rule.selectors = rule.selectors.map(selector => /^(html|body|:root|:host|#root)$/.test(selector.trim()) ? ":scope" : selector);
++  });
++  const scope = postcss.atRule({ name: "scope", params: "(.tabularis-workspace)" });
++  const output = postcss.root();
++  for (const node of [...css.nodes]) {
++    if (node.type === "atrule" && ["font-face", "property", "charset"].includes(node.name)) output.append(node);
++    else scope.append(node);
++  }
++  output.append(scope);
++  output.append(postcss.parse(".tabularis-workspace { height: 100%; min-height: 32rem; min-width: 0; isolation: isolate; font-size: 14px; overflow: hidden; }"));
++  return output.toString();
++}
+diff --git a/packages/web-ui/src/api/transports/httpTransport.ts b/packages/web-ui/src/api/transports/httpTransport.ts
+index fad666b0..740514cc 100644
+--- a/packages/web-ui/src/api/transports/httpTransport.ts
++++ b/packages/web-ui/src/api/transports/httpTransport.ts
+@@ -751,13 +751,13 @@ export class HttpTransport implements TabularisTransport {
+   }
+ 
+   private websocketUrl(): string {
+-    const url = new URL("/api/v1/events", this.baseUrl);
++    const url = new URL(this.url("/api/v1/events"));
+     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+     return url.toString();
+   }
+ 
+   private url(path: string): string {
+-    return new URL(path, this.baseUrl).toString();
++    return new URL(path.replace(/^\//, ""), this.baseUrl).toString();
+   }
+ }
+ 
+@@ -778,7 +778,7 @@ function browserOrigin(): string {
+ 
+ function normalizeBaseUrl(baseUrl: string): string {
+   const url = new URL(baseUrl);
+-  url.pathname = "/";
++  if (!url.pathname.endsWith("/")) url.pathname += "/";
+   url.search = "";
+   url.hash = "";
+   return url.toString();
+diff --git a/packages/web-ui/src/components/notebook/NotebookCellHeader.tsx b/packages/web-ui/src/components/notebook/NotebookCellHeader.tsx
+index e10b3528..4eb7f81f 100644
+--- a/packages/web-ui/src/components/notebook/NotebookCellHeader.tsx
++++ b/packages/web-ui/src/components/notebook/NotebookCellHeader.tsx
+@@ -1,3 +1,4 @@
++import { useWorkspaceRoot } from "../../hooks/useWorkspaceRoot";
+ import { useCallback, useEffect, useRef, useState } from "react";
+ import { createPortal } from "react-dom";
+ import { useTranslation } from "react-i18next";
+@@ -121,6 +122,7 @@ export function NotebookCellHeader({
+   onNameChange,
+   cellContent,
+ }: NotebookCellHeaderProps) {
++  const portalRoot = useWorkspaceRoot();
+   const { t } = useTranslation();
+   const [isDbOpen, setIsDbOpen] = useState(false);
+   const [isEditingName, setIsEditingName] = useState(false);
+@@ -267,7 +269,7 @@ export function NotebookCellHeader({
+                     ))}
+                   </div>
+                 </>,
+-                document.body,
++                portalRoot ?? document.body,
+               )}
+           </div>
+         )}
+diff --git a/packages/web-ui/src/components/ui/EnumSetInput.tsx b/packages/web-ui/src/components/ui/EnumSetInput.tsx
+index 15c4110c..af057279 100644
+--- a/packages/web-ui/src/components/ui/EnumSetInput.tsx
++++ b/packages/web-ui/src/components/ui/EnumSetInput.tsx
+@@ -1,3 +1,4 @@
++import { useWorkspaceRoot } from "../../hooks/useWorkspaceRoot";
+ import React, {
+   useCallback,
+   useEffect,
+@@ -78,6 +79,7 @@ export const EnumSetInput = ({
+   rootRef,
+   className = "",
+ }: EnumSetInputProps) => {
++  const portalRoot = useWorkspaceRoot();
+   const { t } = useTranslation();
+   const [open, setOpen] = useState(autoOpen);
+   const [pos, setPos] = useState({
+@@ -322,7 +324,7 @@ export const EnumSetInput = ({
+           )}
+         />
+       </button>
+-      {dropdown && createPortal(dropdown, document.body)}
++      {dropdown && createPortal(dropdown, portalRoot ?? document.body)}
+     </div>
+   );
+ };
+diff --git a/packages/web-ui/src/components/ui/Modal.tsx b/packages/web-ui/src/components/ui/Modal.tsx
+index 6ff51d27..7eb0543c 100644
+--- a/packages/web-ui/src/components/ui/Modal.tsx
++++ b/packages/web-ui/src/components/ui/Modal.tsx
+@@ -1,3 +1,4 @@
++import { useWorkspaceRoot } from "../../hooks/useWorkspaceRoot";
+ import { createPortal } from "react-dom";
+ import { useEscapeKey } from "../../hooks/useEscapeKey";
+ 
+@@ -16,6 +17,7 @@ export const Modal = ({
+   overlayClassName = "fixed inset-0 bg-black/50 flex items-center justify-center z-[100] backdrop-blur-sm",
+   closeOnBackdrop = false,
+ }: ModalProps) => {
++  const portalRoot = useWorkspaceRoot();
+   useEscapeKey(isOpen, onClose);
+ 
+   if (!isOpen) return null;
+@@ -37,6 +39,6 @@ export const Modal = ({
+     >
+       {children}
+     </div>,
+-    document.body,
++    portalRoot ?? document.body,
+   );
+ };
+diff --git a/packages/web-ui/src/components/ui/PageSizeSelector.tsx b/packages/web-ui/src/components/ui/PageSizeSelector.tsx
+index d9874460..f9597f93 100644
+--- a/packages/web-ui/src/components/ui/PageSizeSelector.tsx
++++ b/packages/web-ui/src/components/ui/PageSizeSelector.tsx
+@@ -1,3 +1,4 @@
++import { useWorkspaceRoot } from "../../hooks/useWorkspaceRoot";
+ import { useEffect, useRef, useState } from "react";
+ import { createPortal } from "react-dom";
+ import { useTranslation } from "react-i18next";
+@@ -33,6 +34,7 @@ export function PageSizeSelector({
+   disabled = false,
+   onChange,
+ }: PageSizeSelectorProps) {
++  const portalRoot = useWorkspaceRoot();
+   const { t } = useTranslation();
+   const [isOpen, setIsOpen] = useState(false);
+   const [customValue, setCustomValue] = useState("");
+@@ -160,7 +162,7 @@ export function PageSizeSelector({
+         {value === 0 ? t("pagination.allRows") : value.toLocaleString()}
+         <ChevronDown size={12} />
+       </button>
+-      {menu && createPortal(menu, document.body)}
++      {menu && createPortal(menu, portalRoot ?? document.body)}
+     </>
+   );
+ }
+diff --git a/packages/web-ui/src/components/ui/Select.tsx b/packages/web-ui/src/components/ui/Select.tsx
+index a322bce1..badb67e7 100644
+--- a/packages/web-ui/src/components/ui/Select.tsx
++++ b/packages/web-ui/src/components/ui/Select.tsx
+@@ -1,3 +1,4 @@
++import { useWorkspaceRoot } from "../../hooks/useWorkspaceRoot";
+ import { useState, useRef, useEffect, useCallback } from "react";
+ import { createPortal } from "react-dom";
+ import { Search, ChevronDown, X } from "lucide-react";
+@@ -42,6 +43,7 @@ export const Select = ({
+   labels,
+   indents,
+ }: SelectProps) => {
++  const portalRoot = useWorkspaceRoot();
+   const [isOpen, setIsOpen] = useState(false);
+   const [searchQuery, setSearchQuery] = useState("");
+   const [dropdownPosition, setDropdownPosition] = useState({
+@@ -219,7 +221,7 @@ export const Select = ({
+         />
+       </button>
+ 
+-      {dropdown && createPortal(dropdown, document.body)}
++      {dropdown && createPortal(dropdown, portalRoot ?? document.body)}
+     </div>
+   );
+ };
+diff --git a/packages/web-ui/src/components/ui/UpdateTooltip.tsx b/packages/web-ui/src/components/ui/UpdateTooltip.tsx
+index 51f682f8..71572ada 100644
+--- a/packages/web-ui/src/components/ui/UpdateTooltip.tsx
++++ b/packages/web-ui/src/components/ui/UpdateTooltip.tsx
+@@ -1,3 +1,4 @@
++import { useWorkspaceRoot } from "../../hooks/useWorkspaceRoot";
+ import { cloneElement, useId, useState, type ReactElement, type CSSProperties, type KeyboardEvent } from "react";
+ import { createPortal } from "react-dom";
+ 
+@@ -14,6 +15,7 @@ interface UpdateTooltipProps {
+ 
+ /** Portalled so the Settings navigation's scroll container cannot clip it. */
+ export function UpdateTooltip({ label, details = [], children, disabled = false, className = "inline-flex" }: UpdateTooltipProps) {
++  const portalRoot = useWorkspaceRoot();
+   const id = useId();
+   const [position, setPosition] = useState<CSSProperties | null>(null);
+   const show = (element: HTMLSpanElement) => {
+@@ -60,7 +62,7 @@ export function UpdateTooltip({ label, details = [], children, disabled = false,
+             </ul>
+           )}
+         </div>,
+-        document.body,
++        portalRoot ?? document.body,
+       )}
+     </span>
+   );
+diff --git a/packages/web-ui/src/contexts/DatabaseProvider.tsx b/packages/web-ui/src/contexts/DatabaseProvider.tsx
+index 0d72602d..4b658f31 100644
+--- a/packages/web-ui/src/contexts/DatabaseProvider.tsx
++++ b/packages/web-ui/src/contexts/DatabaseProvider.tsx
+@@ -1,3 +1,4 @@
++import { useWorkspaceRoot } from '../hooks/useWorkspaceRoot';
+ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+ import { useTranslation } from 'react-i18next';
+ import { invoke } from '@tauri-apps/api/core';
+@@ -81,6 +82,7 @@ const createEmptyConnectionData = (driver: string = '', name: string = '', dbNam
+ 
+ export const DatabaseProvider = ({ children }: { children: ReactNode }) => {
+   const client = useTabularisClient();
++  const workspaceRoot = useWorkspaceRoot();
+   const { settings } = useSettings();
+   const { showToast } = useToast();
+   const { t } = useTranslation();
+@@ -143,6 +145,7 @@ export const DatabaseProvider = ({ children }: { children: ReactNode }) => {
+ 
+   useEffect(() => {
+     const updateTitle = async () => {
++      if (workspaceRoot) return;
+       try {
+         let title = 'tabularis';
+         if (activeConnectionName && activeDatabaseName) {
+@@ -163,7 +166,7 @@ export const DatabaseProvider = ({ children }: { children: ReactNode }) => {
+       }
+     };
+     updateTitle();
+-  }, [activeConnectionName, activeDatabaseName, activeSchema, activeCapabilities, selectedDatabases]);
++  }, [activeConnectionName, activeDatabaseName, activeSchema, activeCapabilities, selectedDatabases, workspaceRoot]);
+ 
+   const updateConnectionData = useCallback((connectionId: string, updates: Partial<ConnectionData>) => {
+     setConnectionDataMap(prev => ({
+diff --git a/packages/web-ui/src/contexts/PluginModalProvider.tsx b/packages/web-ui/src/contexts/PluginModalProvider.tsx
+index afe399a0..9ac1d06b 100644
+--- a/packages/web-ui/src/contexts/PluginModalProvider.tsx
++++ b/packages/web-ui/src/contexts/PluginModalProvider.tsx
+@@ -1,3 +1,4 @@
++import { useWorkspaceRoot } from "../hooks/useWorkspaceRoot";
+ import { useState, useCallback, useMemo } from "react";
+ import { createPortal } from "react-dom";
+ import { X } from "lucide-react";
+@@ -14,6 +15,7 @@ const SIZE_CLASSES: Record<string, string> = {
+ };
+ 
+ export const PluginModalProvider = ({ children }: { children: React.ReactNode }) => {
++  const portalRoot = useWorkspaceRoot();
+   const [modalState, setModalState] = useState<PluginModalOptions | null>(null);
+ 
+   const openModal = useCallback((options: PluginModalOptions) => {
+@@ -54,7 +56,7 @@ export const PluginModalProvider = ({ children }: { children: React.ReactNode })
+   return (
+     <PluginModalContext.Provider value={value}>
+       {children}
+-      {createPortal(modal, document.body)}
++      {createPortal(modal, portalRoot ?? document.body)}
+     </PluginModalContext.Provider>
+   );
+ };
+diff --git a/packages/web-ui/src/contexts/UiStateContext.ts b/packages/web-ui/src/contexts/UiStateContext.ts
+new file mode 100644
+index 00000000..d716d44d
+--- /dev/null
++++ b/packages/web-ui/src/contexts/UiStateContext.ts
+@@ -0,0 +1,5 @@
++import { createContext } from "react";
++import { uiStateStore } from "../utils/uiStateStore";
++
++/** Standalone hosts keep the default store; embedded hosts provide their own. */
++export const UiStateContext = createContext(uiStateStore);
+diff --git a/packages/web-ui/src/contexts/UiStateProvider.tsx b/packages/web-ui/src/contexts/UiStateProvider.tsx
+index 530db736..f143e953 100644
+--- a/packages/web-ui/src/contexts/UiStateProvider.tsx
++++ b/packages/web-ui/src/contexts/UiStateProvider.tsx
+@@ -1,6 +1,7 @@
+ import { useEffect, type ReactNode } from "react";
+ import { useTabularisClient } from "../hooks/useTabularisClient";
+ import { uiStateStore, type UiStateStore } from "../utils/uiStateStore";
++import { UiStateContext } from "./UiStateContext";
+ 
+ interface UiStateProviderProps {
+   children: ReactNode;
+@@ -22,5 +23,5 @@ export function UiStateProvider({ children, store = uiStateStore }: UiStateProvi
+     };
+   }, [client, store]);
+ 
+-  return <>{children}</>;
++  return <UiStateContext.Provider value={store}>{children}</UiStateContext.Provider>;
+ }
+diff --git a/packages/web-ui/src/contexts/WorkspaceRootContext.ts b/packages/web-ui/src/contexts/WorkspaceRootContext.ts
+new file mode 100644
+index 00000000..6d1bbb7c
+--- /dev/null
++++ b/packages/web-ui/src/contexts/WorkspaceRootContext.ts
+@@ -0,0 +1,4 @@
++import { createContext } from "react";
++
++/** Null retains the standalone host's document boundary. */
++export const WorkspaceRootContext = createContext<HTMLElement | null>(null);
+diff --git a/packages/web-ui/src/embed/TabularisWorkspace.tsx b/packages/web-ui/src/embed/TabularisWorkspace.tsx
+new file mode 100644
+index 00000000..aeadf61c
+--- /dev/null
++++ b/packages/web-ui/src/embed/TabularisWorkspace.tsx
+@@ -0,0 +1,21 @@
++"use client";
++
++import { lazy, Suspense, useState } from "react";
++import { MemoryRouter } from "react-router-dom";
++import { buildEditorRoute } from "../routing";
++import type { TabularisWorkspaceProps } from "./types";
++
++const Runtime = lazy(() => import("./WorkspaceRuntime").then(module => ({ default: module.WorkspaceRuntime })));
++
++/** Host routing and authentication remain outside the embedded workbench. */
++export function TabularisWorkspace(props: TabularisWorkspaceProps) {
++  const [root, setRoot] = useState<HTMLDivElement | null>(null);
++  return <div ref={setRoot} className={`tabularis-workspace ${props.className ?? ""}`}>
++    {root && <MemoryRouter key={JSON.stringify([props.scopeId, props.connectionId])}
++      initialEntries={[buildEditorRoute(props.connectionId)]}>
++      <Suspense fallback={<p role="status">{props.locale === "de" ? "Datenbank wird geladen…" : "Loading database…"}</p>}>
++        <Runtime {...props} root={root} />
++      </Suspense>
++    </MemoryRouter>}
++  </div>;
++}
+diff --git a/packages/web-ui/src/embed/WorkspaceAppearance.tsx b/packages/web-ui/src/embed/WorkspaceAppearance.tsx
+new file mode 100644
+index 00000000..f246883d
+--- /dev/null
++++ b/packages/web-ui/src/embed/WorkspaceAppearance.tsx
+@@ -0,0 +1,53 @@
++import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
++import { createInstance } from "i18next";
++import { I18nextProvider } from "react-i18next";
++import en from "../i18n/locales/en.json";
++import de from "../i18n/locales/de.json";
++import { ThemeContext } from "../contexts/ThemeContext";
++import { SettingsContext, DEFAULT_SETTINGS, type Settings } from "../contexts/SettingsContext";
++import { DEFAULT_THEME_SETTINGS } from "../types/theme";
++import { builtinCatalog, selectEffectiveTheme } from "../utils/themeCatalog";
++import { applyThemeToCSS } from "../themes/themeUtils";
++import type { WorkspaceRuntimeProps } from "./types";
++
++async function hostManaged(): Promise<never> {
++  throw new Error("Appearance is managed by the host application");
++}
++
++/** Embedded preferences are ephemeral; host account settings are never changed. */
++export function WorkspaceAppearance({ children, root, locale = "en", theme = "light" }:
++  Pick<WorkspaceRuntimeProps, "root" | "locale" | "theme"> & { children: ReactNode }) {
++  const [i18n] = useState(() => {
++    const instance = createInstance();
++    void instance.init({ lng: locale, fallbackLng: "en", initAsync: false,
++      resources: { en: { translation: en }, de: { translation: de } }, interpolation: { escapeValue: false } });
++    return instance;
++  });
++  const [preferences, setPreferences] = useState(DEFAULT_SETTINGS);
++  const settings = useMemo(() => ({ ...preferences, language: locale, aiEnabled: false,
++    autoConnectLastConnection: false, showWelcome: false }), [preferences, locale]);
++  const updateSetting = useCallback(async <K extends keyof Settings>(key: K, value: Settings[K] | ((previous: Settings[K]) => Settings[K])) => {
++    setPreferences(previous => ({ ...previous, [key]: typeof value === "function" ? value(previous[key]) : value }));
++  }, []);
++  const [catalog] = useState(builtinCatalog);
++  const allThemes = useMemo(() => catalog.themes.map(entry => entry.resolved.theme), [catalog]);
++  const themeSettings = useMemo(() => ({ ...DEFAULT_THEME_SETTINGS, activeThemeId: `tabularis-${theme}`, followSystemTheme: false }), [theme]);
++  const selection = useMemo(() => selectEffectiveTheme(themeSettings, allThemes, theme === "dark"), [themeSettings, allThemes, theme]);
++  useEffect(() => { void i18n.changeLanguage(locale); }, [i18n, locale]);
++  useEffect(() => {
++    applyThemeToCSS(selection.theme, root);
++    root.style.setProperty("--font-size-base", "14px");
++  }, [root, selection.theme]);
++  const themeValue = useMemo(() => ({ currentTheme: selection.theme, settings: themeSettings,
++    allThemes, isLoading: false, catalog, selection, refreshCatalog: async () => catalog,
++    setTheme: hostManaged, createCustomTheme: hostManaged, updateCustomTheme: hostManaged,
++    deleteCustomTheme: hostManaged, duplicateTheme: hostManaged, importTheme: hostManaged,
++    exportTheme: hostManaged, updateSettings: hostManaged, updatePersonalSource: hostManaged,
++    previewTheme: () => {}, previewDefinition: () => {}, cancelPreview: () => {},
++  }), [selection, themeSettings, allThemes, catalog]);
++  return <I18nextProvider i18n={i18n}><ThemeContext.Provider value={themeValue}>
++    <SettingsContext.Provider value={{ settings, updateSetting, isLoading: false, isLanguageReady: true, isLanguageSettled: true }}>
++      {children}
++    </SettingsContext.Provider>
++  </ThemeContext.Provider></I18nextProvider>;
++}
+diff --git a/packages/web-ui/src/embed/WorkspaceLayout.tsx b/packages/web-ui/src/embed/WorkspaceLayout.tsx
+new file mode 100644
+index 00000000..da1ca16c
+--- /dev/null
++++ b/packages/web-ui/src/embed/WorkspaceLayout.tsx
+@@ -0,0 +1,20 @@
++import { useState, type ReactNode } from "react";
++import { PanelLeftOpen } from "lucide-react";
++import { useTranslation } from "react-i18next";
++import { ExplorerSidebar, type SidebarTab } from "../components/layout/ExplorerSidebar";
++import { RightSidebar } from "../components/layout/RightSidebar";
++import { ProductionBanner } from "../components/layout/ProductionBanner";
++import { useSidebarResize } from "../hooks/useSidebarResize";
++
++export function WorkspaceLayout({ children }: { children: ReactNode }) {
++  const { t } = useTranslation();
++  const [tab, setTab] = useState<SidebarTab>("structure");
++  const [collapsed, setCollapsed] = useState(() => typeof matchMedia !== "undefined" && matchMedia("(max-width: 700px)").matches);
++  const { sidebarWidth, startResize } = useSidebarResize();
++  return <div className="flex h-full min-h-0 overflow-hidden bg-base text-primary">
++    {collapsed ? <div className="w-9 shrink-0 border-r border-default pt-2"><button type="button" onClick={() => setCollapsed(false)} className="flex h-8 w-9 items-center justify-center text-secondary hover:text-primary" aria-label={t("sidebar.structure")} title={t("sidebar.structure")}><PanelLeftOpen size={16} /></button></div> :
++      <ExplorerSidebar sidebarWidth={sidebarWidth} startResize={startResize} onCollapse={() => setCollapsed(true)} sidebarTab={tab} onSidebarTabChange={setTab} />}
++    <main className="flex min-w-0 flex-1 flex-col overflow-hidden"><ProductionBanner /><div className="min-h-0 flex-1">{children}</div></main>
++    <RightSidebar />
++  </div>;
++}
+diff --git a/packages/web-ui/src/embed/WorkspaceRuntime.tsx b/packages/web-ui/src/embed/WorkspaceRuntime.tsx
+new file mode 100644
+index 00000000..671ab2d2
+--- /dev/null
++++ b/packages/web-ui/src/embed/WorkspaceRuntime.tsx
+@@ -0,0 +1,57 @@
++import "./polyfills";
++import { useEffect, useMemo, useState } from "react";
++import { Routes, Route } from "react-router-dom";
++import { TabularisClientProvider } from "../contexts/TabularisClientProvider";
++import { UiStateProvider } from "../contexts/UiStateProvider";
++import { UiStateStore } from "../utils/uiStateStore";
++import { PlatformCapabilitiesProvider } from "../contexts/PlatformCapabilitiesProvider";
++import { createEmbeddedPlatform } from "./platform";
++import { WorkspaceRootContext } from "../contexts/WorkspaceRootContext";
++import { ToastProvider } from "../contexts/ToastProvider";
++import { AlertProvider } from "../contexts/AlertProvider";
++import { DatabaseProvider } from "../contexts/DatabaseProvider";
++import { SavedQueriesProvider } from "../contexts/SavedQueriesProvider";
++import { QueryHistoryProvider } from "../contexts/QueryHistoryProvider";
++import { EditorProvider } from "../contexts/EditorProvider";
++import { ProductionGuardProvider } from "../contexts/ProductionGuardContext";
++import { KeybindingsProvider } from "../contexts/KeybindingsProvider";
++import { ConnectionLayoutProvider } from "../contexts/ConnectionLayoutProvider";
++import { RightSidebarProvider } from "../contexts/RightSidebarProvider";
++import { CommandPaletteProvider } from "../contexts/CommandPaletteProvider";
++import { PluginSlotContext } from "../contexts/PluginSlotContext";
++import { PluginModalProvider } from "../contexts/PluginModalProvider";
++import { BrowserPlatformDialogs } from "../components/modals/BrowserPlatformDialogs";
++import { WorkspaceAppearance } from "./WorkspaceAppearance";
++import { WorkspaceLayout } from "./WorkspaceLayout";
++import { ConnectionEditorRoute } from "../pages/ConnectionEditorRoute";
++import type { WorkspaceRuntimeProps } from "./types";
++import { BROWSER_ROUTES } from "../routing";
++
++const noExtensions = {
++  contributions: [], register: () => () => {}, registerAll: () => () => {}, getSlotContributions: () => [],
++};
++
++export function WorkspaceRuntime(props: WorkspaceRuntimeProps) {
++  const [store] = useState(() => new UiStateStore(undefined, null));
++  const platform = useMemo(() => createEmbeddedPlatform(props.client), [props.client]);
++  // The surrounding session owns the transport; every provider releases its subscriptions on unmount.
++  useEffect(() => () => { store.reset(); }, [store]);
++  return <WorkspaceRootContext.Provider value={props.root}><TabularisClientProvider client={props.client}>
++    <UiStateProvider store={store}><PlatformCapabilitiesProvider capabilities={platform}>
++      <WorkspaceAppearance {...props}><ToastProvider><AlertProvider>
++        <DatabaseProvider><SavedQueriesProvider><QueryHistoryProvider><EditorProvider>
++          <ProductionGuardProvider><KeybindingsProvider><PluginSlotContext.Provider value={noExtensions}>
++            <PluginModalProvider><ConnectionLayoutProvider><RightSidebarProvider>
++              <BrowserPlatformDialogs />
++              <CommandPaletteProvider><WorkspaceLayout>
++                <Routes><Route path={BROWSER_ROUTES.connectionEditor} element={<ConnectionEditorRoute />} />
++                  <Route path="*" element={<p role="alert">{props.locale === "de" ? "Datenbank nicht verfügbar. Bitte erneut über die Anwendung öffnen." : "Database unavailable. Reopen it from the host application."}</p>} />
++                </Routes>
++              </WorkspaceLayout></CommandPaletteProvider>
++            </RightSidebarProvider></ConnectionLayoutProvider></PluginModalProvider>
++          </PluginSlotContext.Provider></KeybindingsProvider></ProductionGuardProvider>
++        </EditorProvider></QueryHistoryProvider></SavedQueriesProvider></DatabaseProvider>
++      </AlertProvider></ToastProvider></WorkspaceAppearance>
++    </PlatformCapabilitiesProvider></UiStateProvider>
++  </TabularisClientProvider></WorkspaceRootContext.Provider>;
++}
+diff --git a/packages/web-ui/src/embed/index.ts b/packages/web-ui/src/embed/index.ts
+new file mode 100644
+index 00000000..9bb1f4fe
+--- /dev/null
++++ b/packages/web-ui/src/embed/index.ts
+@@ -0,0 +1,9 @@
++export { TabularisWorkspace } from "./TabularisWorkspace";
++export type { TabularisWorkspaceProps } from "./types";
++export { TabularisClient } from "../api/client";
++export type { TabularisTransport } from "../api/client";
++export { HttpTransport } from "../api/transports/httpTransport";
++export type { HttpTransportOptions } from "../api/transports/httpTransport";
++export type { CommandName, CommandRequest, CommandResponse, CommandCallOptions } from "../api/contract";
++export type { SessionNegotiation } from "../api/session";
++import "../index.css";
+diff --git a/packages/web-ui/src/embed/platform.ts b/packages/web-ui/src/embed/platform.ts
+new file mode 100644
+index 00000000..b6b22699
+--- /dev/null
++++ b/packages/web-ui/src/embed/platform.ts
+@@ -0,0 +1,18 @@
++import { BrowserPlatformCapabilities } from "../platform/browserCapabilities";
++import type { PlatformCapabilities, PlatformCapabilityName, PlatformCapabilityAvailability } from "../platform/capabilities";
++import type { TabularisClient } from "../api/client";
++
++export function createEmbeddedPlatform(client: TabularisClient): PlatformCapabilities {
++  const browser = new BrowserPlatformCapabilities(client);
++  const blocked: PlatformCapabilityAvailability = { supported: false, adaptation: "unsupported", reason: "Secondary windows are unavailable in this embedded workspace." };
++  const negotiation = { ...browser.negotiation, capabilities: { ...browser.negotiation.capabilities, openRoute: blocked, closeRoute: blocked } };
++  return new Proxy(browser, {
++    get(target, name) {
++      if (name === "negotiation") return negotiation;
++      if (name === "supports") return (capability: PlatformCapabilityName) => negotiation.capabilities[capability].supported;
++      if (name === "openRoute" || name === "openConnectionRoute" || name === "closeRoute") return async () => { throw new Error(blocked.reason); };
++      const value = Reflect.get(target, name);
++      return typeof value === "function" ? value.bind(target) : value;
++    },
++  });
++}
+diff --git a/packages/web-ui/src/embed/polyfills.ts b/packages/web-ui/src/embed/polyfills.ts
+new file mode 100644
+index 00000000..019162b8
+--- /dev/null
++++ b/packages/web-ui/src/embed/polyfills.ts
+@@ -0,0 +1,7 @@
++import { Buffer } from "buffer";
++import process from "process";
++
++// Existing host globals take precedence over the browser fallbacks.
++const host = globalThis as typeof globalThis & { Buffer?: typeof Buffer; process?: typeof process };
++host.Buffer ??= Buffer;
++host.process ??= process;
+diff --git a/packages/web-ui/src/embed/types.ts b/packages/web-ui/src/embed/types.ts
+new file mode 100644
+index 00000000..88a7fceb
+--- /dev/null
++++ b/packages/web-ui/src/embed/types.ts
+@@ -0,0 +1,15 @@
++import type { TabularisClient } from "../api/client";
++
++export interface TabularisWorkspaceProps {
++  /** Changes whenever the authorized user, database grant or session changes. */
++  scopeId: string;
++  connectionId: string;
++  client: TabularisClient;
++  locale?: "en" | "de";
++  theme?: "light" | "dark";
++  className?: string;
++}
++
++export interface WorkspaceRuntimeProps extends TabularisWorkspaceProps {
++  root: HTMLElement;
++}
+diff --git a/packages/web-ui/src/hooks/useUiState.ts b/packages/web-ui/src/hooks/useUiState.ts
+index 6adb23b8..9003f686 100644
+--- a/packages/web-ui/src/hooks/useUiState.ts
++++ b/packages/web-ui/src/hooks/useUiState.ts
+@@ -1,6 +1,6 @@
+-import { useCallback, useSyncExternalStore } from "react";
++import { useCallback, useContext, useSyncExternalStore } from "react";
++import { UiStateContext } from "../contexts/UiStateContext";
+ import {
+-  uiStateStore,
+   type UiStateKeyDefinition,
+   type UiStateStore,
+ } from "../utils/uiStateStore";
+@@ -14,8 +14,10 @@ interface UseUiStateOptions {
+ export function useUiState<T>(
+   definition: UiStateKeyDefinition<T>,
+   fallback: T,
+-  { debounceMs, store = uiStateStore }: UseUiStateOptions = {},
++  { debounceMs, store: suppliedStore }: UseUiStateOptions = {},
+ ): [T, (value: T) => void] {
++  const inheritedStore = useContext(UiStateContext);
++  const store = suppliedStore ?? inheritedStore;
+   const { key } = definition;
+   const value = useSyncExternalStore(
+     useCallback((listener: () => void) => store.subscribe(listener), [store]),
+@@ -29,7 +31,9 @@ export function useUiState<T>(
+ }
+ 
+ /** True once the backend values were loaded (or the load failed). */
+-export function useUiStateReady(store: UiStateStore = uiStateStore): boolean {
++export function useUiStateReady(suppliedStore?: UiStateStore): boolean {
++  const inheritedStore = useContext(UiStateContext);
++  const store = suppliedStore ?? inheritedStore;
+   return useSyncExternalStore(
+     useCallback((listener: () => void) => store.subscribe(listener), [store]),
+     () => store.isReady(),
+diff --git a/packages/web-ui/src/hooks/useWorkspaceRoot.ts b/packages/web-ui/src/hooks/useWorkspaceRoot.ts
+new file mode 100644
+index 00000000..f89af78f
+--- /dev/null
++++ b/packages/web-ui/src/hooks/useWorkspaceRoot.ts
+@@ -0,0 +1,6 @@
++import { useContext } from "react";
++import { WorkspaceRootContext } from "../contexts/WorkspaceRootContext";
++
++export function useWorkspaceRoot() {
++  return useContext(WorkspaceRootContext);
++}
+diff --git a/packages/web-ui/src/i18n/locales/de.json b/packages/web-ui/src/i18n/locales/de.json
+index 12a6aa04..16c8028e 100644
+--- a/packages/web-ui/src/i18n/locales/de.json
++++ b/packages/web-ui/src/i18n/locales/de.json
+@@ -64,7 +64,11 @@
+     "development": "Entwicklung",
+     "staging": "Staging",
+     "production": "Produktion",
+-    "short": { "development": "DEV", "staging": "STAGING", "production": "PROD" },
++    "short": {
++      "development": "DEV",
++      "staging": "STAGING",
++      "production": "PROD"
++    },
+     "banner": "Produktion — {{name}}",
+     "warnTitle": "Produktionsdatenbank",
+     "warnMessage": "Sie sind dabei, Produktionsdaten auf \"{{name}}\" zu ändern. Wirklich fortfahren?",
+@@ -1288,7 +1292,9 @@
+     "revealCell": "Zelle anzeigen",
+     "maskCell": "Zelle maskieren",
+     "revealColumn": "Spalte anzeigen",
+-    "maskColumn": "Spalte maskieren"
++    "maskColumn": "Spalte maskieren",
++    "reviewChanges": "Einige Änderungen können bereits gespeichert sein. Prüfe die Datenbank vor dem erneuten Anwenden. Beim Aktualisieren werden die verbleibenden vorgemerkten Änderungen verworfen.",
++    "changesSavedRefresh": "Änderungen gespeichert. Prüfe das Ergebnis mit einer lesenden Abfrage. Die vorherige Schreibabfrage wurde nicht erneut ausgeführt."
+   },
+   "editRow": {
+     "title": "Zeile bearbeiten",
+@@ -2516,9 +2522,106 @@
+   "themePackages": {
+     "import": "Theme importieren",
+     "registryMismatch": "Dieses Paket stammt aus einer anderen Registry. Ändern Sie die konfigurierte Registry ausdrücklich, bevor Sie es aktualisieren.",
+-    "importedTheme": "Importiertes Design", "manage": "Designs verwalten", "importJSON": "Tabularis-JSON importieren", "importVSCode": "Aus VS Code importieren", "edit": "Persönliches Design bearbeiten", "localPackage": "Lokales Paket", "installTitle": "Design-Paket installieren", "installSubtitle": "Deklaratives Design aus der konfigurierten Registry. Es wird kein Code ausgeführt.", "discover": "Designs unter Plugins durchsuchen", "refresh": "Liste aktualisieren", "preview": "Vorschau", "apply": "Anwenden", "confirm": "Bestätigen", "duplicate": "Als persönliches Design kopieren", "exportJSON": "Eigenständiges JSON exportieren", "exportPackage": "Autorenpaket exportieren", "remove": "Löschen", "update": "Paket aktualisieren", "disable": "Paket deaktivieren", "enable": "Paket aktivieren", "removePackage": "Paket deinstallieren", "disabled": "Deaktiviert", "file": "Designdatei", "name": "Designname", "mode": "Modus / Basis", "detectMode": "Erkennen (bei Unklarheit auswählen)", "source": "Design-JSON", "search": "Designs suchen", "loading": "Wird geladen…", "noThemes": "Keine Designs in dieser Registry verfügbar.", "details": "Details / Installation", "readme": "README / Bildschirmfotos", "version": "Paketversion", "latest": "Neueste Version", "install": "Paket installieren / ersetzen", "chooseArchive": "ZIP-Archiv auswählen", "screenshots": "Screenshots (extern öffnen)", "externalMedia": "Bilder und andere entfernte Medien werden nicht automatisch geladen. Links öffnen sich im Browser.", "snapshotEditor": "Exaktes Editor-JSON", "snapshotEditorHelp": "Dieser unabhängige Snapshot steuert die SQL-Farben anstelle des alten Alias. Änderungen werden als Vorschau angezeigt und gegen die ursprüngliche Revision gespeichert.", "recover": "Unterbrochene Installationen wiederherstellen", "recoveryExplanation": "Unvollständige Theme-Transaktionen ausdrücklich prüfen und wiederherstellen. Dies kann unterbrochene Installationen reparieren, wählt aber kein Theme aus und ändert keine gespeicherten Einstellungen.", "recoveryDone": "Wiederherstellungsprüfung abgeschlossen. Verbleibende Meldungen stehen unten.", "catalogIssues": "Katalogdiagnose", "fileTooLarge": "Die Datei überschreitet das Importlimit.", "previewHint": "Die Vorschau ist vorübergehend. Abbrechen stellt das gespeicherte Design wieder her; Anwenden speichert die Auswahl.", "previewReady": "Vorschau aktiv. Prüfen Sie Anwendung und Editor vor der Bestätigung.", "licenseNotice": "Import oder Export gewährt keine Weiterverbreitungsrechte. Urheberangaben beibehalten und Lizenz vor der Veröffentlichung prüfen.", "acknowledge": "Ich verstehe und akzeptiere die aufgeführten Konvertierungsgrenzen.", "applyAfterSave": "Nach dem Speichern anwenden", "savedNotApplied": "Design gespeichert, Auswahl fehlgeschlagen. Nicht erneut importieren; gespeichertes Design auswählen.", "installHint": "Die Installation ersetzt das gesamte Paket, wählt aber keine Variante. Vorschau, lokaler Import und Auswahl zählen nicht als Downloads.", "installedHint": "Paket installiert. Schließen und unter Erscheinungsbild eine Variante auswählen.", "committedRefreshFailed": "Vorgang abgeschlossen, Katalogaktualisierung fehlgeschlagen. Liste vor einem erneuten Versuch aktualisieren.", "missing": "Gespeicherte Auswahl nicht verfügbar: {{id}}. Offline-Ersatz ohne Änderung der Einstellung.", "downloads": "Downloads: {{count}}", "downloadsUnavailable": "Downloadanzahl nicht verfügbar", "installedVersion": "Installiert: {{version}}", "minimumVersion": "Benötigt Tabularis {{version}} oder neuer", "incompatible": "Inkompatible Version oder nicht genau ein universelles Archiv vorhanden.", "packageWarning": "Betrifft alle Paketvarianten. Gespeicherte Auswahlen bleiben erhalten und werden bei erneuter Verfügbarkeit wiederhergestellt.", "deleteWarning": "Persönliches Design löschen? Seine gespeicherten Anwendungsauswahlen verwenden danach die Standarddesigns.", "duplicateHint": "Unabhängige, bearbeitbare persönliche Kopie erstellen, ohne sie zu aktivieren.", "exportError": "Paketexport fehlgeschlagen; eigenständiger JSON-Export bleibt verfügbar.", "runtimeWarning": "Die tatsächlich erste unterstützte Version angeben. Eine Entwicklungsversionsnummer beweist keine Kompatibilität alter Clients.", "packageName": "Paketkennung (Kleinbuchstaben)", "minimumRuntime": "Minimale Tabularis-Version", "license": "Lizenztext und Urheberangaben", "rightsAcknowledged": "Ich habe Weiterverbreitungsrechte und Urheberangaben geprüft.",
+-    "groups": { "builtin": "Integriert · offline", "installed": "Installierte Pakete", "personal": "Persönliche Designs" }, "modes": { "light": "Hell", "dark": "Dunkel", "high-contrast": "Hoher Kontrast" },
+-    "importErrors": { "unrecognized": "Kein erkanntes VS-Code-Design.", "modeRequired": "Modus auswählen und Vorschau erneut öffnen.", "includeOnly": "Reine Include-Designs sind nicht importierbar. Die tatsächlichen Farben bereitstellen.", "noSupportedData": "Keine unterstützten Farben oder SQL-Tokenregeln gefunden.", "invalidColor": "Ungültiger Wert einer unterstützten Farbe.", "invalidRules": "Ungültige oder zu viele Tokenregeln." },
+-    "diagnostics": { "unsupportedKey": "Nicht unterstütztes Feld", "unsupportedColor": "Nicht unterstützte Farbe", "unsupportedScope": "Nicht unterstützter Bereich", "scopeApproximation": "Angenäherte SQL-Zuordnung", "unsupportedStyle": "Nicht unterstützter Stil", "ignoredInclude": "Include nicht geladen", "ignoredSemanticTokens": "Semantische Tokens ignoriert", "unsupportedReference": "Externe Referenz nicht geladen", "unsupportedSetting": "Nicht unterstützte Einstellung", "tokenAlphaFlattened": "Token-Deckkraft gegen den Basishintergrund berechnet", "modeApproximation": "Modus überschrieben oder angenähert", "diagnosticsTruncated": "Weitere Diagnosen ausgelassen" }
++    "importedTheme": "Importiertes Design",
++    "manage": "Designs verwalten",
++    "importJSON": "Tabularis-JSON importieren",
++    "importVSCode": "Aus VS Code importieren",
++    "edit": "Persönliches Design bearbeiten",
++    "localPackage": "Lokales Paket",
++    "installTitle": "Design-Paket installieren",
++    "installSubtitle": "Deklaratives Design aus der konfigurierten Registry. Es wird kein Code ausgeführt.",
++    "discover": "Designs unter Plugins durchsuchen",
++    "refresh": "Liste aktualisieren",
++    "preview": "Vorschau",
++    "apply": "Anwenden",
++    "confirm": "Bestätigen",
++    "duplicate": "Als persönliches Design kopieren",
++    "exportJSON": "Eigenständiges JSON exportieren",
++    "exportPackage": "Autorenpaket exportieren",
++    "remove": "Löschen",
++    "update": "Paket aktualisieren",
++    "disable": "Paket deaktivieren",
++    "enable": "Paket aktivieren",
++    "removePackage": "Paket deinstallieren",
++    "disabled": "Deaktiviert",
++    "file": "Designdatei",
++    "name": "Designname",
++    "mode": "Modus / Basis",
++    "detectMode": "Erkennen (bei Unklarheit auswählen)",
++    "source": "Design-JSON",
++    "search": "Designs suchen",
++    "loading": "Wird geladen…",
++    "noThemes": "Keine Designs in dieser Registry verfügbar.",
++    "details": "Details / Installation",
++    "readme": "README / Bildschirmfotos",
++    "version": "Paketversion",
++    "latest": "Neueste Version",
++    "install": "Paket installieren / ersetzen",
++    "chooseArchive": "ZIP-Archiv auswählen",
++    "screenshots": "Screenshots (extern öffnen)",
++    "externalMedia": "Bilder und andere entfernte Medien werden nicht automatisch geladen. Links öffnen sich im Browser.",
++    "snapshotEditor": "Exaktes Editor-JSON",
++    "snapshotEditorHelp": "Dieser unabhängige Snapshot steuert die SQL-Farben anstelle des alten Alias. Änderungen werden als Vorschau angezeigt und gegen die ursprüngliche Revision gespeichert.",
++    "recover": "Unterbrochene Installationen wiederherstellen",
++    "recoveryExplanation": "Unvollständige Theme-Transaktionen ausdrücklich prüfen und wiederherstellen. Dies kann unterbrochene Installationen reparieren, wählt aber kein Theme aus und ändert keine gespeicherten Einstellungen.",
++    "recoveryDone": "Wiederherstellungsprüfung abgeschlossen. Verbleibende Meldungen stehen unten.",
++    "catalogIssues": "Katalogdiagnose",
++    "fileTooLarge": "Die Datei überschreitet das Importlimit.",
++    "previewHint": "Die Vorschau ist vorübergehend. Abbrechen stellt das gespeicherte Design wieder her; Anwenden speichert die Auswahl.",
++    "previewReady": "Vorschau aktiv. Prüfen Sie Anwendung und Editor vor der Bestätigung.",
++    "licenseNotice": "Import oder Export gewährt keine Weiterverbreitungsrechte. Urheberangaben beibehalten und Lizenz vor der Veröffentlichung prüfen.",
++    "acknowledge": "Ich verstehe und akzeptiere die aufgeführten Konvertierungsgrenzen.",
++    "applyAfterSave": "Nach dem Speichern anwenden",
++    "savedNotApplied": "Design gespeichert, Auswahl fehlgeschlagen. Nicht erneut importieren; gespeichertes Design auswählen.",
++    "installHint": "Die Installation ersetzt das gesamte Paket, wählt aber keine Variante. Vorschau, lokaler Import und Auswahl zählen nicht als Downloads.",
++    "installedHint": "Paket installiert. Schließen und unter Erscheinungsbild eine Variante auswählen.",
++    "committedRefreshFailed": "Vorgang abgeschlossen, Katalogaktualisierung fehlgeschlagen. Liste vor einem erneuten Versuch aktualisieren.",
++    "missing": "Gespeicherte Auswahl nicht verfügbar: {{id}}. Offline-Ersatz ohne Änderung der Einstellung.",
++    "downloads": "Downloads: {{count}}",
++    "downloadsUnavailable": "Downloadanzahl nicht verfügbar",
++    "installedVersion": "Installiert: {{version}}",
++    "minimumVersion": "Benötigt Tabularis {{version}} oder neuer",
++    "incompatible": "Inkompatible Version oder nicht genau ein universelles Archiv vorhanden.",
++    "packageWarning": "Betrifft alle Paketvarianten. Gespeicherte Auswahlen bleiben erhalten und werden bei erneuter Verfügbarkeit wiederhergestellt.",
++    "deleteWarning": "Persönliches Design löschen? Seine gespeicherten Anwendungsauswahlen verwenden danach die Standarddesigns.",
++    "duplicateHint": "Unabhängige, bearbeitbare persönliche Kopie erstellen, ohne sie zu aktivieren.",
++    "exportError": "Paketexport fehlgeschlagen; eigenständiger JSON-Export bleibt verfügbar.",
++    "runtimeWarning": "Die tatsächlich erste unterstützte Version angeben. Eine Entwicklungsversionsnummer beweist keine Kompatibilität alter Clients.",
++    "packageName": "Paketkennung (Kleinbuchstaben)",
++    "minimumRuntime": "Minimale Tabularis-Version",
++    "license": "Lizenztext und Urheberangaben",
++    "rightsAcknowledged": "Ich habe Weiterverbreitungsrechte und Urheberangaben geprüft.",
++    "groups": {
++      "builtin": "Integriert · offline",
++      "installed": "Installierte Pakete",
++      "personal": "Persönliche Designs"
++    },
++    "modes": {
++      "light": "Hell",
++      "dark": "Dunkel",
++      "high-contrast": "Hoher Kontrast"
++    },
++    "importErrors": {
++      "unrecognized": "Kein erkanntes VS-Code-Design.",
++      "modeRequired": "Modus auswählen und Vorschau erneut öffnen.",
++      "includeOnly": "Reine Include-Designs sind nicht importierbar. Die tatsächlichen Farben bereitstellen.",
++      "noSupportedData": "Keine unterstützten Farben oder SQL-Tokenregeln gefunden.",
++      "invalidColor": "Ungültiger Wert einer unterstützten Farbe.",
++      "invalidRules": "Ungültige oder zu viele Tokenregeln."
++    },
++    "diagnostics": {
++      "unsupportedKey": "Nicht unterstütztes Feld",
++      "unsupportedColor": "Nicht unterstützte Farbe",
++      "unsupportedScope": "Nicht unterstützter Bereich",
++      "scopeApproximation": "Angenäherte SQL-Zuordnung",
++      "unsupportedStyle": "Nicht unterstützter Stil",
++      "ignoredInclude": "Include nicht geladen",
++      "ignoredSemanticTokens": "Semantische Tokens ignoriert",
++      "unsupportedReference": "Externe Referenz nicht geladen",
++      "unsupportedSetting": "Nicht unterstützte Einstellung",
++      "tokenAlphaFlattened": "Token-Deckkraft gegen den Basishintergrund berechnet",
++      "modeApproximation": "Modus überschrieben oder angenähert",
++      "diagnosticsTruncated": "Weitere Diagnosen ausgelassen"
++    }
+   }
+ }
+diff --git a/packages/web-ui/src/i18n/locales/en.json b/packages/web-ui/src/i18n/locales/en.json
+index 6a094dd0..2b9eb7d3 100644
+--- a/packages/web-ui/src/i18n/locales/en.json
++++ b/packages/web-ui/src/i18n/locales/en.json
+@@ -64,7 +64,11 @@
+     "development": "Development",
+     "staging": "Staging",
+     "production": "Production",
+-    "short": { "development": "DEV", "staging": "STAGING", "production": "PROD" },
++    "short": {
++      "development": "DEV",
++      "staging": "STAGING",
++      "production": "PROD"
++    },
+     "banner": "Production — {{name}}",
+     "warnTitle": "Production database",
+     "warnMessage": "You are about to modify production data on “{{name}}”. Are you sure you want to continue?",
+@@ -1336,7 +1340,9 @@
+     "revealCell": "Reveal cell",
+     "maskCell": "Mask cell",
+     "revealColumn": "Reveal column",
+-    "maskColumn": "Mask column"
++    "maskColumn": "Mask column",
++    "reviewChanges": "Some changes may already be saved. Review the database before applying again. Refreshing clears the remaining pending edits.",
++    "changesSavedRefresh": "Changes saved. Refresh with a read query to inspect the result; the previous write statement was not run again."
+   },
+   "editRow": {
+     "title": "Edit Row",
+@@ -2605,10 +2611,106 @@
+   "themePackages": {
+     "import": "Import theme",
+     "registryMismatch": "This package belongs to another registry. Explicitly change the configured registry before updating it.",
+-    "importedTheme": "Imported theme", "manage": "Manage themes", "importJSON": "Import Tabularis JSON", "importVSCode": "Import from VS Code", "edit": "Edit personal theme", "localPackage": "Local package", "installTitle": "Install theme package", "installSubtitle": "Declarative theme from the configured registry. No code is executed.", "discover": "Browse themes in Plugins", "refresh": "Refresh", "preview": "Preview", "apply": "Apply", "confirm": "Confirm", "duplicate": "Duplicate as personal", "exportJSON": "Export standalone JSON", "exportPackage": "Export author package", "remove": "Delete", "update": "Update package", "disable": "Disable package", "enable": "Enable package", "removePackage": "Uninstall package", "disabled": "Disabled", "file": "Theme file", "name": "Theme name", "mode": "Mode / base", "detectMode": "Detect (choose explicitly if ambiguous)", "source": "Theme JSON", "search": "Search themes", "loading": "Loading…", "noThemes": "No themes available in this registry.", "details": "Details / install", "readme": "README / screenshots", "version": "Package version", "latest": "Latest release", "install": "Install / replace package", "chooseArchive": "Choose ZIP archive", "screenshots": "Screenshots (open externally)", "externalMedia": "Images and other remote media are not loaded automatically. Links open in your browser.", "snapshotEditor": "Exact editor JSON", "snapshotEditorHelp": "This independent snapshot controls SQL colors instead of the legacy named alias. Changes are previewed and saved against the original revision.", "recover": "Recover interrupted installs", "recoveryExplanation": "Explicitly check and recover unfinished theme transactions. This may restore interrupted installs; it does not select a theme or change saved preferences.", "recoveryDone": "Recovery checks completed. Review any remaining diagnostics below.", "catalogIssues": "Catalog diagnostics", "fileTooLarge": "The file exceeds the import byte limit.", "previewHint": "Preview changes are temporary. Cancel restores your saved theme; Apply saves your choice.", "previewReady": "Preview active. Review the application and editor before confirming.", "licenseNotice": "Importing or exporting does not grant redistribution rights. Preserve attribution and verify the license before publishing.", "acknowledge": "I understand and accept the conversion limitations listed above.", "applyAfterSave": "Apply after saving", "savedNotApplied": "Theme saved, but selection failed. Do not import again; select the saved theme.", "installHint": "Installation replaces the whole package but does not select a variant. Preview, local import and selection do not count as downloads.", "installedHint": "Package installed. Close this dialog and explicitly choose a variant in Appearance.", "committedRefreshFailed": "The operation committed, but catalog refresh failed. Refresh before retrying.", "missing": "Saved selection unavailable: {{id}}. Using an offline fallback without changing your preference.", "downloads": "Downloads: {{count}}", "downloadsUnavailable": "Download count unavailable", "installedVersion": "Installed: {{version}}", "minimumVersion": "Requires Tabularis {{version}} or newer", "incompatible": "This release is incompatible or does not have exactly one universal asset.", "packageWarning": "This affects every variant in the package. Saved selections are retained and restored when available again.", "deleteWarning": "Delete this personal theme? Its saved application selections will use the default themes.", "duplicateHint": "Create an independent, editable personal copy. This does not activate it.", "exportError": "Package export failed; standalone JSON export remains available.", "runtimeWarning": "Enter the actual first supporting release. A development build number is not proof of old-client compatibility.", "packageName": "Package slug (lowercase)", "minimumRuntime": "Minimum Tabularis version", "license": "License and attribution text", "rightsAcknowledged": "I have verified the redistribution rights and attribution.",
+-    "groups": { "builtin": "Builtin · offline", "installed": "Installed packages", "personal": "Personal themes" },
+-    "modes": { "light": "Light", "dark": "Dark", "high-contrast": "High contrast" },
+-    "importErrors": { "unrecognized": "Not a recognized VS Code theme.", "modeRequired": "Choose a mode explicitly, then preview again.", "includeOnly": "Include-only themes cannot be imported. Supply the actual colors.", "noSupportedData": "No supported colors or SQL token rules were found.", "invalidColor": "A supported color has an invalid value.", "invalidRules": "Invalid or excessive token rules." },
+-    "diagnostics": { "unsupportedKey": "Unsupported field", "unsupportedColor": "Unsupported color", "unsupportedScope": "Unsupported scope", "scopeApproximation": "Approximate SQL scope mapping", "unsupportedStyle": "Unsupported style", "ignoredInclude": "Include not loaded", "ignoredSemanticTokens": "Semantic tokens ignored", "unsupportedReference": "External reference not loaded", "unsupportedSetting": "Unsupported setting", "tokenAlphaFlattened": "Token opacity materialized against the base background", "modeApproximation": "Mode overridden or approximated", "diagnosticsTruncated": "Additional diagnostics omitted" }
++    "importedTheme": "Imported theme",
++    "manage": "Manage themes",
++    "importJSON": "Import Tabularis JSON",
++    "importVSCode": "Import from VS Code",
++    "edit": "Edit personal theme",
++    "localPackage": "Local package",
++    "installTitle": "Install theme package",
++    "installSubtitle": "Declarative theme from the configured registry. No code is executed.",
++    "discover": "Browse themes in Plugins",
++    "refresh": "Refresh",
++    "preview": "Preview",
++    "apply": "Apply",
++    "confirm": "Confirm",
++    "duplicate": "Duplicate as personal",
++    "exportJSON": "Export standalone JSON",
++    "exportPackage": "Export author package",
++    "remove": "Delete",
++    "update": "Update package",
++    "disable": "Disable package",
++    "enable": "Enable package",
++    "removePackage": "Uninstall package",
++    "disabled": "Disabled",
++    "file": "Theme file",
++    "name": "Theme name",
++    "mode": "Mode / base",
++    "detectMode": "Detect (choose explicitly if ambiguous)",
++    "source": "Theme JSON",
++    "search": "Search themes",
++    "loading": "Loading…",
++    "noThemes": "No themes available in this registry.",
++    "details": "Details / install",
++    "readme": "README / screenshots",
++    "version": "Package version",
++    "latest": "Latest release",
++    "install": "Install / replace package",
++    "chooseArchive": "Choose ZIP archive",
++    "screenshots": "Screenshots (open externally)",
++    "externalMedia": "Images and other remote media are not loaded automatically. Links open in your browser.",
++    "snapshotEditor": "Exact editor JSON",
++    "snapshotEditorHelp": "This independent snapshot controls SQL colors instead of the legacy named alias. Changes are previewed and saved against the original revision.",
++    "recover": "Recover interrupted installs",
++    "recoveryExplanation": "Explicitly check and recover unfinished theme transactions. This may restore interrupted installs; it does not select a theme or change saved preferences.",
++    "recoveryDone": "Recovery checks completed. Review any remaining diagnostics below.",
++    "catalogIssues": "Catalog diagnostics",
++    "fileTooLarge": "The file exceeds the import byte limit.",
++    "previewHint": "Preview changes are temporary. Cancel restores your saved theme; Apply saves your choice.",
++    "previewReady": "Preview active. Review the application and editor before confirming.",
++    "licenseNotice": "Importing or exporting does not grant redistribution rights. Preserve attribution and verify the license before publishing.",
++    "acknowledge": "I understand and accept the conversion limitations listed above.",
++    "applyAfterSave": "Apply after saving",
++    "savedNotApplied": "Theme saved, but selection failed. Do not import again; select the saved theme.",
++    "installHint": "Installation replaces the whole package but does not select a variant. Preview, local import and selection do not count as downloads.",
++    "installedHint": "Package installed. Close this dialog and explicitly choose a variant in Appearance.",
++    "committedRefreshFailed": "The operation committed, but catalog refresh failed. Refresh before retrying.",
++    "missing": "Saved selection unavailable: {{id}}. Using an offline fallback without changing your preference.",
++    "downloads": "Downloads: {{count}}",
++    "downloadsUnavailable": "Download count unavailable",
++    "installedVersion": "Installed: {{version}}",
++    "minimumVersion": "Requires Tabularis {{version}} or newer",
++    "incompatible": "This release is incompatible or does not have exactly one universal asset.",
++    "packageWarning": "This affects every variant in the package. Saved selections are retained and restored when available again.",
++    "deleteWarning": "Delete this personal theme? Its saved application selections will use the default themes.",
++    "duplicateHint": "Create an independent, editable personal copy. This does not activate it.",
++    "exportError": "Package export failed; standalone JSON export remains available.",
++    "runtimeWarning": "Enter the actual first supporting release. A development build number is not proof of old-client compatibility.",
++    "packageName": "Package slug (lowercase)",
++    "minimumRuntime": "Minimum Tabularis version",
++    "license": "License and attribution text",
++    "rightsAcknowledged": "I have verified the redistribution rights and attribution.",
++    "groups": {
++      "builtin": "Builtin · offline",
++      "installed": "Installed packages",
++      "personal": "Personal themes"
++    },
++    "modes": {
++      "light": "Light",
++      "dark": "Dark",
++      "high-contrast": "High contrast"
++    },
++    "importErrors": {
++      "unrecognized": "Not a recognized VS Code theme.",
++      "modeRequired": "Choose a mode explicitly, then preview again.",
++      "includeOnly": "Include-only themes cannot be imported. Supply the actual colors.",
++      "noSupportedData": "No supported colors or SQL token rules were found.",
++      "invalidColor": "A supported color has an invalid value.",
++      "invalidRules": "Invalid or excessive token rules."
++    },
++    "diagnostics": {
++      "unsupportedKey": "Unsupported field",
++      "unsupportedColor": "Unsupported color",
++      "unsupportedScope": "Unsupported scope",
++      "scopeApproximation": "Approximate SQL scope mapping",
++      "unsupportedStyle": "Unsupported style",
++      "ignoredInclude": "Include not loaded",
++      "ignoredSemanticTokens": "Semantic tokens ignored",
++      "unsupportedReference": "External reference not loaded",
++      "unsupportedSetting": "Unsupported setting",
++      "tokenAlphaFlattened": "Token opacity materialized against the base background",
++      "modeApproximation": "Mode overridden or approximated",
++      "diagnosticsTruncated": "Additional diagnostics omitted"
++    }
+   }
+ }
+diff --git a/packages/web-ui/src/pages/Editor.tsx b/packages/web-ui/src/pages/Editor.tsx
+index 1a7d7ebe..8b8f3fec 100644
+--- a/packages/web-ui/src/pages/Editor.tsx
++++ b/packages/web-ui/src/pages/Editor.tsx
+@@ -1,6 +1,10 @@
+ import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
+ import { useAutoRefresh } from "../hooks/useAutoRefresh";
+ import { hasPendingTableEdits, tableRefreshIdentity } from "../utils/autoRefresh";
++import { commitGridMutations, type GridMutation } from "../utils/gridMutations";
++import { isReadOnlyQuery } from "../utils/sqlAnalysis";
++import { useWorkspaceRoot } from "../hooks/useWorkspaceRoot";
++import { containsWorkspaceEvent } from "../utils/workspace";
+ import { useLocation, useNavigate } from "react-router-dom";
+ import { useTranslation } from "react-i18next";
+ import {
+@@ -18,7 +22,6 @@ import {
+ import { serializePkKey, buildPkMap } from "../utils/dataGrid";
+ import { TONE_SOFT_BG_CLASS, TONE_TEXT_CLASS, tint } from "../utils/tones";
+ import {
+-  buildKeylessUpdatePlan,
+   resolveRowIdentity,
+ } from "../utils/rowIdentity";
+ import {
+@@ -243,6 +246,7 @@ interface EditorProps {
+ export const Editor = ({ commandScopeId }: EditorProps) => {
+   const client = useTabularisClient();
+   const platform = usePlatformCapabilities();
++  const workspaceRoot = useWorkspaceRoot();
+   const { openResultsWindow, closeResultsWindow } = useSecondaryWindows();
+   const { t } = useTranslation();
+   const {
+@@ -665,6 +669,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+   // Update window title when the active tab changes
+   useEffect(() => {
+     const updateTitle = async () => {
++      if (workspaceRoot) return;
+       try {
+         let title = "tabularis";
+         if (activeConnectionName && activeDatabaseName) {
+@@ -693,6 +698,8 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+     updateTitle();
+   }, [
+     activeTabId,
++    platform,
++    workspaceRoot,
+     activeTab?.schema,
+     activeConnectionName,
+     activeDatabaseName,
+@@ -700,7 +707,6 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+     activeCapabilities,
+     isMultiDb,
+     selectedDatabases,
+-    platform,
+   ]);
+ 
+   // Define updateActiveTab first to be used in handleQueryChange
+@@ -1287,6 +1293,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+           textToRun = interpolateQueryParams(textToRun, storedParams, activeDialect);
+         }
+ 
++
+         // Automatically open the results panel when running a query — but only
+         // for the main window; a detached run must not re-expand the main panel.
+         if (!isDetached) {
+@@ -1316,6 +1323,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+           results: undefined,
+           activeResultId: undefined,
+           // Clear pending changes and selection when running a new query (unless preserving)
++          mutationNeedsReview: false,
+           pendingChanges: preservePendingChanges?.pendingChanges,
+           pendingDeletions: preservePendingChanges?.pendingDeletions,
+           pendingInsertions: preservePendingChanges?.pendingInsertions,
+@@ -2729,6 +2737,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+   // Global Ctrl/Command+F5 shortcut for Run (+Shift for Run All)
+   useEffect(() => {
+     const handleKeyDown = (e: KeyboardEvent) => {
++      if (!containsWorkspaceEvent(workspaceRoot, e.target)) return;
+       if ((e.ctrlKey || e.metaKey) && e.key === "F5") {
+         e.preventDefault();
+         if (e.shiftKey) handleRunAll();
+@@ -2737,7 +2746,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+     };
+     window.addEventListener("keydown", handleKeyDown);
+     return () => window.removeEventListener("keydown", handleKeyDown);
+-  }, [handleRunButton, handleRunAll]);
++  }, [handleRunButton, handleRunAll, workspaceRoot]);
+ 
+   // Global Ctrl+Tab shortcut: open tab switcher and advance to next tab circularly.
+   // In split mode only the focused pane (explorerConnectionId) handles the shortcut.
+@@ -2745,6 +2754,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+     const focused = isFocusedPane(explorerConnectionId, activeConnectionId);
+ 
+     const handleKeyDown = (e: KeyboardEvent) => {
++      if (!containsWorkspaceEvent(workspaceRoot, e.target)) return;
+       if (!focused || !e.ctrlKey || e.key !== "Tab") return;
+       e.preventDefault();
+       setIsTabSwitcherOpen(true);
+@@ -2761,12 +2771,13 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+       window.removeEventListener("keydown", handleKeyDown);
+       window.removeEventListener("keyup", handleKeyUp);
+     };
+-  }, [explorerConnectionId, activeConnectionId, setActiveTabId]);
++  }, [explorerConnectionId, activeConnectionId, setActiveTabId, workspaceRoot]);
+ 
+   // Cmd/Ctrl+T: new console tab; Cmd/Ctrl+Right: next page; Cmd/Ctrl+Left: prev page
+   useEffect(() => {
+     const focused = isFocusedPane(explorerConnectionId, activeConnectionId);
+     const handleKeyDown = (e: KeyboardEvent) => {
++      if (!containsWorkspaceEvent(workspaceRoot, e.target)) return;
+       if (!focused) return;
+ 
+       if (matchesShortcut(e, "close_tab")) {
+@@ -2824,6 +2835,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+     window.addEventListener("keydown", handleKeyDown);
+     return () => window.removeEventListener("keydown", handleKeyDown);
+   }, [
++    workspaceRoot,
+     explorerConnectionId,
+     activeConnectionId,
+     matchesShortcut,
+@@ -3438,8 +3450,17 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+     showAlert,
+   ]);
+ 
++  const submittingGrid = useRef(false);
+   const handleSubmitChanges = useCallback(async () => {
+     if (!activeTab || !activeTab.activeTable || !activeConnectionId) return;
++    if (submittingGrid.current || activeTab.isLoading) return;
++    if (activeTab.mutationNeedsReview) {
++      showAlert(t("dataGrid.reviewChanges"), { title: t("common.error"), kind: "error" });
++      return;
++    }
++    submittingGrid.current = true;
++    try {
++
+ 
+     const {
+       pendingChanges,
+@@ -3563,9 +3584,19 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+     if (!(await guardProductionWrite(activeConnectionId))) return;
+ 
+     updateActiveTab({ isLoading: true });
+-
++    const newPendingChanges = Object.fromEntries(Object.entries(pendingChanges || {}).map(([key, row]) => [key, { ...row, changes: { ...row.changes } }]));
++    const newPendingDeletions = { ...(pendingDeletions || {}) };
++    const newPendingInsertions = { ...(pendingInsertions || {}) };
++    const publishConfirmed = () => updateActiveTab({
++      pendingChanges: { ...newPendingChanges }, pendingDeletions: { ...newPendingDeletions }, pendingInsertions: { ...newPendingInsertions },
++    });
++    const confirmUpdate = (pk: Record<string, unknown>, column: string) => {
++      const key = serializePkKey(pk), row = newPendingChanges[key];
++      if (row) { delete row.changes[column]; if (!Object.keys(row.changes).length) delete newPendingChanges[key]; }
++      publishConfirmed();
++    };
+     try {
+-      const promises = [];
++      const operations: GridMutation[] = [];
+ 
+       const dataChangeScope = getTableDataChangeScope(
+         activeCapabilities,
+@@ -3573,149 +3604,47 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+         activeSchema,
+       );
+ 
+-      // Deletions
+-      if (deletions.length > 0) {
+-        if (isKeyless) {
+-          // Every grid row sharing an identity is marked for deletion
+-          // together (pendingDeletions is keyed by the serialized identity),
+-          // but drivers differ in how many duplicates one DELETE removes
+-          // (MySQL appends LIMIT 1, PostgreSQL/SQLite sweep them all).
+-          // Repeat each DELETE until the number of copies the grid showed is
+-          // gone, and surface a clear error when the row no longer matches.
+-          const countByKey = new Map<string, number>();
+-          if (activeTab.result && pkColumns) {
+-            const pkIndices = pkColumns.map((c) =>
+-              activeTab.result!.columns.indexOf(c),
+-            );
+-            if (pkIndices.every((i) => i !== -1)) {
+-              for (const row of activeTab.result.rows) {
+-                const key = serializePkKey(buildPkMap(pkColumns, row, pkIndices));
+-                countByKey.set(key, (countByKey.get(key) ?? 0) + 1);
+-              }
+-            }
+-          }
+-          promises.push(
+-            ...deletions.map(async (pkMap) => {
+-              let remaining = countByKey.get(serializePkKey(pkMap)) ?? 1;
+-              while (remaining > 0) {
+-                const affected = await client.call("delete_record", {
+-                  connectionId: activeConnectionId,
+-                  table: activeTable,
+-                  pkMap,
+-                  ...dataChangeScope,
+-                });
+-                if (affected === 0) {
+-                  throw new Error(
+-                    t("dataGrid.keylessDeleteNotFound", {
+-                      defaultValue:
+-                        "No row matched the original values while deleting. The table has no primary key and its data may have changed — refresh and retry.",
+-                    }),
+-                  );
+-                }
+-                remaining -= affected;
+-              }
+-            }),
+-          );
+-        } else {
+-          promises.push(
+-            ...deletions.map((pkMap) =>
+-              client.call("delete_record", {
+-                connectionId: activeConnectionId,
+-                table: activeTable,
+-                pkMap,
+-                ...dataChangeScope,
+-              }),
+-            ),
+-          );
++      const counts = new Map<string, number>();
++      if (isKeyless && activeTab.result && pkColumns) {
++        const indices = pkColumns.map(column => activeTab.result!.columns.indexOf(column));
++        for (const row of activeTab.result.rows) {
++          const key = serializePkKey(buildPkMap(pkColumns, row, indices));
++          counts.set(key, (counts.get(key) ?? 0) + 1);
+         }
+       }
+-
+-      // Updates
+-      if (updates.length > 0) {
+-        if (isKeyless) {
+-          // Without a primary key the WHERE clause matches every identity
+-          // column, so each UPDATE invalidates the previous values used to
+-          // address the row. Group changes per row and run them in order,
+-          // threading the already-applied values into each WHERE map.
+-          const updatesByRow = new Map<
+-            string,
+-            { pkVal: Record<string, unknown>; changes: Record<string, unknown> }
+-          >();
+-          for (const u of updates) {
+-            const rowKey = serializePkKey(u.pkVal);
+-            const entry = updatesByRow.get(rowKey) ?? {
+-              pkVal: u.pkVal,
+-              changes: {},
+-            };
+-            entry.changes[u.colName] = u.newVal;
+-            updatesByRow.set(rowKey, entry);
++      for (const pkMap of deletions) {
++        const key = serializePkKey(pkMap);
++        operations.push({ run: async () => {
++          let remaining = isKeyless ? counts.get(key) ?? 1 : 1;
++          while (remaining > 0) {
++            const affected = await client.call("delete_record", { connectionId: activeConnectionId, table: activeTable, pkMap, ...dataChangeScope });
++            if (affected === 0) throw new Error(t("dataGrid.reviewChanges"));
++            remaining -= affected;
+           }
+-
+-          promises.push(
+-            ...Array.from(updatesByRow.values()).map(async (row) => {
+-              const plan = buildKeylessUpdatePlan(row.pkVal, row.changes);
+-              for (const step of plan) {
+-                const affected = await client.call("update_record", {
+-                  connectionId: activeConnectionId,
+-                  table: activeTable,
+-                  pkMap: step.pkMap,
+-                  colName: step.colName,
+-                  newVal: step.newVal,
+-                  ...dataChangeScope,
+-                });
+-                if (affected === 0) {
+-                  throw new Error(
+-                    t("dataGrid.keylessRowNotFound", {
+-                      column: step.colName,
+-                      defaultValue:
+-                        'No row matched the original values while updating "{{column}}". The table has no primary key and its data may have changed — refresh and retry.',
+-                    }),
+-                  );
+-                }
+-              }
+-            }),
+-          );
+-        } else {
+-          promises.push(
+-            ...updates.map((u) =>
+-              client.call("update_record", {
+-                connectionId: activeConnectionId,
+-                table: activeTable,
+-                pkMap: u.pkVal,
+-                colName: u.colName,
+-                newVal: u.newVal,
+-                ...dataChangeScope,
+-              }),
+-            ),
+-          );
+-        }
++        }, confirm: () => { delete newPendingDeletions[key]; publishConfirmed(); } });
+       }
+-
+-      // Insertions
+-      if (insertions.length > 0) {
+-        promises.push(
+-          ...insertions.map((insertion) =>
+-            client.call("insert_record", {
+-              connectionId: activeConnectionId,
+-              table: activeTable,
+-              data: insertion.data,
+-              ...dataChangeScope,
+-            }),
+-          ),
+-        );
++      const identities = new Map<string, Record<string, unknown>>();
++      for (const update of updates) {
++        const key = serializePkKey(update.pkVal);
++        operations.push({ run: async () => {
++          const identity = identities.get(key) ?? update.pkVal;
++          const affected = await client.call("update_record", { connectionId: activeConnectionId, table: activeTable,
++            pkMap: identity, colName: update.colName, newVal: update.newVal, ...dataChangeScope });
++          if (affected === 0) throw new Error(t("dataGrid.reviewChanges"));
++          if (isKeyless || Object.hasOwn(identity, update.colName)) identities.set(key, { ...identity, [update.colName]: update.newVal });
++        }, confirm: () => confirmUpdate(update.pkVal, update.colName) });
+       }
++      for (const insertion of insertions) {
++        operations.push({ run: () => client.call("insert_record", { connectionId: activeConnectionId, table: activeTable, data: insertion.data, ...dataChangeScope }),
++          confirm: () => { delete newPendingInsertions[insertion.tempId]; publishConfirmed(); } });
++      }
++      await commitGridMutations(operations);
+ 
+-      await Promise.all(promises);
+-
+-      // Remove processed changes from state
+-      const newPendingChanges = { ...(pendingChanges || {}) };
+-      const newPendingDeletions = { ...(pendingDeletions || {}) };
+-      const newPendingInsertions = { ...(pendingInsertions || {}) };
+-
+-      // Partial cleanup - remove only processed changes
+-      updates.forEach((u) => delete newPendingChanges[serializePkKey(u.pkVal)]);
+-      deletions.forEach((d) => delete newPendingDeletions[serializePkKey(d as Record<string, unknown>)]);
+-      insertions.forEach((i) => delete newPendingInsertions[i.tempId]);
++      if (!isReadOnlyQuery(lastRunQueryRef.current[activeTab.id] || activeTab.query)) {
++        updateActiveTab({ isLoading: false });
++        showAlert(t("dataGrid.changesSavedRefresh"), { title: t("common.success"), kind: "info" });
++        return;
++      }
+ 
+       // Cleanup empty change objects
+       Object.keys(newPendingChanges).forEach((key) => {
+@@ -3745,7 +3674,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+       runQuery(
+         undefined,
+         activeTab.page,
+-        undefined,
++        activeTab.id,
+         undefined,
+         undefined,
+         undefined,
+@@ -3758,12 +3687,13 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+       );
+     } catch (e) {
+       console.error("Batch update failed", e);
+-      updateActiveTab({ isLoading: false });
+-      showAlert(t("dataGrid.updateFailed") + String(e), {
++      updateActiveTab({ isLoading: false, mutationNeedsReview: true });
++      showAlert(t("dataGrid.reviewChanges") + "\n" + String(e), {
+         title: t("common.error"),
+         kind: "error",
+       });
+     }
++    } finally { submittingGrid.current = false; }
+   }, [
+     client,
+     activeTab,
+@@ -3783,6 +3713,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+   useEffect(() => {
+     const focused = isFocusedPane(explorerConnectionId, activeConnectionId);
+     const handleKeyDown = (e: KeyboardEvent) => {
++      if (!containsWorkspaceEvent(workspaceRoot, e.target)) return;
+       if (!focused) return;
+       if (matchesShortcut(e, "save_grid_changes")) {
+         e.preventDefault();
+@@ -3799,6 +3730,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+     window.addEventListener("keydown", handleKeyDown);
+     return () => window.removeEventListener("keydown", handleKeyDown);
+   }, [
++    workspaceRoot,
+     explorerConnectionId,
+     activeConnectionId,
+     matchesShortcut,
+@@ -5107,7 +5039,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+               )}
+               <div className="relative flex items-center gap-0.5">
+                 {/* Detach results into a separate window */}
+-                <button
++                {platform.supports("openRoute") && <button
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     handleDetachResults();
+@@ -5117,7 +5049,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+                   title={t("editor.results.detach")}
+                 >
+                   <ExternalLink size={14} />
+-                </button>
++                </button>}
+                 {/* Minimize (collapse the results panel) */}
+                 <button
+                   onClick={(e) => {
+@@ -5618,7 +5550,7 @@ export const Editor = ({ commandScopeId }: EditorProps) => {
+                         <div className="w-px self-stretch bg-default"></div>
+                         <button
+                           onClick={handleSubmitChanges}
+-                          disabled={!applyToAll && !selectionHasPending}
++                          disabled={activeTab.isLoading || activeTab.mutationNeedsReview || (!applyToAll && !selectionHasPending)}
+                           className="flex items-center gap-1.5 px-2.5 @[560px]:px-4 py-2 text-accent-success hover:bg-surface-secondary transition-colors text-sm font-medium disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer"
+                           title={t("editor.submitChanges")}
+                         >
+diff --git a/packages/web-ui/src/themes/themeUtils.ts b/packages/web-ui/src/themes/themeUtils.ts
+index 378e4cdf..607501e3 100644
+--- a/packages/web-ui/src/themes/themeUtils.ts
++++ b/packages/web-ui/src/themes/themeUtils.ts
+@@ -74,8 +74,7 @@ export function loadMonacoTheme(
+   }
+ }
+ 
+-export function applyThemeToCSS(theme: Theme): void {
+-  const root = document.documentElement;
++export function applyThemeToCSS(theme: Theme, root: HTMLElement = document.documentElement): void {
+ 
+   // Background
+   root.style.setProperty("--bg-base", theme.colors.bg.base);
+@@ -142,7 +141,9 @@ export function applyThemeToCSS(theme: Theme): void {
+   root.style.setProperty("color-scheme", colorScheme);
+ 
+   // Let the next startup paint this theme before React mounts (see index.html).
+-  saveThemeBootCache({ bg: theme.colors.bg.base, fg: theme.colors.text.primary, scheme: colorScheme });
++  if (root === document.documentElement) {
++    saveThemeBootCache({ bg: theme.colors.bg.base, fg: theme.colors.text.primary, scheme: colorScheme });
++  }
+ }
+ 
+ export function generateMonacoTheme(theme: Theme): MonacoThemeDefinition {
+@@ -298,4 +299,4 @@ export function generateMonacoTheme(theme: Theme): MonacoThemeDefinition {
+       ...baseColors,
+     },
+   };
+-}
+\ No newline at end of file
++}
+diff --git a/packages/web-ui/src/types/editor.ts b/packages/web-ui/src/types/editor.ts
+index 4446e233..936e726f 100644
+--- a/packages/web-ui/src/types/editor.ts
++++ b/packages/web-ui/src/types/editor.ts
+@@ -115,6 +115,7 @@ export interface Tab {
+   >;
+   pendingDeletions?: Record<string, unknown>; // Map of stringified PK -> original PK value
+   pendingInsertions?: Record<string, PendingInsertion>; // Map of tempId -> pending insertion
++  mutationNeedsReview?: boolean; // A failed write batch must be reconciled before another submission.
+   selectedRows?: number[]; // Selected row indices
+   isEditorOpen?: boolean; // Whether the SQL editor is visible
+   filterClause?: string; // SQL WHERE clause (without "WHERE")
+diff --git a/packages/web-ui/src/utils/gridMutations.ts b/packages/web-ui/src/utils/gridMutations.ts
+new file mode 100644
+index 00000000..01e18c12
+--- /dev/null
++++ b/packages/web-ui/src/utils/gridMutations.ts
+@@ -0,0 +1,26 @@
++export interface GridMutation {
++  run: () => Promise<unknown>;
++  confirm: () => void;
++}
++
++export class GridCommitError extends Error {
++  readonly completed: number;
++  readonly requiresReview = true;
++  constructor(cause: unknown, completed: number) {
++    super(cause instanceof Error ? cause.message : String(cause), { cause });
++    this.name = "GridCommitError";
++    this.completed = completed;
++  }
++}
++
++/** A lost response may follow a committed write. Never replay this batch automatically. */
++export async function commitGridMutations(operations: readonly GridMutation[]): Promise<void> {
++  let completed = 0;
++  try {
++    for (const operation of operations) {
++      await operation.run();
++      operation.confirm();
++      completed++;
++    }
++  } catch (cause) { throw new GridCommitError(cause, completed); }
++}
+diff --git a/packages/web-ui/src/utils/startupConfig.ts b/packages/web-ui/src/utils/startupConfig.ts
+index c96a3e0a..33c36adb 100644
+--- a/packages/web-ui/src/utils/startupConfig.ts
++++ b/packages/web-ui/src/utils/startupConfig.ts
+@@ -8,12 +8,14 @@ type StartupConfig = Partial<Settings> & {
+   darkThemeId?: string;
+ };
+ 
+-let pending: Promise<StartupConfig> | undefined;
++const pending = new WeakMap<TabularisClient, Promise<StartupConfig>>();
+ 
+ /** Share simultaneous boot reads without retaining a stale config after boot. */
+ export function loadStartupConfig(client: TabularisClient): Promise<StartupConfig> {
+-  pending ??= client.call("get_config", undefined).finally(() => {
+-    pending = undefined;
+-  });
+-  return pending;
++  let request = pending.get(client);
++  if (!request) {
++    request = client.call("get_config", undefined).finally(() => pending.delete(client));
++    pending.set(client, request);
++  }
++  return request;
+ }
+diff --git a/packages/web-ui/src/utils/uiStateStore.ts b/packages/web-ui/src/utils/uiStateStore.ts
+index 12a4ee0b..810c9381 100644
+--- a/packages/web-ui/src/utils/uiStateStore.ts
++++ b/packages/web-ui/src/utils/uiStateStore.ts
+@@ -83,9 +83,14 @@ export class UiStateStore {
+   private client: TabularisClient | null = null;
+   private ready = false;
+   private generation = 0;
++  private readonly suppliedStorage: Storage | null | undefined;
++  private get storage(): Storage | null {
++    return this.suppliedStorage === undefined ? safeStorage() : this.suppliedStorage;
++  }
+ 
+-  constructor(definitions: UiStateKeyDefinition<unknown>[] = DEFINITIONS) {
++  constructor(definitions: UiStateKeyDefinition<unknown>[] = DEFINITIONS, storage?: Storage | null) {
+     this.definitions = definitions;
++    this.suppliedStorage = storage;
+     this.readFirstPaintCache();
+   }
+ 
+@@ -205,7 +210,7 @@ export class UiStateStore {
+     }
+     if (generation !== this.generation) return;
+ 
+-    const storage = safeStorage();
++    const storage = this.storage;
+     for (const definition of this.definitions) {
+       const { key } = definition;
+       if (this.dirty.has(key)) continue;
+@@ -255,7 +260,7 @@ export class UiStateStore {
+   }
+ 
+   private readFirstPaintCache(): void {
+-    const storage = safeStorage();
++    const storage = this.storage;
+     if (!storage) return;
+     let cached: Record<string, unknown> = {};
+     try {
+@@ -272,7 +277,7 @@ export class UiStateStore {
+   }
+ 
+   private writeFirstPaintCache(): void {
+-    const storage = safeStorage();
++    const storage = this.storage;
+     if (!storage) return;
+     const cached: Record<string, unknown> = {};
+     for (const definition of this.definitions) {
+diff --git a/packages/web-ui/src/utils/workspace.ts b/packages/web-ui/src/utils/workspace.ts
+new file mode 100644
+index 00000000..9f44fe67
+--- /dev/null
++++ b/packages/web-ui/src/utils/workspace.ts
+@@ -0,0 +1,3 @@
++export function containsWorkspaceEvent(root: HTMLElement | null, target: EventTarget | null): boolean {
++  return root === null || (target instanceof Node && root.contains(target));
++}
+diff --git a/packages/web-ui/tests/api/transports/httpTransport.test.ts b/packages/web-ui/tests/api/transports/httpTransport.test.ts
+index d000ccd8..df5747a3 100644
+--- a/packages/web-ui/tests/api/transports/httpTransport.test.ts
++++ b/packages/web-ui/tests/api/transports/httpTransport.test.ts
+@@ -37,6 +37,14 @@ const SESSION = {
+   },
+ };
+ 
++it("keeps a gateway's workspace path for session negotiation and RPC calls", async () => {
++  const fetch = vi.fn().mockResolvedValueOnce(jsonResponse(SESSION)).mockResolvedValueOnce(jsonResponse({ ok: true, data: [] }));
++  const transport = new HttpTransport({ baseUrl: "https://gateway.example/s/123", fetch });
++  await transport.call("get_connections", undefined);
++  expect(fetch.mock.calls[0][0]).toBe("https://gateway.example/s/123/api/v1/session");
++  expect(fetch.mock.calls[1][0]).toBe("https://gateway.example/s/123/api/v1/rpc/get_connections");
++});
++
+ function jsonResponse(body: unknown, status = 200): Response {
+   return new Response(JSON.stringify(body), {
+     status,
+diff --git a/packages/web-ui/tests/contexts/DatabaseProvider.test.tsx b/packages/web-ui/tests/contexts/DatabaseProvider.test.tsx
+index 1341e064..4e90dfd9 100644
+--- a/packages/web-ui/tests/contexts/DatabaseProvider.test.tsx
++++ b/packages/web-ui/tests/contexts/DatabaseProvider.test.tsx
+@@ -5,6 +5,7 @@ import { ToastContext } from '../../src/contexts/ToastContext';
+ import { useDatabase } from '../../src/hooks/useDatabase';
+ import { invoke, isTauri } from '@tauri-apps/api/core';
+ import React from 'react';
++import { WorkspaceRootContext } from '../../src/contexts/WorkspaceRootContext';
+ 
+ vi.mock('@tauri-apps/api/core', () => ({
+   invoke: vi.fn(),
+@@ -122,6 +123,12 @@ describe('DatabaseProvider', () => {
+     vi.restoreAllMocks();
+   });
+ 
++  it('does not change the native window title in a browser host', async () => {
++    const wrapper = ({ children }: { children: React.ReactNode }) => React.createElement(DatabaseProvider, null, children);
++    await act(async () => { renderHook(() => useDatabase(), { wrapper }); });
++    expect(vi.mocked(invoke).mock.calls.some(([command]) => command === 'set_window_title')).toBe(false);
++  });
++
+   it('shares concurrent connection-list loads but refreshes on a later call', async () => {
+     const wrapper = ({ children }: { children: React.ReactNode }) => React.createElement(DatabaseProvider, null, children);
+     vi.mocked(invoke).mockImplementation(async (command) => command === 'get_connections_with_groups'
+@@ -626,6 +633,19 @@ describe('DatabaseProvider', () => {
+     expect(invoke).not.toHaveBeenCalledWith('set_window_title', expect.anything());
+   });
+ 
++  it('preserves the host document title in an embedded workspace', async () => {
++    vi.mocked(isTauri).mockReturnValue(false);
++    document.title = 'Webdock Studio';
++    const root = document.createElement('div');
++    const wrapper = ({ children }: { children: React.ReactNode }) =>
++      React.createElement(WorkspaceRootContext.Provider, { value: root },
++        React.createElement(DatabaseProvider, null, children));
++    const { result } = renderHook(() => useDatabase(), { wrapper });
++    await act(async () => { await result.current.connect('conn-123'); });
++    expect(document.title).toBe('Webdock Studio');
++    expect(invoke).not.toHaveBeenCalledWith('set_window_title', expect.anything());
++  });
++
+   describe('Views Management', () => {
+     it('should load views on connection', async () => {
+       const wrapper = ({ children }: { children: React.ReactNode }) =>
+diff --git a/packages/web-ui/tests/contexts/ThemeProvider.test.tsx b/packages/web-ui/tests/contexts/ThemeProvider.test.tsx
+index 28784f98..3f4fb59c 100644
+--- a/packages/web-ui/tests/contexts/ThemeProvider.test.tsx
++++ b/packages/web-ui/tests/contexts/ThemeProvider.test.tsx
+@@ -203,7 +203,7 @@ describe("ThemeProvider catalog and explicit persistence", () => {
+     const native = vi.mocked(invoke).getMockImplementation()!;
+     vi.mocked(invoke).mockImplementation((command, args) => command === "get_theme_catalog" ? pending.promise : native(command, args));
+     const { result } = renderHook(() => useTheme(), { wrapper });
+-    await act(async () => { await loadStartupConfig(); });
++    await act(async () => { await loadStartupConfig(tauriBackedClient); });
+     expect(result.current.isLoading).toBe(true);
+     expect(applyThemeToCSS).not.toHaveBeenCalled();
+     await act(async () => pending.resolve(snapshot()));
+diff --git a/packages/web-ui/tests/embed/hostBoundary.test.tsx b/packages/web-ui/tests/embed/hostBoundary.test.tsx
+new file mode 100644
+index 00000000..29b6e808
+--- /dev/null
++++ b/packages/web-ui/tests/embed/hostBoundary.test.tsx
+@@ -0,0 +1,35 @@
++import { render, screen, cleanup } from "@testing-library/react";
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { Modal } from "../../src/components/ui/Modal";
++import { WorkspaceRootContext } from "../../src/contexts/WorkspaceRootContext";
++import { containsWorkspaceEvent } from "../../src/utils/workspace";
++import { createEmbeddedPlatform } from "../../src/embed/platform";
++import type { TabularisClient } from "../../src/api/client";
++
++afterEach(cleanup);
++describe("embedding host boundary", () => {
++  it("portals dialogs inside the workspace so scoped styles and theme apply", () => {
++    const root = document.createElement("div"); root.className = "tabularis-workspace"; document.body.append(root);
++    render(<WorkspaceRootContext.Provider value={root}><Modal isOpen onClose={() => {}}><div role="dialog">Scoped dialog</div></Modal></WorkspaceRootContext.Provider>);
++    expect(root.contains(screen.getByRole("dialog"))).toBe(true);
++    cleanup(); root.remove();
++  });
++  it("preserves the standalone portal target", () => {
++    render(<Modal isOpen onClose={() => {}}><div role="dialog">Desktop dialog</div></Modal>);
++    expect(document.body.contains(screen.getByRole("dialog"))).toBe(true);
++  });
++  it("ignores keyboard events from the surrounding host application", () => {
++    const root = document.createElement("div"), input = document.createElement("input"); root.append(input);
++    expect(containsWorkspaceEvent(root, input)).toBe(true);
++    expect(containsWorkspaceEvent(root, document.body)).toBe(false);
++    expect(containsWorkspaceEvent(null, document.body)).toBe(true);
++  });
++  it("does not open standalone application routes in the host", async () => {
++    const open = vi.spyOn(window, "open");
++    const platform = createEmbeddedPlatform({} as TabularisClient);
++    expect(platform.supports("openRoute")).toBe(false);
++    expect(platform.negotiation.capabilities.openRoute.supported).toBe(false);
++    await expect(platform.openRoute({ route: "/results-window", label: "results", title: "Results" })).rejects.toThrow();
++    expect(open).not.toHaveBeenCalled(); open.mockRestore();
++  });
++});
+diff --git a/packages/web-ui/tests/embed/isolation.test.tsx b/packages/web-ui/tests/embed/isolation.test.tsx
+new file mode 100644
+index 00000000..40b5fd67
+--- /dev/null
++++ b/packages/web-ui/tests/embed/isolation.test.tsx
+@@ -0,0 +1,41 @@
++import { act, renderHook } from "@testing-library/react";
++import { describe, expect, it } from "vitest";
++import { applyThemeToCSS } from "../../src/themes/themeUtils";
++import { themeRegistry } from "../../src/themes/themeRegistry";
++import { UiStateStore, UI_STATE_KEYS, UI_STATE_CACHE_KEY } from "../../src/utils/uiStateStore";
++import { UiStateContext } from "../../src/contexts/UiStateContext";
++import { useUiState } from "../../src/hooks/useUiState";
++
++describe("embedded workspace isolation", () => {
++  it("applies a theme to its own element without modifying the host or boot cache", () => {
++    const root = document.createElement("div");
++    const before = document.documentElement.getAttribute("style");
++    const storage = { ...localStorage };
++    applyThemeToCSS(themeRegistry.getPreset("tabularis-dark")!, root);
++    expect(root.style.getPropertyValue("--bg-base")).not.toBe("");
++    expect(document.documentElement.getAttribute("style")).toBe(before);
++    expect({ ...localStorage }).toEqual(storage);
++  });
++
++  it("does not hydrate a workspace from another user's browser cache", () => {
++    localStorage.setItem(UI_STATE_CACHE_KEY, JSON.stringify({ tabularis_sidebar_width: 999 }));
++    const store = new UiStateStore(undefined, null);
++    expect(store.get("tabularis_sidebar_width", 280)).toBe(280);
++    store.set("tabularis_sidebar_width", 320);
++    expect(localStorage.getItem(UI_STATE_CACHE_KEY)).toContain("999");
++  });
++
++  it("uses the current provider's store and keeps sibling workspaces independent", () => {
++    const first = new UiStateStore(undefined, null);
++    const second = new UiStateStore(undefined, null);
++    const a = renderHook(() => useUiState(UI_STATE_KEYS.sidebarWidth, 280), {
++      wrapper: ({ children }) => <UiStateContext.Provider value={first}>{children}</UiStateContext.Provider>,
++    });
++    const b = renderHook(() => useUiState(UI_STATE_KEYS.sidebarWidth, 280), {
++      wrapper: ({ children }) => <UiStateContext.Provider value={second}>{children}</UiStateContext.Provider>,
++    });
++    act(() => a.result.current[1](360));
++    expect(a.result.current[0]).toBe(360);
++    expect(b.result.current[0]).toBe(280);
++  });
++});
+diff --git a/packages/web-ui/tests/embed/styles.test.ts b/packages/web-ui/tests/embed/styles.test.ts
+new file mode 100644
+index 00000000..1465e540
+--- /dev/null
++++ b/packages/web-ui/tests/embed/styles.test.ts
+@@ -0,0 +1,20 @@
++import { describe, expect, it } from "vitest";
++import { scopeWorkspaceCss } from "../../scripts/scopeWorkspaceCss";
++
++describe("embedded stylesheet", () => {
++  it("scopes root, body and utility rules without changing animation steps", () => {
++    const css = scopeWorkspaceCss('@layer base { :root,:host { --x: red } body { margin: 0 } } .flex { display: flex } @keyframes spin { to { transform: rotate(360deg) } }');
++    expect(css).toContain('@scope (.tabularis-workspace)');
++    expect(css).not.toContain(':root');
++    expect(css).not.toContain(':host');
++    expect(css).not.toContain('body');
++    expect(css).not.toContain('@layer');
++    expect(css).toContain('to { transform: rotate(360deg) }');
++  });
++  it("does not rewrite class names and attribute values containing body or html", () => {
++    const css = scopeWorkspaceCss('.body, .html-editor, [data-kind="body"] { color: red }');
++    expect(css).toContain('.body');
++    expect(css).toContain('.html-editor');
++    expect(css).toContain('[data-kind="body"]');
++  });
++});
+diff --git a/packages/web-ui/tests/embed/workspace.test.tsx b/packages/web-ui/tests/embed/workspace.test.tsx
+new file mode 100644
+index 00000000..701bdb4e
+--- /dev/null
++++ b/packages/web-ui/tests/embed/workspace.test.tsx
+@@ -0,0 +1,35 @@
++import { fireEvent, render, screen } from "@testing-library/react";
++import { useState } from "react";
++import { useLocation, useNavigate } from "react-router-dom";
++import { describe, expect, it, vi } from "vitest";
++import type { TabularisClient } from "../../src/api/client";
++import { TabularisWorkspace } from "../../src/embed/TabularisWorkspace";
++
++vi.mock("../../src/embed/WorkspaceRuntime", () => ({
++  WorkspaceRuntime: function Probe() {
++    const location = useLocation(), navigate = useNavigate();
++    const [draft, setDraft] = useState("");
++    return <><input aria-label="SQL draft" value={draft} onChange={e => setDraft(e.target.value)} />
++      <button onClick={() => navigate("/editor/internal")}>Navigate</button><output>{location.pathname}</output></>;
++  },
++}));
++
++describe("TabularisWorkspace", () => {
++  it("owns internal routing while leaving the host URL untouched", async () => {
++    const before = location.href;
++    render(<TabularisWorkspace scopeId="one" connectionId="db" client={{} as TabularisClient} />);
++    fireEvent.click(await screen.findByText("Navigate"));
++    expect(screen.getByText("/editor/internal")).toBeInTheDocument();
++    expect(location.href).toBe(before);
++  });
++
++  it("preserves drafts on appearance changes and resets them on authorization scope changes", async () => {
++    const client = {} as TabularisClient;
++    const { rerender } = render(<TabularisWorkspace scopeId="one" connectionId="db" client={client} theme="light" />);
++    fireEvent.change(await screen.findByLabelText("SQL draft"), { target: { value: "select 1" } });
++    rerender(<TabularisWorkspace scopeId="one" connectionId="db" client={client} theme="dark" locale="de" />);
++    expect(screen.getByLabelText("SQL draft")).toHaveValue("select 1");
++    rerender(<TabularisWorkspace scopeId="two" connectionId="db" client={client} />);
++    expect(await screen.findByLabelText("SQL draft")).toHaveValue("");
++  });
++});
+diff --git a/packages/web-ui/tests/utils/gridMutations.test.ts b/packages/web-ui/tests/utils/gridMutations.test.ts
+new file mode 100644
+index 00000000..5ee9b39b
+--- /dev/null
++++ b/packages/web-ui/tests/utils/gridMutations.test.ts
+@@ -0,0 +1,27 @@
++import { describe, expect, it } from "vitest";
++import { commitGridMutations, GridCommitError } from "../../src/utils/gridMutations";
++
++describe("grid mutation submission", () => {
++  it("submits large batches with bounded concurrency and acknowledges each successful row", async () => {
++    let active = 0, maximum = 0; const confirmed: number[] = [];
++    const operations = Array.from({ length: 40 }, (_, id) => ({
++      run: async () => { active++; maximum = Math.max(active, maximum); await Promise.resolve(); active--; },
++      confirm: () => { confirmed.push(id); },
++    }));
++    await commitGridMutations(operations);
++    expect(maximum).toBe(1); expect(confirmed).toHaveLength(40);
++  });
++  it("keeps only unconfirmed rows pending and stops after an ambiguous committed insert", async () => {
++    const rows: number[] = [], pending = new Set([1, 2, 3]);
++    const operations = [...pending].map(id => ({
++      run: async () => { rows.push(id); if (id === 2) throw new Error("Response lost after commit"); },
++      confirm: () => { pending.delete(id); },
++    }));
++    let failure: unknown;
++    try { await commitGridMutations(operations); } catch (error) { failure = error; }
++    expect(failure).toBeInstanceOf(GridCommitError);
++    expect((failure as GridCommitError).completed).toBe(1);
++    expect((failure as GridCommitError).requiresReview).toBe(true);
++    expect(rows).toEqual([1, 2]); expect([...pending]).toEqual([2, 3]);
++  });
++});
+diff --git a/packages/web-ui/tests/utils/startupConfig.test.ts b/packages/web-ui/tests/utils/startupConfig.test.ts
+index bf70d481..3cedde50 100644
+--- a/packages/web-ui/tests/utils/startupConfig.test.ts
++++ b/packages/web-ui/tests/utils/startupConfig.test.ts
+@@ -8,6 +8,17 @@ function mockClient() {
+ }
+ 
+ describe("loadStartupConfig", () => {
++  it("does not share in-flight configuration between different clients", async () => {
++    const a = mockClient(), b = mockClient();
++    a.call.mockResolvedValue({ language: "de" });
++    b.call.mockResolvedValue({ language: "en" });
++    const first = loadStartupConfig(a.client);
++    const second = loadStartupConfig(b.client);
++    expect(second).not.toBe(first);
++    expect(await first).toEqual({ language: "de" });
++    expect(await second).toEqual({ language: "en" });
++  });
++
+   it("coalesces bootstrap readers without caching subsequent settings edits", async () => {
+     const { call, client } = mockClient();
+     call.mockResolvedValueOnce({ language: "it" }).mockResolvedValueOnce({ language: "en" });
+diff --git a/packages/web-ui/tsconfig.library.json b/packages/web-ui/tsconfig.library.json
+new file mode 100644
+index 00000000..f8e2098b
+--- /dev/null
++++ b/packages/web-ui/tsconfig.library.json
+@@ -0,0 +1,14 @@
++{
++  "extends": "./tsconfig.app.json",
++  "compilerOptions": {
++    "noEmit": false,
++    "declaration": true,
++    "emitDeclarationOnly": true,
++    "declarationDir": "./lib/types",
++    "rootDir": "../..",
++    "baseUrl": ".",
++    "paths": { "@tabularis/explain": ["../explain/src/index.ts"] },
++    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.library.tsbuildinfo"
++  },
++  "include": ["src/embed/index.ts"]
++}
+diff --git a/packages/web-ui/vite.library.config.ts b/packages/web-ui/vite.library.config.ts
+new file mode 100644
+index 00000000..d5caaf0d
+--- /dev/null
++++ b/packages/web-ui/vite.library.config.ts
+@@ -0,0 +1,37 @@
++import { readFileSync } from "node:fs";
++import { fileURLToPath } from "node:url";
++import { defineConfig } from "vite";
++import react from "@vitejs/plugin-react";
++import { scopeWorkspaceCss } from "./scripts/scopeWorkspaceCss";
++
++const root = fileURLToPath(new URL(".", import.meta.url));
++
++export default defineConfig({
++  base: "./",
++  plugins: [react(), {
++    name: "scope-tabularis-library-css",
++    enforce: "post",
++    generateBundle: { order: "post", handler(_options, bundle) {
++      for (const item of Object.values(bundle)) {
++        if (item.type !== "asset" || !item.fileName.endsWith(".css")) continue;
++        const css = String(item.source).replace(/(?:\.\.\/|\/)fonts\/([a-z-]+\.woff2)/g, (_match, name: string) =>
++          `data:font/woff2;base64,${readFileSync(new URL(`./public/fonts/${name}`, import.meta.url)).toString("base64")}`);
++        item.source = scopeWorkspaceCss(css);
++      }
++    } },
++  }],
++  css: { postcss: root },
++  define: { global: "globalThis", "process.env": {} },
++  build: {
++    outDir: "lib", copyPublicDir: false, chunkSizeWarningLimit: 8000,
++    lib: { entry: fileURLToPath(new URL("./src/embed/index.ts", import.meta.url)), formats: ["es"], fileName: "index", cssFileName: "workspace" },
++    rollupOptions: {
++      external: id => /^(react|react-dom)(\/|$)/.test(id),
++      output: {
++        banner: chunk => chunk.isEntry ? '"use client";' : "",
++        onlyExplicitManualChunks: true,
++        manualChunks: id => id.includes("/lucide-react/") ? "icons" : undefined,
++      },
++    },
++  },
++});
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 38ed69cf..bd11568d 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -288,6 +288,16 @@ importers:
+         version: 5.9.3
+ 
+   packages/web-ui:
++    dependencies:
++      '@xyflow/react':
++        specifier: ^12.10.2
++        version: 12.10.2(@types/react@19.2.14)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
++      react:
++        specifier: ^19.2.0
++        version: 19.2.4
++      react-dom:
++        specifier: ^19.2.0
++        version: 19.2.4(react@19.2.4)
+     devDependencies:
+       '@tailwindcss/postcss':
+         specifier: ^4.2.2
+@@ -313,6 +323,9 @@ importers:
+       postcss:
+         specifier: ^8.5.8
+         version: 8.5.8
++      tsup:
++        specifier: 8.5.1
++        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)
+       typescript:
+         specifier: ~5.9.3
+         version: 5.9.3
+-- 
+2.56.0
+
