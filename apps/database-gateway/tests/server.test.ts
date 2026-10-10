@@ -6,6 +6,7 @@ import { WebSocket, WebSocketServer } from "ws";
 import { createGateway } from "../src/server";
 
 test("gateway authenticates each RPC, strips credentials and stops revoked sessions", async () => {
+  let nextInspectionDelay = 0;
   let revoked = false, lastHeaders: Record<string, unknown> = {};
   const audit: unknown[] = [];
   const upstream = createServer((req, res) => {
@@ -25,6 +26,8 @@ test("gateway authenticates each RPC, strips credentials and stops revoked sessi
   const gateway = createGateway({ publicOrigin: "http://127.0.0.1:55442", allowedOrigins: ["http://localhost:3120"], runtimeOrigins: [upstreamOrigin],
     audit: event => audit.push(event),
     control: async body => {
+      const delay = nextInspectionDelay; nextInspectionDelay = 0;
+      if (delay) await new Promise(resolve => setTimeout(resolve, delay));
       if (revoked) throw Error("revoked");
       if (body.action === "exchange") return { token: "t".repeat(43), scopeID: "123", expiresAt: new Date(Date.now()+60000).toISOString() };
       return { scopeID: "123", subject: "alice", connectionID: "internal", profile: "read", runtimeOrigin: upstreamOrigin, proxySecret: "trusted-secret", expiresAt: new Date(Date.now()+60000).toISOString() };
@@ -46,6 +49,33 @@ test("gateway authenticates each RPC, strips credentials and stops revoked sessi
     const events = new WebSocket("ws://127.0.0.1:55442/s/123/api/v1/events", { headers: { Origin: "http://localhost:3120", Cookie: cookie } });
     const [event] = await once(events, "message");
     assert.equal(JSON.parse(event.toString()).payload.connectionId, "123");
+    const upstreamClient = [...upstreamEvents.clients][0];
+    const collectTwo = (socket: WebSocket) => new Promise<unknown[]>((resolve, reject) => {
+      const messages: unknown[] = [];
+      const timeout = setTimeout(() => { socket.off("message", receive); reject(Error("Missing ordered frames")); }, 2000);
+      const receive = (data: import("ws").RawData) => {
+        messages.push(JSON.parse(data.toString()));
+        if (messages.length === 2) { clearTimeout(timeout); socket.off("message", receive); resolve(messages); }
+      };
+      socket.on("message", receive);
+    });
+    const receivedEvents = collectTwo(events);
+    nextInspectionDelay = 50;
+    upstreamClient.send(JSON.stringify({ type: "event", sequence: 2 }));
+    upstreamClient.send(JSON.stringify({ type: "event", sequence: 3 }));
+    assert.deepEqual((await receivedEvents).map(value => (value as { sequence: number }).sequence), [2, 3], "Authorization latency must not reorder events");
+    const receivedCommands = collectTwo(upstreamClient);
+    nextInspectionDelay = 50;
+    events.send(JSON.stringify({ type: "subscribe", event: "query-progress" }));
+    events.send(JSON.stringify({ type: "unsubscribe", event: "query-progress" }));
+    assert.deepEqual((await receivedCommands).map(value => (value as { type: string }).type), ["subscribe", "unsubscribe"], "Authorization latency must not reorder subscription commands");
+    const overloaded = new WebSocket("ws://127.0.0.1:55442/s/123/api/v1/events", { headers: { Origin: "http://localhost:3120", Cookie: cookie } });
+    await once(overloaded, "message");
+    const floodSource = [...upstreamEvents.clients].find(client => client !== upstreamClient)!;
+    const overflowClosed = once(overloaded, "close");
+    nextInspectionDelay = 50;
+    for (let sequence = 2; sequence <= 131; sequence++) floodSource.send(JSON.stringify({ type: "event", sequence }));
+    assert.equal((await overflowClosed)[0], 1008, "Authorization queues must remain bounded");
     const rpc = (command: string, body: unknown) => call("/s/123/api/v1/rpc/"+command, { method: "POST", headers: { Cookie: cookie, "Content-Type": "application/json", "X-Tabularis-Csrf": sessionData.csrfToken, "X-Tabularis-User": "attacker" }, body: JSON.stringify(body) });
     const rows = await rpc("get_connections", null);
     assert.equal(rows.status, 200);

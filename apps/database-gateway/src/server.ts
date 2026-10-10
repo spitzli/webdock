@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { randomBytes, randomUUID } from "node:crypto";
-import { WebSocket, WebSocketServer } from "ws";
+import { WebSocket, WebSocketServer, type RawData } from "ws";
 import { runtimeOrigin, type RuntimeAccess } from "@webdock/database-contracts";
 import { authorizeRpc, publicResult, GatewayError, record } from "./policy";
 
@@ -203,28 +203,43 @@ export function createGateway(options: GatewayOptions) {
         const close = () => { if (closed) return; closed = true; clearInterval(timer); upstreamSockets.delete(upstream); client.close(1008, "Database session ended"); upstream.close(); };
         const timer = setInterval(async () => { if (checking) return; checking = true; try { await inspect(session); } catch { close(); } finally { checking = false; } }, 3000);
         upstream.on("open", () => { for (const message of pending) upstream.send(message); pending.length = 0; });
-        client.on("message", async data => {
-          try {
-            await inspect(session);
-            const message = record(JSON.parse(data.toString()));
-            if (!["subscribe", "unsubscribe", "ping"].includes(String(message.type))) throw Error();
-            const text = JSON.stringify(message);
-            if (upstream.readyState === WebSocket.OPEN) upstream.send(text);
-            else { pendingBytes += text.length; if (pendingBytes > MAX_BODY) throw Error(); pending.push(text); }
-          } catch { close(); }
-        });
-        upstream.on("message", async data => {
-          try {
-            await inspect(session);
-            const event = record(JSON.parse(data.toString()));
-            if (event.payload && typeof event.payload === "object" && !Array.isArray(event.payload)) {
-              const payload = { ...record(event.payload) };
-              for (const field of ["connectionId", "connection_id"]) if (payload[field] === access.connectionID) payload[field] = access.scopeID;
-              event.payload = payload;
-            }
-            if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify(event));
-          } catch { close(); }
-        });
+        // Authorization is asynchronous; preserve wire order in each direction.
+        const ordered = (maximum: number, forward: (text: string) => void) => {
+          let queue = Promise.resolve(), queuedBytes = 0, queuedFrames = 0;
+          return (data: RawData) => {
+            if (closed) return;
+            const text = data.toString(), bytes = Buffer.byteLength(text);
+            if (queuedBytes + bytes > maximum || queuedFrames >= 128) { close(); return; }
+            queuedBytes += bytes; queuedFrames++;
+            queue = queue.then(async () => {
+              if (closed) return;
+              await inspect(session);
+              if (!closed) forward(text);
+            }).catch(close).finally(() => { queuedBytes -= bytes; queuedFrames--; });
+          };
+        };
+        client.on("message", ordered(MAX_BODY, text => {
+          const message = record(JSON.parse(text));
+          if (!["subscribe", "unsubscribe", "ping"].includes(String(message.type))) throw Error();
+          const encoded = JSON.stringify(message);
+          if (upstream.readyState === WebSocket.OPEN) {
+            if (upstream.bufferedAmount + Buffer.byteLength(encoded) > MAX_BODY) throw Error();
+            upstream.send(encoded);
+          } else { pendingBytes += Buffer.byteLength(encoded); if (pendingBytes > MAX_BODY) throw Error(); pending.push(encoded); }
+        }));
+        upstream.on("message", ordered(MAX_RESPONSE, text => {
+          const event = record(JSON.parse(text));
+          if (event.payload && typeof event.payload === "object" && !Array.isArray(event.payload)) {
+            const payload = { ...record(event.payload) };
+            for (const field of ["connectionId", "connection_id"]) if (payload[field] === access.connectionID) payload[field] = access.scopeID;
+            event.payload = payload;
+          }
+          if (client.readyState === WebSocket.OPEN) {
+            const encoded = JSON.stringify(event);
+            if (client.bufferedAmount + Buffer.byteLength(encoded) > MAX_RESPONSE) throw Error();
+            client.send(encoded);
+          }
+        }));
         client.on("close", close); client.on("error", close); upstream.on("close", close); upstream.on("error", close);
       });
     } catch { socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n"); socket.destroy(); }
