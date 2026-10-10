@@ -63,8 +63,9 @@ function deletionPlan(row: Record<string, any>, storage = false) {
 export async function executeAppCommand(
   actor: HostingActor,
   cmd: HostingCommand,
+  connection?: Connection,
 ) {
-  return transaction(async (db) => {
+  const run = async (db: Connection) => {
     if (cmd.action === "apps.list") {
       const access = await authorizeHosting(
         actor,
@@ -421,5 +422,6 @@ export async function executeAppCommand(
     ).rows[0];
     await audit(db, actor, action, row!.id, "queued");
     return { id: op.id, appID: row!.id, status: op.status };
-  });
+  };
+  return connection ? run(connection) : transaction(run);
 }

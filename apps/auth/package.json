@@ -31,7 +31,8 @@
     "react-dom": "19.2.8",
     "@webdock/i18n": "*",
     "@webdock/hosting-contracts": "*",
-    "@webdock/search": "*"
+    "@webdock/search": "*",
+    "@webdock/database-contracts": "*"
   },
   "devDependencies": {
     "@types/node": "^24",

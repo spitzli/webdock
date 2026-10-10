@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { gitOAuthCommandSchema } from "@webdock/hosting-contracts/git-oauth";
+import { executeGitOAuth } from "./git-oauth";
 import {
   commandSchema,
   resourceID,
@@ -19,6 +21,7 @@ const bodySchema = z
     vercelRuntime:z.object({clientID:z.string().min(1).max(256),clientSecret:z.string().min(1).max(8192),slug:z.string().min(1).max(100),origin:z.string().url().max(300),platformTeam:z.string().max(160)}).strict().optional(),
     command: z.union([
       commandSchema,
+      gitOAuthCommandSchema,
       z
         .object({
           action: z.literal("enrollment.display"),
@@ -118,7 +121,9 @@ export async function hostingBridge(request: Request) {
     const data =
       input.command.action === "enrollment.display"
         ? await issueEnrollment(actor, input.command.enrollmentID)
-        : await executeHosting(actor, input.command,input.vercelRuntime);
+        : input.command.action.startsWith("git.oauth.")
+          ? await executeGitOAuth(actor, gitOAuthCommandSchema.parse(input.command))
+          : await executeHosting(actor, input.command,input.vercelRuntime);
     return Response.json(
       { data },
       { headers: { "Cache-Control": "no-store" } },

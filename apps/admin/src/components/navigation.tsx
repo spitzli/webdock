@@ -100,13 +100,14 @@ export function TenantNavigation({ customerID, canManage = false, preview = fals
         [base, msgid("Overview")],
         [base + "/usage", msgid("Plan & usage")],
         [base + "/hosting", msgid("Hosting")],
+        ...(!preview ? [[base + "/databases", msgid("Databases")]] : []),
         ...(!preview ? [[base + "/mail", msgid("Mail")]] : []),
         ...(canManage ? [[base + "/mail/keys", msgid("Credentials")], [base + "/mail/tracking", msgid("Tracking")]] : []),
       ].map(([href, label]) => (
         <Link
           key={href}
           href={href}
-          aria-current={path === href ? "page" : undefined}
+          aria-current={path === href || (href === base + "/databases" && path.startsWith(href + "/")) ? "page" : undefined}
         >
           {i18n.t(label)}
         </Link>

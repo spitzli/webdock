@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/TabularisDB/tabularis",
+  "basePullRequest": "https://github.com/TabularisDB/tabularis/pull/676",
+  "baseCommit": "aeb589e6a3fdd091184a3693bb2f8629bff46f96",
+  "sourceCommit": "fdd6c0a6f979ede0acb38415fa12b25c04aa9c4e",
+  "sourceTree": "09e1c433d458b8469cd8dad9b8b7b7aca263a6c6",
+  "artifact": "tabularis-web-ui-fdd6c0a6.tgz",
+  "sha256": "505de0e090577381ed653c45e798b5bb5bf56da1765880c3173982466c6b2bfe",
+  "build": "pnpm install --frozen-lockfile && pnpm --filter @tabularis/web-ui pack --pack-destination /tmp"
+}

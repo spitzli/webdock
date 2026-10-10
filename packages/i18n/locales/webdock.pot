@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 15:57+0200\n"
+"POT-Creation-Date: 2026-10-10 15:17+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -38,7 +38,10 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/page.tsx:35
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:177
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:77
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:140
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:433
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:483
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:78
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:110
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:158
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:75
@@ -99,7 +102,7 @@ msgid "Scale application"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/page.tsx:90
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:78
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:79
 msgid "Replicas"
 msgstr ""
 
@@ -232,7 +235,7 @@ msgid "Search and filters"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:137
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:60
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:61
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:52
 #: apps/admin/src/components/hosting/customer.tsx:115
 #: apps/admin/src/components/hosting/own-mail.tsx:125
@@ -315,6 +318,9 @@ msgid "Actual usage"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:234
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:142
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:435
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:485
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:132
 msgid "Actions"
 msgstr ""
@@ -373,7 +379,68 @@ msgid "The connection could not be completed. Start a new connection from your h
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/connection-error/page.tsx:14
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connection-error/page.tsx:8
 msgid "Return to your customers"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:32
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:39
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:161
+msgid "Connect GitHub"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:33
+#: apps/admin/src/lib/git-deployment-messages.ts:42
+msgid "GitHub connection expired. Start again."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:43
+msgid "Choose an installation and repository you can access. GitHub consent is completed on GitHub."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:52
+msgid "Install or update GitHub access"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:56
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:139
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:222
+msgid "GitHub account"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:63
+msgid "Select an installation"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:72
+msgid "Load repositories"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:82
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:263
+msgid "Repository"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:85
+msgid "Select a repository"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:95
+msgid "Connect repository"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:99
+msgid "Connection help"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connection-error/page.tsx:6
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:133
+msgid "GitHub connection"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/git/connection-error/page.tsx:7
+#: apps/admin/src/lib/git-deployment-messages.ts:38
+msgid "GitHub access could not be verified. Check installation and repository permissions."
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/operations/[operationID]/page.tsx:20
@@ -397,18 +464,223 @@ msgstr ""
 msgid "Back to cluster"
 msgstr ""
 
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:25
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:110
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:54
+msgid "Git deployments"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:26
+msgid "Build logs"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:35
+msgid "Build failed. Review the logs and setup requirements."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:46
+msgid "View build logs in GitHub Actions"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:58
+msgid "No build output yet."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:119
+msgid "Pushes build the configured branch. Production publication requires approval of an exact artifact."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:124
+msgid "Setup required"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:137
+msgid "No GitHub connection yet."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:152
+msgid "Disconnect GitHub"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:168
+#: apps/admin/src/lib/git-deployment-messages.ts:6
+msgid "Bind Vercel target"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:171
+#: apps/admin/src/lib/git-deployment-messages.ts:77
+msgid "Select an existing authorized Vercel project. Disable native Git builds and configure Frankfurt Functions before binding."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:181
+#: apps/admin/src/lib/git-deployment-messages.ts:89
+msgid "Verify and bind target"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:184
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:294
+#: apps/admin/src/lib/git-deployment-messages.ts:87
+msgid "Vercel project ID"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:200
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:39
+#: apps/admin/src/components/hosting/own-mail.tsx:77
+msgid "Connection"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:203
+#: apps/admin/src/lib/git-deployment-messages.ts:25
+msgid "Customer Vercel connection"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:207
+#: apps/admin/src/lib/git-deployment-messages.ts:62
+msgid "Platform Vercel connection"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:216
+msgid "Deployment source"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:232
+msgid "Select connection"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:259
+msgid "Save deployment source"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:277
+msgid "Branch"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:290
+msgid "Root directory"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:299
+msgid "Build provider"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:306
+msgid "Isolated Webdock worker"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:311
+msgid "GitHub Actions workflow"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:323
+msgid "Artifact name prefix"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:333
+msgid "GitHub builds the artifact. Webdock verifies and publishes it. Artifact names end with the exact commit SHA."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:337
+msgid "Build recipe"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:347
+msgid "Deployment target"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:367
+msgid "Build pushes automatically"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:376
+msgid "Publish production automatically after checks pass"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:388
+msgid "Connect a repository to configure Git deployments."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:394
+msgid "Configure a deployment target before enabling Git deployments."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:400
+msgid "Builds"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:410
+msgid "Build latest commit"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:416
+msgid "Push to the configured branch or start a new workflow in GitHub Actions. Re-running an existing run is not supported."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:423
+msgid "No builds yet."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:426
+msgid "Commit"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:444
+msgid "Cancel build"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:451
+msgid "Build pages"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:468
+msgid "Releases"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:471
+msgid "Rollback reuses a retained artifact. It does not restore a database."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:477
+msgid "No releases yet."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:480
+msgid "Artifact"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:516
+msgid "Reconcile release"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:518
+msgid "Request rollback"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:520
+#: apps/admin/src/lib/git-deployment-messages.ts:67
+msgid "Renew approval"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:521
+msgid "Approve release"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:529
+msgid "Release pages"
+msgstr ""
+
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:53
 msgid "Managed applications"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:69
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:70
 msgid "No applications deployed yet."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:72
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:73
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:68
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:112
+#: apps/admin/src/components/databases/forms.tsx:24
 #: apps/admin/src/components/hosting/own-infrastructure.tsx:146
 #: apps/admin/src/lib/ui-labels.ts:15
 #: apps/auth/src/app/tenants/[customerID]/page.tsx:34
@@ -417,12 +689,12 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:89
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:100
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:90
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:101
 msgid "Deploy application"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:103
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:104
 msgid "Application name"
 msgstr ""
 
@@ -849,6 +1121,27 @@ msgstr ""
 msgid "Postal code"
 msgstr ""
 
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:13
+#: apps/admin/src/components/navigation.tsx:103
+msgid "Databases"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:13
+msgid "Explore project data with Tabularis."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:15
+msgid "No databases are available for your account."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:18
+msgid "No access assigned"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:19
+msgid "Open database"
+msgstr ""
+
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/keys/form.tsx:132
 #: apps/auth/src/lib/i18n-messages.ts:62
 msgid "Copied."
@@ -930,11 +1223,6 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:36
 msgid "Cluster status"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:39
-#: apps/admin/src/components/hosting/own-mail.tsx:77
-msgid "Connection"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:43
@@ -1154,10 +1442,6 @@ msgstr ""
 msgid "The isolated schema used by this deployed CMS."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:294
-msgid "Vercel project ID"
-msgstr ""
-
 #: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:297
 msgid "The existing Vercel project ID, starting with prj_."
 msgstr ""
@@ -1305,6 +1589,120 @@ msgstr ""
 msgid "Local changes discarded."
 msgstr ""
 
+#: apps/admin/src/components/databases/forms.tsx:14
+#: apps/admin/src/components/hosting/form.tsx:56
+#: apps/auth/src/app/admin/form.tsx:43 apps/auth/src/app/admin/form.tsx:57
+#: apps/auth/src/app/admin/plans/form.tsx:12
+#: apps/auth/src/app/people/form.tsx:32 apps/auth/src/app/tenants/form.tsx:15
+#: packages/cms-ui/src/client.tsx:942
+msgid "Saving…"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:20
+msgid "Register database"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:22
+#: apps/admin/src/components/hosting/customer.tsx:127
+#: apps/admin/src/components/hosting/customer.tsx:200
+#: apps/admin/src/components/hosting/customer.tsx:248
+#: apps/admin/src/lib/ui-labels.ts:10 apps/admin/src/lib/ui-labels.ts:15
+msgid "Project"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:23
+msgid "Database engine"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:25
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
+msgid "Environment"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:25
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
+#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:31
+#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
+#: apps/auth/src/lib/i18n-labels.ts:6
+msgid "Production"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:25
+msgid "Staging"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:25
+msgid "Development"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:31
+#: apps/admin/src/lib/customer-fields.ts:9
+#: apps/auth/src/app/tenants/[customerID]/page.tsx:24
+#: apps/auth/src/app/tenants/[customerID]/page.tsx:27
+msgid "Person"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:32
+msgid "Manage database access"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:33
+msgid "Assign a dedicated Tabularis runtime with a verified database role for this person."
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:34
+msgid "Save access"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:36
+msgid "Database permission"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:36
+#: packages/cms-ui/src/client.tsx:768
+msgid "Read only"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:36
+msgid "Edit data"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:36
+msgid "Manage schema"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:37
+msgid "Runtime origin"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:38
+msgid "Tabularis connection ID"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:39
+msgid "Runtime proxy secret"
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:40
+msgid "This runtime and its storage are isolated for this person and database."
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:41
+msgid "The database role enforces the selected permission and denies other tenants."
+msgstr ""
+
+#: apps/admin/src/components/databases/forms.tsx:43
+msgid "Revoke access"
+msgstr ""
+
+#: apps/admin/src/components/databases/workspace-frame.tsx:51
+msgid "Database workspace"
+msgstr ""
+
+#: apps/admin/src/components/databases/workspace-frame.tsx:53
+msgid "Back to databases"
+msgstr ""
+
 #: apps/admin/src/components/editor.tsx:22 packages/cms-ui/src/client.tsx:945
 msgid "Save changes"
 msgstr ""
@@ -1428,13 +1826,6 @@ msgstr ""
 msgid "No hosting projects assigned."
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:127
-#: apps/admin/src/components/hosting/customer.tsx:200
-#: apps/admin/src/components/hosting/customer.tsx:248
-#: apps/admin/src/lib/ui-labels.ts:10 apps/admin/src/lib/ui-labels.ts:15
-msgid "Project"
-msgstr ""
-
 #: apps/admin/src/components/hosting/customer.tsx:132
 #: apps/admin/src/components/hosting/customer.tsx:211
 msgid "Provider"
@@ -1521,7 +1912,15 @@ msgid "Also allow this project's images on a shared cluster (applications share 
 msgstr ""
 
 #: apps/admin/src/components/hosting/environment.tsx:42
+msgid "Build environment variables"
+msgstr ""
+
+#: apps/admin/src/components/hosting/environment.tsx:42
 msgid "Environment variables"
+msgstr ""
+
+#: apps/admin/src/components/hosting/environment.tsx:44
+msgid "Only these build values reach repository code. Repository scripts can read them. Runtime variables are configured separately."
 msgstr ""
 
 #: apps/admin/src/components/hosting/environment.tsx:45
@@ -1586,14 +1985,6 @@ msgstr ""
 
 #: apps/admin/src/components/hosting/form.tsx:52
 msgid "Open cluster enrollment"
-msgstr ""
-
-#: apps/admin/src/components/hosting/form.tsx:56
-#: apps/auth/src/app/admin/form.tsx:43 apps/auth/src/app/admin/form.tsx:57
-#: apps/auth/src/app/admin/plans/form.tsx:12
-#: apps/auth/src/app/people/form.tsx:32 apps/auth/src/app/tenants/form.tsx:15
-#: packages/cms-ui/src/client.tsx:942
-msgid "Saving…"
 msgstr ""
 
 #: apps/admin/src/components/hosting/form.tsx:71
@@ -1913,7 +2304,7 @@ msgstr ""
 msgid "My websites"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:103
+#: apps/admin/src/components/navigation.tsx:104
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:13
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:24
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:33
@@ -1921,11 +2312,11 @@ msgstr ""
 msgid "Mail"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:104
+#: apps/admin/src/components/navigation.tsx:105
 msgid "Credentials"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:104
+#: apps/admin/src/components/navigation.tsx:105
 msgid "Tracking"
 msgstr ""
 
@@ -2165,12 +2556,6 @@ msgstr ""
 msgid "Company"
 msgstr ""
 
-#: apps/admin/src/lib/customer-fields.ts:9
-#: apps/auth/src/app/tenants/[customerID]/page.tsx:24
-#: apps/auth/src/app/tenants/[customerID]/page.tsx:27
-msgid "Person"
-msgstr ""
-
 #: apps/admin/src/lib/customer-fields.ts:10 apps/admin/src/lib/tenants.ts:12
 #: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:47
 msgid "Company name"
@@ -2248,23 +2633,371 @@ msgstr ""
 msgid "Only operators can see these notes."
 msgstr ""
 
-#: apps/admin/src/lib/hosting-actions.ts:170
+#: apps/admin/src/lib/git-deployment-messages.ts:5
+msgid "An exact commit is required."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:7
+msgid "Build environment exceeds the allowed size."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:8
+msgid "Build environment is too large."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:9
+msgid "Build lease expired."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:11
+msgid "Build variables must be explicitly approved and cannot contain provider credentials."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:13
+msgid "Build worker endpoint is unavailable."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:14
+msgid "Complete GitHub authorization first."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:16
+msgid "Configure Frankfurt Functions and disable cross-region failover before publication."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:18
+msgid "Configure Node.js 24 for this Vercel build target."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:19
+msgid "Configure a Vercel hosting project first."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:20
+msgid "Configure an explicitly bound platform Vercel deployment credential."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:21
+msgid "Configure the platform Vercel team first."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:22
+msgid "Configure verified EU artifact and registry storage."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:23
+msgid "Connect GitHub and enable a verified source first."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:24
+msgid "Connect GitHub interactively in Studio."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:27
+msgid "Disconnect native Vercel Git builds before enabling Webdock publication."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:29
+msgid "Enter valid resource amounts in cores, MB or GB."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:30
+msgid "Environment variables are too large."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:31
+msgid "Git deployment changed. Refresh and try again."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:33
+msgid "Git deployment changed. Review the source and release before reconciliation."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:35
+msgid "Git deployment is unavailable."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:36
+msgid "Git publication authorization changed. Review the release."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:40
+msgid "GitHub authorization was already used."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:41
+msgid "GitHub check reconciliation exceeds the supported limit."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:43
+msgid "GitHub connection setup is incomplete."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:45
+msgid "GitHub could not complete this request. Check the current state before retrying."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:47
+msgid "GitHub deployments are not configured yet."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:48
+msgid "GitHub event is too large."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:49
+msgid "GitHub installation is unavailable."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:50
+msgid "GitHub repository selection exceeds the supported limit."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:51
+msgid "GitHub webhooks are not configured yet."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:52
+msgid "Install verified registry pull access on the target cluster."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:53
+msgid "Invalid build lease."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:54
+msgid "Invalid build result."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:55
+msgid "Invalid build worker."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:56
+msgid "Invalid delivery."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:57
+msgid "Invalid environment variables."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:58
+msgid "Invalid immutable artifact."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:59
+msgid "Invalid immutable registry image."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:60
+msgid "Invalid publication result."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:61
+msgid "Multiple GitHub checks match this build. Reconciliation is required."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:63
+msgid "Publication identity cannot be replaced."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:64
+msgid "Publication requires observed health and verified target location."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:65
+msgid "Reconnect Vercel with deployment write and project read permissions."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:66
+msgid "Release health has not been verified."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:69
+msgid "Rollback requires a retained healthy release with compatible configuration."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:71
+msgid "Runtime configuration changed. Build again before publication."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:73
+msgid "Select a Vercel connection and project before enabling Git deployments."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:75
+msgid "Select a Vercel deployment target before enabling Git deployments."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:79
+msgid "Select this project in the customer Vercel connection first."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:80
+msgid "Ten builds are already queued or running for this project."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:81
+msgid "This GitHub installation belongs to another customer."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:83
+msgid "This Vercel target is already bound to another hosting project or connection."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:85
+msgid "Vercel deployment identity could not be verified."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:86
+msgid "Vercel deployment target could not be verified."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:88
+msgid "Verified EU microVM capacity is required."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:90
+msgid "Wait before connecting GitHub again."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:91
+msgid "active"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:92
+msgid "awaiting-approval"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:93
+msgid "cancelled"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:94
+msgid "completed"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:95
+msgid "deploying"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:96
+msgid "disconnected"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:97
+msgid "failed"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:98
+msgid "in_progress"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:99
+msgid "needs-reconciliation"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:100
+msgid "queued"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:101
+msgid "ready"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:102
+msgid "revalidation-required"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:103
+msgid "running"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:104
+msgid "succeeded"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:105
+msgid "superseded"
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:108
+msgid "Configure the GitHub App ID and private key in the private Auth environment."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:110
+msgid "Configure the GitHub webhook secret before enabling push builds."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:112
+msgid "Enroll verified EU isolated build capacity before requesting a build."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:114
+msgid "Verified isolated build capacity is required."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:116
+msgid "Enroll verified isolated build capacity before requesting a build."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:118
+msgid "Configure verified artifact and registry storage."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:120
+msgid "The original Vercel target is no longer accessible."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:122
+msgid "The original publication target could not be verified."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:124
+msgid "Enroll a trusted artifact publisher before importing Actions builds."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:126
+msgid "Configure build variables in GitHub Actions before using external builds."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:128
+msgid "Accept the GitHub App Actions read permission first."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:130
+msgid "Run the configured workflow in GitHub Actions. Webdock imports successful builds automatically."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:132
+msgid "Verified build or artifact publisher capacity is required."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:134
+msgid "Actions imports cannot request source archives."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:136
+msgid "External build variables are unsupported."
+msgstr ""
+
+#: apps/admin/src/lib/hosting-actions.ts:186
 msgid "turboSMTP connection verified and saved."
 msgstr ""
 
-#: apps/admin/src/lib/hosting-actions.ts:172
+#: apps/admin/src/lib/hosting-actions.ts:188
 msgid "Sender-domain status updated."
 msgstr ""
 
-#: apps/admin/src/lib/hosting-actions.ts:174
+#: apps/admin/src/lib/hosting-actions.ts:190
 msgid "Sender domain registered. Complete DNS setup in turboSMTP."
 msgstr ""
 
-#: apps/admin/src/lib/hosting-actions.ts:177
+#: apps/admin/src/lib/hosting-actions.ts:193
 msgid "turboSMTP disconnected. Your provider resources remain intact."
 msgstr ""
 
-#: apps/admin/src/lib/hosting-actions.ts:180
+#: apps/admin/src/lib/hosting-actions.ts:196
 msgid "Provider state reviewed. You can continue."
 msgstr ""
 
@@ -4242,17 +4975,6 @@ msgid "Connect each Blob store or a tenant’s exclusive path prefix. Credential
 msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
-msgid "Environment"
-msgstr ""
-
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
-#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:31
-#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
-#: apps/auth/src/lib/i18n-labels.ts:6
-msgid "Production"
-msgstr ""
-
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:31
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
 #: apps/auth/src/lib/i18n-labels.ts:6 apps/web/src/components/dock.tsx:7
@@ -4873,12 +5595,12 @@ msgstr ""
 msgid "Stored application environment could not be opened."
 msgstr ""
 
-#: apps/auth/src/lib/hosting/service.ts:304
-#: apps/auth/src/lib/hosting/service.ts:356
+#: apps/auth/src/lib/hosting/service.ts:306
+#: apps/auth/src/lib/hosting/service.ts:358
 msgid "Confirm permission to run this project's images on a shared cluster."
 msgstr ""
 
-#: apps/auth/src/lib/hosting/service.ts:353
+#: apps/auth/src/lib/hosting/service.ts:355
 msgid "A Kubernetes cluster available to this customer is required."
 msgstr ""
 
@@ -6923,10 +7645,6 @@ msgstr ""
 
 #: packages/cms-ui/src/client.tsx:765
 msgid "Administrator"
-msgstr ""
-
-#: packages/cms-ui/src/client.tsx:768
-msgid "Read only"
 msgstr ""
 
 #: packages/cms-ui/src/client.tsx:775

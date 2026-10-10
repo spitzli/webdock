@@ -64,6 +64,9 @@ def collect_observation():
             mail = None
         if mail is not None:
             observed['capabilities']['nativeMail'] = mail
+
+    import registry
+    if registry.capability(command):observed['capabilities']['registryVersion']=1
     return observed
 
 

@@ -1,0 +1,125 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: webdock\n"
+"Language: de\n"
+"PO-Revision-Date: 2026-10-10 00:00+0000\n"
+"Last-Translator: Webdock\n"
+"Language-Team: German\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Databases"
+msgstr "Datenbanken"
+
+msgid "Explore project data with Tabularis."
+msgstr "Projektdaten mit Tabularis erkunden."
+
+msgid "No databases are available for your account."
+msgstr "Für dein Konto sind keine Datenbanken freigegeben."
+
+msgid "No access assigned"
+msgstr "Kein Zugriff zugewiesen"
+
+msgid "Open database"
+msgstr "Datenbank öffnen"
+
+msgid "Connecting to database…"
+msgstr "Verbindung zur Datenbank wird hergestellt…"
+
+msgid "Register database"
+msgstr "Datenbank registrieren"
+
+msgid "Manage database access"
+msgstr "Datenbankzugriff verwalten"
+
+msgid "Assign a dedicated Tabularis runtime with a verified database role for this person."
+msgstr "Dieser Person eine eigene Tabularis-Instanz mit geprüfter Datenbankrolle zuweisen."
+
+msgid "Database permission"
+msgstr "Datenbankberechtigung"
+
+msgid "Edit data"
+msgstr "Daten bearbeiten"
+
+msgid "Manage schema"
+msgstr "Schema verwalten"
+
+msgid "Runtime origin"
+msgstr "Adresse der Tabularis-Instanz"
+
+msgid "Tabularis connection ID"
+msgstr "Tabularis-Verbindungs-ID"
+
+msgid "Runtime proxy secret"
+msgstr "Proxy-Geheimnis der Instanz"
+
+msgid "This runtime and its storage are isolated for this person and database."
+msgstr "Diese Instanz und ihr Speicher sind für diese Person und Datenbank isoliert."
+
+msgid "The database role enforces the selected permission and denies other tenants."
+msgstr "Die Datenbankrolle erzwingt die gewählte Berechtigung und sperrt andere Mandanten."
+
+msgid "Check the database configuration fields."
+msgstr "Bitte prüfe die Angaben zur Datenbank."
+
+msgid "Database configuration saved."
+msgstr "Datenbankkonfiguration gespeichert."
+
+msgid "Database configuration could not be saved."
+msgstr "Die Datenbankkonfiguration konnte nicht gespeichert werden."
+
+msgid "Database access is unavailable."
+msgstr "Der Datenbankzugriff ist nicht verfügbar."
+
+msgid "Database service is unavailable."
+msgstr "Der Datenbankdienst ist nicht verfügbar."
+
+msgid "Database authentication is unavailable."
+msgstr "Die Datenbankanmeldung ist nicht verfügbar."
+
+msgid "Invalid database response."
+msgstr "Ungültige Antwort des Datenbankdienstes."
+
+msgid "Database gateway is not configured."
+msgstr "Das Datenbank-Gateway ist noch nicht eingerichtet."
+
+msgid "Changing database privileges requires a newly isolated runtime."
+msgstr "Für andere Datenbankrechte ist eine neue isolierte Instanz erforderlich."
+
+msgid "This runtime is already assigned to another database user."
+msgstr "Diese Instanz ist bereits einem anderen Datenbankbenutzer zugewiesen."
+
+msgid "Development"
+msgstr "Entwicklung"
+
+msgid "Staging"
+msgstr "Testumgebung"
+
+msgid "Revoke access"
+msgstr "Zugriff entziehen"
+
+msgid "Save access"
+msgstr "Zugriff speichern"
+
+msgid "Database workspace"
+msgstr "Datenbank-Arbeitsbereich"
+
+msgid "Back to databases"
+msgstr "Zurück zu den Datenbanken"
+
+msgid "Focus mode"
+msgstr "Fokusmodus"
+
+msgid "Exit focus mode"
+msgstr "Fokusmodus verlassen"
+
+msgid "Fullscreen"
+msgstr "Vollbild"
+
+msgid "Exit fullscreen"
+msgstr "Vollbild verlassen"
+
+msgid "Database engine"
+msgstr "Datenbanktyp"
