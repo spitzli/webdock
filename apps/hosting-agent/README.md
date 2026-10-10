@@ -18,6 +18,12 @@ HTTPS is mandatory except for explicit local `--allow-loopback` verification. Cr
 
 Supported now: cached immutable HTTP images, positive CPU/RAM/ephemeral quotas, restricted Pods, temporary /tmp, controlled ClusterIP services. Persistent PVCs and external registry pulls are disabled. New managed project/validation namespaces are distinct from the server baseline namespaces.
 
+Managed apply operations observe readiness for at most 180 seconds. Both executor
+transports allow 260 seconds for preparation and observation; the Auth operation
+lease is 300 seconds. Lease expiry still interrupts work and timeout requires
+reconciliation. Deploy the matching control-plane and agent changes together.
+See [the production timeout evidence](../../docs/verification/2026-10-10-lunares-actions-production.md).
+
 Run tests with `python3 -m unittest discover -s apps/hosting-agent -v`.
 
 ## Historical observer-only background (superseded by managed daemon above)

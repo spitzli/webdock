@@ -346,6 +346,12 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
         );
         const claimed = await claimOperation(agent);
         assert.equal(claimed?.id, operation.id);
+        const leaseRemaining = Number((await database.query(
+          "SELECT EXTRACT(EPOCH FROM lease_until-now()) AS seconds FROM webdock_auth.hosting_operation WHERE id=$1",
+          [operation.id],
+        )).rows[0].seconds);
+        // The 260-second executor transport needs headroom to return its proof.
+        assert.ok(leaseRemaining > 290 && leaseRemaining <= 300);
         await assert.rejects(
           completeOperation(agent, {
             id: claimed!.id,
@@ -579,6 +585,7 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
         }
         const firstAttempt = await claimOperation(managedAgent);
         assert.equal(firstAttempt.id, made.id);
+        assert.equal(firstAttempt.desired.leaseUntil, firstAttempt.lease_until.toISOString());
         assert.deepEqual(firstAttempt.desired.environment,{TOKEN:'private-env-fixture',EMPTY:''});
         assert.equal(firstAttempt.desired.environmentEncrypted,undefined);
         const persisted=(await database.query('SELECT to_jsonb(a) AS app FROM webdock_auth.hosting_app a WHERE id=$1',[made.appID])).rows;

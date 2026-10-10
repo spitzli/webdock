@@ -308,7 +308,8 @@ def execute(p):
     for obj in [service,deployment]:
         kubectl('apply','--server-side','--dry-run=server','--field-manager=webdock','-f','-',obj=obj)
     for obj in [service,deployment]:apply(obj,p)
-    deadline=time.monotonic()+55
+    # Recreate termination and image pull precede the 60-second startup probe.
+    deadline=time.monotonic()+180
     while time.monotonic()<deadline:
         lease(p);observed=get('deployment',name,p['namespace']);check_owner(observed,p,True)
         status=observed.get('status',{});items=pods(p)
