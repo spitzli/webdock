@@ -1,4 +1,4 @@
-import { HostingError } from "@webdock/hosting-contracts";
+import { HostingError, gitHealthPath } from "@webdock/hosting-contracts";
 import type { GitVercelCredential } from "./git-vercel";
 type ProviderJSON = (
   path: string,
@@ -200,31 +200,87 @@ export function createGitVercelObserver(
     }
     if (row.aliasAssigned !== true || row.aliasError)
       return { ...identity, status: "deploying" as const };
-    const health = new URL(input.healthPath, identity.url);
-    if (health.origin !== identity.url) throw denied();
-    try {
-      const response = await fetchImpl(health, {
-        method: "GET",
-        cache: "no-store",
-        redirect: "error",
-        signal: AbortSignal.timeout(10_000),
-        headers: { Accept: "text/plain" },
-      });
-      await response.body?.cancel();
-      if (!response.ok)
-        return {
-          ...identity,
-          status: "failed" as const,
-          failureCode: "healthcheck-failed",
-        };
-    } catch {
+    const probe = async (origin: string) => {
+      const health = new URL(input.healthPath, origin);
+      if (health.origin !== origin) throw denied();
+      try {
+        const response = await fetchImpl(health, {
+          method: "GET",
+          cache: "no-store",
+          redirect: "error",
+          signal: AbortSignal.timeout(10_000),
+          headers: { Accept: "text/plain" },
+        });
+        await response.body?.cancel();
+        return response.status === 200;
+      } catch {
+        return false;
+      }
+    };
+    let healthy = await probe(identity.url);
+    if (!healthy) {
+      // Unique URLs can require Vercel SSO while the production alias is public.
+      // Only provider-owned vercel.app DNS is eligible; custom hosts/redirects are never followed.
+      try {
+        const aliases = await json(
+          "/v2/deployments/" + identity.deploymentID + "/aliases",
+          credential.token,
+          credential.teamID,
+        );
+        const hosts: string[] = Array.isArray(aliases.aliases)
+          ? aliases.aliases
+              .map((alias: any) => alias.alias)
+              .filter(
+                (host: unknown): host is string =>
+                  typeof host === "string" &&
+                  /^[a-z0-9][a-z0-9-]{0,62}\.vercel\.app$/.test(host),
+              )
+          : [];
+        for (const host of [...new Set(hosts)]
+          .sort((a, b) => a.length - b.length)
+          .slice(0, 3)) {
+          const path = "/v4/aliases/" + encodeURIComponent(host);
+          const before = await json(path, credential.token, credential.teamID);
+          const matches = (alias: any) =>
+            alias.alias === host &&
+            alias.projectId === credential.projectID &&
+            alias.deploymentId === identity.deploymentID &&
+            !alias.deletedAt &&
+            !alias.redirect &&
+            (!alias.deployment ||
+              alias.deployment.id === identity.deploymentID) &&
+            typeof alias.uid === "string" &&
+            Number.isSafeInteger(alias.updatedAt);
+          if (!matches(before) || !(await probe("https://" + host))) continue;
+          const after = await json(path, credential.token, credential.teamID);
+          // Recheck assignment and version so a newer healthy deployment cannot validate this release.
+          if (
+            matches(after) &&
+            after.uid === before.uid &&
+            after.updatedAt === before.updatedAt
+          ) {
+            healthy = true;
+            break;
+          }
+        }
+      } catch {
+        /* Missing alias access cannot prove deployment health. */
+      }
+    }
+    if (!healthy)
       return {
         ...identity,
         status: "failed" as const,
         failureCode: "healthcheck-failed",
       };
-    }
     return { ...identity, status: "ready" as const, region: "fra1" as const };
   }
   return { resolveDeployment, reconcileDeployment, observeDeployment };
+}
+
+/** Historical releases without a health snapshot retain their original root check. */
+export function gitReleaseHealthPath(
+  target: { healthPath?: unknown } | null | undefined,
+): string {
+  return gitHealthPath.parse(target?.healthPath ?? "/");
 }

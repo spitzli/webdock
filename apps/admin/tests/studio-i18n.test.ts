@@ -77,9 +77,8 @@ test('GNU gettext Studio catalog covers UI source literals and native error alia
   try{
     const mo=join(directory,'studio.mo'), ids=join(directory,'ids.json');
     await writeFile(ids,JSON.stringify([...messages]));
-    const catalogDirectory='../../packages/i18n/locales/de';
-    const catalogs=(await readdir(catalogDirectory)).filter(name=>name.endsWith('.po')).map(name=>join(catalogDirectory,name));
-    const merged=join(directory,'combined.po');
+    const merged=join(directory,'studio.po');
+    const catalogs=(await readdir('../../packages/i18n/locales/de')).filter(name=>name.endsWith('.po')).sort().map(name=>join('../../packages/i18n/locales/de',name));
     const combined=spawnSync('msgcat',['--use-first','-o',merged,...catalogs],{encoding:'utf8'});
     assert.equal(combined.status,0,combined.stderr);
     const compiled=spawnSync('msgfmt',['--check','--check-format','-o',mo,merged],{encoding:'utf8'});

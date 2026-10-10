@@ -7610,3 +7610,9 @@ msgstr "Build-Logs in GitHub Actions öffnen"
 
 msgid "Retry Mail operation"
 msgstr "E-Mail-Änderung erneut ausführen"
+
+msgid "Vercel healthcheck path"
+msgstr "Vercel-Healthcheck-Pfad"
+
+msgid "Use a public health endpoint that returns HTTP 200 without a redirect."
+msgstr "Verwende einen öffentlichen Healthcheck-Endpunkt, der HTTP 200 ohne Weiterleitung zurückgibt."

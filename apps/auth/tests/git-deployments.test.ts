@@ -163,8 +163,10 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
     recipe: "vercel",
     targetID: target,
     revision: 0,
+    healthPath: "/api/health",
   });
   assert.equal(configured.revision, 1);
+  assert.equal(configured.healthPath, "/api/health");
   const idem = key();
   const build = await call({
     action: "git.builds.request",
@@ -260,6 +262,7 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
     generation: next!.generation,
   });
   assert.equal(done.release?.status, "awaiting-approval");
+  assert.equal((await database.query("SELECT publication_target FROM webdock_auth.git_release WHERE id=$1", [done.release!.id])).rows[0].publication_target.healthPath, "/api/health");
   await assert.rejects(
     completeGitBuild(enrolled.credential, {
       ...completion,
@@ -432,9 +435,11 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
     recipe: "vercel",
     targetID: target,
     revision: 1,
+    healthPath: "/api/ready",
     autoPublish: true,
     buildEnvironment: [{ name: "BUILD_FIXTURE", value: "build-private-value" }],
   });
+  assert.equal((await database.query("SELECT publication_target FROM webdock_auth.git_release WHERE id=$1", [done.release!.id])).rows[0].publication_target.healthPath, "/api/health");
   const publicSource = await call({
     action: "git.source.get",
     projectID: project,
@@ -513,6 +518,7 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
   });
   assert.equal(rollback.status, "queued");
   assert.notEqual(rollback.id, healthy.id);
+  assert.equal((await database.query("SELECT publication_target FROM webdock_auth.git_release WHERE id=$1", [rollback.id])).rows[0].publication_target.healthPath, "/api/ready");
   const preflight = await claimGitRelease(enrolled.credential);
   assert.equal(preflight?.releaseID, rollback.id);
   const retryable = await completeGitRelease(enrolled.credential, {
