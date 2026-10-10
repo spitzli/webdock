@@ -806,6 +806,9 @@
   "Ask your operator to review the tracking domain count.": [
     "Bitte deinen Betreiber, die Anzahl der Tracking-Domains zu prüfen."
   ],
+  "Assign a dedicated Tabularis runtime with a verified database role for this person.": [
+    "Dieser Person eine eigene Tabularis-Instanz mit geprüfter Datenbankrolle zuweisen."
+  ],
   "Assign a plan": [
     "Tarif zuweisen"
   ],
@@ -883,6 +886,9 @@
   ],
   "Back to cluster": [
     "Zurück zum Cluster"
+  ],
+  "Back to databases": [
+    "Zurück zu den Datenbanken"
   ],
   "Back to editor": [
     "Zurück zum Editor"
@@ -1163,6 +1169,9 @@
   "Changes saved.": [
     "Änderungen gespeichert."
   ],
+  "Changing database privileges requires a newly isolated runtime.": [
+    "Für andere Datenbankrechte ist eine neue isolierte Instanz erforderlich."
+  ],
   "Changing language…": [
     "Sprache wird geändert…"
   ],
@@ -1174,6 +1183,9 @@
   ],
   "Check connection and domains": [
     "Verbindung und Domains prüfen"
+  ],
+  "Check the database configuration fields.": [
+    "Bitte prüfe die Angaben zur Datenbank."
   ],
   "Check the image URL and whether the file is available.": [
     "Prüfe die Bildadresse oder die Erreichbarkeit der Datei."
@@ -1618,6 +1630,9 @@
   ],
   "Connecting Vercel is optional; without it, Studio cannot display live Vercel information. You can restrict the projects selected during installation and revoke access at Vercel.": [
     "Die Verbindung mit Vercel ist optional. Ohne sie kann Studio keine aktuellen Vercel-Informationen anzeigen. Du kannst die bei der Installation ausgewählten Projekte einschränken und den Zugriff bei Vercel widerrufen."
+  ],
+  "Connecting to database…": [
+    "Verbindung zur Datenbank wird hergestellt…"
   ],
   "Connection": [
     "Verbindung"
@@ -2136,11 +2151,38 @@
   "Data is stored at /data and remains after application deletion.": [
     "Daten werden unter /data gespeichert und bleiben nach dem Löschen der Anwendung erhalten."
   ],
+  "Database access is unavailable.": [
+    "Der Datenbankzugriff ist nicht verfügbar."
+  ],
+  "Database authentication is unavailable.": [
+    "Die Datenbankanmeldung ist nicht verfügbar."
+  ],
+  "Database configuration could not be saved.": [
+    "Die Datenbankkonfiguration konnte nicht gespeichert werden."
+  ],
+  "Database configuration saved.": [
+    "Datenbankkonfiguration gespeichert."
+  ],
+  "Database gateway is not configured.": [
+    "Das Datenbank-Gateway ist noch nicht eingerichtet."
+  ],
   "Database ownership does not match this website.": [
     "Der Datenbankeigentümer stimmt nicht mit dieser Website überein."
   ],
+  "Database permission": [
+    "Datenbankberechtigung"
+  ],
   "Database schema": [
     "Datenbankschema"
+  ],
+  "Database service is unavailable.": [
+    "Der Datenbankdienst ist nicht verfügbar."
+  ],
+  "Database workspace": [
+    "Datenbank-Arbeitsbereich"
+  ],
+  "Databases": [
+    "Datenbanken"
   ],
   "Date": [
     "Datum"
@@ -2252,6 +2294,9 @@
   ],
   "Dessert": [
     "Dessert"
+  ],
+  "Development": [
+    "Entwicklung"
   ],
   "Disable access": [
     "Zugriff deaktivieren"
@@ -2456,6 +2501,9 @@
   ],
   "Edit customer names and saved addresses.": [
     "Kundennamen und gespeicherte Adressen bearbeiten."
+  ],
+  "Edit data": [
+    "Daten bearbeiten"
   ],
   "Edit products, variants, extras and prices.": [
     "Produkte, Varianten, Extras und Preise bearbeiten."
@@ -2706,6 +2754,12 @@
   "Existing project ID": [
     "ID des bestehenden Projekts"
   ],
+  "Exit focus mode": [
+    "Fokusmodus verlassen"
+  ],
+  "Exit fullscreen": [
+    "Vollbild verlassen"
+  ],
   "Expected content fields.": [
     "Inhaltsfelder werden erwartet."
   ],
@@ -2720,6 +2774,9 @@
   ],
   "Explore Webdock": [
     "Webdock entdecken"
+  ],
+  "Explore project data with Tabularis.": [
+    "Projektdaten mit Tabularis erkunden."
   ],
   "Extract the archive, run the installer and enter the one-time token when prompted.": [
     "Entpacke das Archiv, starte die Installation und gib den einmaligen Verbindungscode auf Nachfrage ein."
@@ -2790,6 +2847,9 @@
   "First name is invalid or too long.": [
     "Vorname ist ungültig oder zu lang."
   ],
+  "Focus mode": [
+    "Fokusmodus"
+  ],
   "Font family": [
     "Schriftfamilie"
   ],
@@ -2840,6 +2900,9 @@
   ],
   "Full record name": [
     "Vollständiger Eintragsname"
+  ],
+  "Fullscreen": [
+    "Vollbild"
   ],
   "German": [
     "Deutsch"
@@ -3347,6 +3410,9 @@
   ],
   "Invalid customer.": [
     "Ungültiger Kunde."
+  ],
+  "Invalid database response.": [
+    "Ungültige Antwort des Datenbankdienstes."
   ],
   "Invalid date.": [
     "Ungültiges Datum."
@@ -3867,6 +3933,9 @@
   "Manage customer names and addresses. Sign-in and permissions remain protected.": [
     "Kundennamen und Adressen verwalten. Anmeldung und Berechtigungen bleiben geschützt."
   ],
+  "Manage database access": [
+    "Datenbankzugriff verwalten"
+  ],
   "Manage existing applications": [
     "Vorhandene Anwendungen verwalten"
   ],
@@ -3896,6 +3965,9 @@
   ],
   "Manage reusable plans": [
     "Wiederverwendbare Tarife verwalten"
+  ],
+  "Manage schema": [
+    "Schema verwalten"
   ],
   "Manage selected repositories": [
     "Ausgewählte Repositories verwalten"
@@ -4170,6 +4242,9 @@
   "No access": [
     "Kein Zugriff"
   ],
+  "No access assigned": [
+    "Kein Zugriff zugewiesen"
+  ],
   "No accessible installations found. Install the app on a GitHub account and choose the repositories to make available.": [
     "Keine zugänglichen Installationen gefunden. Installiere die App in einem GitHub-Konto und wähle die freizugebenden Repositories aus."
   ],
@@ -4229,6 +4304,9 @@
   ],
   "No customers yet": [
     "Noch keine Kunden"
+  ],
+  "No databases are available for your account.": [
+    "Für dein Konto sind keine Datenbanken freigegeben."
   ],
   "No default tracking domain is selected.": [
     "Keine Standard-Tracking-Domain ausgewählt."
@@ -4583,6 +4661,9 @@
   ],
   "Open content manager": [
     "Content-Manager öffnen"
+  ],
+  "Open database": [
+    "Datenbank öffnen"
   ],
   "Open deployment ↗": [
     "Deployment öffnen ↗"
@@ -5391,6 +5472,9 @@
   "Register cluster": [
     "Cluster registrieren"
   ],
+  "Register database": [
+    "Datenbank registrieren"
+  ],
   "Register sender domain": [
     "Versanddomain registrieren"
   ],
@@ -5712,6 +5796,9 @@
   "Revision": [
     "Revision"
   ],
+  "Revoke access": [
+    "Zugriff entziehen"
+  ],
   "Revoke agent": [
     "Agent-Zugang widerrufen"
   ],
@@ -5766,6 +5853,12 @@
   "Runtime configuration changed. Build again before publication.": [
     "Die Laufzeitkonfiguration wurde geändert. Erstelle vor der Veröffentlichung einen neuen Build."
   ],
+  "Runtime origin": [
+    "Adresse der Tabularis-Instanz"
+  ],
+  "Runtime proxy secret": [
+    "Proxy-Geheimnis der Instanz"
+  ],
   "SEO & contact": [
     "Suchmaschinen und Kontakt"
   ],
@@ -5807,6 +5900,9 @@
   ],
   "Save a draft first, then publish when ready.": [
     "Speichere zunächst einen Entwurf und veröffentliche ihn, wenn er fertig ist."
+  ],
+  "Save access": [
+    "Zugriff speichern"
   ],
   "Save access and send invitation": [
     "Zugriff speichern und Einladung senden"
@@ -6342,6 +6438,9 @@
   "Spitzli Development admin ↗": [
     "Spitzli-Development-Verwaltung ↗"
   ],
+  "Staging": [
+    "Testumgebung"
+  ],
   "Stall Eichenbruch admin ↗": [
     "Stall-Eichenbruch-Verwaltung ↗"
   ],
@@ -6531,6 +6630,9 @@
   "Tablet": [
     "Tablet"
   ],
+  "Tabularis connection ID": [
+    "Tabularis-Verbindungs-ID"
+  ],
   "Template": [
     "Vorlage"
   ],
@@ -6704,6 +6806,9 @@
   ],
   "The customer cluster limit has been reached.": [
     "Die maximale Clusteranzahl dieses Kunden ist erreicht."
+  ],
+  "The database role enforces the selected permission and denies other tenants.": [
+    "Die Datenbankrolle erzwingt die gewählte Berechtigung und sperrt andere Mandanten."
   ],
   "The database role has privileges beyond this website.": [
     "Die Datenbankrolle besitzt Rechte außerhalb dieser Website."
@@ -7118,6 +7223,12 @@
   ],
   "This reset link is invalid or has expired. Request a new link to reset your password.": [
     "Dieser Link ist ungültig oder abgelaufen. Fordere einen neuen Link zum Zurücksetzen deines Passworts an."
+  ],
+  "This runtime and its storage are isolated for this person and database.": [
+    "Diese Instanz und ihr Speicher sind für diese Person und Datenbank isoliert."
+  ],
+  "This runtime is already assigned to another database user.": [
+    "Diese Instanz ist bereits einem anderen Datenbankbenutzer zugewiesen."
   ],
   "This secret is shown only now. Store it securely before leaving or dismissing this panel.": [
     "Dieses Secret wird nur jetzt angezeigt. Speichere es sicher, bevor du diese Ansicht verlässt oder ausblendest."
