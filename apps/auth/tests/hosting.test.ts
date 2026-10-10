@@ -113,7 +113,7 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
     )
   ).rows[0].id;
   const call = (actor: HostingActor, command: unknown) =>
-    executeHosting(actor, command) as Promise<any>;
+    executeHosting(actor, command);
   let clusterID: string = "",
     secondClusterID: string = "",
     secondProjectID: string = "";
@@ -248,7 +248,7 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
         const connected = (
           race.find(
             (x) => x.status === "fulfilled",
-          ) as PromiseFulfilledResult<any>
+          ) as PromiseFulfilledResult<Awaited<ReturnType<typeof executeHosting>>>
         ).value;
         const agent = await authenticateAgent(clusterID, connected.credential);
         const observation = {
@@ -336,7 +336,7 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
         const operation = (
           results.find(
             (x) => x.status === "fulfilled",
-          ) as PromiseFulfilledResult<any>
+          ) as PromiseFulfilledResult<Awaited<ReturnType<typeof executeHosting>>>
         ).value;
         await assert.rejects(
           call(b.actor, {
@@ -823,10 +823,10 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
           await database.query("UPDATE webdock_auth.hosting_agent SET observation=jsonb_set(jsonb_set(jsonb_set(observation,'{capabilities,storage}','true'),'{capabilities,storageVersion}','1'),'{capacity,volumeBytes}','1000000000'),last_seen=now() WHERE cluster_id=$1",[clusterID]);
           await database.query("UPDATE webdock_auth.hosting_cluster SET capacity=jsonb_set(capacity,'{volumeBytes}','1000000000') WHERE id=$1",[clusterID]);
           const stored=await call(a.actor,create);
-          async function complete(op:any,deleted=false,purged=false){
+          async function complete(op:{id:string},deleted=false,purged=false){
             const job=await claimOperation(managedAgent);assert.equal(job.id,op.id);assert.equal(job.desired.storageVersion,1);
             const proof={appID:stored.appID,revision:job.target_revision,namespace:'wd-'+project,uid:deleted?null:'storage-uid',ready:true,deleted,replicas:deleted?0:job.desired.spec.replicas,storage:{volumeBytes:purged?0:134217728,retained:deleted&&!purged}};
-            const {storage,...withoutStorage}=proof;
+            const withoutStorage={...proof};Reflect.deleteProperty(withoutStorage,"storage");
             await assert.rejects(completeOperation(managedAgent,{id:job.id,generation:job.generation,outcome:'succeeded',proof:withoutStorage}));
             await completeOperation(managedAgent,{id:job.id,generation:job.generation,outcome:'succeeded',proof});return job;
           }
@@ -845,7 +845,7 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
           const removed=await call(root.actor,{action:'apps.delete',appID:stored.appID,confirmName:preview.plan.name,planHash:preview.planHash,idempotencyKey:key()});
           const job=await complete(removed,true);assert.equal(job.desired.finalQuota.volumeBytes,134217728);
           assert.equal((await get()).status,'deleted');
-          assert.ok((await call(a.actor,{action:'apps.list',projectID:project})).docs.some((v:any)=>v.id===stored.appID));
+          assert.ok((await call(a.actor,{action:'apps.list',projectID:project})).docs.some((v:{id:string})=>v.id===stored.appID));
           assert.equal((await call(a.actor,{action:'usage.get',customerID:customers[0]})).allocated.volumeBytes,134217728);
           await assert.rejects(call(a.actor,{action:'apps.storageDeletion',appID:stored.appID}),/operator/);
           const purge=await call(root.actor,{action:'apps.storageDeletion',appID:stored.appID});
@@ -948,7 +948,7 @@ test('BYOK tenant isolation, disabled policy, enrollment and finite cluster coun
  const customer=(await database.query("INSERT INTO webdock_admin.customers(id,name) VALUES(webdock_auth.next_snowflake(),'BYOK fixture') RETURNING id")).rows[0].id;
  const org=(await database.query('SELECT organization_id FROM webdock_auth.tenant_customer WHERE customer_id=$1',[customer])).rows[0].organization_id;
  await database.query('INSERT INTO webdock_auth.member("organizationId","userId",role,"createdAt") VALUES($1,$2,\'admin\',now())',[org,owner.actor.subject]);
- const call=(actor:HostingActor,cmd:unknown)=>executeHosting(actor,cmd) as Promise<any>;
+ const call=(actor:HostingActor,cmd:unknown)=>executeHosting(actor,cmd);
  const registration={action:'byok.register',customerID:customer,name:'Customer cluster',provider:'k3s',region:'EU',locationEvidence:'Owner confirmed EU',idempotencyKey:key()};
  await assert.rejects(call(owner.actor,registration));
  const policy=await call(root.actor,{action:'byok.policy.set',customerID:customer,revision:0,kubernetes:true,vercel:true,maxClusters:1,manageExisting:true,namespaces:['apps']});
@@ -972,13 +972,13 @@ test('BYOK Vercel callback binds the tenant session and selected projects gate p
  const org=(await database.query('SELECT organization_id FROM webdock_auth.tenant_customer WHERE customer_id=$1',[customer])).rows[0].organization_id;
  await database.query('INSERT INTO webdock_auth.member("organizationId","userId",role,"createdAt") VALUES($1,$2,\'admin\',now())',[org,owner.actor.subject]);
  const runtime={clientID:"integration_fixture",clientSecret:"fixture-secret",slug:"webdock-fixture",platformTeam:"team_platformfixture",origin:"https://studio.example.invalid"};
- const call=(actor:HostingActor,cmd:unknown)=>executeHosting(actor,cmd,runtime) as Promise<any>;
+ const call=(actor:HostingActor,cmd:unknown)=>executeHosting(actor,cmd,runtime);
  await call(root.actor,{action:'byok.policy.set',customerID:customer,revision:0,kubernetes:false,vercel:true,maxClusters:0,manageExisting:false,namespaces:[]});
  const before={...process.env};Object.assign(process.env,{WEBDOCK_STUDIO_ORIGIN:'https://studio.example.invalid'});
  const teamID='team_'+key(),configurationID='icfg_'+key();let requests=0;const original=globalThis.fetch;
  try {
   const start=await call(owner.actor,{action:'byok.vercel.begin',customerID:customer});const state=new URL(start.url).searchParams.get('state');
-  globalThis.fetch=async(input:any)=>{requests++;const u=String(input);return Response.json(u.includes('access_token')?{access_token:'fixture-private-token',team_id:teamID,installation_id:configurationID,token_type:'Bearer'}:u.includes('/configuration/')?{id:configurationID,teamId:teamID,integrationId:'integration_fixture',scopes:['read:integration-configuration','read:project','read:deployment','read:domain']}: {projects:[{id:'prj_fixture',name:'Existing website',accountId:teamID}],pagination:{next:null}});};
+  globalThis.fetch=async(input)=>{requests++;const u=String(input);return Response.json(u.includes('access_token')?{access_token:'fixture-private-token',team_id:teamID,installation_id:configurationID,token_type:'Bearer'}:u.includes('/configuration/')?{id:configurationID,teamId:teamID,integrationId:'integration_fixture',scopes:['read:integration-configuration','read:project','read:deployment','read:domain']}: {projects:[{id:'prj_fixture',name:'Existing website',accountId:teamID}],pagination:{next:null}});};
   const finish={action:'byok.vercel.finish',state,code:'fixture-code',teamID,configurationID};
   await assert.rejects(call(other.actor,finish));assert.equal(requests,0);
   assert.equal((await call(owner.actor,finish)).customerID,customer);
@@ -994,7 +994,7 @@ test('BYOK inventory is bounded, namespace filtered, identity pinned and permiss
  const customer=(await database.query("INSERT INTO webdock_admin.customers(id,name) VALUES(webdock_auth.next_snowflake(),'Inventory fixture') RETURNING id")).rows[0].id;
  const org=(await database.query('SELECT organization_id FROM webdock_auth.tenant_customer WHERE customer_id=$1',[customer])).rows[0].organization_id;
  await database.query('INSERT INTO webdock_auth.member("organizationId","userId",role,"createdAt") VALUES($1,$2,\'admin\',now())',[org,owner.actor.subject]);
- const call=(actor:HostingActor,cmd:unknown)=>executeHosting(actor,cmd) as Promise<any>;
+ const call=(actor:HostingActor,cmd:unknown)=>executeHosting(actor,cmd);
  const policy={action:'byok.policy.set',customerID:customer,revision:0,kubernetes:true,vercel:false,maxClusters:1,manageExisting:true,namespaces:['apps']};
  await call(root.actor,policy);
  const cluster=await call(owner.actor,{action:'byok.register',customerID:customer,name:'Inventory fixture',provider:'kubernetes',region:'EU',locationEvidence:'Local disposable test',idempotencyKey:key()});
@@ -1034,13 +1034,13 @@ test('turboSMTP BYOK keeps credentials private and enforces tenant, revision and
   const org=(await database.query('SELECT organization_id FROM webdock_auth.tenant_customer WHERE customer_id=$1',[customers[i]])).rows[0].organization_id;
   await database.query('INSERT INTO webdock_auth.member("organizationId","userId",role,"createdAt") VALUES($1,$2,\'admin\',now())',[org,user.actor.subject]);
  }
- const call=(actor:HostingActor,cmd:unknown)=>executeHosting(actor,cmd) as Promise<any>;
+ const call=(actor:HostingActor,cmd:unknown)=>executeHosting(actor,cmd);
  const credential='test-consumer-'+key();const secret='private-secret-'+key();
  const connect={action:'byok.mail.connect',customerID:customers[0],label:'Own account',consumerKey:credential,consumerSecret:secret,confirmAccountAccess:true,revision:0};
  await assert.rejects(call(owner.actor,connect));
  for(const customerID of customers)await call(root.actor,{action:'byok.policy.set',customerID,revision:0,kubernetes:false,vercel:false,turbosmtp:true,maxMailDomains:1,maxClusters:0,manageExisting:false,namespaces:[]});
- let requests=0;const original=globalThis.fetch;let domains:any[]=[];
- globalThis.fetch=async(input:any,init?:RequestInit)=>{requests++;assert.match(String(input),/^https:\/\/pro\.api\.serversmtp\.com\/api\/v2\/sender-domains/);assert.equal((init?.headers as any).consumerKey,credential);if(init?.method==='POST'){const body=JSON.parse(String(init.body));domains=[{id:'domain1',domain:body.domain,spf_verified:false,dkim_verified:false,dmarc_verified:false}];return Response.json(domains[0]);}return Response.json({count:domains.length,results:domains});};
+ let requests=0;const original=globalThis.fetch;let domains:{id:string;domain:string;spf_verified:boolean;dkim_verified:boolean;dmarc_verified:boolean}[]=[];
+ globalThis.fetch=async(input,init)=>{requests++;assert.match(String(input),/^https:\/\/pro\.api\.serversmtp\.com\/api\/v2\/sender-domains/);assert.equal(new Headers(init?.headers).get("consumerKey"),credential);if(init?.method==='POST'){const body=JSON.parse(String(init.body));domains=[{id:'domain1',domain:body.domain,spf_verified:false,dkim_verified:false,dmarc_verified:false}];return Response.json(domains[0]);}return Response.json({count:domains.length,results:domains});};
  try {
   await assert.rejects(call({...owner.actor,source:'oauth'},connect));assert.equal(requests,0);
   const saved=await call(owner.actor,connect);assert.equal(saved.connected,true);assert.ok(!JSON.stringify(saved).includes(secret));assert.ok(!JSON.stringify(saved).includes(credential));
@@ -1060,11 +1060,11 @@ test('turboSMTP uncertain registration is fenced and resolved by observation, no
  const customerID=(await database.query("INSERT INTO webdock_admin.customers(id,name) VALUES(webdock_auth.next_snowflake(),'Own SMTP recovery') RETURNING id")).rows[0].id;
  const org=(await database.query('SELECT organization_id FROM webdock_auth.tenant_customer WHERE customer_id=$1',[customerID])).rows[0].organization_id;
  await database.query('INSERT INTO webdock_auth.member("organizationId","userId",role,"createdAt") VALUES($1,$2,\'admin\',now())',[org,owner.actor.subject]);
- const call=(actor:HostingActor,cmd:unknown)=>executeHosting(actor,cmd) as Promise<any>;
+ const call=(actor:HostingActor,cmd:unknown)=>executeHosting(actor,cmd);
  const policy={action:'byok.policy.set',customerID,revision:0,kubernetes:false,vercel:false,turbosmtp:true,maxMailDomains:2,maxClusters:0,manageExisting:false,namespaces:[]};await call(root.actor,policy);
- const {turbosmtp,maxMailDomains,...legacy}=policy;const kept=await call(root.actor,{...legacy,revision:1});assert.equal(kept.turbosmtp,true);assert.equal(kept.maxMailDomains,2);
- let domains:any[]=[];let writes=0;const original=globalThis.fetch;
- globalThis.fetch=async(_url:any,init?:RequestInit)=>{if(init?.method==='POST'){writes++;domains=[{id:'recovered',domain:'example.invalid',spf_verified:false,dkim_verified:false,dmarc_verified:false}];throw Error('response lost after provider write');}return Response.json({count:domains.length,results:domains});};
+ const legacy={...policy};Reflect.deleteProperty(legacy,"turbosmtp");Reflect.deleteProperty(legacy,"maxMailDomains");const kept=await call(root.actor,{...legacy,revision:1});assert.equal(kept.turbosmtp,true);assert.equal(kept.maxMailDomains,2);
+ let domains:{id:string;domain:string;spf_verified:boolean;dkim_verified:boolean;dmarc_verified:boolean}[]=[];let writes=0;const original=globalThis.fetch;
+ globalThis.fetch=async(_url,init)=>{if(init?.method==='POST'){writes++;domains=[{id:'recovered',domain:'example.invalid',spf_verified:false,dkim_verified:false,dmarc_verified:false}];throw Error('response lost after provider write');}return Response.json({count:domains.length,results:domains});};
  try{
   const connected=await call(owner.actor,{action:'byok.mail.connect',customerID,label:'Own account',consumerKey:'consumer-'+key(),consumerSecret:'secret-'+key(),confirmAccountAccess:true,revision:0});
   await assert.rejects(call(owner.actor,{action:'byok.mail.domain',customerID,revision:connected.revision,domain:'example.invalid'}));
@@ -1085,7 +1085,7 @@ test('shared custom images require explicit operator approval per project',async
  const org=(await database.query('SELECT organization_id FROM webdock_auth.tenant_customer WHERE customer_id=$1',[customerID])).rows[0].organization_id;
  await database.query('INSERT INTO webdock_auth.member("organizationId","userId",role,"createdAt") VALUES($1,$2,\'admin\',now())',[org,owner.actor.subject]);
  const projects=(await database.query("INSERT INTO webdock_admin.projects(id,name,customer_id,status) SELECT webdock_auth.next_snowflake(),'Image permission '||n,$1,'active' FROM generate_series(1,3) n RETURNING id",[customerID])).rows;
- const call=(actor:HostingActor,cmd:unknown)=>executeHosting(actor,cmd) as Promise<any>;
+ const call=(actor:HostingActor,cmd:unknown)=>executeHosting(actor,cmd);
  const cluster=await call(root.actor,{action:'clusters.register',name:'Shared fixture',provider:'local',country:'DE',region:'local',locationEvidence:'Disposable fixture',idempotencyKey:key()});
  const create={action:'projects.create',projectID:projects[0].id,clusterID:cluster.id,provider:'k3s',mode:'selfservice',ownImages:true,idempotencyKey:key()};
  await assert.rejects(call(root.actor,create));
@@ -1098,8 +1098,8 @@ test('shared custom images require explicit operator approval per project',async
  await call(root.actor,{...update,confirmSharedImages:true});
  await call(root.actor,{...update,revision:2,ownImages:false});
  const list=await call(root.actor,{action:'projects.list',customerID});
- assert.equal(list.docs.find((p:any)=>p.projectID===projects[0].id).ownImages,true);
- assert.equal(list.docs.find((p:any)=>p.projectID===projects[1].id).ownImages,false);
+ assert.equal(list.docs.find((p:{projectID:string;ownImages:boolean})=>p.projectID===projects[0].id).ownImages,true);
+ assert.equal(list.docs.find((p:{projectID:string;ownImages:boolean})=>p.projectID===projects[1].id).ownImages,false);
  await assert.rejects(call(root.actor,{...create,projectID:projects[2].id,provider:'vercel',clusterID:undefined,confirmSharedImages:true,idempotencyKey:key()}));
  const other=(await database.query("INSERT INTO webdock_admin.customers(id,name) VALUES(webdock_auth.next_snowflake(),'Foreign images fixture') RETURNING id")).rows[0].id;
  const dedicated=await call(root.actor,{action:'clusters.register',name:'Foreign dedicated',provider:'local',country:'DE',region:'local',locationEvidence:'Disposable fixture',dedicatedCustomerID:other,idempotencyKey:key()});
@@ -1115,7 +1115,7 @@ test('Orama hosting search scans later batches without crossing tenant boundarie
  await database.query("INSERT INTO webdock_auth.hosting_project(project_id,customer_id,provider,mode) SELECT id,$1,'vercel','selfservice' FROM webdock_admin.projects WHERE id=ANY($2::varchar[])",[customers[0],projects.map(r=>r.id)]);
  const foreign=(await database.query("INSERT INTO webdock_admin.projects(id,name,customer_id,status) VALUES(webdock_auth.next_snowflake(),'Orama private foreign',$1,'active') RETURNING id",[customers[1]])).rows[0];
  await database.query("INSERT INTO webdock_auth.hosting_project(project_id,customer_id,provider,mode) VALUES($1,$2,'vercel','selfservice')",[foreign.id,customers[1]]);
- const result=await executeHosting(user.actor,{action:'projects.list',customerID:customers[0],search:'orma',page:1,limit:20}) as any;
+ const result=await executeHosting(user.actor,{action:'projects.list',customerID:customers[0],search:'orma',page:1,limit:20});
  assert.equal(result.totalDocs,1);assert.equal(result.docs[0].name,'ZZ Orama garden');
  await assert.rejects(executeHosting(user.actor,{action:'projects.list',customerID:customers[1],search:'orama',page:1,limit:20}));
 });

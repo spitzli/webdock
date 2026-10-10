@@ -24,9 +24,9 @@ test("only the assigned cluster can claim, checkpoint and complete native Mail p
   const actor = (await database.query('INSERT INTO webdock_auth."user"(name,email,"emailVerified",role,"mustChangePassword","twoFactorEnabled") VALUES(\'Mail agent test\',$1,true,\'operator\',false,true) RETURNING id', [`agent-${randomBytes(8).toString("hex")}@example.invalid`])).rows[0].id;
   const customerID = (await database.query("INSERT INTO webdock_admin.customers(id,name) VALUES(webdock_auth.next_snowflake(),'Mail agent fixture') RETURNING id")).rows[0].id;
   const clusters = (await database.query(`INSERT INTO webdock_auth.hosting_cluster(name,provider,country,region,location_evidence,verified,capacity)
-    VALUES('Mail A','k3s','DE','Germany','Local test',true,$1),('Mail B','k3s','DE','Germany','Local test',true,$1) RETURNING id`, [JSON.stringify(mailInstanceDemand)])).rows;
+    VALUES('Mail A','Contabo','DE','Germany','Local test',true,$1),('Mail B','Contabo','DE','Germany','Local test',true,$1) RETURNING id`, [JSON.stringify(mailInstanceDemand)])).rows;
   const agents = clusters.map(cluster => ({ clusterID: cluster.id, generation: 1, credentialHash: randomBytes(32).toString("hex") }));
-  for (const agent of agents) await database.query("INSERT INTO webdock_auth.hosting_agent(cluster_id,credential_hash,generation,last_seen,observation) VALUES($1,$2,1,now(),$3)", [agent.clusterID, agent.credentialHash, JSON.stringify({ capabilities: { storageVersion: 1, nativeMail: { version: 1, image: process.env.MAIL_STALWART_IMAGE } } })]);
+  for (const agent of agents) await database.query("INSERT INTO webdock_auth.hosting_agent(cluster_id,credential_hash,generation,last_seen,observation) VALUES($1,$2,1,now(),$3)", [agent.clusterID, agent.credentialHash, JSON.stringify({ version: "v1.36.5+k3s1", capabilities: { storageVersion: 1, nativeMail: { version: 1, image: process.env.MAIL_STALWART_IMAGE } } })]);
   const priorSettings = (await database.query("SELECT settings FROM webdock_auth.platform_settings WHERE id=true")).rows[0];
   try {
     await database.query("INSERT INTO webdock_auth.platform_settings(id,settings) VALUES(true,'{\"mailEnabled\":true}') ON CONFLICT(id) DO UPDATE SET settings=excluded.settings");

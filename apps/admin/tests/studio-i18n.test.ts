@@ -77,7 +77,12 @@ test('GNU gettext Studio catalog covers UI source literals and native error alia
   try{
     const mo=join(directory,'studio.mo'), ids=join(directory,'ids.json');
     await writeFile(ids,JSON.stringify([...messages]));
-    const compiled=spawnSync('msgfmt',['--check','--check-format','-o',mo,'../../packages/i18n/locales/de/studio.po'],{encoding:'utf8'});
+    const catalogDirectory='../../packages/i18n/locales/de';
+    const catalogs=(await readdir(catalogDirectory)).filter(name=>name.endsWith('.po')).map(name=>join(catalogDirectory,name));
+    const merged=join(directory,'combined.po');
+    const combined=spawnSync('msgcat',['--use-first','-o',merged,...catalogs],{encoding:'utf8'});
+    assert.equal(combined.status,0,combined.stderr);
+    const compiled=spawnSync('msgfmt',['--check','--check-format','-o',mo,merged],{encoding:'utf8'});
     assert.equal(compiled.status,0,compiled.stderr);
     const checked=spawnSync('python3',['-c',`import gettext,json,sys
 with open(sys.argv[1],'rb') as stream: catalog=gettext.GNUTranslations(stream)._catalog

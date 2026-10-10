@@ -14,7 +14,7 @@ type ProviderJSON = (
   path: string,
   token: string,
   teamID: string,
-) => Promise<any>;
+) => Promise<Record<string, unknown>>;
 const missing = (message: string) => new HostingError(409, message);
 const denied = () =>
   new HostingError(403, "Vercel deployment target could not be verified.");
@@ -218,7 +218,7 @@ export async function prepareGitVercelBuild(
     throw missing(
       "Disconnect native Vercel Git builds before enabling Webdock publication.",
     );
-  const resourceConfig = project.resourceConfig ?? project;
+  const resourceConfig = (project.resourceConfig ?? project) as Record<string, unknown>;
   if (
     !Array.isArray(resourceConfig.functionDefaultRegions) ||
     resourceConfig.functionDefaultRegions.length !== 1 ||

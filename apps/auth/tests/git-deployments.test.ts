@@ -282,7 +282,7 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
   const approved = (
     approvals.find(
       (r) => r.status === "fulfilled",
-    ) as PromiseFulfilledResult<any>
+    ) as PromiseFulfilledResult<Awaited<ReturnType<typeof executeGitDeployment>>>
   ).value;
   assert.equal(approved.status, "queued");
   const otherWorker = await enrollGitWorker(actor, {
@@ -690,7 +690,7 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
       "INSERT INTO webdock_auth.git_source(customer_id,project_id,connection_id,repository_id,branch,root_directory,recipe,target_id) VALUES($1,$2,$3,$4,'main','.','vercel',$5)",
       [customer, foreignProject, connection.id, binding.repositoryID, target],
     ),
-    (error: any) => error.constraint === "git_source_project_customer_fk",
+    (error: unknown) => (error as { constraint?: string }).constraint === "git_source_project_customer_fk",
   );
   // Registry-only writes cannot create an application operation; their failures must be retryable.
   const cluster = (

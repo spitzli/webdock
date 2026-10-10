@@ -1,3 +1,4 @@
+import type { VercelProjectSnapshot } from "@webdock/hosting-contracts/vercel";
 import { uiLabel } from "@/lib/ui-labels";
 import Link from "next/link";
 import { getRequestI18n } from "@webdock/i18n/next";
@@ -16,12 +17,12 @@ export default async function OwnVercel({
     { t } = await getRequestI18n(),
     path = `/hosting/vercel/${customerID}`;
   const [data, policy] = await Promise.all([
-    hostingPageCall<any>({ action: "byok.vercel.projects", customerID }, path),
-    hostingPageCall<any>({ action: "byok.policy.get", customerID }, path),
+    hostingPageCall<{ projects: { id: string; name: string }[]; selected: string[]; revision: number; complete: boolean }>({ action: "byok.vercel.projects", customerID }, path),
+    hostingPageCall<{ canWrite: boolean }>({ action: "byok.policy.get", customerID }, path),
   ]);
   const snapshot =
     project && data.selected.includes(project)
-      ? await hostingPageCall<any>(
+      ? await hostingPageCall<VercelProjectSnapshot & { canCancel: boolean; canSetRegion: boolean }>(
           { action: "byok.vercel.resources", customerID, projectID: project },
           path,
         )
@@ -59,7 +60,7 @@ export default async function OwnVercel({
             label={t("Save selected projects")}
           >
             <div className="hosting-projects">
-              {data.projects.map((p: any) => (
+              {data.projects.map((p) => (
                 <label className="check" key={p.id}>
                   <input
                     type="checkbox"
@@ -75,8 +76,8 @@ export default async function OwnVercel({
         ) : null}
         <nav className="hosting-project-links">
           {data.projects
-            .filter((p: any) => data.selected.includes(p.id))
-            .map((p: any) => (
+            .filter((p) => data.selected.includes(p.id))
+            .map((p) => (
               <Link
                 key={p.id}
                 className="button secondary"
@@ -102,7 +103,7 @@ export default async function OwnVercel({
           </p>
           <h3>{t("Deployments")}</h3>
           <HostingTable
-            rows={snapshot.deployments as any[]}
+            rows={snapshot.deployments}
             rowKey={(r) => r.id}
             empty={t("No deployments found.")}
             columns={[
@@ -149,7 +150,7 @@ export default async function OwnVercel({
           />
           <h3>{t("Domains")}</h3>
           <HostingTable
-            rows={snapshot.domains as any[]}
+            rows={snapshot.domains}
             rowKey={(r) => r.name}
             empty={t("No domains found.")}
             columns={[

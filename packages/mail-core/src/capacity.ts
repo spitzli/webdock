@@ -25,7 +25,7 @@ export async function reserveMailCapacity(db: Connection, customerID: string, cl
   await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [`hosting-cluster:${clusterID}`]);
   const cluster = (await db.query(`SELECT c.*,a.revoked,a.last_seen,a.observation FROM webdock_auth.hosting_cluster c
     JOIN webdock_auth.hosting_agent a ON a.cluster_id=c.id WHERE c.id=$1 FOR SHARE OF c,a`, [clusterID])).rows[0];
-  if (!cluster || cluster.ownership !== "platform" || cluster.provider !== "k3s" || !cluster.verified || cluster.revoked ||
+  if (!cluster || cluster.ownership !== "platform" || !/^v[0-9][^,]*\+k3s[0-9]+$/.test(cluster.observation?.version || "") || !cluster.verified || cluster.revoked ||
     !cluster.last_seen || Date.now() - new Date(cluster.last_seen).getTime() >= 90_000 || cluster.observation?.capabilities?.nativeMail?.version !== 1 ||
     cluster.observation?.capabilities?.storageVersion !== 1)
     throw new MailCapacityError("A fresh managed cluster with verified Mail and storage support is required.");

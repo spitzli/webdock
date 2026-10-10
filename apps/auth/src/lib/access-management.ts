@@ -88,7 +88,7 @@ export async function listAccess(headers: Headers, search: string) {
   await requireAccessOperator(headers);
   const term=search.trim().slice(0,160);
   const query = `%${term}%`;
-  const searched=async (sql:string,text:(row:any)=>string,limit:number)=>({rows:(await searchPage(async page=>{const rows=(await database.query(sql+' LIMIT 300 OFFSET $1',[(page-1)*300])).rows;return {rows,hasMore:rows.length===300};},text,term,1,limit)).docs});
+  const searched=async (sql:string,text:(row:{name:string;email:string})=>string,limit:number)=>({rows:(await searchPage(async page=>{const rows=(await database.query(sql+' LIMIT 300 OFFSET $1',[(page-1)*300])).rows;return {rows,hasMore:rows.length===300};},text,term,1,limit)).docs});
   const [users, organizations, bindings, grants, invitations, events] =
     await Promise.all([
       term?searched('SELECT id,name,email,role,banned,"emailVerified","mustChangePassword" FROM webdock_auth."user" ORDER BY "createdAt" DESC,id',r=>r.name+' '+r.email,100):database.query(

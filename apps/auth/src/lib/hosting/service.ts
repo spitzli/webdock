@@ -389,7 +389,7 @@ export async function executeHosting(actor: HostingActor, raw: unknown, runtime?
       let reconciliation:undefined|{resourceVersion:string};
       if(op.action==='byok.workload') {
         const access=await byokCluster(db,actor,op.cluster_id);
-        const snapshot=access.row.inventory;const resource=snapshot?.resources.find((r:any)=>r.uid===op.desired.resource.uid);
+        const snapshot=access.row.inventory;const resource=snapshot?.resources.find((r: import("@webdock/hosting-contracts").InventoryResource)=>r.uid===op.desired.resource.uid);
         if(access.operator&&op.status==='needs-reconciliation'&&resource&&Date.now()-Date.parse(snapshot.observedAt)<180000)reconciliation={resourceVersion:resource.resourceVersion};
         if(!access.policy.namespaces.includes(op.desired.resource.namespace)||op.desired.action==='logs'&&!access.liveReads)throw new HostingError(403,'Operation is unavailable.');
       }

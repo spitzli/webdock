@@ -42,13 +42,17 @@ CREATE TABLE IF NOT EXISTS webdock_mail.cluster_reservation (
  status text NOT NULL CHECK(status IN ('reserved','active'))
 );`;
 
-export function nativeMailGrants(authRole: string, workerRole: string) {
-  for (const role of [authRole, workerRole]) if (!/^[a-z][a-z0-9_]{0,62}$/.test(role)) throw new Error("Invalid Mail database role");
+export function nativeMailGrants(authRole: string, workerRole?: string) {
+  for (const role of workerRole === undefined ? [authRole] : [authRole, workerRole])
+    if (typeof role !== "string" || !/^[a-z][a-z0-9_]{0,62}$/.test(role)) throw new Error("Invalid Mail database role");
   if (authRole === workerRole) throw new Error("Mail worker and authentication roles must be separate");
-  return `GRANT USAGE ON SCHEMA webdock_mail TO "${authRole}","${workerRole}";
-GRANT SELECT,INSERT,UPDATE ON webdock_mail.service,webdock_mail.operation,webdock_mail.cluster_reservation TO "${authRole}";
+  const managed = `GRANT USAGE ON SCHEMA webdock_mail TO "${authRole}";
+GRANT SELECT,INSERT,UPDATE ON webdock_mail.service,webdock_mail.operation,webdock_mail.cluster_reservation,webdock_mail.instance TO "${authRole}";`;
+  if (workerRole === undefined) return managed;
+  return managed + `
+GRANT USAGE ON SCHEMA webdock_mail TO "${workerRole}";
 GRANT SELECT,UPDATE ON webdock_mail.service,webdock_mail.operation TO "${workerRole}";
-GRANT SELECT,INSERT,UPDATE ON webdock_mail.instance TO "${authRole}","${workerRole}";
+GRANT SELECT,INSERT,UPDATE ON webdock_mail.instance TO "${workerRole}";
 GRANT USAGE ON SCHEMA webdock_auth,webdock_admin TO "${workerRole}";
 GRANT SELECT(id,status) ON webdock_admin.customers TO "${workerRole}";
 GRANT SELECT(id,settings) ON webdock_auth.platform_settings TO "${workerRole}";`;

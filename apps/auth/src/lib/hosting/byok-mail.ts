@@ -52,7 +52,11 @@ async function rowFor(db: Connection, customerID: string) {
     )
   ).rows[0];
 }
-function view(row: any) {
+function view(row: {
+  encrypted_secret: string | null; label: string; key_suffix: string | null;
+  revision: number; snapshot: SenderDomain[]; checked_at: string | Date | null;
+  state: string; pending_domain: string | null;
+} | undefined) {
   return {
     connected: !!row?.encrypted_secret,
     label: row?.label ?? "",
@@ -72,7 +76,7 @@ const fail = (message: string): never => {
 export async function executeByokMail(
   actor: HostingActor,
   cmd: HostingCommand,
-): Promise<any> {
+) {
   if (!("customerID" in cmd))
     throw new HostingError(400, "Choose an authorized hosting customer.");
   const customerID = cmd.customerID;

@@ -28,7 +28,7 @@ function config() {
 async function verify(db: Connection, agent: Agent) {
   const observed = await verifyAgent(db, agent);
   const c = (await db.query("SELECT ownership,provider,verified FROM webdock_auth.hosting_cluster WHERE id=$1 FOR SHARE", [agent.clusterID])).rows[0];
-  if (!c || c.ownership !== "platform" || c.provider !== "k3s" || !c.verified) conflict();
+  if (!c || c.ownership !== "platform" || !/^v[0-9][^,]*\+k3s[0-9]+$/.test(observed.observation?.version || "") || !c.verified) conflict();
   return observed;
 }
 async function operation(db: Connection, agent: Agent, input: z.infer<typeof lease>): Promise<MailOperation> {

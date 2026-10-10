@@ -115,9 +115,9 @@ test("managed Mail reserves cluster capacity atomically and retained volumes rem
   const root = await identity(true);
   const customers = (await database.query("INSERT INTO webdock_admin.customers(id,name) VALUES(webdock_auth.next_snowflake(),'Mail capacity A'),(webdock_auth.next_snowflake(),'Mail capacity B') RETURNING id")).rows.map(row => row.id as string);
   const cluster = (await database.query(`INSERT INTO webdock_auth.hosting_cluster(name,provider,country,region,location_evidence,verified,capacity)
-    VALUES('Mail test cluster','k3s','DE','Germany','Local fixture',true,$1) RETURNING id`, [JSON.stringify(mailInstanceDemand)])).rows[0].id;
+    VALUES('Mail test cluster','Contabo','DE','Germany','Local fixture',true,$1) RETURNING id`, [JSON.stringify(mailInstanceDemand)])).rows[0].id;
   await database.query(`INSERT INTO webdock_auth.hosting_agent(cluster_id,credential_hash,generation,last_seen,observation)
-    VALUES($1,$2,1,now(),$3)`, [cluster, randomBytes(32).toString("hex"), JSON.stringify({ capabilities: { nativeMail: { version: 1 }, storageVersion: 1 } })]);
+    VALUES($1,$2,1,now(),$3)`, [cluster, randomBytes(32).toString("hex"), JSON.stringify({ version: "v1.36.5+k3s1", capabilities: { nativeMail: { version: 1 }, storageVersion: 1 } })]);
   const previous = (await database.query("SELECT settings FROM webdock_auth.platform_settings WHERE id=true")).rows[0];
   try {
     await database.query("INSERT INTO webdock_auth.platform_settings(id,settings) VALUES(true,'{\"mailEnabled\":true}') ON CONFLICT(id) DO UPDATE SET settings=excluded.settings");
