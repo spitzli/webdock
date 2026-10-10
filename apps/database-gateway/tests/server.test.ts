@@ -7,16 +7,20 @@ import { createGateway } from "../src/server";
 
 test("gateway authenticates each RPC, strips credentials and stops revoked sessions", async () => {
   let nextInspectionDelay = 0;
+  let storedDriver = "postgres";
   let revoked = false, lastHeaders: Record<string, unknown> = {};
   const audit: unknown[] = [];
-  const upstream = createServer((req, res) => {
+  let lastBody: unknown;
+  const upstream = createServer(async (req, res) => {
     lastHeaders = req.headers;
     res.setHeader("Content-Type", "application/json");
     if (req.url === "/api/v1/session") {
       res.setHeader("Set-Cookie", "tabularis_session=upstream-private; HttpOnly");
       return res.end(JSON.stringify({ apiVersion: "v1", authenticated: true, csrfToken: "upstream-csrf", capabilities: {}, queryResponsePolicy: {} }));
     }
-    setTimeout(() => res.end(JSON.stringify({ ok: true, data: [{ id: "internal", name: "Orders", params: { driver: "postgres", database: "orders", password: "never-expose" } }] })), 25);
+    let raw = ""; for await (const chunk of req) raw += chunk;
+    lastBody = raw ? JSON.parse(raw) : null;
+    setTimeout(() => res.end(JSON.stringify({ ok: true, data: [{ id: "internal", name: "Orders", params: { driver: storedDriver, database: "orders", password: "never-expose" } }] })), 25);
   });
   const upstreamEvents = new WebSocketServer({ server: upstream });
   upstreamEvents.on("connection", client => client.send(JSON.stringify({ type: "event", event: "query-progress", payload: { connectionId: "internal" }, sequence: 1 })));
@@ -82,6 +86,10 @@ test("gateway authenticates each RPC, strips credentials and stops revoked sessi
     assert.equal((await rows.json()).data[0].id, "123");
     assert.equal(lastHeaders["x-tabularis-user"], "alice");
     assert.equal(lastHeaders["x-tabularis-proxy-secret"], "trusted-secret");
+    storedDriver = "sqlite";
+    assert.equal((await rpc("test_connection", { request: { connection_id: "123", params: { database: "/etc/passwd" } } })).status, 200, "SQLite uses only the registered runtime connection");
+    assert.deepEqual(lastBody, { request: { connection_id: "internal", params: { driver: "sqlite", database: "orders", password: "never-expose" } } });
+    storedDriver = "postgres";
     const initialReads = await Promise.all(Array.from({ length: 12 }, () => rpc("get_connections", null)));
     assert.ok(initialReads.every(response => response.status === 200), "Workspace bootstrap metadata must fit the concurrency limit");
     assert.equal((await rpc("save_connection", {})).status, 403);

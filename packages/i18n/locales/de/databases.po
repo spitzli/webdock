@@ -120,3 +120,6 @@ msgstr "Vollbild"
 
 msgid "Exit fullscreen"
 msgstr "Vollbild verlassen"
+
+msgid "Database engine"
+msgstr "Datenbanktyp"

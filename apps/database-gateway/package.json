@@ -1,7 +1,26 @@
 {
-  "name": "@webdock/database-gateway", "version": "0.1.0", "private": true, "type": "module",
-  "engines": { "node": "24.x" },
-  "scripts": { "start": "node --import tsx src/main.ts", "test": "node --import tsx --test tests/*.test.ts", "check": "tsc --noEmit" },
-  "dependencies": { "@webdock/database-contracts": "*", "ws": "8.22.0", "tsx": "^4.23.15" },
-  "devDependencies": { "@types/ws": "8.18.2", "@types/node": "^24", "typescript": "^5" }
+  "name": "@webdock/database-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "start": "node --import tsx src/main.ts",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "check": "tsc --noEmit",
+    "build": "esbuild src/main.ts --bundle --platform=node --target=node24 --format=cjs --outfile=dist/main.cjs"
+  },
+  "dependencies": {
+    "@webdock/database-contracts": "*",
+    "tsx": "^4.23.15",
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "@types/ws": "8.18.2",
+    "esbuild": "0.25.12",
+    "typescript": "^5"
+  }
 }

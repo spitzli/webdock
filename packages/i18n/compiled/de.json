@@ -2178,6 +2178,9 @@
   "Database configuration saved.": [
     "Datenbankkonfiguration gespeichert."
   ],
+  "Database engine": [
+    "Datenbanktyp"
+  ],
   "Database gateway is not configured.": [
     "Das Datenbank-Gateway ist noch nicht eingerichtet."
   ],
