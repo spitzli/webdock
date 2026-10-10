@@ -49,3 +49,38 @@ class DaemonTests(unittest.TestCase):
             error=HTTPError('https://auth.webdock.dev',code,'failure',{},BytesIO(body))
             self.assertEqual(authentication_revoked(error),expected)
             error.close()
+
+    def test_mail_job_checkpoints_before_reporting_completion(self):
+        from test_mail_executor import MailExecutorTests
+        packet = MailExecutorTests().packet(); packet['clusterID'] = '123'
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.state(directory); calls = []
+            def request(origin, state, route, body):
+                calls.append((route, body))
+                if route == 'mail-claim': return packet
+                if route == 'mail-checkpoint': return {'leaseUntil': packet['leaseUntil']}
+            def execute(value, checkpoint):
+                checkpoint({'username': 'admin', 'password': 'fixture'})
+                return {'namespace': 'wd-mail-123', 'revision': 1, 'running': True, 'edition': 'community', 'recoveryDisabled': True}
+            observed = {'nodes': [], 'capabilities': {'nativeMail': {'version': 1, 'image': packet['image']}}}
+            with patch('daemon.collect_observation', return_value=observed), patch('daemon.agent_request', side_effect=request), patch('mail_executor.execute_mail', side_effect=execute) as executor:
+                result = run_once(path)
+            executor.assert_called_once()
+            self.assertEqual(result['event'], 'mail-operation')
+            routes = [route for route, _ in calls]
+            self.assertLess(routes.index('mail-checkpoint'), routes.index('mail-complete'))
+            complete = next(body for route, body in calls if route == 'mail-complete')
+            self.assertEqual(complete['outcome'], 'succeeded')
+            self.assertNotIn('fixture', str(complete))
+
+    def test_foreign_mail_packet_never_executes(self):
+        from test_mail_executor import MailExecutorTests
+        packet = MailExecutorTests().packet()
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.state(directory)
+            observed = {'nodes': [], 'capabilities': {'nativeMail': {'version': 1, 'image': packet['image']}}}
+            def request(origin, state, route, body):
+                if route == 'mail-claim': return packet
+            with patch('daemon.collect_observation', return_value=observed), patch('daemon.agent_request', side_effect=request), patch('mail_executor.execute_mail') as executor:
+                with self.assertRaises(ValueError): run_once(path)
+            executor.assert_not_called()

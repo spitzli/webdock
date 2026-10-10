@@ -8,6 +8,7 @@ import { createIdentity, registerApplication } from "../src/lib/bootstrap";
 import { currentClaims } from "../src/lib/authorization";
 import { handleStudioRequest } from "../src/lib/studio-api";
 import { tenantPreviewSchemaSQL } from "../src/lib/tenant-preview-schema";
+import { nativeMailSchemaSQL } from "@webdock/mail-core/schema";
 
 const databaseURL = new URL(process.env.DATABASE_URL!);
 if (!["localhost", "127.0.0.1"].includes(databaseURL.hostname) || databaseURL.pathname !== "/webdock_admin_test" || process.env.AUTH_TEST_MAIL !== "true") throw Error("Disposable local database and test outbox required");
@@ -62,6 +63,19 @@ test("Studio delegation validates live session identity, bounds inputs and retai
   response = await handleStudioRequest(request("getTenant", [tenant.id]), { introspect });
   assert.equal(response.status, 200);
   assert.equal((await response.json()).data.tenant.notes, undefined);
+  await database.query(nativeMailSchemaSQL);
+  const nativeMailFlag = process.env.WEBDOCK_NATIVE_MAIL_ENABLED;
+  process.env.WEBDOCK_NATIVE_MAIL_ENABLED = "true";
+  try {
+    response = await handleStudioRequest(request("getTenantMailService", [tenant.id]), { introspect });
+    assert.equal(response.status, 200);
+    const mail = (await response.json()).data;
+    assert.equal(mail.service.state, "disabled");
+    assert.equal(mail.canActivate, false);
+    assert.equal((await handleStudioRequest(request("manageTenantMailService", [tenant.id, { action: "activate", revision: "0" }]), { introspect })).status, 403);
+  } finally {
+    if (nativeMailFlag === undefined) delete process.env.WEBDOCK_NATIVE_MAIL_ENABLED; else process.env.WEBDOCK_NATIVE_MAIL_ENABLED = nativeMailFlag;
+  }
   for (const operation of ["requireAccessOperator", "listAccess", "getPlatformSettings", "getMailConnectionStatus", "testMailConnection", "clearMailCredentials", "saveMailCredentials", "savePlatformSettings"]) {
     const args = operation === "listAccess" ? [""] : operation === "saveMailCredentials" ? ["key", "secret"] : operation === "savePlatformSettings" ? [{}] : [];
     assert.equal((await handleStudioRequest(request(operation, args), { introspect })).status, 403, operation);

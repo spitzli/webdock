@@ -1,0 +1,22 @@
+{
+  "name": "@webdock/mail",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "24.x" },
+  "scripts": {
+    "worker": "node src/worker.ts",
+    "test": "node --test tests/*.test.ts",
+    "test:integration": "node ../../scripts/test-mail.mjs",
+    "test:database": "node --env-file=.env.test.local --test --test-concurrency=1 tests/database/*.test.ts",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": { "@webdock/mail-core": "*", "pg": "8.16.3" },
+  "devDependencies": {
+    "@types/pg": "^8",
+    "@types/node": "^24",
+    "@types/nodemailer": "^8.0.2",
+    "nodemailer": "10.0.13",
+    "typescript": "^5"
+  }
+}

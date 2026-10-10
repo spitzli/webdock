@@ -395,6 +395,12 @@
   "Actions": [
     "Aktionen"
   ],
+  "Activate email": [
+    "E-Mail aktivieren"
+  ],
+  "Activate email for this customer to set up its mail service. Suspending the service retains existing mailbox data.": [
+    "Aktiviere E-Mail für diesen Kunden, um den Dienst einzurichten. Beim Deaktivieren bleiben vorhandene Postfachdaten erhalten."
+  ],
   "Active": [
     "Aktiv"
   ],
@@ -749,6 +755,9 @@
   "Apply": [
     "Anwenden"
   ],
+  "Applying change": [
+    "Änderung wird umgesetzt"
+  ],
   "Appointment": [
     "Termin"
   ],
@@ -1087,6 +1096,9 @@
   ],
   "Change password": [
     "Passwort ändern"
+  ],
+  "Change queued": [
+    "Änderung vorgemerkt"
   ],
   "Change result": [
     "Ergebnis der Änderung"
@@ -3552,6 +3564,12 @@
   "Mail & domains": [
     "Mail & Domains"
   ],
+  "Mail change queued. Existing mailbox data will be retained.": [
+    "Die E-Mail-Änderung ist vorgemerkt. Vorhandene Postfachdaten bleiben erhalten."
+  ],
+  "Mail change recorded. An operator must reconcile the existing operation.": [
+    "Die E-Mail-Änderung wurde gespeichert. Ein Administrator muss den bestehenden Auftrag abgleichen."
+  ],
   "Mail change saved.": [
     "Mail-Änderung gespeichert."
   ],
@@ -3608,6 +3626,15 @@
   ],
   "Mail sent against provider quota": [
     "Gesendete E-Mails im Verhältnis zum Anbieterlimit"
+  ],
+  "Mail settings are unchanged.": [
+    "Die E-Mail-Einstellungen sind unverändert."
+  ],
+  "Mail settings changed. Refresh before trying again.": [
+    "Die E-Mail-Einstellungen wurden geändert. Lade die Seite vor einem erneuten Versuch neu."
+  ],
+  "Mail settings could not be changed. Refresh before trying again.": [
+    "Die E-Mail-Einstellungen konnten nicht geändert werden. Lade die Seite vor einem erneuten Versuch neu."
   ],
   "Mail tracking": [
     "Mail-Tracking"
@@ -3875,6 +3902,9 @@
   ],
   "Namespace": [
     "Namespace"
+  ],
+  "Native Mail is not available yet.": [
+    "Webdock Mail ist noch nicht verfügbar."
   ],
   "Neon’s data-processing agreement": [
     "Neons Vereinbarung zur Auftragsverarbeitung"
@@ -4187,6 +4217,9 @@
   ],
   "None": [
     "Keine"
+  ],
+  "Not activated": [
+    "Nicht aktiviert"
   ],
   "Not available": [
     "Nicht verfügbar"
@@ -6201,8 +6234,14 @@
   "Suspend account": [
     "Konto sperren"
   ],
+  "Suspend email": [
+    "E-Mail deaktivieren"
+  ],
   "Suspended": [
     "Gesperrt"
+  ],
+  "Suspended — data retained": [
+    "Deaktiviert — Daten bleiben erhalten"
   ],
   "System": [
     "System"
@@ -6479,6 +6518,9 @@
   ],
   "The preview needs a page title, valid address and complete colour values. Add these in the editor.": [
     "Die Vorschau benötigt einen Seitentitel, eine gültige Adresse und vollständige Farbwerte. Ergänze diese im Editor."
+  ],
+  "The previous change needs to be checked before setup can continue.": [
+    "Die vorherige Änderung muss geprüft werden, bevor die Einrichtung fortgesetzt werden kann."
   ],
   "The project changed before deletion. Nothing further was removed.": [
     "Das Projekt wurde vor der Löschung geändert. Es wurde nichts Weiteres entfernt."
@@ -7463,6 +7505,9 @@
   ],
   "Webdock MCP": [
     "Webdock MCP"
+  ],
+  "Webdock Mail": [
+    "Webdock Mail"
   ],
   "Webdock Studio": [
     "Webdock Studio"

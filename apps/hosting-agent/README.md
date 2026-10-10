@@ -44,3 +44,42 @@ python3 apps/hosting-agent/connect.py \
 HTTPS is required except for explicit local testing with `--allow-loopback` and a loopback origin. Omit `--once` to observe every 30 seconds. SSH host-key checking is mandatory. Redirects are rejected before credentials could be forwarded. Errors stop the bridge and do not change cluster state. A revoked agent cannot reconnect without a new enrollment.
 
 The original connection was local-only; the owner subsequently requested and authorized production rollout while retaining Studio/Auth on Vercel. Server location evidence and local-path storage limitations are documented in `docs/architecture/hosting-control-plane.md`.
+
+## Native Mail agent profile (source implemented; not deployed)
+
+Managed Mail uses the same authenticated daemon, with `mail-claim`,
+`mail-checkpoint` and `mail-complete`. Only platform-owned k3s clusters participate.
+Each explicitly activated customer receives namespace `wd-mail-CUSTOMER_ID`, a
+retained fixed-size storage allocation and one restricted Stalwart CE container.
+Suspension scales the existing Deployment to zero without deleting its PVC/data.
+
+Managed installation must include `mail_executor.py`, `mail_client.py` and their
+existing executor/storage dependencies. The observer-only SSH bridge and BYOK
+installer deliberately do not advertise or execute managed Mail.
+
+Before enabling the capability, build `infra/mail/Dockerfile`, import the exact
+immutable image into the node's k3s image store, and create root-owned mode-0600
+`/etc/webdock-mail.json` with `{"node":"YOUR_NODE","image":"REGISTRY/IMAGE@sha256:DIGEST"}`.
+The observer verifies that digest is cached and that the cluster has exactly that
+single node with an available storage helper. It never pulls arbitrary images.
+Adding nodes requires explicit image distribution/scheduling support first.
+Configure the same digest, the platform cluster ID, hostname suffix and independent
+Mail encryption key in Auth (`MAIL_STALWART_IMAGE`, `MAIL_MANAGED_CLUSTER_ID`,
+`MAIL_HOSTNAME_SUFFIX`, `MAIL_ENCRYPTION_KEY`). Apply the native Mail migration before
+enabling `WEBDOCK_NATIVE_MAIL_ENABLED`. Existing instance keys must remain decryptable.
+
+Bootstrap runs in recovery mode while listener configuration is prepared. Permanent
+credentials are checkpointed to Auth before the recovery environment and temporary
+Kubernetes Secret are removed. Unknown mutations or lost leases require operator
+reconciliation; the agent does not replay them. Internal ports are HTTP 8080, SMTP
+2525, TLS submission 2465 and IMAPS 1993; no NodePort, public ingress or relay egress
+is provisioned by this profile yet. A successful provisioning proof confirms the
+private instance, **not** working public email delivery.
+
+The real local restricted-container test requires the locally built image and an
+explicit Unix Docker socket; it only creates isolated disposable fixtures:
+
+```sh
+WEBDOCK_MAIL_DOCKER_TEST=1 DOCKER_HOST=unix:///var/run/docker.sock \
+  python3 -m unittest discover -s apps/hosting-agent -p test_mail_client.py -v
+```
