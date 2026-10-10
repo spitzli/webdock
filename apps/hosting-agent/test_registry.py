@@ -7,6 +7,15 @@ class RegistryTests(unittest.TestCase):
         self.config={'version':1,'euStorageEvidence':'verified DE','projects':{'2':{'repository':'registry.example/tenant-1/project-2','pullSecret':'registry-project-2','readOnly':True,'credentialScopeEvidence':'read-only repository-scoped robot'}}}
     def test_exact_project_digest(self):
         self.assertEqual(registry.pull_configuration(self.packet,self.config),{'name':'registry-project-2'})
+    def test_unverified_geography_is_truthful_metadata_not_weaker_pull_authorization(self):
+        self.config['euStorageEvidence']='Precise country/EU placement unverified; best-effort geography accepted.'
+        self.assertEqual(registry.pull_configuration(self.packet,self.config),{'name':'registry-project-2'})
+        self.packet['projectID']='3'
+        with self.assertRaises(registry.RegistryError):registry.pull_configuration(self.packet,self.config)
+        self.packet['projectID']='2'
+        self.config['projects']['2']['readOnly']=False
+        with self.assertRaises(registry.RegistryError):registry.pull_configuration(self.packet,self.config)
+
     def test_existing_local_images_do_not_acquire_registry_credentials(self):
         self.packet['spec']['image']='docker.io/library/nginx@sha256:'+'b'*64
         self.assertIsNone(registry.pull_configuration(self.packet,self.config))

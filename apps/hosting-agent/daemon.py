@@ -56,7 +56,7 @@ def heartbeat(path,state):
 
 
 def execute_local(packet):
-    result=subprocess.run([sys.executable,str(Path(__file__).with_name('executor.py'))],input=json.dumps(packet),capture_output=True,text=True,timeout=140,check=True)
+    result=subprocess.run([sys.executable,str(Path(__file__).with_name('executor.py'))],input=json.dumps(packet),capture_output=True,text=True,timeout=260,check=True)
     if len(result.stdout)>65536:raise ValueError('Executor result is too large')
     return json.loads(result.stdout)
 
