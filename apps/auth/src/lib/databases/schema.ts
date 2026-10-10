@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS webdock_auth.database_binding (
  environment text NOT NULL CHECK(environment IN ('production','staging','development')),
  enabled boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE webdock_auth.database_binding ADD COLUMN IF NOT EXISTS engine text NOT NULL DEFAULT 'postgresql' CHECK(engine IN ('postgresql','sqlite'));
 CREATE TABLE IF NOT EXISTS webdock_auth.database_grant (
  id varchar PRIMARY KEY DEFAULT webdock_auth.next_snowflake(),
  binding_id varchar NOT NULL REFERENCES webdock_auth.database_binding(id),

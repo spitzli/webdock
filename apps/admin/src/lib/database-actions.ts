@@ -8,7 +8,7 @@ import { databaseCall } from "./database-client";
 export async function saveDatabase(_state: { error?: string; message?: string }, form: FormData): Promise<{ error?: string; message?: string }> {
   const value = (name: string) => typeof form.get(name) === "string" ? String(form.get(name)) : "";
   const action = value("action"), bindingID = value("bindingID");
-  const input = action === "create" ? { action, projectID: value("projectID"), name: value("name"), environment: value("environment") } :
+  const input = action === "create" ? { action, engine: value("engine") || "postgresql", projectID: value("projectID"), name: value("name"), environment: value("environment") } :
     action === "grant" ? { action, bindingID, subject: value("subject"), profile: value("profile"), runtimeOrigin: value("runtimeOrigin"),
       connectionID: value("connectionID"), proxySecret: value("proxySecret"), isolationVerified: value("isolationVerified") === "on", databaseRoleVerified: value("databaseRoleVerified") === "on" } :
     action === "revoke" ? { action, bindingID, subject: value("subject") } : { action, bindingID };

@@ -14,7 +14,7 @@ export default async function Databases({ params }: { params: Promise<{ customer
     <section className="panel database-directory">
       {!data.bindings.length && <p>{t("No databases are available for your account.")}</p>}
       {data.bindings.map(binding => <article key={binding.id} className="database-row"><div className="database-row-heading">
-        <div><strong>{binding.name}</strong><p className="muted">PostgreSQL · {t(binding.environment === "production" ? "Production" : binding.environment === "staging" ? "Staging" : "Development")}</p></div>
+        <div><strong>{binding.name}</strong><p className="muted">{binding.engine === "sqlite" ? "SQLite" : "PostgreSQL"} · {t(binding.environment === "production" ? "Production" : binding.environment === "staging" ? "Staging" : "Development")}</p></div>
         <span>{binding.profile ? t(binding.profile === "read" ? "Read only" : binding.profile === "write" ? "Edit data" : "Manage schema") : t("No access assigned")}</span>
         {binding.profile && <Link className="button secondary" href={`${base}/${binding.id}`}>{t("Open database")}</Link>}
       </div>{data.operator && <DatabaseAccess bindingID={binding.id} people={data.people} />}</article>)}

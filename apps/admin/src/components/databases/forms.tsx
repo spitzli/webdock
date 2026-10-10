@@ -20,6 +20,7 @@ export function AddDatabase({ projects }: Pick<DatabaseDirectory, "projects">) {
   return <details className="panel"><summary>{t("Register database")}</summary><DatabaseForm label={t("Register database")}>
     <input type="hidden" name="action" value="create" />
     <label className="field">{t("Project")}<select name="projectID" required>{projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label>
+    <label className="field">{t("Database engine")}<select name="engine"><option value="postgresql">PostgreSQL</option><option value="sqlite">SQLite</option></select></label>
     <label className="field">{t("Name")}<input name="name" required maxLength={120} /></label>
     <label className="field">{t("Environment")}<select name="environment"><option value="production">{t("Production")}</option><option value="staging">{t("Staging")}</option><option value="development">{t("Development")}</option></select></label>
   </DatabaseForm></details>;

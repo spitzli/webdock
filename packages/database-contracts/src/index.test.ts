@@ -19,3 +19,13 @@ test("public binding DTOs cannot expose runtime addresses or secrets", () => {
   assert.equal("runtimeOrigin" in result, false);
   assert.equal("proxySecret" in result, false);
 });
+
+test("database registration supports project-owned SQLite as well as PostgreSQL", () => {
+  const base = { action: "create", projectID: "10", name: "Lunares", environment: "production" };
+  const sqlite = databaseCommand.parse({ ...base, engine: "sqlite" });
+  const postgres = databaseCommand.parse(base);
+  assert.ok(sqlite.action === "create" && postgres.action === "create");
+  assert.equal(sqlite.engine, "sqlite");
+  assert.equal(postgres.engine, "postgresql");
+  assert.equal(databaseCommand.safeParse({ ...base, engine: "unknown" }).success, false);
+});

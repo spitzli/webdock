@@ -150,7 +150,7 @@ export function createGateway(options: GatewayOptions) {
         const existing = await fetch(access.runtimeOrigin+"/api/v1/rpc/get_connections", { method: "POST", headers: upstreamHeaders(session, access), body: "null", redirect: "error", signal: AbortSignal.timeout(10_000) });
         const result = record(await boundedJSON(existing));
         const connection = Array.isArray(result.data) && result.data.find(row => record(row).id === access.connectionID);
-        if (!existing.ok || !connection || !["postgres", "postgresql"].includes(String(record(record(connection).params).driver))) throw new GatewayError(502, "Registered PostgreSQL connection is unavailable.");
+        if (!existing.ok || !connection || !["postgres", "postgresql", "sqlite"].includes(String(record(record(connection).params).driver))) throw new GatewayError(502, "Registered database connection is unavailable.");
         input = { request: { connection_id: access.connectionID, params: record(connection).params } };
       }
       const headers: Record<string, string> = upstreamHeaders(session, access);

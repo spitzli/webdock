@@ -7,7 +7,7 @@ import { encryptMailSecret, decryptMailSecret } from "../platform";
 const fail = () => new HostingError(404, "Database access is unavailable.");
 const hash = (token: string) => createHash("sha256").update(token).digest("hex");
 const token = () => randomBytes(32).toString("base64url");
-const selection = `SELECT b.id,b.project_id AS "projectID",p.customer_id AS "customerID",b.name,b.environment,'postgresql' AS engine,g.profile
+const selection = `SELECT b.id,b.project_id AS "projectID",p.customer_id AS "customerID",b.name,b.environment,b.engine,g.profile
  FROM webdock_auth.database_binding b JOIN webdock_admin.projects p ON p.id=b.project_id
  LEFT JOIN webdock_auth.database_grant g ON g.binding_id=b.id AND g.subject=$1 AND g.enabled
  WHERE b.enabled AND p.status='active'`;
@@ -39,7 +39,7 @@ export async function executeDatabase(db: Connection, actor: HostingActor, input
   }
   if (cmd.action === "create") {
     await authorizeHosting(actor, { projectID: cmd.projectID, operator: true, write: true }, db);
-    const row = (await db.query("INSERT INTO webdock_auth.database_binding(project_id,name,environment) VALUES($1,$2,$3) RETURNING id", [cmd.projectID, cmd.name, cmd.environment])).rows[0];
+    const row = (await db.query("INSERT INTO webdock_auth.database_binding(project_id,name,environment,engine) VALUES($1,$2,$3,$4) RETURNING id", [cmd.projectID, cmd.name, cmd.environment, cmd.engine])).rows[0];
     await audit(db, actor, "binding.create", row.id);
     return { id: row.id };
   }
