@@ -79,7 +79,7 @@ def run(args):
                         # Execute the fixed module in a namespace that does not run its stdin entrypoint.
                         code=dependency+"import base64,json\nnamespace={'__name__':'webdock_executor'}\nexec(compile("+repr(executor)+",'<webdock-executor>','exec'),namespace)\nnamespace['main'](json.loads(base64.b64decode('"+encoded+"')))\n"
                         try:
-                            executed=subprocess.run(['ssh','-i',args.identity,'-o','BatchMode=yes','-o','StrictHostKeyChecking=yes','-o','ConnectTimeout=8',args.ssh,'python3','-'],input=code,capture_output=True,text=True,timeout=140,check=True)
+                            executed=subprocess.run(['ssh','-i',args.identity,'-o','BatchMode=yes','-o','StrictHostKeyChecking=yes','-o','ConnectTimeout=8',args.ssh,'python3','-'],input=code,capture_output=True,text=True,timeout=260,check=True)
                             if len(executed.stdout)>65536:raise ValueError('Executor response too large')
                             outcome=json.loads(executed.stdout)
                         except Exception:

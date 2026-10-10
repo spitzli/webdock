@@ -1,6 +1,10 @@
 # Actions publisher and private registry on the existing application node
 
-Status: **operator runbook, not applied**. The October 10 read-only inspection of
+Status: **runtime installed and acceptance checked on October 10, 2026**. The
+registry, publisher and versioned agent are active; actual application release
+verification is a separate control-plane operation. Sanitized runtime evidence is
+kept in `.superpowers/sdd/lunares-autodeploy/runtime-setup.json` (ignored local file).
+The initial October 10 read-only inspection of
 `root@213.136.65.22` (`vmd208517`) found 6 CPUs, 11 GiB RAM (about 10 GiB available),
 188 GiB free disk, k3s/containerd, and no registry, skopeo, nginx, Node or Vercel CLI.
 This adds no purchased infrastructure. Customer builds remain on GitHub Actions;
@@ -46,7 +50,11 @@ users access to the backend socket. Create private directories:
 /var/lib/webdock-artifact-publisher/artifacts/  webdock-publisher, 0700
 ```
 
-Budget registry disk separately (initially 20 GiB), alert before exhaustion, and
+The installed runtime uses a dedicated 20 GiB ext4 loop filesystem at
+`/var/lib/webdock-registry-data.ext4`, mounted with `loop,nodev,nosuid,noexec` onto
+`/var/lib/webdock-registry`. Its mount unit is required by the registry service
+through `RequiresMountsFor=/var/lib/webdock-registry`; this gives a hard registry
+storage ceiling without changing application volumes. Alert before exhaustion and
 keep 5 GiB free for import staging. The worker's artifact-store ceiling does **not**
 limit registry storage. Do not enable registry deletion/GC until retained release
 references and rollback protection are implemented; GC must use a stopped/read-only
@@ -108,6 +116,7 @@ Use `/etc/systemd/system/webdock-private-registry.service`:
 [Unit]
 Description=Webdock private OCI registry backend
 After=local-fs.target
+RequiresMountsFor=/var/lib/webdock-registry
 [Service]
 User=webdock-registry
 Group=webdock-registry-socket
@@ -147,13 +156,18 @@ http {
   access_log off;
   client_body_temp_path /var/lib/webdock-registry-proxy/body;
   proxy_temp_path /var/lib/webdock-registry-proxy/proxy;
+  fastcgi_temp_path /var/lib/webdock-registry-proxy/fastcgi;
+  uwsgi_temp_path /var/lib/webdock-registry-proxy/uwsgi;
+  scgi_temp_path /var/lib/webdock-registry-proxy/scgi;
   map "$remote_user:$request_method:$uri" $registry_allowed {
     default 0;
     ~^:(GET|HEAD):/v2/$ 1;
+    # Challenge unauthenticated clients that begin at the manifest/blob endpoint.
+    ~^:(GET|HEAD):/v2/customers/CUSTOMER_ID/projects/101713101337919488/(manifests|blobs)/[A-Za-z0-9_:.+-]+$ 1;
     ~^lunares-(pull|publish):(GET|HEAD):/v2/$ 1;
     ~^lunares-(pull|publish):(GET|HEAD):/v2/customers/CUSTOMER_ID/projects/101713101337919488/(manifests|blobs)/[A-Za-z0-9_:.+-]+$ 1;
     ~^lunares-publish:(GET|HEAD|POST|PATCH|PUT):/v2/customers/CUSTOMER_ID/projects/101713101337919488/blobs/uploads/([A-Za-z0-9_-]+)?$ 1;
-    ~^lunares-publish:PUT:/v2/customers/CUSTOMER_ID/projects/101713101337919488/manifests/(release-[0-9]+|sha256:[a-f0-9]{64})$ 1;
+    "~^lunares-publish:PUT:/v2/customers/CUSTOMER_ID/projects/101713101337919488/manifests/(release-[0-9]+|sha256:[a-f0-9]{64})$" 1;
   }
   server {
     listen 127.0.0.1:5443 ssl;
@@ -218,7 +232,9 @@ WantedBy=multi-user.target
 Verify syntax and socket access before enabling; test this exact auth policy with
 real skopeo before calling it verified. A write-only publisher in product language
 still needs read methods for blob existence checks; the pull identity has no write
-methods. No host firewall port opening is required.
+methods. No host firewall port opening is required. Containerd begins with an unauthenticated
+manifest HEAD, so the exact-repository anonymous GET/HEAD route must reach
+`auth_basic` and receive a 401 challenge rather than being rejected early with 403.
 
 ## Containerd and skopeo CA trust, without restarting workloads
 
@@ -357,7 +373,18 @@ publisher only after all following acceptance checks pass.
    existing running container; preserve cached immutable previous images and registry
    data for rollback. Removing a pull secret or registry trust is not a rollback.
 
-This runbook intentionally does not execute any production installation commands.
+Installed runtime acceptance: verified TLS, method/repository denial matrix,
+trusted skopeo read and actual kubelet pull via the project secret passed. The
+validation fixture contained no executable application and its temporary pod was
+removed. k3s PID remained 844; the existing Lunares pod UID and restart count
+remained unchanged during setup. Publisher enrollment and an authenticated empty
+claim were verified. The host-specific publisher unit also requires/starts after
+the registry proxy; the agent override is bounded to 1 GiB and two CPUs.
+
+The private registry policy records precise country/EU placement as **unverified**
+under the legacy `euStorageEvidence` field; it claims no backup verification.
+Geographic metadata does not relax credential, repository, digest or namespace
+checks.
 
 References: [Distribution configuration](https://distribution.github.io/distribution/about/configuration/),
 [containerd hosts configuration and live reload](https://github.com/containerd/containerd/blob/main/docs/hosts.md),

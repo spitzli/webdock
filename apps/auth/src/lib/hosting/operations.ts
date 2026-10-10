@@ -124,7 +124,7 @@ export async function claimOperation(agent: Agent) {
     if (busy) return null;
     const claimed = (
       await db.query(
-        "UPDATE webdock_auth.hosting_operation SET status='running',generation=generation+1,lease_until=now()+interval '180 seconds' WHERE id=$1 RETURNING id,action,project_id,generation,lease_until,desired,target_revision",
+        "UPDATE webdock_auth.hosting_operation SET status='running',generation=generation+1,lease_until=now()+interval '300 seconds' WHERE id=$1 RETURNING id,action,project_id,generation,lease_until,desired,target_revision",
         [row.id],
       )
     ).rows[0];
