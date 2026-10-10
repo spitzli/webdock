@@ -262,13 +262,13 @@ export async function observeGitPublication(
       projectID: r.project_id,
       targetID: r.target_id,
     });
-    const { createGitVercelObserver } =
+    const { createGitVercelObserver, gitReleaseHealthPath } =
       await import("./git-vercel-publication");
     if (!r.provider_deployment_id) return { status: "needs-reconciliation" };
     const observed = await createGitVercelObserver(provider).observeDeployment({
       deploymentID: r.provider_deployment_id,
       releaseID: r.id,
-      healthPath: "/",
+      healthPath: gitReleaseHealthPath(r.publication_target),
     });
     return {
       status: observed.status,

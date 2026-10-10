@@ -29,6 +29,7 @@ export const gitBranch = z
       !v.endsWith("/") &&
       !v.endsWith(".lock"),
   );
+export const gitHealthPath = z.string().max(160).regex(/^\/[a-zA-Z0-9/_-]*$/).refine((value) => !value.startsWith("//"));
 const page = {
   page: z.number().int().min(1).max(100000).default(1),
   limit: z.number().int().min(1).max(100).default(25),
@@ -70,6 +71,7 @@ export const gitCommands = [
       branch: gitBranch,
       rootDirectory: gitRootDirectory,
       recipe: z.enum(["dockerfile", "vercel"]),
+      healthPath: gitHealthPath.default("/"),
       buildProvider: z.enum(["isolated", "github-actions"]).default("isolated"),
       workflowPath: z
         .string()

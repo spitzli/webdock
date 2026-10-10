@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS webdock_auth.git_worker (
 );
 ALTER TABLE webdock_auth.git_worker DROP CONSTRAINT IF EXISTS git_worker_isolation_check;
 ALTER TABLE webdock_auth.git_worker ADD CONSTRAINT git_worker_isolation_check CHECK(isolation IN ('microvm','artifact-only'));
+ALTER TABLE webdock_auth.git_source ADD COLUMN IF NOT EXISTS health_path text NOT NULL DEFAULT '/';
 ALTER TABLE webdock_auth.git_source ADD COLUMN IF NOT EXISTS build_provider text NOT NULL DEFAULT 'isolated' CHECK(build_provider IN ('isolated','github-actions'));
 ALTER TABLE webdock_auth.git_source ADD COLUMN IF NOT EXISTS workflow_path text NOT NULL DEFAULT '.github/workflows/webdock.yml';
 ALTER TABLE webdock_auth.git_source ADD COLUMN IF NOT EXISTS artifact_prefix text NOT NULL DEFAULT 'webdock';
@@ -80,7 +81,7 @@ CREATE TABLE IF NOT EXISTS webdock_auth.git_receipt (
 ALTER TABLE webdock_auth.git_release ADD COLUMN IF NOT EXISTS publication_started_at timestamptz;
 ALTER TABLE webdock_auth.git_release ADD COLUMN IF NOT EXISTS publication_target jsonb;
 -- Only matching source revisions can establish a legacy release's original target.
-UPDATE webdock_auth.git_release r SET publication_target=jsonb_build_object('recipe',s.recipe,'targetID',s.target_id,'teamID',t.team_id)
+UPDATE webdock_auth.git_release r SET publication_target=jsonb_build_object('recipe',s.recipe,'targetID',s.target_id,'teamID',t.team_id,'healthPath','/')
 FROM webdock_auth.git_source s LEFT JOIN webdock_auth.git_vercel_target t ON t.project_id=s.project_id AND t.customer_id=s.customer_id AND t.target_id=s.target_id
 WHERE r.project_id=s.project_id AND r.customer_id=s.customer_id AND r.source_revision=s.revision AND r.publication_target IS NULL
 AND (s.recipe='dockerfile' OR t.team_id IS NOT NULL);

@@ -52,7 +52,7 @@ export async function saveHosting(
     if (form.has("ownImagesPresent"))
       cmd.ownImages = form.get("ownImages") === "yes";
     if (base.action === "git.source.configure") {
-      for (const field of ["connectionID", "repositoryID", "branch", "rootDirectory", "recipe", "targetID", "buildProvider", "workflowPath", "artifactPrefix"]) {
+      for (const field of ["connectionID", "repositoryID", "branch", "rootDirectory", "healthPath", "recipe", "targetID", "buildProvider", "workflowPath", "artifactPrefix"]) {
         if (form.has(field)) cmd[field] = String(form.get(field));
       }
       cmd.enabled = form.get("enabled") === "yes";
