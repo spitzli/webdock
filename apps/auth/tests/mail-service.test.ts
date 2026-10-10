@@ -70,7 +70,21 @@ test("activation is explicit and idempotent, pending changes serialize, and susp
     await request(true, "3");
     assert.equal(await claimMailOperation(database, "local-test"), null);
     assert.equal((await database.query("SELECT count(*)::int AS n FROM webdock_mail.service WHERE customer_id=$1", [customer])).rows[0].n, 1);
+    const retry = { customerID: customer, enabled: true, expectedRevision: "3", actorID: actor, hostID: "local-test", reconcile: true };
+    await assert.rejects(requestMailService(database, retry), /verified/);
+    await database.query("INSERT INTO webdock_mail.instance(customer_id,encrypted_credentials,verified_at) VALUES($1,'fixture',now())", [customer]);
+    await assert.rejects(requestMailService(database, { ...retry, expectedRevision: "2" }), /changed/);
+    const repaired = await requestMailService(database, retry);
+    assert.equal(repaired.state, "pending");
+    assert.equal(repaired.revision, "4");
+    assert.equal((await database.query("SELECT state FROM webdock_mail.operation WHERE id=$1", [restart.id])).rows[0].state, "superseded");
+    const recheck = await claimMailOperation(database, "local-test");
+    assert.ok(recheck);
+    await finishMailOperation(database, recheck, "succeeded");
+    assert.equal((await getMailService(database, customer)).state, "ready");
+
   } finally {
+    await database.query("DELETE FROM webdock_mail.instance WHERE customer_id=$1", [customer]);
     await database.query("DELETE FROM webdock_mail.operation WHERE customer_id=$1", [customer]);
     await database.query("DELETE FROM webdock_mail.service WHERE customer_id=$1", [customer]);
     await database.query('DELETE FROM webdock_auth."user" WHERE id=$1', [actor]);

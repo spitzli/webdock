@@ -5823,6 +5823,9 @@
   "Retired": [
     "Abgelöst"
   ],
+  "Retry Mail operation": [
+    "E-Mail-Änderung erneut ausführen"
+  ],
   "Return this record to your active workspace.": [
     "Diesen Datensatz in deinen aktiven Arbeitsbereich zurückholen."
   ],

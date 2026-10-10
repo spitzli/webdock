@@ -77,7 +77,7 @@ export async function dispatchTenantPreview(context: PreviewContext, operation: 
  if (operation === 'listTenantInvitations') return [];
  if (operation === 'accountSites') return previewSites(context);
  if (!['getTenant', 'getTenantPlan', 'getTenantStorage', 'getTenantMail', 'getTenantMailService'].includes(operation) || args[0] !== customerID) denied();
- if (operation === 'getTenantMailService') { const mail = await getTenantMailService(headers, customerID); return mail ? { ...mail, canActivate: false, canSuspend: false } : null; }
+ if (operation === 'getTenantMailService') { const mail = await getTenantMailService(headers, customerID); return mail ? { ...mail, canActivate: false, canSuspend: false, canReconcile: false } : null; }
  if (operation === 'getTenantPlan') return getTenantPlan(headers, customerID);
  if (operation === 'getTenantStorage') return getTenantStorage(headers, customerID);
  // This read uses stored account/domain snapshots and a configured flag only;

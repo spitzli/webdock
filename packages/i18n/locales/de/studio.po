@@ -7607,3 +7607,6 @@ msgstr "Externe Build-Variablen werden nicht unterstützt."
 
 msgid "View build logs in GitHub Actions"
 msgstr "Build-Logs in GitHub Actions öffnen"
+
+msgid "Retry Mail operation"
+msgstr "E-Mail-Änderung erneut ausführen"

@@ -65,7 +65,7 @@ def mail_manifests(packet):
     container = deployment['spec']['template']['spec']['containers'][0]
     container['ports'] = [{'name': name, 'containerPort': port} for name, port in ports]
     container['env'] = [{'name': 'STALWART_PUBLIC_URL', 'value': 'https://' + packet['hostname']}]
-    if packet['credentials'].get('bootstrapPassword'):
+    if packet['action'] == 'ensure' and packet['credentials'].get('bootstrapPassword'):
         container['env'].append({'name': 'STALWART_RECOVERY_MODE', 'value': '1'})
         container['env'].append({'name': 'STALWART_RECOVERY_ADMIN', 'valueFrom': {'secretKeyRef': {'name': 'mail-bootstrap-' + packet['operationID'], 'key': 'administrator'}}})
     service['spec']['ports'] = [{'name': name, 'port': port, 'targetPort': port} for name, port in ports]
@@ -155,10 +155,9 @@ def execute_mail(packet, checkpoint):
             check_owner(current, p, True)
         if packet['action'] == 'suspend':
             if current:
-                # Patch only replicas: suspension must not introduce a new bootstrap environment.
-                lease(p)
-                current['spec']['replicas'] = 0
-                kubectl('replace', '-f', '-', obj=current)
+                # Keep server-side-apply ownership of replicas across suspend/resume.
+                deployment, _ = mail_manifests(packet)
+                apply(deployment, p)
                 wait(ready)
             elif existing and pods(p):
                 raise ExecutionError('ownership_conflict')

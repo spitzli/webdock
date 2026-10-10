@@ -1,7 +1,7 @@
 // Public JSON data returned by Auth's fixed Studio API. Keep this file dependency-free.
 // Dates crossing this boundary are ISO strings; native sessions and credentials are excluded.
 export type ChangeResult = { message: string };
-export type NativeMailView = { service: import("@webdock/mail-core").MailService; canActivate: boolean; canSuspend: boolean } | null;
+export type NativeMailView = { service: import("@webdock/mail-core").MailService; canActivate: boolean; canSuspend: boolean; canReconcile: boolean } | null;
 export type Site = { id: string; name: string; url: string; role: string };
 export type AccountSummary = { id: string; name: string; email: string; role: string; banned: boolean | null; emailVerified: boolean; mustChangePassword: boolean };
 export type TenantSummary = { id: string; name: string; status: string; role: string | null };

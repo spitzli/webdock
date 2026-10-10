@@ -35,9 +35,9 @@ export async function getMailService(pool: Pool, id: string): Promise<MailServic
   return view(customerID(id), (await pool.query("SELECT customer_id,desired_enabled,state,revision FROM webdock_mail.service WHERE customer_id=$1", [id])).rows[0]);
 }
 
-export async function requestMailService(pool: Pool, input: { customerID: string; enabled: boolean; actorID: string; expectedRevision: string; hostID: string }): Promise<MailService> {
+export async function requestMailService(pool: Pool, input: { customerID: string; enabled: boolean; actorID: string; expectedRevision: string; hostID: string; reconcile?: boolean }): Promise<MailService> {
   const id = customerID(input.customerID), host = hostID(input.hostID);
-  if (typeof input.enabled !== "boolean" || !/^(0|[1-9][0-9]{0,18})$/.test(input.expectedRevision || "")) fail("Invalid mail activation request.");
+  if ((input.reconcile !== undefined && typeof input.reconcile !== "boolean") || typeof input.enabled !== "boolean" || !/^(0|[1-9][0-9]{0,18})$/.test(input.expectedRevision || "")) fail("Invalid mail activation request.");
   return transaction(pool, async client => {
     // Lock authorization and ownership before changing desired state; revocation cannot race this write.
     const actor = await client.query(`SELECT id FROM webdock_auth."user" WHERE id=$1 AND role='operator'
@@ -52,19 +52,27 @@ export async function requestMailService(pool: Pool, input: { customerID: string
       if (settings?.settings?.mailEnabled !== true) fail("Mail is disabled by the platform operator.");
     }
     const current = (await client.query("SELECT * FROM webdock_mail.service WHERE customer_id=$1 FOR UPDATE", [id])).rows[0];
-    if (current?.desired_enabled === input.enabled || (!current && !input.enabled)) return view(id, current);
+    if (input.reconcile) {
+      if (!current || current.state !== "needs_review" || current.desired_enabled !== input.enabled)
+        fail("Only an operation awaiting review can be retried.");
+      const verified = (await client.query("SELECT customer_id FROM webdock_mail.instance WHERE customer_id=$1 AND verified_at IS NOT NULL", [id])).rowCount;
+      if (!verified) fail("Only previously verified Mail instances can be retried.");
+      if ((await client.query("SELECT id FROM webdock_mail.operation WHERE customer_id=$1 AND state='running'", [id])).rowCount)
+        fail("The previous Mail operation is still running.");
+    }
+    if (!input.reconcile && (current?.desired_enabled === input.enabled || (!current && !input.enabled))) return view(id, current);
     if (String(current?.revision ?? "0") !== input.expectedRevision) fail("Mail settings changed. Refresh before trying again.");
     const revision = current ? String(BigInt(current.revision) + 1n) : "1";
     const result = await client.query(`INSERT INTO webdock_mail.service(customer_id,instance_key,host_id,desired_enabled,state,revision)
       VALUES($1,$2,$3,$4,'pending',$5) ON CONFLICT(customer_id) DO UPDATE SET desired_enabled=$4,
-      state=CASE WHEN service.state='needs_review' THEN 'needs_review' ELSE 'pending' END,revision=$5,updated_at=now() RETURNING *`,
-    [id, `mail-${id}`, host, input.enabled, revision]);
+      state=CASE WHEN service.state='needs_review' AND NOT $6 THEN 'needs_review' ELSE 'pending' END,revision=$5,updated_at=now() RETURNING *`,
+    [id, `mail-${id}`, host, input.enabled, revision, input.reconcile === true]);
     const targetHost = result.rows[0].host_id;
     if (input.enabled && /^[1-9][0-9]*$/.test(targetHost)) {
       try { await reserveMailCapacity(client, id, targetHost); }
       catch (error) { if (error instanceof MailCapacityError) fail(error.message); throw error; }
     }
-    await client.query("UPDATE webdock_mail.operation SET state='superseded',finished_at=now() WHERE customer_id=$1 AND state='pending'", [id]);
+    await client.query("UPDATE webdock_mail.operation SET state='superseded',finished_at=coalesce(finished_at,now()) WHERE customer_id=$1 AND (state='pending' OR ($2 AND state='needs_review'))", [id, input.reconcile === true]);
     await client.query(`INSERT INTO webdock_mail.operation(customer_id,revision,desired_enabled,requested_by) VALUES($1,$2,$3,$4)`,
       [id, revision, input.enabled, input.actorID]);
     return view(id, result.rows[0]);

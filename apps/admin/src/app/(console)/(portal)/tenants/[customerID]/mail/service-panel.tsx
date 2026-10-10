@@ -21,6 +21,12 @@ export function MailServicePanel({ data }: { data: NonNullable<NativeMailView> }
       <input type="hidden" name="action" value={service.enabled ? "suspend" : "activate"} />
       <button className="button secondary" type="submit" disabled={pending}>{pending ? i18n.t("Saving…") : service.enabled ? i18n.t("Suspend email") : i18n.t("Activate email")}</button>
     </form>}
+    {data.canReconcile && <form action={submit} className="access-form" aria-busy={pending}>
+      <input type="hidden" name="customer" value={service.customerID} />
+      <input type="hidden" name="revision" value={service.revision} />
+      <input type="hidden" name="action" value="reconcile" />
+      <button className="button" type="submit" disabled={pending}>{i18n.t("Retry Mail operation")}</button>
+    </form>}
     {result.error && <p className="notice error" role="alert">{i18n.error(result.error)}</p>}
     {result.message && <p className="notice" role="status">{i18n.error(result.message, "Changes saved.")}</p>}
   </section>;

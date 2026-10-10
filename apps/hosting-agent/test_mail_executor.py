@@ -165,3 +165,22 @@ class MailExecutionTests(unittest.TestCase):
             self.assertEqual(apply.call_args_list[0].args[0]['metadata']['annotations']['webdock.dev/revision'], '3')
             prepare_storage(p)
             self.assertEqual(ensure.call_args.args[0]['revision'], 3)
+
+    def test_suspend_preserves_webdock_field_ownership_for_subsequent_resume(self):
+        from unittest.mock import patch
+        from contextlib import ExitStack
+        import tempfile, os
+        from mail_executor import execute_mail
+        packet = MailExecutorTests().packet(); packet['action'] = 'suspend'
+        current = {'metadata': {'generation': 1}, 'spec': {'replicas': 1}, 'status': {'observedGeneration': 1}}
+        with tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
+            stack.enter_context(patch.dict(os.environ, {'WEBDOCK_EXECUTOR_LOCK': directory + '/lock'}))
+            stack.enter_context(patch('executor.get', return_value=current))
+            stack.enter_context(patch('executor.check_owner'))
+            stack.enter_context(patch('executor.pods', return_value=[]))
+            kubectl = stack.enter_context(patch('executor.kubectl'))
+            apply = stack.enter_context(patch('executor.apply'))
+            execute_mail(packet, lambda credentials: {'leaseUntil': packet['leaseUntil']})
+            kubectl.assert_not_called()
+            self.assertEqual(apply.call_args.args[0]['spec']['replicas'], 0)
+            self.assertNotIn('STALWART_RECOVERY', str(apply.call_args.args[0]))
