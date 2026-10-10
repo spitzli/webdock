@@ -51,3 +51,27 @@ test("list pagination and mutation concurrency are bounded", () => {
     false,
   );
 });
+test("Actions sources bind a bounded workflow path and artifact prefix", () => {
+  const actions = {
+    ...source,
+    buildProvider: "github-actions",
+    workflowPath: ".github/workflows/build.yml",
+    artifactPrefix: "webdock-app",
+  };
+  assert.equal(gitCommandSchema.safeParse(actions).success, true);
+  for (const workflowPath of [
+    "../build.yml",
+    ".github/workflows/../build.yml",
+    "https://evil/build.yml",
+    ".github/workflows/build.yml@main",
+  ])
+    assert.equal(
+      gitCommandSchema.safeParse({ ...actions, workflowPath }).success,
+      false,
+    );
+  for (const artifactPrefix of ["", "../artifact", "artifact*", "a".repeat(81)])
+    assert.equal(
+      gitCommandSchema.safeParse({ ...actions, artifactPrefix }).success,
+      false,
+    );
+});

@@ -13,6 +13,7 @@ import {
   claimGitRelease,
   completeGitRelease,
   inspectGitBuildLease,
+  prepareGitActionsArtifact,
   processGitEvents,
   processGitChecks,
 } from "./git-deployments";
@@ -90,9 +91,19 @@ export async function gitWorkerAPI(request: Request, path: string[]) {
         resourceID.parse(path[1]),
         generation.parse(Number(query.get("generation"))),
       );
-      data = path[2] === "lease" ? { active: true } : await createGitHubProvider().prepareSourceDownload(
-        build.installation_id, build.repository_id, build.source_sha,
-      );
+      if (path[2] === "source" && build.build_provider === "github-actions")
+        throw new HostingError(
+          403,
+          "Actions imports cannot request source archives.",
+        );
+      data =
+        path[2] === "lease"
+          ? { active: true }
+          : await createGitHubProvider().prepareSourceDownload(
+              build.installation_id,
+              build.repository_id,
+              build.source_sha,
+            );
     } else {
       if (request.method !== "POST" || path.length !== 1)
         throw new HostingError(404, "Build worker endpoint is unavailable.");
@@ -103,6 +114,32 @@ export async function gitWorkerAPI(request: Request, path: string[]) {
           await processGitEvents().catch(() => undefined);
           await processGitChecks().catch(() => undefined);
           const job = await claimGitBuild(credential);
+          let actionsArtifact;
+          if (job?.buildProvider === "github-actions") {
+            try {
+              const build = await inspectGitBuildLease(
+                credential,
+                job.buildID,
+                job.generation,
+              );
+              if (Object.keys(job.buildEnvironment).length)
+                throw new HostingError(
+                  422,
+                  "External build variables are unsupported.",
+                );
+              actionsArtifact = await prepareGitActionsArtifact(build);
+            } catch {
+              await completeGitBuild(credential, {
+                buildID: job.buildID,
+                generation: job.generation,
+                status: "failed",
+                logs: "Actions artifact identity could not be verified.",
+                failureCode: "ACTIONS_ARTIFACT_UNAVAILABLE",
+              });
+              data = null;
+              break;
+            }
+          }
           if (job?.recipe === "vercel") {
             try {
               const build = await inspectGitBuildLease(
@@ -128,7 +165,11 @@ export async function gitWorkerAPI(request: Request, path: string[]) {
                   throw new HostingError(409, "Build lease expired.");
                 return result;
               });
-              data = { ...job, vercelSettings: prepared.vercelSettings };
+              data = {
+                ...job,
+                actionsArtifact,
+                vercelSettings: prepared.vercelSettings,
+              };
             } catch {
               await completeGitBuild(credential, {
                 buildID: job.buildID,
@@ -139,7 +180,7 @@ export async function gitWorkerAPI(request: Request, path: string[]) {
               });
               data = null;
             }
-          } else data = job;
+          } else data = job ? { ...job, actionsArtifact } : null;
           break;
         }
         case "complete":

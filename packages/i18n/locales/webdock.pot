@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-10 14:47+0200\n"
+"POT-Creation-Date: 2026-10-10 15:11+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -38,9 +38,9 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/page.tsx:35
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:177
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:137
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:378
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:428
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:140
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:433
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:483
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:78
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:110
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:158
@@ -318,9 +318,9 @@ msgid "Actual usage"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:234
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:139
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:380
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:430
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:142
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:435
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:485
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:132
 msgid "Actions"
 msgstr ""
@@ -385,7 +385,7 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:32
 #: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:39
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:158
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:161
 msgid "Connect GitHub"
 msgstr ""
 
@@ -403,8 +403,8 @@ msgid "Install or update GitHub access"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:56
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:136
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:219
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:139
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:222
 msgid "GitHub account"
 msgstr ""
 
@@ -417,7 +417,7 @@ msgid "Load repositories"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:82
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:255
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:263
 msgid "Repository"
 msgstr ""
 
@@ -434,7 +434,7 @@ msgid "Connection help"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/git/connection-error/page.tsx:6
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:130
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:133
 msgid "GitHub connection"
 msgstr ""
 
@@ -464,179 +464,207 @@ msgstr ""
 msgid "Back to cluster"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:24
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:107
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:25
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:110
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:54
 msgid "Git deployments"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:25
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:26
 msgid "Build logs"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:34
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:35
 msgid "Build failed. Review the logs and setup requirements."
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:46
+msgid "View build logs in GitHub Actions"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:58
 msgid "No build output yet."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:116
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:119
 msgid "Pushes build the configured branch. Production publication requires approval of an exact artifact."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:121
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:124
 msgid "Setup required"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:134
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:137
 msgid "No GitHub connection yet."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:149
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:152
 msgid "Disconnect GitHub"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:165
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:168
 #: apps/admin/src/lib/git-deployment-messages.ts:6
 msgid "Bind Vercel target"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:168
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:171
 #: apps/admin/src/lib/git-deployment-messages.ts:77
 msgid "Select an existing authorized Vercel project. Disable native Git builds and configure Frankfurt Functions before binding."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:178
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:181
 #: apps/admin/src/lib/git-deployment-messages.ts:89
 msgid "Verify and bind target"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:181
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:184
 #: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:294
 #: apps/admin/src/lib/git-deployment-messages.ts:87
 msgid "Vercel project ID"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:197
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:200
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:39
 #: apps/admin/src/components/hosting/own-mail.tsx:77
 msgid "Connection"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:200
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:203
 #: apps/admin/src/lib/git-deployment-messages.ts:25
 msgid "Customer Vercel connection"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:204
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:207
 #: apps/admin/src/lib/git-deployment-messages.ts:62
 msgid "Platform Vercel connection"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:213
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:216
 msgid "Deployment source"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:229
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:232
 msgid "Select connection"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:251
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:259
 msgid "Save deployment source"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:269
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:277
 msgid "Branch"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:282
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:290
 msgid "Root directory"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:291
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:299
+msgid "Build provider"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:306
+msgid "Isolated Webdock worker"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:311
+msgid "GitHub Actions workflow"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:323
+msgid "Artifact name prefix"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:333
+msgid "GitHub builds the artifact. Webdock verifies and publishes it. Artifact names end with the exact commit SHA."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:337
 msgid "Build recipe"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:301
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:347
 msgid "Deployment target"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:321
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:367
 msgid "Build pushes automatically"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:330
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:376
 msgid "Publish production automatically after checks pass"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:342
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:388
 msgid "Connect a repository to configure Git deployments."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:348
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:394
 msgid "Configure a deployment target before enabling Git deployments."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:354
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:400
 msgid "Builds"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:362
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:410
 msgid "Build latest commit"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:368
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:416
+msgid "Push to the configured branch or start a new workflow in GitHub Actions. Re-running an existing run is not supported."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:423
 msgid "No builds yet."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:371
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:426
 msgid "Commit"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:389
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:444
 msgid "Cancel build"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:396
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:451
 msgid "Build pages"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:413
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:468
 msgid "Releases"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:416
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:471
 msgid "Rollback reuses a retained artifact. It does not restore a database."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:422
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:477
 msgid "No releases yet."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:425
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:480
 msgid "Artifact"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:461
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:516
 msgid "Reconcile release"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:463
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:518
 msgid "Request rollback"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:465
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:520
 #: apps/admin/src/lib/git-deployment-messages.ts:67
 msgid "Renew approval"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:466
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:521
 msgid "Approve release"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:474
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:529
 msgid "Release pages"
 msgstr ""
 
@@ -2919,6 +2947,34 @@ msgstr ""
 
 #: apps/admin/src/lib/git-deployment-messages.ts:122
 msgid "The original publication target could not be verified."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:124
+msgid "Enroll a trusted artifact publisher before importing Actions builds."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:126
+msgid "Configure build variables in GitHub Actions before using external builds."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:128
+msgid "Accept the GitHub App Actions read permission first."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:130
+msgid "Run the configured workflow in GitHub Actions. Webdock imports successful builds automatically."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:132
+msgid "Verified build or artifact publisher capacity is required."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:134
+msgid "Actions imports cannot request source archives."
+msgstr ""
+
+#: apps/admin/src/lib/git-deployment-messages.ts:136
+msgid "External build variables are unsupported."
 msgstr ""
 
 #: apps/admin/src/lib/hosting-actions.ts:186

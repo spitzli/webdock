@@ -14,6 +14,7 @@ export default async function Build({
     sourceSHA: string;
     status: string;
     logs: string;
+    actionsRunURL: string | null;
     failureCode: string | null;
   }>(
     { action: "git.builds.get", projectID, buildID },
@@ -33,6 +34,17 @@ export default async function Build({
           <p role="alert">
             {t("Build failed. Review the logs and setup requirements.")}{" "}
             <code>{build.failureCode}</code>
+          </p>
+        )}
+        {build.actionsRunURL && (
+          <p>
+            <a
+              href={build.actionsRunURL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t("View build logs in GitHub Actions")}
+            </a>
           </p>
         )}
         <pre

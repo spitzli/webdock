@@ -87,6 +87,33 @@ async function lease(
     throw changed();
   return { release, actor, source };
 }
+/** Automatic Actions releases follow the current branch; explicit approvals may roll back. */
+export async function assertGitAutomaticSourceHead(
+  source: { build_provider: string; branch: string },
+  release: {
+    approved_source: string;
+    installation_id: string;
+    repository_id: string;
+    source_sha: string;
+  },
+  provider: {
+    resolveSource(input: {
+      installationID: string;
+      repositoryID: string;
+      branch: string;
+    }): Promise<{ sha: string }>;
+  },
+) {
+  if (source.build_provider !== "github-actions" || release.approved_source !== "git-policy")
+    return;
+  const head = await provider.resolveSource({
+    installationID: release.installation_id,
+    repositoryID: release.repository_id,
+    branch: source.branch,
+  });
+  if (head.sha !== release.source_sha) throw changed();
+}
+
 export async function prepareGitPublication(
   credential: string,
   releaseID: string,
@@ -99,10 +126,9 @@ export async function prepareGitPublication(
       releaseID,
       generation,
     );
-    await createGitHubProvider().revalidateRepository(
-      r.installation_id,
-      r.repository_id,
-    );
+    const github = createGitHubProvider();
+    await github.revalidateRepository(r.installation_id, r.repository_id);
+    await assertGitAutomaticSourceHead(source, r, github);
     if (r.recipe === "dockerfile") {
       const capability = (
         await db.query(

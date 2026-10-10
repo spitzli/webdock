@@ -22,7 +22,7 @@ try {
       },
       {
         country: config.country,
-        isolation: "microvm",
+        isolation: config.isolation ?? "microvm",
         evidence: config.evidence,
         capacity: config.capacity,
       },

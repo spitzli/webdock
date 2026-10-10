@@ -120,3 +120,17 @@ msgid("Configure verified artifact and registry storage.");
 msgid("The original Vercel target is no longer accessible.");
 
 msgid("The original publication target could not be verified.");
+
+msgid("Enroll a trusted artifact publisher before importing Actions builds.");
+
+msgid("Configure build variables in GitHub Actions before using external builds.");
+
+msgid("Accept the GitHub App Actions read permission first.");
+
+msgid("Run the configured workflow in GitHub Actions. Webdock imports successful builds automatically.");
+
+msgid("Verified build or artifact publisher capacity is required.");
+
+msgid("Actions imports cannot request source archives.");
+
+msgid("External build variables are unsupported.");

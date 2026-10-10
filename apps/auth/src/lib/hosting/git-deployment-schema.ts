@@ -33,9 +33,15 @@ DO $$ BEGIN
 END $$;
 CREATE TABLE IF NOT EXISTS webdock_auth.git_worker (
  id varchar PRIMARY KEY DEFAULT webdock_auth.next_snowflake(),credential_hash text NOT NULL UNIQUE,generation integer NOT NULL DEFAULT 1,
- enabled boolean NOT NULL DEFAULT false,country text NOT NULL,isolation text NOT NULL CHECK(isolation='microvm'),evidence text NOT NULL,
+ enabled boolean NOT NULL DEFAULT false,country text NOT NULL,isolation text NOT NULL CHECK(isolation IN ('microvm','artifact-only')),evidence text NOT NULL,
  capacity integer NOT NULL CHECK(capacity BETWEEN 1 AND 32),created_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE webdock_auth.git_worker DROP CONSTRAINT IF EXISTS git_worker_isolation_check;
+ALTER TABLE webdock_auth.git_worker ADD CONSTRAINT git_worker_isolation_check CHECK(isolation IN ('microvm','artifact-only'));
+ALTER TABLE webdock_auth.git_source ADD COLUMN IF NOT EXISTS build_provider text NOT NULL DEFAULT 'isolated' CHECK(build_provider IN ('isolated','github-actions'));
+ALTER TABLE webdock_auth.git_source ADD COLUMN IF NOT EXISTS workflow_path text NOT NULL DEFAULT '.github/workflows/webdock.yml';
+ALTER TABLE webdock_auth.git_source ADD COLUMN IF NOT EXISTS artifact_prefix text NOT NULL DEFAULT 'webdock';
+ALTER TABLE webdock_auth.git_source ADD COLUMN IF NOT EXISTS actions_configured_at timestamptz NOT NULL DEFAULT now();
 CREATE TABLE IF NOT EXISTS webdock_auth.git_build (
  id varchar PRIMARY KEY DEFAULT webdock_auth.next_snowflake(),customer_id varchar NOT NULL,project_id varchar NOT NULL,source_id varchar NOT NULL,
  source_sha text NOT NULL CHECK(source_sha ~ '^[a-f0-9]{40}$'),source_revision integer NOT NULL,connection_generation integer NOT NULL,environment_revision integer NOT NULL,
@@ -46,6 +52,8 @@ CREATE TABLE IF NOT EXISTS webdock_auth.git_build (
  FOREIGN KEY(source_id,customer_id,project_id) REFERENCES webdock_auth.git_source(id,customer_id,project_id),
  UNIQUE(project_id,idempotency_key),UNIQUE(id,customer_id,project_id)
 );
+ALTER TABLE webdock_auth.git_build ADD COLUMN IF NOT EXISTS actions_provenance jsonb;
+CREATE UNIQUE INDEX IF NOT EXISTS git_build_actions_run ON webdock_auth.git_build(source_id,(actions_provenance->>'runID'),(actions_provenance->>'runAttempt')) WHERE actions_provenance IS NOT NULL;
 CREATE INDEX IF NOT EXISTS git_build_queue ON webdock_auth.git_build(status,created_at);
 CREATE TABLE IF NOT EXISTS webdock_auth.git_artifact (
  id varchar PRIMARY KEY DEFAULT webdock_auth.next_snowflake(),build_id varchar NOT NULL UNIQUE,customer_id varchar NOT NULL,project_id varchar NOT NULL,

@@ -7520,3 +7520,45 @@ msgstr "Das ursprüngliche Vercel-Ziel ist nicht mehr zugänglich."
 
 msgid "The original publication target could not be verified."
 msgstr "Das ursprüngliche Veröffentlichungsziel konnte nicht überprüft werden."
+
+msgid "Build provider"
+msgstr "Build-Anbieter"
+
+msgid "Isolated Webdock worker"
+msgstr "Isolierter Webdock-Worker"
+
+msgid "GitHub Actions workflow"
+msgstr "GitHub-Actions-Workflow"
+
+msgid "Artifact name prefix"
+msgstr "Präfix des Artefaktnamens"
+
+msgid "GitHub builds the artifact. Webdock verifies and publishes it. Artifact names end with the exact commit SHA."
+msgstr "GitHub baut das Artefakt. Webdock prüft und veröffentlicht es. Artefaktnamen enden mit dem exakten Commit-SHA."
+
+msgid "Push to the configured branch or start a new workflow in GitHub Actions. Re-running an existing run is not supported."
+msgstr "Pushe auf den konfigurierten Branch oder starte einen neuen Workflow in GitHub Actions. Das Wiederholen eines bestehenden Laufs wird nicht unterstützt."
+
+msgid "Enroll a trusted artifact publisher before importing Actions builds."
+msgstr "Registriere einen vertrauenswürdigen Artefakt-Publisher, bevor Actions-Builds importiert werden."
+
+msgid "Configure build variables in GitHub Actions before using external builds."
+msgstr "Konfiguriere Build-Variablen in GitHub Actions, bevor du externe Builds verwendest."
+
+msgid "Accept the GitHub App Actions read permission first."
+msgstr "Akzeptiere zuerst die Actions-Leseberechtigung der GitHub-App."
+
+msgid "Run the configured workflow in GitHub Actions. Webdock imports successful builds automatically."
+msgstr "Starte den konfigurierten Workflow in GitHub Actions. Webdock importiert erfolgreiche Builds automatisch."
+
+msgid "Verified build or artifact publisher capacity is required."
+msgstr "Überprüfte Build- oder Artefakt-Publisher-Kapazität ist erforderlich."
+
+msgid "Actions imports cannot request source archives."
+msgstr "Actions-Importe dürfen keine Quellcode-Archive anfordern."
+
+msgid "External build variables are unsupported."
+msgstr "Externe Build-Variablen werden nicht unterstützt."
+
+msgid "View build logs in GitHub Actions"
+msgstr "Build-Logs in GitHub Actions öffnen"

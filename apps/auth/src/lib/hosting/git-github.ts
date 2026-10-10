@@ -221,12 +221,20 @@ export function createGitHubProvider(
   async function repositoryToken(
     installationID: string,
     repositoryID: string,
-    checks = false,
+    checks: boolean | "actions" = false,
   ) {
-    await installation(installationID);
-    const permissions = checks
-      ? { checks: "write", metadata: "read" }
-      : { contents: "read", metadata: "read" };
+    const installed = await installation(installationID);
+    if (
+      checks === "actions" &&
+      !["read", "write"].includes(installed.permissions?.actions)
+    )
+      throw denied();
+    const permissions =
+      checks === "actions"
+        ? { actions: "read", metadata: "read" }
+        : checks
+          ? { checks: "write", metadata: "read" }
+          : { contents: "read", metadata: "read" };
     const r = await json(
       "/app/installations/" + id(installationID) + "/access_tokens",
       jwt(),
@@ -322,6 +330,9 @@ export function createGitHubProvider(
         metadata: i.permissions.metadata,
         contents: i.permissions.contents,
         checks: i.permissions.checks,
+        ...(["read", "write"].includes(i.permissions.actions)
+          ? { actions: i.permissions.actions }
+          : {}),
       },
     };
   }
@@ -351,9 +362,24 @@ export function createGitHubProvider(
     if (!config.clientID || !config.clientSecret)
       throw new HostingError(503, "GitHub deployments are not configured yet.");
     let callback: URL;
-    try { callback = new URL(redirectURI); } catch { throw denied(); }
-    const local = process.env.NODE_ENV !== "production" && callback.protocol === "http:" && ["localhost", "127.0.0.1"].includes(callback.hostname);
-    if (!code || code.length > 1024 || (!local && callback.protocol !== "https:") || callback.username || callback.password || callback.hash) throw denied();
+    try {
+      callback = new URL(redirectURI);
+    } catch {
+      throw denied();
+    }
+    const local =
+      process.env.NODE_ENV !== "production" &&
+      callback.protocol === "http:" &&
+      ["localhost", "127.0.0.1"].includes(callback.hostname);
+    if (
+      !code ||
+      code.length > 1024 ||
+      (!local && callback.protocol !== "https:") ||
+      callback.username ||
+      callback.password ||
+      callback.hash
+    )
+      throw denied();
     const r = await request(
       "https://github.com/login/oauth/access_token",
       undefined,
@@ -454,6 +480,140 @@ export function createGitHubProvider(
       repositoryID,
       repositoryName: descriptor.repositoryName,
       checksum: createHash("sha256").update(bytes).digest("hex"),
+    };
+  }
+  async function verifyActionsRun(input: {
+    installationID: string;
+    repositoryID: string;
+    workflowPath: string;
+    runID: string;
+    runAttempt: number;
+    branch: string;
+    sha: string;
+    artifactName: string;
+  }) {
+    if (
+      input.runAttempt !== 1 ||
+      !/^\.github\/workflows\/[A-Za-z0-9_-]+\.ya?ml$/.test(
+        input.workflowPath,
+      ) ||
+      !/^[A-Za-z0-9_-]{1,160}$/.test(input.artifactName)
+    )
+      throw denied();
+    const revision = sha(input.sha),
+      runID = id(input.runID),
+      branch = branchName(input.branch);
+    const token = await repositoryToken(
+      input.installationID,
+      input.repositoryID,
+      "actions",
+    );
+    const repo = repository(
+      await json("/repositories/" + id(input.repositoryID), token),
+    );
+    if (repo.repositoryID !== input.repositoryID) throw denied();
+    const base = "/repos/" + repo.fullName + "/actions";
+    const workflow = await json(
+      base +
+        "/workflows/" +
+        encodeURIComponent(input.workflowPath.split("/").at(-1)!),
+      token,
+    );
+    if (workflow.path !== input.workflowPath || workflow.state !== "active")
+      throw denied();
+    const run = await json(base + "/runs/" + runID + "/attempts/1", token);
+    if (
+      id(run.id) !== runID ||
+      run.run_attempt !== 1 ||
+      id(run.workflow_id) !== id(workflow.id) ||
+      run.path !== input.workflowPath ||
+      id(run.repository?.id) !== input.repositoryID ||
+      id(run.head_repository?.id) !== input.repositoryID ||
+      run.head_branch !== branch ||
+      run.head_sha !== revision ||
+      !["push", "workflow_dispatch"].includes(run.event) ||
+      run.status !== "completed" ||
+      run.conclusion !== "success" ||
+      !Number.isFinite(Date.parse(run.created_at))
+    )
+      throw denied();
+    // Attempt-specific execution is accepted only before any rerun can replace its artifacts.
+    const current = await json(base + "/runs/" + runID, token);
+    if (
+      current.run_attempt !== 1 ||
+      current.head_sha !== revision ||
+      current.conclusion !== "success"
+    )
+      throw denied();
+    const artifacts = await pages(
+      base + "/runs/" + runID + "/artifacts",
+      token,
+      "artifacts",
+    );
+    const matches = artifacts.filter((a) => a.name === input.artifactName);
+    if (matches.length !== 1) throw denied();
+    const artifact = matches[0];
+    if (
+      artifact.expired !== false ||
+      !/^sha256:[a-f0-9]{64}$/.test(artifact.digest ?? "") ||
+      !Number.isSafeInteger(artifact.size_in_bytes) ||
+      artifact.size_in_bytes < 1 ||
+      artifact.size_in_bytes > 600_000_000 ||
+      id(artifact.workflow_run?.id) !== runID ||
+      id(artifact.workflow_run?.repository_id) !== input.repositoryID ||
+      id(artifact.workflow_run?.head_repository_id) !== input.repositoryID ||
+      artifact.workflow_run?.head_sha !== revision ||
+      Date.parse(artifact.created_at) < Date.parse(run.created_at) ||
+      !Number.isFinite(Date.parse(artifact.created_at))
+    )
+      throw denied();
+    const response = await request(
+      "https://api.github.com" +
+        base +
+        "/artifacts/" +
+        id(artifact.id) +
+        "/zip",
+      token,
+      {},
+      true,
+    );
+    const location = response.headers.get("location");
+    await response.body?.cancel();
+    if (response.status !== 302 || !location) throw unavailable();
+    const url = new URL(location);
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.port ||
+      !(
+        url.hostname.endsWith(".blob.core.windows.net") ||
+        url.hostname.endsWith(".actions.githubusercontent.com")
+      )
+    )
+      throw denied();
+    return {
+      runID,
+      runAttempt: 1,
+      workflowID: id(workflow.id),
+      workflowPath: input.workflowPath,
+      repositoryID: input.repositoryID,
+      sha: revision,
+      branch,
+      createdAt: run.created_at,
+      artifact: {
+        id: id(artifact.id),
+        name: artifact.name,
+        sizeBytes: artifact.size_in_bytes,
+        digest: artifact.digest,
+        downloadURL: url.toString(),
+        repository: repo.fullName,
+        ref: "refs/heads/" + branch,
+        runID,
+        runAttempt: 1,
+        workflowPath: input.workflowPath,
+        repositoryID: input.repositoryID,
+      },
     };
   }
   async function reportCheck(input: {
@@ -567,9 +727,23 @@ export function createGitHubProvider(
     fetchSource,
     prepareSourceDownload,
     reportCheck,
+    verifyActionsRun,
   };
 }
 export type GitHubWebhook =
+  | {
+      deliveryID: string;
+      event: "workflow_run";
+      installationID: string;
+      repositoryID: string;
+      branch: string;
+      sha: string;
+      runID: string;
+      runAttempt: number;
+      workflowPath: string;
+      conclusion: string;
+      action: string;
+    }
   | {
       deliveryID: string;
       event: "push";
@@ -630,6 +804,34 @@ export function parseGitHubWebhook(
       branch: branchName(payload.ref.slice(11)),
       sha: sha(payload.after),
       deleted: payload.deleted,
+    };
+  }
+  if (event === "workflow_run") {
+    const run = payload.workflow_run;
+    if (
+      payload.action !== "completed" ||
+      !run ||
+      !Number.isSafeInteger(run.run_attempt) ||
+      run.run_attempt < 1 ||
+      typeof run.path !== "string" ||
+      !/^\.github\/workflows\/[A-Za-z0-9_-]+\.ya?ml$/.test(run.path) ||
+      typeof run.conclusion !== "string" ||
+      run.conclusion.length > 40 ||
+      id(run.head_repository?.id) !== id(payload.repository?.id)
+    )
+      throw denied();
+    return {
+      deliveryID,
+      event,
+      installationID,
+      repositoryID: id(payload.repository.id),
+      branch: branchName(run.head_branch),
+      sha: sha(run.head_sha),
+      runID: id(run.id),
+      runAttempt: run.run_attempt,
+      workflowPath: run.path,
+      conclusion: run.conclusion,
+      action: payload.action,
     };
   }
   const actions: Record<string, string[]> = {
