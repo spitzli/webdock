@@ -3,11 +3,12 @@ import { withHostingPageAccess, HostingSessionRequiredError } from "./hosting-pa
 import "server-only";
 import { headers } from "next/headers";
 import { HostingError, type HostingCommand } from "@webdock/hosting-contracts";
+import type { GitOAuthCommand } from "@webdock/hosting-contracts/git-oauth";
 import { sso } from "./sso";
 export async function hostingTokenCall<T = unknown>(
   accessToken: string,
   command:
-    HostingCommand | { action: "enrollment.display"; enrollmentID: string },
+    HostingCommand | GitOAuthCommand | { action: "enrollment.display"; enrollmentID: string },
 ): Promise<T> {
   const issuer = new URL(
     process.env.WEBDOCK_AUTH_ISSUER || "https://auth.webdock.dev/api/auth",
@@ -85,7 +86,7 @@ export async function hostingTokenCall<T = unknown>(
 }
 export async function hostingCall<T = unknown>(
   command:
-    HostingCommand | { action: "enrollment.display"; enrollmentID: string },
+    HostingCommand | GitOAuthCommand | { action: "enrollment.display"; enrollmentID: string },
 ): Promise<T> {
   const session = sso && (await sso.getDelegatedSession(await headers()));
   if (!session) throw new HostingSessionRequiredError();

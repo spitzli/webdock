@@ -7142,3 +7142,381 @@ msgstr "Reserviere Plattformkapazität und dokumentiere die geprüfte Sicherheit
 
 msgid "Retained data has been permanently removed. The storage allowance is available again."
 msgstr "Die aufbewahrten Daten wurden endgültig entfernt. Das Speicherkontingent steht wieder zur Verfügung."
+
+msgid "GitHub connection expired. Start again."
+msgstr "Die GitHub-Verbindung ist abgelaufen. Starte erneut."
+
+msgid "Choose an installation and repository you can access. GitHub consent is completed on GitHub."
+msgstr "Wähle eine Installation und ein Repository, auf die du Zugriff hast. Die Freigabe erfolgt bei GitHub."
+
+msgid "Install or update GitHub access"
+msgstr "GitHub-Zugriff installieren oder aktualisieren"
+
+msgid "GitHub account"
+msgstr "GitHub-Konto"
+
+msgid "Select an installation"
+msgstr "Installation auswählen"
+
+msgid "Load repositories"
+msgstr "Repositories laden"
+
+msgid "Select a repository"
+msgstr "Repository auswählen"
+
+msgid "Connect repository"
+msgstr "Repository verbinden"
+
+msgid "Connection help"
+msgstr "Hilfe zur Verbindung"
+
+msgid "Git deployments"
+msgstr "Git-Deployments"
+
+msgid "Build logs"
+msgstr "Build-Protokolle"
+
+msgid "Build failed. Review the logs and setup requirements."
+msgstr "Build fehlgeschlagen. Prüfe die Protokolle und Einrichtungsvoraussetzungen."
+
+msgid "No build output yet."
+msgstr "Noch keine Build-Ausgabe vorhanden."
+
+msgid "Pushes build the configured branch. Production publication requires approval of an exact artifact."
+msgstr "Pushes bauen den konfigurierten Branch. Die Veröffentlichung in Produktion erfordert die Freigabe eines bestimmten Artefakts."
+
+msgid "GitHub connection"
+msgstr "GitHub-Verbindung"
+
+msgid "No GitHub connection yet."
+msgstr "Noch keine GitHub-Verbindung vorhanden."
+
+msgid "Disconnect GitHub"
+msgstr "GitHub trennen"
+
+msgid "Deployment source"
+msgstr "Deployment-Quelle"
+
+msgid "Select connection"
+msgstr "Verbindung auswählen"
+
+msgid "Save deployment source"
+msgstr "Deployment-Quelle speichern"
+
+msgid "Branch"
+msgstr "Branch"
+
+msgid "Root directory"
+msgstr "Stammverzeichnis"
+
+msgid "Build recipe"
+msgstr "Build-Verfahren"
+
+msgid "Deployment target"
+msgstr "Deployment-Ziel"
+
+msgid "Build pushes automatically"
+msgstr "Pushes automatisch bauen"
+
+msgid "Publish production automatically after checks pass"
+msgstr "Nach erfolgreichen Prüfungen automatisch in Produktion veröffentlichen"
+
+msgid "Connect a repository to configure Git deployments."
+msgstr "Verbinde ein Repository, um Git-Deployments zu konfigurieren."
+
+msgid "Configure a deployment target before enabling Git deployments."
+msgstr "Konfiguriere ein Deployment-Ziel, bevor du Git-Deployments aktivierst."
+
+msgid "Builds"
+msgstr "Builds"
+
+msgid "Build latest commit"
+msgstr "Neuesten Commit bauen"
+
+msgid "No builds yet."
+msgstr "Noch keine Builds vorhanden."
+
+msgid "Commit"
+msgstr "Commit"
+
+msgid "Cancel build"
+msgstr "Build abbrechen"
+
+msgid "Build pages"
+msgstr "Build-Seiten"
+
+msgid "Releases"
+msgstr "Releases"
+
+msgid "Rollback reuses a retained artifact. It does not restore a database."
+msgstr "Ein Rollback verwendet ein aufbewahrtes Artefakt erneut. Eine Datenbank wird dabei nicht wiederhergestellt."
+
+msgid "No releases yet."
+msgstr "Noch keine Releases vorhanden."
+
+msgid "Artifact"
+msgstr "Artefakt"
+
+msgid "Reconcile release"
+msgstr "Release-Status abgleichen"
+
+msgid "Request rollback"
+msgstr "Rollback anfordern"
+
+msgid "Approve release"
+msgstr "Release freigeben"
+
+msgid "Build environment variables"
+msgstr "Build-Umgebungsvariablen"
+
+msgid "Only these build values reach repository code. Repository scripts can read them. Runtime variables are configured separately."
+msgstr "Nur diese Build-Werte werden an den Repository-Code weitergegeben. Repository-Skripte können sie lesen. Laufzeitvariablen werden separat konfiguriert."
+
+msgid "An exact commit is required."
+msgstr "Ein bestimmter Commit ist erforderlich."
+
+msgid "Build environment exceeds the allowed size."
+msgstr "Die Build-Umgebung überschreitet die zulässige Größe."
+
+msgid "Build environment is too large."
+msgstr "Die Build-Umgebung ist zu groß."
+
+msgid "Build lease expired."
+msgstr "Die Build-Zuweisung ist abgelaufen."
+
+msgid "Build variables must be explicitly approved and cannot contain provider credentials."
+msgstr "Build-Variablen müssen ausdrücklich freigegeben sein und dürfen keine Anbieter-Zugangsdaten enthalten."
+
+msgid "Build worker endpoint is unavailable."
+msgstr "Der Build-Worker-Endpunkt ist nicht verfügbar."
+
+msgid "Complete GitHub authorization first."
+msgstr "Schließe zuerst die GitHub-Autorisierung ab."
+
+msgid "Configure Frankfurt Functions and disable cross-region failover before publication."
+msgstr "Konfiguriere Functions in Frankfurt und deaktiviere den regionsübergreifenden Failover vor der Veröffentlichung."
+
+msgid "Configure Node.js 24 for this Vercel build target."
+msgstr "Konfiguriere Node.js 24 für dieses Vercel-Build-Ziel."
+
+msgid "Configure a Vercel hosting project first."
+msgstr "Konfiguriere zuerst ein Vercel-Hosting-Projekt."
+
+msgid "Configure an explicitly bound platform Vercel deployment credential."
+msgstr "Konfiguriere ausdrücklich zugeordnete Zugangsdaten für Vercel-Deployments der Plattform."
+
+msgid "Configure the platform Vercel team first."
+msgstr "Konfiguriere zuerst das Vercel-Team der Plattform."
+
+msgid "Configure verified EU artifact and registry storage."
+msgstr "Konfiguriere überprüften EU-Speicher für Artefakte und die Registry."
+
+msgid "Connect GitHub and enable a verified source first."
+msgstr "Verbinde zuerst GitHub und aktiviere eine überprüfte Quelle."
+
+msgid "Connect GitHub interactively in Studio."
+msgstr "Verbinde GitHub über den Anmeldedialog in Studio."
+
+msgid "Disconnect native Vercel Git builds before enabling Webdock publication."
+msgstr "Trenne die native Git-Build-Anbindung von Vercel, bevor du die Veröffentlichung durch Webdock aktivierst."
+
+msgid "Git deployment changed. Refresh and try again."
+msgstr "Das Git-Deployment wurde geändert. Lade die Seite neu und versuche es erneut."
+
+msgid "Git deployment changed. Review the source and release before reconciliation."
+msgstr "Das Git-Deployment wurde geändert. Prüfe Quelle und Release vor dem Statusabgleich."
+
+msgid "Git deployment is unavailable."
+msgstr "Das Git-Deployment ist nicht verfügbar."
+
+msgid "Git publication authorization changed. Review the release."
+msgstr "Die Berechtigung zur Git-Veröffentlichung wurde geändert. Prüfe das Release."
+
+msgid "GitHub access could not be verified. Check installation and repository permissions."
+msgstr "Der GitHub-Zugriff konnte nicht überprüft werden. Prüfe die Installations- und Repository-Berechtigungen."
+
+msgid "GitHub authorization was already used."
+msgstr "Die GitHub-Autorisierung wurde bereits verwendet."
+
+msgid "GitHub check reconciliation exceeds the supported limit."
+msgstr "Der Abgleich der GitHub-Prüfungen überschreitet die unterstützte Grenze."
+
+msgid "GitHub connection setup is incomplete."
+msgstr "Die Einrichtung der GitHub-Verbindung ist unvollständig."
+
+msgid "GitHub could not complete this request. Check the current state before retrying."
+msgstr "GitHub konnte diese Anfrage nicht abschließen. Prüfe den aktuellen Status vor einem erneuten Versuch."
+
+msgid "GitHub deployments are not configured yet."
+msgstr "GitHub-Deployments sind noch nicht eingerichtet."
+
+msgid "GitHub event is too large."
+msgstr "Das GitHub-Ereignis ist zu groß."
+
+msgid "GitHub installation is unavailable."
+msgstr "Die GitHub-Installation ist nicht verfügbar."
+
+msgid "GitHub repository selection exceeds the supported limit."
+msgstr "Die GitHub-Repository-Auswahl überschreitet die unterstützte Grenze."
+
+msgid "GitHub webhooks are not configured yet."
+msgstr "GitHub-Webhooks sind noch nicht eingerichtet."
+
+msgid "Install verified registry pull access on the target cluster."
+msgstr "Richte überprüften Lesezugriff auf die Registry im Zielcluster ein."
+
+msgid "Invalid build lease."
+msgstr "Ungültige Build-Zuweisung."
+
+msgid "Invalid build result."
+msgstr "Ungültiges Build-Ergebnis."
+
+msgid "Invalid build worker."
+msgstr "Ungültiger Build-Worker."
+
+msgid "Invalid delivery."
+msgstr "Ungültige Ereigniszustellung."
+
+msgid "Invalid immutable artifact."
+msgstr "Ungültiges unveränderliches Artefakt."
+
+msgid "Invalid immutable registry image."
+msgstr "Ungültiges unveränderliches Registry-Image."
+
+msgid "Invalid publication result."
+msgstr "Ungültiges Veröffentlichungsergebnis."
+
+msgid "Multiple GitHub checks match this build. Reconciliation is required."
+msgstr "Mehrere GitHub-Prüfungen gehören zu diesem Build. Ein Statusabgleich ist erforderlich."
+
+msgid "Publication identity cannot be replaced."
+msgstr "Die Veröffentlichungskennung kann nicht ersetzt werden."
+
+msgid "Publication requires observed health and verified target location."
+msgstr "Die Veröffentlichung erfordert eine bestätigte Funktionsprüfung und einen überprüften Zielstandort."
+
+msgid "Reconnect Vercel with deployment write and project read permissions."
+msgstr "Verbinde Vercel erneut mit Schreibrechten für Deployments und Leserechten für Projekte."
+
+msgid "Release health has not been verified."
+msgstr "Die Funktionsfähigkeit des Releases wurde noch nicht bestätigt."
+
+msgid "Rollback requires a retained healthy release with compatible configuration."
+msgstr "Ein Rollback erfordert ein aufbewahrtes, funktionsfähiges Release mit kompatibler Konfiguration."
+
+msgid "Runtime configuration changed. Build again before publication."
+msgstr "Die Laufzeitkonfiguration wurde geändert. Erstelle vor der Veröffentlichung einen neuen Build."
+
+msgid "Select a Vercel connection and project before enabling Git deployments."
+msgstr "Wähle eine Vercel-Verbindung und ein Projekt, bevor du Git-Deployments aktivierst."
+
+msgid "Select a Vercel deployment target before enabling Git deployments."
+msgstr "Wähle ein Vercel-Deployment-Ziel, bevor du Git-Deployments aktivierst."
+
+msgid "Select this project in the customer Vercel connection first."
+msgstr "Wähle dieses Projekt zuerst in der Vercel-Verbindung des Kunden aus."
+
+msgid "Ten builds are already queued or running for this project."
+msgstr "Für dieses Projekt warten oder laufen bereits zehn Builds."
+
+msgid "This GitHub installation belongs to another customer."
+msgstr "Diese GitHub-Installation gehört zu einem anderen Kunden."
+
+msgid "This Vercel target is already bound to another hosting project or connection."
+msgstr "Dieses Vercel-Ziel ist bereits einem anderen Hosting-Projekt oder einer anderen Verbindung zugeordnet."
+
+msgid "Vercel deployment identity could not be verified."
+msgstr "Die Vercel-Deployment-Kennung konnte nicht überprüft werden."
+
+msgid "Vercel deployment target could not be verified."
+msgstr "Das Vercel-Deployment-Ziel konnte nicht überprüft werden."
+
+msgid "Verified EU microVM capacity is required."
+msgstr "Überprüfte MicroVM-Kapazität in der EU ist erforderlich."
+
+msgid "Wait before connecting GitHub again."
+msgstr "Warte, bevor du GitHub erneut verbindest."
+
+msgid "Bind Vercel target"
+msgstr "Vercel-Ziel zuordnen"
+
+msgid "Select an existing authorized Vercel project. Disable native Git builds and configure Frankfurt Functions before binding."
+msgstr "Wähle ein vorhandenes Vercel-Projekt mit autorisiertem Zugriff. Deaktiviere native Git-Builds und konfiguriere Functions in Frankfurt vor der Zuordnung."
+
+msgid "Verify and bind target"
+msgstr "Ziel prüfen und zuordnen"
+
+msgid "Customer Vercel connection"
+msgstr "Vercel-Verbindung des Kunden"
+
+msgid "Platform Vercel connection"
+msgstr "Vercel-Verbindung der Plattform"
+
+msgid "Renew approval"
+msgstr "Freigabe erneuern"
+
+msgid "active"
+msgstr "Aktiv"
+
+msgid "disconnected"
+msgstr "Getrennt"
+
+msgid "revalidation-required"
+msgstr "Erneute Überprüfung erforderlich"
+
+msgid "queued"
+msgstr "In der Warteschlange"
+
+msgid "running"
+msgstr "Läuft"
+
+msgid "succeeded"
+msgstr "Erfolgreich"
+
+msgid "cancelled"
+msgstr "Abgebrochen"
+
+msgid "awaiting-approval"
+msgstr "Wartet auf Freigabe"
+
+msgid "deploying"
+msgstr "Wird bereitgestellt"
+
+msgid "superseded"
+msgstr "Ersetzt"
+
+msgid "needs-reconciliation"
+msgstr "Statusabgleich erforderlich"
+
+msgid "in_progress"
+msgstr "In Bearbeitung"
+
+msgid "completed"
+msgstr "Abgeschlossen"
+
+msgid "Release pages"
+msgstr "Release-Seiten"
+
+msgid "Configure the GitHub App ID and private key in the private Auth environment."
+msgstr "Konfiguriere die GitHub-App-ID und den privaten Schlüssel in der privaten Auth-Umgebung."
+
+msgid "Configure the GitHub webhook secret before enabling push builds."
+msgstr "Konfiguriere das GitHub-Webhook-Geheimnis, bevor du Builds durch Pushes aktivierst."
+
+msgid "Enroll verified EU isolated build capacity before requesting a build."
+msgstr "Registriere überprüfte, isolierte EU-Build-Kapazität, bevor du einen Build anforderst."
+
+msgid "Verified isolated build capacity is required."
+msgstr "Überprüfte, isolierte Build-Kapazität ist erforderlich."
+
+msgid "Enroll verified isolated build capacity before requesting a build."
+msgstr "Registriere überprüfte, isolierte Build-Kapazität, bevor du einen Build anforderst."
+
+msgid "Configure verified artifact and registry storage."
+msgstr "Konfiguriere überprüften Speicher für Artefakte und die Registry."
+
+msgid "The original Vercel target is no longer accessible."
+msgstr "Das ursprüngliche Vercel-Ziel ist nicht mehr zugänglich."
+
+msgid "The original publication target could not be verified."
+msgstr "Das ursprüngliche Veröffentlichungsziel konnte nicht überprüft werden."

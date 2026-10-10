@@ -1,3 +1,4 @@
+import {executeGitDeployment} from "./git-deployments";
 import { msgid } from "@webdock/i18n";
 import {searchPage} from "@webdock/search";
 import type {VercelRuntime} from "./byok-vercel";
@@ -18,6 +19,7 @@ import { clusterView } from "./clusters";
 import { replay, recordResult } from "./operations";
 export async function executeHosting(actor: HostingActor, raw: unknown, runtime?:VercelRuntime) {
   const cmd = commandSchema.parse(raw);
+  if (cmd.action.startsWith("git.")) return executeGitDeployment(actor,cmd);
   if (cmd.action.startsWith("byok.")) return executeByok(actor,cmd,runtime);
   if (cmd.action.startsWith("apps.")) return executeAppCommand(actor, cmd);
   return transaction(async (db) => {

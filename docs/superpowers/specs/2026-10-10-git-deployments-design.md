@@ -3,6 +3,8 @@
 Status: written design for review; no implementation or production activation yet.
 Date: 2026-10-10.
 
+User override, 2026-10-10: EU placement is a best-effort preference for isolated build workers, not a geographic enrollment blocker. Record actual country metadata; `ZZ` requires explicit unverified-location evidence. Verified VM isolation and all credential, artifact and runtime boundaries remain mandatory. Earlier EU-only worker wording below is superseded by this instruction.
+
 ## Intent and agreed scope
 
 Customers must connect their own GitHub accounts/organizations and selected repositories from the first release. Webdock owns the daily workflow: repository selection, build configuration, build logs, release approval, deployment status and rollback for managed containers and Vercel applications. GitHub installation/consent and provider consent remain external authorization ceremonies.

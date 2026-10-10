@@ -2,12 +2,14 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   commandSchema,
   byokCommands,
+  gitCommands,
   readActions,
   HostingError,
   hostingError,
   type HostingCommand,
 } from "@webdock/hosting-contracts";
 export const hostingTools: Record<HostingCommand["action"], string> = {
+  ...Object.fromEntries(gitCommands.map(s => [s.shape.action.value, s.shape.action.value.replaceAll(".", "_")])) as Record<(typeof gitCommands)[number]["shape"]["action"]["value"], string>,
   ...Object.fromEntries(byokCommands.map(s=>[s.shape.action.value,s.shape.action.value.replaceAll(".","_")])) as Record<(typeof byokCommands)[number]["shape"]["action"]["value"],string>,
   "clusters.activate": "activate_hosting_cluster",
   "apps.list": "list_hosting_apps",

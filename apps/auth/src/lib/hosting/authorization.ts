@@ -18,6 +18,9 @@ export async function authorizeHosting(
   db: Connection,
 ) {
   const scopes = actor.scopes;
+  const policy = actor.source === "git-policy";
+  if (policy && (!target.projectID || target.operator || target.live || actor.sessionID !== ""))
+    throw new HostingError(403, "Git publication policy is unavailable.");
   if (
     !scopes.includes("hosting:read") ||
     (target.write && !scopes.includes("hosting:write"))
@@ -25,10 +28,13 @@ export async function authorizeHosting(
     throw new HostingError(403, "Hosting scope is required.");
   const row = (
     await db.query(
-      `SELECT u.id,u.role,u.banned,u."emailVerified",u."mustChangePassword",u."twoFactorEnabled"
+      policy ? `SELECT u.id,u.role,u.banned,u."emailVerified",u."mustChangePassword",u."twoFactorEnabled"
+ FROM webdock_auth."user" u JOIN webdock_auth.git_source p ON p.policy_subject=u.id
+ WHERE u.id=$1 AND p.project_id=$2 AND p.auto_publish AND p.enabled
+ FOR SHARE OF u,p` : `SELECT u.id,u.role,u.banned,u."emailVerified",u."mustChangePassword",u."twoFactorEnabled"
  FROM webdock_auth."user" u JOIN webdock_auth.session s ON s."userId"=u.id
  WHERE u.id=$1 AND s.id=$2 AND s."expiresAt">now() FOR SHARE OF u,s`,
-      [actor.subject, actor.sessionID],
+      [actor.subject, policy ? target.projectID : actor.sessionID],
     )
   ).rows[0];
   if (!row || row.banned || !row.emailVerified || row.mustChangePassword)

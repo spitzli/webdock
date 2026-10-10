@@ -34,7 +34,7 @@ def main():
  if not re.fullmatch(r'[A-Za-z0-9_-]{43}',token):parser.error('Invalid enrollment token.')
  enrolled=agent_request(args.endpoint,{},'enroll',{'clusterID':args.cluster,'token':token})
  target.mkdir(parents=True,exist_ok=True);state.mkdir(parents=True,exist_ok=True,mode=0o700);os.chmod(state,0o700)
- for name in ['daemon.py','byok.py','observer.py','connect.py','executor.py','storage_client.py']:
+ for name in ['daemon.py','byok.py','observer.py','connect.py','executor.py','storage_client.py','registry.py']:
   shutil.copyfile(Path(__file__).with_name(name),target/name);os.chmod(target/name,0o644)
  connection=state/'connection.json'
  fd=os.open(connection,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
