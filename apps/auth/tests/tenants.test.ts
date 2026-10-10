@@ -102,9 +102,39 @@ test("Two tenants isolate profiles, membership, invitations, native endpoints an
   assert.equal((await getTenant(invitedHeaders, one.id)).canManage, true);
   await assert.rejects(getTenant(invitedHeaders, two.id));
   const site = await registerApplication({ label: "Tenant website", origin: "http://127.0.0.1:3202", logoutPath: "/admin/login", headers: operator.headers, organizationID: org(one.id) });
-  assert.equal((await currentClaims(user.id, site.binding)).disabled, true, "Tenant admin does not imply CMS access");
+  assert.equal((await currentClaims(user.id, site.binding)).webdock_role, "admin", "Mapped tenant admins inherit their own CMS access");
+  assert.equal((await currentClaims(admin.id, site.binding)).webdock_role, "admin");
+  assert.equal((await currentClaims(stranger.id, site.binding)).disabled, true, "Other tenant admins cannot cross the binding boundary");
+  assert.equal((await currentClaims(member.id, site.binding)).disabled, true, "Ordinary membership alone cannot edit a CMS");
+  await database.query('UPDATE webdock_auth.member SET role=\'owner\' WHERE "userId"=$1 AND "organizationId"=$2', [user.id, org(one.id)]);
+  assert.equal((await currentClaims(user.id, site.binding)).webdock_role, "admin", "Mapped tenant owners inherit CMS administration");
+  await database.query('UPDATE webdock_auth.member SET role=\'admin\' WHERE "userId"=$1 AND "organizationId"=$2', [user.id, org(one.id)]);
+  for (const [column, blocked, restored] of [["emailVerified", false, true], ["mustChangePassword", true, false]] as const) {
+    await database.query(`UPDATE webdock_auth."user" SET "${column}"=$1 WHERE id=$2`, [blocked, user.id]);
+    assert.equal((await currentClaims(user.id, site.binding)).disabled, true, column);
+    await database.query(`UPDATE webdock_auth."user" SET "${column}"=$1 WHERE id=$2`, [restored, user.id]);
+  }
+  await database.query('UPDATE webdock_auth.app_binding SET enabled=false WHERE id=$1', [site.binding]);
+  assert.equal((await currentClaims(user.id, site.binding)).disabled, true, "Disabled bindings override inherited access");
+  await database.query('UPDATE webdock_auth.app_binding SET enabled=true WHERE id=$1', [site.binding]);
+  await database.query('UPDATE webdock_auth."oauthClient" SET disabled=true WHERE "clientId"=$1', [site.clientID]);
+  assert.equal((await currentClaims(user.id, site.binding)).disabled, true, "Disabled clients override inherited access");
+  await database.query('UPDATE webdock_auth."oauthClient" SET disabled=false WHERE "clientId"=$1', [site.clientID]);
   await database.query('INSERT INTO webdock_auth.project_grant(user_id,binding_id,organization_id,role,enabled) VALUES($1,$2,$3,\'reader\',true)', [user.id, site.binding, org(one.id)]);
-  assert.equal((await getTenant(invitedHeaders, one.id)).sites.length, 1);
+  assert.equal((await currentClaims(user.id, site.binding)).webdock_role, "admin", "Enabled grants do not reduce tenant admin authority");
+  await database.query('UPDATE webdock_auth.project_grant SET enabled=false WHERE user_id=$1 AND binding_id=$2', [user.id, site.binding]);
+  assert.equal((await currentClaims(user.id, site.binding)).disabled, true, "Explicit revocation overrides inherited access");
+  assert.equal((await getTenant(invitedHeaders, one.id)).sites.length, 0);
+  await database.query('UPDATE webdock_auth.project_grant SET enabled=true,organization_id=$3 WHERE user_id=$1 AND binding_id=$2', [user.id, site.binding, org(two.id)]);
+  assert.equal((await currentClaims(user.id, site.binding)).disabled, true, "A mismatched explicit grant fails closed");
+  await database.query('UPDATE webdock_auth.project_grant SET organization_id=$3 WHERE user_id=$1 AND binding_id=$2', [user.id, site.binding, org(one.id)]);
+  assert.equal((await getTenant(invitedHeaders, one.id)).sites[0].role, "admin");
+  await database.query('DELETE FROM webdock_auth.project_grant WHERE user_id=$1 AND binding_id=$2', [user.id, site.binding]);
+  assert.equal((await currentClaims(user.id, site.binding)).webdock_role, "admin", "Inherited access applies without an explicit grant");
+  await database.query('INSERT INTO webdock_auth.project_grant(user_id,binding_id,organization_id,role,enabled) VALUES($1,$2,$3,\'editor\',true)', [member.id, site.binding, org(one.id)]);
+  assert.equal((await currentClaims(member.id, site.binding)).webdock_role, "editor", "Ordinary members keep explicit site roles");
+  await database.query('UPDATE webdock_auth.project_grant SET enabled=false WHERE user_id=$1 AND binding_id=$2', [member.id, site.binding]);
+  assert.equal((await currentClaims(member.id, site.binding)).disabled, true, "Ordinary member grants remain revocable");
   const previousPlatform = (await database.query("SELECT settings FROM webdock_auth.platform_settings WHERE id=true")).rows[0];
   try {
     await database.query("INSERT INTO webdock_auth.platform_settings(id,settings) VALUES(true,'{\"cmsEnabled\":false}') ON CONFLICT(id) DO UPDATE SET settings=EXCLUDED.settings");
@@ -115,7 +145,7 @@ test("Two tenants isolate profiles, membership, invitations, native endpoints an
     if (previousPlatform) await database.query("UPDATE webdock_auth.platform_settings SET settings=$1 WHERE id=true", [JSON.stringify(previousPlatform.settings)]);
     else await database.query("DELETE FROM webdock_auth.platform_settings WHERE id=true");
   }
-  assert.equal((await getTenant(admin.headers, one.id)).sites.length, 0);
+  assert.equal((await getTenant(admin.headers, one.id)).sites[0].role, "admin");
   await database.query('UPDATE webdock_admin.customers SET status=\'archived\' WHERE id=$1', [one.id]);
   await assert.rejects(getTenant(invitedHeaders, one.id));
   assert.equal((await listTenants(invitedHeaders)).length, 0);

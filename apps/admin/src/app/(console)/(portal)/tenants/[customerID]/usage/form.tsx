@@ -1,4 +1,8 @@
 "use client";
+import {msgid} from '@webdock/i18n';
+import {uiLabel} from "@/lib/ui-labels";
+import { useI18n } from '@webdock/i18n/react';
+
 import { useActionState, useState, type ReactNode } from "react";
 import type { getPlans, getTenantPlan } from "@/lib/plans";
 import type { getTenantStorage } from "@/lib/storage-usage";
@@ -20,6 +24,8 @@ export function UsageForms({
   data: Awaited<ReturnType<typeof getTenantPlan>>;
   storage: Awaited<ReturnType<typeof getTenantStorage>>;
 }) {
+  const i18n = useI18n();
+
   const [state, submit, pending] = useActionState(usageAction, {});
   const [selected, setSelected] = useState("");
   const [copied, setCopied] = useState(false);
@@ -37,7 +43,7 @@ export function UsageForms({
         <input type="hidden" name="revision" value={data.revision} />
         {children}
         <button className="button secondary" disabled={pending}>
-          {pending ? "Working…" : label}
+          {pending ? i18n.t("Working…") : i18n.t(label)}
         </button>
       </form>
     );
@@ -46,24 +52,22 @@ export function UsageForms({
     <>
       <section
         className="account-section"
-        aria-label="Change result"
+        aria-label={i18n.t("Change result")}
         aria-live="polite"
       >
         {!pending && state.error && (
           <p className="notice error" role="alert">
-            {state.error}
+            {i18n.error(state.error)}
           </p>
         )}
         {!pending && state.message && (
           <p className="notice" role="status">
-            {state.message}
+            {i18n.error(state.message, "Changes saved.")}
           </p>
         )}
         {!pending && state.offerURL && (
           <div className="notice">
-            <label className="field">
-              Shareable offer link
-              <input
+            <label className="field">{i18n.t("Shareable offer link")}<input
                 readOnly
                 value={state.offerURL}
                 onFocus={(event) => event.currentTarget.select()}
@@ -81,29 +85,22 @@ export function UsageForms({
                 }
               }}
             >
-              {copied ? "Copied" : "Copy link"}
+              {copied ? i18n.t("Copied") : i18n.t("Copy link")}
             </button>
-            <p>
-              Copy this link now. It is shown only after creation and disappears
-              after your next action. Share it with this tenant’s administrator.
-            </p>
+            <p>{i18n.t("Copy this link now. It is shown only after creation and disappears after your next action. Share it with this tenant’s administrator.")}</p>
           </div>
         )}
       </section>
       <div className="access-grid">
         <details className="auth-panel">
-          <summary>Assign a plan</summary>
-          <p>Applies immediately. Existing extras are preserved.</p>
+          <summary>{i18n.t("Assign a plan")}</summary>
+          <p>{i18n.t("Applies immediately. Existing extras are preserved.")}</p>
           {plans.length ? (
             form(
               "assign",
-              "Assign plan",
-              <label className="field">
-                Plan
-                <select name="planID" required defaultValue="">
-                  <option value="" disabled>
-                    Choose a plan
-                  </option>
+              msgid("Assign plan"),
+              <label className="field">{i18n.t("Plan")}<select name="planID" required defaultValue="">
+                  <option value="" disabled>{i18n.t("Choose a plan")}</option>
                   {plans.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
@@ -113,19 +110,16 @@ export function UsageForms({
               </label>,
             )
           ) : (
-            <p>Create a reusable plan in the plan library first.</p>
+            <p>{i18n.t("Create a reusable plan in the plan library first.")}</p>
           )}
         </details>
         <details className="auth-panel">
-          <summary>Additional allowances</summary>
-          <p>
-            Save the total extras for this tenant. This replaces the previous
-            extras.
-          </p>
+          <summary>{i18n.t("Additional allowances")}</summary>
+          <p>{i18n.t("Save the total extras for this tenant. This replaces the previous extras.")}</p>
           {data.subscription ? (
             form(
               "extras",
-              "Save extras",
+              msgid("Save extras"),
               <PlanFields
                 key={data.revision}
                 values={data.subscription.extras}
@@ -133,29 +127,23 @@ export function UsageForms({
               />,
             )
           ) : (
-            <p>Assign a plan before adding extras.</p>
+            <p>{i18n.t("Assign a plan before adding extras.")}</p>
           )}
         </details>
       </div>
       <details className="account-section">
-        <summary>Create an individual offer</summary>
-        <p>
-          Prepare adjusted plan allowances and optional commercial terms for the
-          customer to accept. Acceptance assigns these allowances and preserves
-          the extras shown below. This does not collect payment.
-        </p>
+        <summary>{i18n.t("Create an individual offer")}</summary>
+        <p>{i18n.t("Prepare adjusted plan allowances and optional commercial terms for the customer to accept. Acceptance assigns these allowances and preserves the extras shown below. This does not collect payment.")}</p>
         {form(
           "create-offer",
-          "Create offer link",
+          msgid("Create offer link"),
           <>
-            <label className="field">
-              Start from a plan
-              <select
+            <label className="field">{i18n.t("Start from a plan")}<select
                 name="planID"
                 value={selected}
                 onChange={(event) => setSelected(event.target.value)}
               >
-                <option value="">Custom offer</option>
+                <option value="">{i18n.t("Custom offer")}</option>
                 {plans.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}
@@ -167,17 +155,13 @@ export function UsageForms({
               <PlanIdentity name={plan?.name} description={plan?.description} />
               <PlanFields values={plan?.allowances} />
             </div>
-            <label className="field">
-              Commercial terms (optional)
-              <textarea
+            <label className="field">{i18n.t("Commercial terms (optional)")}<textarea
                 name="terms"
                 maxLength={8000}
-                placeholder="Agreed price, service scope, or other terms"
+                placeholder={i18n.t("Agreed price, service scope, or other terms")}
               />
             </label>
-            <label className="field">
-              Expires after (days)
-              <input
+            <label className="field">{i18n.t("Expires after (days)")}<input
                 name="expiresDays"
                 type="number"
                 min={1}
@@ -188,7 +172,7 @@ export function UsageForms({
             </label>
             {data.subscription && (
               <details>
-                <summary>Extras preserved on acceptance</summary>
+                <summary>{i18n.t("Extras preserved on acceptance")}</summary>
                 <AllowanceList values={data.subscription.extras} />
               </details>
             )}
@@ -196,67 +180,48 @@ export function UsageForms({
         )}
       </details>
       <section className="account-section">
-        <h2>Offers</h2>
+        <h2>{i18n.t("Offers")}</h2>
         {data.offers.length ? (
           data.offers.map((offer) => (
             <article className="access-record" key={offer.id}>
               <h3>{offer.name}</h3>
               <p>
-                {offer.status} · Expires{" "}
-                {new Date(offer.expiresAt).toLocaleString("en-GB", {
+                {i18n.t(uiLabel(offer.status))}{i18n.t(" · Expires")}{" "}
+                {new Date(offer.expiresAt).toLocaleString(i18n.locale === "de" ? "de-DE" : "en-GB", {
                   timeZone: "UTC",
-                })}{" "}
-                UTC
-              </p>
+                })}{" "}{i18n.t("UTC")}</p>
               {offer.status === "pending" &&
                 form(
                   "revoke-offer",
-                  "Revoke offer",
+                  msgid("Revoke offer"),
                   <input type="hidden" name="offerID" value={offer.id} />,
                 )}
             </article>
           ))
         ) : (
-          <p>No offers yet.</p>
+          <p>{i18n.t("No offers yet.")}</p>
         )}
       </section>
       <details className="account-section">
-        <summary>Manage storage connections</summary>
-        <p>
-          Connect each Blob store or a tenant’s exclusive path prefix.
-          Credentials are saved privately and are never displayed. Production
-          and preview storage are measured separately.
-        </p>
+        <summary>{i18n.t("Manage storage connections")}</summary>
+        <p>{i18n.t("Connect each Blob store or a tenant’s exclusive path prefix. Credentials are saved privately and are never displayed. Production and preview storage are measured separately.")}</p>
         {form(
           "storage-add",
-          "Connect storage",
+          msgid("Connect storage"),
           <>
-            <label className="field">
-              Label
-              <input name="label" required maxLength={160} />
+            <label className="field">{i18n.t("Label")}<input name="label" required maxLength={160} />
             </label>
-            <label className="field">
-              Environment
-              <select name="environment">
-                <option value="production">Production</option>
-                <option value="preview">Preview</option>
+            <label className="field">{i18n.t("Environment")}<select name="environment">
+                <option value="production">{i18n.t("Production")}</option>
+                <option value="preview">{i18n.t("Preview")}</option>
               </select>
             </label>
-            <label className="field">
-              Blob store ID
-              <input name="storeID" required maxLength={160} />
+            <label className="field">{i18n.t("Blob store ID")}<input name="storeID" required maxLength={160} />
             </label>
-            <label className="field">
-              Path prefix (optional)
-              <input name="prefix" maxLength={1024} />
-              <span className="help">
-                Blank measures the entire store. Use an exclusive prefix for a
-                shared store.
-              </span>
+            <label className="field">{i18n.t("Path prefix (optional)")}<input name="prefix" maxLength={1024} />
+              <span className="help">{i18n.t("Blank measures the entire store. Use an exclusive prefix for a shared store.")}</span>
             </label>
-            <label className="field">
-              Blob read/write token
-              <input
+            <label className="field">{i18n.t("Blob read/write token")}<input
                 name="token"
                 type="password"
                 autoComplete="new-password"
@@ -270,23 +235,20 @@ export function UsageForms({
             <h3>{store.label}</h3>
             <p>
               {store.environment} · {store.storeID} ·{" "}
-              {store.prefix || "Whole store"}
+              {store.prefix || i18n.t("Whole store")}
             </p>
             {form(
               "storage-refresh",
-              "Refresh measurement",
+              msgid("Refresh measurement"),
               <input type="hidden" name="storageID" value={store.id} />,
             )}
             {form(
               "storage-remove",
-              "Disconnect storage",
+              msgid("Disconnect storage"),
               <>
                 <input type="hidden" name="storageID" value={store.id} />
                 <label className="check">
-                  <input type="checkbox" required />
-                  Remove this measurement connection. Stored files remain
-                  unchanged.
-                </label>
+                  <input type="checkbox" required />{i18n.t("Remove this measurement connection. Stored files remain unchanged.")}</label>
               </>,
             )}
           </article>

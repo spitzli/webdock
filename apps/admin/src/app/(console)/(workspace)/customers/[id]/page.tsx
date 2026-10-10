@@ -1,3 +1,7 @@
+import {uiLabel} from "@/lib/ui-labels";
+
+import { getRequestI18n } from '@webdock/i18n/next';
+import { TenantPreviewStart } from "@/components/tenant-preview";
 import { customerFields } from "../../../../../lib/customer-fields";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,6 +14,8 @@ export default async function Customer({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const i18n = await getRequestI18n();
+
   const { id } = await params;
   if (!validRecordID(id)) notFound();
   const { payload, user } = await requireOperator();
@@ -32,53 +38,42 @@ export default async function Customer({
   });
   return (
     <>
-      <Link className="back" href="/customers">
-        ← Customers
-      </Link>
+      <Link className="back" href="/customers">{i18n.t("← Customers")}</Link>
       <div className="page-heading">
         <div>
           <h1>{customer.name}</h1>
           <p>
-            <span className="badge">{customer.status}</span>
+            <span className="badge">{i18n.t(uiLabel(customer.status))}</span>
           </p>
         </div>
         {customer.status === "active" && (
-          <Link href={"/projects/new?customer=" + id} className="button">
-            Add project +
-          </Link>
+          <Link href={"/projects/new?customer=" + id} className="button">{i18n.t("Add project +")}</Link>
         )}
       </div>
       <div className="detail-grid">
         <section className="panel">
-          <h2>Customer details</h2>
+          <h2>{i18n.t("Customer details")}</h2>
           <Editor
             action={saveCustomer.bind(null, id)}
             fields={customerFields(customer)}
           />
         </section>
         <aside>
-          <section className="panel">
-            <h2>Customer tenant</h2>
-            <p>
-              Manage this customer’s members and invite-only access. Contact
-              details alone do not grant access.
-            </p>
-            <Link className="button" href={`/tenants/${id}`}>
-              Tenant &amp; invitations
-            </Link>
-            <Link className="button secondary" href={`/tenants/${id}/usage`}>
-              Plan &amp; usage
-            </Link>
-            <Link className="button secondary" href={`/tenants/${id}/mail`}>
-              Mail &amp; domains
-            </Link>
+          <section className="panel customer-tenant-card">
+            <h2>{i18n.t("Customer tenant")}</h2>
+            {customer.status === "active" && <TenantPreviewStart customerID={id}/>}
+            <p>{i18n.t("Manage this customer’s members and invite-only access. Contact details alone do not grant access.")}</p>
+            <div className="customer-tenant-actions">
+            <Link className="button" href={`/tenants/${id}`}>{i18n.t("Tenant & invitations")}</Link>
+            <Link className="button secondary" href={`/customers/${id}/hosting`}>{i18n.t("Hosting")}</Link>
+            <Link className="button secondary" href={`/tenants/${id}/usage`}>{i18n.t("Plan & usage")}</Link>
+            <Link className="button secondary" href={`/tenants/${id}/mail`}>{i18n.t("Mail & domains")}</Link>
+            </div>
           </section>
           <section className="panel">
             <div className="section-heading">
-              <h2>Projects ({projects.totalDocs})</h2>
-              <Link className="small-link" href={"/?status=all&customer=" + id}>
-                View all
-              </Link>
+              <h2>{i18n.t("Projects (")}{projects.totalDocs})</h2>
+              <Link className="small-link" href={"/?status=all&customer=" + id}>{i18n.t("View all")}</Link>
             </div>
             {projects.docs.map((p) => (
               <Link
@@ -92,27 +87,23 @@ export default async function Customer({
                     "badge " + (p.status === "active" ? "connected" : "")
                   }
                 >
-                  {p.status}
+                  {i18n.t(uiLabel(p.status))}
                 </span>
               </Link>
             ))}
-            {!projects.totalDocs && <p className="muted">No projects yet.</p>}
+            {!projects.totalDocs && <p className="muted">{i18n.t("No projects yet.")}</p>}
           </section>
           <section className="record-meta">
-            <p>
-              Customer ID <code>{id}</code>
-              <small>
-                Created {date(customer.createdAt)} · Updated{" "}
-                {date(customer.updatedAt)}
+            <p>{i18n.t("Customer ID ")}<code>{id}</code>
+              <small>{i18n.t("Created ")}{date(customer.createdAt,i18n.locale)}{i18n.t(" · Updated")}{" "}
+                {date(customer.updatedAt,i18n.locale)}
               </small>
             </p>
             <p>
               <Link
                 className="small-link"
                 href={"/activity?collection=customers&target=" + id}
-              >
-                View customer history
-              </Link>
+              >{i18n.t("View customer history")}</Link>
             </p>
             <ArchiveButton
               action={archiveRecord.bind(null, "customers", id)}

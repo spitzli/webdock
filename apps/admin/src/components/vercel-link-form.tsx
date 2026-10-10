@@ -1,4 +1,6 @@
 "use client";
+import { useI18n } from '@webdock/i18n/react';
+
 import { useActionState } from "react";
 import { linkVercelProject } from "../lib/vercel-actions";
 export function VercelLinkForm({
@@ -8,15 +10,13 @@ export function VercelLinkForm({
   projects: { id: string; name: string }[];
   vercelProjects: { id: string; name: string }[];
 }) {
+  const i18n = useI18n();
+
   const [state, action, pending] = useActionState(linkVercelProject, {});
   return (
     <form className="editor" action={action} aria-busy={pending}>
-      <label className="field">
-        Studio project
-        <select name="project" required defaultValue="">
-          <option value="" disabled>
-            Choose a project
-          </option>
+      <label className="field">{i18n.t("Studio project")}<select name="project" required defaultValue="">
+          <option value="" disabled>{i18n.t("Choose a project")}</option>
           {projects.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -24,12 +24,8 @@ export function VercelLinkForm({
           ))}
         </select>
       </label>
-      <label className="field">
-        Vercel project
-        <select name="vercelProject" required defaultValue="">
-          <option value="" disabled>
-            Choose an authorized project
-          </option>
+      <label className="field">{i18n.t("Vercel project")}<select name="vercelProject" required defaultValue="">
+          <option value="" disabled>{i18n.t("Choose an authorized project")}</option>
           {vercelProjects.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -39,12 +35,12 @@ export function VercelLinkForm({
       </label>
       {state.error && (
         <p className="error" role="alert">
-          {state.error}
+          {i18n.error(state.error)}
         </p>
       )}
       {state.message && (
         <p className="success" role="status">
-          {state.message}
+          {i18n.error(state.message, "Changes saved.")}
         </p>
       )}
       <div className="form-footer">
@@ -52,7 +48,7 @@ export function VercelLinkForm({
           className="button"
           disabled={pending || !projects.length || !vercelProjects.length}
         >
-          {pending ? "Linking…" : "Link Vercel project"}
+          {pending ? i18n.t("Linking…") : i18n.t("Link Vercel project")}
         </button>
       </div>
     </form>

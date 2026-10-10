@@ -2,11 +2,13 @@
   "regions": [
     "fra1"
   ],
-  "crons": [{ "path": "/api/cron/storage-usage", "schedule": "0 * * * *" }],
-  "git": {
-    "deploymentEnabled": {
-      "main": true,
-      "*": false
+  "crons": [
+    {
+      "path": "/api/cron/storage-usage",
+      "schedule": "0 * * * *"
     }
+  ],
+  "git": {
+    "deploymentEnabled": false
   }
 }

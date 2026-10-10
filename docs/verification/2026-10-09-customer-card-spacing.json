@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-09",
+  "deploymentID": "dpl_JDFrv8z3AcR3c8MVyTgbTizN2Rum",
+  "readyState": "READY",
+  "regions": [
+    "fra1"
+  ],
+  "sourceChanges": [
+    "Customer detail card markup",
+    "Scoped card CSS"
+  ],
+  "liveBrowserVerified": true,
+  "widths": [
+    1440,
+    390
+  ],
+  "cardPaddingDesktop": 28,
+  "cardPaddingMobile": 20,
+  "contentGap": 16,
+  "buttonGap": 12,
+  "overflow": false,
+  "linksPreserved": true,
+  "typecheck": "passed",
+  "build": "local prebuilt passed",
+  "behaviorTests": "Not added for a presentation-only change"
+}

@@ -1,3 +1,5 @@
+import { I18nProvider } from '@webdock/i18n/react';
+import { getRequestI18n } from '@webdock/i18n/next';
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./styles.css";
@@ -10,9 +12,10 @@ export const metadata: Metadata = {
   title: { default: "Webdock Studio", template: "%s — Webdock" },
   robots: { index: false, follow: false },
 };
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default async function Layout({ children }: { children: React.ReactNode }) {
+  const { locale, preference } = await getRequestI18n();
   return (
-    <html lang="en" className={space.variable} suppressHydrationWarning>
+    <html lang={locale} className={space.variable} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -21,7 +24,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           }}
         />
       </head>
-      <body>{children}</body>
+      <body><I18nProvider locale={locale} preference={preference}>{children}</I18nProvider></body>
     </html>
   );
 }

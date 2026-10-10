@@ -1,3 +1,4 @@
+import {msgid} from '@webdock/i18n';
 import type { Field } from "payload";
 import type { CMSField } from "./types";
 const scalar = new Set([
@@ -16,6 +17,7 @@ const scalar = new Set([
   "json",
   "code",
 ]);
+const defaultLabels:Record<string,string>={title:msgid('Title'),description:msgid('Description'),question:msgid('Question'),answer:msgid('Answer'),contactEmail:msgid('Contact email'),name:msgid('Name'),slug:msgid('Slug'),alt:msgid('Alternative text'),source:msgid('Source')};
 const label = (value: unknown, fallback: string) =>
   typeof value === "string"
     ? value
@@ -25,7 +27,7 @@ const label = (value: unknown, fallback: string) =>
             (value as Record<string, unknown>).de ||
             fallback,
         )
-      : fallback.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("-", " ");
+      : defaultLabels[fallback] || fallback.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("-", " ");
 export function cmsFields(fields: Field[]): CMSField[] {
   const result: CMSField[] = [];
   for (const original of fields) {
@@ -134,7 +136,7 @@ export function editableData(
   row = false,
 ): Record<string, unknown> {
   if (!input || typeof input !== "object" || Array.isArray(input))
-    throw new CMSInputError("Expected content fields.");
+    throw new CMSInputError(msgid("Expected content fields."));
   const flattened = fields.flatMap((f) =>
     f.type === "section" ? flatten(f.fields || []) : [f],
   );
@@ -155,7 +157,7 @@ export function editableData(
       !["string", "number"].includes(typeof source.id) ||
       String(source.id).length > 128
     )
-      throw new CMSInputError("Invalid item ID.");
+      throw new CMSInputError(msgid("Invalid item ID."));
     out.id = source.id;
   }
   if (row && source.blockType !== undefined) out.blockType = source.blockType;
@@ -170,7 +172,7 @@ export function editableData(
       out[f.name] = value.map((item) => {
         if (f.type === "blocks") {
           const block = f.blocks?.find((b) => b.slug === item?.blockType);
-          if (!block) throw new CMSInputError("Unknown content block.");
+          if (!block) throw new CMSInputError(msgid("Unknown content block."));
           return editableData(block.fields, item, true);
         }
         return editableData(f.fields || [], item, true);

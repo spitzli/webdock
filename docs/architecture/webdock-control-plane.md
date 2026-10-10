@@ -1,5 +1,15 @@
 # Webdock management architecture
 
+## Current status — 2026-10-05
+
+Central Better Auth sign-in, the operator registry and the customer tenant portal are deployed. Studio provides tenant-scoped CMS access and a read-only, session-bound customer view. The 15 priority-A lead demos plus Pizza2400 have verified central CMS links; their native `/admin` paths redirect to Studio. Each website still owns its isolated content schema and runtime credentials. A free canvas with draft/publish separation, responsive artboards and unsaved live preview is now available on all 16 sites; this is not a generic collection/schema designer.
+
+Current evidence: [CMS link audit](../../../webdock-demos/cms-audit.json), [admin route audit](../../../webdock-demos/admin-routes-audit.json), [customer-view verification](../../../webdock-demos/tenant-preview-verification.json), [canvas runtime verification](../../../webdock-demos/canvas-runtime-verification.json), and [canvas Studio verification](../../../webdock-demos/canvas-studio-verification.json). The implemented customer-view/canvas contract is in the [current specification](../superpowers/specs/2026-10-05-customer-view-and-canvas.md). The [gettext plan](../superpowers/plans/2026-10-05-gettext.md) tracks the separate final localization verification and cleanup; those checks are not implied by the earlier reports.
+
+## Historical design snapshot
+
+The remainder records the earlier architecture discussion. Statements below about paused authentication, an undeployed Studio, an absent customer panel/page builder or direct native admin entry are historical and superseded by the status and evidence above. Automated general-purpose provisioning, a generic collection designer and infrastructure isolation beyond the verified per-site schemas remain separate proposals, not delivered features.
+
 Status: independent website CMS instances are live. The operator registry is in development in `apps/admin` of the public `spitzli/webdock` monorepo. Production authentication is paused for design review; no customer panel, generic collection designer or platform page builder is implemented.
 
 ## Deployment and data ownership

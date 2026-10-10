@@ -1,0 +1,152 @@
+{
+  "checkedAt": "2026-10-08T19:03:24.897Z",
+  "controlPlane": "local preview; Studio/Auth production unchanged on Vercel",
+  "server": "213.136.65.22",
+  "clusterID": "101741004872224768",
+  "projectID": "101748680347877376",
+  "app": {
+    "id": "101749052365869056",
+    "project_id": "101748680347877376",
+    "revision": 8,
+    "observed_revision": 8,
+    "status": "deleted"
+  },
+  "operations": [
+    {
+      "id": "101749052370063360",
+      "action": "apps.create",
+      "status": "succeeded",
+      "revision": 1,
+      "proof": {
+        "appID": "101749052365869056",
+        "namespace": "wd-101748680347877376",
+        "uid": "8115ff7e-7fd5-4989-b049-9bf573674962",
+        "ready": true,
+        "deleted": false,
+        "replicas": 1
+      }
+    },
+    {
+      "id": "101749198319259648",
+      "action": "apps.scale",
+      "status": "succeeded",
+      "revision": 2,
+      "proof": {
+        "appID": "101749052365869056",
+        "namespace": "wd-101748680347877376",
+        "uid": "8115ff7e-7fd5-4989-b049-9bf573674962",
+        "ready": true,
+        "deleted": false,
+        "replicas": 2
+      }
+    },
+    {
+      "id": "101749473155223552",
+      "action": "apps.stop",
+      "status": "succeeded",
+      "revision": 3,
+      "proof": {
+        "appID": "101749052365869056",
+        "namespace": "wd-101748680347877376",
+        "uid": "8115ff7e-7fd5-4989-b049-9bf573674962",
+        "ready": true,
+        "deleted": false,
+        "replicas": 0
+      }
+    },
+    {
+      "id": "101749653623541760",
+      "action": "apps.start",
+      "status": "succeeded",
+      "revision": 4,
+      "proof": {
+        "appID": "101749052365869056",
+        "namespace": "wd-101748680347877376",
+        "uid": "8115ff7e-7fd5-4989-b049-9bf573674962",
+        "ready": true,
+        "deleted": false,
+        "replicas": 1
+      }
+    },
+    {
+      "id": "101749928132349952",
+      "action": "apps.restart",
+      "status": "succeeded",
+      "revision": 5,
+      "proof": {
+        "appID": "101749052365869056",
+        "namespace": "wd-101748680347877376",
+        "uid": "8115ff7e-7fd5-4989-b049-9bf573674962",
+        "ready": true,
+        "deleted": false,
+        "replicas": 1
+      }
+    },
+    {
+      "id": "101750193879257088",
+      "action": "apps.rollback",
+      "status": "succeeded",
+      "revision": 6,
+      "proof": {
+        "appID": "101749052365869056",
+        "namespace": "wd-101748680347877376",
+        "uid": "8115ff7e-7fd5-4989-b049-9bf573674962",
+        "ready": true,
+        "deleted": false,
+        "replicas": 1
+      }
+    },
+    {
+      "id": "101750442559541248",
+      "action": "apps.logs",
+      "status": "succeeded",
+      "revision": 6,
+      "proof": {
+        "appID": "101749052365869056",
+        "namespace": "wd-101748680347877376",
+        "uid": "8115ff7e-7fd5-4989-b049-9bf573674962",
+        "ready": true,
+        "deleted": false,
+        "replicas": 1
+      }
+    },
+    {
+      "id": "101750779018219520",
+      "action": "apps.update",
+      "status": "succeeded",
+      "revision": 7,
+      "proof": {
+        "appID": "101749052365869056",
+        "namespace": "wd-101748680347877376",
+        "uid": "8115ff7e-7fd5-4989-b049-9bf573674962",
+        "ready": true,
+        "deleted": false,
+        "replicas": 1
+      }
+    },
+    {
+      "id": "101751400752484352",
+      "action": "apps.delete",
+      "status": "succeeded",
+      "revision": 8,
+      "proof": {
+        "appID": "101749052365869056",
+        "namespace": "wd-101748680347877376",
+        "uid": null,
+        "ready": true,
+        "deleted": true,
+        "replicas": 0
+      }
+    }
+  ],
+  "remainingReservations": 0,
+  "internalHTTPCheck": "Traefik to managed service /ping returned OK before deletion",
+  "postDeletionRead": "No Deployments, Pods or Services remain in wd-101748680347877376; CPU/RAM/ephemeral ResourceQuota hard limits zero",
+  "namespacesRetained": [
+    "wd-101748680347877376",
+    "wdv-101748680347877376"
+  ],
+  "publicIngress": false,
+  "persistentVolumes": false,
+  "imagePulled": false
+}

@@ -1,3 +1,4 @@
+import {previewProjectDeletion,deleteProject,deleteProjectInput} from "./project-deletion";
 import { projectVercelStatus } from "./vercel-project";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
@@ -22,6 +23,7 @@ export const mutationTools = new Set([
   "save_project",
   "save_cms_connection",
   "set_archived",
+  "delete_project",
 ]);
 export function createRegistryMCP(actor: RegistryActor, canWrite: boolean) {
   const server = new McpServer({ name: "webdock-studio", version: "1.0.0" });
@@ -77,7 +79,9 @@ export function createRegistryMCP(actor: RegistryActor, canWrite: boolean) {
     },
     ({ projectID }) => result(() => projectVercelStatus(actor, projectID)),
   );
+  server.registerTool("preview_project_deletion", {description:"Preview permanent removal of an isolated managed project: hosting, CMS database and website login. Platform operators only; no mutation.",inputSchema:{projectID:recordID},annotations:{readOnlyHint:true,openWorldHint:true}},({projectID})=>result(()=>previewProjectDeletion(actor,projectID)));
   if (canWrite) {
+    server.registerTool("delete_project", {description:"Permanently remove the exact project, hosting, isolated CMS database and website access shown in preview_project_deletion. Requires its planHash and exact project name. Retains customer/user records and audit history. Repeating the same confirmed plan resumes recorded progress.",inputSchema:{projectID:recordID,...deleteProjectInput.shape},annotations:{readOnlyHint:false,destructiveHint:true,idempotentHint:true,openWorldHint:true}},({projectID,...input})=>result(()=>deleteProject(actor,projectID,input)));
     const annotations = {
       readOnlyHint: false,
       destructiveHint: false,

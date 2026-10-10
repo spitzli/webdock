@@ -1,4 +1,6 @@
 "use client";
+import { useI18n } from '@webdock/i18n/react';
+
 import { useActionState, type ReactNode } from "react";
 import { planAction } from "./actions";
 export function PlanForm({
@@ -10,6 +12,8 @@ export function PlanForm({
   label: string;
   children: ReactNode;
 }) {
+  const i18n = useI18n();
+
   const [state, submit, pending] = useActionState(planAction, {});
   return (
     <form action={submit} className="access-form" aria-busy={pending}>
@@ -17,16 +21,16 @@ export function PlanForm({
       {children}
       {state.error && (
         <p className="notice error" role="alert">
-          {state.error}
+          {i18n.error(state.error)}
         </p>
       )}
       {state.message && (
         <p className="notice" role="status">
-          {state.message}
+          {i18n.error(state.message, "Changes saved.")}
         </p>
       )}
       <button className="button secondary" disabled={pending}>
-        {pending ? "Saving…" : label}
+        {pending ? i18n.t("Saving…") : i18n.t(label)}
       </button>
     </form>
   );

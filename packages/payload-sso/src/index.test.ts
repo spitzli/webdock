@@ -115,6 +115,7 @@ test('OIDC flow verifies signed identity, introspects every request, and never l
     if (url.includes('.well-known/openid-configuration')) return json({
       issuer, authorization_endpoint: `${issuer}/oauth2/authorize`, token_endpoint: `${issuer}/oauth2/token`,
       introspection_endpoint: `${issuer}/oauth2/introspect`, jwks_uri: `${issuer}/jwks`,
+      end_session_endpoint: `${issuer}/oauth2/end-session`,
       response_types_supported: ['code'], subject_types_supported: ['public'], id_token_signing_alg_values_supported: ['RS256'],
     })
     if (url === `${issuer}/jwks`) return json({ keys: [jwk] })
@@ -227,6 +228,14 @@ test('OIDC flow verifies signed identity, introspects every request, and never l
   assert.equal(logout.headers.get('location'), `${options.appOrigin}/login`)
   assert.ok(logout.headers.getSetCookie().every(cookie => cookie.includes('Max-Age=0')))
   assert.equal((await sso.logout(new Request(`${options.appOrigin}/api/sso/logout`))).status, 403)
+  const central = configurePayloadSSO({ ...options, getPayload: async () => payload, centralLogout: true })
+  const centralCallback = await central.callback(await begin('', central))
+  assert.equal(centralCallback.status, 302)
+  const centralCookie = centralCallback.headers.getSetCookie().find(value => value.startsWith('__Host-webdock-sso='))!.split(';')[0]!
+  const centralLogout = await central.logout(new Request(`${options.appOrigin}/api/sso/logout`, { method: 'POST', headers: { origin: options.appOrigin, cookie: centralCookie } }))
+  const destination = new URL(centralLogout.headers.get('location')!)
+  assert.equal(destination.pathname, '/api/auth/oauth2/end-session')
+  assert.ok(destination.searchParams.get('id_token_hint'), 'The callback retains the verified ID token for immediate browser logout')
 })
 
 test('local HTTP is explicitly gated and forbidden for production or remote hosts', async () => {
@@ -246,6 +255,40 @@ test('local HTTP is explicitly gated and forbidden for production or remote host
     if (previous === undefined) delete env.NODE_ENV
     else env.NODE_ENV = previous
   }
+})
+
+test('central logout reaches the provider for new and pre-upgrade browser sessions', async (t) => {
+  const { sealData } = await import('iron-session')
+  const endpoint = `${options.issuer}/oauth2/end-session`
+  t.mock.method(globalThis, 'fetch', async () => Response.json({
+    issuer: options.issuer, end_session_endpoint: endpoint, jwks_uri: `${options.issuer}/jwks`,
+    introspection_endpoint: `${options.issuer}/oauth2/introspect`,
+    authorization_endpoint: `${options.issuer}/oauth2/authorize`, token_endpoint: `${options.issuer}/oauth2/token`,
+    response_types_supported: ['code'], subject_types_supported: ['public'], id_token_signing_alg_values_supported: ['RS256'],
+  }))
+  const sso = configurePayloadSSO({ ...options, centralLogout: true })
+  for (const idToken of ['signed-id-token', undefined]) {
+    const sealed = await sealData({ kind: 'session', accessToken: 'opaque', sub: 'subject-123', exp: Math.floor(Date.now() / 1000) + 300, idToken }, { password: options.cookieSecret, ttl: 300 })
+    const response = await sso.logout(new Request(`${options.appOrigin}/api/sso/logout`, {
+      method: 'POST', headers: { origin: options.appOrigin, cookie: `__Host-webdock-sso=${sealed}` },
+    }))
+    assert.equal(response.status, 303)
+    const destination = new URL(response.headers.get('location')!)
+    assert.equal(destination.origin + destination.pathname, endpoint)
+    assert.equal(destination.searchParams.get('client_id'), options.clientId)
+    assert.equal(destination.searchParams.get('id_token_hint'), idToken ?? null)
+    assert.equal(destination.searchParams.get('post_logout_redirect_uri'), `${options.appOrigin}/login`)
+    assert.ok(response.headers.getSetCookie().every(cookie => cookie.includes('Max-Age=0')))
+  }
+  const missing = await sso.logout(new Request(`${options.appOrigin}/api/sso/logout`, { method: 'POST', headers: { origin: options.appOrigin } }))
+  assert.equal(new URL(missing.headers.get('location')!).pathname, '/api/auth/oauth2/end-session')
+  const foreign = await sso.logout(new Request(`${options.appOrigin}/api/sso/logout`, { method: 'POST', headers: { origin: 'https://other.example.test' } }))
+  assert.equal(foreign.status, 403)
+  assert.equal(foreign.headers.has('set-cookie'), false)
+  t.mock.method(globalThis, 'fetch', async () => { throw Error('Provider unavailable') })
+  const unavailable = await configurePayloadSSO({ ...options, centralLogout: true }).logout(new Request(`${options.appOrigin}/api/sso/logout`, { method: 'POST', headers: { origin: options.appOrigin } }))
+  assert.equal(unavailable.headers.get('location'), `${options.appOrigin}/login`)
+  assert.ok(unavailable.headers.getSetCookie().every(cookie => cookie.includes('Max-Age=0')), 'Provider downtime must still clear local credentials')
 })
 
 test('local HTTP login uses unprefixed, non-Secure development cookies', async (t) => {

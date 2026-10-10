@@ -1,0 +1,37 @@
+{
+  "status": "prepared-except-missing-discord-token",
+  "date": "2026-10-09",
+  "appID": "102047516467400704",
+  "revision": 10,
+  "observedRevision": 10,
+  "replicas": 0,
+  "botStarted": false,
+  "image": "webdock.local/lunares@sha256:9149815a6c6a35378f1754be983a2af940da64c6fe176b7a425e0909f5239687",
+  "build": "local, network disabled, cached base",
+  "fix": "DISBOARD state now stored beside the SQLite database in /data, not read-only /app",
+  "tests": {
+    "pythonTotal": 40,
+    "pythonPassed": 37,
+    "postgresTestsSkipped": 3,
+    "offlineModuleLoadCount": 21,
+    "offlineFilesystem": "read-only root with disposable /data and /tmp",
+    "discordRequests": "mocked as unavailable; Docker network none"
+  },
+  "verified": {
+    "sqliteIntegrity": "ok",
+    "dataOwnerUID": 65532,
+    "persistentVolume": "Bound, 1GB",
+    "hostingAgent": "active",
+    "storageHelper": "active",
+    "databasePolicyTimer": "active",
+    "discordProxy": "available",
+    "traefik": "available",
+    "apiTLSExpires": "2027-01-07T13:28:09Z",
+    "apiTokenPresentNonemptyValidFormat": true,
+    "databaseConfigurationPresent": true,
+    "discordTokenPresent": false
+  },
+  "blocker": "DISCORD_TOKEN absent from persisted app and Kubernetes Secret; user reports saved, exact page requested to resolve discrepancy",
+  "startAuthorization": "not granted; retain zero replicas until explicit new start instruction",
+  "supersededBy": "2026-10-09-lunares-discord-start.json"
+}

@@ -1,3 +1,4 @@
+import {msgid} from '@webdock/i18n';
 /* eslint-disable @typescript-eslint/no-explicit-any -- Explicit module and field allowlists constrain dynamic CMS schemas; native validation remains authoritative. */
 import { APIError, createLocalReq, type Payload } from "payload";
 import { cmsFields, defaultData, editableData, CMSInputError } from "./schema";
@@ -26,13 +27,13 @@ const recordID = (value: unknown) => {
     value.length > 128 ||
     !/^[-\w]+$/.test(value)
   )
-    throw new CMSInputError("Invalid record.");
+    throw new CMSInputError(msgid("Invalid record."));
   return value;
 };
 const boundedPage = (value: string | null) => {
   if (value === null) return 1;
   if (!/^\d+$/.test(value) || Number(value) < 1 || Number(value) > 10000)
-    throw new CMSInputError("Invalid page.");
+    throw new CMSInputError(msgid("Invalid page."));
   return Number(value);
 };
 const moduleConfig = (p: Payload, m: CMSModule) =>
@@ -52,7 +53,7 @@ async function bodyOf(request: Request) {
         size += item.value.length;
         if (size > limit) {
           await reader.cancel();
-          throw new CMSInputError("The upload is too large.", 413);
+          throw new CMSInputError(msgid("The upload is too large."), 413);
         }
         chunks.push(item.value);
       }
@@ -71,7 +72,7 @@ async function bodyOf(request: Request) {
     try {
       input = JSON.parse(String(form.get("data")));
     } catch {
-      throw new CMSInputError("Invalid form data.");
+      throw new CMSInputError(msgid("Invalid form data."));
     }
     const file = form.get("file");
     if (file instanceof File && file.size)
@@ -84,13 +85,13 @@ async function bodyOf(request: Request) {
     return input;
   }
   if (!type.startsWith("application/json"))
-    throw new CMSInputError("Use JSON or a file upload.", 415);
+    throw new CMSInputError(msgid("Use JSON or a file upload."), 415);
   if (bytes.length > 1024 * 1024)
-    throw new CMSInputError("Content is too large.", 413);
+    throw new CMSInputError(msgid("Content is too large."), 413);
   try {
     return JSON.parse(bytes.toString("utf8"));
   } catch {
-    throw new CMSInputError("Invalid JSON.");
+    throw new CMSInputError(msgid("Invalid JSON."));
   }
 }
 export async function handleCMSRequest(
@@ -115,21 +116,21 @@ export async function handleCMSRequest(
           new URL(request.url).origin,
         ].includes(origin)
       )
-        throw new CMSInputError("Reload the CMS and try again.", 403);
+        throw new CMSInputError(msgid("Reload the CMS and try again."), 403);
     }
     p = await getPayload();
     const user = await cmsUser(p, request.headers);
-    if (!user) throw new CMSInputError("Sign in to open the CMS.", 401);
+    if (!user) throw new CMSInputError(msgid("Sign in to open the CMS."), 401);
     const canWrite = user.role !== "reader",
       canDelete = ["admin", "operator"].includes(String(user.role));
     if (request.method !== "GET" && !canWrite)
       throw new CMSInputError(
-        "Your role can view content but cannot change it.",
+        msgid("Your role can view content but cannot change it."),
         403,
       );
     if (request.method === "DELETE" && !canDelete)
       throw new CMSInputError(
-        "An administrator is required to delete content.",
+        msgid("An administrator is required to delete content."),
         403,
       );
     const url = new URL(request.url),
@@ -138,13 +139,13 @@ export async function handleCMSRequest(
           ? Object.fromEntries(url.searchParams)
           : await bodyOf(request);
     if (!input || typeof input !== "object" || Array.isArray(input))
-      throw new CMSInputError("Invalid request.");
+      throw new CMSInputError(msgid("Invalid request."));
     const locale = input.locale || options.defaultLocale;
     if (
       locale &&
       !(options.locales || [options.defaultLocale]).includes(locale)
     )
-      throw new CMSInputError("Choose a supported language.");
+      throw new CMSInputError(msgid("Choose a supported language."));
     if (!input.module && request.method === "GET")
       return json({
         siteName: options.siteName,
@@ -169,10 +170,10 @@ export async function handleCMSRequest(
       module.slug === "users" ||
       module.slug.startsWith("payload-")
     )
-      throw new CMSInputError("This content area is not available.", 404);
+      throw new CMSInputError(msgid("This content area is not available."), 404);
     const config = moduleConfig(p, module);
     if (!config)
-      throw new CMSInputError("Content configuration is unavailable.", 404);
+      throw new CMSInputError(msgid("Content configuration is unavailable."), 404);
     const fields = cmsFields(config.fields),
       drafts = Boolean(config.versions && config.versions.drafts);
     const common: any = {
@@ -210,7 +211,7 @@ export async function handleCMSRequest(
       if (input.operation === "versions") {
         if (!config.versions)
           throw new CMSInputError(
-            "Version history is not enabled for this content.",
+            msgid("Version history is not enabled for this content."),
           );
         const result =
           module.kind === "global"
@@ -262,36 +263,36 @@ export async function handleCMSRequest(
     }
     const mode = request.method === "DELETE" ? "delete" : input.mode || "save";
     if (!["save", "draft", "publish", "restore", "delete"].includes(mode))
-      throw new CMSInputError("Unknown content action.");
+      throw new CMSInputError(msgid("Unknown content action."));
     if (mode === "delete" && !canDelete)
       throw new CMSInputError(
-        "An administrator is required to delete content.",
+        msgid("An administrator is required to delete content."),
         403,
       );
     if (["draft", "publish"].includes(mode) && !drafts)
-      throw new CMSInputError("This content does not support drafts.");
+      throw new CMSInputError(msgid("This content does not support drafts."));
     if (mode === "restore" && (!canDelete || !config.versions))
       throw new CMSInputError(
-        "An administrator is required to restore versions.",
+        msgid("An administrator is required to restore versions."),
         403,
       );
     if (mode === "delete" && module.kind === "global")
-      throw new CMSInputError("Website settings cannot be deleted.");
+      throw new CMSInputError(msgid("Website settings cannot be deleted."));
     const isNew =
       module.kind === "collection" && (!input.id || input.id === "new");
     if (isNew && module.create === false)
       throw new CMSInputError(
-        "New records are created by the website in this content area.",
+        msgid("New records are created by the website in this content area."),
         403,
       );
     if (isNew && ["delete", "restore"].includes(mode))
-      throw new CMSInputError("Select an existing record.");
+      throw new CMSInputError(msgid("Select an existing record."));
     transaction = await p.db.beginTransaction({
       isolationLevel: "serializable",
     });
     if (transaction === null)
       throw new CMSInputError(
-        "Content writes require transaction support.",
+        msgid("Content writes require transaction support."),
         503,
       );
     const req = await createLocalReq(
@@ -309,7 +310,7 @@ export async function handleCMSRequest(
           : input.updatedAt !== null
       )
         throw new CMSInputError(
-          "This content changed since you opened it. Reload before saving.",
+          msgid("This content changed since you opened it. Reload before saving."),
           409,
         );
     }
@@ -338,7 +339,7 @@ export async function handleCMSRequest(
           ) !== String(input.id)
         )
           throw new CMSInputError(
-            "This version belongs to a different record.",
+            msgid("This version belongs to a different record."),
           );
         result = await p.restoreVersion({
           collection: module.slug,
@@ -368,7 +369,7 @@ export async function handleCMSRequest(
             )
         )
           throw new CMSInputError(
-            "This file is not allowed or is too large.",
+            msgid("This file is not allowed or is too large."),
             413,
           );
       }
@@ -407,12 +408,12 @@ export async function handleCMSRequest(
         doc: result,
         message:
           mode === "delete"
-            ? "Content deleted."
+            ? msgid("Content deleted.")
             : mode === "draft"
-              ? "Draft saved."
+              ? msgid("Draft saved.")
               : mode === "publish"
-                ? "Published."
-                : "Changes saved.",
+                ? msgid("Published.")
+                : msgid("Changes saved."),
       },
       isNew ? 201 : 200,
     );
@@ -434,14 +435,14 @@ export async function handleCMSRequest(
       return json(
         {
           error:
-            "Another edit was saved at the same time. Reload before trying again.",
+            msgid("Another edit was saved at the same time. Reload before trying again."),
         },
         409,
       );
     return json(
       {
         error:
-          "The CMS could not complete this request. Your changes were not confirmed.",
+          msgid("The CMS could not complete this request. Your changes were not confirmed."),
       },
       500,
     );

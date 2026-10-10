@@ -1,0 +1,40 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Webdock\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-05 00:00+0000\n"
+"PO-Revision-Date: 2026-10-05 00:00+0000\n"
+"Last-Translator: Webdock\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Language"
+msgstr "Sprache"
+
+msgid "System"
+msgstr "System"
+
+msgid "Changing language…"
+msgstr "Sprache wird geändert…"
+
+msgid "Could not change language. Please try again."
+msgstr "Die Sprache konnte nicht geändert werden. Bitte erneut versuchen."
+
+msgid "Something went wrong. Please try again."
+msgstr "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+
+msgid "Saving failed. Please try again."
+msgstr "Speichern fehlgeschlagen. Bitte erneut versuchen."
+
+msgid "Page not found"
+msgstr "Seite nicht gefunden"
+
+msgid "This page is not available. Check the address or return to the homepage."
+msgstr "Diese Seite ist nicht verfügbar. Prüfe die Adresse oder kehre zur Startseite zurück."
+
+msgid "Back to homepage"
+msgstr "Zur Startseite"

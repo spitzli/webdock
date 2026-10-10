@@ -29,7 +29,8 @@
       "@payload-config": [
         "./src/payload.config.ts"
       ]
-    }
+    },
+    "allowImportingTsExtensions": true
   },
   "include": [
     "next-env.d.ts",

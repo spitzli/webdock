@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-08",
+  "status": "production_control_plane_and_permanent_agent_live",
+  "clusterID": "101775802667896832",
+  "url": "https://studio.webdock.dev/infrastructure/101775802667896832",
+  "deployments": {
+    "auth": "dpl_21zCA9qpYpSpbGLwgnC22mAniaqS",
+    "studio": "dpl_5vUyiTRwCpEE1xeW5jVADjTLqvWV",
+    "state": "READY",
+    "regions": [
+      "fra1"
+    ],
+    "build": "local Node 24, prebuilt upload",
+    "globalEUOnlyClaim": false
+  },
+  "agent": {
+    "host": "vmd208517",
+    "service": "webdock-hosting-agent.service",
+    "active": true,
+    "enabled": true,
+    "heartbeatsAfterLocalProcessesStopped": true,
+    "intervalSeconds": 15,
+    "endpoint": "https://auth.webdock.dev"
+  },
+  "browser": {
+    "realProductionOperatorSession": true,
+    "renderedPages": [
+      "/infrastructure/101775802667896832",
+      "/tenants/101711682211938304/hosting",
+      "/hosting/projects/101713101337919488"
+    ],
+    "screenshot": "/home/newt/.t3/userdata/browser-artifacts/browser-screenshot-studio-webdock-dev-mv00n461-47833370.png"
+  },
+  "businessRows": {
+    "customers": 22,
+    "projects": 21,
+    "cmsInstances": 20,
+    "unchangedByMigration": true
+  },
+  "productionApplicationSmokeTest": false,
+  "realNodeLifecycleEvidence": "2026-10-08-managed-hosting.json",
+  "country": null,
+  "locationEvidence": "User confirmed EU; exact provider data center unverified",
+  "limits": {
+    "apps": 20,
+    "cpuMillicores": 4000,
+    "memoryBytes": 8000000000,
+    "ephemeralBytes": 10000000000,
+    "volumeBytes": 0,
+    "replicasPerApp": 10,
+    "concurrentDeployments": 2
+  },
+  "remaining": [
+    "persistent hard byte quotas",
+    "EU registry/build pipeline",
+    "public domain/TLS provisioning",
+    "custom egress",
+    "backup/restore",
+    "OS/k3s maintenance",
+    "Vercel provider metering/enforcement"
+  ],
+  "finalTests": {
+    "auth": 80,
+    "agentPython": 9,
+    "failures": 0
+  }
+}

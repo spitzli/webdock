@@ -1,3 +1,9 @@
+import {auditSummary} from "@/lib/ui-labels";
+import {uiLabel} from "@/lib/ui-labels";
+
+import { msgid } from '@webdock/i18n';
+
+import { getRequestI18n } from '@webdock/i18n/next';
 import { Suspense } from "react";
 import { VercelProjectPanel } from "../../../../../components/vercel-panel";
 import Link from "next/link";
@@ -20,6 +26,8 @@ export default async function Project({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const i18n = await getRequestI18n();
+
   const { id } = await params;
   if (!validRecordID(id)) notFound();
   const { payload, user } = await requireOperator();
@@ -73,9 +81,7 @@ export default async function Project({
   const instance = instances.docs[0];
   return (
     <>
-      <Link className="back" href="/">
-        ← Projects
-      </Link>
+      <Link className="back" href="/">{i18n.t("← Projects")}</Link>
       <div className="page-heading">
         <div>
           <h1>{project.name}</h1>
@@ -83,9 +89,9 @@ export default async function Project({
             <Link href={"/customers/" + relatedID(project.customer)}>
               {typeof project.customer === "object"
                 ? project.customer.name
-                : "Customer"}
+                : i18n.t("Customer")}
             </Link>{" "}
-            <span className="badge">{project.status}</span>
+            <span className="badge">{i18n.t(uiLabel(project.status))}</span>
           </p>
         </div>
         {project.url && (
@@ -94,58 +100,46 @@ export default async function Project({
             className="button secondary"
             target="_blank"
             rel="noreferrer"
-          >
-            Visit website ↗
-          </a>
+          >{i18n.t("Visit website ↗")}</a>
         )}
       </div>
-      <nav className="record-actions" aria-label="Customer services">
-        <Link href={`/tenants/${relatedID(project.customer)}`}>
-          Tenant & people
-        </Link>
-        <Link href={`/tenants/${relatedID(project.customer)}/usage`}>
-          Plan & usage
-        </Link>
-        <Link href={`/tenants/${relatedID(project.customer)}/mail`}>
-          Mail & domains
-        </Link>
+      <nav className="record-actions" aria-label={i18n.t("Customer services")}>
+        <Link href={`/tenants/${relatedID(project.customer)}`}>{i18n.t("Tenant & people")}</Link>
+        <Link href={`/tenants/${relatedID(project.customer)}/usage`}>{i18n.t("Plan & usage")}</Link>
+        <Link href={`/tenants/${relatedID(project.customer)}/mail`}>{i18n.t("Mail & domains")}</Link>
       </nav>
       <div className="project-overview">
         <div>
-          <span>Website</span>
+          <span>{i18n.t("Website")}</span>
           {project.url ? (
             <a href={project.url} target="_blank" rel="noreferrer">
-              {hostname(project.url)} ↗
+              {hostname(project.url,i18n.t("No domain yet"))} ↗
             </a>
           ) : (
-            <strong>No website linked</strong>
+            <strong>{i18n.t("No website linked")}</strong>
           )}
         </div>
         <div>
-          <span>Repository</span>
+          <span>{i18n.t("Repository")}</span>
           {project.repositoryURL ? (
-            <a href={project.repositoryURL} target="_blank" rel="noreferrer">
-              Open repository ↗
-            </a>
+            <a href={project.repositoryURL} target="_blank" rel="noreferrer">{i18n.t("Open repository ↗")}</a>
           ) : (
-            <strong>No repository linked</strong>
+            <strong>{i18n.t("No repository linked")}</strong>
           )}
         </div>
         <div>
-          <span>Last updated</span>
-          <strong>{date(project.updatedAt)}</strong>
+          <span>{i18n.t("Last updated")}</span>
+          <strong>{date(project.updatedAt,i18n.locale)}</strong>
         </div>
       </div>
       {project.status === "archived" && (
-        <p className="status-notice">
-          This project is archived. Restore it to manage its CMS connection.
-        </p>
+        <p className="status-notice">{i18n.t("This project is archived. Restore it to manage its CMS connection.")}</p>
       )}
       <Suspense
         fallback={
           <section className="panel">
-            <h2>Vercel</h2>
-            <p role="status">Loading deployment information…</p>
+            <h2>{i18n.t("Vercel")}</h2>
+            <p role="status">{i18n.t("Loading deployment information…")}</p>
           </section>
         }
       >
@@ -154,44 +148,45 @@ export default async function Project({
       <div className="detail-grid">
         <div>
           <section className="panel">
-            <h2>Project details</h2>
+            <h2>{i18n.t("Project details")}</h2>
             <Editor
               action={saveProject.bind(null, id)}
               fields={[
                 {
                   name: "name",
-                  label: "Project name",
+                  label: msgid("Project name"),
                   required: true,
                   value: project.name,
                 },
                 {
                   name: "customer",
-                  label: "Customer",
+                  label: msgid("Customer"),
                   type: "select",
                   required: true,
                   value: relatedID(project.customer),
                   options: customers.docs.map((customer) => ({
                     value: customer.id,
+                    translate: false,
                     label:
                       customer.name +
-                      (customer.status === "archived" ? " (archived)" : ""),
+                      (customer.status === "archived" ? i18n.t(" (archived)") : ""),
                   })),
                 },
                 {
                   name: "url",
-                  label: "Website URL",
+                  label: msgid("Website URL"),
                   type: "url",
                   value: project.url || "",
                 },
                 {
                   name: "repositoryURL",
-                  label: "Repository URL",
+                  label: msgid("Repository URL"),
                   type: "url",
                   value: project.repositoryURL || "",
                 },
                 {
                   name: "notes",
-                  label: "Notes",
+                  label: msgid("Notes"),
                   type: "textarea",
                   value: project.notes || "",
                 },
@@ -200,22 +195,20 @@ export default async function Project({
           </section>
           <section className="panel">
             <div className="section-heading">
-              <h2>Recent changes</h2>
+              <h2>{i18n.t("Recent changes")}</h2>
               <Link
                 className="small-link"
                 href={"/activity?collection=projects&target=" + id}
-              >
-                View full history
-              </Link>
+              >{i18n.t("View full history")}</Link>
             </div>
             {events.docs.map((e) => (
               <div className="activity-row" key={e.id}>
-                <span>{e.summary}</span>
-                <small>{date(e.createdAt)}</small>
+                <span>{auditSummary(e.summary,i18n.t)}</span>
+                <small>{date(e.createdAt,i18n.locale)}</small>
               </div>
             ))}
             {!events.totalDocs && (
-              <p className="muted">No changes recorded yet.</p>
+              <p className="muted">{i18n.t("No changes recorded yet.")}</p>
             )}
           </section>
         </div>
@@ -226,13 +219,13 @@ export default async function Project({
                 "badge " + (instance?.status === "active" ? "connected" : "")
               }
             >
-              {instance ? `CMS ${instance.status}` : "No CMS linked"}
+              {instance ? `CMS ${i18n.t(uiLabel(instance.status))}` : i18n.t("No CMS linked")}
             </span>
-            <h2>{instance ? instance.label : "A CMS is optional."}</h2>
+            <h2>{instance ? instance.label : i18n.t("A CMS is optional.")}</h2>
             <p>
               {instance
-                ? "This is the recorded connection to the project’s independent content admin. Its live availability has not been checked."
-                : "This project can run without a CMS. You can link a CMS that has already been deployed."}
+                ? i18n.t("This is the recorded connection to the project’s independent content admin. Its live availability has not been checked.")
+                : i18n.t("This project can run without a CMS. You can link a CMS that has already been deployed.")}
             </p>
             {instance && instance.status !== "retired" && (
               <a
@@ -240,77 +233,72 @@ export default async function Project({
                 href={instance.adminURL}
                 target="_blank"
                 rel="noreferrer"
-              >
-                Open CMS ↗
-              </a>
+              >{i18n.t("Open CMS ↗")}</a>
             )}
             {instance && (
               <dl>
-                <dt>Admin</dt>
-                <dd>{hostname(instance.adminURL)}</dd>
-                <dt>Hosting</dt>
-                <dd>Vercel</dd>
-                <dt>Project ID</dt>
+                <dt>{i18n.t("Admin")}</dt>
+                <dd>{hostname(instance.adminURL,i18n.t("No domain yet"))}</dd>
+                <dt>{i18n.t("Hosting")}</dt>
+                <dd>{i18n.t("Vercel")}</dd>
+                <dt>{i18n.t("Project ID")}</dt>
                 <dd>
                   <code>{instance.providerProjectID}</code>
                 </dd>
-                <dt>Database schema</dt>
+                <dt>{i18n.t("Database schema")}</dt>
                 <dd>
                   <code>{instance.schemaName}</code>
                 </dd>
-                <dt>Template</dt>
+                <dt>{i18n.t("Template")}</dt>
                 <dd>{instance.template}</dd>
-                <dt>CMS engine</dt>
-                <dd>{instance.payloadVersion || "Not recorded"}</dd>
-                <dt>Recorded status</dt>
-                <dd>{instance.status}</dd>
+                <dt>{i18n.t("CMS engine")}</dt>
+                <dd>{instance.payloadVersion || i18n.t("Not recorded")}</dd>
+                <dt>{i18n.t("Recorded status")}</dt>
+                <dd>{i18n.t(uiLabel(instance.status))}</dd>
               </dl>
             )}
             {project.status === "active" && (
               <details className="cms-details">
                 <summary>
                   {instance
-                    ? "Edit connection details"
-                    : "Link an existing CMS"}
+                    ? i18n.t("Edit connection details")
+                    : i18n.t("Link an existing CMS")}
                 </summary>
-                <p className="muted">
-                  Inventory only. This does not deploy, suspend or delete
-                  infrastructure. Automatic provisioning is not available yet.
-                </p>
+                <p className="muted">{i18n.t("Inventory only. This does not deploy, suspend or delete infrastructure. Automatic provisioning is not available yet.")}</p>
                 <Editor
                   action={saveInstance.bind(null, id, instance?.id || null)}
-                  submit={instance ? "Update connection" : "Link CMS"}
+                  submit={instance ? i18n.t("Update connection") : i18n.t("Link CMS")}
                   fields={[
                     {
                       name: "label",
-                      label: "CMS name",
+                      label: msgid("CMS name"),
                       required: true,
                       value: instance?.label || project.name,
                     },
                     {
                       name: "adminURL",
-                      label: "Admin URL",
+                      label: msgid("Admin URL"),
                       type: "url",
                       required: true,
                       value: instance?.adminURL,
                     },
                     {
                       name: "schemaName",
-                      label: "Database schema",
+                      label: msgid("Database schema"),
                       required: true,
                       value: instance?.schemaName,
-                      hint: "The isolated schema used by this deployed CMS.",
+                      hint: msgid("The isolated schema used by this deployed CMS."),
                     },
                     {
                       name: "providerProjectID",
-                      label: "Vercel project ID",
+                      label: msgid("Vercel project ID"),
                       required: true,
                       value: instance?.providerProjectID,
-                      hint: "The existing Vercel project ID, starting with prj_.",
+                      hint: msgid("The existing Vercel project ID, starting with prj_."),
                     },
                     {
                       name: "template",
-                      label: "Template",
+                      label: msgid("Template"),
                       type: "select",
                       required: true,
                       value: instance?.template || "custom",
@@ -319,27 +307,27 @@ export default async function Project({
                         "spitzli-portfolio",
                         "stall-business",
                         "custom",
-                      ].map((value) => ({ value, label: value })),
+                      ].map((value) => ({ value, label: uiLabel(value) })),
                     },
                     {
                       name: "payloadVersion",
-                      label: "CMS engine version",
+                      label: msgid("CMS engine version"),
                       value: instance?.payloadVersion || "",
                     },
                     {
                       name: "status",
-                      label: "Recorded status",
-                      hint: "Inventory only. Changing this does not change the running CMS.",
+                      label: msgid("Recorded status"),
+                      hint: msgid("Inventory only. Changing this does not change the running CMS."),
                       type: "select",
                       required: true,
                       value: instance?.status || "active",
                       options: ["active", "suspended", "retired"].map(
-                        (value) => ({ value, label: value }),
+                        (value) => ({ value, label: uiLabel(value) }),
                       ),
                     },
                     {
                       name: "notes",
-                      label: "Notes",
+                      label: msgid("Notes"),
                       type: "textarea",
                       value: instance?.notes || "",
                     },
@@ -347,7 +335,7 @@ export default async function Project({
                       ? [
                           {
                             name: "confirmExisting",
-                            label: "This CMS is already deployed",
+                            label: msgid("This CMS is already deployed"),
                             type: "checkbox" as const,
                             required: true,
                           },
@@ -359,9 +347,9 @@ export default async function Project({
             )}
           </section>
           <section className="record-meta">
-            <p>
-              Project ID<code>{id}</code>
-              <small>Created {date(project.createdAt)}</small>
+            <Link href={`/projects/${id}/delete`}>{i18n.t("Delete project")}</Link>
+            <p>{i18n.t("Project ID")}<code>{id}</code>
+              <small>{i18n.t("Created ")}{date(project.createdAt,i18n.locale)}</small>
             </p>
             <ArchiveButton
               action={archiveRecord.bind(null, "projects", id)}

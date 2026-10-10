@@ -19,7 +19,7 @@ export type AccessView = {
   invitations: { id: string; email: string; status: string; expiresAt: string; name: string }[];
   events: { id: string; actor_id: string; action: string; target_id: string | null; outcome: string; created_at: string; actor: string | null }[];
 };
-export type Allowances = Record<"storageBytes" | "mailMessages" | "transferBytes" | "websites" | "editors", number | null>;
+export type Allowances = Record<"storageBytes" | "mailMessages" | "transferBytes" | "websites" | "editors", number | null> & { hosting?: import("@webdock/hosting-contracts").HostingAllowances };
 export type Plan = { id: string; name: string; description: string; allowances: Allowances; createdAt: string };
 export type TenantPlanView = {
   subscription: { name: string; description: string; base: Allowances; extras: Allowances; effective: Allowances; revision: number } | null;

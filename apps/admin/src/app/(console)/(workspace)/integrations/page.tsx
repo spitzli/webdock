@@ -1,3 +1,7 @@
+
+import { msgid } from '@webdock/i18n';
+
+import { getRequestI18n } from '@webdock/i18n/next';
 import { Suspense } from "react";
 import { VercelIntegration } from "../../../../components/vercel-integration";
 import Link from "next/link";
@@ -13,15 +17,15 @@ import { GitHubRepositories } from "../../../../components/github-repositories";
 import { mcpResource } from "../../../../lib/mcp-auth";
 
 const messages: Record<string, string> = {
-  connected: "GitHub connected. Choose an installation and a repository below.",
+  connected: msgid("GitHub connected. Choose an installation and a repository below."),
   disconnected:
-    "GitHub disconnected from this browser. Existing project links are unchanged.",
-  failed: "GitHub authorization did not complete. Start Connect GitHub again.",
+    msgid("GitHub disconnected from this browser. Existing project links are unchanged."),
+  failed: msgid("GitHub authorization did not complete. Start Connect GitHub again."),
   expired:
-    "Your GitHub connection expired. Connect again to choose repositories.",
+    msgid("Your GitHub connection expired. Connect again to choose repositories."),
   "save-failed":
-    "The repository could not be linked. Refresh the list and check that the project and GitHub installation are still accessible.",
-  setup: "Complete the GitHub App setup before connecting.",
+    msgid("The repository could not be linked. Refresh the list and check that the project and GitHub installation are still accessible."),
+  setup: msgid("Complete the GitHub App setup before connecting."),
 };
 const positive = (value: unknown, fallback: number) =>
   typeof value === "string" && /^[1-9][0-9]{0,8}$/.test(value)
@@ -33,6 +37,8 @@ export default async function Integrations({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const i18n = await getRequestI18n();
+
   const { payload, user } = await requireOperator();
   const query = await searchParams;
   let github: ReturnType<typeof getGitHub> = null;
@@ -70,7 +76,7 @@ export default async function Integrations({
       }
     } catch {
       problem =
-        "GitHub access could not be checked. Reconnect or review the app’s installation and read-only metadata permission.";
+        msgid("GitHub access could not be checked. Reconnect or review the app’s installation and read-only metadata permission.");
     }
   }
   const projects = session
@@ -95,8 +101,8 @@ export default async function Integrations({
     <>
       <div className="page-heading">
         <div>
-          <h1>Integrations</h1>
-          <p>Connect your repositories and the tools you work with.</p>
+          <h1>{i18n.t("Integrations")}</h1>
+          <p>{i18n.t("Connect your repositories and the tools you work with.")}</p>
         </div>
       </div>
       {notice && (
@@ -104,14 +110,14 @@ export default async function Integrations({
           className={isError ? "error" : "success"}
           role={isError ? "alert" : "status"}
         >
-          {notice}
+          {i18n.t(notice)}
         </p>
       )}
       <Suspense
         fallback={
           <section className="panel">
-            <h2>Vercel</h2>
-            <p role="status">Loading connection…</p>
+            <h2>{i18n.t("Vercel")}</h2>
+            <p role="status">{i18n.t("Loading connection…")}</p>
           </section>
         }
       >
@@ -127,44 +133,32 @@ export default async function Integrations({
       <div className="detail-grid">
         <section className="panel" aria-labelledby="github-heading">
           <div className="section-heading">
-            <h2 id="github-heading">GitHub</h2>
+            <h2 id="github-heading">{i18n.t("GitHub")}</h2>
             <span className={`badge ${session ? "connected" : ""}`}>
               {session
-                ? "Connected"
+                ? i18n.t("Connected")
                 : github
-                  ? "Not connected"
-                  : "Setup required"}
+                  ? i18n.t("Not connected")
+                  : i18n.t("Setup required")}
             </span>
           </div>
-          <p>
-            Choose repositories from a GitHub App installation and link them to
-            Webdock projects.
-          </p>
+          <p>{i18n.t("Choose repositories from a GitHub App installation and link them to Webdock projects.")}</p>
           {session ? (
             <>
-              <p>
-                Connected as <strong>{session.login}</strong>. This browser
-                connection expires after eight hours.
-              </p>
+              <p>{i18n.t("Connected as ")}<strong>{session.login}</strong>{i18n.t(". This browser connection expires after eight hours.")}</p>
               <div className="section-heading">
-                <a className="button secondary" href={github!.installURL}>
-                  Manage selected repositories
-                </a>
+                <a className="button secondary" href={github!.installURL}>{i18n.t("Manage selected repositories")}</a>
                 <form action="/api/github/disconnect" method="post">
-                  <button className="text-button" type="submit">
-                    Disconnect this browser
-                  </button>
+                  <button className="text-button" type="submit">{i18n.t("Disconnect this browser")}</button>
                 </form>
               </div>
               {problem ? (
                 <>
                   <p className="error" role="alert">
-                    {problem}
+                    {i18n.error(problem)}
                   </p>
                   <form action="/api/github/connect" method="post">
-                    <button className="button" type="submit">
-                      Reconnect GitHub
-                    </button>
+                    <button className="button" type="submit">{i18n.t("Reconnect GitHub")}</button>
                   </form>
                 </>
               ) : (
@@ -182,9 +176,7 @@ export default async function Integrations({
                           value={installationPage}
                         />
                         <div className="field wide">
-                          <label htmlFor="github-installation">
-                            GitHub account or organisation
-                          </label>
+                          <label htmlFor="github-installation">{i18n.t("GitHub account or organisation")}</label>
                           <select
                             id="github-installation"
                             name="installation"
@@ -198,9 +190,7 @@ export default async function Integrations({
                           </select>
                         </div>
                         <div className="form-footer">
-                          <button className="button secondary" type="submit">
-                            Browse repositories
-                          </button>
+                          <button className="button secondary" type="submit">{i18n.t("Browse repositories")}</button>
                         </div>
                       </form>
                       <GitHubRepositories
@@ -213,139 +203,90 @@ export default async function Integrations({
                       />
                     </>
                   ) : (
-                    <p>
-                      No accessible installations found. Install the app on a
-                      GitHub account and choose the repositories to make
-                      available.
-                    </p>
+                    <p>{i18n.t("No accessible installations found. Install the app on a GitHub account and choose the repositories to make available.")}</p>
                   )}
                   {installationPages > 1 && (
                     <nav
                       className="pagination"
-                      aria-label="GitHub installation pages"
+                      aria-label={i18n.t("GitHub installation pages")}
                     >
                       {installationPage > 1 && (
                         <Link
                           href={`/integrations?installationPage=${installationPage - 1}`}
-                        >
-                          Previous accounts
-                        </Link>
+                        >{i18n.t("Previous accounts")}</Link>
                       )}
-                      <span>
-                        Accounts page {installationPage} of {installationPages}
+                      <span>{i18n.t("Accounts page ")}{installationPage}{i18n.t(" of ")}{installationPages}
                       </span>
                       {installationPage < installationPages && (
                         <Link
                           href={`/integrations?installationPage=${installationPage + 1}`}
-                        >
-                          Next accounts
-                        </Link>
+                        >{i18n.t("Next accounts")}</Link>
                       )}
                     </nav>
                   )}
                 </>
               )}
               <p>
-                <a href={github!.permissionsURL}>
-                  Review or revoke access on GitHub
-                </a>
+                <a href={github!.permissionsURL}>{i18n.t("Review or revoke access on GitHub")}</a>
               </p>
             </>
           ) : github ? (
             <>
               <form action="/api/github/connect" method="post">
-                <button className="button" type="submit">
-                  Connect GitHub
-                </button>
+                <button className="button" type="submit">{i18n.t("Connect GitHub")}</button>
               </form>
               <p>
-                <a href={github.installURL}>Install the GitHub App</a> and
-                choose only the repositories you want to use.
-              </p>
+                <a href={github.installURL}>{i18n.t("Install the GitHub App")}</a>{i18n.t(" and choose only the repositories you want to use.")}</p>
             </>
           ) : (
-            <p>
-              Register a GitHub App once to enable repository selection for
-              Studio.
-            </p>
+            <p>{i18n.t("Register a GitHub App once to enable repository selection for Studio.")}</p>
           )}
           <details open={!github}>
-            <summary>GitHub App setup</summary>
+            <summary>{i18n.t("GitHub App setup")}</summary>
             <ol>
               <li>
-                <a href="https://github.com/settings/apps/new">
-                  Register a GitHub App
-                </a>{" "}
-                with the callback URL{" "}
+                <a href="https://github.com/settings/apps/new">{i18n.t("Register a GitHub App")}</a>{" "}{i18n.t("with the callback URL")}{" "}
                 <code style={{ overflowWrap: "anywhere" }}>{callback}</code>.
               </li>
-              <li>
-                Grant only{" "}
-                <strong>Repository permissions → Metadata → Read-only</strong>.
-                Leave other permissions and webhook events off. Keep user access
-                token expiration enabled.
-              </li>
-              <li>
-                Set <code>WEBDOCK_GITHUB_CLIENT_ID</code>,{" "}
-                <code>WEBDOCK_GITHUB_CLIENT_SECRET</code>, and{" "}
-                <code>WEBDOCK_GITHUB_APP_SLUG</code> in Studio’s server
-                environment. Studio uses its existing SSO cookie secret to
-                encrypt the connection.
-              </li>
-              <li>
-                Install the app with <strong>Only select repositories</strong>,
-                then return here and choose <strong>Connect GitHub</strong>.
-                Leave automatic user authorization during installation off so
-                this connection starts in Studio.
-              </li>
+              <li>{i18n.t("Grant only")}{" "}
+                <strong>{i18n.t("Repository permissions → Metadata → Read-only")}</strong>{i18n.t(". Leave other permissions and webhook events off. Keep user access token expiration enabled.")}</li>
+              <li>{i18n.t("Set ")}<code>WEBDOCK_GITHUB_CLIENT_ID</code>,{" "}
+                <code>WEBDOCK_GITHUB_CLIENT_SECRET</code>{i18n.t(", and")}{" "}
+                <code>WEBDOCK_GITHUB_APP_SLUG</code>{i18n.t(" in Studio’s server environment. Studio uses its existing SSO cookie secret to encrypt the connection.")}</li>
+              <li>{i18n.t("Install the app with ")}<strong>{i18n.t("Only select repositories")}</strong>{i18n.t(", then return here and choose ")}<strong>{i18n.t("Connect GitHub")}</strong>{i18n.t(". Leave automatic user authorization during installation off so this connection starts in Studio.")}</li>
             </ol>
             <p>
-              <a href="https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-user-access-token-for-a-github-app">
-                GitHub App authorization documentation
-              </a>
+              <a href="https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-user-access-token-for-a-github-app">{i18n.t("GitHub App authorization documentation")}</a>
             </p>
           </details>
         </section>
         <aside>
           <section className="panel cms-panel" aria-labelledby="mcp-heading">
-            <h2 id="mcp-heading">Webdock MCP</h2>
-            <p>
-              Use Webdock’s project registry from an MCP-compatible assistant.
-              Authorization uses your central Webdock account.
-            </p>
+            <h2 id="mcp-heading">{i18n.t("Webdock MCP")}</h2>
+            <p>{i18n.t("Use Webdock’s project registry from an MCP-compatible assistant. Authorization uses your central Webdock account.")}</p>
             <dl>
-              <dt>Server URL</dt>
+              <dt>{i18n.t("Server URL")}</dt>
               <dd>
                 <code style={{ overflowWrap: "anywhere" }}>
                   {mcpResource()}
                 </code>
               </dd>
-              <dt>HTTP API</dt>
+              <dt>{i18n.t("HTTP API")}</dt>
               <dd>
                 <code>{new URL("/api/registry", mcpResource()).href}</code>
               </dd>
-              <dt>Read scope</dt>
+              <dt>{i18n.t("Read scope")}</dt>
               <dd>
-                <code>webdock:read</code> — browse customers, projects, CMS
-                instances, and activity.
-              </dd>
-              <dt>Write scope</dt>
+                <code>webdock:read</code>{i18n.t(" — browse customers, projects, CMS instances, and activity.")}</dd>
+              <dt>{i18n.t("Write scope")}</dt>
               <dd>
-                <code>webdock:write</code> — create and update registry records.
-              </dd>
+                <code>webdock:write</code>{i18n.t(" — create, update and explicitly delete managed projects. Platform administrators only.")}</dd>
             </dl>
             <a
               className="button secondary"
               href="https://auth.webdock.dev/connections"
-            >
-              Manage connections
-            </a>
-            <p>
-              Enable automatic token renewal when registering a client for
-              remote work. Interactive sign-in and consent still require your
-              browser. Only operators can access the registry. Changes made
-              through integrations appear in Activity.
-            </p>
+            >{i18n.t("Manage connections")}</a>
+            <p>{i18n.t("Enable automatic token renewal when registering a client for remote work. Interactive sign-in and consent still require your browser. Only operators can access the registry. Changes made through integrations appear in Activity.")}</p>
           </section>
         </aside>
       </div>

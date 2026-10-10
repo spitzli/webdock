@@ -1,0 +1,4 @@
+import type {CollectionConfig,GlobalConfig} from 'payload';
+const denied=()=>false;
+export const SitePages:CollectionConfig={slug:'site-pages',versions:false,admin:{description:'Freie Canvas-Seiten. Verwaltung ausschließlich in Webdock.'},access:{read:denied,create:denied,update:denied,delete:denied},fields:[{name:'draft',type:'json',required:true},{name:'revision',type:'number',required:true,defaultValue:1,min:1},{name:'published',type:'json'},{name:'publishedRevision',type:'number'},{name:'publishedSlug',type:'text',unique:true},{name:'publishedAt',type:'date'},{name:'updatedBy',type:'text',required:true,maxLength:128},{name:'publishedBy',type:'text',maxLength:128}]};
+export const SiteBuilder:GlobalConfig={slug:'site-builder',versions:false,label:'Seiteneditor',access:{read:denied,update:denied},fields:[{name:'settings',type:'json',required:true,defaultValue:{homePageID:null}}]};

@@ -1,0 +1,8 @@
+{
+  "Die Kundenansicht ist schreibgeschützt. Bitte zuerst die Vorschau verlassen.": "Customer view is read-only. Exit the preview first.",
+  "Eine aktive Betreiber-Sitzung mit vollständiger Sicherheitskonfiguration ist erforderlich.": "An active operator session with completed security setup is required.",
+  "Mandant nicht verfügbar.": "Tenant unavailable.",
+  "Ein aktiver, zugeordneter Mandant ist erforderlich.": "An active mapped tenant is required.",
+  "Die Kundenansicht ist abgelaufen oder nicht mehr verfügbar. Bitte die Vorschau verlassen.": "Customer view has expired or is no longer available. Exit the preview.",
+  "Kundenansicht beendet.": "Customer view ended."
+}

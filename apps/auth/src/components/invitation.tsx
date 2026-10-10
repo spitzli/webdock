@@ -1,10 +1,13 @@
 "use client";
+import { authLabel } from "@/lib/i18n-labels";
+import { useI18n } from "@webdock/i18n/react";
 
 import { useEffect, useState } from "react";
 import { accountClient } from "./auth-client";
 import { AuthPanel } from "./auth-forms";
 
 export function Invitation({ id, tenantsURL }: { id: string; tenantsURL: string }) {
+ const { t, error: translateError } = useI18n();
   const [invitation, setInvitation] = useState<{
     organizationName: string;
     email: string;
@@ -45,21 +48,21 @@ export function Invitation({ id, tenantsURL }: { id: string; tenantsURL: string 
     finally { setBusy(false); }
   }
 
-  return <AuthPanel title="Organization invitation">
-    {loading && <p role="status">Loading your invitation…</p>}
-    {error && <p className="notice error" role="alert">{error}</p>}
+  return <AuthPanel title={t("Organization invitation")}>
+    {loading && <p role="status">{t("Loading your invitation…")}</p>}
+    {error && <p className="notice error" role="alert">{translateError(error)}</p>}
     {decision ? <>
-      <p className="notice" role="status">{decision === "accepted" ? `You have joined ${invitation?.organizationName}.` : "You have declined this invitation."}</p>
-      {decision === "accepted" && <p className="muted">Your administrator manages access to individual projects and websites.</p>}
-      <a className="button" href={tenantsURL}>Go to your tenants</a>
+      <p className="notice" role="status">{decision === "accepted" ? t("You have joined {value1}.", {value1: invitation?.organizationName}) : t("You have declined this invitation.")}</p>
+      {decision === "accepted" && <p className="muted">{t("Your administrator manages access to individual projects and websites.")}</p>}
+      <a className="button" href={tenantsURL}>{t("Go to your tenants")}</a>
     </> : invitation && <>
-      <p>You have been invited to join <strong>{invitation.organizationName}</strong>.</p>
-      <p className="muted">For {invitation.email}<br />Organization role: {invitation.role}</p>
+      <p>{t("You have been invited to join ")}<strong>{invitation.organizationName}</strong>.</p>
+      <p className="muted">{t("For ")}{invitation.email}<br />{t("Organization role: ")}{authLabel(invitation.role, t)}</p>
       <div className="actions">
-        <button className="button" disabled={busy} onClick={() => void respond(true)}>Accept invitation</button>
-        <button className="button secondary" disabled={busy} onClick={() => void respond(false)}>Decline</button>
+        <button className="button" disabled={busy} onClick={() => void respond(true)}>{t("Accept invitation")}</button>
+        <button className="button secondary" disabled={busy} onClick={() => void respond(false)}>{t("Decline")}</button>
       </div>
     </>}
-    {!loading && !invitation && <p className="help">Sign in with the email address the invitation was sent to. Contact your Webdock administrator if you need help.</p>}
+    {!loading && !invitation && <p className="help">{t("Sign in with the email address the invitation was sent to. Contact your Webdock administrator if you need help.")}</p>}
   </AuthPanel>;
 }

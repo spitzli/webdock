@@ -31,7 +31,7 @@ export const defaultLexical = lexicalEditor({
             admin: {
               condition: (_data, siblingData) => siblingData?.linkType !== 'internal',
             },
-            label: ({ t }) => t('fields:enterURL'),
+            label: ({ t: payloadTranslate }) => payloadTranslate('fields:enterURL'),
             required: true,
             validate: ((value, options) => {
               if ((options?.siblingData as LinkFields)?.linkType === 'internal') {

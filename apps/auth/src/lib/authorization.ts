@@ -42,15 +42,25 @@ export async function currentClaims(
   }
   if (!row.organization_id) return { disabled: true };
   if (!(await getPlatformSettings()).cmsEnabled) return { disabled: true };
-  const grant = (
+  // Only mapped, active customer administrators inherit website access.
+  // An explicit revoked or mismatched site grant still fails closed.
+  const access = (
     await database.query(
-      `SELECT g.role FROM webdock_auth.project_grant g JOIN webdock_auth.member m ON m."userId"=g.user_id AND m."organizationId"=g.organization_id WHERE g.user_id=$1 AND g.binding_id=$2 AND g.organization_id=$3 AND g.enabled=true AND NOT EXISTS (SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE t.organization_id=g.organization_id AND c.status<>'active')`,
+      `SELECT CASE WHEN c.status='active' AND m.role IN ('owner','admin') THEN 'admin' ELSE g.role END AS role
+ FROM webdock_auth.member m
+ LEFT JOIN webdock_auth.tenant_customer t ON t.organization_id=m."organizationId"
+ LEFT JOIN webdock_admin.customers c ON c.id=t.customer_id
+ LEFT JOIN webdock_auth.project_grant g ON g.user_id=m."userId" AND g.binding_id=$2
+ WHERE m."userId"=$1 AND m."organizationId"=$3
+ AND (t.customer_id IS NULL OR c.status='active')
+ AND (g.id IS NULL OR (g.enabled=true AND g.organization_id=$3))
+ AND ((c.status='active' AND m.role IN ('owner','admin')) OR g.enabled=true)`,
       [subject, binding, row.organization_id],
     )
   ).rows[0];
-  return grant
+  return access
     ? {
-        webdock_role: grant.role,
+        webdock_role: access.role,
         webdock_email: row.email,
         webdock_name: row.name,
       }

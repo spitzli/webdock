@@ -267,9 +267,14 @@ export function configurePayloadSSO(options: PayloadSSOOptions) {
       let destination = logoutURL
       try {
         const stored = options.centralLogout ? await session(request.headers) : null
-        const config = stored?.idToken ? await configuration() : null
+        const config = options.centralLogout ? await configuration() : null
         if (config?.serverMetadata().end_session_endpoint) {
-          destination = oidc.buildEndSessionUrl(config, { id_token_hint: stored!.idToken!, post_logout_redirect_uri: logoutURL }).href
+          // Older/expired local sessions have no hint. The provider then confirms
+          // logout against its current browser session instead of skipping it.
+          destination = oidc.buildEndSessionUrl(config, {
+            ...(stored?.idToken ? { id_token_hint: stored.idToken } : {}),
+            post_logout_redirect_uri: logoutURL,
+          }).href
         }
       } catch { /* Provider failure must not prevent clearing the local session. */ }
       const response = respond(303, null, destination)

@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-09",
+  "customerID": "101711682211938304",
+  "projects": {
+    "bot": {
+      "id": "101713101337919488",
+      "name": "Lunares Discord Bot",
+      "provider": "k3s",
+      "url": "https://api.schattenclan.de",
+      "appID": "102047516467400704"
+    },
+    "panel": {
+      "id": "102142641457594368",
+      "name": "Lunares Admin-Panel",
+      "provider": "vercel",
+      "url": "https://admin.schattenclan.de",
+      "vercelProjectID": "prj_jxdw3xvinxBhfQM6rjEZyBOg5A3G"
+    }
+  },
+  "changes": [
+    "Created separate Webdock panel project through authenticated Studio",
+    "Linked existing Vercel project through Studio integration",
+    "Registered Vercel managed hosting assignment",
+    "Renamed existing project and corrected its URL for the Discord bot",
+    "Preserved bot project/app IDs, data and credentials"
+  ],
+  "verification": {
+    "customerProjects": 2,
+    "hostingProjects": 2,
+    "vercelLinkMatches": true,
+    "liveVercelPanelState": "READY",
+    "botStatus": "stopped",
+    "botRevision": 10,
+    "botReplicas": 0,
+    "botPods": 0
+  },
+  "deploymentsCreated": 0,
+  "cmsInstancesCreated": 0,
+  "authBindingsCreated": 0,
+  "commits": false
+}

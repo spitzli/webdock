@@ -1,10 +1,22 @@
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { registerHostingTools, validateHostingMCPToken } from "@/lib/hosting-mcp";
+import { hostingTokenCall } from "@/lib/hosting-client";
+import { introspectMCP, validateMCPToken, mcpOrigin, mcpIssuer, mcpResource } from "@/lib/mcp-auth";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { getCMS } from "@/lib/server";
 import { authenticateMCP, challenge, authorizeRegistry } from "@/lib/mcp-auth";
 import { createRegistryMCP, mutationTools } from "@/lib/mcp-server";
 export const runtime = "nodejs";
+export const maxDuration = 120;
 export async function POST(request: Request) {
-  const access = await authorizeRegistry(request, false, { getCMS });
+  const origin = request.headers.get("origin");
+  if (origin && origin !== mcpOrigin()) return new Response(null,{status:403});
+  let token;
+  try { token = await introspectMCP(request); } catch { return Response.json({error:"Authorization unavailable"},{status:503}); }
+  const hosting = validateHostingMCPToken(token,mcpResource(),mcpIssuer());
+  const registry = validateMCPToken(token,mcpResource(),mcpIssuer());
+  if (!hosting && !registry) return challenge(401);
+  const access = registry ? await authorizeRegistry(request, false, { getCMS, authenticate:async()=>registry }) : null;
   if (access instanceof Response) return access;
   if (Number(request.headers.get("content-length")) > 65536) return new Response(null, { status: 413 });
   const reader = request.body?.getReader();
@@ -23,9 +35,10 @@ export async function POST(request: Request) {
   let body;
   try { body = JSON.parse(raw); } catch { return Response.json({ error: "Invalid JSON" }, { status: 400 }); }
   if (Array.isArray(body)) return Response.json({ error: "Batch requests are not supported" }, { status: 400 });
-  const { actor, canWrite } = access;
+  const canWrite = access?.canWrite ?? false;
   if (body?.method === "tools/call" && mutationTools.has(body?.params?.name) && !canWrite) return challenge(403, "webdock:read webdock:write");
-  const server = createRegistryMCP(actor, canWrite);
+  const server = access ? createRegistryMCP(access.actor, canWrite) : new McpServer({name:"webdock-hosting",version:"1.0.0"});
+  if (hosting) registerHostingTools(server, cmd=>hostingTokenCall(request.headers.get("authorization")!.slice(7),cmd),hosting.scopes.has("hosting:write"));
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
   try {
     await server.connect(transport);
@@ -38,7 +51,8 @@ export async function POST(request: Request) {
 }
 export async function GET(request: Request) {
   try {
-    if (!await authenticateMCP(request)) return challenge(401);
+    const token=await introspectMCP(request);
+    if (!validateMCPToken(token,mcpResource(),mcpIssuer()) && !validateHostingMCPToken(token,mcpResource(),mcpIssuer())) return challenge(401);
     return new Response(null, { status: 405, headers: { Allow: "POST", "Cache-Control": "no-store" } });
   } catch { return Response.json({ error: "Authorization unavailable" }, { status: 503 }); }
 }

@@ -2,7 +2,7 @@ import { APIError, type Payload, type Where } from "payload";
 import { z } from "zod";
 import type { User } from "../payload-types";
 
-export type RegistryActor = { payload: Payload; user: User & { collection: "users" } };
+export type RegistryActor = { payload: Payload; user: User & { collection: "users" }; accessToken?: string };
 export const recordID = z.string().regex(/^[1-9][0-9]{0,18}$/).refine(v => /^[1-9][0-9]{0,18}$/.test(v) && BigInt(v) <= 9223372036854775807n, "Invalid ID");
 export const collectionName = z.enum(["customers", "projects", "cms-instances", "audit-events"]);
 const text = z.string().trim().max(160);

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createHash } from "node:crypto";
 import { sealData, unsealData } from "iron-session";
-import { configureVercelOAuth } from "../src/lib/vercel-oauth";
+import { configureVercelOAuth, vercelCompletionURL } from "../src/lib/vercel-oauth";
 
 const options = {
   clientID: "oac_fixture",
@@ -14,6 +14,7 @@ const options = {
   cookieSecret: "fixture-cookie-secret-at-least-thirty-two-characters",
 };
 const actor = "1001";
+const completionURL="https://vercel.com/integrations/webdock-studio/complete?configurationId=icfg_fixture";
 const token = {
   token_type: "Bearer",
   access_token: "vcp_fixture_token",
@@ -76,6 +77,7 @@ async function callback(
     state: new URL(start.url).searchParams.get("state")!,
     teamId: options.teamID,
     configurationId: token.installation_id,
+    next: completionURL,
   }).toString();
   edit?.(url);
   const cookie = start.cookie.split(";")[0]!;
@@ -121,13 +123,12 @@ test("private dashboard installation URL and host-only sealed flow bind operator
 
 test("exchanges the code with exact redirect URI and verifies read-only installation", async () => {
   const { oauth, calls } = rig();
-  const { request } = await callback(oauth, (url) =>
-    url.searchParams.set("next", "https://untrusted.example/"),
-  );
+  const { request } = await callback(oauth);
   assert.deepEqual(await oauth.finish(request, actor), {
     accessToken: token.access_token,
     teamID: options.teamID,
     configurationID: token.installation_id,
+    completionURL,
   });
   assert.equal(calls.length, 2);
   assert.equal(calls[0]!.init?.method, "POST");
@@ -249,6 +250,7 @@ test("exact method/path/origin and raw Host required; proxy loopback accepted bu
       accessToken: token.access_token,
       teamID: options.teamID,
       configurationID: token.installation_id,
+    completionURL,
     },
   );
 });
@@ -275,7 +277,7 @@ test("malformed token type, installation, team or credential never reaches confi
   }
 });
 
-test("installation identity and exactly four read scopes required, never additional/write permissions", async () => {
+test("installation identity and exact common scopes plus one project scope required", async () => {
   for (const result of [
     null,
     [],
@@ -297,6 +299,11 @@ test("installation identity and exactly four read scopes required, never additio
       scopes.slice(1),
       [...scopes, "read:team"],
       [...scopes, "read-write:project"],
+      [...scopes, "write:deployment"],
+      [...scopes, "write:project"],
+      scopes.map(scope => scope === "read:project" ? "write:project" : scope),
+      scopes.map(scope => scope === "read:domain" ? "read-write:project" : scope),
+      [...scopes, "write:project", "write:project"],
       [scopes[0], scopes[0], scopes[2], scopes[3]],
       scopes.join(" "),
       [...scopes.slice(0, 3), 42],
@@ -307,6 +314,14 @@ test("installation identity and exactly four read scopes required, never additio
       oauth.finish((await callback(oauth)).request, actor),
       failed,
     );
+  }
+});
+
+test("optional project write permission preserves existing read-only installation support", async () => {
+  for (const granted of [scopes, ["read:integration-configuration", "read:deployment", "read:domain", "read-write:project"]]) {
+    const { oauth } = rig(token, { ...installation, scopes: granted });
+    const result = await oauth.finish((await callback(oauth)).request, actor);
+    assert.equal(result.configurationID, installation.id);
   }
 });
 
@@ -359,4 +374,28 @@ test("invalid/insecure configuration rejected; HTTP only on nonproduction loopba
   assert.throws(() =>
     configureVercelOAuth({ ...options, origin: "http://127.0.0.1:3120" }),
   );
+});
+
+test('callback diagnostics expose only a fixed failure stage, never credentials', async () => {
+  const {oauth}=rig();
+  const missing=await callback(oauth,url=>url.searchParams.delete('state'));
+  await assert.rejects(oauth.finish(missing.request,actor),{name:'VercelOAuthError',message:failed.message,stage:'callback-parameters'});
+  const unsafe=rig({token_type:'Bearer',access_token:'private-secret-not-for-logs'});
+  const request=await callback(unsafe.oauth);
+  await assert.rejects(unsafe.oauth.finish(request.request,actor),error=>{
+    assert.equal((error as {stage:string}).stage,'token-response');
+    assert.equal(JSON.stringify(error).includes('private-secret'),false);
+    assert.equal((error as Error).message,failed.message);
+    return true;
+  });
+});
+
+
+test('Vercel installation completion is required and restricted to the exact HTTPS provider origin', async()=>{
+  assert.equal(vercelCompletionURL(completionURL),completionURL);
+  for(const next of [null,'','https://evil.example/done','https://vercel.com.evil.example/done','https://user:secret@vercel.com/done','http://vercel.com/done','//vercel.com/done','javascript:alert(1)','https://vercel.com:444/done','https://vercel.com/done#secret']){
+    const {oauth,calls}=rig();const value=await callback(oauth,url=>next===null?url.searchParams.delete('next'):url.searchParams.set('next',next));
+    await assert.rejects(oauth.finish(value.request,actor),{name:'VercelOAuthError',stage:'completion-url'});
+    assert.equal(calls.length,0,'Invalid completion must fail before consuming the OAuth code');
+  }
 });

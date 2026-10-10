@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-09",
+  "trigger": "User saved DISCORD_TOKEN and manually started the bot",
+  "supersedesStopInstruction": true,
+  "appID": "102047516467400704",
+  "revision": 12,
+  "desiredReplicas": 1,
+  "readyReplicas": 1,
+  "podRestarts": 0,
+  "discordTokenNamePresent": true,
+  "tokenValueDisclosed": false,
+  "discordGatewayConnected": true,
+  "signedPanelConnection": "connected",
+  "responseSignatureVerified": true,
+  "expectedGuildVerified": true,
+  "panelConfigurationRevision": 5,
+  "panelConnectionStatusRecorded": true,
+  "panelURL": "https://admin.schattenclan.de",
+  "apiURL": "https://api.schattenclan.de",
+  "startupNotes": [
+    "Discord returned temporary429 responses during existing panel synchronization; discord.py retried successfully",
+    "21 configured modules loaded",
+    "Bot API started and15 guild slash commands synchronized"
+  ],
+  "assistantStartedAdditionalInstance": false
+}

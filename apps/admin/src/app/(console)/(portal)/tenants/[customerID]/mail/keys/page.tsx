@@ -1,3 +1,5 @@
+
+import { getRequestI18n } from '@webdock/i18n/next';
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -5,12 +7,14 @@ import { auth } from "@/lib/auth";
 import { AccessError } from "@/lib/access-management";
 import { getTenantMailKeys, MailKeysError } from "@/lib/mail-keys";
 import { KeyForm } from "./form";
-export const metadata = { title: "Mail credentials" };
+export async function generateMetadata(){ const i18n = await getRequestI18n(); return { title: i18n.t("Mail credentials") }; }
 export default async function MailKeys({
   params,
 }: {
   params: Promise<{ customerID: string }>;
 }) {
+  const i18n = await getRequestI18n();
+
   const { customerID } = await params,
     requestHeaders = await headers();
   if (!(await auth.api.getSession({ headers: requestHeaders })))
@@ -25,11 +29,11 @@ export default async function MailKeys({
     if (error instanceof MailKeysError)
       return (
         <section className="auth-panel">
-          <h1>Mail credentials</h1>
+          <h1>{i18n.t("Mail credentials")}</h1>
           <p className="notice error" role="alert">
-            {error.message}
+            {i18n.error(error.message)}
           </p>
-          <Link href={`/tenants/${customerID}/mail`}>Back to Mail</Link>
+          <Link href={`/tenants/${customerID}/mail`}>{i18n.t("Back to Mail")}</Link>
         </section>
       );
     throw error;
@@ -38,79 +42,68 @@ export default async function MailKeys({
     <div className="access-page">
       <header className="account-heading">
         <div>
-          <h1>Mail credentials</h1>
+          <h1>{i18n.t("Mail credentials")}</h1>
           <p className="muted">{data.tenant.name}</p>
         </div>
       </header>
       <section className="auth-panel">
-        <h2>Connection details</h2>
+        <h2>{i18n.t("Connection details")}</h2>
         <dl>
-          <dt>SMTP server</dt>
+          <dt>{i18n.t("SMTP server")}</dt>
           <dd>
             <code>{data.smtpHost}</code>
           </dd>
-          <dt>Port and encryption</dt>
-          <dd>587 with STARTTLS, or 465 with TLS</dd>
-          <dt>SMTP username</dt>
-          <dd>Your credential’s Consumer key</dd>
-          <dt>SMTP password</dt>
-          <dd>The Consumer secret shown when you create that credential</dd>
-          <dt>Sending API</dt>
+          <dt>{i18n.t("Port and encryption")}</dt>
+          <dd>{i18n.t("587 with STARTTLS, or 465 with TLS")}</dd>
+          <dt>{i18n.t("SMTP username")}</dt>
+          <dd>{i18n.t("Your credential’s Consumer key")}</dd>
+          <dt>{i18n.t("SMTP password")}</dt>
+          <dd>{i18n.t("The Consumer secret shown when you create that credential")}</dd>
+          <dt>{i18n.t("Sending API")}</dt>
           <dd style={{ overflowWrap: "anywhere" }}>
             <code>{data.sendAPI}</code>
           </dd>
         </dl>
-        <p>
-          Select SMTP sending or API sending when creating the credential for
-          your application.
-        </p>
+        <p>{i18n.t("Select SMTP sending or API sending when creating the credential for your application.")}</p>
       </section>
       {(!data.enabled || !data.active) && (
         <p className="notice">
-          {!data.enabled ? "Mail is disabled." : "Sending is paused."} You can
-          still view and revoke existing credentials.
-        </p>
+          {!data.enabled ? i18n.t("Mail is disabled.") : i18n.t("Sending is paused.")}{i18n.t(" You can still view and revoke existing credentials.")}</p>
       )}
       {data.enabled && data.active && (
         <section className="auth-panel">
-          <h2>Create credential</h2>
-          <p>
-            Manage this tenant’s SMTP and API credentials directly in Webdock.
-            Secrets are shown once when created and cannot be retrieved later.
-          </p>
+          <h2>{i18n.t("Create credential")}</h2>
+          <p>{i18n.t("Manage this tenant’s SMTP and API credentials directly in Webdock. Secrets are shown once when created and cannot be retrieved later.")}</p>
           <KeyForm customer={customerID} operator={data.operator} />
         </section>
       )}
       <section className="account-section">
-        <h2>Existing credentials</h2>
-        <p>
-          To rotate a credential, create a replacement, update your application,
-          then revoke the old credential.
-        </p>
+        <h2>{i18n.t("Existing credentials")}</h2>
+        <p>{i18n.t("To rotate a credential, create a replacement, update your application, then revoke the old credential.")}</p>
         <div className="access-grid">
           {data.keys.map((key) => (
             <article className="access-record" key={key.consumerKey}>
               <h3>{key.label}</h3>
               <dl>
-                <dt>Consumer key</dt>
+                <dt>{i18n.t("Consumer key")}</dt>
                 <dd style={{ overflowWrap: "anywhere" }}>
                   <code>{key.consumerKey}</code>
                 </dd>
-                <dt>Created</dt>
+                <dt>{i18n.t("Created")}</dt>
                 <dd>{key.creation_time}</dd>
-                <dt>Permissions</dt>
-                <dd>{key.permissions.join(", ") || "None"}</dd>
-                <dt>Allowed IPs</dt>
+                <dt>{i18n.t("Permissions")}</dt>
+                <dd>{key.permissions.join(", ") || i18n.t("None")}</dd>
+                <dt>{i18n.t("Allowed IPs")}</dt>
                 <dd style={{ overflowWrap: "anywhere" }}>
-                  {key.ips.join(", ") || "Any IP address"}
+                  {key.ips.join(", ") || i18n.t("Any IP address")}
                 </dd>
               </dl>
-              {key.is_legacy && <p className="muted">Legacy credential</p>}
+              {key.is_legacy && <p className="muted">{i18n.t("Legacy credential")}</p>}
               <KeyForm customer={customerID} consumerKey={key.consumerKey} />
             </article>
           ))}
         </div>
-        {!data.keys.length && <p>No credentials created yet.</p>}
+        {!data.keys.length && <p>{i18n.t("No credentials created yet.")}</p>}
       </section>
     </div>
   );

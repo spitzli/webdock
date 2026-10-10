@@ -1,10 +1,12 @@
 "use client";
+import { useI18n } from "@webdock/i18n/react";
 /* eslint-disable @next/next/no-location-assign-relative-destination -- Authentication transitions reload the page to synchronize session cookies and the provider's signed query. */
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { accountClient, authClient, goToAccount } from "./auth-client";
 import { Passkeys } from "./passkeys";
+import { signInError, SIGN_IN_EXPIRED } from "../lib/sign-in-recovery";
 
 function Notice({
   message,
@@ -13,12 +15,13 @@ function Notice({
   message: string;
   error?: boolean;
 }) {
+ const { t, error: translateError } = useI18n();
   return message ? (
     <p
       className={error ? "notice error" : "notice"}
       role={error ? "alert" : "status"}
     >
-      {message}
+      {error ? translateError(message) : t(message)}
     </p>
   ) : null;
 }
@@ -36,9 +39,10 @@ function Field({
   autoComplete?: string;
   minLength?: number;
 }) {
+ const { t } = useI18n();
   return (
     <label className="field">
-      {label}
+      {t(label)}
       <input
         name={name}
         type={type}
@@ -57,15 +61,17 @@ export function AuthPanel({
   title: string;
   children: ReactNode;
 }) {
+ const { t } = useI18n();
   return (
     <section className="auth-panel">
-      <h1>{title}</h1>
+      <h1>{t(title)}</h1>
       {children}
     </section>
   );
 }
 
-export function SignInForm() {
+export function SignInForm({ restartURL }: { restartURL: string }) {
+ const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -80,8 +86,7 @@ export function SignInForm() {
       });
       if (result.error)
         setError(
-          result.error.message ||
-            "Sign-in failed. Check your email and password.",
+          signInError(result.error, "Sign-in failed. Check your email and password."),
         );
       else goToAccount(result.data);
     } catch {
@@ -91,23 +96,24 @@ export function SignInForm() {
     }
   }
   return (
-    <AuthPanel title="Sign in to Webdock">
-      <p className="muted">One account for your workspace and websites.</p>
+    <AuthPanel title={t("Sign in to Webdock")}>
+      <p className="muted">{t("One account for your workspace and websites.")}</p>
       <form method="post" onSubmit={submit} aria-busy={busy}>
         <Field
-          label="Email address"
+          label={t("Email address")}
           name="email"
           type="email"
           autoComplete="username"
         />
         <Field
-          label="Password"
+          label={t("Password")}
           name="password"
           autoComplete="current-password"
         />
         <Notice message={error} error />
+        {error === SIGN_IN_EXPIRED && <a className="button secondary" href={restartURL}>{t("Start a new sign-in")}</a>}
         <button className="button" disabled={busy}>
-          {busy ? "Signing in…" : "Sign in"}
+          {busy ? t("Signing in…") : t("Sign in")}
         </button>
       </form>
       <button
@@ -125,8 +131,7 @@ export function SignInForm() {
             const result = await authClient.signIn.passkey();
             if (result.error)
               setError(
-                result.error.message ||
-                  "Passkey sign-in was cancelled. Try again or use your password.",
+                signInError(result.error, "Passkey sign-in was cancelled. Try again or use your password."),
               );
             else goToAccount(result.data);
           } catch (cause) {
@@ -140,21 +145,18 @@ export function SignInForm() {
           }
         }}
       >
-        Sign in with a passkey
-      </button>
+        {t("Sign in with a passkey")}</button>
       <p className="help">
-        You can add a passkey in your account after signing in.
-      </p>
-      <Link href="/forgot-password">Forgot your password?</Link>
+        {t("You can add a passkey in your account after signing in.")}</p>
+      <Link href="/forgot-password">{t("Forgot your password?")}</Link>
       <p className="help">
-        Access is by invitation. If you need access or help with your account,
-        contact your Webdock administrator.
-      </p>
+        {t("Access is by invitation. If you need access or help with your account, contact your Webdock administrator.")}</p>
     </AuthPanel>
   );
 }
 
-export function TwoFactorForm() {
+export function TwoFactorForm({ restartURL }: { restartURL: string }) {
+ const { t } = useI18n();
   const [recovery, setRecovery] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -172,7 +174,7 @@ export function TwoFactorForm() {
         : await authClient.twoFactor.verifyTotp({ code, trustDevice: false });
       if (result.error)
         setError(
-          result.error.message || "The code could not be verified. Try again.",
+          signInError(result.error, "The code could not be verified. Try again."),
         );
       else goToAccount(result.data);
     } catch {
@@ -182,15 +184,13 @@ export function TwoFactorForm() {
     }
   }
   return (
-    <AuthPanel title={recovery ? "Use a recovery code" : "Verify your sign-in"}>
+    <AuthPanel title={recovery ? t("Use a recovery code") : t("Verify your sign-in")}>
       <p className="muted">
-        {recovery
-          ? "Enter one of the recovery codes you saved. Each code works once."
-          : "Enter the six-digit code from your authenticator app."}
+        {recovery ? t("Enter one of the recovery codes you saved. Each code works once.") : t("Enter the six-digit code from your authenticator app.")}
       </p>
       <form method="post" onSubmit={submit} aria-busy={busy}>
         <label className="field">
-          {recovery ? "Recovery code" : "Authenticator code"}
+          {recovery ? t("Recovery code") : t("Authenticator code")}
           <input
             key={String(recovery)}
             name="code"
@@ -203,8 +203,9 @@ export function TwoFactorForm() {
           />
         </label>
         <Notice message={error} error />
+        {error === SIGN_IN_EXPIRED && <a className="button secondary" href={restartURL}>{t("Start a new sign-in")}</a>}
         <button className="button" disabled={busy}>
-          {busy ? "Verifying…" : "Verify"}
+          {busy ? t("Verifying…") : t("Verify")}
         </button>
       </form>
       <button
@@ -215,13 +216,14 @@ export function TwoFactorForm() {
           setError("");
         }}
       >
-        {recovery ? "Use an authenticator code" : "Use a recovery code"}
+        {recovery ? t("Use an authenticator code") : t("Use a recovery code")}
       </button>
     </AuthPanel>
   );
 }
 
 export function Account({ links }: { links: { tenants: string; sites: string; people: string; admin: string; studio: string } }) {
+ const { t } = useI18n();
   const {
     data: session,
     isPending,
@@ -259,34 +261,32 @@ export function Account({ links }: { links: { tenants: string; sites: string; pe
   }
   if (isPending)
     return (
-      <AuthPanel title="Your account">
-        <p role="status">Loading your account…</p>
+      <AuthPanel title={t("Your account")}>
+        <p role="status">{t("Loading your account…")}</p>
       </AuthPanel>
     );
   if (sessionError)
     return (
-      <AuthPanel title="Your account">
+      <AuthPanel title={t("Your account")}>
         <Notice
           message="We couldn’t load your account. Please reload this page."
           error
         />
         <button className="button" onClick={() => void refetch()}>
-          Try again
-        </button>
+          {t("Try again")}</button>
       </AuthPanel>
     );
   if (!session)
     return (
-      <AuthPanel title="Your account">
-        <p>Sign in to manage your password and account security.</p>
+      <AuthPanel title={t("Your account")}>
+        <p>{t("Sign in to manage your password and account security.")}</p>
         <button
           className="button"
           onClick={() =>
             window.location.assign(`/sign-in${window.location.search}`)
           }
         >
-          Sign in
-        </button>
+          {t("Sign in")}</button>
       </AuthPanel>
     );
   const needsSetup =
@@ -296,7 +296,7 @@ export function Account({ links }: { links: { tenants: string; sites: string; pe
     <div className="account">
       <header className="account-heading">
         <div>
-          <h1>Your account</h1>
+          <h1>{t("Your account")}</h1>
           <p className="muted">
             {session.user.name}
             <br />
@@ -314,24 +314,17 @@ export function Account({ links }: { links: { tenants: string; sites: string; pe
             })
           }
         >
-          Sign out
-        </button>
+          {t("Sign out")}</button>
       </header>
-      <nav className="actions" aria-label="Workspace shortcuts"><a className="button secondary" href={links.tenants}>My tenants</a><a className="button secondary" href={links.sites}>My websites</a>{session.user.role === "operator" && <><a className="button secondary" href={links.people}>People &amp; access</a><a className="button secondary" href={links.admin}>Webdock administration</a></>}</nav>
-      {needsSetup && (
-        <p className="notice">
-          Complete your account security setup before continuing to your
-          workspace.
-        </p>
-      )}
+      <nav className="actions" aria-label={t("Workspace shortcuts")}><a className="button secondary" href={links.tenants}>{t("My tenants")}</a><a className="button secondary" href={links.sites}>{t("My websites")}</a>{session.user.role === "operator" && <><a className="button secondary" href={links.people}>{t("People & access")}</a><a className="button secondary" href={links.admin}>{t("Webdock administration")}</a></>}</nav>
+      {needsSetup && (<p className="notice">
+          {t("Complete your account security setup before continuing to your workspace.")}</p>)}
       <Notice message={error} error />
       <Notice message={message} />
       <section className="account-section">
-        <h2>Change password</h2>
+        <h2>{t("Change password")}</h2>
         <p className="muted">
-          {session.user.mustChangePassword
-            ? "Replace your temporary password with a password only you know."
-            : "Use a unique password with at least 12 characters."}
+          {session.user.mustChangePassword ? t("Replace your temporary password with a password only you know.") : t("Use a unique password with at least 12 characters.")}
         </p>
         <form
           method="post"
@@ -358,39 +351,32 @@ export function Account({ links }: { links: { tenants: string; sites: string; pe
           aria-busy={busy}
         >
           <Field
-            label="Current password"
+            label={t("Current password")}
             name="currentPassword"
             autoComplete="current-password"
           />
           <Field
-            label="New password"
+            label={t("New password")}
             name="newPassword"
             autoComplete="new-password"
             minLength={12}
           />
           <Field
-            label="Confirm new password"
+            label={t("Confirm new password")}
             name="confirmPassword"
             autoComplete="new-password"
             minLength={12}
           />
           <button className="button" disabled={busy}>
-            Change password
-          </button>
+            {t("Change password")}</button>
         </form>
       </section>
       <section className="account-section">
-        <h2>Two-factor authentication</h2>
-        {session.user.twoFactorEnabled ? (
-          <p className="notice">Your authenticator is enabled.</p>
-        ) : (
-          <>
+        <h2>{t("Two-factor authentication")}</h2>
+        {session.user.twoFactorEnabled ? (<p className="notice">{t("Your authenticator is enabled.")}</p>) : (<>
             <p className="muted">
-              Protect your account with a code from an authenticator app.
-              Required for Webdock operators.
-            </p>
-            {!setup ? (
-              <form
+              {t("Protect your account with a code from an authenticator app. Required for Webdock operators.")}</p>
+            {!setup ? (<form
                 method="post"
                 onSubmit={(event) => {
                   event.preventDefault();
@@ -414,24 +400,18 @@ export function Account({ links }: { links: { tenants: string; sites: string; pe
                 aria-busy={busy}
               >
                 <Field
-                  label="Current password"
+                  label={t("Current password")}
                   name="password"
                   autoComplete="current-password"
                 />
                 <button className="button" disabled={busy}>
-                  Set up authenticator
-                </button>
-              </form>
-            ) : (
-              <div className="setup">
-                <h3>Add Webdock to your authenticator</h3>
+                  {t("Set up authenticator")}</button>
+              </form>) : (<div className="setup">
+                <h3>{t("Add Webdock to your authenticator")}</h3>
                 <p>
-                  Choose “Enter a setup key” in your app. Use your email as the
-                  account name and select a time-based code.
-                </p>
+                  {t("Choose “Enter a setup key” in your app. Use your email as the account name and select a time-based code.")}</p>
                 <label className="field">
-                  Setup key
-                  <input
+                  {t("Setup key")}<input
                     readOnly
                     value={
                       new URL(setup.totpURI).searchParams.get("secret") || ""
@@ -440,30 +420,26 @@ export function Account({ links }: { links: { tenants: string; sites: string; pe
                   />
                 </label>
                 <details>
-                  <summary>Full authenticator URI</summary>
+                  <summary>{t("Full authenticator URI")}</summary>
                   <code>{setup.totpURI}</code>
                 </details>
-                <h3>Save your recovery codes</h3>
+                <h3>{t("Save your recovery codes")}</h3>
                 <p>
-                  Store these somewhere safe. You will need a recovery code if
-                  you lose your authenticator.
-                </p>
+                  {t("Store these somewhere safe. You will need a recovery code if you lose your authenticator.")}</p>
                 <button
                   className="button secondary"
                   type="button"
                   onClick={() => setShowCodes(!showCodes)}
                 >
-                  {showCodes ? "Hide recovery codes" : "Show recovery codes"}
+                  {showCodes ? t("Hide recovery codes") : t("Show recovery codes")}
                 </button>
-                {showCodes && (
-                  <ul className="recovery-codes">
+                {showCodes && (<ul className="recovery-codes">
                     {setup.backupCodes.map((code) => (
                       <li key={code}>
                         <code>{code}</code>
                       </li>
                     ))}
-                  </ul>
-                )}
+                  </ul>)}
                 <form
                   method="post"
                   onSubmit={(event) => {
@@ -493,11 +469,9 @@ export function Account({ links }: { links: { tenants: string; sites: string; pe
                       onChange={(event) => setSavedCodes(event.target.checked)}
                       required
                     />{" "}
-                    I have saved my recovery codes.
-                  </label>
+                    {t("I have saved my recovery codes.")}</label>
                   <label className="field">
-                    Authenticator code
-                    <input
+                    {t("Authenticator code")}<input
                       name="code"
                       inputMode="numeric"
                       autoComplete="one-time-code"
@@ -507,31 +481,20 @@ export function Account({ links }: { links: { tenants: string; sites: string; pe
                     />
                   </label>
                   <button className="button" disabled={busy || !savedCodes}>
-                    Verify and enable
-                  </button>
+                    {t("Verify and enable")}</button>
                 </form>
-              </div>
-            )}
-          </>
-        )}
+              </div>)}
+          </>)}
       </section>
-      {needsSetup ? (
-        <section className="account-section">
-          <h2>Passkeys</h2>
+      {needsSetup ? (<section className="account-section">
+          <h2>{t("Passkeys")}</h2>
           <p className="muted">
-            Complete your password and authenticator setup before adding a
-            passkey.
-          </p>
-        </section>
-      ) : (
-        <Passkeys disabled={busy} />
-      )}
+            {t("Complete your password and authenticator setup before adding a passkey.")}</p>
+        </section>) : (<Passkeys disabled={busy} />)}
       <section className="account-section">
-        <h2>Continue to your workspace</h2>
+        <h2>{t("Continue to your workspace")}</h2>
         <p className="muted">
-          Once your account is ready, continue the sign-in you started or return
-          to Webdock.
-        </p>
+          {t("Once your account is ready, continue the sign-in you started or return to Webdock.")}</p>
         <button
           className="button"
           disabled={busy || !!needsSetup}
@@ -550,14 +513,14 @@ export function Account({ links }: { links: { tenants: string; sites: string; pe
             })
           }
         >
-          Continue
-        </button>
+          {t("Continue")}</button>
       </section>
     </div>
   );
 }
 
 export function ForgotPasswordForm() {
+ const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
@@ -583,34 +546,30 @@ export function ForgotPasswordForm() {
     }
   }
   return (
-    <AuthPanel title="Reset your password">
-      {sent ? (
-        <Notice message="If an account exists for that email address, you’ll receive a password reset link. Check your inbox and spam folder." />
-      ) : (
-        <>
+    <AuthPanel title={t("Reset your password")}>
+      {sent ? (<Notice message="If an account exists for that email address, you’ll receive a password reset link. Check your inbox and spam folder." />) : (<>
           <p className="muted">
-            Enter your account’s email address to request a reset link.
-          </p>
+            {t("Enter your account’s email address to request a reset link.")}</p>
           <form method="post" onSubmit={submit} aria-busy={busy}>
             <Field
-              label="Email address"
+              label={t("Email address")}
               name="email"
               type="email"
               autoComplete="username"
             />
             <Notice message={error} error />
             <button className="button" disabled={busy}>
-              {busy ? "Requesting link…" : "Send reset link"}
+              {busy ? t("Requesting link…") : t("Send reset link")}
             </button>
           </form>
-        </>
-      )}
-      <Link href="/sign-in">Back to sign in</Link>
+        </>)}
+      <Link href="/sign-in">{t("Back to sign in")}</Link>
     </AuthPanel>
   );
 }
 
 export function ResetPasswordForm({ token, invitation }: { token: string | null; invitation?: string }) {
+ const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
@@ -646,50 +605,41 @@ export function ResetPasswordForm({ token, invitation }: { token: string | null;
     }
   }
   return (
-    <AuthPanel title={done ? "Password updated" : "Choose a new password"}>
-      {done ? (
-        <>
+    <AuthPanel title={done ? t("Password updated") : t("Choose a new password")}>
+      {done ? (<>
           <Notice message="Your password has been updated and your previous sessions have been signed out. Sign in with your new password." />
           <Link className="button" href={invitation ? `/sign-in?invitation=${encodeURIComponent(invitation)}` : "/sign-in"}>
-            Sign in
-          </Link>
-        </>
-      ) : !token ? (
-        <>
+            {t("Sign in")}</Link>
+        </>) : !token ? (<>
           <Notice
             message="This reset link is invalid or has expired. Request a new link to reset your password."
             error
           />
           <Link className="button" href="/forgot-password">
-            Request a new link
-          </Link>
-        </>
-      ) : (
-        <>
+            {t("Request a new link")}</Link>
+        </>) : (<>
           <p className="muted">
-            Use a unique password with at least 12 characters.
-          </p>
+            {t("Use a unique password with at least 12 characters.")}</p>
           <form method="post" onSubmit={submit} aria-busy={busy}>
             <Field
-              label="New password"
+              label={t("New password")}
               name="newPassword"
               autoComplete="new-password"
               minLength={12}
             />
             <Field
-              label="Confirm new password"
+              label={t("Confirm new password")}
               name="confirmPassword"
               autoComplete="new-password"
               minLength={12}
             />
             <Notice message={error} error />
             <button className="button" disabled={busy}>
-              {busy ? "Updating password…" : "Update password"}
+              {busy ? t("Updating password…") : t("Update password")}
             </button>
           </form>
-          <Link href="/forgot-password">Request a new link</Link>
-        </>
-      )}
+          <Link href="/forgot-password">{t("Request a new link")}</Link>
+        </>)}
     </AuthPanel>
   );
 }
@@ -703,6 +653,7 @@ export function ConsentForm({
   scopes: string[];
   claims: string[];
 }) {
+ const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   async function decide(accept: boolean) {
@@ -722,26 +673,23 @@ export function ConsentForm({
     }
   }
   return (
-    <AuthPanel title="Authorize access">
+    <AuthPanel title={t("Authorize access")}>
       <p>
-        <strong>{name}</strong> is requesting access to your account.
-      </p>
-      <h2>Requested permissions</h2>
+        <strong>{name}</strong> {t(" is requesting access to your account.")}</p>
+      <h2>{t("Requested permissions")}</h2>
       <ul>
         {scopes.map((scope) => (
-          <li key={scope}>{({ "webdock:read": "Read customers, projects, CMS connections and activity", "webdock:write": "Create and update registry records", offline_access: "Automatically renew access during your working session" } as Record<string, string>)[scope] || scope}</li>
+          <li key={scope}>{({"hosting:read": t("Read your hosting projects and resource usage"), "hosting:write": t("Manage hosting within your permissions and limits"), "webdock:read": t("Read customers, projects, CMS connections and activity"), "webdock:write": t("Create and update registry records"), offline_access: t("Automatically renew access during your working session"), openid: t("Confirm your identity"), profile: t("Basic profile"), email: t("Email address")} as Record<string, string>)[scope] || scope}</li>
         ))}
       </ul>
-      {claims.length > 0 && (
-        <>
-          <h2>Requested profile fields</h2>
+      {claims.length > 0 && (<>
+          <h2>{t("Requested profile fields")}</h2>
           <ul>
             {claims.map((claim) => (
-              <li key={claim}>{claim}</li>
+              <li key={({name: t("Name"), email: t("Email address"), email_verified: t("Email verified"), picture: t("Profile picture")} as Record<string,string>)[claim] || claim}>{({name: t("Name"), email: t("Email address"), email_verified: t("Email verified"), picture: t("Profile picture")} as Record<string,string>)[claim] || claim}</li>
             ))}
           </ul>
-        </>
-      )}
+        </>)}
       <Notice message={error} error />
       <div className="actions">
         <button
@@ -749,15 +697,13 @@ export function ConsentForm({
           disabled={busy}
           onClick={() => void decide(true)}
         >
-          Allow access
-        </button>
+          {t("Allow access")}</button>
         <button
           className="button secondary"
           disabled={busy}
           onClick={() => void decide(false)}
         >
-          Deny
-        </button>
+          {t("Deny")}</button>
       </div>
     </AuthPanel>
   );

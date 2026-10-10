@@ -1,0 +1,171 @@
+{
+  "date": "2026-10-09",
+  "status": "deployed-intentionally-stopped-by-final-user-instruction",
+  "finalInstruction": "Leave the bot switched off. No automatic restart without a new explicit start request.",
+  "urls": {
+    "panel": "https://admin.schattenclan.de",
+    "api": "https://api.schattenclan.de",
+    "webdockApp": "https://studio.webdock.dev/hosting/apps/102047516467400704"
+  },
+  "app": {
+    "id": "102047516467400704",
+    "projectID": "101713101337919488",
+    "customerID": "101711682211938304",
+    "clusterID": "101775802667896832",
+    "revision": 9,
+    "observedRevision": 9,
+    "status": "stopped",
+    "desiredReplicas": 0,
+    "pods": 0,
+    "volumeRetained": true,
+    "volumeBytes": 1000000000,
+    "cpuMillicores": 500,
+    "memoryBytes": 512000000,
+    "ephemeralBytes": 256000000
+  },
+  "deployments": {
+    "auth": {
+      "id": "dpl_CRAeLfU2R8DvwzQhDPZTQTaXxt8w",
+      "state": "READY",
+      "regions": [
+        "fra1"
+      ],
+      "localBuild": true,
+      "prebuilt": true
+    },
+    "admin": {
+      "id": "dpl_AVNhov57bb4aFunxcDdGLHr5X7rK",
+      "state": "READY",
+      "regions": [
+        "fra1"
+      ],
+      "localBuild": true,
+      "prebuilt": true
+    }
+  },
+  "panelDeployment": {
+    "id": "dpl_BDh71VsCJYgKVcVEHfUcRCQ2KryH",
+    "state": "READY",
+    "regions": [
+      "fra1"
+    ],
+    "unchanged": true,
+    "oauthCallbackVerified": "https://admin.schattenclan.de/api/auth/discord/callback"
+  },
+  "node": {
+    "host": "213.136.65.22",
+    "name": "vmd208517",
+    "storageHelper": "active",
+    "hostingAgent": "active",
+    "postgresPolicyTimer": "active",
+    "storagePoolBytes": 20000000000,
+    "hostReserveBytes": 20000000000,
+    "hostMountNamespaceVerified": true
+  },
+  "image": {
+    "reference": "webdock.local/lunares@sha256:9e94e955df82fab1e06182562901ad23d23e8ea0096f222af5cbe53ead3c6f33",
+    "configDigest": "sha256:3289e9acb9cc40827f8282e16ed56d4637185136bf41e7eafb2488c2c075e57d",
+    "archiveSHA256": "68a2415f9ab280bad8d2f4745ae7c14f91bf2310250fa18a649880a99912d1ae",
+    "localBuildNetwork": "none",
+    "registryPulls": false,
+    "pullPolicy": "Never",
+    "uid": 65532,
+    "embeddedEnvironmentFiles": 0,
+    "embeddedDatabases": 0
+  },
+  "data": {
+    "source": "user attachment lunares.db",
+    "sourceBytes": 348160,
+    "sourceSHA256": "791fc7d9590c8019d407f051ec6d342ce143e07444bf06cf2fd243f8b8194b6f",
+    "originalBackup": "/root/setup-backup/lunares-original-20261009.db",
+    "backupMode": "0600",
+    "tables": 21,
+    "rows": 404,
+    "integrity": "ok",
+    "allOriginalRowsAndColumnsIdenticalAfterStartup": true,
+    "allOriginalRowsAndColumnsIdenticalAfterWebdockRestart": true
+  },
+  "connection": {
+    "signedResponseVerifiedBeforeStop": true,
+    "unsignedStatusHTTP": 401,
+    "healthHTTPBeforeStop": 200,
+    "panelApiUrlSaved": "https://api.schattenclan.de",
+    "panelConfigurationRevision": 4,
+    "otherPanelSettingsAndCredentialsPreserved": true,
+    "discordLoginVerified": false,
+    "apiKeyRestoredAtAppRevision": 8,
+    "userStopAtAppRevision": 9
+  },
+  "network": {
+    "discordHTTP": 200,
+    "gatewayHelloWithoutLogin": true,
+    "directInternetBlocked": true,
+    "metadataBlocked": true,
+    "kubernetesAPIBlocked": true,
+    "nodeSSHBlocked": true,
+    "unapprovedProxyHostBlocked": true
+  },
+  "dns": {
+    "apiRecordID": "4a62db181ccea5e93384617eb47960aa",
+    "type": "A",
+    "content": "213.136.65.22",
+    "proxied": false,
+    "existingRecordUnchanged": true,
+    "provisionalWebdockRecordRetained": "rec_8ec624bb6c73e7676b7809b2",
+    "provisionalNameHasNoAppIngress": true
+  },
+  "tls": {
+    "subject": "api.schattenclan.de",
+    "issuer": "Lets Encrypt YR2",
+    "expires": "2027-01-07T13:28:09Z",
+    "automaticRenewal": "Traefik ACME with persistent platform PVC"
+  },
+  "incidents": {
+    "apiKey": {
+      "userAccidentalChange": true,
+      "originalRestoredThroughStudio": true,
+      "otherVariablesUnchanged": true,
+      "signedConnectionReverified": true
+    },
+    "firewall": {
+      "observed": "Vercel persistent system deny for owned Contabo IP",
+      "exceptionIP": "213.136.65.22",
+      "exceptionHostname": "auth.webdock.dev",
+      "applicationAuthenticationUnchanged": true,
+      "unauthenticatedAgentHTTPAfterException": 401
+    },
+    "redirectLoop": {
+      "observedOAuthAuthorizeHTTP": 429,
+      "fault": "private bridges mapped introspection429/5xx to401, inducing fresh SSO; stable apps also polled continuously",
+      "fix": "preserve429/503; backend401 manual recovery; ready apps stop polling and hidden tabs pause",
+      "freshAuthenticatedPageStable": true,
+      "tests": {
+        "auth": 90,
+        "studio": 101,
+        "typechecks": "passed",
+        "localBuilds": "passed"
+      }
+    }
+  },
+  "otherTests": {
+    "lunaresPythonTotal": 39,
+    "lunaresPythonPassed": 36,
+    "lunaresLocalPostgresSkipped": 3,
+    "proxy": 4,
+    "networkPolicy": 1,
+    "independentCodeReview": "no remaining important findings"
+  },
+  "limitations": [
+    "No bot login verified; bot intentionally stopped",
+    "API is unavailable while application is stopped",
+    "Original external bot host was never accessed or stopped",
+    "No scheduled application backups, resize, replication or full host reboot/power-loss test",
+    "Networking/TLS are targeted operator configuration, not generic selfservice",
+    "Encrypted HTTP contents cannot be fully inspected by Discord CONNECT proxy",
+    "Vercel assembly/control-plane, public DNS and certificate authority are global; no full EU-only guarantee"
+  ],
+  "commits": false,
+  "pullRequests": false,
+  "pcShutdown": false,
+  "supersededBy": "2026-10-09-lunares-discord-start.json"
+}

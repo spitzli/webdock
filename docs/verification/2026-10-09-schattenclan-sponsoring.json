@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-09",
+  "customerID": "101711682211938304",
+  "customer": "schattenclan",
+  "projectID": "101713101337919488",
+  "project": "Lunares",
+  "clusterID": "101775802667896832",
+  "mode": "selfservice",
+  "ownImages": true,
+  "sharedClusterApproval": "explicit user instruction and operator form confirmation",
+  "planID": "102017039614349312",
+  "planName": "Schattenclan Sponsoring",
+  "subscriptionRevision": 1,
+  "hosting": {
+    "apps": 2,
+    "cpuMillicores": 1000,
+    "memoryBytes": 2000000000,
+    "ephemeralBytes": 2000000000,
+    "volumeBytes": 0,
+    "replicasPerApp": 1,
+    "concurrentDeployments": 1
+  },
+  "websiteConfiguredAllowances": {
+    "storageBytes": 1000000000,
+    "transferBytes": 25000000000,
+    "mailMessages": 1000,
+    "websites": 1,
+    "editors": 3
+  },
+  "changesVia": "authenticated Studio platform administrator forms",
+  "verification": [
+    "fresh live hosting page",
+    "saved own_images and mode",
+    "effective subscription values",
+    "projects.create succeeded audit entry"
+  ],
+  "tests": {
+    "auth": 87,
+    "admin": "98 passed initially; missing new gettext entries fixed and all 4 localization tests passed on rerun",
+    "agentExecutor": 3,
+    "sharedGrantRegression": "failed before new command field, passed after implementation",
+    "typechecks": "admin and auth passed",
+    "builds": "local prebuilt, both passed"
+  },
+  "limits": [
+    "cached immutable images only; no new registry pipeline",
+    "shared host kernel",
+    "no persistent container volumes",
+    "website storage/transfer configured but not hard enforced; mail provider limit separate",
+    "Recreate deployments; no extra concurrent rollout replicas"
+  ],
+  "noApplicationStarted": true,
+  "deployments": {
+    "auth": {
+      "id": "dpl_CKt2ufkZBV57DByjmJMY9iA5ZpTu",
+      "state": "READY",
+      "regions": [
+        "fra1"
+      ]
+    },
+    "admin": {
+      "id": "dpl_GZoo5vovw78Dk4iqDZpu9eUQaBgB",
+      "state": "READY",
+      "regions": [
+        "fra1"
+      ]
+    }
+  }
+}

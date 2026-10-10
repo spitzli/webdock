@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-09",
+  "rootCause": "Checkbox and grid styles scoped only to studio-portal; workspace inherited full-width 44px text-field dimensions",
+  "changes": [
+    "Shared hosting-form layout in workspace and portal",
+    "20px checkbox with 44px clickable label row",
+    "Two-column permission grid when space permits, single column on mobile",
+    "Separate quota grid and full-width namespace field",
+    "20px spacing before empty-state notice"
+  ],
+  "validation": {
+    "adminTypecheck": "passed",
+    "localProductionBuild": "passed",
+    "localViews": [
+      "workspace desktop",
+      "workspace mobile",
+      "portal desktop",
+      "portal mobile"
+    ],
+    "labelAndSpaceToggle": "passed against local fixture, restored without submission",
+    "newBehaviorTests": "none; presentation-only change",
+    "productionValuesChanged": false
+  },
+  "liveBrowserVerified": true,
+  "deploymentID": "dpl_sUEcAwBdVaJron4B7fZRBDKSKUbe",
+  "readyState": "READY",
+  "regions": [
+    "fra1"
+  ],
+  "widths": [
+    1280,
+    390
+  ],
+  "checkboxSize": 20,
+  "labelMinHeight": 44,
+  "noticeGap": 20,
+  "horizontalOverflow": false
+}

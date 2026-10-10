@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-09",
+  "engine": "@orama/orama 3.1.18 (embedded, no cloud service)",
+  "tests": {
+    "admin": 99,
+    "auth": 86,
+    "search": 4,
+    "failed": 0,
+    "localDisposableDatabase": true,
+    "sequentialDatabaseSuites": true,
+    "adminTypecheck": "passed",
+    "authTypecheck": "passed",
+    "gettextCatalogCheck": "passed"
+  },
+  "localBrowser": {
+    "typoSearch": "contbo finds Contabo",
+    "focusRetained": true,
+    "rapidTypingLatestQueryWins": true,
+    "lateResponseAfterBlur": "deliberately held old RSC response; newer value and URL preserved",
+    "resetBeforeDebounceSameURL": true,
+    "optionalSelectReset": true,
+    "browserBack": true
+  },
+  "scope": {
+    "globalAuthorizedLists": [
+      "projects",
+      "customers",
+      "activity",
+      "hosting clusters",
+      "hosting projects",
+      "apps",
+      "people"
+    ],
+    "authorizedSnapshots": [
+      "BYOK inventory",
+      "turboSMTP domains",
+      "websites"
+    ],
+    "existingPageLocalEditors": [
+      "shop products",
+      "shop customers",
+      "requests",
+      "content"
+    ],
+    "existingRealtimeCMSLookups": "unchanged; separate customer CMS APIs retain their contract"
+  },
+  "isolation": [
+    "authorization before indexing",
+    "no shared cross-tenant index",
+    "no secrets indexed",
+    "numeric identifiers not fuzzied",
+    "second-batch search and foreign tenant denial tested"
+  ],
+  "build": {
+    "auth": "local prebuilt passed",
+    "admin": "local prebuilt passed",
+    "functionsRegion": "fra1",
+    "vercelGlobalInfrastructure": "Artifact packaging and control plane remain global; not EU-only"
+  },
+  "uiTodo": "Selfservice permissions checkbox layout remains pending",
+  "productionBrowserVerified": true,
+  "deployments": {
+    "auth": {
+      "id": "dpl_2UM64XhFH1aCfszxzDM2Yu6mwmTk",
+      "url": "webdock-auth-n410z5g1b-spitzli.vercel.app",
+      "readyState": "READY",
+      "regions": [
+        "fra1"
+      ]
+    },
+    "admin": {
+      "id": "dpl_6Xkvg5S1jRgXTsvMpcjjdEj6LJor",
+      "url": "webdock-admin-j3re8vif7-spitzli.vercel.app",
+      "readyState": "READY",
+      "regions": [
+        "fra1"
+      ]
+    }
+  },
+  "productionBrowser": {
+    "realPlatformAdminSession": true,
+    "projectTypoSearch": "nordlict → 3 Nordlicht projects",
+    "customerTypoSearch": "nordlict → 3 Nordlicht customers",
+    "clusterTypoSearch": "contbo → live connected Contabo cluster",
+    "submitRequired": false,
+    "inputFocusRetained": true,
+    "mobileWidth": 390,
+    "mobileHorizontalOverflow": false,
+    "reset": "query empty and original list restored",
+    "screenshot": "/home/newt/.t3/userdata/browser-artifacts/browser-screenshot-studio-webdock-dev-mv0wzc9s-eae32914.png"
+  },
+  "errorLogs": {
+    "window": "last 10 minutes, scoped to new deployments",
+    "admin": 0,
+    "auth": 0
+  }
+}

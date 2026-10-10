@@ -1,0 +1,67 @@
+{
+  "verifiedAt": "2026-10-09T21:12:47.741957+00:00",
+  "panel": {
+    "url": "https://admin.schattenclan.de/modules/applications",
+    "deploymentID": "dpl_H3c4uj2jftmM2b3P3bEkXoueUvj5",
+    "state": "READY",
+    "sourceBuild": "local_prebuilt",
+    "functionRegions": [
+      "fra1"
+    ],
+    "providerArtifactAssembly": "global (iad1 log; sfo1 metadata), not EU-only",
+    "realSession": "local admin",
+    "applications": 21,
+    "pending": 4,
+    "accepted": 16,
+    "rejected": 1,
+    "panels": 1,
+    "detailAnswersRendered": 5,
+    "mobileWidth": 390,
+    "horizontalOverflow": false,
+    "dashboardConnected": true
+  },
+  "bot": {
+    "appID": "102047516467400704",
+    "image": "webdock.local/lunares@sha256:209a872f377fdf306d5260ff1857732bb37a0c5f251049d118ed7be0f2653abb",
+    "podRevision": 13,
+    "replicas": 1,
+    "ready": true,
+    "localAdminEnabled": true,
+    "enabledScopes": [
+      "status:read",
+      "guild:read",
+      "applications:read",
+      "applications:write"
+    ],
+    "signedStatus": "connected",
+    "rollout": "Initial readiness deadline exceeded during Discord startup; same operation reconciled successfully through Webdock at 21:12:00 UTC, without another pod restart.",
+    "webdockRevision": 13,
+    "webdockObservedRevision": 13,
+    "operationID": "102149999051149312",
+    "operationOutcome": "succeeded"
+  },
+  "tests": {
+    "webPassed": 33,
+    "pythonPassed": 41,
+    "pythonSkipped": 3,
+    "typecheck": "passed",
+    "build": "passed",
+    "reviewFindingsFixed": [
+      "zero panel channel/message sentinels",
+      "offline local decisions must not commit"
+    ]
+  },
+  "safety": {
+    "liveDecisionExecuted": false,
+    "productionDBReset": false,
+    "secretValuesExposed": false,
+    "newDiscordIdentityImpersonated": false,
+    "localReviewer": -1,
+    "uncertainWriteRetry": "locked with operation status lookup"
+  },
+  "remaining": [
+    "Jobs/questions/publishing managed through existing Discord bot",
+    "Other modules still marked planned",
+    "Real application mutation not exercised in production"
+  ]
+}

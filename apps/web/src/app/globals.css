@@ -117,3 +117,4 @@ nav a:hover,.text-link:hover,.site-footer a:hover { text-decoration: underline; 
 .legal-copy li { padding-left: 6px; margin-bottom: 12px; }
 .legal-copy a { text-decoration: underline; text-underline-offset: 3px; }
 .site-footer nav { display: flex; flex-wrap: wrap; gap: 20px; }
+.preference-pickers{display:flex;align-items:center;gap:16px;flex-wrap:wrap}.language-picker{display:flex;align-items:center;gap:8px;font-size:12px}.language-picker label{display:flex;align-items:center;gap:8px}.language-picker select{font:inherit;background:var(--color-paper);color:inherit;border:1px solid currentColor;border-radius:5px;padding:6px;max-width:160px}@media(max-width:640px){.preference-pickers{justify-content:flex-end;gap:8px}.language-picker{font-size:11px}.language-picker select{max-width:120px}}

@@ -1,6 +1,8 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element -- Runtime CMS records have per-instance schemas and image hosts. */
-import { useEffect, useState, type ComponentType } from "react";
+import React, { useEffect, useState, type ComponentType } from "react";
+import {msgid} from "@webdock/i18n";
+import {I18nProvider,useI18n} from "@webdock/i18n/react";
 import { defaultData, editorData } from "./schema";
 import type { CMSAppProps, CMSField, RichTextEditorProps } from "./types";
 const api = "/api/cms";
@@ -25,7 +27,7 @@ async function request(
   const result = await response.json();
   if (!response.ok) {
     if (response.status === 401)
-      throw Error("Your session ended. Reload to sign in again.");
+      throw Error(msgid("Your session ended. Reload to sign in again."));
     throw Error(
       [
         result.error,
@@ -52,6 +54,7 @@ function Relation({
   disabled: boolean;
   locale: string;
 }) {
+  const {t,error:translateError,number:formatNumber}=useI18n();
   const collections = Array.isArray(field.relationTo)
     ? field.relationTo
     : [field.relationTo!];
@@ -78,7 +81,7 @@ function Relation({
           }
         },
         () => {
-          if (active) setError("Could not load choices. Try again.");
+          if (active) setError(msgid("Could not load choices. Try again."));
         },
       );
     }, 200);
@@ -115,7 +118,7 @@ function Relation({
   return (
     <div className="cms-relation">
       <label className="cms-field-label">
-        {field.label}
+        {t(field.label)}
         {field.required ? " *" : ""}
       </label>
       {selected.length > 0 && (
@@ -125,11 +128,11 @@ function Relation({
               {rows.find((r) => String(r.id) === keyOf(v))?.title ||
                 rows.find((r) => String(r.id) === keyOf(v))?.name ||
                 rows.find((r) => String(r.id) === keyOf(v))?.filename ||
-                `Selected item ${keyOf(v)}`}{" "}
+                t("Selected item {id}",{id:keyOf(v)})}{" "}
               {!disabled && (
                 <button
                   type="button"
-                  aria-label={`Remove selected ${field.label}`}
+                  aria-label={t("Remove selected {field}",{field:t(field.label)})}
                   onClick={() =>
                     field.hasMany
                       ? onChange(selected.filter((x) => keyOf(x) !== keyOf(v)))
@@ -144,7 +147,7 @@ function Relation({
         </div>
       )}
       <input
-        aria-label={`Search ${field.label}`}
+        aria-label={t("Search {field}",{field:t(field.label)})}
         type="search"
         value={search}
         onChange={(e) => {
@@ -152,9 +155,9 @@ function Relation({
           setPage(1);
         }}
         disabled={disabled}
-        placeholder={field.type === "upload" ? "Find an image" : "Find an item"}
+        placeholder={field.type === "upload" ? t("Find an image") : t("Find an item")}
       />
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{translateError(error)}</p>}
       <div
         className={field.type === "upload" ? "cms-media-picker" : "cms-choices"}
       >
@@ -179,25 +182,20 @@ function Relation({
             type="button"
             disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}
-          >
-            Previous choices
-          </button>
+          >{t("Previous choices")}</button>
           <span>
-            {page} / {pages}
+            {formatNumber(page)} / {formatNumber(pages)}
           </span>
           <button
             type="button"
             disabled={page >= pages}
             onClick={() => setPage((p) => p + 1)}
-          >
-            Next choices
-          </button>
+          >{t("Next choices")}</button>
         </div>
       )}
       {Array.isArray(field.relationTo) && field.relationTo.length > 1 && (
         <p className="cms-muted">
-          Existing linked items are preserved. New choices shown from {relation}
-          .
+          {t("Existing linked items are preserved. New choices shown from {collection}.",{collection:relation})}
         </p>
       )}
     </div>
@@ -220,6 +218,7 @@ function Fields({
   richTextEditor?: ComponentType<RichTextEditorProps>;
   path?: string;
 }) {
+  const {t,n}=useI18n();
   return (
     <>
       {fields.map((f, index) => {
@@ -231,7 +230,7 @@ function Fields({
         if (f.type === "section")
           return (
             <section className="cms-field-section" key={key}>
-              {f.label && <h2>{f.label}</h2>}
+              {f.label && <h2>{t(f.label)}</h2>}
               <Fields
                 fields={f.fields || []}
                 data={data || {}}
@@ -246,8 +245,8 @@ function Fields({
         if (f.type === "group")
           return (
             <section className="cms-field-section" key={key}>
-              <h2>{f.label}</h2>
-              {f.description && <p className="cms-help">{f.description}</p>}
+              <h2>{t(f.label)}</h2>
+              {f.description && <p className="cms-help">{t(f.description)}</p>}
               <Fields
                 fields={f.fields || []}
                 data={value || {}}
@@ -266,10 +265,10 @@ function Fields({
           return (
             <section className="cms-field-section" key={key}>
               <div className="cms-section-heading">
-                <h2>{f.label}</h2>
-                <span className="cms-muted">{items.length} items</span>
+                <h2>{t(f.label)}</h2>
+                <span className="cms-muted">{n("{count} item","{count} items",items.length)}</span>
               </div>
-              {f.description && <p className="cms-help">{f.description}</p>}
+              {f.description && <p className="cms-help">{t(f.description)}</p>}
               {items.map((item, n) => {
                 const block =
                   f.type === "blocks"
@@ -287,8 +286,8 @@ function Fields({
                         item.name ||
                         item.question ||
                         item.blockName ||
-                        block?.label ||
-                        `Item ${n + 1}`}
+                        (block?.label ? t(block.label) : "") ||
+                        t("Item {number}",{number:n+1})}
                     </summary>
                     <Fields
                       fields={childFields}
@@ -309,9 +308,7 @@ function Fields({
                             [next[n - 1], next[n]] = [next[n], next[n - 1]];
                             set(next);
                           }}
-                        >
-                          Move up
-                        </button>
+                        >{t("Move up")}</button>
                         <button
                           type="button"
                           disabled={n === items.length - 1}
@@ -320,23 +317,19 @@ function Fields({
                             [next[n + 1], next[n]] = [next[n], next[n + 1]];
                             set(next);
                           }}
-                        >
-                          Move down
-                        </button>
+                        >{t("Move down")}</button>
                         <button
                           type="button"
                           disabled={items.length <= (f.minRows || 0)}
                           onClick={() => {
                             if (
                               window.confirm(
-                                "Remove this item from the page? Save to apply the change.",
+                                t("Remove this item from the page? Save to apply the change."),
                               )
                             )
                               set(items.filter((_, i) => i !== n));
                           }}
-                        >
-                          Remove
-                        </button>
+                        >{t("Remove")}</button>
                       </div>
                     )}
                   </details>
@@ -345,9 +338,7 @@ function Fields({
               {!disabled &&
                 items.length < (f.maxRows ?? 500) &&
                 (f.type === "blocks" ? (
-                  <label className="cms-field">
-                    Add a section
-                    <select
+                  <label className="cms-field">{t("Add a section")}<select
                       value=""
                       onChange={(e) => {
                         const b = f.blocks?.find(
@@ -360,10 +351,10 @@ function Fields({
                           ]);
                       }}
                     >
-                      <option value="">Choose a section…</option>
+                      <option value="">{t("Choose a section…")}</option>
                       {f.blocks?.map((b) => (
                         <option key={b.slug} value={b.slug}>
-                          {b.label}
+                          {t(b.label)}
                         </option>
                       ))}
                     </select>
@@ -373,9 +364,7 @@ function Fields({
                     className="cms-button cms-secondary"
                     type="button"
                     onClick={() => set([...items, defaultData(f.fields || [])])}
-                  >
-                    Add item
-                  </button>
+                  >{t("Add item")}</button>
                 ))}
             </section>
           );
@@ -395,32 +384,26 @@ function Fields({
           return (
             <div className="cms-field" key={key}>
               <span className="cms-field-label">
-                {f.label}
+                {t(f.label)}
                 {f.required ? " *" : ""}
               </span>
               {RichText ? (
                 <RichText value={value} onChange={set} readOnly={disabled} />
               ) : (
-                <div className="cms-notice">
-                  This formatted content is preserved. An administrator can edit
-                  it in Advanced tools.
-                </div>
+                <div className="cms-notice">{t("This formatted content is preserved. An administrator can edit it in Advanced tools.")}</div>
               )}
             </div>
           );
         if (f.type === "json" || f.readOnly)
           return (
             <details key={key} className="cms-preserved">
-              <summary>{f.label} · managed separately</summary>
-              <p className="cms-help">
-                This field is preserved when you save. Use Advanced tools if it
-                needs changing.
-              </p>
+              <summary>{t("{field} · managed separately",{field:t(f.label)})}</summary>
+              <p className="cms-help">{t("This field is preserved when you save. Use Advanced tools if it needs changing.")}</p>
             </details>
           );
         const label = (
           <label htmlFor={id}>
-            {f.label}
+            {t(f.label)}
             {f.required ? " *" : ""}
             {f.localized && <small> · {locale.toUpperCase()}</small>}
           </label>
@@ -456,10 +439,10 @@ function Fields({
                   )
                 }
               >
-                {!f.hasMany && <option value="">Choose…</option>}
+                {!f.hasMany && <option value="">{t("Choose…")}</option>}
                 {f.options?.map((o) => (
                   <option key={o.value} value={o.value}>
-                    {o.label}
+                    {t(o.label)}
                   </option>
                 ))}
               </select>
@@ -519,7 +502,7 @@ function Fields({
             )}
             {f.description && (
               <p className="cms-help">
-                {f.description.replaceAll("Payload", "CMS")}
+                {t(f.description.replaceAll("Payload", "CMS"))}
               </p>
             )}
           </div>
@@ -542,7 +525,9 @@ function contentURL(
   const result = new URL(path, siteURL);
   return result.origin === new URL(siteURL).origin ? result.href : null;
 }
-export function CMSApp(props: CMSAppProps) {
+export function CMSApp(props: CMSAppProps) { return <I18nProvider locale={props.uiLocale||"en"} preference={props.uiPreference||props.uiLocale||"en"}><CMSAppContent {...props}/></I18nProvider>; }
+function CMSAppContent(props: CMSAppProps) {
+  const {t,n,error:translateError,date,number:formatNumber}=useI18n();
   const [manifest, setManifest] = useState<any>(null),
     [module, setModule] = useState(""),
     [id, setID] = useState(""),
@@ -647,7 +632,7 @@ export function CMSApp(props: CMSAppProps) {
     return () => window.removeEventListener("beforeunload", before);
   }, [dirty]);
   const leave = () =>
-    !dirty || window.confirm("You have unsaved changes. Leave without saving?");
+    !dirty || window.confirm(t("You have unsaved changes. Leave without saving?"));
   const navigate = (m: string, nextID = "") => {
     if (!leave()) return;
     setModule(m);
@@ -697,7 +682,7 @@ export function CMSApp(props: CMSAppProps) {
       setReload((n) => n + 1);
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : "The change could not be saved.",
+        e instanceof Error ? e.message : msgid("The change could not be saved."),
       );
     } finally {
       setBusy(false);
@@ -710,7 +695,7 @@ export function CMSApp(props: CMSAppProps) {
   const loose = topFields.filter((f) => !separate(f));
   const sections = [
     ...(loose.length
-      ? [{ key: "general", label: "Overview", fields: loose }]
+      ? [{ key: "general", label: msgid("Overview"), fields: loose }]
       : []),
     ...topFields.filter(separate).map((f, index) => ({
       key: f.name || `section-${index}`,
@@ -737,9 +722,7 @@ export function CMSApp(props: CMSAppProps) {
         : null;
   return (
     <div className="cms-shell">
-      <a className="cms-skip" href="#cms-main">
-        Skip to content
-      </a>
+      <a className="cms-skip" href="#cms-main">{t("Skip to content")}</a>
       <aside className="cms-sidebar">
         <a
           className="cms-wordmark"
@@ -747,8 +730,7 @@ export function CMSApp(props: CMSAppProps) {
           onClick={(e) => {
             if (!leave()) e.preventDefault();
           }}
-        >
-          webdock<span>.</span> <strong>CMS</strong>
+        >{"webdock"}<span>.</span> <strong>{"CMS"}</strong>
         </a>
         <button
           className="cms-account-toggle"
@@ -756,11 +738,9 @@ export function CMSApp(props: CMSAppProps) {
           aria-expanded={accountOpen}
           aria-controls="cms-account-links"
           onClick={() => setAccountOpen((value) => !value)}
-        >
-          Account
-        </button>
+        >{t("Account")}</button>
         <p className="cms-site-name">{props.siteName}</p>
-        <nav aria-label="Content areas">
+        <nav aria-label={t("Content areas")}>
           {manifest?.modules.map((m: any) => (
             <button
               key={m.slug}
@@ -768,7 +748,7 @@ export function CMSApp(props: CMSAppProps) {
               aria-current={module === m.slug ? "page" : undefined}
               onClick={() => navigate(m.slug)}
             >
-              {m.label}
+              {t(m.label)}
               <span>↗</span>
             </button>
           ))}
@@ -780,31 +760,29 @@ export function CMSApp(props: CMSAppProps) {
           <span>{manifest?.user.name}</span>
           <small>
             {manifest?.user.role === "operator"
-              ? "Platform administrator"
+              ? t("Platform administrator")
               : manifest?.user.role === "admin"
-                ? "Administrator"
+                ? t("Administrator")
                 : manifest?.user.role === "editor"
-                  ? "Editor"
-                  : "Read only"}
+                  ? t("Editor")
+                  : t("Read only")}
           </small>
-          <a href={props.accountURL}>My account</a>
+          <a href={props.accountURL}>{t("My account")}</a>
           {manifest?.user.role === "operator" && (
             <>
-              <a href={props.accessURL}>People &amp; access</a>
+              <a href={props.accessURL}>{t("People & access")}</a>
               {props.technicalURL && (
-                <a href={props.technicalURL}>Advanced tools</a>
+                <a href={props.technicalURL}>{t("Advanced tools")}</a>
               )}
             </>
           )}
-          <a href={new URL("/sites", props.accountURL).href}>My websites</a>
+          <a href={new URL("/sites", props.accountURL).href}>{t("My websites")}</a>
         </div>
       </aside>
       <div className="cms-main-wrap">
         <header className="cms-topbar">
-          <span>Your website, in your hands.</span>
-          <a href={props.siteURL} target="_blank" rel="noreferrer">
-            View website ↗
-          </a>
+          <span>{t("Your website, in your hands.")}</span>
+          <a href={props.siteURL} target="_blank" rel="noreferrer">{t("View website ↗")}</a>
         </header>
         <main id="cms-main">
           <div className="cms-heading">
@@ -813,16 +791,14 @@ export function CMSApp(props: CMSAppProps) {
               <h1>
                 {editing
                   ? id === "new"
-                    ? `New ${loaded.label}`
-                    : loaded.doc.title || loaded.doc.name || loaded.label
-                  : loaded?.label || "CMS"}
+                    ? t("New {type}",{type:t(loaded.label)})
+                    : loaded.doc.title || loaded.doc.name || t(loaded.label)
+                  : loaded?.label ? t(loaded.label) : "CMS"}
               </h1>
-              <p>{loaded?.description || "Keep your website up to date."}</p>
+              <p>{loaded?.description ? t(loaded.description) : t("Keep your website up to date.")}</p>
             </div>
             {manifest?.locales.length > 1 && (
-              <label className="cms-language">
-                Language
-                <select
+              <label className="cms-language">{t("Content language")}<select
                   value={locale}
                   onChange={(e) => {
                     if (leave()) {
@@ -833,7 +809,7 @@ export function CMSApp(props: CMSAppProps) {
                 >
                   {manifest.locales.map((l: string) => (
                     <option key={l} value={l}>
-                      {l === "en" ? "English" : l === "de" ? "Deutsch" : l}
+                      {l === "en" ? t("English") : l === "de" ? t("German") : l}
                     </option>
                   ))}
                 </select>
@@ -842,26 +818,22 @@ export function CMSApp(props: CMSAppProps) {
           </div>
           {error && (
             <div className="cms-notice cms-error" role="alert">
-              {error}
+              {translateError(error)}
               <button
                 type="button"
                 onClick={() => {
                   if (leave()) setReload((n) => n + 1);
                 }}
-              >
-                Reload
-              </button>
+              >{t("Reload")}</button>
             </div>
           )}
           {message && (
             <p className="cms-notice" role="status">
-              {message}
+              {t(message)}
             </p>
           )}
           {loading ? (
-            <p role="status" className="cms-loading">
-              Opening your content…
-            </p>
+            <p role="status" className="cms-loading">{t("Opening your content…")}</p>
           ) : (
             loaded &&
             (editing ? (
@@ -873,24 +845,21 @@ export function CMSApp(props: CMSAppProps) {
                       className="cms-text-button"
                       onClick={() => navigate(module)}
                     >
-                      ← Back to {loaded.label}
+                      {t("Back to {type}",{type:t(loaded.label)})}
                     </button>
                   )}
                   <span className="cms-status">
                     {dirty
-                      ? "Unsaved changes"
+                      ? t("Unsaved changes")
                       : loaded.drafts
                         ? loaded.doc._status === "published"
-                          ? "Published"
-                          : "Draft"
-                        : "Live content"}
+                          ? t("Published")
+                          : t("Draft")
+                        : t("Live content")}
                   </span>
                 </div>
                 {!manifest.canWrite && (
-                  <p className="cms-notice">
-                    You have read-only access. Contact your administrator to
-                    request editing rights.
-                  </p>
+                  <p className="cms-notice">{t("You have read-only access. Contact your administrator to request editing rights.")}</p>
                 )}
                 <form
                   onSubmit={(e) => {
@@ -902,7 +871,7 @@ export function CMSApp(props: CMSAppProps) {
                 >
                   {loaded.upload && (
                     <section className="cms-field-section">
-                      <h2>Image</h2>
+                      <h2>{t("Image")}</h2>
                       {loaded.doc.url && (
                         <img
                           className="cms-upload-preview"
@@ -911,7 +880,7 @@ export function CMSApp(props: CMSAppProps) {
                         />
                       )}
                       <label className="cms-field">
-                        {id === "new" ? "Upload image" : "Replace image"}
+                        {id === "new" ? t("Upload image") : t("Replace image")}
                         <input
                           type="file"
                           accept="image/*"
@@ -927,7 +896,7 @@ export function CMSApp(props: CMSAppProps) {
                   {sections.length > 1 && (
                     <nav
                       className="cms-section-nav"
-                      aria-label="Content sections"
+                      aria-label={t("Content sections")}
                     >
                       {sections.map((item) => (
                         <button
@@ -936,7 +905,7 @@ export function CMSApp(props: CMSAppProps) {
                           aria-pressed={item === selectedSection}
                           onClick={() => setSection(item.key)}
                         >
-                          {item.label}
+                          {t(item.label)}
                         </button>
                       ))}
                     </nav>
@@ -953,13 +922,13 @@ export function CMSApp(props: CMSAppProps) {
                     <div>
                       <strong>
                         {dirty
-                          ? "Ready to save?"
-                          : "Your content is up to date."}
+                          ? t("Ready to save?")
+                          : t("Your content is up to date.")}
                       </strong>
                       <small>
                         {loaded.drafts
-                          ? "Save a draft first, then publish when ready."
-                          : "Saving changes updates the live website."}
+                          ? t("Save a draft first, then publish when ready.")
+                          : t("Saving changes updates the live website.")}
                       </small>
                     </div>
                     <div className="cms-save-actions">
@@ -970,10 +939,10 @@ export function CMSApp(props: CMSAppProps) {
                           disabled={busy || (!dirty && id !== "new")}
                         >
                           {busy
-                            ? "Saving…"
+                            ? t("Saving…")
                             : loaded.drafts
-                              ? "Save draft"
-                              : "Save changes"}
+                              ? t("Save draft")
+                              : t("Save changes")}
                         </button>
                       )}
                       {manifest.canWrite && loaded.drafts && (
@@ -984,14 +953,12 @@ export function CMSApp(props: CMSAppProps) {
                           onClick={() => {
                             if (
                               window.confirm(
-                                "Publish this content to the website?",
+                                t("Publish this content to the website?"),
                               )
                             )
                               void save("publish");
                           }}
-                        >
-                          Publish
-                        </button>
+                        >{t("Publish")}</button>
                       )}
                       {previewURL && (
                         <a
@@ -999,9 +966,7 @@ export function CMSApp(props: CMSAppProps) {
                           href={previewURL}
                           target="_blank"
                           rel="noreferrer"
-                        >
-                          Preview saved draft ↗
-                        </a>
+                        >{t("Preview saved draft ↗")}</a>
                       )}
                       {liveURL && (
                         <a
@@ -1009,9 +974,7 @@ export function CMSApp(props: CMSAppProps) {
                           href={liveURL}
                           target="_blank"
                           rel="noreferrer"
-                        >
-                          View live ↗
-                        </a>
+                        >{t("View live ↗")}</a>
                       )}
                     </div>
                   </div>
@@ -1029,16 +992,12 @@ export function CMSApp(props: CMSAppProps) {
                           operation: "versions",
                         }).then(setHistory, (e) => setError(e.message))
                       }
-                    >
-                      Version history
-                    </button>
+                    >{t("Version history")}</button>
                     {history?.docs.map((v: any) => (
                       <div key={v.id}>
                         <span>
-                          {new Date(
-                            v.updatedAt || v.createdAt,
-                          ).toLocaleString()}{" "}
-                          · {v.status || "Saved"}
+                          {date(v.updatedAt||v.createdAt,{dateStyle:"medium",timeStyle:"short"})}{" "}
+                          · {v.status === "published" ? t("Published") : v.status === "draft" ? t("Draft") : t("Saved")}
                         </span>
                         {manifest.canDelete && (
                           <button
@@ -1047,14 +1006,12 @@ export function CMSApp(props: CMSAppProps) {
                             onClick={() => {
                               if (
                                 window.confirm(
-                                  "Restore this version? This replaces the current content.",
+                                  t("Restore this version? This replaces the current content."),
                                 )
                               )
                                 void save("restore", String(v.id));
                             }}
-                          >
-                            Restore
-                          </button>
+                          >{t("Restore")}</button>
                         )}
                       </div>
                     ))}
@@ -1064,33 +1021,26 @@ export function CMSApp(props: CMSAppProps) {
                   loaded.kind === "collection" &&
                   id !== "new" && (
                     <details className="cms-danger">
-                      <summary>Delete this content</summary>
-                      <p>
-                        This removes the record. Images may still be used by
-                        other content.
-                      </p>
+                      <summary>{t("Delete this content")}</summary>
+                      <p>{t("This removes the record. Images may still be used by other content.")}</p>
                       <button
                         type="button"
                         disabled={busy}
                         onClick={() => {
-                          if (window.confirm("Permanently delete this record?"))
+                          if (window.confirm(t("Permanently delete this record?")))
                             void save("delete");
                         }}
-                      >
-                        Delete permanently
-                      </button>
+                      >{t("Delete permanently")}</button>
                     </details>
                   )}
               </>
             ) : (
               <>
                 <div className="cms-list-toolbar">
-                  <label className="cms-search">
-                    Search
-                    <input
+                  <label className="cms-search">{t("Search")}<input
                       type="search"
                       value={search}
-                      placeholder={`Find ${loaded.label.toLowerCase()}`}
+                      placeholder={t("Find {type}",{type:t(loaded.label)})}
                       onChange={(e) => {
                         setSearch(e.target.value);
                         setPage(1);
@@ -1103,7 +1053,7 @@ export function CMSApp(props: CMSAppProps) {
                       className="cms-button"
                       onClick={() => navigate(module, "new")}
                     >
-                      {loaded.upload ? "Upload image" : "Create new"} +
+                      {loaded.upload ? t("Upload image") : t("Create new")} +
                     </button>
                   )}
                 </div>
@@ -1127,23 +1077,23 @@ export function CMSApp(props: CMSAppProps) {
                       <div>
                         <h2>
                           {(loaded.titleField === "id"
-                            ? `${loaded.label} #${doc.id}`
+                            ? t("{type} #{id}",{type:t(loaded.label),id:doc.id})
                             : doc[loaded.titleField]) ||
                             doc.title ||
                             doc.name ||
                             doc.filename ||
-                            `Item ${doc.id}`}
+                            t("Item {number}",{number:doc.id})}
                         </h2>
                         <p>
                           {doc._status
                             ? doc._status === "published"
-                              ? "Published"
-                              : "Draft"
+                              ? t("Published")
+                              : t("Draft")
                             : loaded.upload
-                              ? "Image"
-                              : "Content"}
+                              ? t("Image")
+                              : t("Content")}
                           {doc.updatedAt &&
-                            ` · ${new Date(doc.updatedAt).toLocaleDateString()}`}
+                            ` · ${date(doc.updatedAt)}`}
                         </p>
                       </div>
                       <span aria-hidden="true">↗</span>
@@ -1154,42 +1104,37 @@ export function CMSApp(props: CMSAppProps) {
                   <div className="cms-empty">
                     <h2>
                       {search
-                        ? "No matching content"
-                        : "Make room for your next idea."}
+                        ? t("No matching content")
+                        : t("Make room for your next idea.")}
                     </h2>
                     <p>
                       {search
-                        ? "Try another search."
-                        : "Create your first item to get started."}
+                        ? t("Try another search.")
+                        : t("Create your first item to get started.")}
                     </p>
                   </div>
                 )}
-                <nav className="cms-pagination" aria-label="Content pages">
-                  <span>{loaded.totalDocs || 0} items</span>
+                <nav className="cms-pagination" aria-label={t("Content pages")}>
+                  <span>{n("{count} item","{count} items",loaded.totalDocs||0)}</span>
                   <button
                     type="button"
                     disabled={page === 1}
                     onClick={() => setPage((p) => p - 1)}
-                  >
-                    Previous
-                  </button>
+                  >{t("Previous")}</button>
                   <span>
-                    {page} / {Math.max(1, loaded.totalPages || 1)}
+                    {formatNumber(page)} / {formatNumber(Math.max(1,loaded.totalPages||1))}
                   </span>
                   <button
                     type="button"
                     disabled={page >= loaded.totalPages}
                     onClick={() => setPage((p) => p + 1)}
-                  >
-                    Next
-                  </button>
+                  >{t("Next")}</button>
                 </nav>
               </>
             ))
           )}
         </main>
-        <footer className="cms-footer">
-          CMS by Webdock <span>Content and access, kept in your control.</span>
+        <footer className="cms-footer">{t("CMS by Webdock")} <span>{t("Content and access, kept in your control.")}</span>
         </footer>
       </div>
     </div>

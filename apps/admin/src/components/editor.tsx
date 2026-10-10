@@ -1,4 +1,7 @@
 "use client";
+import {msgid} from '@webdock/i18n';
+import { useI18n } from '@webdock/i18n/react';
+
 import { Fragment, useActionState, useId } from "react";
 import type { FormState } from "../lib/actions";
 export type EditorField = {
@@ -7,7 +10,7 @@ export type EditorField = {
   type?: "text" | "email" | "tel" | "url" | "textarea" | "select" | "checkbox";
   required?: boolean;
   value?: string;
-  options?: { value: string; label: string }[];
+  options?: { value: string; label: string; translate?: boolean }[];
   hint?: string;
   group?: string;
   maxLength?: number;
@@ -16,35 +19,37 @@ export type EditorField = {
 export function Editor({
   action,
   fields,
-  submit = "Save changes",
+  submit = msgid("Save changes"),
 }: {
   action: (state: FormState, form: FormData) => Promise<FormState>;
   fields: EditorField[];
   submit?: string;
 }) {
+  const i18n = useI18n();
+
   const [state, formAction, pending] = useActionState(action, {});
   const formID = useId();
   return (
     <form action={formAction} className="editor" aria-busy={pending}>
-      <p className="form-instructions">Fields marked * are required.</p>
+      <p className="form-instructions">{i18n.t("Fields marked * are required.")}</p>
       {state.error && (
         <p role="alert" className="error">
-          {state.error}
+          {i18n.error(state.error)}
         </p>
       )}
       {state.success && (
         <p role="status" className="success">
-          {state.success}
+          {i18n.error(state.success, "Changes saved.")}
         </p>
       )}
       {fields.map((f) => (
         <Fragment key={f.name}>
-          {f.group && <h3 className="editor-section">{f.group}</h3>}
+          {f.group && <h3 className="editor-section">{i18n.t(f.group)}</h3>}
           <div
             className={"field " + (f.type === "textarea" ? "wide" : "")}
           >
             <label htmlFor={`${formID}-${f.name}`}>
-              {f.label}
+              {i18n.t(f.label)}
               {f.required && <span aria-hidden="true"> *</span>}
             </label>
             {f.type === "textarea" ? (
@@ -68,7 +73,7 @@ export function Editor({
               >
                 {f.options?.map((o) => (
                   <option key={o.value} value={o.value}>
-                    {o.label}
+                    {o.translate === false ? o.label : i18n.t(o.label)}
                   </option>
                 ))}
               </select>
@@ -94,13 +99,13 @@ export function Editor({
                 defaultValue={state.values?.[f.name] ?? f.value ?? ""}
               />
             )}
-            {f.hint && <small id={`${formID}-${f.name}-hint`}>{f.hint}</small>}
+            {f.hint && <small id={`${formID}-${f.name}-hint`}>{i18n.t(f.hint)}</small>}
           </div>
         </Fragment>
       ))}
       <div className="form-footer">
         <button className="button" disabled={pending}>
-          {pending ? "Saving…" : submit}
+          {pending ? i18n.t("Saving…") : i18n.t(submit)}
         </button>
       </div>
     </form>
@@ -113,28 +118,30 @@ export function ArchiveButton({
   action: (state: FormState, form: FormData) => Promise<FormState>;
   archived: boolean;
 }) {
+  const i18n = useI18n();
+
   const [state, formAction, pending] = useActionState(action, {});
   return (
     <form action={formAction}>
       <input type="hidden" name="restore" value={String(archived)} />
       <details className="archive-controls" key={String(archived)}>
-        <summary>{archived ? "Restore record" : "Archive record"}</summary>
+        <summary>{archived ? i18n.t("Restore record") : i18n.t("Archive record")}</summary>
         <p>
           {archived
-            ? "Return this record to your active workspace."
-            : "Keep this record and its history, and remove it from the active list. You can restore it later."}
+            ? i18n.t("Return this record to your active workspace.")
+            : i18n.t("Keep this record and its history, and remove it from the active list. You can restore it later.")}
         </p>
         <button className="button secondary" disabled={pending}>
           {pending
-            ? "Saving…"
+            ? i18n.t("Saving…")
             : archived
-              ? "Confirm restore"
-              : "Confirm archive"}
+              ? i18n.t("Confirm restore")
+              : i18n.t("Confirm archive")}
         </button>
       </details>
       {state.error && (
         <p role="alert" className="error">
-          {state.error}
+          {i18n.error(state.error)}
         </p>
       )}
     </form>

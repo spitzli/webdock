@@ -1,4 +1,6 @@
 "use client";
+import { useI18n } from '@webdock/i18n/react';
+
 import { useActionState, type ReactNode } from "react";
 import { tenantAction } from "./actions";
 export function TenantForm({
@@ -14,6 +16,8 @@ export function TenantForm({
   children?: ReactNode;
   confirm?: string;
 }) {
+  const i18n = useI18n();
+
   const [state, submit, pending] = useActionState(tenantAction, {});
   return (
     <form action={submit} className="access-form" aria-busy={pending}>
@@ -28,29 +32,27 @@ export function TenantForm({
       )}
       {state.error && (
         <p className="notice error" role="alert">
-          {state.error}
+          {i18n.error(state.error)}
         </p>
       )}
       {state.message && (
         <p className="notice" role="status">
-          {state.message}
+          {i18n.error(state.message, "Changes saved.")}
         </p>
       )}
       <button className="button secondary" disabled={pending}>
-        {pending ? "Saving…" : label}
+        {pending ? i18n.t("Saving…") : i18n.t(label)}
       </button>
     </form>
   );
 }
 export function TenantRole({ value = "member" }: { value?: string }) {
+  const i18n = useI18n();
+
   return (
-    <label className="field">
-      Tenant role
-      <select name="role" defaultValue={value === "owner" ? "admin" : value}>
-        <option value="member">Member — view customer profile</option>
-        <option value="admin">
-          Administrator — edit profile and invite people
-        </option>
+    <label className="field">{i18n.t("Tenant role")}<select name="role" defaultValue={value === "owner" ? "admin" : value}>
+        <option value="member">{i18n.t("Member — view customer profile")}</option>
+        <option value="admin">{i18n.t("Administrator — edit profile and invite people")}</option>
       </select>
     </label>
   );

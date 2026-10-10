@@ -1,4 +1,6 @@
 "use client";
+import { useI18n } from '@webdock/i18n/react';
+
 import { useActionState, type ReactNode } from "react";
 import { trackingAction } from "./actions";
 export function TrackingForm({
@@ -14,6 +16,8 @@ export function TrackingForm({
   children?: ReactNode;
   confirm?: string;
 }) {
+  const i18n = useI18n();
+
   const [state, submit, pending] = useActionState(trackingAction, {});
   return (
     <form action={submit} className="access-form" aria-busy={pending}>
@@ -38,17 +42,17 @@ export function TrackingForm({
           </label>
         )}
         <button className="button secondary" type="submit">
-          {pending ? "Working…" : label}
+          {pending ? i18n.t("Working…") : i18n.t(label)}
         </button>
       </fieldset>
       {state.error && (
         <p className="notice error" role="alert">
-          {state.error}
+          {i18n.error(state.error)}
         </p>
       )}
       {state.message && (
         <p className="notice" role="status">
-          {state.message}
+          {i18n.error(state.message, "Changes saved.")}
         </p>
       )}
     </form>

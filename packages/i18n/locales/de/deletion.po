@@ -1,0 +1,224 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Webdock\n"
+"PO-Revision-Date: 2026-10-06 14:00+0200\n"
+"Last-Translator: Webdock\n"
+"Language-Team: German\n"
+"MIME-Version: 1.0\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: de\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Back to project"
+msgstr "Zurück zum Projekt"
+
+msgid "Delete project"
+msgstr "Projekt löschen"
+
+msgid "Permanently delete project"
+msgstr "Projekt endgültig löschen"
+
+msgid "Type the exact project name"
+msgstr "Genauen Projektnamen eingeben"
+
+msgid "I confirm permanent deletion of this project and its website data."
+msgstr "Ich bestätige die endgültige Löschung dieses Projekts und seiner Website-Daten."
+
+msgid "This permanently removes the website, its deployments, CMS content and website login. Customer and user accounts and audit history are retained."
+msgstr "Die Website, ihre Bereitstellungen, CMS-Inhalte und Website-Anmeldung werden endgültig gelöscht. Kunden- und Benutzerkonten sowie das Änderungsprotokoll bleiben erhalten."
+
+msgid "Completed deletion steps"
+msgstr "Abgeschlossene Löschschritte"
+
+msgid "Project deleted."
+msgstr "Projekt gelöscht."
+
+msgid "Deletion preview is unavailable."
+msgstr "Die Löschvorschau ist nicht verfügbar."
+
+msgid "Deletion stopped. Review its progress before retrying."
+msgstr "Die Löschung wurde angehalten. Prüfe den Fortschritt vor einem erneuten Versuch."
+
+msgid "Deletion stopped. Check its recorded progress before retrying."
+msgstr "Die Löschung wurde angehalten. Prüfe den protokollierten Fortschritt vor einem erneuten Versuch."
+
+msgid "A current administrator session or write-enabled MCP token is required."
+msgstr "Eine aktuelle Administratorsitzung oder ein MCP-Token mit Schreibzugriff ist erforderlich."
+
+msgid "A current preview hash is required."
+msgstr "Eine aktuelle Löschvorschau ist erforderlich."
+
+msgid "Account binding changed. Review deletion again."
+msgstr "Die Zugangszuordnung wurde geändert. Prüfe die Löschung erneut."
+
+msgid "Account service could not confirm deletion."
+msgstr "Der Kontodienst konnte die Löschung nicht bestätigen."
+
+msgid "Account service is not configured."
+msgstr "Der Kontodienst ist nicht konfiguriert."
+
+msgid "Account service returned an invalid deletion confirmation."
+msgstr "Der Kontodienst hat keine gültige Löschbestätigung geliefert."
+
+msgid "Account service returned an invalid response."
+msgstr "Der Kontodienst hat eine ungültige Antwort geliefert."
+
+msgid "Active operator session required."
+msgstr "Eine aktive Sitzung als Plattformadministrator ist erforderlich."
+
+msgid "Another application depends on this database. Deletion is blocked."
+msgstr "Eine andere Anwendung verwendet diese Datenbank. Die Löschung ist gesperrt."
+
+msgid "Another deletion request changed this project."
+msgstr "Ein anderer Löschauftrag hat dieses Projekt geändert."
+
+msgid "Binding changed. Preview again."
+msgstr "Die Zuordnung wurde geändert. Öffne die Vorschau erneut."
+
+msgid "Binding mapping is shared, protected or changed."
+msgstr "Die Zuordnung wird gemeinsam verwendet, ist geschützt oder wurde geändert."
+
+msgid "Binding metadata is protected or changed."
+msgstr "Die Metadaten der Zuordnung sind geschützt oder wurden geändert."
+
+msgid "Binding not found or not eligible."
+msgstr "Die Zuordnung wurde nicht gefunden oder kann nicht gelöscht werden."
+
+msgid "Confirm permanent deletion."
+msgstr "Bestätige die endgültige Löschung."
+
+msgid "Connect Vercel in Webdock before deleting this project."
+msgstr "Verbinde Vercel in Webdock, bevor du dieses Projekt löschst."
+
+msgid "Control-plane or unmanaged websites cannot be deleted here."
+msgstr "Plattformdienste und nicht verwaltete Websites können hier nicht gelöscht werden."
+
+msgid "Database ownership does not match this website."
+msgstr "Der Datenbankeigentümer stimmt nicht mit dieser Website überein."
+
+msgid "Invalid delegated authentication."
+msgstr "Die übertragene Anmeldung ist ungültig."
+
+msgid "Invalid lifecycle request."
+msgstr "Die Anfrage zur Ressourcenverwaltung ist ungültig."
+
+msgid "Invalid managed database mapping."
+msgstr "Die Zuordnung der verwalteten Datenbank ist ungültig."
+
+msgid "Invalid website metadata."
+msgstr "Die Website-Metadaten sind ungültig."
+
+msgid "Invalid website redirects."
+msgstr "Die Weiterleitungen der Website sind ungültig."
+
+msgid "Invalid write requirement."
+msgstr "Die angeforderte Schreibberechtigung ist ungültig."
+
+msgid "Leave customer preview before lifecycle operations."
+msgstr "Verlasse zuerst die Kundenansicht, bevor du Ressourcen verwaltest."
+
+msgid "Managed database deletion is not configured for this website."
+msgstr "Die verwaltete Datenbanklöschung ist für diese Website nicht eingerichtet."
+
+msgid "Managed database deletion is not configured."
+msgstr "Die verwaltete Datenbanklöschung ist nicht eingerichtet."
+
+msgid "Managed deletion requires exactly one isolated CMS connection."
+msgstr "Die verwaltete Löschung benötigt genau eine isolierte CMS-Verbindung."
+
+msgid "Only a platform administrator may delete projects."
+msgstr "Nur Plattformadministratoren dürfen Projekte löschen."
+
+msgid "Operator MCP scope required."
+msgstr "Die MCP-Berechtigung eines Plattformadministrators ist erforderlich."
+
+msgid "Platform operator required."
+msgstr "Ein Plattformadministrator ist erforderlich."
+
+msgid "Studio authentication required."
+msgstr "Eine Studio-Anmeldung ist erforderlich."
+
+msgid "The CMS management binding is not valid."
+msgstr "Die Zuordnung zur CMS-Verwaltung ist ungültig."
+
+msgid "The database role has privileges beyond this website."
+msgstr "Die Datenbankrolle besitzt Rechte außerhalb dieser Website."
+
+msgid "The database schema is accessible to another role."
+msgstr "Eine andere Rolle hat Zugriff auf das Datenbankschema."
+
+msgid "The hosting connection is not supported for deletion."
+msgstr "Diese Hosting-Verbindung unterstützt keine verwaltete Löschung."
+
+msgid "The hosting link differs from the CMS connection."
+msgstr "Die Hosting-Zuordnung stimmt nicht mit der CMS-Verbindung überein."
+
+msgid "The managed database credential is not safely scoped."
+msgstr "Die Zugangsdaten der verwalteten Datenbank sind nicht ausreichend eingeschränkt."
+
+msgid "The project changed before deletion. Nothing further was removed."
+msgstr "Das Projekt wurde vor der Löschung geändert. Es wurde nichts Weiteres entfernt."
+
+msgid "The project mapping changed. Deletion is blocked."
+msgstr "Die Projektzuordnung wurde geändert. Die Löschung ist gesperrt."
+
+msgid "The project or deletion preview changed. Review it again."
+msgstr "Das Projekt oder die Löschvorschau wurde geändert. Prüfe die Vorschau erneut."
+
+msgid "The registered database schema was not found."
+msgstr "Das hinterlegte Datenbankschema wurde nicht gefunden."
+
+msgid "The website binding was already removed."
+msgstr "Die Website-Zuordnung wurde bereits entfernt."
+
+msgid "The website domain is not assigned to the linked hosting project."
+msgstr "Die Website-Domain ist dem verknüpften Hosting-Projekt nicht zugeordnet."
+
+msgid "This database is not registered for managed deletion."
+msgstr "Diese Datenbank ist nicht für die verwaltete Löschung registriert."
+
+msgid "This website shares resources with another project. Deletion is blocked."
+msgstr "Diese Website teilt Ressourcen mit einem anderen Projekt. Die Löschung ist gesperrt."
+
+msgid "Use an exact HTTPS origin."
+msgstr "Verwende eine genaue HTTPS-Basisadresse."
+
+msgid "Hosting verification is unavailable."
+msgstr "Die Hosting-Prüfung ist nicht verfügbar."
+
+msgid "View hosting status and domains. Deleting a project additionally requires project write permission in Vercel."
+msgstr "Hosting-Status und Domains ansehen. Zum Löschen eines Projekts ist zusätzlich die Projekt-Schreibberechtigung bei Vercel erforderlich."
+
+msgid "The Vercel connection could not be verified. Start from Studio and select the configured team with the required project permissions."
+msgstr "Die Vercel-Verbindung konnte nicht bestätigt werden. Starte im Studio und wähle das konfigurierte Team mit den benötigten Projektberechtigungen."
+
+msgid " — create, update and explicitly delete managed projects. Platform administrators only."
+msgstr " — verwaltete Projekte erstellen, aktualisieren und ausdrücklich löschen. Nur für Plattformadministratoren."
+
+msgid "Connected Vercel integration"
+msgstr "Vercel-Integration verbunden"
+
+msgid "The Vercel integration does not have permission to delete this project. Grant project write access and reconnect the integration."
+msgstr "Die Vercel-Integration darf dieses Projekt nicht löschen. Erteile die Projekt-Schreibberechtigung und verbinde die Integration erneut."
+
+msgid "Vercel project information is temporarily unavailable."
+msgstr "Die Vercel-Projektinformationen sind vorübergehend nicht verfügbar."
+
+msgid "Reconnect the Vercel integration to read project information."
+msgstr "Verbinde die Vercel-Integration erneut, um Projektinformationen abzurufen."
+
+msgid "The Vercel integration does not have access to this project or team."
+msgstr "Die Vercel-Integration hat keinen Zugriff auf dieses Projekt oder Team. Gib das Projekt in der Integration frei und verbinde Vercel erneut."
+
+msgid "The mapped Vercel project could not be found."
+msgstr "Das zugeordnete Vercel-Projekt wurde nicht gefunden."
+
+msgid "Project deletion is unavailable: the Vercel integration needs project write permission for this team and project."
+msgstr "Die Löschung ist nicht möglich: Die Vercel-Integration benötigt die Projekt-Schreibberechtigung für dieses Team und Projekt."
+
+msgid "Vercel project region set to fra1; automatic regional failover disabled."
+msgstr "Vercel-Projektregion auf Frankfurt gesetzt; automatischer Regions-Failover deaktiviert."
+
+msgid "Vercel project region already fra1; automatic regional failover disabled."
+msgstr "Vercel-Projektregion bereits Frankfurt; automatischer Regions-Failover deaktiviert."

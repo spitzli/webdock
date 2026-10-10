@@ -1,15 +1,21 @@
+import {LiveSearchForm} from "@webdock/search/form";
+import {uiLabel} from "@/lib/ui-labels";
+
+import { getRequestI18n } from '@webdock/i18n/next';
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { listAccess } from "@/lib/access-management";
 import { AccessForm, RoleSelect } from "./form";
-export const metadata = { title: "People & access" };
+export async function generateMetadata(){ const i18n = await getRequestI18n(); return { title: i18n.t("People & access") }; }
 export default async function People({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
+  const i18n = await getRequestI18n();
+
   const requestHeaders = await headers();
   const session = await auth.api.getSession({ headers: requestHeaders });
   if (!session) redirect("/api/sso/login?returnTo=%2Fpeople");
@@ -21,10 +27,8 @@ export default async function People({
     <div className="access-page">
       <header className="account-heading">
         <div>
-          <h1>People & access</h1>
-          <p className="muted">
-            Invite customers and control access to each website.
-          </p>
+          <h1>{i18n.t("People & access")}</h1>
+          <p className="muted">{i18n.t("Invite customers and control access to each website.")}</p>
         </div>
         <Link
           className="button secondary"
@@ -35,26 +39,16 @@ export default async function People({
                 "https://auth.webdock.dev/api/auth",
             ).href
           }
-        >
-          Account & security
-        </Link>
+        >{i18n.t("Account & security")}</Link>
       </header>
       <div className="access-grid">
         <section className="auth-panel">
-          <h2>Invite to a website</h2>
-          <p>
-            New customers receive a secure link to choose their password.
-            Existing accounts receive an invitation. Website access starts when
-            customer membership is accepted.
-          </p>
-          <AccessForm action="invite" label="Save access and send invitation">
-            <label className="field">
-              Customer name
-              <input name="name" required maxLength={160} autoComplete="name" />
+          <h2>{i18n.t("Invite to a website")}</h2>
+          <p>{i18n.t("New customers receive a secure link to choose their password. Existing accounts receive an invitation. Website access starts when customer membership is accepted.")}</p>
+          <AccessForm action="invite" label={i18n.t("Save access and send invitation")}>
+            <label className="field">{i18n.t("Customer name")}<input name="name" required maxLength={160} autoComplete="name" />
             </label>
-            <label className="field">
-              Email address
-              <input
+            <label className="field">{i18n.t("Email address")}<input
                 name="email"
                 type="email"
                 required
@@ -62,12 +56,8 @@ export default async function People({
                 autoComplete="email"
               />
             </label>
-            <label className="field">
-              Website
-              <select name="binding" required defaultValue="">
-                <option value="" disabled>
-                  Select a website
-                </option>
+            <label className="field">{i18n.t("Website")}<select name="binding" required defaultValue="">
+                <option value="" disabled>{i18n.t("Select a website")}</option>
                 {data.websites
                   .filter((site) => site.organization_id)
                   .map((site) => (
@@ -75,31 +65,23 @@ export default async function People({
                       {site.label} —{" "}
                       {data.organizations.find(
                         (org) => org.id === site.organization_id,
-                      )?.name || "Customer"}
+                      )?.name || i18n.t("Customer")}
                     </option>
                   ))}
               </select>
             </label>
             <RoleSelect />
           </AccessForm>
-          <p className="help">
-            Website roles do not grant infrastructure or platform-operator
-            access. Sending again updates the selected website role and resends
-            a pending invitation.
-          </p>
+          <p className="help">{i18n.t("Website roles do not grant infrastructure or platform-operator access. Sending again updates the selected website role and resends a pending invitation.")}</p>
         </section>
         <section className="auth-panel">
-          <h2>Customers & websites</h2>
-          <p>
-            Group website access by customer. Public sign-up remains closed.
-          </p>
+          <h2>{i18n.t("Customers & websites")}</h2>
+          <p>{i18n.t("Group website access by customer. Public sign-up remains closed.")}</p>
           <AccessForm
             action="create-organization"
-            label="Create customer group"
+            label={i18n.t("Create customer group")}
           >
-            <label className="field">
-              Customer group name
-              <input name="name" required maxLength={160} />
+            <label className="field">{i18n.t("Customer group name")}<input name="name" required maxLength={160} />
             </label>
           </AccessForm>
           {data.websites.map((site) => (
@@ -112,14 +94,10 @@ export default async function People({
                   )?.name || site.organization_id}
                 </p>
               ) : (
-                <AccessForm action="link-website" label="Assign customer">
+                <AccessForm action="link-website" label={i18n.t("Assign customer")}>
                   <input type="hidden" name="binding" value={site.id} />
-                  <label className="field">
-                    Customer
-                    <select name="organization" required defaultValue="">
-                      <option value="" disabled>
-                        Select a customer
-                      </option>
+                  <label className="field">{i18n.t("Customer")}<select name="organization" required defaultValue="">
+                      <option value="" disabled>{i18n.t("Select a customer")}</option>
                       {data.organizations.map((org) => (
                         <option key={org.id} value={org.id}>
                           {org.name}
@@ -133,26 +111,23 @@ export default async function People({
           ))}
         </section>
       </div>
-      <form className="access-search" method="get">
-        <label className="field">
-          Find a person
-          <input
+      <LiveSearchForm className="access-search" path="/people">
+        <label className="field">{i18n.t("Find a person")}<input
             type="search"
             name="q"
             defaultValue={q}
+            data-search-default=""
+            autoComplete="off"
             maxLength={160}
-            placeholder="Name or email"
+            placeholder={i18n.t("Name or email")}
           />
         </label>
-        <button className="button">Search</button>
-        {q && <Link href="/people">Clear</Link>}
-      </form>
+        <noscript><button className="button">{i18n.t("Search")}</button></noscript>
+        {q && <Link href="/people">{i18n.t("Clear")}</Link>}
+      </LiveSearchForm>
       <section className="account-section">
-        <h2>Accounts</h2>
-        <p className="muted">
-          Up to 100 matching accounts. Platform operators are protected from
-          suspension here.
-        </p>
+        <h2>{i18n.t("Accounts")}</h2>
+        <p className="muted">{i18n.t("Up to 100 matching accounts. Platform operators are protected from suspension here.")}</p>
         <div className="access-grid">
           {data.users.map((user) => (
             <article className="access-record" key={user.id}>
@@ -162,24 +137,24 @@ export default async function People({
                 <br />
                 <small>
                   {user.role === "operator"
-                    ? "Platform operator"
+                    ? i18n.t("Platform operator")
                     : user.banned
-                      ? "Suspended"
+                      ? i18n.t("Suspended")
                       : !user.emailVerified || user.mustChangePassword
-                        ? "Setup pending"
-                        : "Active"}
+                        ? i18n.t("Setup pending")
+                        : i18n.t("Active")}
                 </small>
               </p>
               {user.role !== "operator" && (
                 <details>
-                  <summary>Manage account</summary>
+                  <summary>{i18n.t("Manage account")}</summary>
                   <AccessForm
                     action="suspend"
-                    label={user.banned ? "Restore account" : "Suspend account"}
+                    label={user.banned ? i18n.t("Restore account") : i18n.t("Suspend account")}
                     confirm={
                       user.banned
                         ? undefined
-                        : "Suspend access to all websites and sign out this person"
+                        : i18n.t("Suspend access to all websites and sign out this person")
                     }
                   >
                     <input type="hidden" name="user" value={user.id} />
@@ -194,14 +169,11 @@ export default async function People({
             </article>
           ))}
         </div>
-        {!data.users.length && <p>No matching accounts.</p>}
+        {!data.users.length && <p>{i18n.t("No matching accounts.")}</p>}
       </section>
       <section className="account-section">
-        <h2>Website permissions</h2>
-        <p className="muted">
-          Up to 200 matching permissions. Customer membership and an active
-          account are also required.
-        </p>
+        <h2>{i18n.t("Website permissions")}</h2>
+        <p className="muted">{i18n.t("Up to 200 matching permissions. Customer membership and an active account are also required.")}</p>
         <div className="access-grid">
           {data.grants.map((grant) => (
             <article className="access-record" key={grant.id}>
@@ -211,11 +183,11 @@ export default async function People({
                 <br />
                 {grant.email}
                 <br />
-                <small>{grant.enabled ? "Enabled" : "Revoked"}</small>
+                <small>{grant.enabled ? i18n.t("Enabled") : i18n.t("Revoked")}</small>
               </p>
               <AccessForm
                 action="change-access"
-                label={grant.enabled ? "Update role" : "Restore access"}
+                label={grant.enabled ? i18n.t("Update role") : i18n.t("Restore access")}
               >
                 <input type="hidden" name="grant" value={grant.id} />
                 <RoleSelect value={grant.role} />
@@ -223,8 +195,8 @@ export default async function People({
               {grant.enabled && (
                 <AccessForm
                   action="revoke-access"
-                  label="Revoke website access"
-                  confirm="Remove this website access"
+                  label={i18n.t("Revoke website access")}
+                  confirm={i18n.t("Remove this website access")}
                 >
                   <input type="hidden" name="grant" value={grant.id} />
                 </AccessForm>
@@ -232,13 +204,11 @@ export default async function People({
             </article>
           ))}
         </div>
-        {!data.grants.length && <p>No website permissions yet.</p>}
+        {!data.grants.length && <p>{i18n.t("No website permissions yet.")}</p>}
       </section>
       <section className="account-section">
-        <h2>Invitations</h2>
-        <p className="muted">
-          Up to 100 matching invitations. Resend from the invitation form above.
-        </p>
+        <h2>{i18n.t("Invitations")}</h2>
+        <p className="muted">{i18n.t("Up to 100 matching invitations. Resend from the invitation form above.")}</p>
         {data.invitations.map((invite) => (
           <article className="access-record" key={invite.id}>
             <h3>{invite.email}</h3>
@@ -246,14 +216,14 @@ export default async function People({
               {invite.name} ·{" "}
               {invite.status === "pending" &&
               new Date(invite.expiresAt) < new Date()
-                ? "Expired"
-                : invite.status}
+                ? i18n.t("Expired")
+                : i18n.t(uiLabel(invite.status))}
             </p>
             {invite.status === "pending" && (
               <AccessForm
                 action="cancel-invite"
-                label="Cancel invitation"
-                confirm="Cancel this invitation and withdraw pending website access for this customer group"
+                label={i18n.t("Cancel invitation")}
+                confirm={i18n.t("Cancel this invitation and withdraw pending website access for this customer group")}
               >
                 <input type="hidden" name="id" value={invite.id} />
               </AccessForm>
@@ -262,17 +232,15 @@ export default async function People({
         ))}
       </section>
       <section className="account-section">
-        <h2>Recent access changes</h2>
+        <h2>{i18n.t("Recent access changes")}</h2>
         {data.events.map((event) => (
           <p key={event.id} className="access-event">
             <time dateTime={new Date(event.created_at).toISOString()}>
               {new Date(event.created_at)
                 .toISOString()
                 .replace("T", " ")
-                .slice(0, 16)}{" "}
-              UTC
-            </time>{" "}
-            · {event.action} · {event.outcome}
+                .slice(0, 16)}{" "}{i18n.t("UTC")}</time>{" "}
+            · {i18n.t(uiLabel(event.action))} · {i18n.t(uiLabel(event.outcome))}
             <br />
             <small>{event.actor || event.actor_id}</small>
           </p>

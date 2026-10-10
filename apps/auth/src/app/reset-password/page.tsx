@@ -1,7 +1,8 @@
+import { getRequestI18n } from "@webdock/i18n/next";
 import type { Metadata } from "next";
 import { ResetPasswordForm } from "@/components/auth-forms";
 
-export const metadata: Metadata = { title: "Choose a new password" };
+export async function generateMetadata(): Promise<Metadata> { const { t } = await getRequestI18n(); return { title: t("Choose a new password") }; }
 export default async function ResetPassword({
   searchParams,
 }: {

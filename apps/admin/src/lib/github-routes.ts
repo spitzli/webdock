@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { getCMS } from "./server";
+import { operatorPreviewDenial } from "./preview-guard";
 import { getGitHub, githubOrigin } from "./github";
 import { linkGitHubRepository } from "./github-project";
 
@@ -13,6 +14,8 @@ const notice = (status: string) =>
     },
   });
 async function operator(request: Request) {
+  const denied = await operatorPreviewDenial(request.headers);
+  if (denied) return denied;
   const payload = await getCMS();
   const { user } = await payload.auth({ headers: request.headers });
   return user?.collection === "users" && user.role === "operator"
@@ -22,18 +25,21 @@ async function operator(request: Request) {
 
 export async function githubConnect(request: Request) {
   const actor = await operator(request);
+  if (actor instanceof Response) return actor;
   if (!actor) return new Response(null, { status: 403 });
   const github = getGitHub();
   return github ? github.connect(request, actor.user.id) : notice("setup");
 }
 export async function githubCallback(request: Request) {
+  const actor = await operator(request);
+  if (actor instanceof Response) return actor;
   const github = getGitHub();
   if (!github) return notice("setup");
-  const actor = await operator(request);
   return github.callback(request, actor?.user.id || "");
 }
 export async function githubDisconnect(request: Request) {
   const actor = await operator(request);
+  if (actor instanceof Response) return actor;
   if (!actor) return new Response(null, { status: 403 });
   const github = getGitHub();
   return github ? github.disconnect(request) : notice("setup");
@@ -44,6 +50,9 @@ export async function githubSelect(request: Request) {
     request.headers.get("origin") !== new URL(githubOrigin()).origin
   )
     return new Response(null, { status: 403 });
+  const actor = await operator(request);
+  if (actor instanceof Response) return actor;
+  if (!actor) return new Response(null, { status: 403 });
   if (
     !request.headers
       .get("content-type")
@@ -71,8 +80,6 @@ export async function githubSelect(request: Request) {
       reader.releaseLock();
     }
   const body = Buffer.concat(chunks).toString("utf8");
-  const actor = await operator(request);
-  if (!actor) return new Response(null, { status: 403 });
   const github = getGitHub();
   if (!github) return notice("setup");
   const session = await github.session(request.headers, actor.user.id);

@@ -22,9 +22,11 @@ export async function registerClient(_state: ClientState, form: FormData): Promi
     const id = (await database.query("SELECT webdock_auth.next_snowflake() AS id")).rows[0].id;
     const confidential = form.get("confidential") === "yes";
     const offline = form.get("offline") === "yes";
-    const scope = (form.get("write") === "yes" ? "webdock:read webdock:write" : "webdock:read") + (offline ? " offline_access" : "");
+    const hosting = form.get("capability") === "hosting";
+    const prefix = hosting ? "hosting" : "webdock";
+    const scope = (form.get("write") === "yes" ? `${prefix}:read ${prefix}:write` : `${prefix}:read`) + (offline ? " offline_access" : "");
     // Private context is entered only after a fresh central operator/MFA check.
-    const client = await offlineProvisioning.run({ clientID: id }, () => auth.api.adminCreateOAuthClient({ headers: requestHeaders, body: { client_name: name, redirect_uris: [uri.toString()], application_type: loopback ? "native" : "web", scope, grant_types: offline ? ["authorization_code", "refresh_token"] : ["authorization_code"], response_types: ["code"], token_endpoint_auth_method: confidential ? "client_secret_post" : "none", require_pkce: true, skip_consent: false, metadata: { webdock_mcp: true } } }));
+    const client = await offlineProvisioning.run({ clientID: id }, () => auth.api.adminCreateOAuthClient({ headers: requestHeaders, body: { client_name: name, redirect_uris: [uri.toString()], application_type: loopback ? "native" : "web", scope, grant_types: offline ? ["authorization_code", "refresh_token"] : ["authorization_code"], response_types: ["code"], token_endpoint_auth_method: confidential ? "client_secret_post" : "none", require_pkce: true, skip_consent: false, metadata: hosting ? { webdock_hosting: true } : { webdock_mcp: true } } }));
     try {
       await auth.api.adminLinkClientResource({ headers: requestHeaders, params: { identifier: mcpResource, client_id: client.client_id } });
     } catch (error) {
@@ -39,6 +41,6 @@ export async function disableClient(form: FormData) {
   await operator();
   const id = String(form.get("id") || "");
   if (!/^[1-9][0-9]{0,18}$/.test(id)) throw Error("Invalid client");
-  await database.query(`UPDATE webdock_auth."oauthClient" SET disabled=true WHERE "clientId"=$1 AND metadata::jsonb->>'webdock_mcp'='true'`, [id]);
+  await database.query(`UPDATE webdock_auth."oauthClient" SET disabled=true WHERE "clientId"=$1 AND (metadata::jsonb->>'webdock_mcp'='true' OR metadata::jsonb->>'webdock_hosting'='true')`, [id]);
   revalidatePath("/connections");
 }

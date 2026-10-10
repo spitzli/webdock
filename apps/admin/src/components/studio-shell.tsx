@@ -1,15 +1,24 @@
+
+import { getRequestI18n } from '@webdock/i18n/next';
 import Link from "next/link";
+import { LanguagePicker } from "@webdock/i18n/picker";
+import type { TenantPreview } from "@/lib/studio-client";
+import { TenantPreviewBanner } from "./tenant-preview";
 import { Navigation, Appearance, Logout, MobileMenu } from "./navigation";
 
-export function StudioShell({
+export async function StudioShell({
   children,
   user,
   ssoEnabled = true,
+  preview,
 }: {
   children: React.ReactNode;
   user?: { name?: string | null; role?: string | null } | null;
   ssoEnabled?: boolean;
+  preview?: TenantPreview;
 }) {
+  const i18n = await getRequestI18n();
+
   const operator = user?.role === "operator";
   const accountURL = new URL(
     "/account",
@@ -17,55 +26,48 @@ export function StudioShell({
   ).href;
   return (
     <div className="workspace">
-      <a className="skip-link" href="#main">
-        Skip to content
-      </a>
+      <a className="skip-link" href="#main">{i18n.t("Skip to content")}</a>
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <Link href={operator ? "/" : "/tenants"} className="brand">
-            webdock<span>.</span>
+          <Link href={operator ? "/" : "/tenants"} className="brand">{i18n.t("webdock")}<span>.</span>
           </Link>
           <p className="workspace-label">
-            {operator ? "Operator studio" : "Customer studio"}
+            {operator ? i18n.t("Operator studio") : i18n.t("Customer studio")}
           </p>
         </div>
         <div className="desktop-navigation">
           <Navigation operator={operator} />
-          <nav className="account-navigation" aria-label="Account and security">
-            <a href={accountURL}>Account &amp; security ↗</a>
-          </nav>
+          {!preview && <nav className="account-navigation" aria-label={i18n.t("Account and security")}><a href={accountURL}>{i18n.t("Account & security ↗")}</a></nav>}
           <div className="sidebar-bottom">
             <p className="operator">
-              {user?.name || "Webdock Studio"}
+              {user?.name || i18n.t("Webdock Studio")}
               <small>
-                {operator ? "Platform operator" : "Your customer workspace"}
+                {operator ? i18n.t("Platform operator") : i18n.t("Your customer workspace")}
               </small>
             </p>
-            <Appearance />
+            <Appearance /><LanguagePicker className="studio-language-picker" />
             {user && <Logout ssoEnabled={ssoEnabled} />}
           </div>
         </div>
         <MobileMenu
           operator={operator}
-          accountURL={accountURL}
+          accountURL={preview ? undefined : accountURL}
           userName={user?.name}
           signedIn={Boolean(user)}
           ssoEnabled={ssoEnabled}
         />
       </aside>
       <div className="main-wrap">
+        {preview && <TenantPreviewBanner preview={preview}/>}
         <header className="topbar">
-          <span>Webdock Studio</span>
+          <span>{i18n.t("Webdock Studio")}</span>
           <div className="mobile-appearance">
-            <Appearance />
+            <Appearance /><LanguagePicker className="studio-language-picker" />
           </div>
-          <a href="https://webdock.dev" target="_blank" rel="noreferrer">
-            Visit Webdock ↗
-          </a>
+          <a href="https://webdock.dev" target="_blank" rel="noreferrer">{i18n.t("Visit Webdock ↗")}</a>
         </header>
         <main id="main">{children}</main>
-        <footer className="workspace-footer">
-          Webdock Studio<span>One workspace. Independent websites.</span>
+        <footer className="workspace-footer">{i18n.t("Webdock Studio")}<span>{i18n.t("One workspace. Independent websites.")}</span>
         </footer>
       </div>
     </div>

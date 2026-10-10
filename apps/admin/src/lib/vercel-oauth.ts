@@ -5,11 +5,23 @@ const FLOW_AGE = 600;
 const CALLBACK_PATH = "/api/vercel/callback";
 const SCOPES = new Set([
   "read:integration-configuration",
-  "read:project",
   "read:deployment",
   "read:domain",
 ]);
 const FAILED = "Vercel connection could not be verified. Start again.";
+export class VercelOAuthError extends Error {
+  constructor(readonly stage: string) { super(FAILED); this.name = "VercelOAuthError"; }
+}
+/** Vercel supplies this final hop to complete its popup installation transaction.
+ * Never redirect a callback to a caller-controlled origin.
+ */
+export function vercelCompletionURL(value: string | null): string {
+  if (!value || value.length > 8192 || /[\\\s\x00-\x1f\x7f]/u.test(value)) throw new VercelOAuthError("completion-url");
+  let url: URL;
+  try { url = new URL(value); } catch { throw new VercelOAuthError("completion-url"); }
+  if (url.origin !== "https://vercel.com" || url.username || url.password || url.hash) throw new VercelOAuthError("completion-url");
+  return url.href;
+}
 const now = () => Math.floor(Date.now() / 1000);
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === "object" && !Array.isArray(value);
@@ -123,7 +135,9 @@ export function configureVercelOAuth(options: Options) {
       accessToken: string;
       teamID: string;
       configurationID: string;
+      completionURL: string;
     }> {
+      let stage = "callback-request";
       try {
         const incoming = new URL(request.url);
         const host = request.headers.get("host");
@@ -144,6 +158,7 @@ export function configureVercelOAuth(options: Options) {
           !bounded(operatorID, 256)
         )
           throw Error(FAILED);
+        stage = "callback-parameters";
         const params = incoming.searchParams;
         const names = [...params.keys()];
         if (new Set(names).size !== names.length || params.has("error"))
@@ -160,12 +175,16 @@ export function configureVercelOAuth(options: Options) {
           params.get("teamId") !== teamID
         )
           throw Error(FAILED);
+        stage = "completion-url";
+        const completionURL = vercelCompletionURL(params.get("next"));
+        stage = "flow-cookie";
         const cookies = (request.headers.get("cookie") || "")
           .split(";")
           .map((value) => value.trim())
           .filter((value) => value.startsWith(`${name}=`));
         if (cookies.length !== 1 || cookies[0]!.length > 4096)
           throw Error(FAILED);
+        stage = "flow-validation";
         const flow = await unsealData<unknown>(
           cookies[0]!.slice(name.length + 1),
           { password, ttl: FLOW_AGE },
@@ -190,6 +209,7 @@ export function configureVercelOAuth(options: Options) {
           !timingSafeEqual(Buffer.from(state), Buffer.from(flow.state))
         )
           throw Error(FAILED);
+        stage = "token-exchange";
         const exchanged = await fetcher(
           "https://api.vercel.com/v2/oauth/access_token",
           {
@@ -210,6 +230,7 @@ export function configureVercelOAuth(options: Options) {
           },
         );
         if (!exchanged.ok) throw Error(FAILED);
+        stage = "token-response";
         const token: unknown = await exchanged.json();
         if (
           !record(token) ||
@@ -222,6 +243,7 @@ export function configureVercelOAuth(options: Options) {
           token.team_id !== teamID
         )
           throw Error(FAILED);
+        stage = "configuration-read";
         const url = new URL(
           `https://api.vercel.com/v1/integrations/configuration/${configurationID}`,
         );
@@ -236,7 +258,10 @@ export function configureVercelOAuth(options: Options) {
           signal: AbortSignal.timeout(10000),
         });
         if (!response.ok) throw Error(FAILED);
+        stage = "configuration-validation";
         const configuration: unknown = await response.json();
+        const grantedScopes = record(configuration) && Array.isArray(configuration.scopes)
+          ? configuration.scopes : [];
         if (
           !record(configuration) ||
           configuration.id !== configurationID ||
@@ -253,17 +278,18 @@ export function configureVercelOAuth(options: Options) {
           (configuration.installationType !== undefined &&
             configuration.installationType !== "external") ||
           !Array.isArray(configuration.scopes) ||
-          configuration.scopes.length !== SCOPES.size ||
-          new Set(configuration.scopes).size !== SCOPES.size ||
+          configuration.scopes.length !== SCOPES.size + 1 ||
+          new Set(configuration.scopes).size !== configuration.scopes.length ||
+          [...SCOPES].some((scope) => !grantedScopes.includes(scope)) ||
           configuration.scopes.some(
-            (scope) => typeof scope !== "string" || !SCOPES.has(scope),
+            (scope) => typeof scope !== "string" || (!SCOPES.has(scope) && scope !== "read:project" && scope !== "read-write:project"),
           )
         )
           throw Error(FAILED);
-        return { accessToken: token.access_token, teamID, configurationID };
+        return { accessToken: token.access_token, teamID, configurationID, completionURL };
       } catch {
-        // Provider bodies, network errors, authorization codes and tokens never cross this boundary.
-        throw Error(FAILED);
+        // Only a fixed stage label crosses this boundary, never credentials or provider text.
+        throw new VercelOAuthError(stage);
       }
     },
   };

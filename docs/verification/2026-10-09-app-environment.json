@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-09",
+  "feature": "Application environment variables",
+  "ui": [
+    "create and update app",
+    "add, replace, empty and remove values",
+    "saved values hidden",
+    "editor disabled during submission",
+    "responsive at 1280 and 390px"
+  ],
+  "security": [
+    "AES-GCM purpose-bound to app ID",
+    "no secret values or ciphertext in public app/operation views",
+    "encrypted operation and rollback snapshots",
+    "operator/customer/preview guards unchanged",
+    "immutable revision-specific Kubernetes Secrets",
+    "agent capability gate",
+    "current and historical configured-value log redaction, including truncated edges",
+    "obsolete Secrets cleaned after observed rollout; app deletion clears all owned Secrets and stored ciphertext"
+  ],
+  "limits": {
+    "variables": 32,
+    "valueBytes": 4096,
+    "totalNameValueBytes": 12000,
+    "serializedValuesBytes": 16000
+  },
+  "verification": {
+    "authFullSuite": 89,
+    "finalChangedIntegrationTests": 16,
+    "admin": "98 passed in full run; missing Undo translation corrected and all 4 localization tests passed on rerun",
+    "pythonAgentTests": 20,
+    "typechecks": "admin and auth passed",
+    "builds": "both local prebuilt passed",
+    "actualLocalKubernetes": "UI updates produced ready revisions 2, 3 and 4; in-Pod values asserted; untouched value preserved, removed key absent; revision Secret cleanup verified",
+    "localTestImage": "cached nginx image layers/config/architecture compared; test adapter maps immutable fixture reference to identical preloaded minikube tag, no registry pull",
+    "testCleanup": "Webdock delete via local operator UI and agent; Deployment/Service/Secrets absent; empty managed namespaces retained",
+    "productionUI": "real operator session; add/remove empty row; desktop/mobile layout checked, no overflow",
+    "productionData": "three additive columns, 0 apps before and after; no customer application started",
+    "agent": "Contabo systemd service active; fresh heartbeat advertises environment=true"
+  },
+  "deployments": {
+    "auth": {
+      "id": "dpl_6kGC6Zw7tmFBUi2NwkD1aQRTCRbe",
+      "state": "READY",
+      "regions": [
+        "fra1"
+      ]
+    },
+    "admin": {
+      "id": "dpl_3vwsgVVWbgo4jJF2HrH9pHyK37Yu",
+      "state": "READY",
+      "regions": [
+        "fra1"
+      ]
+    }
+  }
+}

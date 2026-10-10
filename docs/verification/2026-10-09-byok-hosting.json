@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-09",
+  "status": "deployed",
+  "deployments": {
+    "auth": {
+      "id": "dpl_J6eLWRxAoRxqLBzWuZDCyy8bbPCL",
+      "url": "webdock-auth-1dlaixhex-spitzli.vercel.app",
+      "readyState": "READY",
+      "regions": [
+        "fra1"
+      ],
+      "target": "production"
+    },
+    "admin": {
+      "id": "dpl_G7zSAzRNE4gJCKgrG5kWo1HaYuEN",
+      "url": "webdock-admin-4rx4phzhb-spitzli.vercel.app",
+      "readyState": "READY",
+      "regions": [
+        "fra1"
+      ],
+      "target": "production"
+    }
+  },
+  "build": "Local Node 24 builds; prebuilt Vercel uploads",
+  "globalEUOnlyClaim": false,
+  "tests": {
+    "auth": 83,
+    "studio": 95,
+    "contractsAndResourceUI": 8,
+    "pythonAgent": 18,
+    "failures": 0,
+    "typechecks": [
+      "auth",
+      "studio"
+    ],
+    "gettextCatalogsValidated": true,
+    "independentReview": "Findings fixed; follow-up found no critical residual issue"
+  },
+  "localEndToEnd": {
+    "cluster": "disposable minikube webdock-byok-test, Kubernetes v1.35.1",
+    "clusterID": "101967572211077120",
+    "customerID": "101737705683030016",
+    "resource": "apps/Deployment/existing-web",
+    "actions": [
+      "scan",
+      "scale",
+      "stop",
+      "start",
+      "restart",
+      "logs"
+    ],
+    "unrelatedPodTemplateAnnotationPreserved": true,
+    "daemonHTTPConnectionVerified": true,
+    "browserScaleOperationID": "101970778907480064",
+    "browserScaleResult": "succeeded; 1 replica"
+  },
+  "productionVerification": {
+    "realOperatorSession": true,
+    "renderedPages": [
+      "/infrastructure/101775802667896832",
+      "/tenants/101711682211938304/hosting"
+    ],
+    "existingBusinessCountsUnchanged": {
+      "customers": 22,
+      "projects": 21,
+      "cms": 20
+    },
+    "existingAgentRecovered": true,
+    "existingAgentID": "101775802667896832",
+    "existingAgentCredentialsRotated": false,
+    "automaticTenantEntitlementChanges": false,
+    "newCustomerWorkloadMigrated": false,
+    "screenshot": "/home/newt/.t3/userdata/browser-artifacts/browser-screenshot-studio-webdock-dev-mv0sg8qz-4d9c8d92.png",
+    "lastAgentCheck": {
+      "id": "101775802667896832",
+      "name": "Contabo · vmd208517",
+      "ownership": "platform",
+      "last_seen": "2026-10-09T09:53:58.319Z",
+      "age": {
+        "seconds": 11,
+        "milliseconds": 90.509
+      },
+      "revoked": false,
+      "nodes": 1
+    }
+  },
+  "agentBundleSHA256": "64f190b0a3af092c1065bc2303ecff2cbee6e188419831a462514634a4309c36",
+  "liveBundleHashMatched": true,
+  "verificationGaps": [
+    "First real customer-owned Vercel OAuth installation has not been performed; requires customer authorization for a separate team.",
+    "StatefulSet/DaemonSet/CronJob paths have focused validation but were not all run as live fixtures."
+  ],
+  "limits": [
+    "No arbitrary shell/YAML, Secret or ConfigMap reads.",
+    "No customer deletion of workloads, namespaces, persistent data or clusters.",
+    "Recognized GitOps/HPA conflicts and StatefulSet scale-down with Delete PVC retention are blocked.",
+    "BYOK resource observations are not hard provider-wide quota enforcement.",
+    "Vercel remote builds/redeploy, usage metering and spend caps are not provided.",
+    "Revoked cluster registrations still count; no archive UI in this increment."
+  ]
+}

@@ -15,7 +15,7 @@ import { offlineProvisioning } from "./offline";
 import { currentClaims } from "./authorization";
 import { sendAuthMail } from "./mail";
 import { passkeySecurity, passwordTwoFactor } from "./passkeys";
-import { mcpResource, mcpScopes, currentMCPClaims } from "./mcp";
+import { mcpResource, mcpScopes, currentMCPClaims, hostingScopes, currentHostingMCPClaims } from "./mcp";
 const baseURL = process.env.BETTER_AUTH_URL || "http://localhost:3125";
 export const auth = lazyAuth(() => betterAuth({
   appName: "Webdock",
@@ -158,8 +158,8 @@ export const auth = lazyAuth(() => betterAuth({
     oauthProvider({
       loginPage: "/sign-in",
       consentPage: "/consent",
-      scopes: ["openid", "profile", "email", "offline_access", ...mcpScopes],
-      resources: [{ identifier: mcpResource, name: "Webdock Studio", allowedScopes: [...mcpScopes, "offline_access"], accessTokenTtl: 300 }],
+      scopes: ["openid", "profile", "email", "offline_access", ...mcpScopes, ...hostingScopes],
+      resources: [{ identifier: mcpResource, name: "Webdock Studio", allowedScopes: [...mcpScopes, ...hostingScopes, "offline_access"], accessTokenTtl: 300 }],
       enforcePerClientResources: true,
       grantTypes: ["authorization_code", "refresh_token"],
       refreshTokenExpiresIn: 60 * 60 * 8,
@@ -194,7 +194,7 @@ export const auth = lazyAuth(() => betterAuth({
         return id;
       },
       extensions: [{ claims: { accessToken: async ({ ctx, metadata, grantType, sessionId, user }) => {
-        if (metadata?.webdock_mcp === true && grantType) {
+        if ((metadata?.webdock_mcp === true || metadata?.webdock_hosting === true) && grantType) {
           // Offline refresh tokens survive session deletion with a NULL FK.
           // Never let renewal turn session-bound access into sessionless access.
           const session = sessionId ? await ctx.context.adapter.findOne<{ userId: string; expiresAt: Date }>({
@@ -206,12 +206,16 @@ export const auth = lazyAuth(() => betterAuth({
         return {};
       } } }],
       customTokenResponseFields: async ({ metadata, user }) => {
+        if (metadata?.webdock_hosting === true && (await currentHostingMCPClaims(user?.id)).disabled)
+          throw new APIError("FORBIDDEN", { message: "Current hosting authorization is required." });
         if (metadata?.webdock_mcp === true && (await currentMCPClaims(user?.id)).disabled)
           throw new APIError("FORBIDDEN", { message: "Current operator authorization is required." });
         return {};
       },
       customAccessTokenClaims: ({ user, metadata }) =>
-        metadata?.webdock_mcp === true
+        metadata?.webdock_hosting === true
+          ? currentHostingMCPClaims(user?.id)
+          : metadata?.webdock_mcp === true
           ? currentMCPClaims(user?.id)
           : currentClaims(user?.id, metadata?.webdock_binding),
     }),

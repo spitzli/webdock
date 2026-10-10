@@ -1,3 +1,4 @@
+import {previewProjectDeletion,deleteProject,deleteProjectInput} from "./project-deletion";
 import { projectVercelStatus } from "./vercel-project";
 import { APIError, type Payload } from "payload";
 import { z } from "zod";
@@ -79,6 +80,8 @@ export async function handleRegistryRequest(
             collections: collectionName.options,
             operations: {
               hosting: "GET /api/registry/projects/{id}/hosting",
+              deletionPreview: "GET /api/registry/projects/{id}/deletion",
+              deletion: "DELETE /api/registry/projects/{id}: { confirmName, planHash }",
               GET: "/api/registry/{collection}[/{id}]",
               POST: "/api/registry/{collection}",
               PUT: "/api/registry/{collection}/{id}",
@@ -105,6 +108,8 @@ export async function handleRegistryRequest(
       request.method === "GET"
     )
       return json(await projectVercelStatus(actor, recordID.parse(path[1])));
+    if(path.length===3 && path[0]==="projects" && path[2]==="deletion" && request.method==="GET")return json(await previewProjectDeletion(actor,recordID.parse(path[1])));
+    if(path.length===2 && path[0]==="projects" && request.method==="DELETE")return json(await deleteProject(actor,recordID.parse(path[1]),deleteProjectInput.parse(await readJSON(request))));
     if (path.length > 2) return json({ error: "Not found" }, 404);
     const collection = collectionName.parse(path[0]);
     const id = path[1] === undefined ? null : recordID.parse(path[1]);

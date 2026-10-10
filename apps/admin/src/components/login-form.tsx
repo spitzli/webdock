@@ -1,8 +1,13 @@
 "use client";
+import {msgid} from '@webdock/i18n';
+import { useI18n } from '@webdock/i18n/react';
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 export default function LoginForm() {
+  const i18n = useI18n();
+
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -25,23 +30,23 @@ export default function LoginForm() {
           const j = await r.json();
           if (!r.ok || j.user?.role !== "operator") {
             if (r.ok) await fetch("/api/users/logout", { method: "POST" });
-            throw Error("Check your email and password, or try again later.");
+            throw Error(msgid("Check your email and password, or try again later."));
           }
           router.replace("/");
           router.refresh();
         } catch (err) {
-          setError(err instanceof Error ? err.message : "Sign in failed.");
+          setError(err instanceof Error ? err.message : msgid("Sign in failed."));
           setBusy(false);
         }
       }}
     >
       {error && (
         <p className="error" role="alert">
-          {error}
+          {i18n.error(error)}
         </p>
       )}
       <div className="field">
-        <label htmlFor="email">Email</label>
+        <label htmlFor="email">{i18n.t("Email")}</label>
         <input
           id="email"
           name="email"
@@ -51,7 +56,7 @@ export default function LoginForm() {
         />
       </div>
       <div className="field">
-        <label htmlFor="password">Password</label>
+        <label htmlFor="password">{i18n.t("Password")}</label>
         <input
           id="password"
           name="password"
@@ -61,11 +66,9 @@ export default function LoginForm() {
         />
       </div>
       <button className="button" disabled={busy}>
-        {busy ? "Signing in…" : "Sign in"}
+        {busy ? i18n.t("Signing in…") : i18n.t("Sign in")}
       </button>
-      <Link className="forgot" href="/system/forgot">
-        Forgot password?
-      </Link>
+      <Link className="forgot" href="/system/forgot">{i18n.t("Forgot password?")}</Link>
     </form>
   );
 }

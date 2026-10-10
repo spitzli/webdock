@@ -1,0 +1,439 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Webdock\n"
+"PO-Revision-Date: 2026-10-05 00:00+0000\n"
+"Last-Translator: Webdock\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "{count} item"
+msgid_plural "{count} items"
+msgstr[0] "{count} Eintrag"
+msgstr[1] "{count} Einträge"
+
+msgid "{field} · managed separately"
+msgstr "{field} · separat verwaltet"
+
+msgid "{type} #{id}"
+msgstr "{type} #{id}"
+
+msgid "Account"
+msgstr "Konto"
+
+msgid "Add a section"
+msgstr "Abschnitt hinzufügen"
+
+msgid "Add item"
+msgstr "Eintrag hinzufügen"
+
+msgid "Administrator"
+msgstr "Administrator"
+
+msgid "Advanced tools"
+msgstr "Erweiterte Werkzeuge"
+
+msgid "All accessible sites"
+msgstr "Alle zugänglichen Websites"
+
+msgid "Alternative text"
+msgstr "Alternativtext"
+
+msgid "An administrator is required to delete content."
+msgstr "Zum Löschen von Inhalten sind Administratorrechte erforderlich."
+
+msgid "An administrator is required to restore versions."
+msgstr "Zum Wiederherstellen von Versionen sind Administratorrechte erforderlich."
+
+msgid "Answer"
+msgstr "Antwort"
+
+msgid "Back to {type}"
+msgstr "Zurück zu {type}"
+
+msgid "Changes saved."
+msgstr "Änderungen gespeichert."
+
+msgid "Choose a section…"
+msgstr "Abschnitt auswählen …"
+
+msgid "Choose a supported language."
+msgstr "Wähle eine unterstützte Sprache."
+
+msgid "Choose…"
+msgstr "Auswählen …"
+
+msgid "CMS by Webdock"
+msgstr "CMS von Webdock"
+
+msgid "Contact email"
+msgstr "Kontakt-E-Mail"
+
+msgid "Content"
+msgstr "Inhalte"
+
+msgid "Content and access, kept in your control."
+msgstr "Inhalte und Zugriffe unter deiner Kontrolle."
+
+msgid "Content areas"
+msgstr "Inhaltsbereiche"
+
+msgid "Content configuration is unavailable."
+msgstr "Die Inhaltskonfiguration ist nicht verfügbar."
+
+msgid "Content deleted."
+msgstr "Inhalt gelöscht."
+
+msgid "Content is too large."
+msgstr "Der Inhalt ist zu groß."
+
+msgid "Content language"
+msgstr "Inhaltssprache"
+
+msgid "Content pages"
+msgstr "Inhaltsseiten"
+
+msgid "Content sections"
+msgstr "Inhaltsabschnitte"
+
+msgid "Content writes require transaction support."
+msgstr "Inhalte können nur mit Transaktionsunterstützung gespeichert werden."
+
+msgid "Could not load choices. Try again."
+msgstr "Die Auswahl konnte nicht geladen werden. Bitte erneut versuchen."
+
+msgid "Create new"
+msgstr "Neu erstellen"
+
+msgid "Create your first item to get started."
+msgstr "Erstelle deinen ersten Eintrag, um zu beginnen."
+
+msgid "Delete permanently"
+msgstr "Endgültig löschen"
+
+msgid "Delete this content"
+msgstr "Diesen Inhalt löschen"
+
+msgid "Description"
+msgstr "Beschreibung"
+
+msgid "Draft"
+msgstr "Entwurf"
+
+msgid "Draft saved."
+msgstr "Entwurf gespeichert."
+
+msgid "Editor"
+msgstr "Editor"
+
+msgid "English"
+msgstr "Englisch"
+
+msgid "Existing linked items are preserved. New choices shown from {collection}."
+msgstr "Vorhandene Verknüpfungen bleiben erhalten. Neue Auswahlmöglichkeiten stammen aus {collection}."
+
+msgid "Expected content fields."
+msgstr "Inhaltsfelder werden erwartet."
+
+msgid "Find {type}"
+msgstr "{type} suchen"
+
+msgid "Find an image"
+msgstr "Bild suchen"
+
+msgid "Find an item"
+msgstr "Eintrag suchen"
+
+msgid "German"
+msgstr "Deutsch"
+
+msgid "Image"
+msgstr "Bild"
+
+msgid "Invalid form data."
+msgstr "Ungültige Formulardaten."
+
+msgid "Invalid item ID."
+msgstr "Ungültige Eintrags-ID."
+
+msgid "Invalid JSON."
+msgstr "Ungültiges JSON."
+
+msgid "Invalid page."
+msgstr "Ungültige Seite."
+
+msgid "Invalid record."
+msgstr "Ungültiger Datensatz."
+
+msgid "Invalid request."
+msgstr "Ungültige Anfrage."
+
+msgid "Item {number}"
+msgstr "Eintrag {number}"
+
+msgid "Keep your website up to date."
+msgstr "Halte deine Website aktuell."
+
+msgid "Live content"
+msgstr "Veröffentlichter Inhalt"
+
+msgid "Make room for your next idea."
+msgstr "Platz für deine nächste Idee."
+
+msgid "Move down"
+msgstr "Nach unten"
+
+msgid "Move up"
+msgstr "Nach oben"
+
+msgid "My account"
+msgstr "Mein Konto"
+
+msgid "My websites"
+msgstr "Meine Websites"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "New {type}"
+msgstr "Neu: {type}"
+
+msgid "New records are created by the website in this content area."
+msgstr "Neue Datensätze in diesem Bereich werden von der Website erstellt."
+
+msgid "Next"
+msgstr "Weiter"
+
+msgid "Next choices"
+msgstr "Weitere Auswahlmöglichkeiten"
+
+msgid "No matching content"
+msgstr "Keine passenden Inhalte"
+
+msgid "Opening your content…"
+msgstr "Inhalte werden geöffnet …"
+
+msgid "Overview"
+msgstr "Übersicht"
+
+msgid "People & access"
+msgstr "Personen & Zugriff"
+
+msgid "Permanently delete this record?"
+msgstr "Diesen Datensatz endgültig löschen?"
+
+msgid "Platform administrator"
+msgstr "Plattformadministrator"
+
+msgid "Preview saved draft ↗"
+msgstr "Gespeicherten Entwurf ansehen ↗"
+
+msgid "Previous"
+msgstr "Zurück"
+
+msgid "Previous choices"
+msgstr "Vorherige Auswahlmöglichkeiten"
+
+msgid "Publish"
+msgstr "Veröffentlichen"
+
+msgid "Publish this content to the website?"
+msgstr "Diesen Inhalt auf der Website veröffentlichen?"
+
+msgid "Published"
+msgstr "Veröffentlicht"
+
+msgid "Published."
+msgstr "Veröffentlicht."
+
+msgid "Question"
+msgstr "Frage"
+
+msgid "Read only"
+msgstr "Nur lesen"
+
+msgid "Ready to save?"
+msgstr "Bereit zum Speichern?"
+
+msgid "Reload"
+msgstr "Neu laden"
+
+msgid "Reload the CMS and try again."
+msgstr "Lade das CMS neu und versuche es erneut."
+
+msgid "Remove"
+msgstr "Entfernen"
+
+msgid "Remove selected {field}"
+msgstr "Ausgewählte Zuordnung für {field} entfernen"
+
+msgid "Remove this item from the page? Save to apply the change."
+msgstr "Diesen Eintrag von der Seite entfernen? Speichere, um die Änderung zu übernehmen."
+
+msgid "Replace image"
+msgstr "Bild ersetzen"
+
+msgid "Restore"
+msgstr "Wiederherstellen"
+
+msgid "Restore this version? This replaces the current content."
+msgstr "Diese Version wiederherstellen? Der aktuelle Inhalt wird dadurch ersetzt."
+
+msgid "Save a draft first, then publish when ready."
+msgstr "Speichere zunächst einen Entwurf und veröffentliche ihn, wenn er fertig ist."
+
+msgid "Save changes"
+msgstr "Änderungen speichern"
+
+msgid "Save draft"
+msgstr "Entwurf speichern"
+
+msgid "Saved"
+msgstr "Gespeichert"
+
+msgid "Saving changes updates the live website."
+msgstr "Gespeicherte Änderungen erscheinen direkt auf der Website."
+
+msgid "Saving…"
+msgstr "Wird gespeichert …"
+
+msgid "Search"
+msgstr "Suchen"
+
+msgid "Search {field}"
+msgstr "{field} suchen"
+
+msgid "Select an existing record."
+msgstr "Wähle einen vorhandenen Datensatz."
+
+msgid "Selected item {id}"
+msgstr "Ausgewählter Eintrag {id}"
+
+msgid "Sign in to open the CMS."
+msgstr "Melde dich an, um das CMS zu öffnen."
+
+msgid "Site"
+msgstr "Website"
+
+msgid "Skip to content"
+msgstr "Zum Inhalt springen"
+
+msgid "Slug"
+msgstr "URL-Kürzel"
+
+msgid "Source"
+msgstr "Quelle"
+
+msgid "Spitzli Development admin ↗"
+msgstr "Spitzli-Development-Verwaltung ↗"
+
+msgid "Stall Eichenbruch admin ↗"
+msgstr "Stall-Eichenbruch-Verwaltung ↗"
+
+msgid "The change could not be saved."
+msgstr "Die Änderung konnte nicht gespeichert werden."
+
+msgid "The shared CMS has been retired. Sign in to your website to manage its content."
+msgstr "Das gemeinsame CMS wurde abgelöst. Melde dich bei deiner Website an, um ihre Inhalte zu verwalten."
+
+msgid "The upload is too large."
+msgstr "Die hochgeladene Datei ist zu groß."
+
+msgid "This content area is not available."
+msgstr "Dieser Inhaltsbereich ist nicht verfügbar."
+
+msgid "This content changed since you opened it. Reload before saving."
+msgstr "Dieser Inhalt wurde seit dem Öffnen geändert. Lade ihn vor dem Speichern neu."
+
+msgid "This content does not support drafts."
+msgstr "Dieser Inhalt unterstützt keine Entwürfe."
+
+msgid "This field is preserved when you save. Use Advanced tools if it needs changing."
+msgstr "Dieses Feld bleibt beim Speichern erhalten. Änderungen sind über die erweiterten Werkzeuge möglich."
+
+msgid "This file is not allowed or is too large."
+msgstr "Diese Datei ist nicht erlaubt oder zu groß."
+
+msgid "This formatted content is preserved. An administrator can edit it in Advanced tools."
+msgstr "Dieser formatierte Inhalt bleibt erhalten. Ein Administrator kann ihn über die erweiterten Werkzeuge bearbeiten."
+
+msgid "This removes the record. Images may still be used by other content."
+msgstr "Dadurch wird der Datensatz entfernt. Bilder können weiterhin in anderen Inhalten verwendet werden."
+
+msgid "This version belongs to a different record."
+msgstr "Diese Version gehört zu einem anderen Datensatz."
+
+msgid "Title"
+msgstr "Titel"
+
+msgid "Try another search."
+msgstr "Versuche einen anderen Suchbegriff."
+
+msgid "Unknown content action."
+msgstr "Unbekannte Inhaltsaktion."
+
+msgid "Unknown content block."
+msgstr "Unbekannter Inhaltsblock."
+
+msgid "Unsaved changes"
+msgstr "Ungespeicherte Änderungen"
+
+msgid "Upload image"
+msgstr "Bild hochladen"
+
+msgid "Use JSON or a file upload."
+msgstr "Verwende JSON oder lade eine Datei hoch."
+
+msgid "Version history"
+msgstr "Versionsverlauf"
+
+msgid "Version history is not enabled for this content."
+msgstr "Für diesen Inhalt ist kein Versionsverlauf aktiviert."
+
+msgid "View live ↗"
+msgstr "Veröffentlichte Seite ansehen ↗"
+
+msgid "View website ↗"
+msgstr "Website ansehen ↗"
+
+msgid "Webdock admin ↗"
+msgstr "Webdock-Verwaltung ↗"
+
+msgid "Website administration — Webdock"
+msgstr "Website-Verwaltung — Webdock"
+
+msgid "Website settings cannot be deleted."
+msgstr "Website-Einstellungen können nicht gelöscht werden."
+
+msgid "You have read-only access. Contact your administrator to request editing rights."
+msgstr "Du hast Lesezugriff. Frage deinen Administrator nach Bearbeitungsrechten."
+
+msgid "You have unsaved changes. Leave without saving?"
+msgstr "Du hast ungespeicherte Änderungen. Ohne Speichern verlassen?"
+
+msgid "Your content is up to date."
+msgstr "Deine Inhalte sind aktuell."
+
+msgid "Your existing email address and password still work."
+msgstr "Deine bisherige E-Mail-Adresse und dein Passwort funktionieren weiterhin."
+
+msgid "Your role can view content but cannot change it."
+msgstr "Deine Rolle erlaubt das Ansehen, aber nicht das Ändern von Inhalten."
+
+msgid "Your session ended. Reload to sign in again."
+msgstr "Deine Sitzung ist abgelaufen. Lade die Seite neu, um dich erneut anzumelden."
+
+msgid "Your website has its own admin."
+msgstr "Deine Website hat eine eigene Verwaltung."
+
+msgid "Your website, in your hands."
+msgstr "Deine Website. In deiner Hand."
+
+msgid "Another edit was saved at the same time. Reload before trying again."
+msgstr "Eine andere Änderung wurde gleichzeitig gespeichert. Lade die Seite neu, bevor du es erneut versuchst."
+
+msgid "The CMS could not complete this request. Your changes were not confirmed."
+msgstr "Das CMS konnte diese Anfrage nicht abschließen. Deine Änderungen wurden nicht bestätigt."

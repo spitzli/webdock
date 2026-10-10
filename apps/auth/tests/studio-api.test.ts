@@ -7,10 +7,12 @@ import { database } from "../src/lib/db";
 import { createIdentity, registerApplication } from "../src/lib/bootstrap";
 import { currentClaims } from "../src/lib/authorization";
 import { handleStudioRequest } from "../src/lib/studio-api";
+import { tenantPreviewSchemaSQL } from "../src/lib/tenant-preview-schema";
 
 const databaseURL = new URL(process.env.DATABASE_URL!);
 if (!["localhost", "127.0.0.1"].includes(databaseURL.hostname) || databaseURL.pathname !== "/webdock_admin_test" || process.env.AUTH_TEST_MAIL !== "true") throw Error("Disposable local database and test outbox required");
 const origin = process.env.BETTER_AUTH_URL!;
+test.before(async () => { await database.query(tenantPreviewSchemaSQL); });
 test.after(async () => { await auth.$context; await database.end(); });
 async function identity(operator = false) {
   const password = randomBytes(24).toString("base64url");
@@ -34,6 +36,7 @@ test("Studio delegation validates live session identity, bounds inputs and retai
   const tenant = (await database.query("INSERT INTO webdock_admin.customers(id,name,notes) VALUES(webdock_auth.next_snowflake(),'Studio tenant','private operator note') RETURNING id")).rows[0];
   const org = (await database.query('SELECT organization_id FROM webdock_auth.tenant_customer WHERE customer_id=$1', [tenant.id])).rows[0].organization_id;
   await database.query('INSERT INTO webdock_auth.member("organizationId","userId",role,"createdAt") VALUES($1,$2,\'admin\',now())', [org, customer.id]);
+  assert.equal((await currentClaims(customer.id, app.binding)).webdock_role, "reader", "Tenant admin authority never elevates the global Studio binding");
   const claims = { active: true, client_id: app.clientID, sub: customer.id, sid: customer.session.id, exp: Math.floor(Date.now() / 1000) + 300 };
   const introspect = async (incoming: Request) => {
     assert.equal(incoming.url, origin + "/api/auth/oauth2/introspect");
@@ -178,4 +181,24 @@ test("Studio preserves safe validation and delegates native organization creatio
   assert.equal(response.status, 403);
   assert.equal((await database.query('SELECT id FROM webdock_auth.invitation WHERE email=$1', [unauthorizedEmail])).rowCount, 0);
   assert.equal(testOutbox.some(mail => mail.to === unauthorizedEmail), false);
+});
+
+test("Studio and hosting introspection outages cannot masquerade as expired browser sessions", async (t) => {
+  const previousClientID = process.env.WEBDOCK_STUDIO_CLIENT_ID;
+  process.env.WEBDOCK_STUDIO_CLIENT_ID = "loop-regression-fixture";
+  t.after(() => { if (previousClientID === undefined) delete process.env.WEBDOCK_STUDIO_CLIENT_ID; else process.env.WEBDOCK_STUDIO_CLIENT_ID = previousClientID; });
+  const { hostingIdentity } = await import("../src/lib/hosting/bridge");
+  const { HostingError } = await import("@webdock/hosting-contracts");
+  for (const [upstream, expected] of [[429, 429], [500, 503], [503, 503], [401, 401], [403, 401]]) {
+    const introspect = async () => new Response("private provider error", {status: upstream});
+    const mocked = t.mock.method(auth, "handler", introspect);
+    try {
+      const response = await handleStudioRequest(request("session"), {introspect});
+      assert.equal(response.status, expected, `Studio upstream ${upstream}`);
+      assert.equal((await response.text()).includes("private provider error"), false);
+      await assert.rejects(hostingIdentity(request("session"), "fixture-access-token"),
+        error => error instanceof HostingError && error.status === expected,
+        `Hosting upstream ${upstream}`);
+    } finally { mocked.mock.restore(); }
+  }
 });

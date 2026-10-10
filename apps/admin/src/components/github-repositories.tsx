@@ -1,7 +1,9 @@
+
+import { getRequestI18n } from '@webdock/i18n/next';
 import Link from "next/link";
 import type { GitHubRepository } from "../lib/github";
 
-export function GitHubRepositories({
+export async function GitHubRepositories({
   repositories,
   projects,
   installation,
@@ -16,6 +18,8 @@ export function GitHubRepositories({
   page: number;
   totalPages: number;
 }) {
+  const i18n = await getRequestI18n();
+
   const pageURL = (next: number) =>
     `/integrations?${new URLSearchParams({ installation: String(installation), installationPage: String(installationPage), page: String(next) })}`;
   return (
@@ -30,8 +34,7 @@ export function GitHubRepositories({
           />
           <input type="hidden" name="page" value={page} />
           <div className="field wide">
-            <label htmlFor="github-repository">
-              Repository <span aria-hidden="true">*</span>
+            <label htmlFor="github-repository">{i18n.t("Repository ")}<span aria-hidden="true">*</span>
             </label>
             <select
               id="github-repository"
@@ -39,19 +42,16 @@ export function GitHubRepositories({
               required
               defaultValue=""
             >
-              <option value="" disabled>
-                Choose a repository
-              </option>
+              <option value="" disabled>{i18n.t("Choose a repository")}</option>
               {repositories.map((repo) => (
                 <option key={repo.id} value={repo.id}>
-                  {repo.name} · {repo.private ? "Private" : "Public"}
+                  {repo.name} · {repo.private ? i18n.t("Private") : i18n.t("Public")}
                 </option>
               ))}
             </select>
           </div>
           <div className="field wide">
-            <label htmlFor="github-project">
-              Webdock project <span aria-hidden="true">*</span>
+            <label htmlFor="github-project">{i18n.t("Webdock project ")}<span aria-hidden="true">*</span>
             </label>
             <select
               id="github-project"
@@ -61,54 +61,39 @@ export function GitHubRepositories({
               disabled={!projects.length}
               aria-describedby="github-project-hint"
             >
-              <option value="" disabled>
-                Choose a project
-              </option>
+              <option value="" disabled>{i18n.t("Choose a project")}</option>
               {projects.map((project) => (
                 <option key={project.id} value={project.id}>
                   {project.name}
-                  {project.repositoryURL ? " · Replace current repository" : ""}
+                  {project.repositoryURL ? i18n.t(" · Replace current repository") : ""}
                 </option>
               ))}
             </select>
-            <small id="github-project-hint">
-              Saves the repository link to the project and records the change in
-              Activity.
-            </small>
+            <small id="github-project-hint">{i18n.t("Saves the repository link to the project and records the change in Activity.")}</small>
           </div>
           <div className="form-footer">
             <button
               className="button"
               type="submit"
               disabled={!projects.length}
-            >
-              Link repository
-            </button>
+            >{i18n.t("Link repository")}</button>
             {!projects.length && (
-              <Link href="/projects/new">Create a project first</Link>
+              <Link href="/projects/new">{i18n.t("Create a project first")}</Link>
             )}
           </div>
         </form>
       ) : (
-        <p>
-          No repositories are available on this page. Review the app’s selected
-          repositories on GitHub.
-        </p>
+        <p>{i18n.t("No repositories are available on this page. Review the app’s selected repositories on GitHub.")}</p>
       )}
       {totalPages > 1 && (
-        <nav className="pagination" aria-label="Repository pages">
+        <nav className="pagination" aria-label={i18n.t("Repository pages")}>
           {page > 1 && (
-            <Link className="button secondary" href={pageURL(page - 1)}>
-              Previous repositories
-            </Link>
+            <Link className="button secondary" href={pageURL(page - 1)}>{i18n.t("Previous repositories")}</Link>
           )}
-          <span>
-            Page {page} of {totalPages}
+          <span>{i18n.t("Page ")}{page}{i18n.t(" of ")}{totalPages}
           </span>
           {page < totalPages && (
-            <Link className="button secondary" href={pageURL(page + 1)}>
-              Next repositories
-            </Link>
+            <Link className="button secondary" href={pageURL(page + 1)}>{i18n.t("Next repositories")}</Link>
           )}
         </nav>
       )}

@@ -12,13 +12,14 @@ export default async function TenantLayout({
 }) {
   const { customerID } = await params;
   let canManage = false;
-  if (await getStudioSession()) {
+  const session = await getStudioSession();
+  if (session) {
     try { canManage = (await getTenant(await headers(), customerID)).canManage; }
     catch (error) { if (!(error instanceof AccessError)) throw error; }
   }
   return (
     <>
-      <TenantNavigation customerID={customerID} canManage={canManage} />
+      <TenantNavigation customerID={customerID} canManage={canManage} preview={!!session?.preview} />
       {children}
     </>
   );

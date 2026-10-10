@@ -775,3 +775,4 @@ button:not(.cms-button) {
     display: flex;
   }
 }
+.cms-ui-language{display:flex;justify-content:flex-end;padding:10px 24px;background:var(--cms-bg,#f5f6f8);border-bottom:1px solid var(--cms-line,#dce1e7);font:12px system-ui,sans-serif}.cms-ui-language label{display:flex;align-items:center;gap:8px}.cms-ui-language select{font:inherit;min-height:32px;max-width:160px}

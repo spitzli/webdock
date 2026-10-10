@@ -1,3 +1,5 @@
+import { operatorPreviewDenial } from "@/lib/preview-guard";
+import { guardNativeHandler } from "@/lib/preview-guard-policy";
 import config from "@payload-config";
 import {
   REST_DELETE,
@@ -7,9 +9,10 @@ import {
   REST_POST,
   REST_PUT,
 } from "@payloadcms/next/routes";
-export const GET = REST_GET(config);
-export const POST = REST_POST(config);
-export const DELETE = REST_DELETE(config);
-export const PATCH = REST_PATCH(config);
-export const PUT = REST_PUT(config);
-export const OPTIONS = REST_OPTIONS(config);
+const protect = (handler: ReturnType<typeof REST_GET>) => guardNativeHandler(handler, operatorPreviewDenial);
+export const GET = protect(REST_GET(config));
+export const POST = protect(REST_POST(config));
+export const DELETE = protect(REST_DELETE(config));
+export const PATCH = protect(REST_PATCH(config));
+export const PUT = protect(REST_PUT(config));
+export const OPTIONS = protect(REST_OPTIONS(config));

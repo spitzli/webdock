@@ -1,0 +1,7144 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Webdock Studio\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-05 00:00+0000\n"
+"PO-Revision-Date: 2026-10-05 00:00+0000\n"
+"Last-Translator: Webdock\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid " (archived)"
+msgstr " (archiviert)"
+
+
+msgid " (previous address)"
+msgstr " (bisherige Adresse)"
+
+
+msgid " Active CMS records"
+msgstr " Aktive CMS-Einträge"
+
+
+msgid " Active projects"
+msgstr " Aktive Projekte"
+
+
+msgid " Archived projects"
+msgstr " Archivierte Projekte"
+
+
+msgid " Contact your Webdock operator to complete setup."
+msgstr " Wende dich an deinen Webdock-Betreiber, um die Einrichtung abzuschließen."
+
+
+msgid " I want to remove the saved Mail credentials."
+msgstr " Ich möchte die gespeicherten Mail-Zugangsdaten entfernen."
+
+
+msgid " You can still view and revoke existing credentials."
+msgstr " Vorhandene Zugangsdaten können weiterhin angezeigt und widerrufen werden."
+
+
+msgid " Your local changes are preserved."
+msgstr " Dein lokaler Stand bleibt erhalten."
+
+
+msgid " and choose only the repositories you want to use."
+msgstr " und wähle nur die Repositorys aus, die du verwenden möchtest."
+
+
+msgid " available"
+msgstr " verfügbar"
+
+
+msgid " configured"
+msgstr " konfiguriert"
+
+
+msgid " emails."
+msgstr " E-Mails."
+
+
+msgid " hrs"
+msgstr " Uhr"
+
+
+msgid " in Studio’s server environment. Studio uses its existing SSO cookie secret to encrypt the connection."
+msgstr " in der Serverumgebung von Studio. Studio verschlüsselt die Verbindung mit dem vorhandenen SSO-Cookie-Geheimnis."
+
+
+msgid " min · "
+msgstr " Min. · "
+
+
+msgid " of"
+msgstr " von"
+
+
+msgid " of "
+msgstr " von "
+
+
+msgid " on this page"
+msgstr " auf dieser Seite"
+
+
+msgid " px · Links are disabled in preview"
+msgstr " px · Links sind in der Vorschau deaktiviert"
+
+
+msgid " sent · Provider limit:"
+msgstr " gesendet · Anbieterlimit:"
+
+
+msgid " · Active homepage"
+msgstr " · Aktive Startseite"
+
+
+msgid " · Archived"
+msgstr " · Archiviert"
+
+
+msgid " · Expires"
+msgstr " · Gültig bis"
+
+
+msgid " · Key ending in {suffix}"
+msgstr " · Schlüssel endet auf {suffix}"
+
+
+msgid " · Management"
+msgstr " · Verwaltung"
+
+
+msgid " · No integrated preview"
+msgstr " · Keine integrierte Vorschau"
+
+
+msgid " · Node.js"
+msgstr " · Node.js"
+
+
+msgid " · Please return to your own view."
+msgstr " · Bitte zur eigenen Ansicht zurückkehren."
+
+
+msgid " · Redirects to "
+msgstr " · Weiterleitung zu "
+
+
+msgid " · Replace current repository"
+msgstr " · Aktuelles Repository ersetzen"
+
+
+msgid " · Request #{id}"
+msgstr " · Anfrage #{id}"
+
+
+msgid " · Required by account policy"
+msgstr " · Durch die Kontorichtlinie vorgeschrieben"
+
+
+msgid " · Tenant"
+msgstr " · Mandant"
+
+
+msgid " · Track opens and clicks with your own domain."
+msgstr " · Öffnungen und Klicks mit deiner eigenen Domain erfassen."
+
+
+msgid " · Until {time}"
+msgstr " · Bis {time}"
+
+
+msgid " · Updated"
+msgstr " · Aktualisiert"
+
+
+msgid " — browse customers, projects, CMS instances, and activity."
+msgstr " — Kunden, Projekte, CMS-Instanzen und Aktivitäten ansehen."
+
+
+msgid " — create and update registry records."
+msgstr " — Verwaltungseinträge erstellen und aktualisieren."
+
+
+msgid "+ Exception"
+msgstr "+ Ausnahme"
+
+
+msgid "+ Opening time"
+msgstr "+ Öffnungszeit"
+
+
+msgid "+ Time slot"
+msgstr "+ Zeitfenster"
+
+
+msgid ", and"
+msgstr " und"
+
+
+msgid ", then return here and choose "
+msgstr ", kehre anschließend hierher zurück und wähle "
+
+
+msgid ". Leave automatic user authorization during installation off so this connection starts in Studio."
+msgstr ". Lass die automatische Benutzerautorisierung bei der Installation deaktiviert, damit die Verbindung in Studio gestartet wird."
+
+
+msgid ". Leave other permissions and webhook events off. Keep user access token expiration enabled."
+msgstr ". Lass alle anderen Berechtigungen und Webhook-Ereignisse deaktiviert. Der Ablauf von Benutzer-Zugriffstokens muss aktiviert bleiben."
+
+
+msgid ". Read-only data from Vercel."
+msgstr ". Schreibgeschützte Daten von Vercel."
+
+
+msgid ". This browser connection expires after eight hours."
+msgstr ". Diese Browser-Verbindung läuft nach acht Stunden ab."
+
+
+msgid "/contact or https://…"
+msgstr "/kontakt oder https://…"
+
+
+msgid "/images/photo.jpg or https://…"
+msgstr "/images/foto.jpg oder https://…"
+
+
+msgid "0 results"
+msgstr "0 Ergebnisse"
+
+
+msgid "15 minutes"
+msgstr "15 Minuten"
+
+
+msgid "203.0.113.10, 2001:db8::10"
+msgstr "203.0.113.10, 2001:db8::10"
+
+
+msgid "30 minutes"
+msgstr "30 Minuten"
+
+
+msgid "587 with STARTTLS, or 465 with TLS"
+msgstr "587 mit STARTTLS oder 465 mit TLS"
+
+
+msgid "60 minutes"
+msgstr "60 Minuten"
+
+
+msgid "A CMS instance cannot move between projects."
+msgstr "Eine CMS-Instanz kann nicht zwischen Projekten verschoben werden."
+
+
+msgid "A CMS is optional."
+msgstr "Ein CMS ist optional."
+
+
+msgid "A contact address does not grant access. Invite members from Tenant & invitations after saving."
+msgstr "Eine Kontaktadresse gewährt keinen Zugriff. Lade nach dem Speichern Mitglieder unter Mandant & Einladungen ein."
+
+
+msgid "A default tracking domain is selected."
+msgstr "Eine Standard-Tracking-Domain ist ausgewählt."
+
+
+msgid "A domain operation is in progress."
+msgstr "Eine Domain-Aktion wird gerade ausgeführt."
+
+
+msgid "A form field is too long or invalid."
+msgstr "Formularfeld ist zu lang oder ungültig."
+
+
+msgid "A lasting record of who changed what in your workspace."
+msgstr "Ein dauerhaftes Protokoll darüber, wer was in deinem Arbeitsbereich geändert hat."
+
+
+msgid "A linked CMS is still active. Retire its inventory record before archiving this project."
+msgstr "Ein verknüpftes CMS ist noch aktiv. Setze seinen Verwaltungseintrag auf Stillgelegt, bevor du dieses Projekt archivierst."
+
+
+msgid "A place for"
+msgstr "Ein Platz für"
+
+
+msgid "API sending"
+msgstr "API-Versand"
+
+
+msgid "Accept offer and assign plan"
+msgstr "Angebot annehmen und Tarif zuweisen"
+
+
+msgid "Accept your invitation or ask for access to a website."
+msgstr "Nimm Deine Einladung an oder lass dir Zugriff auf eine Website geben."
+
+
+msgid "Acceptance assigns the displayed plan and preserves the displayed extras. This page does not collect payment. Storage and transfer limits are configured allocations and are not yet enforced; Mail sending uses the provider quota."
+msgstr "Die Annahme weist den angezeigten Tarif zu und behält die angezeigten Zusatzkontingente bei. Auf dieser Seite wird keine Zahlung abgewickelt. Speicher- und Transferlimits sind konfigurierte Kontingente und werden noch nicht durchgesetzt; für den Mail-Versand gilt das Anbieterlimit."
+
+
+msgid "Accepted"
+msgstr "Angenommen"
+
+
+msgid "Accepting…"
+msgstr "Wird angenommen…"
+
+
+msgid "Access"
+msgstr "Zugriff"
+
+
+msgid "Account & security"
+msgstr "Konto & Sicherheit"
+
+
+msgid "Account & security ↗"
+msgstr "Konto & Sicherheit ↗"
+
+
+msgid "Account and security"
+msgstr "Konto und Sicherheit"
+
+
+msgid "Account creation is in progress. If this state persists, ask an operator to investigate before making further changes. Do not create a second account."
+msgstr "Das Konto wird gerade erstellt. Bleibt dieser Zustand bestehen, bitte einen Betreiber um Prüfung, bevor du weitere Änderungen vornimmst. Erstelle kein zweites Konto."
+
+
+msgid "Account creation needs reconciliation. An operator must review the provider dashboard and link the existing account. Do not create a second account."
+msgstr "Die Kontoerstellung muss abgeglichen werden. Ein Betreiber muss das Anbieter-Dashboard prüfen und das vorhandene Konto verknüpfen. Erstelle kein zweites Konto."
+
+
+msgid "Account email"
+msgstr "Konto-E-Mail"
+
+
+msgid "Accounts"
+msgstr "Konten"
+
+
+msgid "Accounts are provisioned by an administrator."
+msgstr "Konten werden von einem Admin eingerichtet."
+
+
+msgid "Accounts page "
+msgstr "Konten-Seite "
+
+
+msgid "Active"
+msgstr "Aktiv"
+
+
+msgid "Activity"
+msgstr "Aktivität"
+
+
+msgid "Add a customer and a project to keep its website and CMS details together."
+msgstr "Lege einen Kunden und ein Projekt an, um Website- und CMS-Daten gemeinsam zu verwalten."
+
+
+msgid "Add a customer first."
+msgstr "Lege zuerst einen Kunden an."
+
+
+msgid "Add address"
+msgstr "Adresse hinzufügen"
+
+
+msgid "Add and verify a sender domain in Mail before creating a tracking domain."
+msgstr "Füge unter Mail eine Absenderdomain hinzu und bestätige sie, bevor du eine Tracking-Domain erstellst."
+
+
+msgid "Add appointment"
+msgstr "Termin eintragen"
+
+
+msgid "Add appointment "
+msgstr "Termin eintragen "
+
+
+msgid "Add both CNAME records at your DNS host, then verify. Your DNS host may append the parent domain automatically."
+msgstr "Lege beide CNAME-Einträge bei deinem DNS-Anbieter an und bestätige sie anschließend. Dein DNS-Anbieter hängt die übergeordnete Domain möglicherweise automatisch an."
+
+
+msgid "Add domain"
+msgstr "Domain hinzufügen"
+
+
+msgid "Add project +"
+msgstr "Projekt hinzufügen +"
+
+
+msgid "Add your domain, publish the DNS records below and verify ownership. Then register it for sending directly in Webdock."
+msgstr "Füge deine Domain hinzu, veröffentliche die unten aufgeführten DNS-Einträge und bestätige die Inhaberschaft. Registriere sie anschließend direkt in Webdock für den Versand."
+
+
+msgid "Additional allowances"
+msgstr "Zusätzliche Kontingente"
+
+
+msgid "Address /p/"
+msgstr "Adresse /p/"
+
+
+msgid "Address addition"
+msgstr "Adresszusatz"
+
+
+msgid "Address line 1"
+msgstr "Adresszeile 1"
+
+
+msgid "Address line 2"
+msgstr "Adresszeile 2"
+
+
+msgid "Address {number}"
+msgstr "Adresse {number}"
+
+
+msgid "Address, contact details and opening hours"
+msgstr "Adresse, Kontakt und Öffnungszeiten"
+
+
+msgid "Addresses"
+msgstr "Adressen"
+
+
+msgid "Admin"
+msgstr "Admin"
+
+
+msgid "Admin URL"
+msgstr "Verwaltungs-URL"
+
+
+msgid "Administration"
+msgstr "Verwaltung"
+
+
+msgid "Administrator — edit profile and invite people"
+msgstr "Admin — Profil bearbeiten und Personen einladen"
+
+
+msgid "Administrator — manage, delete and restore content"
+msgstr "Admin — Inhalte verwalten, löschen und wiederherstellen"
+
+
+msgid "Administrators can edit this profile and invite people. Existing role changes and removals are managed by your Webdock operator."
+msgstr "Admins können dieses Profil bearbeiten und Personen einladen. Bestehende Rollen ändern und Mitgliedschaften entfernen kann dein Webdock-Betreiber."
+
+
+msgid "Agreed price, service scope, or other terms"
+msgstr "Vereinbarter Preis, Leistungsumfang oder weitere Bedingungen"
+
+
+msgid "Alignment"
+msgstr "Ausrichtung"
+
+
+msgid "All"
+msgstr "Alle"
+
+
+msgid "All changes"
+msgstr "Alle Änderungen"
+
+
+msgid "All changes saved"
+msgstr "Alle Änderungen gespeichert"
+
+
+msgid "All custom domains are disabled."
+msgstr "Alle eigenen Domains sind deaktiviert."
+
+
+msgid "All records"
+msgstr "Alle Einträge"
+
+
+msgid "All statuses"
+msgstr "Alle Status"
+
+
+msgid "All tenants"
+msgstr "Alle Mandanten"
+
+
+msgid "Allowed"
+msgstr "Erlaubt"
+
+
+msgid "Allowed IP addresses (optional)"
+msgstr "Erlaubte IP-Adressen (optional)"
+
+
+msgid "Allowed IPs"
+msgstr "Erlaubte IPs"
+
+
+msgid "Alternative text"
+msgstr "Alternativtext"
+
+
+msgid "Amount"
+msgstr "Betrag"
+
+
+msgid "An administrator is required to restore content versions."
+msgstr "Zum Wiederherstellen von Inhaltsversionen sind Adminrechte erforderlich."
+
+
+msgid "An operator is required."
+msgstr "Betreiberzugriff erforderlich."
+
+
+msgid "An unused reservation can be cancelled after 15 minutes, once a fresh provider check confirms that no domain was created."
+msgstr "Eine ungenutzte Reservierung kann nach 15 Minuten aufgehoben werden, sobald eine erneute Anbieterprüfung bestätigt, dass keine Domain erstellt wurde."
+
+
+msgid "Any IP address"
+msgstr "Beliebige IP-Adresse"
+
+
+msgid "Appearance"
+msgstr "Darstellung"
+
+
+msgid "Application"
+msgstr "Anwendung"
+
+
+msgid "Applies immediately. Existing extras are preserved."
+msgstr "Gilt sofort. Vorhandene Zusatzkontingente bleiben erhalten."
+
+
+msgid "Apply"
+msgstr "Anwenden"
+
+
+msgid "Appointment"
+msgstr "Termin"
+
+
+msgid "Appointment added."
+msgstr "Termin eingetragen."
+
+
+msgid "Appointment cancelled."
+msgstr "Termin storniert."
+
+
+msgid "Appointment duration"
+msgstr "Termindauer"
+
+
+msgid "Appointment pages"
+msgstr "Terminseiten"
+
+
+msgid "Appointments"
+msgstr "Termine"
+
+
+msgid "Archive record"
+msgstr "Eintrag archivieren"
+
+
+msgid "Archive this customer’s active projects first."
+msgstr "Archiviere zuerst die aktiven Projekte dieses Kunden."
+
+
+msgid "Archived"
+msgstr "Archiviert"
+
+
+msgid "Archived tenant — changes disabled"
+msgstr "Archivierter Mandant — Änderungen deaktiviert"
+
+
+msgid "Areas"
+msgstr "Bereiche"
+
+
+msgid "Arrow keys: 1 px. Shift: 10 px. Press Escape to clear the selection."
+msgstr "Pfeiltasten: 1 px. Umschalt: 10 px. Auswahl mit Escape aufheben."
+
+
+msgid "Assign a plan"
+msgstr "Tarif zuweisen"
+
+
+msgid "Assign a plan before adding extras."
+msgstr "Weise zuerst einen Tarif zu, bevor du Zusatzkontingente hinzufügst."
+
+
+msgid "Assign customer"
+msgstr "Kunde zuweisen"
+
+
+msgid "Assign plan"
+msgstr "Tarif zuweisen"
+
+
+msgid "Assign website"
+msgstr "Website zuweisen"
+
+
+msgid "Assigned sending IPv4 address"
+msgstr "Zugewiesene IPv4-Versandadresse"
+
+
+msgid "At least one custom domain is enabled."
+msgstr "Mindestens eine eigene Domain ist aktiviert."
+
+
+msgid "Audit entries are generated by the system."
+msgstr "Protokolleinträge werden vom System erstellt."
+
+
+msgid "Audit entries are immutable."
+msgstr "Protokolleinträge können nicht verändert werden."
+
+
+msgid "Authorization unavailable"
+msgstr "Autorisierung nicht verfügbar"
+
+
+msgid "Available"
+msgstr "Verfügbar"
+
+
+msgid "Available editors "
+msgstr "Verfügbare Editoren "
+
+
+msgid "Available in the shop"
+msgstr "Im Shop verfügbar"
+
+
+msgid "Back"
+msgstr "Zurück"
+
+
+msgid "Back to Mail"
+msgstr "Zurück zu Mail"
+
+
+msgid "Back to editor"
+msgstr "Zurück zum Editor"
+
+
+msgid "Back to projects"
+msgstr "Zurück zu Projekten"
+
+
+msgid "Back to tenant"
+msgstr "Zurück zum Mandanten"
+
+
+msgid "Background"
+msgstr "Hintergrund"
+
+
+msgid "Base plan"
+msgstr "Basistarif"
+
+
+msgid "Base plan and extras"
+msgstr "Basistarif und Zusatzkontingente"
+
+
+msgid "Batch requests are not supported"
+msgstr "Sammelanfragen werden nicht unterstützt"
+
+
+msgid "Blank fields add zero. Extras are added to the assigned plan."
+msgstr "Leere Felder addieren null. Zusatzkontingente werden zum zugewiesenen Tarif hinzugefügt."
+
+
+msgid "Blank fields are unmetered. Enter 0 for no allocation."
+msgstr "Leere Felder sind unbegrenzt. Gib 0 ein, wenn kein Kontingent vorgesehen ist."
+
+
+msgid "Blank measures the entire store. Use an exclusive prefix for a shared store."
+msgstr "Ein leeres Feld erfasst den gesamten Speicher. Verwende bei gemeinsam genutztem Speicher ein exklusives Pfadpräfix."
+
+
+msgid "Blob read/write token"
+msgstr "Blob-Token mit Lese-/Schreibzugriff"
+
+
+msgid "Blob store ID"
+msgstr "Blob-Speicher-ID"
+
+
+msgid "Bookings"
+msgstr "Belegungen"
+
+
+msgid "Border"
+msgstr "Rahmen"
+
+
+msgid "Border colour"
+msgstr "Rahmenfarbe"
+
+
+msgid "Box"
+msgstr "Fläche"
+
+
+msgid "Branding, customer access and Mail configuration."
+msgstr "Markenauftritt, Kundenzugriff und E-Mail-Konfiguration."
+
+
+msgid "Bring forward"
+msgstr "Nach vorn"
+
+
+msgid "Broaden your filters to see more workspace activity."
+msgstr "Erweitere deine Filter, um mehr Aktivitäten im Arbeitsbereich anzuzeigen."
+
+
+msgid "Browse existing images for image selection."
+msgstr "Vorhandene Bilder ansehen und für die Bildauswahl finden."
+
+
+msgid "Browse repositories"
+msgstr "Repositorys durchsuchen"
+
+
+msgid "Building"
+msgstr "Wird erstellt"
+
+
+msgid "Built and managed by Spitzli Development."
+msgstr "Entwickelt und betreut von Spitzli Development."
+
+
+msgid "Burger"
+msgstr "Burger"
+
+
+msgid "Button"
+msgstr "Button"
+
+
+msgid "Button label"
+msgstr "Schaltflächentext"
+
+
+msgid "CMS"
+msgstr "CMS"
+
+
+msgid "CMS URL"
+msgstr "CMS-URL"
+
+
+msgid "CMS areas"
+msgstr "CMS-Bereiche"
+
+
+msgid "CMS connection"
+msgstr "CMS-Verbindung"
+
+
+msgid "CMS connections"
+msgstr "CMS-Verbindungen"
+
+
+msgid "CMS engine"
+msgstr "CMS-System"
+
+
+msgid "CMS engine version"
+msgstr "CMS-Systemversion"
+
+
+msgid "CMS name"
+msgstr "CMS-Name"
+
+
+msgid "CMS record"
+msgstr "CMS-Eintrag"
+
+
+msgid "CNAME name"
+msgstr "CNAME-Name"
+
+
+msgid "CNAME target"
+msgstr "CNAME-Ziel"
+
+
+msgid "Calendar editor"
+msgstr "Kalendereditor"
+
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+
+msgid "Cancel appointment"
+msgstr "Stornieren"
+
+
+msgid "Cancel invitation"
+msgstr "Einladung widerrufen"
+
+
+msgid "Cancel the invitation and pending website access"
+msgstr "Einladung und ausstehenden Website-Zugriff widerrufen"
+
+
+msgid "Cancel this invitation and withdraw pending website access for this customer group"
+msgstr "Diese Einladung widerrufen und den ausstehenden Website-Zugriff für diese Kundengruppe zurückziehen"
+
+
+msgid "Cancel this reservation only if the provider confirms no matching tracking domain exists."
+msgstr "Hebe diese Reservierung nur auf, wenn der Anbieter bestätigt, dass keine passende Tracking-Domain existiert."
+
+
+msgid "Cancel unused reservation"
+msgstr "Ungenutzte Reservierung aufheben"
+
+
+msgid "Cancelled"
+msgstr "Abgebrochen"
+
+
+msgid "Cancelling…"
+msgstr "Storniert …"
+
+
+msgid "Category"
+msgstr "Kategorie"
+
+
+msgid "Centre"
+msgstr "Mittig"
+
+
+msgid "Change"
+msgstr "Änderung"
+
+
+msgid "Change result"
+msgstr "Ergebnis der Änderung"
+
+
+msgid "Change summary or field"
+msgstr "Änderungsbeschreibung oder Feld"
+
+
+msgid "Change website access"
+msgstr "Website-Zugriff ändern"
+
+
+msgid "Change your search to open a field."
+msgstr "Ändere die Suche, um ein Feld zu öffnen."
+
+
+msgid "Changes saved."
+msgstr "Änderungen gespeichert."
+
+
+msgid "Check DNS ownership"
+msgstr "DNS-Inhaberschaft prüfen"
+
+
+msgid "Check the image URL and whether the file is available."
+msgstr "Prüfe die Bildadresse oder die Erreichbarkeit der Datei."
+
+
+msgid "Check your email and password, or try again later."
+msgstr "Prüfe deine E-Mail-Adresse und dein Passwort oder versuche es später erneut."
+
+
+msgid "Checked "
+msgstr "Geprüft "
+
+
+msgid "Choose a customer"
+msgstr "Kunden auswählen"
+
+
+msgid "Choose a plan"
+msgstr "Tarif auswählen"
+
+
+msgid "Choose a project"
+msgstr "Projekt auswählen"
+
+
+msgid "Choose a repository"
+msgstr "Repository auswählen"
+
+
+msgid "Choose a tenant to assign a plan"
+msgstr "Wähle einen Mandanten für die Tarifzuweisung"
+
+
+msgid "Choose a website to manage its content and features."
+msgstr "Wähle eine Website, um Inhalte und Funktionen zu verwalten."
+
+
+msgid "Choose an active Studio project."
+msgstr "Wähle ein aktives Studio-Projekt aus."
+
+
+msgid "Choose an active customer."
+msgstr "Wähle einen aktiven Kunden aus."
+
+
+msgid "Choose an active project."
+msgstr "Wähle ein aktives Projekt aus."
+
+
+msgid "Choose an authorized project"
+msgstr "Freigegebenes Projekt auswählen"
+
+
+msgid "Choose repositories from a GitHub App installation and link them to Webdock projects."
+msgstr "Wähle Repositorys aus einer GitHub-App-Installation und verknüpfe sie mit Webdock-Projekten."
+
+
+msgid "Choose state"
+msgstr "Status auswählen"
+
+
+msgid "Choose {label}"
+msgstr "{label} auswählen"
+
+
+msgid "City"
+msgstr "Ort"
+
+
+msgid "Clear"
+msgstr "Leeren"
+
+
+msgid "Click tracking"
+msgstr "Klick-Tracking"
+
+
+msgid "Close editor"
+msgstr "Bearbeitung schließen"
+
+
+msgid "Closed"
+msgstr "Geschlossen"
+
+
+msgid "Commercial terms"
+msgstr "Vertragsbedingungen"
+
+
+msgid "Commercial terms (optional)"
+msgstr "Vertragsbedingungen (optional)"
+
+
+msgid "Company"
+msgstr "Unternehmen"
+
+
+msgid "Company name"
+msgstr "Unternehmensname"
+
+
+msgid "Company, personal details & address"
+msgstr "Unternehmen, persönliche Angaben & Adresse"
+
+
+msgid "Complete the GitHub App setup before connecting."
+msgstr "Schließe die Einrichtung der GitHub-App ab, bevor du sie verbindest."
+
+
+msgid "Configure the GitHub App with Metadata: read-only and no other permissions."
+msgstr "Konfiguriere die GitHub-App mit „Metadata: read-only“ und ohne weitere Berechtigungen."
+
+
+msgid "Confirm archive"
+msgstr "Archivierung bestätigen"
+
+
+msgid "Confirm restore"
+msgstr "Wiederherstellung bestätigen"
+
+
+msgid "Confirm that this CMS is already deployed."
+msgstr "Bestätige, dass dieses CMS bereits bereitgestellt wurde."
+
+
+msgid "Confirm that you want to accept this offer and assign the plan."
+msgstr "Bestätige, dass du dieses Angebot annehmen und den Tarif zuweisen möchtest."
+
+
+msgid "Confirm that you want to remove the saved Mail credentials."
+msgstr "Bestätige, dass du die gespeicherten Mail-Zugangsdaten entfernen möchtest."
+
+
+msgid "Connect GitHub"
+msgstr "GitHub verbinden"
+
+
+msgid "Connect Vercel"
+msgstr "Vercel verbinden"
+
+
+msgid "Connect Vercel in Integrations to view deployment information."
+msgstr "Verbinde Vercel unter Integrationen, um Bereitstellungsinformationen anzuzeigen."
+
+
+msgid "Connect each Blob store or a tenant’s exclusive path prefix. Credentials are saved privately and are never displayed. Production and preview storage are measured separately."
+msgstr "Verbinde jeden Blob-Speicher oder das exklusive Pfadpräfix eines Mandanten. Zugangsdaten werden vertraulich gespeichert und nie angezeigt. Produktiv- und Vorschau-Speicher werden getrennt erfasst."
+
+
+msgid "Connect provider credentials"
+msgstr "Anbieter-Zugangsdaten hinterlegen"
+
+
+msgid "Connect storage"
+msgstr "Speicher verbinden"
+
+
+msgid "Connect the master account in Platform Mail settings."
+msgstr "Verbinde das Hauptkonto in den E-Mail-Einstellungen der Plattform."
+
+
+msgid "Connect the turboSMTP master account used to manage tenant Mail accounts."
+msgstr "Verbinde das turboSMTP-Hauptkonto, mit dem die Mail-Konten der Mandanten verwaltet werden."
+
+
+msgid "Connect your repositories and the tools you work with."
+msgstr "Verbinde deine Repositorys und die Werkzeuge, mit denen du arbeitest."
+
+
+msgid "Connected"
+msgstr "Verbunden"
+
+
+msgid "Connected as "
+msgstr "Verbunden als "
+
+
+msgid "Connected read-only Vercel integration"
+msgstr "Schreibgeschützte Vercel-Integration verbunden"
+
+
+msgid "Connection details"
+msgstr "Verbindungsdaten"
+
+
+msgid "Consumer key"
+msgstr "Consumer-Key"
+
+
+msgid "Consumer key: {key}\nConsumer secret: {secret}"
+msgstr "Consumer Key: {key}\nConsumer Secret: {secret}"
+
+
+msgid "Consumer secret"
+msgstr "Consumer-Secret"
+
+
+msgid "Contact"
+msgstr "Kontakt"
+
+
+msgid "Contact details"
+msgstr "Kontaktdaten"
+
+
+msgid "Contact details do not change anyone’s sign-in email or permissions."
+msgstr "Kontaktdaten ändern weder die Anmelde-E-Mail-Adresse noch die Berechtigungen einer Person."
+
+
+msgid "Contact email"
+msgstr "Kontakt-E-Mail"
+
+
+msgid "Contact name"
+msgstr "Kontaktperson"
+
+
+msgid "Contact person"
+msgstr "Ansprechperson"
+
+
+msgid "Contact your Webdock operator to enable Mail."
+msgstr "Wende dich an deinen Webdock-Betreiber, um Mail zu aktivieren."
+
+
+msgid "Contain"
+msgstr "Ganzes Bild zeigen"
+
+
+msgid "Content"
+msgstr "Inhalte"
+
+
+msgid "Content areas"
+msgstr "Inhaltsbereiche"
+
+
+msgid "Content editor"
+msgstr "Inhaltseditor"
+
+
+msgid "Content field not found."
+msgstr "Inhaltsfeld nicht gefunden."
+
+
+msgid "Content fields"
+msgstr "Inhaltsfelder"
+
+
+msgid "Content is currently unavailable. Please try again later."
+msgstr "Inhalte derzeit nicht erreichbar. Bitte später erneut versuchen."
+
+
+msgid "Content management is currently unavailable. Please refresh later."
+msgstr "Die Inhaltsverwaltung ist gerade nicht erreichbar. Bitte später aktualisieren."
+
+
+msgid "Content management is unavailable."
+msgstr "Inhaltsverwaltung nicht erreichbar."
+
+
+msgid "Content saved. The website shows the change on its next load."
+msgstr "Inhalt gespeichert. Die Website zeigt die Änderung beim nächsten Laden."
+
+
+msgid "Content type"
+msgstr "Inhaltstyp"
+
+
+msgid "Controls customer sign-in and editing access to connected content managers. Public websites and operator maintenance access stay available."
+msgstr "Steuert Anmeldung und Bearbeitungszugriff für Kunden in verbundenen Content-Managern. Öffentliche Websites und Wartungszugriffe des Betreibers bleiben verfügbar."
+
+
+msgid "Controls tenant Mail operations. Turning this off does not disable account verification, password reset or invitation emails."
+msgstr "Steuert Mail-Aktionen der Mandanten. Das Deaktivieren betrifft nicht E-Mails zur Kontobestätigung, Passwortzurücksetzung oder Einladung."
+
+
+msgid "Copied"
+msgstr "Kopiert"
+
+
+msgid "Copied."
+msgstr "Kopiert."
+
+
+msgid "Copy credentials"
+msgstr "Zugangsdaten kopieren"
+
+
+msgid "Copy failed. Select and copy the values above."
+msgstr "Kopieren fehlgeschlagen. Markiere und kopiere die Werte oben."
+
+
+msgid "Copy link"
+msgstr "Link kopieren"
+
+
+msgid "Copy this link now. It is shown only after creation and disappears after your next action. Share it with this tenant’s administrator."
+msgstr "Kopiere diesen Link jetzt. Er wird nur nach der Erstellung angezeigt und verschwindet nach der nächsten Aktion. Teile ihn mit dem Admin dieses Mandanten."
+
+
+msgid "Corner radius"
+msgstr "Rundung"
+
+
+msgid "Could not check the session."
+msgstr "Der Sitzungsstatus konnte nicht geprüft werden."
+
+
+msgid "Could not check the session. Please try again later."
+msgstr "Der Sitzungsstatus konnte nicht geprüft werden. Bitte später erneut versuchen."
+
+
+msgid "Could not load pages. Please try again."
+msgstr "Die Seiten konnten nicht geladen werden. Bitte versuchen Sie es erneut."
+
+
+msgid "Could not save content."
+msgstr "Inhalt konnte nicht gespeichert werden."
+
+
+msgid "Could not save the change. Your draft is preserved."
+msgstr "Die Änderung konnte nicht gespeichert werden. Dein Entwurf bleibt erhalten."
+
+
+msgid "Country code"
+msgstr "Ländercode"
+
+
+msgid "Country code (two letters)"
+msgstr "Ländercode (zwei Buchstaben)"
+
+
+msgid "Cover"
+msgstr "Ausschnitt füllen"
+
+
+msgid "Create a customer"
+msgstr "Kunden erstellen"
+
+
+msgid "Create a dedicated turboSMTP subaccount for this tenant with an initial limit of "
+msgstr "Erstelle ein eigenes turboSMTP-Unterkonto für diesen Mandanten mit einem anfänglichen Limit von "
+
+
+msgid "Create a draft. The existing website is unchanged."
+msgstr "Legen Sie einen Entwurf an. Die bestehende Website bleibt dabei unverändert."
+
+
+msgid "Create a project"
+msgstr "Projekt erstellen"
+
+
+msgid "Create a project first"
+msgstr "Zuerst ein Projekt erstellen"
+
+
+msgid "Create a reusable plan"
+msgstr "Wiederverwendbaren Tarif erstellen"
+
+
+msgid "Create a reusable plan in the plan library first."
+msgstr "Erstelle zuerst einen wiederverwendbaren Tarif in der Tarifbibliothek."
+
+
+msgid "Create an individual offer"
+msgstr "Individuelles Angebot erstellen"
+
+
+msgid "Create credential"
+msgstr "Zugangsdaten erstellen"
+
+
+msgid "Create customer"
+msgstr "Kunden erstellen"
+
+
+msgid "Create customer group"
+msgstr "Kundengruppe erstellen"
+
+
+msgid "Create draft"
+msgstr "Entwurf anlegen"
+
+
+msgid "Create offer link"
+msgstr "Angebotslink erstellen"
+
+
+msgid "Create plan"
+msgstr "Tarif erstellen"
+
+
+msgid "Create project"
+msgstr "Projekt erstellen"
+
+
+msgid "Create sending account"
+msgstr "Versandkonto erstellen"
+
+
+msgid "Create tracking domain"
+msgstr "Tracking-Domain erstellen"
+
+
+msgid "Created"
+msgstr "Erstellt"
+
+
+msgid "Created "
+msgstr "Erstellt "
+
+
+msgid "Created {name}"
+msgstr "{name} erstellt"
+
+
+msgid "Creating…"
+msgstr "Legt an …"
+
+
+msgid "Creation needs reconciliation. Refresh to find the reserved domain; do not create another copy."
+msgstr "Die Erstellung muss abgeglichen werden. Aktualisiere die Ansicht, um die reservierte Domain zu finden; erstelle keine weitere Kopie."
+
+
+msgid "Credentials"
+msgstr "Zugangsdaten"
+
+
+msgid "Credentials configured"
+msgstr "Zugangsdaten hinterlegt"
+
+
+msgid "Current product #"
+msgstr "Aktuelles Produkt #"
+
+
+msgid "Current production"
+msgstr "Aktuelle Produktion"
+
+
+msgid "Current selection #"
+msgstr "Aktuelle Auswahl #"
+
+
+msgid "Currently published records"
+msgstr "Derzeit veröffentlichte Einträge"
+
+
+msgid "Custom offer"
+msgstr "Individuelles Angebot"
+
+
+msgid "Custom tracking domains"
+msgstr "Eigene Tracking-Domains"
+
+
+msgid "Customer"
+msgstr "Kunde"
+
+
+msgid "Customer ID "
+msgstr "Kunden-ID "
+
+
+msgid "Customer details"
+msgstr "Kundendaten"
+
+
+msgid "Customer details, people and assigned websites."
+msgstr "Kundendaten, Personen und zugewiesene Websites."
+
+
+msgid "Customer display name"
+msgstr "Anzeigename des Kunden"
+
+
+msgid "Customer group name"
+msgstr "Name der Kundengruppe"
+
+
+msgid "Customer list"
+msgstr "Kundenliste"
+
+
+msgid "Customer name"
+msgstr "Kundenname"
+
+
+msgid "Customer profile"
+msgstr "Kundenprofil"
+
+
+msgid "Customer profile and tenant access"
+msgstr "Kundenprofil und Mandantenzugriff"
+
+
+msgid "Customer profiles"
+msgstr "Kundenprofile"
+
+
+msgid "Customer record & projects"
+msgstr "Kundendaten & Projekte"
+
+
+msgid "Customer records keep contact details and related projects together."
+msgstr "Kundeneinträge bündeln Kontaktdaten und zugehörige Projekte."
+
+
+msgid "Customer services"
+msgstr "Kundendienste"
+
+
+msgid "Customer studio"
+msgstr "Kundenbereich"
+
+
+msgid "Customer tenant"
+msgstr "Kundenmandant"
+
+
+msgid "Customer type"
+msgstr "Kundentyp"
+
+
+msgid "Customer view"
+msgstr "Kundenansicht"
+
+
+msgid "Customer, project and CMS updates will appear here with their author and time."
+msgstr "Änderungen an Kunden, Projekten und CMS erscheinen hier mit Urheber und Zeitpunkt."
+
+
+msgid "Customers"
+msgstr "Kunden"
+
+
+msgid "Customers & websites"
+msgstr "Kunden & Websites"
+
+
+msgid "Customers matching the selected filters"
+msgstr "Kunden passend zu den ausgewählten Filtern"
+
+
+msgid "DNS verification pending"
+msgstr "DNS-Bestätigung ausstehend"
+
+
+msgid "Daily promotion"
+msgstr "Tagesaktion"
+
+
+msgid "Daily promotion editor"
+msgstr "Tagesaktionseditor"
+
+
+msgid "Daily promotion enabled"
+msgstr "Tagesaktion aktiv"
+
+
+msgid "Dark"
+msgstr "Dunkel"
+
+
+msgid "Database schema"
+msgstr "Datenbankschema"
+
+
+msgid "Date"
+msgstr "Datum"
+
+
+msgid "Dates and offer in the demo cart"
+msgstr "Zeitraum und Angebot im Demo-Warenkorb"
+
+
+msgid "Dedicated domain"
+msgstr "Dedizierte Domain"
+
+
+msgid "Dedicated to this sender domain"
+msgstr "Dieser Absenderdomain zugeordnet"
+
+
+msgid "Default domain"
+msgstr "Standarddomain"
+
+
+msgid "Default email limit"
+msgstr "Standard-E-Mail-Limit"
+
+
+msgid "Delivery"
+msgstr "Lieferung"
+
+
+msgid "Demo orders"
+msgstr "Demo-Bestellungen"
+
+
+msgid "Denied"
+msgstr "Verweigert"
+
+
+msgid "Description"
+msgstr "Beschreibung"
+
+
+msgid "Design"
+msgstr "Design"
+
+
+msgid "Design canvas. Select elements and move them with arrow keys."
+msgstr "Designfläche. Elemente auswählen und mit Pfeiltasten verschieben."
+
+
+msgid "Design free-form pages, save drafts and publish."
+msgstr "Freie Seiten gestalten, als Entwurf speichern und veröffentlichen."
+
+
+msgid "Design pages"
+msgstr "Design-Seiten"
+
+
+msgid "Design pages freely and preview drafts live."
+msgstr "Seiten frei gestalten und Entwürfe live ansehen."
+
+
+msgid "Desktop"
+msgstr "Desktop"
+
+
+msgid "Dessert"
+msgstr "Dessert"
+
+
+msgid "Disabled"
+msgstr "Deaktiviert"
+
+
+msgid "Discard changes"
+msgstr "Änderungen verwerfen"
+
+
+msgid "Discard changes to this field?"
+msgstr "Änderungen an diesem Feld verwerfen?"
+
+
+msgid "Discard local changes and return to the loaded or last saved version?"
+msgstr "Lokale Änderungen verwerfen und zum geladenen oder zuletzt gespeicherten Stand zurückkehren?"
+
+
+msgid "Discard unsaved appointment?"
+msgstr "Ungespeicherten Termin verwerfen?"
+
+
+msgid "Discard unsaved changes?"
+msgstr "Ungespeicherte Änderungen verwerfen?"
+
+
+msgid "Discard unsaved opening hours?"
+msgstr "Ungespeicherte Öffnungszeiten verwerfen?"
+
+
+msgid "Discard unsaved request changes?"
+msgstr "Ungespeicherte Änderungen an Anfragen verwerfen?"
+
+
+msgid "Disconnect"
+msgstr "Verbindung trennen"
+
+
+msgid "Disconnect from Studio"
+msgstr "Von Studio trennen"
+
+
+msgid "Disconnect storage"
+msgstr "Speicher trennen"
+
+
+msgid "Disconnect the team connection from Studio"
+msgstr "Teamverbindung von Studio trennen"
+
+
+msgid "Disconnect this browser"
+msgstr "Verbindung dieses Browsers trennen"
+
+
+msgid "Disconnected Vercel from Studio"
+msgstr "Vercel von Studio getrennt"
+
+
+msgid "Discount"
+msgstr "Rabatt"
+
+
+msgid "Dismiss secret"
+msgstr "Secret ausblenden"
+
+
+msgid "Display name"
+msgstr "Anzeigename"
+
+
+msgid "Do not use media"
+msgstr "Kein Medium verwenden"
+
+
+msgid "Domain"
+msgstr "Domain"
+
+
+msgid "Domain mode not checked"
+msgstr "Domain-Modus nicht geprüft"
+
+
+msgid "Domains"
+msgstr "Domains"
+
+
+msgid "Draft"
+msgstr "Entwurf"
+
+
+msgid "Draft preview"
+msgstr "Vorschau des Entwurfs"
+
+
+msgid "Draft saved"
+msgstr "Entwurf gespeichert"
+
+
+msgid "Draft saved. The published page is unchanged."
+msgstr "Entwurf gespeichert. Die veröffentlichte Seite bleibt unverändert."
+
+
+msgid "Drinks"
+msgstr "Getränke"
+
+
+msgid "Duplicate"
+msgstr "Duplizieren"
+
+
+msgid "Duration (minutes)"
+msgstr "Dauer (Minuten)"
+
+
+msgid "Each customer gets a tenant for their projects. Access is invite-only; add members after creating the customer."
+msgstr "Jeder Kunde erhält einen Mandanten für seine Projekte. Zugriff ist nur auf Einladung möglich. Füge nach dem Erstellen des Kunden Mitglieder hinzu."
+
+
+msgid "Each customer has a tenant for their projects, with access by invitation."
+msgstr "Jeder Kunde hat einen Mandanten für seine Projekte. Zugriff wird per Einladung vergeben."
+
+
+msgid "Each project keeps its own design and content. CMS statuses are recorded inventory, not live health checks. Link a deployed CMS when your project needs one."
+msgstr "Jedes Projekt behält sein eigenes Design und seine Inhalte. CMS-Statusangaben sind Verwaltungseinträge und keine Live-Verfügbarkeitsprüfungen. Verknüpfe ein bereitgestelltes CMS, wenn dein Projekt eines benötigt."
+
+
+msgid "Each website can have up to 100 canvas pages."
+msgstr "Pro Website sind höchstens 100 Canvas-Seiten möglich."
+
+
+msgid "Edit"
+msgstr "Bearbeiten"
+
+
+msgid "Edit connection details"
+msgstr "Verbindungsdaten bearbeiten"
+
+
+msgid "Edit customer names and saved addresses."
+msgstr "Kundennamen und gespeicherte Adressen bearbeiten."
+
+
+msgid "Edit products, variants, extras and prices."
+msgstr "Produkte, Varianten, Extras und Preise bearbeiten."
+
+
+msgid "Edit the homepage and shop information."
+msgstr "Startseite und Betriebsangaben bearbeiten."
+
+
+msgid "Edit the homepage and business information."
+msgstr "Startseite und Betriebsangaben bearbeiten."
+
+
+msgid "Edit website text and images."
+msgstr "Texte und Bilder der Website bearbeiten."
+
+
+msgid "Editor"
+msgstr "Editor"
+
+
+msgid "Editor — edit and publish content"
+msgstr "Redakteur — Inhalte bearbeiten und veröffentlichen"
+
+
+msgid "Editors"
+msgstr "Redakteure"
+
+
+msgid "Effective allowances"
+msgstr "Wirksame Kontingente"
+
+
+msgid "Element"
+msgstr "Element"
+
+
+msgid "Email"
+msgstr "E-Mail"
+
+
+msgid "Email address"
+msgstr "E-Mail-Adresse"
+
+
+msgid "Email limit"
+msgstr "E-Mail-Limit"
+
+
+msgid "Email verified"
+msgstr "E-Mail-Adresse bestätigt"
+
+
+msgid "Emails sent"
+msgstr "Gesendete E-Mails"
+
+
+msgid "Empty request."
+msgstr "Leere Anfrage."
+
+
+msgid "Empty response."
+msgstr "Leere Antwort."
+
+
+msgid "Empty text field"
+msgstr "Leeres Textfeld"
+
+
+msgid "Enable CMS access for customers"
+msgstr "CMS-Zugriff für Kunden aktivieren"
+
+
+msgid "Enable Mail for tenants"
+msgstr "E-Mail für Mandanten aktivieren"
+
+
+msgid "Enable Mail in platform settings to manage tenant accounts and domains."
+msgstr "Aktiviere E-Mail in den Plattformeinstellungen, um Mandantenkonten und Domains zu verwalten."
+
+
+msgid "Enable automatic token renewal when registering a client for remote work. Interactive sign-in and consent still require your browser. Only operators can access the registry. Changes made through integrations appear in Activity."
+msgstr "Aktiviere beim Registrieren eines Clients für den Fernzugriff die automatische Token-Erneuerung. Für die interaktive Anmeldung und Zustimmung wird weiterhin dein Browser benötigt. Nur Betreiber können auf die Projektverwaltung zugreifen. Änderungen über Integrationen erscheinen unter Aktivität."
+
+
+msgid "Enabled"
+msgstr "Aktiviert"
+
+
+msgid "Enter a demo name."
+msgstr "Bitte einen Demo-Namen eingeben."
+
+
+msgid "Enter a local path or a valid HTTPS image URL."
+msgstr "Gib einen lokalen Pfad oder eine gültige HTTPS-Bildadresse ein."
+
+
+msgid "Enter a page title and an address using lowercase letters, digits or hyphens."
+msgstr "Bitte einen Seitentitel und eine Adresse aus Kleinbuchstaben, Ziffern oder Bindestrichen eingeben."
+
+
+msgid "Enter both the consumer key and consumer secret to replace the saved credentials."
+msgstr "Gib Consumer-Key und Consumer-Secret ein, um die gespeicherten Zugangsdaten zu ersetzen."
+
+
+msgid "Enter prices in euros with at most two decimal places."
+msgstr "Preise bitte in Euro mit höchstens zwei Nachkommastellen eingeben."
+
+
+msgid "Enter the number of people."
+msgstr "Bitte Personenzahl angeben."
+
+
+msgid "Environment"
+msgstr "Umgebung"
+
+
+msgid "Error"
+msgstr "Fehler"
+
+
+msgid "Europe"
+msgstr "Europa"
+
+
+msgid "Europe/Berlin"
+msgstr "Europe/Berlin"
+
+
+msgid "Event"
+msgstr "Veranstaltung"
+
+
+msgid "Everything for your website in one place."
+msgstr "Alles für Deine Website an einem Ort."
+
+
+msgid "Exception {date}"
+msgstr "Ausnahme am {date}"
+
+
+msgid "Exceptions"
+msgstr "Ausnahmen"
+
+
+msgid "Existing CMS hosting references are used automatically. You can also link projects that have no CMS."
+msgstr "Vorhandene Hosting-Zuordnungen des CMS werden automatisch verwendet. Du kannst auch Projekte ohne CMS verknüpfen."
+
+
+msgid "Existing assignments are preserved."
+msgstr "Bestehende Zuordnungen bleiben erhalten."
+
+
+msgid "Existing credentials"
+msgstr "Vorhandene Zugangsdaten"
+
+
+msgid "Existing entries appear automatically in this overview."
+msgstr "Vorhandene Einträge erscheinen automatisch in dieser Übersicht."
+
+
+msgid "Existing images appear here. Uploading is not available in this view."
+msgstr "Bereits hinterlegte Bilder erscheinen hier. Diese Ansicht bietet keinen Upload."
+
+
+msgid "Existing media"
+msgstr "Vorhandenes Medium"
+
+
+msgid "Expired"
+msgstr "Abgelaufen"
+
+
+msgid "Expires after (days)"
+msgstr "Gültigkeitsdauer (Tage)"
+
+
+msgid "Extras"
+msgstr "Zusatzkontingente"
+
+
+msgid "Extras preserved on acceptance"
+msgstr "Bei Annahme beibehaltene Zusatzkontingente"
+
+
+msgid "Failed"
+msgstr "Fehlgeschlagen"
+
+
+msgid "Favourite"
+msgstr "Favorit"
+
+
+msgid "Featured products"
+msgstr "Produktempfehlungen"
+
+
+msgid "Featured products heading"
+msgstr "Überschrift der Empfehlungen"
+
+
+msgid "Featured products text"
+msgstr "Text der Empfehlungen"
+
+
+msgid "Fields marked * are required."
+msgstr "Mit * markierte Felder sind Pflichtfelder."
+
+
+msgid "Fill colour"
+msgstr "Flächenfarbe"
+
+
+msgid "Filter or sort is not available for this collection."
+msgstr "Filter oder Sortierung sind für diese Sammlung nicht verfügbar."
+
+
+msgid "Find a person"
+msgstr "Person suchen"
+
+
+msgid "Find products, adjust prices and manage availability."
+msgstr "Produkte finden, Preise anpassen und Verfügbarkeit verwalten."
+
+
+msgid "First Vercel projects"
+msgstr "Erste Vercel-Projekte"
+
+
+msgid "First name"
+msgstr "Vorname"
+
+
+msgid "Font family"
+msgstr "Schriftfamilie"
+
+
+msgid "For business customers."
+msgstr "Für Geschäftskunden."
+
+
+msgid "For example, links with example.com creates links.example.com."
+msgstr "Zum Beispiel ergibt links zusammen mit example.com die Adresse links.example.com."
+
+
+msgid "For personal customers or the primary contact."
+msgstr "Für Privatkunden oder die wichtigste Kontaktperson."
+
+
+msgid "Forgot password?"
+msgstr "Passwort vergessen?"
+
+
+msgid "Framework not specified"
+msgstr "Framework nicht angegeben"
+
+
+msgid "Free canvas"
+msgstr "Freie Canvas"
+
+
+msgid "Friday"
+msgstr "Freitag"
+
+
+msgid "Full record name"
+msgstr "Vollständiger Eintragsname"
+
+
+msgid "GitHub"
+msgstr "GitHub"
+
+
+msgid "GitHub App authorization documentation"
+msgstr "Dokumentation zur Autorisierung der GitHub-App"
+
+
+msgid "GitHub App setup"
+msgstr "GitHub-App einrichten"
+
+
+msgid "GitHub access could not be checked. Reconnect or review the app’s installation and read-only metadata permission."
+msgstr "Der GitHub-Zugriff konnte nicht geprüft werden. Verbinde GitHub erneut oder prüfe die App-Installation und die schreibgeschützte Metadatenberechtigung."
+
+
+msgid "GitHub access is unavailable. Reconnect or check the app installation."
+msgstr "Der GitHub-Zugriff ist nicht verfügbar. Stelle die Verbindung erneut her oder prüfe die App-Installation."
+
+
+msgid "GitHub account or organisation"
+msgstr "GitHub-Konto oder -Organisation"
+
+
+msgid "GitHub authorization did not complete. Start Connect GitHub again."
+msgstr "Die GitHub-Autorisierung wurde nicht abgeschlossen. Starte „GitHub verbinden“ erneut."
+
+
+msgid "GitHub connected. Choose an installation and a repository below."
+msgstr "GitHub verbunden. Wähle unten eine Installation und ein Repository aus."
+
+
+msgid "GitHub connection expired. Connect again."
+msgstr "Die GitHub-Verbindung ist abgelaufen. Stelle sie erneut her."
+
+
+msgid "GitHub disconnected from this browser. Existing project links are unchanged."
+msgstr "GitHub wurde in diesem Browser getrennt. Bestehende Projektverknüpfungen bleiben unverändert."
+
+
+msgid "GitHub installation pages"
+msgstr "GitHub-Installationsseiten"
+
+
+msgid "Global"
+msgstr "Global"
+
+
+msgid "Go to tenants"
+msgstr "Zur Mandantenübersicht"
+
+
+msgid "Grant only"
+msgstr "Erlaube nur"
+
+
+msgid "Group website access by customer. Public sign-up remains closed."
+msgstr "Bündele den Website-Zugriff nach Kunden. Die öffentliche Registrierung bleibt geschlossen."
+
+
+msgid "HTTP API"
+msgstr "HTTP-API"
+
+
+msgid "HTTPS not checked"
+msgstr "HTTPS nicht geprüft"
+
+
+msgid "HTTPS pending"
+msgstr "HTTPS ausstehend"
+
+
+msgid "HTTPS ready"
+msgstr "HTTPS bereit"
+
+
+msgid "Headline"
+msgstr "Hauptüberschrift"
+
+
+msgid "Height"
+msgstr "Höhe"
+
+
+msgid "Hidden"
+msgstr "Ausgeblendet"
+
+
+msgid "Hide in this view"
+msgstr "In dieser Ansicht ausblenden"
+
+
+msgid "History for record "
+msgstr "Verlauf für Eintrag "
+
+
+msgid "Homepage"
+msgstr "Startseite"
+
+
+msgid "Homepage image"
+msgstr "Startseitenbild"
+
+
+msgid "Hosting"
+msgstr "Hosting"
+
+
+msgid "Hosting project ID"
+msgstr "Hosting-Projekt-ID"
+
+
+msgid "Hosting provider"
+msgstr "Hosting-Anbieter"
+
+
+msgid "I accept this offer and its stated terms, and want to assign this plan to my tenant."
+msgstr "Ich nehme dieses Angebot und die genannten Bedingungen an und möchte meinem Mandanten diesen Tarif zuweisen."
+
+
+msgid "I am authorized to create this provider subaccount and accept its"
+msgstr "Ich bin berechtigt, dieses Anbieter-Unterkonto zu erstellen, und akzeptiere dessen"
+
+
+msgid "I have checked that this provider account belongs to this tenant."
+msgstr "Ich habe geprüft, dass dieses Anbieterkonto zu diesem Mandanten gehört."
+
+
+msgid "IDs cannot be changed."
+msgstr "IDs können nicht geändert werden."
+
+
+msgid "Identity and credentials cannot be changed here."
+msgstr "Identität und Zugangsdaten können hier nicht geändert werden."
+
+
+msgid "Image"
+msgstr "Bild"
+
+
+msgid "Image URL"
+msgstr "Bildadresse"
+
+
+msgid "Image fit"
+msgstr "Bildfüllung"
+
+
+msgid "Image preview"
+msgstr "Bildvorschau"
+
+
+msgid "Image unavailable"
+msgstr "Bild nicht erreichbar"
+
+
+msgid "Images"
+msgstr "Bilder"
+
+
+msgid "Images must use a local /assets/, /images/ or /fonts/ path, or an HTTPS URL without credentials."
+msgstr "Bilder müssen eine lokale /assets/-, /images/- oder /fonts/-Adresse oder eine HTTPS-Adresse ohne Zugangsdaten verwenden."
+
+
+msgid "Inactive"
+msgstr "Inaktiv"
+
+
+msgid "Independent websites. A shared workspace."
+msgstr "Eigenständige Websites. Ein gemeinsamer Arbeitsbereich."
+
+
+msgid "Individual IPv4 or IPv6 addresses, separated by commas or spaces. Blank allows any IP address."
+msgstr "Einzelne IPv4- oder IPv6-Adressen, getrennt durch Kommas oder Leerzeichen. Ein leeres Feld erlaubt jede IP-Adresse."
+
+
+msgid "Initializing"
+msgstr "Wird initialisiert"
+
+
+msgid "Install the GitHub App"
+msgstr "GitHub-App installieren"
+
+
+msgid "Install the app with "
+msgstr "Installiere die App mit "
+
+
+msgid "Integrations"
+msgstr "Integrationen"
+
+
+msgid "Internal"
+msgstr "Intern"
+
+
+msgid "Internal note"
+msgstr "Interne Notiz"
+
+
+msgid "Introduction"
+msgstr "Einleitung"
+
+
+msgid "Invalid GitHub App configuration"
+msgstr "Ungültige GitHub-App-Konfiguration"
+
+
+msgid "Invalid GitHub account"
+msgstr "Ungültiges GitHub-Konto"
+
+
+msgid "Invalid GitHub installation"
+msgstr "Ungültige GitHub-Installation"
+
+
+msgid "Invalid GitHub installations"
+msgstr "Ungültige GitHub-Installationen"
+
+
+msgid "Invalid GitHub repositories"
+msgstr "Ungültige GitHub-Repositories"
+
+
+msgid "Invalid GitHub repository"
+msgstr "Ungültiges GitHub-Repository"
+
+
+msgid "Invalid GitHub response"
+msgstr "Ungültige GitHub-Antwort"
+
+
+msgid "Invalid GitHub user token"
+msgstr "Ungültiger GitHub-Benutzertoken"
+
+
+msgid "Invalid JSON."
+msgstr "Ungültiges JSON."
+
+
+msgid "Invalid Vercel connection."
+msgstr "Ungültige Vercel-Verbindung."
+
+
+msgid "Invalid Vercel integration configuration."
+msgstr "Ungültige Vercel-Integrationskonfiguration."
+
+
+msgid "Invalid Vercel project."
+msgstr "Ungültiges Vercel-Projekt."
+
+
+msgid "Invalid action."
+msgstr "Ungültige Aktion."
+
+
+msgid "Invalid address."
+msgstr "Ungültige Adresse."
+
+
+msgid "Invalid appointment."
+msgstr "Ungültiger Termin."
+
+
+msgid "Invalid authorization flow"
+msgstr "Ungültiger Autorisierungsvorgang"
+
+
+msgid "Invalid calendar action."
+msgstr "Ungültige Kalenderaktion."
+
+
+msgid "Invalid calendar page."
+msgstr "Ungültige Kalenderseite."
+
+
+msgid "Invalid callback method"
+msgstr "Ungültige Callback-Methode"
+
+
+msgid "Invalid canvas breakpoint."
+msgstr "Ungültiger Canvas-Breakpoint."
+
+
+msgid "Invalid canvas capability"
+msgstr "Ungültige Canvas-Freigabe"
+
+
+msgid "Invalid canvas draft. Check the fields and limits."
+msgstr "Ungültiger Canvas-Entwurf. Bitte Felder und Grenzen prüfen."
+
+
+msgid "Invalid canvas origin."
+msgstr "Ungültiger Canvas-Ursprung."
+
+
+msgid "Invalid content area."
+msgstr "Ungültiger Inhaltsbereich."
+
+
+msgid "Invalid content change."
+msgstr "Ungültige Inhaltsänderung."
+
+
+msgid "Invalid content list."
+msgstr "Ungültige Inhaltsliste."
+
+
+msgid "Invalid content management response."
+msgstr "Ungültige Antwort der Inhaltsverwaltung."
+
+
+msgid "Invalid content or maximum length exceeded."
+msgstr "Ungültiger Inhalt oder maximale Länge überschritten."
+
+
+msgid "Invalid content seed field"
+msgstr "Ungültiges Feld in den Ausgangsinhalten"
+
+
+msgid "Invalid content seed key"
+msgstr "Ungültiger Schlüssel in den Ausgangsinhalten"
+
+
+msgid "Invalid content seed manifest"
+msgstr "Ungültiges Manifest für die Ausgangsinhalte"
+
+
+msgid "Invalid content."
+msgstr "Ungültiger Inhalt."
+
+
+msgid "Invalid date."
+msgstr "Ungültiges Datum."
+
+
+msgid "Invalid demo amount."
+msgstr "Ungültiger Demo-Betrag."
+
+
+msgid "Invalid demo appointment."
+msgstr "Ungültiger Demo-Termin."
+
+
+msgid "Invalid demo bridge configuration"
+msgstr "Ungültige Konfiguration der Demo-Verbindung"
+
+
+msgid "Invalid editor identity."
+msgstr "Ungültiger Bearbeiter."
+
+
+msgid "Invalid email address."
+msgstr "Ungültige E-Mail-Adresse."
+
+
+msgid "Invalid form data."
+msgstr "Ungültige Formulardaten."
+
+
+msgid "Invalid image URL."
+msgstr "Ungültige Bildadresse."
+
+
+msgid "Invalid instance schema"
+msgstr "Ungültiges Instanzschema"
+
+
+msgid "Invalid media or product assignment."
+msgstr "Ungültige Medien- oder Produktzuordnung."
+
+
+msgid "Invalid native website path"
+msgstr "Ungültiger Pfad zur ursprünglichen Website"
+
+
+msgid "Invalid options."
+msgstr "Ungültige Optionen."
+
+
+msgid "Invalid origin."
+msgstr "Ungültiger Ursprung."
+
+
+msgid "Invalid page ID."
+msgstr "Ungültige Seiten-ID."
+
+
+msgid "Invalid page action."
+msgstr "Ungültige Seitenaktion."
+
+
+msgid "Invalid page entry."
+msgstr "Ungültiger Seiteneintrag."
+
+
+msgid "Invalid page list."
+msgstr "Ungültige Seitenübersicht."
+
+
+msgid "Invalid page variant."
+msgstr "Ungültige Seitenvariante."
+
+
+msgid "Invalid page."
+msgstr "Ungültige Seite."
+
+
+msgid "Invalid parameters."
+msgstr "Ungültige Parameter."
+
+
+msgid "Invalid promotion date range."
+msgstr "Ungültiger Aktionszeitraum."
+
+
+msgid "Invalid query parameters."
+msgstr "Ungültige Abfrageparameter."
+
+
+msgid "Invalid request key."
+msgstr "Ungültiger Anfrageschlüssel."
+
+
+msgid "Invalid request origin."
+msgstr "Ungültiger Anfrageursprung."
+
+
+msgid "Invalid request."
+msgstr "Ungültige Anfrage."
+
+
+msgid "Invalid revision."
+msgstr "Ungültiger Versionsstand."
+
+
+msgid "Invalid shop area."
+msgstr "Ungültiger Shop-Bereich."
+
+
+msgid "Invalid site builder action or revision."
+msgstr "Ungültige Builder-Aktion oder Version."
+
+
+msgid "Invalid site builder action."
+msgstr "Ungültige Builder-Aktion."
+
+
+msgid "Invalid site builder response."
+msgstr "Ungültige Antwort des Builders."
+
+
+msgid "Invalid status for this collection."
+msgstr "Ungültiger Status für diese Sammlung."
+
+
+msgid "Invalid time."
+msgstr "Ungültige Uhrzeit."
+
+
+msgid "Invalid website."
+msgstr "Ungültige Website."
+
+
+msgid "Inventory only. Changing this does not change the running CMS."
+msgstr "Nur Bestandsverwaltung. Eine Änderung hier verändert das laufende CMS nicht."
+
+
+msgid "Inventory only. This does not deploy, suspend or delete infrastructure. Automatic provisioning is not available yet."
+msgstr "Nur Bestandsverwaltung. Es wird keine Infrastruktur bereitgestellt, gesperrt oder gelöscht. Eine automatische Bereitstellung ist noch nicht verfügbar."
+
+
+msgid "Invitation to "
+msgstr "Einladung zu "
+
+
+msgid "Invitations"
+msgstr "Einladungen"
+
+
+msgid "Invite a person"
+msgstr "Person einladen"
+
+
+msgid "Invite customers and control access to each website."
+msgstr "Lade Kunden ein und steuere den Zugriff auf jede Website."
+
+
+msgid "Invite person"
+msgstr "Person einladen"
+
+
+msgid "Invite to a website"
+msgstr "Zu einer Website einladen"
+
+
+msgid "JSON is required."
+msgstr "JSON erwartet."
+
+
+msgid "Keep this record and its history, and remove it from the active list. You can restore it later."
+msgstr "Behalte diesen Eintrag samt Verlauf bei und entferne ihn aus der aktiven Liste. Du kannst ihn später wiederherstellen."
+
+
+msgid "Label"
+msgstr "Bezeichnung"
+
+
+msgid "Last checked"
+msgstr "Zuletzt geprüft"
+
+
+msgid "Last checked:"
+msgstr "Zuletzt geprüft:"
+
+
+msgid "Last name"
+msgstr "Nachname"
+
+
+msgid "Last saved "
+msgstr "Zuletzt gespeichert "
+
+
+msgid "Last updated"
+msgstr "Zuletzt aktualisiert"
+
+
+msgid "Layer name"
+msgstr "Ebenenname"
+
+
+msgid "Layers"
+msgstr "Ebenen"
+
+
+msgid "Left"
+msgstr "Links"
+
+
+msgid "Legacy credential"
+msgstr "Ältere Zugangsdaten"
+
+
+msgid "Light"
+msgstr "Hell"
+
+
+msgid "Line breaks are preserved. Text segments are edited individually."
+msgstr "Zeilenumbrüche bleiben erhalten. Textabschnitte werden einzeln bearbeitet."
+
+
+msgid "Line height"
+msgstr "Zeilenhöhe"
+
+
+msgid "Link CMS"
+msgstr "CMS verknüpfen"
+
+
+msgid "Link Vercel project"
+msgstr "Vercel-Projekt verknüpfen"
+
+
+msgid "Link an existing CMS"
+msgstr "Vorhandenes CMS verknüpfen"
+
+
+msgid "Link an existing sending account"
+msgstr "Vorhandenes Versandkonto verknüpfen"
+
+
+msgid "Link destination"
+msgstr "Linkziel"
+
+
+msgid "Link existing account"
+msgstr "Vorhandenes Konto verknüpfen"
+
+
+msgid "Link repository"
+msgstr "Repository verknüpfen"
+
+
+msgid "Link this Studio project to Vercel to see live deployment information."
+msgstr "Verknüpfe dieses Studio-Projekt mit Vercel, um aktuelle Deployment-Informationen zu sehen."
+
+
+msgid "Linked Vercel hosting project"
+msgstr "Vercel-Hosting-Projekt verknüpft"
+
+
+msgid "Linking…"
+msgstr "Wird verknüpft …"
+
+
+msgid "Live preview"
+msgstr "Live-Vorschau"
+
+
+msgid "Live preview of the current draft"
+msgstr "Live-Vorschau des aktuellen Entwurfs"
+
+
+msgid "Live project details, production status, recent deployments and domains. This connection only reads Vercel data."
+msgstr "Aktuelle Projektdaten, Produktivstatus, letzte Deployments und Domains. Diese Verbindung liest ausschließlich Vercel-Daten."
+
+
+msgid "Load current content"
+msgstr "Aktuellen Stand laden"
+
+
+msgid "Loading connection…"
+msgstr "Verbindung wird geladen …"
+
+
+msgid "Loading deployment information…"
+msgstr "Deployment-Informationen werden geladen …"
+
+
+msgid "Loading workspace…"
+msgstr "Arbeitsbereich wird geladen …"
+
+
+msgid "Loading your workspace"
+msgstr "Arbeitsbereich wird geladen"
+
+
+msgid "Loading your workspace…"
+msgstr "Arbeitsbereich wird geladen …"
+
+
+msgid "Local HTTP SSO is restricted to non-production localhost and 127.0.0.1 origins"
+msgstr "Lokales HTTP-SSO ist nur außerhalb der Produktion über localhost und 127.0.0.1 erlaubt."
+
+
+msgid "Local changes discarded."
+msgstr "Lokale Änderungen verworfen."
+
+
+msgid "Local changes from this tab restored."
+msgstr "Lokale Änderungen aus diesem Tab wiederhergestellt."
+
+
+msgid "Local image path or HTTPS URL. This does not upload a file."
+msgstr "Lokaler Bildpfad oder HTTPS-Adresse. Kein Datei-Upload."
+
+
+msgid "Local path or HTTPS URL. “none” means no fallback image."
+msgstr "Lokaler Pfad oder HTTPS-Adresse. „none“ steht für kein Ersatzbild."
+
+
+msgid "MB and GB use decimal units."
+msgstr "MB und GB verwenden Dezimaleinheiten."
+
+
+msgid "Mail"
+msgstr "Mail"
+
+
+msgid "Mail & domains"
+msgstr "Mail & Domains"
+
+
+msgid "Mail credentials"
+msgstr "Mail-Zugangsdaten"
+
+
+msgid "Mail is disabled for tenants."
+msgstr "E-Mail ist für Mandanten deaktiviert."
+
+
+msgid "Mail is disabled."
+msgstr "Mail ist deaktiviert."
+
+
+msgid "Mail messages"
+msgstr "Mail-Nachrichten"
+
+
+msgid "Mail provider"
+msgstr "Mail-Anbieter"
+
+
+msgid "Mail provider credentials are not configured."
+msgstr "Die Zugangsdaten des E-Mail-Anbieters sind nicht hinterlegt."
+
+
+msgid "Mail provider usage"
+msgstr "Mail-Verbrauch beim Anbieter"
+
+
+msgid "Mail region"
+msgstr "Mail-Region"
+
+
+msgid "Mail sent against provider quota"
+msgstr "Gesendete E-Mails im Verhältnis zum Anbieterlimit"
+
+
+msgid "Mail tracking"
+msgstr "Mail-Tracking"
+
+
+msgid "Mail usage is more than 24 hours old."
+msgstr "Der Mail-Verbrauchsstand ist älter als 24 Stunden."
+
+
+msgid "Main navigation"
+msgstr "Hauptnavigation"
+
+
+msgid "Make room for your next project"
+msgstr "Platz für dein nächstes Projekt"
+
+
+msgid "Manage"
+msgstr "Verwalten"
+
+
+msgid "Manage "
+msgstr "Verwalten "
+
+
+msgid "Manage Vercel permissions ↗"
+msgstr "Vercel-Berechtigungen verwalten ↗"
+
+
+msgid "Manage account"
+msgstr "Konto verwalten"
+
+
+msgid "Manage connection"
+msgstr "Verbindung verwalten"
+
+
+msgid "Manage connections"
+msgstr "Verbindungen verwalten"
+
+
+msgid "Manage customer names and addresses. Sign-in and permissions remain protected."
+msgstr "Kundennamen und Adressen verwalten. Anmeldung und Berechtigungen bleiben geschützt."
+
+
+msgid "Manage existing products, variants, extras, prices and availability."
+msgstr "Bestehende Produkte, Varianten, Extras, Preise und Verfügbarkeit pflegen."
+
+
+msgid "Manage membership"
+msgstr "Mitgliedschaft verwalten"
+
+
+msgid "Manage names and saved addresses."
+msgstr "Namen und gespeicherte Adressen verwalten."
+
+
+msgid "Manage opening hours, availability and appointments."
+msgstr "Öffnungszeiten, freie Zeiten und Termine verwalten."
+
+
+msgid "Manage opening hours, exceptions and appointments."
+msgstr "Öffnungszeiten, Ausnahmen und Termine verwalten."
+
+
+msgid "Manage reusable plans"
+msgstr "Wiederverwendbare Tarife verwalten"
+
+
+msgid "Manage selected repositories"
+msgstr "Ausgewählte Repositories verwalten"
+
+
+msgid "Manage shop"
+msgstr "Shop verwalten"
+
+
+msgid "Manage storage connections"
+msgstr "Speicherverbindungen verwalten"
+
+
+msgid "Manage text and images in the new design and original view."
+msgstr "Texte und Bilder im neuen Entwurf und der bisherigen Ansicht pflegen."
+
+
+msgid "Manage the demo daily promotion and discount."
+msgstr "Tagesaktion und Rabatt der Demo verwalten."
+
+
+msgid "Manage this customer’s members and invite-only access. Contact details alone do not grant access."
+msgstr "Verwalte die Mitglieder dieses Kunden und den Zugang auf Einladung. Kontaktdaten allein gewähren keinen Zugriff."
+
+
+msgid "Manage this tenant’s SMTP and API credentials directly in Webdock. Secrets are shown once when created and cannot be retrieved later."
+msgstr "Verwalte die SMTP- und API-Zugangsdaten dieses Mandanten direkt in Webdock. Secrets werden bei der Erstellung einmal angezeigt und können später nicht erneut abgerufen werden."
+
+
+msgid "Manage website"
+msgstr "Website verwalten"
+
+
+msgid "Manage website permissions"
+msgstr "Website-Berechtigungen verwalten"
+
+
+msgid "Manage weekly hours, exceptions and occupied times."
+msgstr "Wochenplan, Ausnahmen und belegte Zeiten verwalten."
+
+
+msgid "Management"
+msgstr "Verwaltung"
+
+
+msgid "Management is currently unavailable. Refresh and try again."
+msgstr "Die Verwaltung ist gerade nicht erreichbar. Bitte aktualisieren und erneut versuchen."
+
+
+msgid "Match sender domain"
+msgstr "Absenderdomain abgleichen"
+
+
+msgid "Measured storage"
+msgstr "Gemessener Speicherverbrauch"
+
+
+msgid "Media"
+msgstr "Medien"
+
+
+msgid "Media image"
+msgstr "Medienfoto"
+
+
+msgid "Media picker"
+msgstr "Medienauswahl"
+
+
+msgid "Media preview"
+msgstr "Medienvorschau"
+
+
+msgid "Medium"
+msgstr "Medium"
+
+
+msgid "Member"
+msgstr "Mitglied"
+
+
+msgid "Member — view customer profile"
+msgstr "Mitglied — Kundenprofil ansehen"
+
+
+msgid "Menu "
+msgstr "Menü "
+
+
+msgid "Message"
+msgstr "Nachricht"
+
+
+msgid "Method not allowed."
+msgstr "Methode nicht erlaubt."
+
+
+msgid "Mobile"
+msgstr "Mobil"
+
+
+msgid "Monday"
+msgstr "Montag"
+
+
+msgid "Monospace"
+msgstr "Monospace"
+
+
+msgid "More Vercel projects"
+msgstr "Weitere Vercel-Projekte"
+
+
+msgid "More entries"
+msgstr "Weitere Einträge"
+
+
+msgid "My websites"
+msgstr "Meine Websites"
+
+
+msgid "Name"
+msgstr "Name"
+
+
+msgid "Name A–Z"
+msgstr "Name A–Z"
+
+
+msgid "Name Z–A"
+msgstr "Name Z–A"
+
+
+msgid "Name or email"
+msgstr "Name oder E-Mail"
+
+
+msgid "Name, contact or email"
+msgstr "Name, Kontaktperson oder E-Mail"
+
+
+msgid "New customer"
+msgstr "Neuer Kunde"
+
+
+msgid "New customer +"
+msgstr "Neuer Kunde +"
+
+
+msgid "New customers receive a secure link to choose their password. Existing accounts receive an invitation. Website access starts when customer membership is accepted."
+msgstr "Neue Kunden erhalten einen sicheren Link, um ihr Passwort festzulegen. Bestehende Konten erhalten eine Einladung. Der Website-Zugriff beginnt, sobald die Kundenmitgliedschaft angenommen wurde."
+
+
+msgid "New design"
+msgstr "Neuer Entwurf"
+
+
+msgid "New page"
+msgstr "Neue Seite"
+
+
+msgid "New people receive a secure link to choose their password. Tenant access starts after they accept the invitation."
+msgstr "Neue Personen erhalten einen sicheren Link, um ihr Passwort festzulegen. Der Mandantenzugriff beginnt, nachdem sie die Einladung angenommen haben."
+
+
+msgid "New project"
+msgstr "Neues Projekt"
+
+
+msgid "New project +"
+msgstr "Neues Projekt +"
+
+
+msgid "Newest first"
+msgstr "Neueste zuerst"
+
+
+msgid "Next"
+msgstr "Weiter"
+
+
+msgid "Next accounts"
+msgstr "Nächste Konten"
+
+
+msgid "Next repositories"
+msgstr "Nächste Repositories"
+
+
+msgid "Next →"
+msgstr "Weiter →"
+
+
+msgid "No"
+msgstr "Nein"
+
+
+msgid "No CMS linked"
+msgstr "Kein CMS verknüpft"
+
+
+msgid "No Git branch recorded"
+msgstr "Kein Git-Branch erfasst"
+
+
+msgid "No Mail account has been set up for this tenant."
+msgstr "Für diesen Mandanten wurde noch kein Mail-Konto eingerichtet."
+
+
+msgid "No access"
+msgstr "Kein Zugriff"
+
+
+msgid "No accessible installations found. Install the app on a GitHub account and choose the repositories to make available."
+msgstr "Keine zugänglichen Installationen gefunden. Installiere die App in einem GitHub-Konto und wähle die freizugebenden Repositories aus."
+
+
+msgid "No active tenant memberships yet. Accept your emailed invitation to get started."
+msgstr "Noch keine aktiven Mandantenmitgliedschaften. Nimm die Einladung aus deiner E-Mail an, um loszulegen."
+
+
+msgid "No additional commercial terms specified."
+msgstr "Keine zusätzlichen Vertragsbedingungen angegeben."
+
+
+msgid "No addresses saved."
+msgstr "Keine Adressen hinterlegt."
+
+
+msgid "No appointments yet. New entries appear here."
+msgstr "Noch keine Termine. Neue Einträge erscheinen hier."
+
+
+msgid "No archived customers"
+msgstr "Keine archivierten Kunden"
+
+
+msgid "No archived projects"
+msgstr "Keine archivierten Projekte"
+
+
+msgid "No changes recorded yet."
+msgstr "Noch keine Änderungen erfasst."
+
+
+msgid "No changes yet"
+msgstr "Noch keine Änderungen"
+
+
+msgid "No contact person"
+msgstr "Keine Kontaktperson"
+
+
+msgid "No content yet"
+msgstr "Noch keine Inhalte"
+
+
+msgid "No credentials configured"
+msgstr "Keine Zugangsdaten konfiguriert"
+
+
+msgid "No credentials created yet."
+msgstr "Noch keine Zugangsdaten erstellt."
+
+
+msgid "No custom tracking domains yet."
+msgstr "Noch keine eigenen Tracking-Domains."
+
+
+msgid "No customer members yet. Invite the first person with the Administrator role."
+msgstr "Noch keine Kundenmitglieder. Lade die erste Person mit der Admin-Rolle ein."
+
+
+msgid "No customers yet"
+msgstr "Noch keine Kunden"
+
+
+msgid "No default tracking domain is selected."
+msgstr "Keine Standard-Tracking-Domain ausgewählt."
+
+
+msgid "No design pages yet"
+msgstr "Noch keine Design-Seiten"
+
+
+msgid "No domain yet"
+msgstr "Noch keine Domain"
+
+
+msgid "No domains attached."
+msgstr "Keine Domains zugeordnet."
+
+
+msgid "No editable fields have been configured for this view."
+msgstr "Für diese Ansicht wurden noch keine bearbeitbaren Felder eingerichtet."
+
+
+msgid "No exceptions. Weekly opening hours apply."
+msgstr "Keine Ausnahmen. Es gelten die wöchentlichen Öffnungszeiten."
+
+
+msgid "No extras configured."
+msgstr "Keine Extras hinterlegt."
+
+
+msgid "No image preview"
+msgstr "Keine Bildvorschau"
+
+
+msgid "No invitations yet."
+msgstr "Noch keine Einladungen."
+
+
+msgid "No mapped application access"
+msgstr "Kein zugeordneter Anwendungszugriff"
+
+
+msgid "No matching accounts."
+msgstr "Keine passenden Konten."
+
+
+msgid "No matching changes"
+msgstr "Keine passenden Änderungen"
+
+
+msgid "No matching content."
+msgstr "Keine passenden Inhalte."
+
+
+msgid "No matching customers"
+msgstr "Keine passenden Kunden"
+
+
+msgid "No matching customers."
+msgstr "Keine passenden Kunden."
+
+
+msgid "No matching projects"
+msgstr "Keine passenden Projekte"
+
+
+msgid "No matching requests on this page."
+msgstr "Keine passenden Anfragen auf dieser Seite."
+
+
+msgid "No media yet"
+msgstr "Noch keine Medien"
+
+
+msgid "No media yet. Select existing images here."
+msgstr "Noch keine Medien vorhanden. Hier wählst du bereits hinterlegte Bilder."
+
+
+msgid "No note."
+msgstr "Keine Notiz."
+
+
+msgid "No offers yet."
+msgstr "Noch keine Angebote."
+
+
+msgid "No orders yet"
+msgstr "Noch keine Bestellungen"
+
+
+msgid "No plan assigned"
+msgstr "Kein Tarif zugewiesen"
+
+
+msgid "No plans yet. Create your first plan above."
+msgstr "Noch keine Tarife. Erstelle oben deinen ersten Tarif."
+
+
+msgid "No preview"
+msgstr "Keine Vorschau"
+
+
+msgid "No product"
+msgstr "Kein Produkt"
+
+
+msgid "No production deployment is currently assigned."
+msgstr "Derzeit ist kein Produktiv-Deployment zugewiesen."
+
+
+msgid "No products match this search."
+msgstr "Keine Produkte für diese Suche."
+
+
+msgid "No products yet"
+msgstr "Noch keine Produkte"
+
+
+msgid "No projects yet."
+msgstr "Noch keine Projekte."
+
+
+msgid "No recent deployments."
+msgstr "Keine aktuellen Deployments."
+
+
+msgid "No repositories are available on this page. Review the app’s selected repositories on GitHub."
+msgstr "Auf dieser Seite sind keine Repositories verfügbar. Prüfe die für die App ausgewählten Repositories auf GitHub."
+
+
+msgid "No repository linked"
+msgstr "Kein Repository verknüpft"
+
+
+msgid "No requests yet. New requests appear here."
+msgstr "Noch keine Anfragen. Neue Anfragen erscheinen hier."
+
+
+msgid "No sender domains added yet."
+msgstr "Noch keine Absenderdomains hinzugefügt."
+
+
+msgid "No storage connections yet. Usage is unavailable until a store is connected and measured."
+msgstr "Noch keine Speicherverbindungen. Der Verbrauch ist erst verfügbar, wenn ein Speicher verbunden und gemessen wurde."
+
+
+msgid "No unsaved changes"
+msgstr "Keine ungespeicherten Änderungen"
+
+
+msgid "No website linked"
+msgstr "Keine Website verknüpft"
+
+
+msgid "No website permissions yet."
+msgstr "Noch keine Website-Berechtigungen."
+
+
+msgid "No websites are currently authorized for your account in this tenant."
+msgstr "Für dein Konto sind derzeit keine Websites in diesem Mandanten freigegeben."
+
+
+msgid "No websites assigned yet"
+msgstr "Noch keine Websites zugeordnet"
+
+
+msgid "No websites found"
+msgstr "Keine Website gefunden"
+
+
+msgid "None"
+msgstr "Keine"
+
+
+msgid "Not available"
+msgstr "Nicht verfügbar"
+
+
+msgid "Not checked"
+msgstr "Nicht geprüft"
+
+
+msgid "Not connected"
+msgstr "Nicht verbunden"
+
+
+msgid "Not linked"
+msgstr "Nicht verknüpft"
+
+
+msgid "Not published yet"
+msgstr "Noch nicht veröffentlicht"
+
+
+msgid "Not recorded"
+msgstr "Nicht erfasst"
+
+
+msgid "Not registered yet"
+msgstr "Noch nicht registriert"
+
+
+msgid "Not reported"
+msgstr "Nicht gemeldet"
+
+
+msgid "Not selected"
+msgstr "Nicht ausgewählt"
+
+
+msgid "Note for follow-up"
+msgstr "Notiz für die weitere Bearbeitung"
+
+
+msgid "Notes"
+msgstr "Notizen"
+
+
+msgid "Notice"
+msgstr "Hinweis"
+
+
+msgid "Objects"
+msgstr "Objekte"
+
+
+msgid "Occupied"
+msgstr "Belegt"
+
+
+msgid "Offer accepted. The agreed allocation was assigned to your tenant. No payment was collected here."
+msgstr "Angebot angenommen. Das vereinbarte Kontingent wurde deinem Mandanten zugewiesen. Hier wurde keine Zahlung abgewickelt."
+
+
+msgid "Offer for "
+msgstr "Angebot für "
+
+
+msgid "Offered plan"
+msgstr "Angebotener Tarif"
+
+
+msgid "Offers"
+msgstr "Angebote"
+
+
+msgid "Oldest first"
+msgstr "Älteste zuerst"
+
+
+msgid "One workspace. Independent websites."
+msgstr "Ein Arbeitsbereich. Eigenständige Websites."
+
+
+msgid "Only administrators can assign the homepage."
+msgstr "Nur Admins können die Startseite zuordnen."
+
+
+msgid "Only an authorized administrator of this tenant can accept an active offer. If the plan has changed, ask your operator for a new offer."
+msgstr "Nur ein berechtigter Admin dieses Mandanten kann ein aktives Angebot annehmen. Hat sich der Tarif geändert, bitte deinen Betreiber um ein neues Angebot."
+
+
+msgid "Only name and addresses are changed. Credentials remain protected; no email is sent."
+msgstr "Nur Name und Adressen werden geändert. Zugangsdaten bleiben geschützt; es wird keine E-Mail versendet."
+
+
+msgid "Only operators can see these notes."
+msgstr "Nur Betreiber können diese Notizen sehen."
+
+
+msgid "Only pending demo requests can be created."
+msgstr "Es können nur offene Demo-Anfragen erstellt werden."
+
+
+msgid "Only platform operators can change these settings. Tenant administrators manage their own tenant. Account registration remains invitation-only."
+msgstr "Nur Plattformbetreiber können diese Einstellungen ändern. Mandanten-Admins verwalten ihren eigenen Mandanten. Konten werden weiterhin nur auf Einladung erstellt."
+
+
+msgid "Only select repositories"
+msgstr "Nur ausgewählte Repositories"
+
+
+msgid "Opacity"
+msgstr "Deckkraft"
+
+
+msgid "Open CMS"
+msgstr "CMS öffnen"
+
+
+msgid "Open CMS ↗"
+msgstr "CMS öffnen ↗"
+
+
+msgid "Open Vercel ↗"
+msgstr "Vercel öffnen ↗"
+
+
+msgid "Open deployment ↗"
+msgstr "Deployment öffnen ↗"
+
+
+msgid "Open page ↗"
+msgstr "Seite öffnen ↗"
+
+
+msgid "Open repository ↗"
+msgstr "Repository öffnen ↗"
+
+
+msgid "Open tracking"
+msgstr "Öffnungs-Tracking"
+
+
+msgid "Open turboSMTP dashboard ↗"
+msgstr "turboSMTP-Dashboard öffnen ↗"
+
+
+msgid "Open view ↗"
+msgstr "Ansicht öffnen ↗"
+
+
+msgid "Open website "
+msgstr "Website öffnen "
+
+
+msgid "Opening hours"
+msgstr "Öffnungszeiten"
+
+
+msgid "Opening hours & appointments"
+msgstr "Öffnungszeiten & Termine"
+
+
+msgid "Opening hours saved."
+msgstr "Öffnungszeiten gespeichert."
+
+
+msgid "Operator"
+msgstr "Betreiber"
+
+
+msgid "Operator access is required."
+msgstr "Betreiberzugriff erforderlich."
+
+
+msgid "Operator access required"
+msgstr "Betreiberzugriff erforderlich"
+
+
+msgid "Operator access required."
+msgstr "Betreiberzugriff erforderlich."
+
+
+msgid "Operator review required"
+msgstr "Betreiberprüfung erforderlich"
+
+
+msgid "Operator studio"
+msgstr "Betreiber-Studio"
+
+
+msgid "Order"
+msgstr "Reihenfolge"
+
+
+msgid "Order overview"
+msgstr "Bestellübersicht"
+
+
+msgid "Orders"
+msgstr "Bestellungen"
+
+
+msgid "Orders and payments on this website are simulated."
+msgstr "Bestellungen und Zahlungen werden in dieser Website simuliert."
+
+
+msgid "Original view"
+msgstr "Bisherige Ansicht"
+
+
+msgid "Original website ↗"
+msgstr "Ursprüngliche Website ↗"
+
+
+msgid "Overview"
+msgstr "Übersicht"
+
+
+msgid "Owner"
+msgstr "Inhaber"
+
+
+msgid "Ownership verification pending"
+msgstr "Bestätigung der Inhaberschaft ausstehend"
+
+
+msgid "Ownership verified"
+msgstr "Inhaberschaft bestätigt"
+
+
+msgid "Page"
+msgstr "Seite"
+
+
+msgid "Page "
+msgstr "Seite "
+
+
+msgid "Page & background"
+msgstr "Seite & Hintergrund"
+
+
+msgid "Page address"
+msgstr "Seitenadresse"
+
+
+msgid "Page content"
+msgstr "Seiteninhalte"
+
+
+msgid "Page not found."
+msgstr "Seite nicht gefunden."
+
+
+msgid "Page published."
+msgstr "Seite veröffentlicht."
+
+
+msgid "Page title"
+msgstr "Seitentitel"
+
+
+msgid "Page unpublished."
+msgstr "Veröffentlichung zurückgenommen."
+
+
+msgid "Password"
+msgstr "Passwort"
+
+
+msgid "Path prefix (optional)"
+msgstr "Pfadpräfix (optional)"
+
+
+msgid "Paused"
+msgstr "Pausiert"
+
+
+msgid "Pending"
+msgstr "Ausstehend"
+
+
+msgid "People"
+msgstr "Personen"
+
+
+msgid "People & access"
+msgstr "Personen & Zugriff"
+
+
+msgid "Period: "
+msgstr "Zeitraum: "
+
+
+msgid "Permissions"
+msgstr "Berechtigungen"
+
+
+msgid "Person"
+msgstr "Person"
+
+
+msgid "Phone"
+msgstr "Telefon"
+
+
+msgid "Pickup"
+msgstr "Abholung"
+
+
+msgid "Pizza"
+msgstr "Pizza"
+
+
+msgid "Place "
+msgstr "Platz "
+
+
+msgid "Places occupied"
+msgstr "Belegte Plätze"
+
+
+msgid "Places per appointment"
+msgstr "Plätze pro Termin"
+
+
+msgid "Plan"
+msgstr "Tarif"
+
+
+msgid "Plan & usage"
+msgstr "Tarif & Nutzung"
+
+
+msgid "Plan and usage"
+msgstr "Tarif und Verbrauch"
+
+
+msgid "Plan library"
+msgstr "Tarifbibliothek"
+
+
+msgid "Plans"
+msgstr "Tarife"
+
+
+msgid "Plans and allowances"
+msgstr "Tarife und Kontingente"
+
+
+msgid "Platform operator"
+msgstr "Plattformbetreiber"
+
+
+msgid "Platform settings"
+msgstr "Plattformeinstellungen"
+
+
+msgid "Please check the page properties."
+msgstr "Bitte die Seiteneigenschaften prüfen."
+
+
+msgid "Please sign in again."
+msgstr "Bitte erneut anmelden."
+
+
+msgid "Please wait until the current action is complete."
+msgstr "Bitte warten Sie, bis die laufende Aktion abgeschlossen ist."
+
+
+msgid "Port and encryption"
+msgstr "Port und Verschlüsselung"
+
+
+msgid "Position and style apply only to the selected screen size. Content and name apply everywhere."
+msgstr "Position und Gestaltung gelten nur für die gewählte Bildschirmgröße. Inhalt und Name gelten überall."
+
+
+msgid "Position elements freely. Drafts and publication remain separate."
+msgstr "Freie Elemente platzieren. Entwürfe und Veröffentlichung bleiben getrennt."
+
+
+msgid "Postal address"
+msgstr "Postanschrift"
+
+
+msgid "Postal code"
+msgstr "Postleitzahl"
+
+
+msgid "Preorder"
+msgstr "Vorbestellung"
+
+
+msgid "Prepare adjusted plan allowances and optional commercial terms for the customer to accept. Acceptance assigns these allowances and preserves the extras shown below. This does not collect payment."
+msgstr "Bereite angepasste Tarifkontingente und optionale Vertragsbedingungen zur Annahme durch den Kunden vor. Die Annahme weist diese Kontingente zu und behält die unten angezeigten Zusatzkontingente bei. Es wird keine Zahlung abgewickelt."
+
+
+msgid "Preserved extras"
+msgstr "Beibehaltene Zusatzkontingente"
+
+
+msgid "Preview"
+msgstr "Vorschau"
+
+
+msgid "Preview ended"
+msgstr "Vorschau beendet"
+
+
+msgid "Preview expired"
+msgstr "Vorschau abgelaufen"
+
+
+msgid "Preview is unavailable for this website CMS"
+msgstr "Vorschau für dieses Website-CMS nicht verfügbar"
+
+
+msgid "Preview of the product image URL"
+msgstr "Vorschau der Produktbildadresse"
+
+
+msgid "Preview of the selected website image"
+msgstr "Vorschau des ausgewählten Website-Bildes"
+
+
+msgid "Preview paused. Complete the title, address and colour values."
+msgstr "Vorschau pausiert. Bitte Titel, Adresse und Farbwerte vervollständigen."
+
+
+msgid "Preview with your unsaved changes"
+msgstr "Vorschau mit deinen ungespeicherten Änderungen"
+
+
+msgid "Previous"
+msgstr "Zurück"
+
+
+msgid "Previous accounts"
+msgstr "Vorherige Konten"
+
+
+msgid "Previous repositories"
+msgstr "Vorherige Repositorys"
+
+
+msgid "Price from"
+msgstr "Preis ab"
+
+
+msgid "Price in €"
+msgstr "Preis in €"
+
+
+msgid "Private"
+msgstr "Privat"
+
+
+msgid "Private operator notes"
+msgstr "Interne Betreibernotizen"
+
+
+msgid "Product"
+msgstr "Produkt"
+
+
+msgid "Product and variant editor"
+msgstr "Produkt- und Varianteneditor"
+
+
+msgid "Product details"
+msgstr "Produktdetails"
+
+
+msgid "Product image"
+msgstr "Produktbild"
+
+
+msgid "Product list"
+msgstr "Produktliste"
+
+
+msgid "Product name"
+msgstr "Produktname"
+
+
+msgid "Product photo from media"
+msgstr "Produktfoto aus Medien"
+
+
+msgid "Production"
+msgstr "Produktion"
+
+
+msgid "Production storage against configured allowance"
+msgstr "Produktivspeicher im Verhältnis zum konfigurierten Kontingent"
+
+
+msgid "Production storage exceeds the configured allocation."
+msgstr "Der Produktivspeicher überschreitet das konfigurierte Kontingent."
+
+
+msgid "Production website"
+msgstr "Produktive Website"
+
+
+msgid "Production: "
+msgstr "Produktion: "
+
+
+msgid "Products"
+msgstr "Produkte"
+
+
+msgid "Project"
+msgstr "Projekt"
+
+
+msgid "Project ID"
+msgstr "Projekt-ID"
+
+
+msgid "Project details"
+msgstr "Projektdetails"
+
+
+msgid "Project mappings are preserved. To revoke Vercel’s permission completely, remove this integration in Vercel."
+msgstr "Projektzuordnungen bleiben erhalten. Entferne diese Integration in Vercel, um die Berechtigung dort vollständig zu widerrufen."
+
+
+msgid "Project name"
+msgstr "Projektname"
+
+
+msgid "Project ownership cannot be reassigned here."
+msgstr "Die Eigentümerschaft des Projekts kann hier nicht neu zugeordnet werden."
+
+
+msgid "Project, customer or domain"
+msgstr "Projekt, Kunde oder Domain"
+
+
+msgid "Projects"
+msgstr "Projekte"
+
+
+msgid "Projects ("
+msgstr "Projekte ("
+
+
+msgid "Projects matching the selected filters"
+msgstr "Projekte passend zu den ausgewählten Filtern"
+
+
+msgid "Promotion title"
+msgstr "Aktionstitel"
+
+
+msgid "Properties"
+msgstr "Eigenschaften"
+
+
+msgid "Provider account ID"
+msgstr "Anbieterkonto-ID"
+
+
+msgid "Provider administration (operator only)"
+msgstr "Anbieterverwaltung (nur Betreiber)"
+
+
+msgid "Provider verification pending"
+msgstr "Anbieterbestätigung ausstehend"
+
+
+msgid "Provisioning"
+msgstr "Wird eingerichtet"
+
+
+msgid "Public"
+msgstr "Öffentlich"
+
+
+msgid "Publication"
+msgstr "Veröffentlichung"
+
+
+msgid "Publish"
+msgstr "Veröffentlichen"
+
+
+msgid "Publish the current page revision before assigning it as the homepage."
+msgstr "Die aktuelle Seitenversion muss vor der Startseitenzuordnung veröffentlicht sein."
+
+
+msgid "Published"
+msgstr "Veröffentlicht"
+
+
+msgid "Published address: /p/"
+msgstr "Veröffentlichte Adresse: /p/"
+
+
+msgid "Published: {address}"
+msgstr "Veröffentlicht: {address}"
+
+
+msgid "Queued"
+msgstr "In der Warteschlange"
+
+
+msgid "Read access"
+msgstr "Lesezugriff"
+
+
+msgid "Read scope"
+msgstr "Leseberechtigung"
+
+
+msgid "Read-only"
+msgstr "Nur lesen"
+
+
+msgid "Reader — view content"
+msgstr "Leser — Inhalte ansehen"
+
+
+msgid "Ready"
+msgstr "Bereit"
+
+
+msgid "Received on "
+msgstr "Eingegangen am "
+
+
+msgid "Recent access changes"
+msgstr "Letzte Zugriffsänderungen"
+
+
+msgid "Recent changes"
+msgstr "Letzte Änderungen"
+
+
+msgid "Recent deployments"
+msgstr "Letzte Deployments"
+
+
+msgid "Recently updated"
+msgstr "Zuletzt aktualisiert"
+
+
+msgid "Recheck sending DNS"
+msgstr "Versand-DNS erneut prüfen"
+
+
+msgid "Reconnect GitHub"
+msgstr "GitHub erneut verbinden"
+
+
+msgid "Reconnect Vercel"
+msgstr "Vercel erneut verbinden"
+
+
+msgid "Reconnect Vercel to refresh its stored credentials."
+msgstr "Verbinde Vercel erneut, um die gespeicherten Zugangsdaten zu aktualisieren."
+
+
+msgid "Record not found"
+msgstr "Datensatz nicht gefunden"
+
+
+msgid "Record type"
+msgstr "Datensatztyp"
+
+
+msgid "Recorded changes"
+msgstr "Protokollierte Änderungen"
+
+
+msgid "Recorded status"
+msgstr "Gespeicherter Status"
+
+
+msgid "Redo"
+msgstr "Vor"
+
+
+msgid "Redo (Ctrl/⌘ Shift Z)"
+msgstr "Wiederholen (Strg/⌘ Umschalt Z)"
+
+
+msgid "Refresh Vercel data"
+msgstr "Vercel-Daten aktualisieren"
+
+
+msgid "Refresh account status"
+msgstr "Kontostatus aktualisieren"
+
+
+msgid "Refresh measurement"
+msgstr "Messung aktualisieren"
+
+
+msgid "Refresh tracking status"
+msgstr "Tracking-Status aktualisieren"
+
+
+msgid "Region"
+msgstr "Region"
+
+
+msgid "Region: "
+msgstr "Region: "
+
+
+msgid "Register a GitHub App"
+msgstr "GitHub-App registrieren"
+
+
+msgid "Register a GitHub App once to enable repository selection for Studio."
+msgstr "Registriere einmalig eine GitHub-App, um die Repository-Auswahl für Studio zu aktivieren."
+
+
+msgid "Register sending domain"
+msgstr "Absenderdomain registrieren"
+
+
+msgid "Register the private Webdock Studio integration in Vercel and configure its client credentials to enable connection."
+msgstr "Registriere die private Webdock-Studio-Integration in Vercel und richte ihre Client-Zugangsdaten ein, um die Verbindung zu ermöglichen."
+
+
+msgid "Reload"
+msgstr "Neu laden"
+
+
+msgid "Remove"
+msgstr "Entfernen"
+
+
+msgid "Remove address"
+msgstr "Adresse entfernen"
+
+
+msgid "Remove credentials"
+msgstr "Zugangsdaten entfernen"
+
+
+msgid "Remove domain"
+msgstr "Domain entfernen"
+
+
+msgid "Remove exception {date}"
+msgstr "Ausnahme für {date} entfernen"
+
+
+msgid "Remove membership"
+msgstr "Mitgliedschaft entfernen"
+
+
+msgid "Remove provider connection"
+msgstr "Anbieterverbindung entfernen"
+
+
+msgid "Remove sending registration"
+msgstr "Versandregistrierung entfernen"
+
+
+msgid "Remove this domain from the sending provider. Applications may no longer send from it."
+msgstr "Entferne diese Domain beim Versandanbieter. Anwendungen können möglicherweise nicht mehr über sie senden."
+
+
+msgid "Remove this local domain entry. DNS records remain unchanged."
+msgstr "Entferne diesen lokalen Domain-Eintrag. DNS-Einträge bleiben unverändert."
+
+
+msgid "Remove this measurement connection. Stored files remain unchanged."
+msgstr "Entferne diese Messverbindung. Gespeicherte Dateien bleiben unverändert."
+
+
+msgid "Remove this person’s tenant and website access"
+msgstr "Mandanten- und Website-Zugriff dieser Person entfernen"
+
+
+msgid "Remove this tracking domain from the sending account. Existing tracked links may stop working."
+msgstr "Entferne diese Tracking-Domain aus dem Versandkonto. Vorhandene Tracking-Links funktionieren möglicherweise nicht mehr."
+
+
+msgid "Remove this website access"
+msgstr "Diesen Website-Zugriff entfernen"
+
+
+msgid "Remove tracking domain"
+msgstr "Tracking-Domain entfernen"
+
+
+msgid "Removing master credentials disables new live Mail operations. Existing provider accounts are not deleted. Revoke the key separately in turboSMTP if it should no longer be valid."
+msgstr "Das Entfernen der Hauptzugangsdaten verhindert neue Mail-Aktionen beim Anbieter. Bestehende Anbieterkonten werden nicht gelöscht. Widerrufe den Schlüssel separat bei turboSMTP, wenn er nicht mehr gültig sein soll."
+
+
+msgid "Removing…"
+msgstr "Wird entfernt…"
+
+
+msgid "Replace provider credentials"
+msgstr "Anbieter-Zugangsdaten ersetzen"
+
+
+msgid "Replace the weekly schedule on the selected date."
+msgstr "Ersetzen den Wochenplan am gewählten Datum."
+
+
+msgid "Repository"
+msgstr "Repository"
+
+
+msgid "Repository "
+msgstr "Repository "
+
+
+msgid "Repository URL"
+msgstr "Repository-URL"
+
+
+msgid "Repository pages"
+msgstr "Repository-Seiten"
+
+
+msgid "Repository permissions → Metadata → Read-only"
+msgstr "Repository-Berechtigungen → Metadaten → Nur lesen"
+
+
+msgid "Request is too large."
+msgstr "Die Anfrage ist zu groß."
+
+
+msgid "Request pages"
+msgstr "Anfragenseiten"
+
+
+msgid "Request saved."
+msgstr "Anfrage gespeichert."
+
+
+msgid "Requests"
+msgstr "Anfragen"
+
+
+msgid "Requests are currently unavailable. Please refresh later."
+msgstr "Die Anfragen sind gerade nicht erreichbar. Bitte später aktualisieren."
+
+
+msgid "Resend invitation"
+msgstr "Einladung erneut senden"
+
+
+msgid "Reservation"
+msgstr "Reservierung"
+
+
+msgid "Reserves time and capacity in the calendar."
+msgstr "Belegt Zeit und Kapazität im Kalender."
+
+
+msgid "Reset"
+msgstr "Zurücksetzen"
+
+
+msgid "Reset filters"
+msgstr "Filter zurücksetzen"
+
+
+msgid "Reset search"
+msgstr "Suche zurücksetzen"
+
+
+msgid "Resolve the existing record conflict before changing DNS. Keep the services and policies you already use."
+msgstr "Behebe den bestehenden Eintragskonflikt, bevor du DNS änderst. Behalte die bereits genutzten Dienste und Richtlinien bei."
+
+
+msgid "Business & contact"
+msgstr "Betrieb & Kontakt"
+
+
+msgid "Business name"
+msgstr "Betriebsname"
+
+
+msgid "Restore access"
+msgstr "Zugriff wiederherstellen"
+
+
+msgid "Restore account"
+msgstr "Konto wiederherstellen"
+
+
+msgid "Restore original homepage"
+msgstr "Ursprüngliche Startseite wiederherstellen"
+
+
+msgid "Restore record"
+msgstr "Datensatz wiederherstellen"
+
+
+msgid "Restore the original website as the homepage?"
+msgstr "Die ursprüngliche Website wieder als Startseite anzeigen?"
+
+
+msgid "Restore this project before linking a repository."
+msgstr "Stelle dieses Projekt wieder her, bevor du ein Repository verknüpfst."
+
+
+msgid "Restored"
+msgstr "Wiederhergestellt"
+
+
+msgid "Results pagination"
+msgstr "Ergebnisseiten"
+
+
+msgid "Retired"
+msgstr "Abgelöst"
+
+
+msgid "Return this record to your active workspace."
+msgstr "Diesen Datensatz in deinen aktiven Arbeitsbereich zurückholen."
+
+
+msgid "Return to own view"
+msgstr "Zur eigenen Ansicht"
+
+
+msgid "Return to your own view using the banner to continue."
+msgstr "Kehre über die Leiste zur eigenen Ansicht zurück, um fortzufahren."
+
+
+msgid "Reusable allocations for your customers. Assign a plan or prepare an individual offer from a tenant’s usage page."
+msgstr "Wiederverwendbare Kontingente für deine Kunden. Weise über die Verbrauchsseite eines Mandanten einen Tarif zu oder erstelle ein individuelles Angebot."
+
+
+msgid "Review incoming requests, update their status and add internal notes."
+msgstr "Eingänge prüfen, den Status aktualisieren und interne Notizen festhalten."
+
+
+msgid "Review invitation"
+msgstr "Einladung prüfen"
+
+
+msgid "Review or revoke access on GitHub"
+msgstr "Zugriff auf GitHub prüfen oder widerrufen"
+
+
+msgid "Review required"
+msgstr "Prüfung erforderlich"
+
+
+msgid "Reviewed"
+msgstr "Geprüft"
+
+
+msgid "Revoke credential"
+msgstr "Zugangsdaten widerrufen"
+
+
+msgid "Revoke offer"
+msgstr "Angebot widerrufen"
+
+
+msgid "Revoke this credential. Applications using it will immediately lose access."
+msgstr "Diese Zugangsdaten widerrufen. Anwendungen, die sie verwenden, verlieren sofort den Zugriff."
+
+
+msgid "Revoke website access"
+msgstr "Website-Zugriff widerrufen"
+
+
+msgid "Revoked"
+msgstr "Widerrufen"
+
+
+msgid "Right"
+msgstr "Rechts"
+
+
+msgid "SMTP password"
+msgstr "SMTP-Passwort"
+
+
+msgid "SMTP sending"
+msgstr "SMTP-Versand"
+
+
+msgid "SMTP server"
+msgstr "SMTP-Server"
+
+
+msgid "SMTP username"
+msgstr "SMTP-Benutzername"
+
+
+msgid "SPF, DKIM and DMARC verified"
+msgstr "SPF, DKIM und DMARC bestätigt"
+
+
+msgid "SSO cookie secret must contain at least 32 characters"
+msgstr "Das Geheimnis für SSO-Cookies muss mindestens 32 Zeichen enthalten"
+
+
+msgid "SSO redirect must be an application-relative path"
+msgstr "Die SSO-Weiterleitung muss ein anwendungsrelativer Pfad sein"
+
+
+msgid "SSO requires an HTTPS issuer and application origin"
+msgstr "SSO erfordert einen HTTPS-Aussteller und einen HTTPS-Anwendungsursprung"
+
+
+msgid "SSO session exceeds cookie size limit"
+msgstr "Die SSO-Sitzung überschreitet die zulässige Cookie-Größe"
+
+
+msgid "Sans Serif"
+msgstr "Serifenlos"
+
+
+msgid "Saturday"
+msgstr "Samstag"
+
+
+msgid "Save"
+msgstr "Speichern"
+
+
+msgid "Save access and send invitation"
+msgstr "Zugriff speichern und Einladung senden"
+
+
+msgid "Save change"
+msgstr "Änderung speichern"
+
+
+msgid "Save changes"
+msgstr "Änderungen speichern"
+
+
+msgid "Save credentials"
+msgstr "Zugangsdaten speichern"
+
+
+msgid "Save draft"
+msgstr "Entwurf speichern"
+
+
+msgid "Save extras"
+msgstr "Zusatzkontingente speichern"
+
+
+msgid "Save opening hours"
+msgstr "Öffnungszeiten speichern"
+
+
+msgid "Save profile"
+msgstr "Profil speichern"
+
+
+msgid "Save request"
+msgstr "Anfrage speichern"
+
+
+msgid "Save settings"
+msgstr "Einstellungen speichern"
+
+
+msgid "Save the draft before publishing."
+msgstr "Vor dem Veröffentlichen zuerst den Entwurf speichern."
+
+
+msgid "Save the total extras for this tenant. This replaces the previous extras."
+msgstr "Speichere die gesamten Zusatzkontingente für diesen Mandanten. Die vorherigen Zusatzkontingente werden dadurch ersetzt."
+
+
+msgid "Save your new credential"
+msgstr "Neue Zugangsdaten sicher speichern"
+
+
+msgid "Saved content appears immediately on the website."
+msgstr "Gespeicherte Inhalte sind direkt auf der Website sichtbar."
+
+
+msgid "Saved credentials are never displayed. Leave these fields untouched to keep the current credentials; saving platform settings does not replace them."
+msgstr "Gespeicherte Zugangsdaten werden nie angezeigt. Lasse diese Felder unverändert, um die vorhandenen Zugangsdaten beizubehalten; das Speichern der Plattformeinstellungen ersetzt sie nicht."
+
+
+msgid "Saved · visible on the website"
+msgstr "Gespeichert · auf der Website sichtbar"
+
+
+msgid "Saved, but the new revision is missing. Reload before making further changes."
+msgstr "Gespeichert, aber der neue Versionsstand fehlt. Bitte vor weiteren Änderungen neu laden."
+
+
+msgid "Saved. The change is visible in the demo."
+msgstr "Gespeichert. Die Änderung ist in der Demo sichtbar."
+
+
+msgid "Saved. The website displays the updated content."
+msgstr "Gespeichert. Die Website zeigt den neuen Inhalt."
+
+
+msgid "Saves the repository link to the project and records the change in Activity."
+msgstr "Speichert die Repository-Verknüpfung am Projekt und protokolliert die Änderung unter Aktivitäten."
+
+
+msgid "Saving change…"
+msgstr "Änderung wird gespeichert …"
+
+
+msgid "Saving failed."
+msgstr "Speichern fehlgeschlagen."
+
+
+msgid "Saving publishes your changes"
+msgstr "Änderungen werden beim Speichern veröffentlicht"
+
+
+msgid "Saving…"
+msgstr "Wird gespeichert …"
+
+
+msgid "Screen size"
+msgstr "Bildschirmgröße"
+
+
+msgid "Search"
+msgstr "Suchen"
+
+
+msgid "Search content"
+msgstr "Inhalte suchen"
+
+
+msgid "Search customers on this page"
+msgstr "Kunden auf dieser Seite suchen"
+
+
+msgid "Search name or email…"
+msgstr "Name oder E-Mail suchen …"
+
+
+msgid "Search products on this page"
+msgstr "Produkte auf dieser Seite durchsuchen"
+
+
+msgid "Search products…"
+msgstr "Produkte durchsuchen …"
+
+
+msgid "Search requests on this page"
+msgstr "Anfragen auf dieser Seite suchen"
+
+
+msgid "Search text or label"
+msgstr "Text oder Bezeichnung suchen"
+
+
+msgid "Search the products on this page."
+msgstr "Suche in den Produkten dieser Seite."
+
+
+msgid "Search websites"
+msgstr "Websites durchsuchen"
+
+
+msgid "Search websites…"
+msgstr "Website suchen …"
+
+
+msgid "Select SMTP sending or API sending when creating the credential for your application."
+msgstr "Wähle beim Erstellen der Zugangsdaten für deine Anwendung SMTP-Versand oder API-Versand."
+
+
+msgid "Select a customer"
+msgstr "Kunden auswählen"
+
+
+msgid "Select a date and time."
+msgstr "Bitte Datum und Uhrzeit auswählen."
+
+
+msgid "Select a page"
+msgstr "Seite auswählen"
+
+
+msgid "Select a state"
+msgstr "Status auswählen"
+
+
+msgid "Select a website"
+msgstr "Website auswählen"
+
+
+msgid "Select an entry"
+msgstr "Eintrag auswählen"
+
+
+msgid "Select content"
+msgstr "Inhalt auswählen"
+
+
+msgid "Select existing images for products and the homepage."
+msgstr "Vorhandene Bilder für Produkte und die Startseite auswählen."
+
+
+msgid "Select the featured products on the homepage."
+msgstr "Die empfohlenen Produkte der Startseite auswählen."
+
+
+msgid "Select today or a future date."
+msgstr "Bitte ein heutiges oder zukünftiges Datum auswählen."
+
+
+msgid "Select up to four products in the desired order. Select each product only once."
+msgstr "Bis zu vier Produkte in der gewünschten Reihenfolge. Jedes Produkt nur einmal auswählen."
+
+
+msgid "Select, edit and publish text and images directly."
+msgstr "Texte und Bilder auswählen, bearbeiten und direkt veröffentlichen."
+
+
+msgid "Selected content"
+msgstr "Ausgewählter Inhalt"
+
+
+msgid "Send backward"
+msgstr "Nach hinten"
+
+
+msgid "Send invitation"
+msgstr "Einladung senden"
+
+
+msgid "Sender domain"
+msgstr "Absenderdomain"
+
+
+msgid "Sender domains"
+msgstr "Absenderdomains"
+
+
+msgid "Sending API"
+msgstr "Versand-API"
+
+
+msgid "Sending account"
+msgstr "Versandkonto"
+
+
+msgid "Sending account and domains"
+msgstr "Versandkonto und Domains"
+
+
+msgid "Sending controls & quota"
+msgstr "Versandsteuerung & Kontingent"
+
+
+msgid "Sending is paused."
+msgstr "Der Versand ist pausiert."
+
+
+msgid "Sending status"
+msgstr "Versandstatus"
+
+
+msgid "Sending status not checked"
+msgstr "Versandstatus nicht geprüft"
+
+
+msgid "Sending verification checked:"
+msgstr "Versandprüfung durchgeführt:"
+
+
+msgid "Sending:"
+msgstr "Versand:"
+
+
+msgid "Serif"
+msgstr "Serifenschrift"
+
+
+msgid "Server URL"
+msgstr "Server-URL"
+
+
+msgid "Service"
+msgstr "Leistung"
+
+
+msgid "Set "
+msgstr "Konfiguriere "
+
+
+msgid "Settings"
+msgstr "Einstellungen"
+
+
+msgid "Setup"
+msgstr "Einrichtung"
+
+
+msgid "Setup pending"
+msgstr "Einrichtung ausstehend"
+
+
+msgid "Setup required"
+msgstr "Einrichtung erforderlich"
+
+
+msgid "Shareable offer link"
+msgstr "Teilbarer Angebotslink"
+
+
+msgid "Shop management is currently unavailable. Please try again later."
+msgstr "Die Shop-Verwaltung ist gerade nicht erreichbar. Bitte später erneut versuchen."
+
+
+msgid "Show all customers"
+msgstr "Alle Kunden anzeigen"
+
+
+msgid "Show all records"
+msgstr "Alle Datensätze anzeigen"
+
+
+msgid "Showing projects for one customer."
+msgstr "Projekte eines Kunden werden angezeigt."
+
+
+msgid "Sides"
+msgstr "Beilagen"
+
+
+msgid "Sign in"
+msgstr "Anmelden"
+
+
+msgid "Sign in failed."
+msgstr "Anmeldung fehlgeschlagen."
+
+
+msgid "Sign in to Studio to continue."
+msgstr "Melde dich bei Studio an, um fortzufahren."
+
+
+msgid "Sign in to manage your customers and projects."
+msgstr "Melde dich an, um deine Kunden und Projekte zu verwalten."
+
+
+msgid "Sign out"
+msgstr "Abmelden"
+
+
+msgid "Sign out failed. Please retry."
+msgstr "Abmelden fehlgeschlagen. Bitte erneut versuchen."
+
+
+msgid "Signing in…"
+msgstr "Anmeldung läuft…"
+
+
+msgid "Simulated"
+msgstr "Simuliert"
+
+
+msgid "Site builder"
+msgstr "Site-Builder"
+
+
+msgid "Size"
+msgstr "Größe"
+
+
+msgid "Size and background apply to the selected screen size."
+msgstr "Größe und Hintergrund gelten für die gewählte Bildschirmgröße."
+
+
+msgid "Variants & prices"
+msgstr "Varianten & Preise"
+
+
+msgid "Skip to content"
+msgstr "Zum Inhalt springen"
+
+
+msgid "Snapshots of connected stores. Missing or failed measurements are unavailable, never counted as zero. Preview storage is shown separately."
+msgstr "Gespeicherte Messstände verbundener Speicher. Fehlende oder fehlgeschlagene Messungen gelten als nicht verfügbar und werden niemals als null gezählt. Vorschau-Speicher wird separat angezeigt."
+
+
+msgid "Sort by"
+msgstr "Sortieren nach"
+
+
+msgid "Spicy"
+msgstr "Scharf"
+
+
+msgid "Start"
+msgstr "Beginn"
+
+
+msgid "Start from a plan"
+msgstr "Mit einem Tarif beginnen"
+
+
+msgid "Start with the essentials. No CMS will be created automatically."
+msgstr "Beginne mit den grundlegenden Angaben. Es wird kein CMS automatisch erstellt."
+
+
+msgid "Started"
+msgstr "Gestartet"
+
+
+msgid "State / region"
+msgstr "Bundesland / Region"
+
+
+msgid "Status"
+msgstr "Status"
+
+
+msgid "Status not checked"
+msgstr "Status nicht geprüft"
+
+
+msgid "Status on this page"
+msgstr "Status auf dieser Seite"
+
+
+msgid "Status unavailable — refresh to check"
+msgstr "Status nicht verfügbar — zum Prüfen aktualisieren"
+
+
+msgid "Storage (MB)"
+msgstr "Speicher (MB)"
+
+
+msgid "Storage measurements"
+msgstr "Speichermessungen"
+
+
+msgid "Stored data"
+msgstr "Gespeicherte Daten"
+
+
+msgid "Street"
+msgstr "Straße"
+
+
+msgid "Street and number"
+msgstr "Straße und Hausnummer"
+
+
+msgid "Studio authentication is not configured."
+msgstr "Die Studio-Authentifizierung ist nicht eingerichtet."
+
+
+msgid "Studio could not reach account services. Refresh and check the current state before retrying."
+msgstr "Studio konnte die Kontodienste nicht erreichen. Aktualisiere die Ansicht und prüfe den aktuellen Stand, bevor du es erneut versuchst."
+
+
+msgid "Studio couldn’t load this page"
+msgstr "Studio konnte diese Seite nicht laden"
+
+
+msgid "Studio project"
+msgstr "Studio-Projekt"
+
+
+msgid "Studio received an invalid response."
+msgstr "Studio hat eine ungültige Antwort erhalten."
+
+
+msgid "Studio received an oversized response."
+msgstr "Studio hat eine zu große Antwort erhalten."
+
+
+msgid "Studio received no response."
+msgstr "Studio hat keine Antwort erhalten."
+
+
+msgid "Subdomain prefix"
+msgstr "Subdomain-Präfix"
+
+
+msgid "Submission fields are immutable."
+msgstr "Die Felder einer Einsendung sind unveränderlich."
+
+
+msgid "Successful"
+msgstr "Erfolgreich"
+
+
+msgid "Sunday"
+msgstr "Sonntag"
+
+
+msgid "Superadmin"
+msgstr "Superadmin"
+
+
+msgid "Support email"
+msgstr "Support-E-Mail"
+
+
+msgid "Suspend access to all websites and sign out this person"
+msgstr "Website-Zugriff sperren und diese Person abmelden"
+
+
+msgid "Suspend account"
+msgstr "Konto sperren"
+
+
+msgid "Suspended"
+msgstr "Gesperrt"
+
+
+msgid "System"
+msgstr "System"
+
+
+msgid "T"
+msgstr "T"
+
+
+msgid "Tablet"
+msgstr "Tablet"
+
+
+msgid "Template"
+msgstr "Vorlage"
+
+
+msgid "Tenant & invitations"
+msgstr "Mandant & Einladungen"
+
+
+msgid "Tenant & people"
+msgstr "Mandant & Personen"
+
+
+msgid "Tenant Mail"
+msgstr "Mandanten-Mail"
+
+
+msgid "Tenant admin"
+msgstr "Mandanten-Admin"
+
+
+msgid "Tenant admin · View only"
+msgstr "Tenant-Admin · Nur ansehen"
+
+
+msgid "Tenant details"
+msgstr "Mandantendetails"
+
+
+msgid "Tenant navigation"
+msgstr "Mandantennavigation"
+
+
+msgid "Tenant plan"
+msgstr "Mandantentarif"
+
+
+msgid "Tenant preview"
+msgstr "Mandanten-Vorschau"
+
+
+msgid "Tenant preview is read-only. Return to your own view first."
+msgstr "Die Mandanten-Vorschau ist schreibgeschützt. Bitte zuerst zur eigenen Ansicht zurückkehren."
+
+
+msgid "Tenant role"
+msgstr "Mandantenrolle"
+
+
+msgid "Tenant role: "
+msgstr "Mandantenrolle: "
+
+
+msgid "Tenants"
+msgstr "Mandanten"
+
+
+msgid "Test connection"
+msgstr "Verbindung testen"
+
+
+msgid "Test the saved connection by reading the provider account list. No email is sent."
+msgstr "Teste die gespeicherte Verbindung durch Abruf der Kontoliste beim Anbieter. Es wird keine E-Mail versendet."
+
+
+msgid "Testing…"
+msgstr "Wird getestet…"
+
+
+msgid "Text"
+msgstr "Text"
+
+
+msgid "Text colour"
+msgstr "Textfarbe"
+
+
+msgid "Text, hero image and featured products"
+msgstr "Texte, Titelbild und Produktempfehlungen"
+
+
+msgid "Texts"
+msgstr "Texte"
+
+
+msgid "The Consumer secret shown when you create that credential"
+msgstr "Das bei der Erstellung dieser Zugangsdaten angezeigte Consumer-Secret"
+
+
+msgid "The Vercel connection could not be verified. Start from Studio and select the configured team with read-only permissions."
+msgstr "Die Vercel-Verbindung konnte nicht geprüft werden. Starte in Studio und wähle das konfigurierte Team mit schreibgeschützten Berechtigungen aus."
+
+
+msgid "The Vercel connection is not active. Connect it in Integrations."
+msgstr "Die Vercel-Verbindung ist nicht aktiv. Verbinde Vercel unter Integrationen."
+
+
+msgid "The appointment has changed. Please reload."
+msgstr "Termin wurde geändert. Bitte neu laden."
+
+
+msgid "The calendar has changed. Please reload."
+msgstr "Kalender wurde geändert. Bitte neu laden."
+
+
+msgid "The calendar is currently unavailable. Please refresh later."
+msgstr "Der Kalender ist gerade nicht erreichbar. Bitte später aktualisieren."
+
+
+msgid "The canvas draft is too large."
+msgstr "Der Canvas-Entwurf ist zu groß."
+
+
+msgid "The change is being saved. Please wait."
+msgstr "Die Änderung wird gerade gespeichert. Bitte kurz warten."
+
+
+msgid "The change was processed. Reload the current version."
+msgstr "Die Änderung wurde verarbeitet. Bitte den aktuellen Stand neu laden."
+
+
+msgid "The content management response is too large."
+msgstr "Antwort der Inhaltsverwaltung ist zu groß."
+
+
+msgid "The existing Vercel project ID, starting with prj_."
+msgstr "Die vorhandene Vercel-Projekt-ID, beginnend mit prj_."
+
+
+msgid "The isolated schema used by this deployed CMS."
+msgstr "Das isolierte Schema, das dieses bereitgestellte CMS verwendet."
+
+
+msgid "The linked Vercel project could not be found."
+msgstr "Das verknüpfte Vercel-Projekt wurde nicht gefunden."
+
+
+msgid "The media photo takes precedence over the image URL."
+msgstr "Das Medienfoto hat Vorrang vor der Bildadresse."
+
+
+msgid "The number of people must be between 1 and 100."
+msgstr "Personenzahl muss zwischen 1 und 100 liegen."
+
+
+msgid "The operation failed. No change was confirmed."
+msgstr "Der Vorgang ist fehlgeschlagen. Es wurde keine Änderung bestätigt."
+
+
+msgid "The original website is the homepage again."
+msgstr "Die ursprüngliche Website ist wieder die Startseite."
+
+
+msgid "The page editor has not been initialized yet."
+msgstr "Der Seiteneditor ist noch nicht initialisiert."
+
+
+msgid "The page has changed. Reload; your draft is preserved."
+msgstr "Die Seite wurde zwischenzeitlich geändert. Bitte neu laden; Dein Entwurf bleibt erhalten."
+
+
+msgid "The preview needs a page title, valid address and complete colour values. Add these in the editor."
+msgstr "Die Vorschau benötigt einen Seitentitel, eine gültige Adresse und vollständige Farbwerte. Ergänze diese im Editor."
+
+
+msgid "The project could not be linked. Check access to both projects, then try again."
+msgstr "Das Projekt konnte nicht verknüpft werden. Prüfe den Zugriff auf beide Projekte und versuche es erneut."
+
+
+msgid "The repository could not be linked. Refresh the list and check that the project and GitHub installation are still accessible."
+msgstr "Das Repository konnte nicht verknüpft werden. Aktualisiere die Liste und prüfe, ob das Projekt und die GitHub-Installation noch zugänglich sind."
+
+
+msgid "The request is too large."
+msgstr "Anfrage ist zu groß."
+
+
+msgid "The response is too large."
+msgstr "Antwort zu groß."
+
+
+msgid "The selected product or media does not belong to this website or is unavailable."
+msgstr "Das gewählte Produkt oder Medium gehört nicht zu dieser Website oder ist nicht verfügbar."
+
+
+msgid "The selection includes up to 100 media files and 500 products. Existing selections are preserved; find more images under Media."
+msgstr "Die Auswahl enthält bis zu 100 Medien und 500 Produkte. Bereits zugeordnete Werte bleiben erhalten; weitere Bilder findest du unter Medien."
+
+
+msgid "The session is unavailable. Please sign in again."
+msgstr "Die Sitzung ist nicht verfügbar. Bitte erneut anmelden."
+
+
+msgid "The site builder is currently unavailable. Reload and check the saved version."
+msgstr "Der Builder ist gerade nicht erreichbar. Bitte neu laden und den gespeicherten Stand prüfen."
+
+
+msgid "The site builder is not available for this website yet."
+msgstr "Der Builder ist für diese Website noch nicht verfügbar."
+
+
+msgid "The site builder is unavailable."
+msgstr "Der Builder ist nicht erreichbar."
+
+
+msgid "The site builder response is too large."
+msgstr "Die Builder-Antwort ist zu groß."
+
+
+msgid "The system operator account is protected."
+msgstr "Das Betreiberkonto des Systems ist geschützt."
+
+
+msgid "The system operator cannot be deleted through the CMS."
+msgstr "Der Systembetreiber kann nicht über das CMS gelöscht werden."
+
+
+msgid "The system operator role cannot be removed."
+msgstr "Die Rolle des Systembetreibers kann nicht entfernt werden."
+
+
+msgid "The workspace behind the websites."
+msgstr "Der Arbeitsbereich hinter den Websites."
+
+
+msgid "There are unsaved changes. Leave this page anyway?"
+msgstr "Es gibt ungespeicherte Änderungen. Seite trotzdem verlassen?"
+
+
+msgid "These are configured allocations. Storage and transfer limits are not yet enforced. Mail sending is governed by the provider’s actual quota."
+msgstr "Dies sind konfigurierte Kontingente. Speicher- und Transferlimits werden noch nicht durchgesetzt. Für den Mail-Versand gilt das tatsächliche Kontingent des Anbieters."
+
+
+msgid "This CMS is already deployed"
+msgstr "Dieses CMS ist bereits bereitgestellt"
+
+
+msgid "This GitHub installation is no longer accessible."
+msgstr "Diese GitHub-Installation ist nicht mehr zugänglich."
+
+
+msgid "This appointment is no longer available."
+msgstr "Dieser Termin ist nicht mehr verfügbar."
+
+
+msgid "This area is currently unavailable."
+msgstr "Dieser Bereich ist gerade nicht erreichbar."
+
+
+msgid "This area is read-only."
+msgstr "Dieser Bereich ist schreibgeschützt."
+
+
+msgid "This calendar feature is unavailable."
+msgstr "Diese Kalenderfunktion ist nicht verfügbar."
+
+
+msgid "This content field cannot be changed here."
+msgstr "Dieses Inhaltsfeld kann hier nicht geändert werden."
+
+
+msgid "This content has changed. Reload and review your changes again."
+msgstr "Dieser Inhalt wurde inzwischen geändert. Bitte neu laden und Deine Änderung erneut prüfen."
+
+
+msgid "This demo feature is unavailable."
+msgstr "Diese Demo-Funktion ist nicht verfügbar."
+
+
+msgid "This field is read-only"
+msgstr "Dieses Feld ist schreibgeschützt"
+
+
+msgid "This is the recorded connection to the project’s independent content admin. Its live availability has not been checked."
+msgstr "Dies ist die gespeicherte Verbindung zur eigenständigen Inhaltsverwaltung des Projekts. Ihre aktuelle Erreichbarkeit wurde nicht geprüft."
+
+
+msgid "This link does not match an available customer or project. Search your workspace to find the record."
+msgstr "Dieser Link passt zu keinem verfügbaren Kunden oder Projekt. Suche den Datensatz in deinem Arbeitsbereich."
+
+
+msgid "This offer is no longer available for acceptance."
+msgstr "Dieses Angebot kann nicht mehr angenommen werden."
+
+
+msgid "This operator area is unavailable in customer view."
+msgstr "Dieser Betreiberbereich ist in der Kundenansicht gesperrt."
+
+
+msgid "This page is now the homepage."
+msgstr "Diese Seite ist jetzt die Startseite."
+
+
+msgid "This product field cannot be changed here."
+msgstr "Dieses Produktfeld kann hier nicht geändert werden."
+
+
+msgid "This project can run without a CMS. You can link a CMS that has already been deployed."
+msgstr "Dieses Projekt kann ohne CMS betrieben werden. Du kannst ein bereits bereitgestelltes CMS verknüpfen."
+
+
+msgid "This project is archived. Restore it to manage its CMS connection."
+msgstr "Dieses Projekt ist archiviert. Stelle es wieder her, um seine CMS-Verbindung zu verwalten."
+
+
+msgid "This project is not included in the Vercel integration’s selected access."
+msgstr "Dieses Projekt ist nicht im ausgewählten Zugriff der Vercel-Integration enthalten."
+
+
+msgid "This public page address is already in use."
+msgstr "Diese öffentliche Seitenadresse wird bereits verwendet."
+
+
+msgid "This repository is no longer available in the selected installation."
+msgstr "Dieses Repository ist in der ausgewählten Installation nicht mehr verfügbar."
+
+
+msgid "This request key has already been used."
+msgstr "Dieser Anfrageschlüssel wurde bereits verwendet."
+
+
+msgid "This secret is shown only now. Store it securely before leaving or dismissing this panel."
+msgstr "Dieses Secret wird nur jetzt angezeigt. Speichere es sicher, bevor du diese Ansicht verlässt oder ausblendest."
+
+
+msgid "This snapshot is more than 24 hours old. Refresh it before relying on these figures."
+msgstr "Dieser Messstand ist älter als 24 Stunden. Aktualisiere ihn, bevor du dich auf diese Zahlen verlässt."
+
+
+msgid "This tenant is archived. Changes are disabled."
+msgstr "Dieser Mandant ist archiviert. Änderungen sind deaktiviert."
+
+
+msgid "This view could not load"
+msgstr "Diese Ansicht konnte nicht geladen werden"
+
+
+msgid "Thursday"
+msgstr "Donnerstag"
+
+
+msgid "Time"
+msgstr "Uhrzeit"
+
+
+msgid "To rotate a credential, create a replacement, update your application, then revoke the old credential."
+msgstr "Erstelle zum Wechsel der Zugangsdaten zuerst einen Ersatz, aktualisiere deine Anwendung und widerrufe anschließend die alten Zugangsdaten."
+
+
+msgid "Too many demo requests. Please try again later."
+msgstr "Zu viele Demo-Anfragen. Bitte später erneut versuchen."
+
+
+msgid "Total"
+msgstr "Gesamt"
+
+
+msgid "Tracking"
+msgstr "Tracking"
+
+
+msgid "Tracking settings"
+msgstr "Tracking-Einstellungen"
+
+
+msgid "Transfer (GB)"
+msgstr "Transfer (GB)"
+
+
+msgid "Transfer usage is not currently measured here."
+msgstr "Der Transferverbrauch wird hier derzeit nicht gemessen."
+
+
+msgid "Try a different name or domain, or reset your filters."
+msgstr "Versuche einen anderen Namen oder eine andere Domain oder setze die Filter zurück."
+
+
+msgid "Try again"
+msgstr "Erneut versuchen"
+
+
+msgid "Try another name or domain."
+msgstr "Versuche einen anderen Namen oder eine Domain."
+
+
+msgid "Try another name, contact or email address."
+msgstr "Versuche einen anderen Namen, Kontakt oder eine andere E-Mail-Adresse."
+
+
+msgid "Tuesday"
+msgstr "Dienstag"
+
+
+msgid "Two-letter ISO code, for example DE or CH."
+msgstr "Zweistelliger ISO-Code, zum Beispiel DE oder CH."
+
+
+msgid "Type"
+msgstr "Typ"
+
+
+msgid "Typography"
+msgstr "Schrift"
+
+
+msgid "UTC"
+msgstr "UTC"
+
+
+msgid "Unavailable"
+msgstr "Nicht verfügbar"
+
+
+msgid "Undo (Ctrl/⌘ Z)"
+msgstr "Rückgängig (Strg/⌘ Z)"
+
+
+msgid "Unexpected SSO introspection endpoint"
+msgstr "Unerwarteter SSO-Introspection-Endpunkt"
+
+
+msgid "Unknown administration action."
+msgstr "Unbekannte Verwaltungsaktion."
+
+
+msgid "Unknown content field in the page template."
+msgstr "Unbekanntes Inhaltsfeld im Seitentemplate."
+
+
+msgid "Unknown form field."
+msgstr "Unbekanntes Formularfeld."
+
+
+msgid "Unmetered"
+msgstr "Unbegrenzt"
+
+
+msgid "Unpublish"
+msgstr "Veröffentlichung zurücknehmen"
+
+
+msgid "Unpublish this page? If it is the homepage, the original website will be shown again."
+msgstr "Diese Seite aus der Veröffentlichung nehmen? Falls sie die Startseite ist, wird die ursprüngliche Website wieder angezeigt."
+
+
+msgid "Unsaved"
+msgstr "Ungespeichert"
+
+
+msgid "Unsaved appointment"
+msgstr "Ungespeicherter Termin"
+
+
+msgid "Unsaved change"
+msgstr "Ungespeicherte Änderung"
+
+
+msgid "Unsaved changes"
+msgstr "Ungespeicherte Änderungen"
+
+
+msgid "Unsaved changes have not been published. Leave this page anyway?"
+msgstr "Ungespeicherte Änderungen wurden noch nicht veröffentlicht. Seite trotzdem verlassen?"
+
+
+msgid "Unsaved requests remain visible"
+msgstr "Ungespeicherte Anfragen bleiben sichtbar"
+
+
+msgid "Up to 100 matching accounts. Platform operators are protected from suspension here."
+msgstr "Bis zu 100 passende Konten. Plattformbetreiber sind hier vor einer Sperrung geschützt."
+
+
+msgid "Up to 100 matching invitations. Resend from the invitation form above."
+msgstr "Bis zu 100 passende Einladungen. Sende sie bei Bedarf über das Einladungsformular oben erneut."
+
+
+msgid "Up to 200 matching permissions. Customer membership and an active account are also required."
+msgstr "Bis zu 200 passende Berechtigungen. Eine Kundenmitgliedschaft und ein aktives Konto sind ebenfalls erforderlich."
+
+
+msgid "Up to five addresses are allowed."
+msgstr "Höchstens fünf Adressen sind möglich."
+
+
+msgid "Update connection"
+msgstr "Verbindung aktualisieren"
+
+
+msgid "Update email limit"
+msgstr "E-Mail-Limit aktualisieren"
+
+
+msgid "Update role"
+msgstr "Rolle aktualisieren"
+
+
+msgid "Update sending status"
+msgstr "Versandstatus aktualisieren"
+
+
+msgid "Update tenant role"
+msgstr "Mandantenrolle aktualisieren"
+
+
+msgid "Update {setting}"
+msgstr "{setting} aktualisieren"
+
+
+msgid "Updated"
+msgstr "Aktualisiert"
+
+
+msgid "Updated {name}"
+msgstr "{name} aktualisiert"
+
+
+msgid "Usage interval"
+msgstr "Verbrauchszeitraum"
+
+
+msgid "Use Webdock’s project registry from an MCP-compatible assistant. Authorization uses your central Webdock account."
+msgstr "Nutze Webdocks Projektverzeichnis über einen MCP-kompatiblen Assistenten. Die Autorisierung erfolgt über dein zentrales Webdock-Konto."
+
+
+msgid "Use a local image path or an HTTPS URL without credentials."
+msgstr "Bitte einen lokalen Bildpfad oder eine HTTPS-Adresse ohne Zugangsdaten verwenden."
+
+
+msgid "Use a subdomain of a verified sender domain. Creating it does not enable open or click tracking."
+msgstr "Verwende eine Subdomain einer bestätigten Absenderdomain. Die Erstellung aktiviert kein Öffnungs- oder Klick-Tracking."
+
+
+msgid "Use application/json."
+msgstr "Verwende application/json."
+
+
+msgid "Use as homepage"
+msgstr "Als Startseite verwenden"
+
+
+msgid "Use the SSO session endpoint; SSO cannot issue Payload tokens."
+msgstr "Verwende den SSO-Sitzungsendpunkt; SSO kann keine Payload-Token ausstellen."
+
+
+msgid "Use the account ID and email from the turboSMTP dashboard. The account will be checked before it is linked to this tenant. Its sending limit will be set to the platform default of"
+msgstr "Verwende die Konto-ID und E-Mail aus dem turboSMTP-Dashboard. Das Konto wird vor der Verknüpfung mit diesem Mandanten geprüft. Sein Versandlimit wird auf den Plattformstandard gesetzt:"
+
+
+msgid "Use the full record names above. If your DNS host appends the zone automatically, enter only the part before that zone. Update an existing SPF record instead of adding a second one."
+msgstr "Verwende die vollständigen Eintragsnamen oben. Hängt dein DNS-Anbieter die Zone automatisch an, gib nur den Teil davor ein. Aktualisiere einen vorhandenen SPF-Eintrag, statt einen zweiten anzulegen."
+
+
+msgid "Use the sending IP assigned by turboSMTP. It is required before provisioning tenant Mail accounts."
+msgstr "Verwende die von turboSMTP zugewiesene Versand-IP. Sie ist erforderlich, bevor Mail-Konten für Mandanten erstellt werden können."
+
+
+msgid "Use this published page as the homepage? It will replace the current homepage."
+msgstr "Diese veröffentlichte Seite als Startseite verwenden? Die bisherige Website wird damit auf der Startseite ersetzt."
+
+
+msgid "Used for account branding and authentication emails."
+msgstr "Wird für die Kontodarstellung und Authentifizierungs-E-Mails verwendet."
+
+
+msgid "User"
+msgstr "Benutzer"
+
+
+msgid "Valid from"
+msgstr "Gültig ab"
+
+
+msgid "Valid until"
+msgstr "Gültig bis"
+
+
+msgid "Value"
+msgstr "Wert"
+
+
+msgid "Values show the last successful provider check. No email is sent from this screen."
+msgstr "Die Werte zeigen die letzte erfolgreiche Anbieterprüfung. Auf dieser Seite wird keine E-Mail versendet."
+
+
+msgid "Vegan"
+msgstr "Vegan"
+
+
+msgid "Vegetarian"
+msgstr "Vegetarisch"
+
+
+msgid "Vercel"
+msgstr "Vercel"
+
+
+msgid "Vercel connected. Choose a project below."
+msgstr "Vercel verbunden. Wähle unten ein Projekt aus."
+
+
+msgid "Vercel connection"
+msgstr "Vercel-Verbindung"
+
+
+msgid "Vercel could not be reached. Reconnect or review its selected project permissions."
+msgstr "Vercel ist nicht erreichbar. Verbinde Vercel erneut oder prüfe die ausgewählten Projektberechtigungen."
+
+
+msgid "Vercel disconnected from Studio."
+msgstr "Vercel wurde von Studio getrennt."
+
+
+msgid "Vercel encryption is not configured."
+msgstr "Die Vercel-Verschlüsselung ist nicht eingerichtet."
+
+
+msgid "Vercel is temporarily unavailable. Your Studio records remain available."
+msgstr "Vercel ist vorübergehend nicht verfügbar. Deine Studio-Datensätze bleiben verfügbar."
+
+
+msgid "Vercel project"
+msgstr "Vercel-Projekt"
+
+
+msgid "Vercel project ID"
+msgstr "Vercel-Projekt-ID"
+
+
+msgid "Vercel project pages"
+msgstr "Vercel-Projektseiten"
+
+
+msgid "Vercel · "
+msgstr "Vercel · "
+
+
+msgid "Verification pending"
+msgstr "Bestätigung ausstehend"
+
+
+msgid "Verified"
+msgstr "Bestätigt"
+
+
+msgid "Verify tracking domain"
+msgstr "Tracking-Domain bestätigen"
+
+
+msgid "View"
+msgstr "Ansehen"
+
+
+msgid "View Mail usage and provider quota"
+msgstr "Mail-Verbrauch und Anbieterlimit ansehen"
+
+
+msgid "View all"
+msgstr "Alle anzeigen"
+
+
+msgid "View and edit the details."
+msgstr "Details ansehen und gezielt bearbeiten."
+
+
+msgid "View as customer"
+msgstr "Als Kunde ansehen"
+
+
+msgid "View customer history"
+msgstr "Kundenverlauf ansehen"
+
+
+msgid "View existing images. Assign them to a product or the homepage."
+msgstr "Vorhandene Bilder ansehen. Die Zuordnung erfolgt beim Produkt oder auf der Startseite."
+
+
+msgid "View existing pages here."
+msgstr "Vorhandene Seiten können hier angesehen werden."
+
+
+msgid "View full history"
+msgstr "Gesamten Verlauf ansehen"
+
+
+msgid "View incoming demo requests and edit their status and internal notes."
+msgstr "Eingegangene Demo-Anfragen ansehen, ihren Status und interne Notizen bearbeiten."
+
+
+msgid "View only"
+msgstr "Nur ansehen"
+
+
+msgid "View requests"
+msgstr "Zu den Anfragen"
+
+
+msgid "View simulated orders and their items. This area is read-only."
+msgstr "Simulierte Bestellungen und ihre Positionen ansehen. Dieser Bereich ist schreibgeschützt."
+
+
+msgid "View simulated orders. No real delivery or payment."
+msgstr "Simulierte Bestellungen ansehen. Keine echte Lieferung oder Zahlung."
+
+
+msgid "View tenants"
+msgstr "Mandanten ansehen"
+
+
+msgid "View website ↗"
+msgstr "Website ansehen ↗"
+
+
+msgid "View your assigned plan"
+msgstr "Zugewiesenen Tarif ansehen"
+
+
+msgid "Visit Webdock ↗"
+msgstr "Webdock besuchen ↗"
+
+
+msgid "Visit website ↗"
+msgstr "Website besuchen ↗"
+
+
+msgid "Voucher"
+msgstr "Gutschein"
+
+
+msgid "Webdock Admin"
+msgstr "Webdock-Verwaltung"
+
+
+msgid "Webdock MCP"
+msgstr "Webdock MCP"
+
+
+msgid "Webdock Studio"
+msgstr "Webdock Studio"
+
+
+msgid "Webdock project "
+msgstr "Webdock-Projekt "
+
+
+msgid "Website"
+msgstr "Website"
+
+
+msgid "Website & content"
+msgstr "Website & Inhalte"
+
+
+msgid "Website CMS"
+msgstr "Website-CMS"
+
+
+msgid "Website URL"
+msgstr "Website-URL"
+
+
+msgid "Website content"
+msgstr "Website-Inhalte"
+
+
+msgid "Website management"
+msgstr "Website-Verwaltung"
+
+
+msgid "Website permissions"
+msgstr "Website-Berechtigungen"
+
+
+msgid "Website permissions are assigned separately by your Webdock operator."
+msgstr "Website-Berechtigungen werden separat von deinem Webdock-Betreiber zugewiesen."
+
+
+msgid "Website role"
+msgstr "Website-Rolle"
+
+
+msgid "Website roles do not grant infrastructure or platform-operator access. Sending again updates the selected website role and resends a pending invitation."
+msgstr "Website-Rollen gewähren keinen Zugriff auf die Infrastruktur oder Betreiberfunktionen. Erneutes Senden aktualisiert die ausgewählte Website-Rolle und versendet eine ausstehende Einladung erneut."
+
+
+msgid "Website selection"
+msgstr "Website-Auswahl"
+
+
+msgid "Website unavailable or permission denied."
+msgstr "Website nicht verfügbar oder Zugriff verweigert."
+
+
+msgid "Website view"
+msgstr "Website-Ansicht"
+
+
+msgid "Websites"
+msgstr "Websites"
+
+
+msgid "Websites, customers and content systems, in one place."
+msgstr "Websites, Kunden und Inhaltssysteme an einem Ort."
+
+
+msgid "Wednesday"
+msgstr "Mittwoch"
+
+
+msgid "Weekly schedule"
+msgstr "Wochenplan"
+
+
+msgid "Weight"
+msgstr "Gewicht"
+
+
+msgid "Welcome back."
+msgstr "Willkommen zurück."
+
+
+msgid "Whole store"
+msgstr "Gesamter Speicher"
+
+
+msgid "Width"
+msgstr "Breite"
+
+
+msgid "Working…"
+msgstr "Wird ausgeführt…"
+
+
+msgid "Write scope"
+msgstr "Schreibberechtigung"
+
+
+msgid "X"
+msgstr "X"
+
+
+msgid "Y"
+msgstr "Y"
+
+
+msgid "Yes"
+msgstr "Ja"
+
+
+msgid "You do not currently have tenant access. Accept your emailed invitation or contact your Webdock operator."
+msgstr "Du hast derzeit keinen Mandantenzugriff. Nimm deine Einladung per E-Mail an oder kontaktiere deinen Webdock-Betreiber."
+
+
+msgid "You do not have permission to access this area."
+msgstr "Keine Berechtigung für diesen Bereich."
+
+
+msgid "You do not have permission to access this shop area."
+msgstr "Keine Berechtigung für diesen Shop-Bereich."
+
+
+msgid "You do not have permission to perform this page action."
+msgstr "Keine Berechtigung für diese Seitenaktion."
+
+
+msgid "You have read access to this website."
+msgstr "Du hast Lesezugriff auf diese Website."
+
+
+msgid "Your GitHub connection expired. Connect again to choose repositories."
+msgstr "Deine GitHub-Verbindung ist abgelaufen. Verbinde sie erneut, um Repositorys auszuwählen."
+
+
+msgid "Your Webdock operator must complete the Mail connection."
+msgstr "Dein Webdock-Betreiber muss die Mail-Verbindung fertig einrichten."
+
+
+msgid "Your changes have not been saved. Create another page anyway?"
+msgstr "Ungespeicherte Änderungen sind noch nicht gespeichert. Trotzdem eine andere Seite anlegen?"
+
+
+msgid "Your credential’s Consumer key"
+msgstr "Der Consumer-Key deiner Zugangsdaten"
+
+
+msgid "Your customer workspace"
+msgstr "Dein Kundenarbeitsbereich"
+
+
+msgid "Your first customer starts here"
+msgstr "Hier legst du deinen ersten Kunden an."
+
+
+msgid "Your invitation is waiting for acceptance."
+msgstr "Deine Einladung wartet auf die Annahme."
+
+
+msgid "Your offer"
+msgstr "Dein Angebot"
+
+
+msgid "Your operator can assign a plan or send you an individual offer."
+msgstr "Dein Betreiber kann dir einen Tarif zuweisen oder ein individuelles Angebot senden."
+
+
+msgid "Your tenants"
+msgstr "Deine Mandanten"
+
+
+msgid "Your websites"
+msgstr "Deine Websites"
+
+
+msgid "Your workspace data is still saved. Retry this view, or return to your projects."
+msgstr "Die Daten deines Arbeitsbereichs sind weiterhin gespeichert. Lade diese Ansicht erneut oder kehre zu deinen Projekten zurück."
+
+
+msgid "Your workspace is temporarily unavailable. Try again, or return to your tenants to continue."
+msgstr "Dein Arbeitsbereich ist vorübergehend nicht verfügbar. Versuche es erneut oder kehre zur Mandantenübersicht zurück."
+
+
+msgid "Zoom"
+msgstr "Zoom"
+
+
+msgid "customer"
+msgstr "Kunde"
+
+
+msgid "e.g. Consultation"
+msgstr "z. B. Beratung"
+
+
+msgid "every project."
+msgstr "jedes Projekt."
+
+
+msgid "for this setup."
+msgstr "für diese Einrichtung."
+
+
+msgid "not specified"
+msgstr "nicht angegeben"
+
+
+msgid "page-name"
+msgstr "seitenname"
+
+
+msgid "project"
+msgstr "Projekt"
+
+
+msgid "terms"
+msgstr "Bedingungen"
+
+
+msgid "webdock"
+msgstr "webdock"
+
+
+msgid "with the callback URL"
+msgstr "mit der Rückruf-URL"
+
+
+msgid "{label}: end {number}"
+msgstr "{label}: Ende {number}"
+
+
+msgid "{label}: remove time slot {number}"
+msgstr "{label}: Zeitfenster {number} entfernen"
+
+
+msgid "{label}: start {number}"
+msgstr "{label}: Beginn {number}"
+
+
+msgid "{start}–{end} of {total}"
+msgstr "{start}–{end} von {total}"
+
+
+msgid "← Back"
+msgstr "← Zurück"
+
+
+msgid "← Back to list"
+msgstr "← Zur Liste"
+
+
+msgid "← Customers"
+msgstr "← Kunden"
+
+
+msgid "← Projects"
+msgstr "← Projekte"
+
+msgid "{count} unsaved field"
+msgid_plural "{count} unsaved fields"
+msgstr[0] "{count} ungespeichertes Feld"
+msgstr[1] "{count} ungespeicherte Felder"
+
+msgid "{count} field"
+msgid_plural "{count} fields"
+msgstr[0] "{count} Feld"
+msgstr[1] "{count} Felder"
+
+msgid "{count} place"
+msgid_plural "{count} places"
+msgstr[0] "{count} Platz"
+msgstr[1] "{count} Plätze"
+
+msgid "Invalid customer."
+msgstr "Ungültiger Kunde."
+
+msgid "Could not switch customer view. Go back and try again."
+msgstr "Die Kundenansicht konnte nicht gewechselt werden. Gehe zurück und versuche es erneut."
+
+msgid "Page not found"
+msgstr "Seite nicht gefunden"
+
+msgid "This page is not available. Check the address or return to the homepage."
+msgstr "Diese Seite ist nicht verfügbar. Prüfe die Adresse oder kehre zur Startseite zurück."
+
+msgid "Back to homepage"
+msgstr "Zur Startseite"
+
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx
+msgid "Product extras"
+msgstr "Extras"
+
+#: apps/admin/src/lib/cms-modules.ts
+msgid "Shop settings"
+msgstr "Shop-Einstellungen"
+
+#: apps/admin/src/lib/cms-modules.ts
+msgid "Edit contact details for the demo checkout."
+msgstr "Kontaktdaten für den Demo-Checkout bearbeiten."
+
+msgid "Access area"
+msgstr "Zugriffsbereich"
+
+msgid "Allow changes in the selected area"
+msgstr "Änderungen im ausgewählten Bereich erlauben"
+
+msgid "Operator registry"
+msgstr "Plattformverwaltung"
+
+msgid "Hosting (customer permissions apply)"
+msgstr "Hosting (Kundenberechtigungen gelten)"
+
+msgid "Read your hosting projects and resource usage"
+msgstr "Eigene Hosting-Projekte und Ressourcennutzung lesen"
+
+msgid "Manage hosting within your permissions and limits"
+msgstr "Hosting innerhalb der eigenen Berechtigungen und Limits verwalten"
+
+msgid "Infrastructure"
+msgstr "Infrastruktur"
+
+msgid "Hosting allowances"
+msgstr "Hosting-Kontingente"
+
+msgid "Hosting apps"
+msgstr "Hosting-Anwendungen"
+
+msgid "CPU (millicores)"
+msgstr "CPU (Millicores)"
+
+msgid "RAM (bytes)"
+msgstr "Arbeitsspeicher (Bytes)"
+
+msgid "Volumes (bytes)"
+msgstr "Volumes (Bytes)"
+
+msgid "Ephemeral storage (bytes)"
+msgstr "Temporärer Speicher (Bytes)"
+
+msgid "Replicas per app"
+msgstr "Replikate pro Anwendung"
+
+msgid "Concurrent deployments"
+msgstr "Gleichzeitige Bereitstellungen"
+
+msgid "Unlimited"
+msgstr "Unbegrenzt"
+
+msgid "Hosting extras use whole nonnegative units."
+msgstr "Hosting-Zusatzkontingente werden in ganzen, nicht negativen Einheiten angegeben."
+
+msgid "Hosting is disabled by default. Enter whole units or unlimited explicitly."
+msgstr "Hosting ist standardmäßig gesperrt. Ganze Einheiten oder ausdrücklich unlimited eingeben."
+
+msgid "Save hosting settings"
+msgstr "Hosting-Einstellungen speichern"
+
+msgid "Hosting settings saved."
+msgstr "Hosting-Einstellungen gespeichert."
+
+msgid "Open cluster enrollment"
+msgstr "Cluster-Anbindung öffnen"
+
+msgid "Create enrollment"
+msgstr "Anbindung vorbereiten"
+
+msgid "Register cluster"
+msgstr "Cluster registrieren"
+
+msgid "Revoke agent"
+msgstr "Agent-Zugang widerrufen"
+
+msgid "The token expires after five minutes and can connect exactly one agent. Store agent credentials privately on your node."
+msgstr "Das Token läuft nach fünf Minuten ab und verbindet genau einen Agenten. Zugangsdaten privat auf dem Node speichern."
+
+msgid "Save this enrollment token now. It is displayed only once."
+msgstr "Dieses Anbindungstoken jetzt speichern. Es wird nur einmal angezeigt."
+
+msgid "Expires at"
+msgstr "Gültig bis"
+
+msgid "Show enrollment token once"
+msgstr "Anbindungstoken einmal anzeigen"
+
+msgid "Manage independent k3s installations and multi-node clusters."
+msgstr "Unabhängige k3s-Installationen und Cluster mit mehreren Nodes verwalten."
+
+msgid "No hosting clusters connected yet."
+msgstr "Noch keine Hosting-Cluster verbunden."
+
+msgid "Cluster"
+msgstr "Cluster"
+
+msgid "Nodes"
+msgstr "Nodes"
+
+msgid "Location"
+msgstr "Standort"
+
+msgid "Register a cluster"
+msgstr "Cluster registrieren"
+
+msgid "Registration creates inventory only. Your existing server is not modified."
+msgstr "Die Registrierung erstellt einen Inventareintrag. Dein vorhandener Server wird nicht verändert."
+
+msgid "Infrastructure provider"
+msgstr "Infrastrukturanbieter"
+
+msgid "Location evidence"
+msgstr "Standortnachweis"
+
+msgid "EU country code"
+msgstr "EU-Ländercode"
+
+msgid "Dedicated customer ID (optional)"
+msgstr "ID des exklusiv zugeordneten Kunden (optional)"
+
+msgid "Cluster status"
+msgstr "Cluster-Status"
+
+msgid "Connection"
+msgstr "Verbindung"
+
+msgid "Last observation"
+msgstr "Letzte Beobachtung"
+
+msgid "Workload readiness"
+msgstr "Freigabe für Anwendungen"
+
+msgid "Not verified"
+msgstr "Nicht geprüft"
+
+msgid "A connected agent does not prove workload isolation, storage or TLS readiness."
+msgstr "Ein verbundener Agent weist weder die Isolation von Anwendungen noch einsatzbereiten Speicher oder TLS nach."
+
+msgid "No node observations available."
+msgstr "Keine Node-Beobachtungen verfügbar."
+
+msgid "Architecture"
+msgstr "Architektur"
+
+msgid "Agent connection"
+msgstr "Agent-Verbindung"
+
+msgid "Revoking the agent disconnects management. Existing workloads are not deleted."
+msgstr "Der Widerruf trennt die Verwaltung. Bestehende Anwendungen werden nicht gelöscht."
+
+msgid "Connect cluster agent"
+msgstr "Cluster-Agent verbinden"
+
+msgid "Agent installation and workload execution are delivered in the next hosting increment. This enrollment establishes the management connection only."
+msgstr "Agent-Installation und Anwendungsausführung folgen im nächsten Hosting-Ausbau. Diese Anbindung stellt zunächst die Verwaltungsverbindung her."
+
+msgid "Hosting and resource limits"
+msgstr "Hosting und Ressourcenlimits"
+
+msgid "Allocated resources, reservations and measured usage are tracked separately."
+msgstr "Zugewiesene Ressourcen, Reservierungen und gemessene Nutzung werden getrennt erfasst."
+
+msgid "Customer allowances"
+msgstr "Kundenkontingente"
+
+msgid "Existing allocations exceed the current limit. New allocations are blocked; existing workloads remain intact."
+msgstr "Bestehende Zuteilungen überschreiten das aktuelle Limit. Neue Zuteilungen sind gesperrt; bestehende Anwendungen bleiben erhalten."
+
+msgid "Resource"
+msgstr "Ressource"
+
+msgid "Limit"
+msgstr "Limit"
+
+msgid "Reserved"
+msgstr "Reserviert"
+
+msgid "Allocated"
+msgstr "Zugewiesen"
+
+msgid "Measured usage"
+msgstr "Gemessene Nutzung"
+
+msgid "Limits apply to Webdock actions. Provider enforcement and measurements are not yet verified."
+msgstr "Limits gelten für Webdock-Aktionen. Durchsetzung beim Anbieter und Messwerte sind noch nicht verifiziert."
+
+msgid "Hosting projects"
+msgstr "Hosting-Projekte"
+
+msgid "No hosting projects assigned."
+msgstr "Keine Hosting-Projekte zugeordnet."
+
+msgid "Provider"
+msgstr "Anbieter"
+
+msgid "Mode"
+msgstr "Betriebsart"
+
+msgid "Managed"
+msgstr "Verwaltet"
+
+msgid "Selfservice"
+msgstr "Selfservice"
+
+msgid "App deployment controls will appear when a verified cluster executor is available."
+msgstr "Die Anwendungsbereitstellung wird verfügbar, sobald eine geprüfte Ausführung auf dem Cluster eingerichtet ist."
+
+msgid "Assign project hosting"
+msgstr "Projekt-Hosting zuordnen"
+
+msgid "Existing project ID"
+msgstr "ID des bestehenden Projekts"
+
+msgid "Cluster ID (k3s only)"
+msgstr "Cluster-ID (nur k3s)"
+
+msgid "Limit overrides"
+msgstr "Zusätzliche Obergrenzen"
+
+msgid "Overrides can restrict the package allowance; they cannot increase it. Unlimited here means no additional cap."
+msgstr "Zusätzliche Obergrenzen können das Paketkontingent einschränken, aber nicht erhöhen. Unbegrenzt bedeutet hier: keine zusätzliche Obergrenze."
+
+msgid "Allow own images (dedicated customer cluster required)"
+msgstr "Eigene Images erlauben (dedizierter Kundencluster erforderlich)"
+
+msgid "unconnected"
+msgstr "Nicht verbunden"
+
+msgid "connected"
+msgstr "Verbunden"
+
+msgid "stale"
+msgstr "Veraltet"
+
+msgid "revoked"
+msgstr "Widerrufen"
+
+msgid "Enter valid hosting allowances."
+msgstr "Gültige Hosting-Kontingente eingeben."
+
+msgid "Combined hosting allowance exceeds the supported range."
+msgstr "Das gesamte Hosting-Kontingent überschreitet den unterstützten Bereich."
+
+msgid "Invalid hosting input."
+msgstr "Ungültige Hosting-Eingabe."
+
+msgid "Hosting is unavailable. Check the current state before retrying."
+msgstr "Hosting ist nicht erreichbar. Vor einem erneuten Versuch den aktuellen Zustand prüfen."
+
+msgid "Platform operator access is required."
+msgstr "Plattformbetreiberrechte sind erforderlich."
+
+msgid "Hosting scope is required."
+msgstr "Die Hosting-Berechtigung ist erforderlich."
+
+msgid "Hosting limits changed. Refresh and try again."
+msgstr "Die Hosting-Limits wurden geändert. Aktualisieren und erneut versuchen."
+
+msgid "Subscription changed. Refresh and try again."
+msgstr "Das Paket wurde geändert. Aktualisieren und erneut versuchen."
+
+msgid "Hosting project changed. Refresh and try again."
+msgstr "Das Hosting-Projekt wurde geändert. Aktualisieren und erneut versuchen."
+
+msgid "Own images require a dedicated customer cluster in this release."
+msgstr "Eigene Images benötigen in dieser Version einen dedizierten Kundencluster."
+
+msgid "Cluster is assigned to another customer."
+msgstr "Der Cluster ist einem anderen Kunden zugeordnet."
+
+msgid "Revoke the existing agent before replacement."
+msgstr "Vor dem Austausch den bestehenden Agent-Zugang widerrufen."
+
+msgid "Cluster changed. Refresh and try again."
+msgstr "Der Cluster wurde geändert. Aktualisieren und erneut versuchen."
+
+msgid "Wait before creating another enrollment."
+msgstr "Vor dem Erstellen einer weiteren Anbindung kurz warten."
+
+msgid "Enrollment expired or was already displayed. Create a new enrollment."
+msgstr "Die Anbindung ist abgelaufen oder wurde bereits angezeigt. Eine neue Anbindung erstellen."
+
+msgid "Customer preview is read-only."
+msgstr "Die Kundenansicht ist schreibgeschützt."
+
+msgid "Hosting target is unavailable."
+msgstr "Das Hosting-Ziel ist nicht verfügbar."
+
+msgid "Hosting authentication is unavailable."
+msgstr "Die Hosting-Anmeldung ist nicht verfügbar."
+
+msgid "Hosting awaits verification of its EU operating environment."
+msgstr "Hosting wartet auf die Prüfung seiner EU-Betriebsumgebung."
+
+msgid "Hosting is already assigned to this project."
+msgstr "Diesem Projekt ist bereits Hosting zugeordnet."
+
+msgid "Select a cluster only for k3s."
+msgstr "Nur für k3s einen Cluster auswählen."
+
+msgid "Container images are not available for this provider."
+msgstr "Container-Images sind für diesen Anbieter nicht verfügbar."
+
+msgid " — create, update and explicitly delete managed projects. Platform administrators only."
+msgstr " — verwaltete Projekte erstellen, aktualisieren und ausdrücklich löschen. Nur für Plattformadministratoren."
+
+msgid "Back to project"
+msgstr "Zurück zum Projekt"
+
+msgid "Delete project"
+msgstr "Projekt löschen"
+
+msgid "This permanently removes the website, its deployments, CMS content and website login. Customer and user accounts and audit history are retained."
+msgstr "Die Website, ihre Bereitstellungen, CMS-Inhalte und Website-Anmeldung werden endgültig gelöscht. Kunden- und Benutzerkonten sowie das Änderungsprotokoll bleiben erhalten."
+
+msgid "Completed deletion steps"
+msgstr "Abgeschlossene Löschschritte"
+
+msgid "Project deleted."
+msgstr "Projekt gelöscht."
+
+msgid "Permanently delete project"
+msgstr "Projekt endgültig löschen"
+
+msgid "Type the exact project name"
+msgstr "Genauen Projektnamen eingeben"
+
+msgid "I confirm permanent deletion of this project and its website data."
+msgstr "Ich bestätige die endgültige Löschung dieses Projekts und seiner Website-Daten."
+
+msgid "The Vercel connection could not be verified. Start from Studio and select the configured team with the required project permissions."
+msgstr "Die Vercel-Verbindung konnte nicht bestätigt werden. Starte im Studio und wähle das konfigurierte Team mit den benötigten Projektberechtigungen."
+
+msgid "View hosting status and domains. Deleting a project additionally requires project write permission in Vercel."
+msgstr "Hosting-Status und Domains ansehen. Zum Löschen eines Projekts ist zusätzlich die Projekt-Schreibberechtigung bei Vercel erforderlich."
+
+msgid "Deletion preview is unavailable."
+msgstr "Die Löschvorschau ist nicht verfügbar."
+
+msgid "Deletion stopped. Review its progress before retrying."
+msgstr "Die Löschung wurde angehalten. Prüfe den Fortschritt vor einem erneuten Versuch."
+
+msgid "Deletion stopped. Check its recorded progress before retrying."
+msgstr "Die Löschung wurde angehalten. Prüfe den protokollierten Fortschritt vor einem erneuten Versuch."
+
+msgid "A current administrator session or write-enabled MCP token is required."
+msgstr "Eine aktuelle Administratorsitzung oder ein MCP-Token mit Schreibzugriff ist erforderlich."
+
+msgid "A current preview hash is required."
+msgstr "Eine aktuelle Löschvorschau ist erforderlich."
+
+msgid "Account binding changed. Review deletion again."
+msgstr "Die Zugangszuordnung wurde geändert. Prüfe die Löschung erneut."
+
+msgid "Account service could not confirm deletion."
+msgstr "Der Kontodienst konnte die Löschung nicht bestätigen."
+
+msgid "Account service is not configured."
+msgstr "Der Kontodienst ist nicht konfiguriert."
+
+msgid "Account service returned an invalid deletion confirmation."
+msgstr "Der Kontodienst hat keine gültige Löschbestätigung geliefert."
+
+msgid "Account service returned an invalid response."
+msgstr "Der Kontodienst hat eine ungültige Antwort geliefert."
+
+msgid "Active operator session required."
+msgstr "Eine aktive Sitzung als Plattformadministrator ist erforderlich."
+
+msgid "Another application depends on this database. Deletion is blocked."
+msgstr "Eine andere Anwendung verwendet diese Datenbank. Die Löschung ist gesperrt."
+
+msgid "Another deletion request changed this project."
+msgstr "Ein anderer Löschauftrag hat dieses Projekt geändert."
+
+msgid "Binding changed. Preview again."
+msgstr "Die Zuordnung wurde geändert. Öffne die Vorschau erneut."
+
+msgid "Binding mapping is shared, protected or changed."
+msgstr "Die Zuordnung wird gemeinsam verwendet, ist geschützt oder wurde geändert."
+
+msgid "Binding metadata is protected or changed."
+msgstr "Die Metadaten der Zuordnung sind geschützt oder wurden geändert."
+
+msgid "Binding not found or not eligible."
+msgstr "Die Zuordnung wurde nicht gefunden oder kann nicht gelöscht werden."
+
+msgid "Confirm permanent deletion."
+msgstr "Bestätige die endgültige Löschung."
+
+msgid "Connect Vercel in Webdock before deleting this project."
+msgstr "Verbinde Vercel in Webdock, bevor du dieses Projekt löschst."
+
+msgid "Control-plane or unmanaged websites cannot be deleted here."
+msgstr "Plattformdienste und nicht verwaltete Websites können hier nicht gelöscht werden."
+
+msgid "Database ownership does not match this website."
+msgstr "Der Datenbankeigentümer stimmt nicht mit dieser Website überein."
+
+msgid "Invalid delegated authentication."
+msgstr "Die übertragene Anmeldung ist ungültig."
+
+msgid "Invalid lifecycle request."
+msgstr "Die Anfrage zur Ressourcenverwaltung ist ungültig."
+
+msgid "Invalid managed database mapping."
+msgstr "Die Zuordnung der verwalteten Datenbank ist ungültig."
+
+msgid "Invalid website metadata."
+msgstr "Die Website-Metadaten sind ungültig."
+
+msgid "Invalid website redirects."
+msgstr "Die Weiterleitungen der Website sind ungültig."
+
+msgid "Invalid write requirement."
+msgstr "Die angeforderte Schreibberechtigung ist ungültig."
+
+msgid "Leave customer preview before lifecycle operations."
+msgstr "Verlasse zuerst die Kundenansicht, bevor du Ressourcen verwaltest."
+
+msgid "Managed database deletion is not configured for this website."
+msgstr "Die verwaltete Datenbanklöschung ist für diese Website nicht eingerichtet."
+
+msgid "Managed database deletion is not configured."
+msgstr "Die verwaltete Datenbanklöschung ist nicht eingerichtet."
+
+msgid "Managed deletion requires exactly one isolated CMS connection."
+msgstr "Die verwaltete Löschung benötigt genau eine isolierte CMS-Verbindung."
+
+msgid "Only a platform administrator may delete projects."
+msgstr "Nur Plattformadministratoren dürfen Projekte löschen."
+
+msgid "Operator MCP scope required."
+msgstr "Die MCP-Berechtigung eines Plattformadministrators ist erforderlich."
+
+msgid "Platform operator required."
+msgstr "Ein Plattformadministrator ist erforderlich."
+
+msgid "Studio authentication required."
+msgstr "Eine Studio-Anmeldung ist erforderlich."
+
+msgid "The CMS management binding is not valid."
+msgstr "Die Zuordnung zur CMS-Verwaltung ist ungültig."
+
+msgid "The database role has privileges beyond this website."
+msgstr "Die Datenbankrolle besitzt Rechte außerhalb dieser Website."
+
+msgid "The database schema is accessible to another role."
+msgstr "Eine andere Rolle hat Zugriff auf das Datenbankschema."
+
+msgid "The hosting connection is not supported for deletion."
+msgstr "Diese Hosting-Verbindung unterstützt keine verwaltete Löschung."
+
+msgid "The hosting link differs from the CMS connection."
+msgstr "Die Hosting-Zuordnung stimmt nicht mit der CMS-Verbindung überein."
+
+msgid "The managed database credential is not safely scoped."
+msgstr "Die Zugangsdaten der verwalteten Datenbank sind nicht ausreichend eingeschränkt."
+
+msgid "The project changed before deletion. Nothing further was removed."
+msgstr "Das Projekt wurde vor der Löschung geändert. Es wurde nichts Weiteres entfernt."
+
+msgid "The project mapping changed. Deletion is blocked."
+msgstr "Die Projektzuordnung wurde geändert. Die Löschung ist gesperrt."
+
+msgid "The project or deletion preview changed. Review it again."
+msgstr "Das Projekt oder die Löschvorschau wurde geändert. Prüfe die Vorschau erneut."
+
+msgid "The registered database schema was not found."
+msgstr "Das hinterlegte Datenbankschema wurde nicht gefunden."
+
+msgid "The website binding was already removed."
+msgstr "Die Website-Zuordnung wurde bereits entfernt."
+
+msgid "The website domain is not assigned to the linked hosting project."
+msgstr "Die Website-Domain ist dem verknüpften Hosting-Projekt nicht zugeordnet."
+
+msgid "This database is not registered for managed deletion."
+msgstr "Diese Datenbank ist nicht für die verwaltete Löschung registriert."
+
+msgid "This website shares resources with another project. Deletion is blocked."
+msgstr "Diese Website teilt Ressourcen mit einem anderen Projekt. Die Löschung ist gesperrt."
+
+msgid "Use an exact HTTPS origin."
+msgstr "Verwende eine genaue HTTPS-Basisadresse."
+
+msgid "Hosting verification is unavailable."
+msgstr "Die Hosting-Prüfung ist nicht verfügbar."
+
+msgid "Vercel project information is temporarily unavailable."
+msgstr "Die Vercel-Projektinformationen sind vorübergehend nicht verfügbar."
+
+msgid "Reconnect the Vercel integration to read project information."
+msgstr "Verbinde die Vercel-Integration erneut, um Projektinformationen abzurufen."
+
+msgid "The Vercel integration does not have access to this project or team."
+msgstr "Die Vercel-Integration hat keinen Zugriff auf dieses Projekt oder Team. Gib das Projekt in der Integration frei und verbinde Vercel erneut."
+
+msgid "The mapped Vercel project could not be found."
+msgstr "Das zugeordnete Vercel-Projekt wurde nicht gefunden."
+
+msgid "Project deletion is unavailable: the Vercel integration needs project write permission for this team and project."
+msgstr "Die Löschung ist nicht möglich: Die Vercel-Integration benötigt die Projekt-Schreibberechtigung für dieses Team und Projekt."
+
+msgid "Connected Vercel integration"
+msgstr "Vercel-Integration verbunden"
+
+msgid "Vercel project region set to fra1; automatic regional failover disabled."
+msgstr "Vercel-Projektregion auf Frankfurt gesetzt; automatischer Regions-Failover deaktiviert."
+
+msgid "Vercel project region already fra1; automatic regional failover disabled."
+msgstr "Vercel-Projektregion bereits Frankfurt; automatischer Regions-Failover deaktiviert."
+
+msgid "Role"
+msgstr "Rolle"
+
+msgid "Application deployment is not enabled yet."
+msgstr "Die Anwendungsbereitstellung ist noch nicht aktiviert."
+
+msgid "Cluster management is being configured. Application deployment is not available yet."
+msgstr "Die Cluster-Verwaltung wird eingerichtet. Die Anwendungsbereitstellung ist noch nicht verfügbar."
+
+msgid "Country unverified"
+msgstr "Land nicht verifiziert"
+
+msgid "Application configuration"
+msgstr "Anwendungskonfiguration"
+
+msgid "HTTP healthcheck"
+msgstr "HTTP-Prüfdienst"
+
+msgid "Custom container"
+msgstr "Eigener Container"
+
+msgid "Immutable image (already cached on the node)"
+msgstr "Unveränderliches Image (bereits auf dem Node vorhanden)"
+
+msgid "Container arguments (JSON array)"
+msgstr "Container-Argumente (JSON-Array)"
+
+msgid "HTTP port"
+msgstr "HTTP-Port"
+
+msgid "Replicas"
+msgstr "Replikate"
+
+msgid "Healthcheck path"
+msgstr "Healthcheck-Pfad"
+
+msgid "Applications run without root or API tokens, with a read-only filesystem and temporary /tmp storage. Cached images only; no unverified registry pulls."
+msgstr "Anwendungen laufen ohne Root-Rechte oder API-Tokens, mit schreibgeschütztem Dateisystem und temporärem /tmp-Speicher. Nur vorhandene Images; kein Abruf von ungeprüften Registries."
+
+msgid "Managed applications"
+msgstr "Verwaltete Anwendungen"
+
+msgid "No applications deployed yet."
+msgstr "Noch keine Anwendungen bereitgestellt."
+
+msgid "Deploy application"
+msgstr "Anwendung bereitstellen"
+
+msgid "Application name"
+msgstr "Anwendungsname"
+
+msgid "Revision"
+msgstr "Revision"
+
+msgid "Applications"
+msgstr "Anwendungen"
+
+msgid "Application controls"
+msgstr "Anwendung steuern"
+
+msgid "Stop"
+msgstr "Stoppen"
+
+msgid "Restart"
+msgstr "Neu starten"
+
+msgid "Rollback"
+msgstr "Vorherige Version wiederherstellen"
+
+msgid "Scale application"
+msgstr "Anwendung skalieren"
+
+msgid "Update application"
+msgstr "Anwendung aktualisieren"
+
+msgid "Application logs"
+msgstr "Anwendungsprotokolle"
+
+msgid "Refresh logs"
+msgstr "Protokolle abrufen"
+
+msgid "No log output."
+msgstr "Keine Protokollausgabe."
+
+msgid "Operator recovery"
+msgstr "Wiederherstellung durch Administrator"
+
+msgid "Reconcile operation"
+msgstr "Auftrag erneut abgleichen"
+
+msgid "Delete application"
+msgstr "Anwendung löschen"
+
+msgid "This removes the application deployment, its pods and its service. The managed project namespace remains. Only a platform operator can confirm deletion."
+msgstr "Entfernt das Deployment, die Pods und den Service der Anwendung. Der verwaltete Projekt-Namespace bleibt erhalten. Nur ein Plattformadministrator kann die Löschung bestätigen."
+
+msgid "Type the exact application name"
+msgstr "Den genauen Anwendungsnamen eingeben"
+
+msgid "Permanently delete application"
+msgstr "Anwendung endgültig löschen"
+
+msgid "Enable managed execution"
+msgstr "Verwaltete Ausführung aktivieren"
+
+msgid "Reserve platform capacity and record the verified security baseline. Persistent storage remains disabled until hard storage quotas are available."
+msgstr "Kapazität für die Plattform reservieren und den geprüften Sicherheitsstand dokumentieren. Persistenter Speicher bleibt gesperrt, bis harte Speicherquotas verfügbar sind."
+
+msgid "Security verification evidence"
+msgstr "Nachweis der Sicherheitsprüfung"
+
+msgid "Open a hosting project to manage its applications."
+msgstr "Ein Hosting-Projekt öffnen, um seine Anwendungen zu verwalten."
+
+msgid "Hosting operation queued."
+msgstr "Hosting-Auftrag eingereiht."
+
+msgid "Open application"
+msgstr "Anwendung öffnen"
+
+msgid "pending"
+msgstr "In Bearbeitung"
+
+msgid "ready"
+msgstr "Bereit"
+
+msgid "stopped"
+msgstr "Gestoppt"
+
+msgid "failed"
+msgstr "Fehlgeschlagen"
+
+msgid "deleted"
+msgstr "Gelöscht"
+
+msgid "Application changed. Refresh before editing."
+msgstr "Die Anwendung wurde geändert. Vor dem Bearbeiten aktualisieren."
+
+msgid "Wait for the current project operation or reconcile it first."
+msgstr "Den laufenden Projektauftrag abwarten oder zuerst abgleichen."
+
+msgid "Customer hosting allowance exceeded."
+msgstr "Das Hosting-Kontingent des Kunden ist überschritten."
+
+msgid "Project or provider hosting allowance exceeded."
+msgstr "Das Hosting-Kontingent des Projekts oder Anbieters ist überschritten."
+
+msgid "Cluster readiness must be verified before allocation."
+msgstr "Die Cluster-Freigabe muss vor einer Zuteilung geprüft sein."
+
+msgid "No previous application revision is available."
+msgstr "Es ist keine vorherige Anwendungsversion verfügbar."
+
+msgid "Deletion preview changed. Review the current application."
+msgstr "Die Löschvorschau wurde geändert. Die aktuelle Anwendung erneut prüfen."
+
+msgid "Kubernetes rejected the application safety profile."
+msgstr "Kubernetes hat das Sicherheitsprofil der Anwendung abgelehnt."
+
+msgid "The application did not become ready. Inspect the healthcheck and resources."
+msgstr "Die Anwendung wurde nicht bereit. Healthcheck und Ressourcen prüfen."
+
+msgid "Managed resource ownership changed. Operator review is required."
+msgstr "Die Zuordnung verwalteter Ressourcen wurde geändert. Eine Administratorprüfung ist erforderlich."
+
+msgid "Cluster execution failed. Inspect and reconcile before retrying."
+msgstr "Die Ausführung auf dem Cluster ist fehlgeschlagen. Vor einem erneuten Versuch prüfen und abgleichen."
+
+msgid "Start application"
+msgstr "Anwendung starten"
+
+msgid "The application logs could not be read."
+msgstr "Die Anwendungsprotokolle konnten nicht gelesen werden."
+
+msgid "The HTTP healthcheck template fixes the image, arguments, port 8080 and /ping path. Custom containers use the values below."
+msgstr "Die HTTP-Prüfvorlage verwendet ein festes Image mit festen Argumenten, Port 8080 und dem Pfad /ping. Eigene Container verwenden die folgenden Werte."
+
+msgid "Hosting execution is not enabled for this runtime region."
+msgstr "Die Hosting-Ausführung ist für diese Laufzeitregion nicht freigegeben."
+
+msgid "Invalid hosting project identity."
+msgstr "Ungültige Hosting-Projektzuordnung."
+
+msgid "Hosting project identity does not match this website."
+msgstr "Die Hosting-Projektzuordnung passt nicht zu dieser Website."
+
+msgid "Managed container hosting must be retired before project deletion."
+msgstr "Vor dem Löschen des Projekts muss das verwaltete Container-Hosting stillgelegt werden."
+
+msgid "EU country code (optional)"
+msgstr "EU-Ländercode (optional)"
+
+
+msgid "A change is complete only after the cluster confirms its new state."
+msgstr "Eine Änderung ist erst abgeschlossen, wenn das Cluster den neuen Zustand bestätigt."
+
+
+msgid "Disconnect Vercel"
+msgstr "Vercel trennen"
+
+msgid "Actions"
+msgstr "Aktionen"
+
+msgid "Actual usage"
+msgstr "Tatsächlicher Verbrauch"
+
+msgid "All allowed namespaces"
+msgstr "Alle freigegebenen Namespaces"
+
+msgid "All resource types"
+msgstr "Alle Ressourcentypen"
+
+msgid "Allow own Kubernetes clusters"
+msgstr "Eigene Kubernetes-Cluster erlauben"
+
+msgid "Allow own Vercel team"
+msgstr "Eigenes Vercel-Team erlauben"
+
+msgid "Allowed namespaces"
+msgstr "Freigegebene Namespaces"
+
+msgid "Another controller manages this application. Changes are blocked."
+msgstr "Diese Anwendung wird von einem anderen Controller verwaltet. Änderungen sind gesperrt."
+
+msgid "Application / resource"
+msgstr "Anwendung / Ressource"
+
+msgid "Applications and hosting"
+msgstr "Anwendungen und Hosting"
+
+msgid "CPU cores"
+msgstr "CPU-Kerne"
+
+msgid "Check connection"
+msgstr "Verbindung prüfen"
+
+msgid "Choose which projects Webdock can manage. Vercel continues to bill your own team."
+msgstr "Wähle die Projekte aus, die Webdock verwalten darf. Vercel rechnet weiterhin mit deinem eigenen Team ab."
+
+msgid "Cluster name"
+msgstr "Clustername"
+
+msgid "Cluster resources"
+msgstr "Cluster-Ressourcen"
+
+msgid "Cluster type"
+msgstr "Cluster-Typ"
+
+msgid "Connect own cluster"
+msgstr "Eigenes Cluster verbinden"
+
+msgid "Connect your cluster"
+msgstr "Dein Cluster verbinden"
+
+msgid "Connect your own Kubernetes cluster or Vercel team. Manage applications here; your provider bills you directly."
+msgstr "Verbinde dein eigenes Kubernetes-Cluster oder Vercel-Team. Verwalte Anwendungen hier; dein Anbieter rechnet direkt mit dir ab."
+
+msgid "Connect your own Vercel team to choose its projects."
+msgstr "Verbinde dein eigenes Vercel-Team und wähle dessen Projekte aus."
+
+msgid "Connected clusters"
+msgstr "Verbundene Cluster"
+
+msgid "Connection settings"
+msgstr "Verbindungseinstellungen"
+
+msgid "Customer-owned cluster"
+msgstr "Kundeneigenes Cluster"
+
+msgid "Deployment settings"
+msgstr "Bereitstellungseinstellungen"
+
+msgid "Deployments"
+msgstr "Bereitstellungen"
+
+msgid "Disconnecting removes Webdock access. Vercel projects and deployments remain intact. Revoke the installation in Vercel to remove its provider permissions too."
+msgstr "Trennen entfernt den Webdock-Zugriff. Vercel-Projekte und Bereitstellungen bleiben erhalten. Widerrufe die Integration zusätzlich in Vercel, um auch ihre Anbieterberechtigungen zu entfernen."
+
+msgid "Disconnecting stops Webdock management. Applications keep running on your cluster."
+msgstr "Trennen beendet die Webdock-Verwaltung. Die Anwendungen laufen auf deinem Cluster weiter."
+
+msgid "Download agent"
+msgstr "Agent herunterladen"
+
+msgid "Download the agent"
+msgstr "Agent herunterladen"
+
+msgid "EU location"
+msgstr "EU-Standort"
+
+msgid "Enter a valid resource amount."
+msgstr "Gib einen gültigen Ressourcenwert ein."
+
+msgid "Enter your provider location evidence. A declaration is not provider verification."
+msgstr "Gib den Standortnachweis deines Anbieters an. Eine eigene Angabe ist keine Anbieterprüfung."
+
+msgid "Extract the archive, run the installer and enter the one-time token when prompted."
+msgstr "Entpacke das Archiv, starte die Installation und gib den einmaligen Verbindungscode auf Nachfrage ein."
+
+msgid "Filter"
+msgstr "Filtern"
+
+msgid "For example, Frankfurt"
+msgstr "Zum Beispiel Frankfurt"
+
+msgid "Install and connect"
+msgstr "Installieren und verbinden"
+
+msgid "Install the agent on a host with access to your cluster. Your Kubernetes credentials stay on that host."
+msgstr "Installiere den Agenten auf einem Rechner mit Zugriff auf dein Cluster. Deine Kubernetes-Zugangsdaten bleiben auf diesem Rechner."
+
+msgid "Instances"
+msgstr "Instanzen"
+
+msgid "Live CPU and memory usage is unavailable. Resource requests are still shown."
+msgstr "Der aktuelle CPU- und RAM-Verbrauch ist nicht verfügbar. Angeforderte Ressourcen werden weiterhin angezeigt."
+
+msgid "Manage Vercel projects"
+msgstr "Vercel-Projekte verwalten"
+
+msgid "Manage existing applications"
+msgstr "Vorhandene Anwendungen verwalten"
+
+msgid "Maximum clusters"
+msgstr "Maximale Clusteranzahl"
+
+msgid "Memory"
+msgstr "Arbeitsspeicher"
+
+msgid "Namespace"
+msgstr "Namespace"
+
+msgid "No cluster connected yet."
+msgstr "Noch kein Cluster verbunden."
+
+msgid "No deployments found."
+msgstr "Keine Bereitstellungen gefunden."
+
+msgid "No domains found."
+msgstr "Keine Domains gefunden."
+
+msgid "No logs available."
+msgstr "Keine Logs verfügbar."
+
+msgid "No resources match this view."
+msgstr "Keine Ressourcen passen zu dieser Ansicht."
+
+msgid "Only the first 1,000 projects are shown. Narrow access in your Vercel integration if needed."
+msgstr "Die ersten 1.000 Projekte werden angezeigt. Begrenze bei Bedarf den Zugriff in deiner Vercel-Integration."
+
+msgid "Open website"
+msgstr "Website öffnen"
+
+msgid "Operation progress"
+msgstr "Fortschritt"
+
+msgid "Persistent storage"
+msgstr "Dauerhafter Speicher"
+
+msgid "Prepare cluster access"
+msgstr "Cluster-Zugriff vorbereiten"
+
+msgid "Provider billing and Webdock allowances are separate. Budgets shown here are not a Vercel spending cap."
+msgstr "Anbieterabrechnung und Webdock-Kontingente sind getrennt. Hier angezeigte Budgets sind keine Vercel-Ausgabensperre."
+
+msgid "Resource type"
+msgstr "Ressourcentyp"
+
+msgid "Resources"
+msgstr "Ressourcen"
+
+msgid "Select a project to see deployments and domains."
+msgstr "Wähle ein Projekt aus, um Bereitstellungen und Domains zu sehen."
+
+msgid "Selfservice permissions"
+msgstr "Selfservice-Freigaben"
+
+msgid "Separate names with commas. System namespaces stay protected."
+msgstr "Trenne Namen durch Kommas. System-Namespaces bleiben geschützt."
+
+msgid "Set Frankfurt as the default for future Functions. Existing deployments and global Vercel services are not moved."
+msgstr "Lege Frankfurt als Standard für künftige Functions fest. Bestehende Bereitstellungen und globale Vercel-Dienste werden nicht verschoben."
+
+msgid "Set limit"
+msgstr "Limit festlegen"
+
+msgid "Set resources in cores, MB or GB. Existing applications keep their allocation."
+msgstr "Gib Ressourcen in Kernen, MB oder GB an. Bestehende Anwendungen behalten ihre Zuteilung."
+
+msgid "Some resources could not be scanned. Check the agent permissions."
+msgstr "Einige Ressourcen konnten nicht erfasst werden. Prüfe die Berechtigungen des Agenten."
+
+msgid "Temporary storage"
+msgstr "Temporärer Speicher"
+
+msgid "This inventory is out of date. Refresh it before making changes."
+msgstr "Diese Ressourcenübersicht ist veraltet. Aktualisiere sie vor Änderungen."
+
+msgid "Unit"
+msgstr "Einheit"
+
+msgid "Usage data is not available through this connection. No spending cap is enforced by Webdock."
+msgstr "Über diese Verbindung sind keine Verbrauchsdaten verfügbar. Webdock erzwingt keine Ausgabensperre."
+
+msgid "Use a Linux host with Python 3, kubectl and access to your Kubernetes cluster."
+msgstr "Verwende einen Linux-Rechner mit Python 3, kubectl und Zugriff auf dein Kubernetes-Cluster."
+
+msgid "Use a dedicated kubeconfig with the permissions in the included RBAC guide. Keep it on your host; never upload it to Webdock."
+msgstr "Verwende eine eigene kubeconfig mit den Berechtigungen aus der beigefügten RBAC-Anleitung. Bewahre sie auf deinem Rechner auf und lade sie niemals in Webdock hoch."
+
+msgid "View progress"
+msgstr "Fortschritt ansehen"
+
+msgid "Waiting for first scan"
+msgstr "Warte auf den ersten Scan"
+
+msgid "Your Vercel projects"
+msgstr "Deine Vercel-Projekte"
+
+msgid "Your infrastructure"
+msgstr "Eigene Infrastruktur"
+
+msgid "Your plan does not yet include own infrastructure. Your administrator can enable it here."
+msgstr "Eigene Infrastruktur ist noch nicht freigeschaltet. Dein Administrator kann sie hier aktivieren."
+
+msgid "cores"
+msgstr "Kerne"
+
+msgid "Save permissions"
+msgstr "Freigaben speichern"
+
+msgid "Add cluster"
+msgstr "Cluster hinzufügen"
+
+msgid "Set up connection"
+msgstr "Verbindung einrichten"
+
+msgid "Refresh inventory"
+msgstr "Ressourcen aktualisieren"
+
+msgid "Read logs"
+msgstr "Logs lesen"
+
+msgid "Scale"
+msgstr "Skalieren"
+
+msgid "Disconnect agent"
+msgstr "Agent trennen"
+
+msgid "Create new enrollment"
+msgstr "Neuen Verbindungscode erstellen"
+
+msgid "Save selected projects"
+msgstr "Projektauswahl speichern"
+
+msgid "Cancel deployment"
+msgstr "Bereitstellung abbrechen"
+
+msgid "Use Frankfurt"
+msgstr "Frankfurt verwenden"
+
+msgid "Choose a cluster for Kubernetes"
+msgstr "Cluster für Kubernetes auswählen"
+
+msgid "Resume"
+msgstr "Fortsetzen"
+
+msgid "Suspend"
+msgstr "Pausieren"
+
+msgid "Confirm reviewed state"
+msgstr "Geprüften Zustand bestätigen"
+
+msgid "Add argument"
+msgstr "Argument hinzufügen"
+
+msgid "Advanced settings"
+msgstr "Erweiterte Einstellungen"
+
+msgid "Argument"
+msgstr "Argument"
+
+msgid "Container arguments"
+msgstr "Container-Argumente"
+
+msgid "Remove argument"
+msgstr "Argument entfernen"
+
+msgid "Return to your customers"
+msgstr "Zurück zu deinen Mandanten"
+
+msgid "The connection could not be completed. Start a new connection from your hosting page. If it fails again, ask your administrator to check the Vercel integration configuration and permissions."
+msgstr "Die Verbindung konnte nicht abgeschlossen werden. Starte sie erneut auf deiner Hosting-Seite. Falls sie wieder fehlschlägt, lasse deinen Administrator die Vercel-Integration und ihre Berechtigungen prüfen."
+
+msgid "Vercel connection needs attention"
+msgstr "Vercel-Verbindung prüfen"
+
+msgid "Allocatable"
+msgstr "Verfügbare Kapazität"
+
+msgid "Back to cluster"
+msgstr "Zurück zum Cluster"
+
+msgid "Container requests"
+msgstr "Angeforderte Container-Ressourcen"
+
+msgid "In progress"
+msgstr "In Bearbeitung"
+
+msgid "Stopped"
+msgstr "Gestoppt"
+
+msgid "All resources"
+msgstr "Alle Ressourcen"
+
+msgid "Enter valid resource amounts in cores, MB or GB."
+msgstr "Gib gültige Ressourcenwerte in Kernen, MB oder GB ein."
+
+msgid "Dedicated customer"
+msgstr "Zugeordneter Kunde"
+
+msgid "Managed by"
+msgstr "Verwaltung"
+
+msgid "Shared platform cluster"
+msgstr "Gemeinsam genutztes Plattform-Cluster"
+
+msgid "Search and filters"
+msgstr "Suche und Filter"
+
+msgid "Control plane"
+msgstr "Steuerungsknoten"
+
+msgid "Worker"
+msgstr "Arbeitsknoten"
+
+msgid "Capacity for applications"
+msgstr "Kapazität für Anwendungen"
+
+msgid "Capacity and security settings"
+msgstr "Kapazität und Sicherheit einstellen"
+
+msgid "Update cluster capacity"
+msgstr "Cluster-Kapazität speichern"
+
+msgid "An operation is already in progress for this application."
+msgstr "Für diese Anwendung läuft bereits ein Auftrag."
+
+msgid "Choose projects available to this Vercel connection."
+msgstr "Wähle Projekte aus, auf die diese Vercel-Verbindung zugreifen darf."
+
+msgid "Choose the number of instances."
+msgstr "Wähle die gewünschte Anzahl an Instanzen."
+
+msgid "Cluster identity changed."
+msgstr "Die Cluster-Identität hat sich geändert. Prüfe die Verbindung."
+
+msgid "Connect Vercel in Studio."
+msgstr "Verbinde Vercel im Studio."
+
+msgid "Connect your Vercel team first."
+msgstr "Verbinde zuerst dein Vercel-Team."
+
+msgid "Customer Vercel connections are not configured yet."
+msgstr "Kundeneigene Vercel-Verbindungen sind noch nicht eingerichtet."
+
+msgid "Existing application management is disabled."
+msgstr "Die Verwaltung vorhandener Anwendungen ist nicht freigeschaltet."
+
+msgid "Invalid BYOK request."
+msgstr "Ungültige Anfrage für eigene Infrastruktur."
+
+msgid "Invalid Vercel request."
+msgstr "Ungültige Vercel-Anfrage."
+
+msgid "Invalid cluster request."
+msgstr "Ungültige Cluster-Anfrage."
+
+msgid "Invalid provider endpoint."
+msgstr "Ungültiger Anbieter-Endpunkt."
+
+msgid "Inventory is not enabled for this cluster."
+msgstr "Die Ressourcenerfassung ist für dieses Cluster nicht freigeschaltet."
+
+msgid "Inventory is stale."
+msgstr "Die Ressourcenübersicht ist veraltet."
+
+msgid "Management permission changed."
+msgstr "Die Verwaltungsberechtigung hat sich geändert."
+
+msgid "Own infrastructure is disabled."
+msgstr "Eigene Infrastruktur ist deaktiviert."
+
+msgid "Own infrastructure is not enabled for this customer."
+msgstr "Eigene Infrastruktur ist für diesen Kunden nicht freigeschaltet."
+
+msgid "Reconnect Vercel with deployment management permission."
+msgstr "Verbinde Vercel erneut mit der Berechtigung zum Verwalten von Bereitstellungen."
+
+msgid "Reconnect Vercel with project management permission."
+msgstr "Verbinde Vercel erneut mit der Berechtigung zum Verwalten von Projekten."
+
+msgid "Refresh the cluster inventory before changing this application."
+msgstr "Aktualisiere die Ressourcenübersicht, bevor du diese Anwendung änderst."
+
+msgid "Refresh the cluster inventory before reviewing this operation."
+msgstr "Aktualisiere die Ressourcenübersicht, bevor du diesen Auftrag prüfst."
+
+msgid "Resource observation does not match the requested operation."
+msgstr "Der beobachtete Ressourcenzustand passt nicht zum angeforderten Auftrag."
+
+msgid "Settings changed. Refresh and try again."
+msgstr "Die Einstellungen wurden geändert. Lade die Seite neu und versuche es erneut."
+
+msgid "System resources cannot be managed."
+msgstr "Systemressourcen können hier nicht verändert werden."
+
+msgid "The application is already stopped."
+msgstr "Die Anwendung ist bereits gestoppt."
+
+msgid "The customer cluster limit has been reached."
+msgstr "Die maximale Clusteranzahl dieses Kunden ist erreicht."
+
+msgid "This Vercel team is already assigned to another connection."
+msgstr "Dieses Vercel-Team ist bereits einer anderen Verbindung zugeordnet."
+
+msgid "This action is controlled by another controller or is unsupported."
+msgstr "Diese Aktion wird von einem anderen Controller gesteuert oder nicht unterstützt."
+
+msgid "This cluster is not customer owned."
+msgstr "Dies ist kein kundeneigenes Cluster."
+
+msgid "This connection attempt expired. Start again."
+msgstr "Dieser Verbindungsversuch ist abgelaufen. Starte ihn erneut."
+
+msgid "This deployment cannot be canceled."
+msgstr "Diese Bereitstellung kann nicht abgebrochen werden."
+
+msgid "This operation does not need reconciliation."
+msgstr "Dieser Auftrag muss nicht abgeglichen werden."
+
+msgid "Use Scale to choose the desired number of instances."
+msgstr "Wähle mit „Skalieren“ die gewünschte Anzahl an Instanzen."
+
+msgid "Vercel connection could not be verified."
+msgstr "Die Vercel-Verbindung konnte nicht bestätigt werden."
+
+msgid "Vercel is unavailable. Check the current state before retrying."
+msgstr "Vercel ist nicht erreichbar. Prüfe vor einem erneuten Versuch den aktuellen Zustand."
+
+msgid "Vercel project is unavailable."
+msgstr "Das Vercel-Projekt ist nicht verfügbar."
+
+msgid "Wait before starting another connection."
+msgstr "Warte kurz, bevor du eine neue Verbindung startest."
+
+msgid "The operation did not finish. Refresh inventory and review the resource before retrying."
+msgstr "Der Auftrag wurde nicht abgeschlossen. Aktualisiere die Übersicht und prüfe die Ressource vor einem erneuten Versuch."
+
+msgid "Operation expired before execution. Refresh inventory and try again."
+msgstr "Der Auftrag ist vor der Ausführung abgelaufen. Aktualisiere die Ressourcenübersicht und versuche es erneut."
+
+msgid "Current resource state reviewed. A new action can be requested."
+msgstr "Der aktuelle Ressourcenzustand wurde geprüft. Du kannst einen neuen Auftrag starten."
+
+msgid "Webdock hosting allowances"
+msgstr "Kontingente für Webdock-Hosting"
+
+msgid "These allowances apply to Webdock-hosted applications. Your own infrastructure is managed separately."
+msgstr "Diese Kontingente gelten für Anwendungen im Webdock-Hosting. Deine eigene Infrastruktur wird getrennt verwaltet."
+
+msgid "A sender-domain registration needs review. Refresh to check whether the provider completed it."
+msgstr "Eine Versanddomain-Registrierung muss geprüft werden. Aktualisiere den Status, um das Ergebnis beim Anbieter zu prüfen."
+
+msgid "Add sender domain"
+msgstr "Versanddomain hinzufügen"
+
+msgid "Allow own turboSMTP account"
+msgstr "Eigenes turboSMTP-Konto erlauben"
+
+msgid "Check connection and domains"
+msgstr "Verbindung und Domains prüfen"
+
+msgid "Connect turboSMTP"
+msgstr "turboSMTP verbinden"
+
+msgid "Connect your own Kubernetes cluster, Vercel team or turboSMTP account. Your provider bills you directly."
+msgstr "Verbinde dein eigenes Kubernetes-Cluster, Vercel-Team oder turboSMTP-Konto. Dein Anbieter rechnet direkt mit dir ab."
+
+msgid "Connect your own sending account and manage its sender domains."
+msgstr "Verbinde dein eigenes Versandkonto und verwalte dessen Versanddomains."
+
+msgid "Connection name"
+msgstr "Verbindungsname"
+
+msgid "Create a dedicated Consumer Key and Consumer Secret with API management permission in turboSMTP. Use a separate account for this customer; all sender domains in that account will be visible here."
+msgstr "Erstelle in turboSMTP einen eigenen Consumer Key und Consumer Secret mit API-Verwaltungsberechtigung. Nutze ein separates Konto für diesen Kunden; alle Versanddomains dieses Kontos werden hier sichtbar."
+
+msgid "Disconnect account"
+msgstr "Konto trennen"
+
+msgid "Disconnect turboSMTP"
+msgstr "turboSMTP trennen"
+
+msgid "Disconnecting removes the stored Webdock credential. Your turboSMTP account, domains and applications keep running. Revoke the key at turboSMTP if it should lose provider access too."
+msgstr "Beim Trennen entfernt Webdock den gespeicherten Zugang. Dein turboSMTP-Konto, die Domains und Anwendungen bleiben bestehen. Widerrufe den Schlüssel bei turboSMTP, wenn auch sein Anbieterzugriff enden soll."
+
+msgid "EU sending settings"
+msgstr "Einstellungen für EU-Versand"
+
+msgid "I control this provider account and authorize this customer to manage its sender domains."
+msgstr "Ich verwalte dieses Anbieterkonto und erlaube diesem Kunden die Verwaltung seiner Versanddomains."
+
+msgid "Key ending"
+msgstr "Schlüssel-Endung"
+
+msgid "Limits new registrations through Webdock. Existing domains and provider sending limits stay unchanged."
+msgstr "Begrenzt neue Registrierungen über Webdock. Bestehende Domains und Versandlimits beim Anbieter bleiben erhalten."
+
+msgid "Manage own email"
+msgstr "Eigenes Mailkonto verwalten"
+
+msgid "Manage selfservice permissions"
+msgstr "Selfservice-Freigaben verwalten"
+
+msgid "Manage sending keys and account billing in turboSMTP. This management key is never displayed again by Webdock."
+msgstr "Versandschlüssel und Kontoabrechnung verwaltest du bei turboSMTP. Webdock zeigt diesen Verwaltungszugang nicht erneut an."
+
+msgid "Maximum turboSMTP sender domains"
+msgstr "Maximale turboSMTP-Versanddomains"
+
+msgid "No own turboSMTP account connected yet."
+msgstr "Noch kein eigenes turboSMTP-Konto verbunden."
+
+msgid "No sender domains found in this account."
+msgstr "Keine Versanddomains in diesem Konto gefunden."
+
+msgid "Own turboSMTP is not enabled for this customer."
+msgstr "Ein eigenes turboSMTP-Konto ist für diesen Kunden nicht freigeschaltet."
+
+msgid "Register sender domain"
+msgstr "Versanddomain registrieren"
+
+msgid "Registration starts provider verification. Configure the DNS records shown in your turboSMTP dashboard, then refresh here."
+msgstr "Die Registrierung startet die Anbieterprüfung. Richte die DNS-Einträge aus deinem turboSMTP-Dashboard ein und aktualisiere anschließend den Status hier."
+
+msgid "Replace management key"
+msgstr "Verwaltungszugang ersetzen"
+
+msgid "Review uncertain registration"
+msgstr "Unklare Registrierung prüfen"
+
+msgid "Search domains"
+msgstr "Domains suchen"
+
+msgid "Sending uses EU endpoints. The separate provider management API is an approved exception without an EU-only guarantee. The Webdock domain allowance is not an email sending or spending limit."
+msgstr "Für den Versand sind EU-Endpunkte vorgesehen. Die separate Verwaltungs-API des Anbieters ist als Ausnahme ohne EU-only-Garantie zugelassen. Das Webdock-Domainkontingent ist kein Versand- oder Ausgabenlimit."
+
+msgid "The domain allowance for this connection has been reached."
+msgstr "Das Domainkontingent dieser Verbindung ist erreicht."
+
+msgid "Use your own provider account. turboSMTP bills you directly; Webdock manages the connection and sender domains."
+msgstr "Nutze dein eigenes Anbieterkonto. turboSMTP rechnet direkt mit dir ab; Webdock verwaltet die Verbindung und Versanddomains."
+
+msgid "Use your provider-issued sending credentials in your application. This connection does not send a test email or change existing application settings."
+msgstr "Verwende die Versandschlüssel deines Anbieters in deiner Anwendung. Diese Verbindung versendet keine Testmail und ändert keine bestehenden Anwendungseinstellungen."
+
+msgid "Verify and save connection"
+msgstr "Verbindung prüfen und speichern"
+
+msgid "Wait at least five minutes and inspect the provider state. Confirm the exact pending domain to allow a new operation."
+msgstr "Warte mindestens fünf Minuten und prüfe den Zustand beim Anbieter. Bestätige die genaue ausstehende Domain, um einen neuen Auftrag zu erlauben."
+
+msgid "Your own turboSMTP account"
+msgstr "Dein eigenes turboSMTP-Konto"
+
+msgid "Email provided by Webdock"
+msgstr "Mail über Webdock"
+
+msgid "A domain registration needs review. Refresh the account before continuing."
+msgstr "Eine Domain-Registrierung muss geprüft werden. Aktualisiere zuerst das Konto."
+
+msgid "Connect your own turboSMTP account first."
+msgstr "Verbinde zuerst dein eigenes turboSMTP-Konto."
+
+msgid "Enter turboSMTP credentials only in the protected Studio setup."
+msgstr "Gib turboSMTP-Zugangsdaten nur in der geschützten Studio-Einrichtung ein."
+
+msgid "Platform operator review and the exact pending domain are required."
+msgstr "Die Prüfung durch einen Plattformadministrator und die genaue ausstehende Domain sind erforderlich."
+
+msgid "Review the pending domain registration before disconnecting this account."
+msgstr "Prüfe die ausstehende Domain-Registrierung, bevor du dieses Konto trennst."
+
+msgid "Review the pending domain registration before replacing this connection."
+msgstr "Prüfe die ausstehende Domain-Registrierung, bevor du diese Verbindung ersetzt."
+
+msgid "The mail connection changed. Refresh it before retrying."
+msgstr "Die Mailverbindung hat sich geändert. Aktualisiere sie vor einem erneuten Versuch."
+
+msgid "This account exceeds the supported 1,000 sender domains. Use a dedicated customer account."
+msgstr "Dieses Konto überschreitet die unterstützten 1.000 Versanddomains. Verwende ein separates Kundenkonto."
+
+msgid "This domain is already registered in your turboSMTP account."
+msgstr "Diese Domain ist bereits in deinem turboSMTP-Konto registriert."
+
+msgid "This mail credential is already assigned to another connection."
+msgstr "Dieser Mailzugang ist bereits einer anderen Verbindung zugeordnet."
+
+msgid "Use a dedicated customer credential, not the platform master credential."
+msgstr "Verwende einen eigenen Kundenzugang. Der Plattform-Hauptzugang ist dafür gesperrt."
+
+msgid "Wait five minutes before reconciling an uncertain provider request."
+msgstr "Warte fünf Minuten, bevor du eine unklare Anbieteranfrage abgleichst."
+
+msgid "Domain registration needs review. The provider may have completed it; refresh before retrying."
+msgstr "Die Domain-Registrierung muss geprüft werden. Sie könnte beim Anbieter bereits abgeschlossen sein; aktualisiere vor einem erneuten Versuch."
+
+msgid "The turboSMTP connection could not be verified. Check the keys and API permissions."
+msgstr "Die turboSMTP-Verbindung konnte nicht bestätigt werden. Prüfe die Schlüssel und API-Berechtigungen."
+
+msgid "turboSMTP connection verified and saved."
+msgstr "turboSMTP-Verbindung geprüft und gespeichert."
+
+msgid "Sender-domain status updated."
+msgstr "Status der Versanddomains aktualisiert."
+
+msgid "Sender domain registered. Complete DNS setup in turboSMTP."
+msgstr "Versanddomain registriert. Schließe die DNS-Einrichtung in turboSMTP ab."
+
+msgid "turboSMTP disconnected. Your provider resources remain intact."
+msgstr "turboSMTP getrennt. Deine Ressourcen beim Anbieter bleiben erhalten."
+
+msgid "Provider state reviewed. You can continue."
+msgstr "Anbieterzustand geprüft. Du kannst fortfahren."
+
+msgid "Searching…"
+msgstr "Suche läuft …"
+
+msgid "Allow own container images"
+msgstr "Eigene Container-Images erlauben"
+
+msgid "Also allow this project's images on a shared cluster (applications share the host kernel)"
+msgstr "Images dieses Projekts auch auf einem gemeinsamen Cluster erlauben (Anwendungen teilen den Host-Kernel)"
+
+msgid "Confirm permission to run this project's images on a shared cluster."
+msgstr "Bestätige die Freigabe der Images dieses Projekts für einen gemeinsamen Cluster."
+
+msgid "A Kubernetes cluster available to this customer is required."
+msgstr "Ein für diesen Kunden verfügbares Kubernetes-Cluster ist erforderlich."
+
+msgid "Environment variables"
+msgstr "Umgebungsvariablen"
+
+msgid "Values are encrypted and hidden after saving. Changes take effect with the next application deployment. Do not print secrets in application logs."
+msgstr "Werte werden verschlüsselt gespeichert und danach verborgen. Änderungen gelten ab der nächsten App-Bereitstellung. Gib Geheimnisse nicht in Anwendungslogs aus."
+
+msgid "No environment variables configured."
+msgstr "Noch keine Umgebungsvariablen eingerichtet."
+
+msgid "Variable name"
+msgstr "Variablenname"
+
+msgid "Will be removed when saved"
+msgstr "Wird beim Speichern entfernt"
+
+msgid "Saved value — hidden"
+msgstr "Gespeicherter Wert – verborgen"
+
+msgid "Replace value"
+msgstr "Wert ersetzen"
+
+msgid "Hide value"
+msgstr "Wert verbergen"
+
+msgid "Show value"
+msgstr "Wert anzeigen"
+
+msgid "Remove variable"
+msgstr "Variable entfernen"
+
+msgid "Add variable"
+msgstr "Variable hinzufügen"
+
+msgid "Stored application environment could not be opened."
+msgstr "Die gespeicherten Umgebungsvariablen konnten nicht entschlüsselt werden."
+
+msgid "Update the cluster agent before using environment variables."
+msgstr "Aktualisiere den Cluster-Agenten, bevor du Umgebungsvariablen verwendest."
+
+msgid "Application environment encryption is not configured."
+msgstr "Die Verschlüsselung für Umgebungsvariablen ist nicht eingerichtet."
+
+msgid "Environment variables are too large."
+msgstr "Die Umgebungsvariablen sind zu umfangreich."
+
+msgid "Invalid environment variables."
+msgstr "Ungültige Umgebungsvariablen."
+
+msgid "Duplicate environment variable names."
+msgstr "Variablennamen dürfen nicht doppelt vorkommen."
+
+msgid "Undo"
+msgstr "Rückgängig"
+
+msgid "Persistent storage size is fixed at application creation."
+msgstr "Die Größe des dauerhaften Speichers wird beim Anlegen der Anwendung festgelegt."
+
+msgid "Optional /data storage: enter 0 to disable or at least 68 MB. One instance only. Filesystem overhead reduces usable space. Data and its allowance remain after application deletion."
+msgstr "Optionaler Speicher unter /data: 0 zum Deaktivieren oder mindestens 68 MB eingeben. Nur eine Instanz. Das Dateisystem benötigt einen Teil des Speicherplatzes. Daten und Speicherbelegung bleiben nach dem Löschen der Anwendung erhalten."
+
+msgid "Data is stored at /data and remains after application deletion."
+msgstr "Daten werden unter /data gespeichert und bleiben nach dem Löschen der Anwendung erhalten."
+
+msgid "Permanently delete retained data"
+msgstr "Aufbewahrte Daten endgültig löschen"
+
+msgid "This permanently removes the retained filesystem and all its data. This cannot be undone. The application must already be deleted."
+msgstr "Damit werden der aufbewahrte Speicher und alle darin enthaltenen Daten endgültig gelöscht. Dies kann nicht rückgängig gemacht werden. Die Anwendung muss bereits gelöscht sein."
+
+msgid "This removes the application deployment, its pods and its service. The managed project namespace and persistent data remain. Retained storage still counts against the allowance. Only a platform operator can confirm deletion."
+msgstr "Damit werden die Anwendung, ihre Pods und ihr Dienst entfernt. Der verwaltete Projektnamespace und dauerhafte Daten bleiben erhalten. Aufbewahrter Speicher zählt weiterhin zum Kontingent. Nur Plattformadministratoren können die Löschung bestätigen."
+
+msgid "Delete the application before removing retained storage."
+msgstr "Lösche zuerst die Anwendung, bevor du aufbewahrte Daten entfernst."
+
+msgid "Verified persistent storage is unavailable on this cluster."
+msgstr "Auf diesem Cluster ist kein geprüfter dauerhafter Speicher verfügbar."
+
+msgid "Persistent storage proof does not match the operation."
+msgstr "Der Speichernachweis passt nicht zum Auftrag."
+
+msgid "Managed capacity must be finite and within verified persistent storage capacity."
+msgstr "Die Kapazität muss begrenzt sein und innerhalb der geprüften dauerhaften Speicherkapazität liegen."
+
+msgid "Persistent storage supports one instance."
+msgstr "Dauerhafter Speicher unterstützt eine Instanz."
+
+msgid "Reserve platform capacity and record the verified security baseline. Persistent storage requires the private storage helper and verified filesystem capacity."
+msgstr "Reserviere Plattformkapazität und dokumentiere die geprüfte Sicherheitsbasis. Dauerhafter Speicher benötigt den privaten Speicherdienst und geprüfte Dateisystemkapazität."
+
+msgid "Retained data has been permanently removed. The storage allowance is available again."
+msgstr "Die aufbewahrten Daten wurden endgültig entfernt. Das Speicherkontingent steht wieder zur Verfügung."

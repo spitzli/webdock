@@ -1,0 +1,531 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Webdock\n"
+"PO-Revision-Date: 2026-10-05 00:00+0000\n"
+"Last-Translator: Webdock\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid ". Contact us for information about safeguards applicable to your project."
+msgstr ". Kontaktiere uns für Informationen zu den für dein Projekt geltenden Schutzmaßnahmen."
+
+msgid ". Where project data is processed on behalf of a customer, the customer’s instructions and applicable data-processing agreement also apply."
+msgstr ". Werden Projektdaten im Auftrag eines Kunden verarbeitet, gelten zusätzlich dessen Weisungen und die einschlägige Vereinbarung zur Auftragsverarbeitung."
+
+msgid "A dedicated address for your work in progress. Review it together, share feedback and make the next version better."
+msgstr "Eine eigene Adresse für dein laufendes Projekt. Gemeinsam ansehen, Rückmeldungen teilen und die nächste Version verbessern."
+
+msgid "A home for projects by Spitzli"
+msgstr "Ein Zuhause für Projekte von Spitzli"
+
+msgid "A home online.\nA human on your side."
+msgstr "Ein Zuhause im Netz.\nEin Mensch an deiner Seite."
+
+msgid "A place for your next project."
+msgstr "Ein Platz für dein nächstes Projekt."
+
+msgid "A place on the web. Project previews and client websites by Spitzli Development."
+msgstr "Ein Platz im Netz. Projektvorschauen und Kundenwebsites von Spitzli Development."
+
+msgid "A project by"
+msgstr "Ein Projekt von"
+
+msgid "About"
+msgstr "Über uns"
+
+msgid "Access and permitted use"
+msgstr "Zugang und zulässige Nutzung"
+
+msgid "Access and troubleshooting"
+msgstr "Zugang und Fehlerbehebung"
+
+msgid "Account invitations and security messages are sent through turboSMTP using the recipient’s email address and the message contents, which may include time-limited account-setup links."
+msgstr "Kontoeinladungen und Sicherheitsnachrichten werden über turboSMTP versendet. Dabei werden die E-Mail-Adresse des Empfängers und der Nachrichteninhalt verwendet; dieser kann zeitlich begrenzte Links zur Kontoeinrichtung enthalten."
+
+msgid "Accounts are invitation-only. We process names, email addresses, invitation status, tenant membership and assigned roles to provide the requested access. Authentication records include password hashes, registered passkey public-key information, configured second-factor information and session records. Account and permission changes are recorded for security and accountability. A contact email in a customer profile does not itself create an account or grant access."
+msgstr "Konten werden ausschließlich auf Einladung eingerichtet. Wir verarbeiten Namen, E-Mail-Adressen, Einladungsstatus, Mandantenzugehörigkeit und zugewiesene Rollen, um den angeforderten Zugang bereitzustellen. Zu den Authentifizierungsdaten gehören Passwort-Hashes, öffentliche Schlüsselinformationen registrierter Passkeys, Informationen zu eingerichteten zweiten Faktoren und Sitzungsdaten. Änderungen an Konten und Berechtigungen werden aus Sicherheitsgründen und zur Nachvollziehbarkeit protokolliert. Eine Kontakt-E-Mail-Adresse in einem Kundenprofil erstellt weder ein Konto noch gewährt sie Zugriff."
+
+msgid "After installation, Studio reads the selected Vercel projects, deployments, domains and installation configuration. It displays project settings such as framework and runtime, deployment status and URLs, production releases, Git branch and commit metadata, and domain verification status. It does not deploy projects, modify domains, or request access to environment-variable values."
+msgstr "Nach der Installation liest Studio die ausgewählten Vercel-Projekte, Deployments, Domains und die Installationskonfiguration. Angezeigt werden Projekteinstellungen wie Framework und Laufzeit, Deployment-Status und URLs, Produktionsversionen, Git-Branch- und Commit-Metadaten sowie der Status der Domainprüfung. Die Integration veröffentlicht keine Projekte, ändert keine Domains und fordert keinen Zugriff auf Werte von Umgebungsvariablen an."
+
+msgid "An operator creates a customer profile containing the customer’s display name and, where provided, person or company names, contact person, email, telephone and postal address. These details support administration of the customer relationship and its projects. Authorised members can view their own tenant profile; tenant administrators can update it and invite people. Internal operator notes are not available in the customer portal."
+msgstr "Ein Betreiber erstellt ein Kundenprofil mit dem Anzeigenamen des Kunden und, soweit angegeben, Personen- oder Firmennamen, Ansprechpartner, E-Mail-Adresse, Telefonnummer und Postanschrift. Diese Angaben dienen der Verwaltung der Kundenbeziehung und ihrer Projekte. Berechtigte Mitglieder können ihr eigenes Mandantenprofil ansehen; Mandanten-Admins können es bearbeiten und Personen einladen. Interne Betreibernotizen sind im Kundenportal nicht verfügbar."
+
+msgid "and"
+msgstr "und"
+
+msgid "and any applicable service agreement."
+msgstr "und in einer gegebenenfalls geltenden Leistungsvereinbarung beschrieben."
+
+msgid "Appearance"
+msgstr "Darstellung"
+
+msgid "Are project previews public?"
+msgstr "Sind Projektvorschauen öffentlich?"
+
+msgid "Audit records remain available for security investigations and accountability; disconnection does not automatically erase them. Retention depends on the continuing security purpose, applicable contractual or legal requirements and any unresolved claims. Deletion requests are assessed against those needs. Provider backups and technical logs follow their separate retention lifecycles and are not immediately erased by disconnecting."
+msgstr "Prüfprotokolle bleiben für Sicherheitsuntersuchungen und zur Nachvollziehbarkeit verfügbar; durch das Trennen einer Verbindung werden sie nicht automatisch gelöscht. Die Speicherdauer richtet sich nach dem fortbestehenden Sicherheitszweck, geltenden vertraglichen oder gesetzlichen Anforderungen und offenen Ansprüchen. Löschanfragen werden anhand dieser Erfordernisse geprüft. Sicherungskopien und technische Protokolle der Anbieter unterliegen eigenen Aufbewahrungszyklen und werden beim Trennen einer Verbindung nicht sofort gelöscht."
+
+msgid "Authorised administrators can create and revoke SMTP/API keys for their tenant. A newly created key secret is shown once. Webdock displays the provider’s key labels, permissions, creation dates and IP restrictions; secrets are not retained in local key metadata or audit records."
+msgstr "Berechtigte Administratoren können SMTP-/API-Schlüssel für ihren Mandanten erstellen und widerrufen. Das Geheimnis eines neu erstellten Schlüssels wird einmalig angezeigt. Webdock zeigt die Schlüsselbezeichnungen, Berechtigungen, Erstellungsdaten und IP-Beschränkungen des Anbieters an; Geheimnisse werden nicht in lokalen Schlüsselmetadaten oder Prüfprotokollen gespeichert."
+
+msgid "before connecting."
+msgstr "vor dem Verbinden."
+
+msgid "Built by Spitzli"
+msgstr "Entwickelt von Spitzli"
+
+msgid "Button label"
+msgstr "Schaltflächentext"
+
+msgid "Choose Connect Vercel. Start here so Studio can securely associate the installation with your session."
+msgstr "Wähle „Vercel verbinden“. Beginne hier, damit Studio die Installation sicher deiner Sitzung zuordnen kann."
+
+msgid "Closing heading"
+msgstr "Abschließende Überschrift"
+
+msgid "CMS — Webdock"
+msgstr "CMS — Webdock"
+
+msgid "Concept"
+msgstr "Konzept"
+
+msgid "Connect selected Vercel projects to Webdock Studio with read-only access."
+msgstr "Verbinde ausgewählte Vercel-Projekte mit Webdock Studio über einen Lesezugriff."
+
+msgid "Connect your projects"
+msgstr "Projekte verbinden"
+
+msgid "Connecting Vercel is optional; without it, Studio cannot display live Vercel information. You can restrict the projects selected during installation and revoke access at Vercel."
+msgstr "Die Verbindung mit Vercel ist optional. Ohne sie kann Studio keine aktuellen Vercel-Informationen anzeigen. Du kannst die bei der Installation ausgewählten Projekte einschränken und den Zugriff bei Vercel widerrufen."
+
+msgid "Contact Dominik at Spitzli Development with your project idea. We will agree on the name, technical setup and deployment together. Automated registration is not available at this stage."
+msgstr "Melde dich mit deiner Projektidee bei Dominik von Spitzli Development. Namen, technische Einrichtung und Veröffentlichung stimmen wir gemeinsam ab. Eine automatische Registrierung ist derzeit nicht verfügbar."
+
+msgid "Cookies and technical requests"
+msgstr "Cookies und technische Anfragen"
+
+msgid "Customer profiles and memberships are retained while needed for the customer relationship and its administration. Archiving a tenant or disabling an account restricts access but does not itself erase the records. Request correction or deletion through the contact above; necessary legal retention and unresolved contractual or security matters are assessed before erasure. Authentication sessions expire after eight hours; account security settings and credentials remain until replaced or removed."
+msgstr "Kundenprofile und Mitgliedschaften werden so lange gespeichert, wie sie für die Kundenbeziehung und deren Verwaltung erforderlich sind. Das Archivieren eines Mandanten oder das Deaktivieren eines Kontos beschränkt den Zugriff, löscht aber nicht automatisch die Datensätze. Berichtigungs- oder Löschanfragen können über den oben genannten Kontakt gestellt werden. Erforderliche gesetzliche Aufbewahrung sowie offene vertragliche oder sicherheitsbezogene Fragen werden vor einer Löschung geprüft. Authentifizierungssitzungen laufen nach acht Stunden ab; Sicherheitseinstellungen und Zugangsdaten eines Kontos bleiben bestehen, bis sie ersetzt oder entfernt werden."
+
+msgid "Customer profiles, accounts and invitations"
+msgstr "Kundenprofile, Konten und Einladungen"
+
+msgid "Dark"
+msgstr "Dunkel"
+
+msgid "Description"
+msgstr "Beschreibung"
+
+msgid "Disconnect"
+msgstr "Verbindung trennen"
+
+msgid "Disconnect in Studio to delete its stored access token. Also uninstall Webdock Studio in your Vercel team’s integration settings to revoke permission at Vercel. Project mappings and audit records remain; contact us if you need them removed."
+msgstr "Trenne die Verbindung in Studio, um den dort gespeicherten Zugriffstoken zu löschen. Deinstalliere Webdock Studio zusätzlich in den Integrationseinstellungen deines Vercel-Teams, um die Berechtigung bei Vercel zu widerrufen. Projektzuordnungen und Prüfprotokolle bleiben erhalten. Kontaktiere uns, wenn sie entfernt werden sollen."
+
+msgid "Do I need my own domain?"
+msgstr "Brauche ich eine eigene Domain?"
+
+msgid "Do not bypass access controls, access another organisation’s data without permission, disrupt the service, or use it unlawfully. Access may be restricted or suspended where reasonably necessary to protect users, data or the service."
+msgstr "Umgehe keine Zugriffskontrollen, greife nicht ohne Erlaubnis auf Daten einer anderen Organisation zu, störe den Dienst nicht und nutze ihn nicht rechtswidrig. Der Zugang kann eingeschränkt oder ausgesetzt werden, soweit dies zum Schutz von Nutzern, Daten oder des Dienstes angemessen erforderlich ist."
+
+msgid "Does every project run on Vercel?"
+msgstr "Läuft jedes Projekt auf Vercel?"
+
+msgid "Domain entries contain the requested domain, a random ownership token and verification timestamps. To check ownership, Webdock queries the public TXT record through Cloudflare’s public DNS-over-HTTPS resolver. The domain name is sent to that resolver; account passwords and provider keys are not. DNS ownership verification is distinct from registration and sending-domain verification at the mail provider."
+msgstr "Domaineinträge enthalten die angeforderte Domain, einen zufälligen Eigentumsnachweis-Token und Prüfzeitpunkte. Zur Eigentumsprüfung ruft Webdock den öffentlichen TXT-Eintrag über Cloudflares öffentlichen DNS-over-HTTPS-Resolver ab. Dabei wird der Domainname an diesen Resolver übermittelt, nicht aber Kontopasswörter oder Anbieterschlüssel. Die DNS-Eigentumsprüfung ist von der Registrierung und Prüfung einer Absenderdomain beim Mailanbieter getrennt."
+
+msgid "Dominik Spitzli, trading as Spitzli Development, is responsible for this processing. For privacy questions, access or deletion requests, email"
+msgstr "Für diese Verarbeitung ist Dominik Spitzli, tätig unter Spitzli Development, verantwortlich. Bei Datenschutzfragen sowie Auskunfts- oder Löschanfragen schreibe an"
+
+msgid "Edit your homepage, contact details and search appearance."
+msgstr "Bearbeite deine Startseite, Kontaktdaten und die Darstellung in Suchmaschinen."
+
+msgid "Email support at"
+msgstr "Schreibe an den Support unter"
+
+msgid "EU’s information on data-protection rights"
+msgstr "Informationen der EU zu Datenschutzrechten"
+
+msgid "Every idea needs a place."
+msgstr "Jede Idee braucht einen Platz."
+
+msgid "Example addresses. Your project gets a place of its own."
+msgstr "Beispieladressen. Dein Projekt bekommt einen eigenen Platz."
+
+msgid "explains these rights further."
+msgstr "erläutern diese Rechte näher."
+
+msgid "Explore Webdock"
+msgstr "Webdock entdecken"
+
+msgid "FAQ"
+msgstr "Häufige Fragen"
+
+msgid "Fees and third-party services"
+msgstr "Kosten und Dienste Dritter"
+
+msgid "Finish the installation and return to Studio. Match an active Studio project to its Vercel project in Integrations."
+msgstr "Schließe die Installation ab und kehre zu Studio zurück. Ordne unter Integrationen ein aktives Studio-Projekt seinem Vercel-Projekt zu."
+
+msgid "for its own processing."
+msgstr "für dessen eigene Datenverarbeitung."
+
+msgid "For selected projects, we read project identifiers and names, framework and runtime settings, deployment identifiers, status, URLs and timestamps, production release information, Git branch names, commit identifiers and messages, and domain names, redirects and verification status. Names and commit messages can contain personal information supplied by members of your team. The source is your connected Vercel account. These details let Studio show hosting status alongside its project records."
+msgstr "Für ausgewählte Projekte lesen wir Projektkennungen und -namen, Framework- und Laufzeiteinstellungen, Deployment-Kennungen, Status, URLs und Zeitstempel, Angaben zu Produktionsversionen, Git-Branch-Namen, Commit-Kennungen und -Nachrichten sowie Domainnamen, Weiterleitungen und den Prüfstatus. Namen und Commit-Nachrichten können personenbezogene Angaben von Teammitgliedern enthalten. Quelle ist das verbundene Vercel-Konto. Mit diesen Angaben kann Studio den Hostingstatus neben den Projektdatensätzen anzeigen."
+
+msgid "From “take a look”\nto “we’re live”."
+msgstr "Von „Schau mal rein“\nbis „Wir sind online“."
+
+msgid "From the first preview to the finished website. Webdock gives your project a place to call home."
+msgstr "Von der ersten Vorschau bis zur fertigen Website. Webdock gibt deinem Projekt ein Zuhause."
+
+msgid "Good questions.\nStraight answers."
+msgstr "Gute Fragen.\nKlare Antworten."
+
+msgid "Got something in mind?"
+msgstr "Schon eine Idee?"
+
+msgid "Heading"
+msgstr "Überschrift"
+
+msgid "Heading (one line per row)"
+msgstr "Überschrift (eine Zeile pro Absatz)"
+
+msgid "Hero"
+msgstr "Einstiegsbereich"
+
+msgid "Hosting, recipients and international processing"
+msgstr "Hosting, Empfänger und internationale Verarbeitung"
+
+msgid "How do I get a Webdock subdomain?"
+msgstr "Wie bekomme ich eine Webdock-Subdomain?"
+
+msgid "How Webdock handles account, customer, tenant and Vercel integration data."
+msgstr "Wie Webdock mit Konto-, Kunden-, Mandanten- und Vercel-Integrationsdaten umgeht."
+
+msgid "Illustration: a preview, a website and a custom domain connected to Webdock."
+msgstr "Illustration: eine Vorschau, eine Website und eine eigene Domain, die mit Webdock verbunden sind."
+
+msgid "In Vercel, select your team and the projects to share. Review the four read permissions: projects, deployments, domains and integration configuration."
+msgstr "Wähle in Vercel dein Team und die freizugebenden Projekte aus. Prüfe die vier Leseberechtigungen: Projekte, Deployments, Domains und Integrationskonfiguration."
+
+msgid "Information reflects the latest successful request and can become outdated. Check Vercel directly before relying on a deployment or domain status for operational decisions. Availability depends on Vercel and the hosting services used by Webdock; no separate uptime commitment is made by these terms."
+msgstr "Die Informationen entsprechen der letzten erfolgreichen Abfrage und können veralten. Prüfe Vercel direkt, bevor du dich bei betrieblichen Entscheidungen auf einen Deployment- oder Domainstatus verlässt. Die Verfügbarkeit hängt von Vercel und den von Webdock verwendeten Hostingdiensten ab; diese Bedingungen enthalten keine gesonderte Verfügbarkeitszusage."
+
+msgid "Installing this integration does not itself create a paid subscription. Any Webdock development, hosting or support fees require a separate agreement. Your Vercel account remains subject to Vercel’s own terms and charges. Webdock Studio is provided by Spitzli Development, not by Vercel."
+msgstr "Die Installation dieser Integration begründet für sich genommen kein kostenpflichtiges Abonnement. Entgelte für Webdock-Entwicklung, Hosting oder Support bedürfen einer gesonderten Vereinbarung. Für dein Vercel-Konto gelten weiterhin die eigenen Bedingungen und Entgelte von Vercel. Webdock Studio wird von Spitzli Development bereitgestellt, nicht von Vercel."
+
+msgid "Just ask."
+msgstr "Frag einfach nach."
+
+msgid "Landing page"
+msgstr "Startseite"
+
+msgid "Legal"
+msgstr "Rechtliches"
+
+msgid "Legal bases"
+msgstr "Rechtsgrundlagen"
+
+msgid "Let’s get you docked"
+msgstr "Dein Projekt anlegen"
+
+msgid "Let’s talk about it"
+msgstr "Lass uns darüber sprechen"
+
+msgid "Light"
+msgstr "Hell"
+
+msgid "Mail mappings and domain records remain until removed through the applicable administration process or a deletion request. Removing a local domain entry does not remove DNS records or a provider-side registration; removing stored master credentials does not revoke that key at the provider."
+msgstr "Mailzuordnungen und Domaineinträge bleiben bestehen, bis sie im vorgesehenen Verwaltungsverfahren oder aufgrund einer Löschanfrage entfernt werden. Das Entfernen eines lokalen Domaineintrags löscht weder DNS-Einträge noch eine Registrierung beim Anbieter. Das Entfernen gespeicherter Hauptzugangsdaten widerruft diesen Schlüssel nicht beim Anbieter."
+
+msgid "Main navigation"
+msgstr "Hauptnavigation"
+
+msgid "Meet Spitzli"
+msgstr "Spitzli kennenlernen"
+
+msgid "Most projects currently run on Vercel, but Webdock is not tied to a single hosting provider. The technical environment is chosen to suit each project."
+msgstr "Die meisten Projekte laufen derzeit auf Vercel. Webdock ist aber nicht an einen einzelnen Hostinganbieter gebunden. Die technische Umgebung wird passend zum jeweiligen Projekt gewählt."
+
+msgid "My project with Webdock"
+msgstr "Mein Projekt mit Webdock"
+
+msgid "Neon’s data-processing agreement"
+msgstr "Neons Vereinbarung zur Auftragsverarbeitung"
+
+msgid "No domain of your own? Your project can live on a Webdock subdomain. Easy to share, easy to find again."
+msgstr "Keine eigene Domain? Dein Projekt kann auf einer Webdock-Subdomain laufen. Einfach zu teilen und leicht wiederzufinden."
+
+msgid "No. Your project can live on a subdomain such as your-project.webdock.dev. If you would like to use your own domain, we will work out the right setup for your project."
+msgstr "Nein. Dein Projekt kann auf einer Subdomain wie your-project.webdock.dev laufen. Wenn du eine eigene Domain verwenden möchtest, finden wir die passende Einrichtung für dein Projekt."
+
+msgid "Open the project in Studio to view hosting details. Refresh to request the latest available status."
+msgstr "Öffne das Projekt in Studio, um die Hostingdetails anzusehen. Aktualisiere die Ansicht, um den neuesten verfügbaren Status abzurufen."
+
+msgid "Outlook & closing"
+msgstr "Ausblick und Abschluss"
+
+msgid "Outlook description"
+msgstr "Beschreibung des Ausblicks"
+
+msgid "Outlook heading"
+msgstr "Überschrift des Ausblicks"
+
+msgid "Page title"
+msgstr "Seitentitel"
+
+msgid "Preview"
+msgstr "Vorschau"
+
+msgid "Privacy"
+msgstr "Datenschutz"
+
+msgid "Privacy — Webdock Studio"
+msgstr "Datenschutz — Webdock Studio"
+
+msgid "privacy notice"
+msgstr "Datenschutzhinweis"
+
+msgid "Privacy notice"
+msgstr "Datenschutzhinweis"
+
+msgid "Read the"
+msgstr "Lies die"
+
+msgid "Ready for the world"
+msgstr "Bereit für die Welt"
+
+msgid "Ready for what comes next."
+msgstr "Bereit für den nächsten Schritt."
+
+msgid "Responsibility and changes"
+msgstr "Verantwortung und Änderungen"
+
+msgid "Retention and disconnection"
+msgstr "Speicherdauer und Trennung der Verbindung"
+
+msgid "Room for ideas"
+msgstr "Raum für Ideen"
+
+msgid "SEO & contact"
+msgstr "Suchmaschinen und Kontakt"
+
+msgid "Serving requests entails processing technical data such as IP address, requested URL, timestamp and browser information for delivery, fault diagnosis and abuse prevention. Hosting providers may retain technical logs under their service settings and policies. See"
+msgstr "Bei der Bearbeitung von Anfragen werden technische Daten wie IP-Adresse, angeforderte URL, Zeitstempel und Browserinformationen für die Auslieferung, Fehlerdiagnose und Missbrauchsabwehr verarbeitet. Hostinganbieter können technische Protokolle entsprechend ihren Diensteinstellungen und Richtlinien aufbewahren. Beachte"
+
+msgid "Share it before you ship it."
+msgstr "Teilen, bevor es online geht."
+
+msgid "Sign in to"
+msgstr "Melde dich bei"
+
+msgid "Sign in with Webdock"
+msgstr "Mit Webdock anmelden"
+
+msgid "Skip to content"
+msgstr "Zum Inhalt springen"
+
+msgid "Some projects need a link to get started. Others need a lasting home. Webdock is here for both."
+msgstr "Manche Projekte brauchen zum Start einen Link. Andere ein dauerhaftes Zuhause. Webdock ist für beides da."
+
+msgid "Something else on your mind?"
+msgstr "Noch eine Frage?"
+
+msgid "Start a project"
+msgstr "Projekt starten"
+
+msgid "Statutory rights and liability rules remain unaffected. These terms do not exclude liability for intentional misconduct, gross negligence, injury to life, body or health, or any liability that cannot legally be excluded. A separate service agreement takes precedence for the services it expressly covers."
+msgstr "Gesetzliche Rechte und Haftungsregeln bleiben unberührt. Diese Bedingungen schließen keine Haftung für Vorsatz, grobe Fahrlässigkeit, Verletzungen von Leben, Körper oder Gesundheit oder sonstige gesetzlich nicht ausschließbare Haftung aus. Eine gesonderte Leistungsvereinbarung hat für die von ihr ausdrücklich geregelten Leistungen Vorrang."
+
+msgid "Studio → Integrations"
+msgstr "Studio → Integrationen"
+
+msgid "Studio stores project mappings and records connection, disconnection and mapping changes in its audit log, including the acting operator, affected record and action. Retrieved hosting snapshots are fetched for display rather than stored as a deployment-history database. The integration does not request environment-variable values, source-code contents, billing data or Vercel account passwords."
+msgstr "Studio speichert Projektzuordnungen und protokolliert das Verbinden, Trennen und Ändern von Zuordnungen einschließlich des handelnden Betreibers, des betroffenen Datensatzes und der Aktion. Abgerufene Hostingdaten werden zur Anzeige geladen und nicht als Datenbank des Deployment-Verlaufs gespeichert. Die Integration fordert keine Werte von Umgebungsvariablen, Quellcodeinhalte, Abrechnungsdaten oder Passwörter von Vercel-Konten an."
+
+msgid "Subject to the applicable conditions, you can request access, correction, erasure, restriction and portability of your personal data, and object to processing based on legitimate interests. You can complain to a data-protection supervisory authority, including where you live or work. Contact us using the email above; we may need to verify your identity before disclosing account data. The"
+msgstr "Unter den jeweils geltenden Voraussetzungen kannst du Auskunft, Berichtigung, Löschung, Einschränkung und Übertragbarkeit deiner personenbezogenen Daten verlangen sowie einer Verarbeitung auf Grundlage berechtigter Interessen widersprechen. Du kannst dich bei einer Datenschutzaufsichtsbehörde beschweren, insbesondere an deinem Wohn- oder Arbeitsort. Nutze dafür die oben genannte E-Mail-Adresse; vor der Offenlegung von Kontodaten kann eine Identitätsprüfung erforderlich sein. Die"
+
+msgid "Support"
+msgstr "Support"
+
+msgid "Supporting note"
+msgstr "Ergänzender Hinweis"
+
+msgid "System"
+msgstr "System"
+
+msgid "Tenant Mail"
+msgstr "Mandanten-Mail"
+
+msgid "Terms for the private Webdock Studio Vercel integration."
+msgstr "Nutzungsbedingungen für die private Vercel-Integration von Webdock Studio."
+
+msgid "terms of use"
+msgstr "Nutzungsbedingungen"
+
+msgid "Terms of use"
+msgstr "Nutzungsbedingungen"
+
+msgid "Terms of use — Webdock Studio"
+msgstr "Nutzungsbedingungen — Webdock Studio"
+
+msgid "That depends on how each project is configured. A subdomain alone does not restrict access. If a preview needs to stay private, access protection is arranged separately."
+msgstr "Das hängt von der Konfiguration des jeweiligen Projekts ab. Eine Subdomain allein beschränkt den Zugriff nicht. Soll eine Vorschau privat bleiben, wird der Zugriffsschutz gesondert eingerichtet."
+
+msgid "The connection flow uses a secure, HTTP-only cookie lasting up to ten minutes to bind the Vercel callback to the operator who started it. Studio also requires an authenticated Webdock session. These cookies support authentication and protect against request forgery. These public pages store an explicitly selected colour theme in your browser’s local storage and load fonts locally."
+msgstr "Der Verbindungsablauf verwendet ein sicheres HTTP-only-Cookie mit einer Laufzeit von bis zu zehn Minuten, um den Vercel-Rückruf dem Betreiber zuzuordnen, der den Vorgang begonnen hat. Studio setzt außerdem eine authentifizierte Webdock-Sitzung voraus. Diese Cookies unterstützen die Authentifizierung und schützen vor gefälschten Anfragen. Diese öffentlichen Seiten speichern ein ausdrücklich gewähltes Farbschema im lokalen Browserspeicher und laden Schriftarten lokal."
+
+msgid "The idea"
+msgstr "Die Idee"
+
+msgid "The integration is provided to authorised Webdock operators to view hosting information for projects they manage. You receive a non-exclusive, non-transferable right to use the integration for that purpose while access is enabled. Only connect a Vercel team and projects you are authorised to manage. Keep your account and authentication devices secure and report suspected misuse promptly."
+msgstr "Die Integration steht berechtigten Webdock-Betreibern zur Verfügung, um Hostinginformationen für die von ihnen verwalteten Projekte anzusehen. Solange der Zugang freigeschaltet ist, erhältst du ein nicht ausschließliches, nicht übertragbares Recht, die Integration zu diesem Zweck zu nutzen. Verbinde ausschließlich Vercel-Teams und Projekte, zu deren Verwaltung du berechtigt bist. Schütze dein Konto und deine Authentifizierungsgeräte und melde vermuteten Missbrauch umgehend."
+
+msgid "The stored Vercel credential remains until the connection is replaced or disconnected. Disconnecting in Studio deletes that credential from the active database. It does not uninstall the integration at Vercel: revoke that separately in Vercel’s integration settings. Project mappings remain until removed with the project or through an administrative deletion request."
+msgstr "Die gespeicherten Vercel-Zugangsdaten bleiben bestehen, bis die Verbindung ersetzt oder getrennt wird. Das Trennen in Studio löscht diese Zugangsdaten aus der aktiven Datenbank. Dadurch wird die Integration bei Vercel nicht deinstalliert; widerrufe sie gesondert in den Vercel-Integrationseinstellungen. Projektzuordnungen bleiben bestehen, bis sie zusammen mit dem Projekt oder im Rahmen einer administrativen Löschanfrage entfernt werden."
+
+msgid "There’s a place\nfor your next idea."
+msgstr "Ein Platz\nfür deine nächste Idee."
+
+msgid "These providers operate internationally, including in the United States. An EU application region does not mean all support, network or service processing stays in the EU. Their published transfer safeguards and subprocessors are described in"
+msgstr "Diese Anbieter sind international tätig, auch in den USA. Eine Anwendungsregion in der EU bedeutet nicht, dass sämtliche Support-, Netzwerk- oder Dienstverarbeitungen in der EU stattfinden. Ihre veröffentlichten Schutzmaßnahmen für Datenübermittlungen und Unterauftragsverarbeiter sind beschrieben in"
+
+msgid "These terms govern the private Webdock Studio integration for Vercel, operated by Dominik Spitzli, trading as Spitzli Development. Contact:"
+msgstr "Diese Bedingungen gelten für die private Vercel-Integration von Webdock Studio, betrieben von Dominik Spitzli unter Spitzli Development. Kontakt:"
+
+msgid "This notice covers Webdock account and tenant management, the private Webdock Studio Vercel integration and these public information pages. It does not replace privacy information for independently operated customer websites or Vercel’s own service."
+msgstr "Dieser Hinweis gilt für die Konto- und Mandantenverwaltung von Webdock, die private Vercel-Integration von Webdock Studio und diese öffentlichen Informationsseiten. Er ersetzt weder die Datenschutzhinweise unabhängig betriebener Kundenwebsites noch diejenigen für Vercels eigenen Dienst."
+
+msgid "This private integration is available to the configured team and authorised operators. It reads hosting information; it cannot deploy, change domains or read environment-variable values. If access is denied, check that the project was selected during installation. If a connection has been revoked or expired, reconnect from Studio. Vercel outages can temporarily prevent status updates."
+msgstr "Diese private Integration steht dem konfigurierten Team und berechtigten Betreibern zur Verfügung. Sie liest Hostinginformationen; sie kann keine Deployments auslösen, Domains ändern oder Werte von Umgebungsvariablen lesen. Wird der Zugriff verweigert, prüfe, ob das Projekt bei der Installation ausgewählt wurde. Wurde eine Verbindung widerrufen oder ist sie abgelaufen, verbinde sie erneut über Studio. Störungen bei Vercel können Statusaktualisierungen vorübergehend verhindern."
+
+msgid "Vercel data we receive and why"
+msgstr "Welche Vercel-Daten wir erhalten und wofür"
+
+msgid "Vercel integration — Webdock Studio"
+msgstr "Vercel-Integration — Webdock Studio"
+
+msgid "Vercel provides hosting and the connected API; Neon provides the PostgreSQL database used to store integration records. Authorised Webdock operators can access the integration’s project information. Data is not sold or used by this integration for advertising or automated decisions with legal or similarly significant effects."
+msgstr "Vercel stellt das Hosting und die verbundene API bereit; Neon stellt die PostgreSQL-Datenbank zur Speicherung der Integrationsdaten bereit. Berechtigte Webdock-Betreiber können auf die Projektinformationen der Integration zugreifen. Die Daten werden von dieser Integration weder verkauft noch für Werbung oder automatisierte Entscheidungen mit rechtlicher oder ähnlich erheblicher Wirkung verwendet."
+
+msgid "Vercel, in Studio."
+msgstr "Vercel in Studio."
+
+msgid "Vercel’s data-processing addendum"
+msgstr "Vercels Zusatzvereinbarung zur Auftragsverarbeitung"
+
+msgid "Vercel’s privacy notice"
+msgstr "Vercels Datenschutzhinweis"
+
+msgid "View hosting information alongside your Webdock project records: current production release, recent deployments, Git branch and commit, runtime settings, and domain verification."
+msgstr "Sieh Hostinginformationen zusammen mit deinen Webdock-Projektdaten: aktuelle Produktionsversion, letzte Deployments, Git-Branch und Commit, Laufzeiteinstellungen und Domainprüfung."
+
+msgid "We may update the integration and these terms as its functionality changes. The date above identifies this version. Material changes affecting existing use will be communicated to the account contact before they take effect; changes do not apply retroactively."
+msgstr "Wir können die Integration und diese Bedingungen anpassen, wenn sich ihre Funktionen ändern. Das oben angegebene Datum bezeichnet diese Fassung. Wesentliche Änderungen, die eine bestehende Nutzung betreffen, werden vor ihrem Inkrafttreten dem Kontokontakt mitgeteilt; Änderungen gelten nicht rückwirkend."
+
+msgid "We process data needed to provide an agreed service under Article 6(1)(b) GDPR where you are the contracting party. Administration of team access, hosting visibility and security auditing rely on our legitimate interests in operating a secure project-management service under Article 6(1)(f). Where a legal obligation requires retention or disclosure, Article 6(1)(c) applies. Connecting Vercel grants technical access; it is not blanket consent to unrelated processing."
+msgstr "Daten, die zur Erbringung einer vereinbarten Leistung erforderlich sind, verarbeiten wir auf Grundlage von Artikel 6 Absatz 1 Buchstabe b DSGVO, sofern du Vertragspartei bist. Die Verwaltung von Teamzugängen, die Anzeige von Hostinginformationen und Sicherheitsprotokollierung beruhen auf unserem berechtigten Interesse am sicheren Betrieb eines Projektverwaltungsdienstes gemäß Artikel 6 Absatz 1 Buchstabe f. Erfordert eine gesetzliche Pflicht die Aufbewahrung oder Offenlegung, gilt Artikel 6 Absatz 1 Buchstabe c. Das Verbinden mit Vercel gewährt technischen Zugriff und stellt keine pauschale Einwilligung in sachfremde Verarbeitungen dar."
+
+msgid "Webdock — Project previews & client websites by Spitzli"
+msgstr "Webdock — Projektvorschauen und Kundenwebsites von Spitzli"
+
+msgid "Webdock — Your project. Well docked."
+msgstr "Webdock — Dein Projekt. Gut angedockt."
+
+msgid "Webdock home"
+msgstr "Webdock-Startseite"
+
+msgid "Webdock is run by Dominik at Spitzli Development. From the first idea to deployment, you work directly with the person building your project."
+msgstr "Webdock wird von Dominik bei Spitzli Development betrieben. Von der ersten Idee bis zur Veröffentlichung arbeitest du direkt mit dem Menschen zusammen, der dein Projekt entwickelt."
+
+msgid "Webdock is the project home of Spitzli Development. It gives project previews and client websites their own address under webdock.dev. Development and personal support are handled by Spitzli."
+msgstr "Webdock ist das Projektzuhause von Spitzli Development. Projektvorschauen und Kundenwebsites erhalten eine eigene Adresse unter webdock.dev. Entwicklung und persönliche Betreuung übernimmt Spitzli."
+
+msgid "Webdock Studio · Integration guide"
+msgstr "Webdock Studio · Integrationsanleitung"
+
+msgid "Webdock Studio · Updated {date}"
+msgstr "Webdock Studio · Stand {date}"
+
+msgid "Website"
+msgstr "Website"
+
+msgid "Website content"
+msgstr "Website-Inhalte"
+
+msgid "What is Webdock?"
+msgstr "Was ist Webdock?"
+
+msgid "What the integration does"
+msgstr "Was die Integration macht"
+
+msgid "When an authorised operator connects Vercel, Vercel supplies an access token, team identifier and installation identifier. We store these together with the connecting operator’s identifier and connection time. The token is encrypted before database storage and is used on the server to authenticate API requests."
+msgstr "Wenn ein berechtigter Betreiber Vercel verbindet, stellt Vercel einen Zugriffstoken, eine Teamkennung und eine Installationskennung bereit. Wir speichern diese zusammen mit der Kennung des verbindenden Betreibers und dem Zeitpunkt der Verbindung. Der Token wird vor der Speicherung in der Datenbank verschlüsselt und serverseitig zur Authentifizierung von API-Anfragen verwendet."
+
+msgid "When an operator enables a tenant’s Mail account, Webdock sends the entered account email, first and last name, assigned sending IP and generated account credential to turboSMTP to provision that subaccount. Webdock stores the tenant-to-provider mapping, encrypted credential, account status, limits and usage returned by the provider. Master provider keys are encrypted and are not shown to customers. Provisioning and account changes are audited."
+msgstr "Wenn ein Betreiber das Mailkonto eines Mandanten aktiviert, übermittelt Webdock die eingegebene Konto-E-Mail-Adresse, Vor- und Nachnamen, die zugewiesene Versand-IP sowie generierte Zugangsdaten an turboSMTP, um das Unterkonto einzurichten. Webdock speichert die Zuordnung zwischen Mandant und Anbieter, verschlüsselte Zugangsdaten, Kontostatus sowie vom Anbieter zurückgegebene Limits und Nutzungsdaten. Hauptschlüssel des Anbieters werden verschlüsselt gespeichert und Kunden nicht angezeigt. Einrichtung und Kontoänderungen werden protokolliert."
+
+msgid "When requested by an authorised tenant administrator, sender and tracking domain names are registered with turboSMTP and their verification status is retrieved. Administrators explicitly control open and click tracking; enabling those features lets the provider record recipient opens and link clicks for that tenant’s sending activity. Webdock stores the selected tracking settings and domain verification state."
+msgstr "Auf Anforderung eines berechtigten Mandanten-Admins werden Absender- und Tracking-Domainnamen bei turboSMTP registriert und ihr Prüfstatus abgerufen. Administratoren steuern das Tracking von Öffnungen und Klicks ausdrücklich. Werden diese Funktionen aktiviert, kann der Anbieter Empfängeröffnungen und Linkklicks für die Versandaktivitäten dieses Mandanten erfassen. Webdock speichert die gewählten Tracking-Einstellungen und den Prüfstatus der Domains."
+
+msgid "When you’re ready for your own domain, we’ll work out the connection. The setup grows with your project."
+msgstr "Wenn du für eine eigene Domain bereit bist, kümmern wir uns um die Anbindung. Die Einrichtung wächst mit deinem Projekt."
+
+msgid "Who is responsible"
+msgstr "Wer verantwortlich ist"
+
+msgid "with an authorised platform operator account."
+msgstr "mit einem berechtigten Betreiberkonto an."
+
+msgid "with the affected project and the visible error. Never include passwords, access tokens or environment-variable values."
+msgstr "und nenne das betroffene Projekt und die sichtbare Fehlermeldung. Sende niemals Passwörter, Zugriffstoken oder Werte von Umgebungsvariablen."
+
+msgid "You can stop using the integration at any time. Disconnecting it in Studio deletes Studio’s stored access token. To revoke the installation’s permission at Vercel, also uninstall it in your Vercel team’s integration settings. Project mappings and security audit records are not automatically removed by disconnecting; contact us for a deletion request."
+msgstr "Du kannst die Nutzung der Integration jederzeit beenden. Das Trennen in Studio löscht den dort gespeicherten Zugriffstoken. Um die Installationsberechtigung bei Vercel zu widerrufen, deinstalliere die Integration zusätzlich in den Integrationseinstellungen deines Vercel-Teams. Projektzuordnungen und Sicherheitsprotokolle werden beim Trennen nicht automatisch entfernt. Kontaktiere uns für eine Löschanfrage."
+
+msgid "You retain your rights in your project data. Webdock processes it only as described in the"
+msgstr "Deine Rechte an deinen Projektdaten bleiben bestehen. Webdock verarbeitet sie ausschließlich wie im"
+
+msgid "Your choices and rights"
+msgstr "Deine Möglichkeiten und Rechte"
+
+msgid "Your data and ending access"
+msgstr "Deine Daten und das Beenden des Zugriffs"
+
+msgid "Your project.\nWell docked."
+msgstr "Dein Projekt.\nGut angedockt."
+
+msgid "Your project. Well docked. A home for project previews and client websites by Spitzli Development — on a Webdock subdomain or your own domain."
+msgstr "Dein Projekt. Gut angedockt. Ein Zuhause für Projektvorschauen und Kundenwebsites von Spitzli Development – auf einer Webdock-Subdomain oder deiner eigenen Domain."
+
+msgid "Your subdomain. Or your own domain."
+msgstr "Deine Subdomain. Oder deine eigene Domain."
+
+msgid "Your website. Your place."
+msgstr "Deine Website. Dein Platz."
+
+msgid "and the"
+msgstr "und den"
+
+
+msgid "Your projects. One workspace."
+msgstr "Deine Projekte. Ein Arbeitsbereich."
+
+msgid "Webdock Studio brings websites, content, appointments and design together. Access is by invitation."
+msgstr "Webdock Studio vereint Websites, Inhalte, Termine und Gestaltung. Der Zugang erfolgt auf Einladung."
+
+msgid "How do I access Webdock Studio?"
+msgstr "Wie bekomme ich Zugang zu Webdock Studio?"
+
+msgid "Open Studio"
+msgstr "Studio öffnen"
+
+msgid "Available"
+msgstr "Verfügbar"

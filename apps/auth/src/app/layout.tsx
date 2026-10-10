@@ -1,3 +1,6 @@
+import { getRequestI18n } from "@webdock/i18n/next";
+import { I18nProvider } from "@webdock/i18n/react";
+import { LanguagePicker } from "@webdock/i18n/picker";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Link from "next/link";
@@ -12,37 +15,37 @@ const space = localFont({
   variable: "--font-space",
   display: "swap",
 });
-export const metadata: Metadata = {
-  title: { default: "Webdock Account", template: "%s — Webdock" },
+export async function generateMetadata(): Promise<Metadata> { const { t } = await getRequestI18n(); return {
+  title: { default: t("Webdock Account"), template: "%s — Webdock" },
   robots: { index: false, follow: false },
   referrer: "no-referrer",
-};
+}; }
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
+ const { t, locale, preference } = await getRequestI18n();
   const platform = await publicPlatformSettings();
   return (
-    <html lang="en" className={space.variable}>
-      <body>
+    <html lang={locale} className={space.variable}>
+      <body><I18nProvider locale={locale} preference={preference}>
         <a className="skip-link" href="#main">
-          Skip to content
-        </a>
+          {t("Skip to content")}</a>
         <header className="site-header">
           <Link className="brand" href="/">
             {platform.name}<span>.</span>
           </Link>
-          <nav aria-label="Account">
-            <Link href="/account">Account &amp; security</Link>
-            <Link href="/connections">Connected apps</Link>
-            <a href={studioURL()}>Open Studio</a>
-          </nav>
+          <nav aria-label={t("Account")}>
+            <Link href="/account">{t("Account & security")}</Link>
+            <Link href="/connections">{t("Connected apps")}</Link>
+            <a href={studioURL()}>{t("Open Studio")}</a>
+          </nav><LanguagePicker className="auth-language-picker"/>
         </header>
         <main id="main">{children}</main>
         <footer className="site-footer">
-          Your {platform.name} sign-in and account security.{" "}
-          <a href={`mailto:${platform.supportEmail}`}>Support</a>{" · "}
-          <a href="https://webdock.dev/privacy">Privacy</a>
+          {t("Your {name} sign-in and account security.", {name: platform.name})}{" "}
+          <a href={`mailto:${platform.supportEmail}`}>{t("Support")}</a>{" · "}
+          <a href="https://webdock.dev/privacy">{t("Privacy")}</a>
         </footer>
-      </body>
+      </I18nProvider></body>
     </html>
   );
 }

@@ -1,6 +1,8 @@
+import { getRequestI18n } from "@webdock/i18n/next";
 import type { Metadata } from "next";
+import { studioURL } from "@/lib/studio-links";
 import { TwoFactorForm } from "@/components/auth-forms";
-export const metadata: Metadata = { title: "Verify sign-in" };
+export async function generateMetadata(): Promise<Metadata> { const { t } = await getRequestI18n(); return { title: t("Verify sign-in") }; }
 export default function TwoFactor() {
-  return <TwoFactorForm />;
+  return <TwoFactorForm restartURL={studioURL("/api/sso/login")} />;
 }

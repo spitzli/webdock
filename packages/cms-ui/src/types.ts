@@ -43,6 +43,9 @@ export type RichTextEditorProps = {
   readOnly: boolean;
 };
 export type CMSAppProps = {
+  /** Interface language only; content locale remains selected independently. */
+  uiLocale?: "en" | "de";
+  uiPreference?: "system" | "en" | "de";
   siteName: string;
   siteURL: string;
   accountURL: string;

@@ -76,7 +76,7 @@ export async function saveVercelConnection(
       auditID,
       "integrations",
       connection.teamID,
-      "Connected read-only Vercel integration",
+      "Connected Vercel integration",
     );
     await client.query("COMMIT");
   } catch (error) {

@@ -1,3 +1,4 @@
+import { effectiveHostingAllowances, parseHostingFields, type HostingAllowances } from "@webdock/hosting-contracts";
 import { createHash, randomBytes } from "node:crypto";
 import type { PoolClient } from "pg";
 import { auth } from "./auth";
@@ -6,7 +7,7 @@ import { studioURL } from "./studio-links";
 
 export class PlanError extends Error {}
 export const allowanceKeys = ["storageBytes", "mailMessages", "transferBytes", "websites", "editors"] as const;
-export type Allowances = Record<typeof allowanceKeys[number], number | null>;
+export type Allowances = Record<typeof allowanceKeys[number], number | null> & { hosting?: HostingAllowances };
 export type Plan = { id: string; name: string; description: string; allowances: Allowances; createdAt: string };
 const zero: Allowances = { storageBytes: 0, mailMessages: 0, transferBytes: 0, websites: 0, editors: 0 };
 export const plansSchemaSQL = `
@@ -48,7 +49,7 @@ function textField(value: string | undefined, max: number, required = false) {
   if ((required && !result) || result.length > max || /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(result)) throw new PlanError("Enter valid offer or plan details.");
   return result;
 }
-function parseAllowances(input: Record<string, string>, extras = false): Allowances {
+function parseAllowances(input: Record<string, string>, extras = false, previousHosting?: HostingAllowances): Allowances {
   const fields = [["storageBytes", "storageMB", 1_000_000], ["mailMessages", "mailMessages", 1], ["transferBytes", "transferGB", 1_000_000_000], ["websites", "websites", 1], ["editors", "editors", 1]] as const;
   const result = { ...zero };
   for (const [key, field, multiplier] of fields) {
@@ -63,6 +64,7 @@ function parseAllowances(input: Record<string, string>, extras = false): Allowan
     if (converted > BigInt(Number.MAX_SAFE_INTEGER)) throw new PlanError("Allowances exceed the supported range.");
     result[key] = Number(converted);
   }
+  try { result.hosting = parseHostingFields(input, previousHosting, extras); } catch { throw new PlanError("Enter valid hosting allowances."); }
   return result;
 }
 function effective(base: Allowances, extras: Allowances): Allowances {
@@ -71,6 +73,7 @@ function effective(base: Allowances, extras: Allowances): Allowances {
     result[key] = base[key] === null ? null : base[key] + (extras[key] || 0);
     if (result[key] !== null && !Number.isSafeInteger(result[key])) throw new PlanError("Combined allowance exceeds the supported range.");
   }
+  try { result.hosting = effectiveHostingAllowances(base.hosting, extras.hosting); } catch { throw new PlanError("Combined hosting allowance exceeds the supported range."); }
   return result;
 }
 async function actor(headers: Headers, connection: Connection = database, lock = false, subject?: string) {
@@ -148,15 +151,15 @@ export async function managePlans(headers: Headers, input: Record<string, string
         checkRevision(input.revision, revision);
         if (input.action === "extras") {
           if (!current) throw new PlanError("Assign a plan before adding extra allowances.");
-          await saveSubscription(connection, customerID, { ...current, id: current.plan_id }, parseAllowances(input, true), revision, user.id);
+          await saveSubscription(connection, customerID, { ...current, id: current.plan_id }, parseAllowances(input, true, current.extras?.hosting), revision, user.id);
         } else {
           const plan = input.planID ? (await connection.query("SELECT * FROM webdock_auth.plan_template WHERE id=$1", [id(input.planID)])).rows[0] : null;
           if ((input.planID && !plan) || (input.action === "assign" && !plan)) throw new PlanError("Plan not found.");
           if (input.action === "assign") {
-            await saveSubscription(connection, customerID, { ...plan, base: plan.allowances }, current?.extras || zero, revision, user.id);
+            await saveSubscription(connection, customerID, { ...plan, base: { ...plan.allowances, hosting: plan.allowances.hosting ?? current?.base?.hosting } }, current?.extras || zero, revision, user.id);
           } else {
             const name = textField(input.name || plan?.name, 160, true), description = textField(input.description ?? plan?.description, 4000);
-            const base = parseAllowances(input); effective(base, current?.extras || zero);
+            const base = parseAllowances(input, false, plan?.allowances?.hosting ?? current?.base?.hosting); effective(base, current?.extras || zero);
             const days = input.expiresDays || "14";
             if (!/^\d+$/.test(days) || Number(days) < 1 || Number(days) > 90) throw new PlanError("Offer expiry must be between 1 and 90 days.");
             const token = randomBytes(32).toString("base64url");

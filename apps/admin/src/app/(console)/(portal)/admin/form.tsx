@@ -1,20 +1,24 @@
 "use client";
+import { useI18n } from '@webdock/i18n/react';
+
 
 import { useActionState } from "react";
 import type { PlatformSettings } from "@/lib/platform";
 import { adminAction, type AdminState } from "./actions";
 
 function Feedback({ state }: { state: AdminState }) {
+  const i18n = useI18n();
+
   return (
     <>
       {state.error && (
         <p className="notice error" role="alert">
-          {state.error}
+          {i18n.error(state.error)}
         </p>
       )}
       {state.message && (
         <p className="notice" role="status">
-          {state.message}
+          {i18n.error(state.message, "Changes saved.")}
         </p>
       )}
     </>
@@ -28,6 +32,8 @@ export function AdminForms({
   settings: PlatformSettings;
   connection: { configured: boolean; consumerKeySuffix?: string };
 }) {
+  const i18n = useI18n();
+
   const [settingsState, settingsAction, saving] = useActionState(
     adminAction,
     {},
@@ -39,21 +45,17 @@ export function AdminForms({
   return (
     <div className="access-grid">
       <section className="auth-panel" aria-labelledby="settings-heading">
-        <h2 id="settings-heading">Platform settings</h2>
+        <h2 id="settings-heading">{i18n.t("Platform settings")}</h2>
         <form className="access-form" action={settingsAction}>
           <input type="hidden" name="action" value="settings" />
-          <label className="field">
-            Display name
-            <input
+          <label className="field">{i18n.t("Display name")}<input
               name="name"
               defaultValue={settings.name}
               required
               maxLength={80}
             />
           </label>
-          <label className="field">
-            Support email
-            <input
+          <label className="field">{i18n.t("Support email")}<input
               name="supportEmail"
               type="email"
               defaultValue={settings.supportEmail}
@@ -61,41 +63,26 @@ export function AdminForms({
               maxLength={254}
             />
           </label>
-          <p className="muted">
-            Used for account branding and authentication emails.
-          </p>
-          <h3>CMS</h3>
+          <p className="muted">{i18n.t("Used for account branding and authentication emails.")}</p>
+          <h3>{i18n.t("CMS")}</h3>
           <label className="check">
             <input
               type="checkbox"
               name="cmsEnabled"
               value="yes"
               defaultChecked={settings.cmsEnabled}
-            />{" "}
-            Enable CMS access for customers
-          </label>
-          <p className="muted">
-            Controls customer sign-in and editing access to connected content
-            managers. Public websites and operator maintenance access stay
-            available.
-          </p>
-          <h3>Tenant Mail</h3>
+            />{" "}{i18n.t("Enable CMS access for customers")}</label>
+          <p className="muted">{i18n.t("Controls customer sign-in and editing access to connected content managers. Public websites and operator maintenance access stay available.")}</p>
+          <h3>{i18n.t("Tenant Mail")}</h3>
           <label className="check">
             <input
               type="checkbox"
               name="mailEnabled"
               value="yes"
               defaultChecked={settings.mailEnabled}
-            />{" "}
-            Enable Mail for tenants
-          </label>
-          <p className="muted">
-            Controls tenant Mail operations. Turning this off does not disable
-            account verification, password reset or invitation emails.
-          </p>
-          <label className="field">
-            Assigned sending IPv4 address
-            <input
+            />{" "}{i18n.t("Enable Mail for tenants")}</label>
+          <p className="muted">{i18n.t("Controls tenant Mail operations. Turning this off does not disable account verification, password reset or invitation emails.")}</p>
+          <label className="field">{i18n.t("Assigned sending IPv4 address")}<input
               name="mailSendingIP"
               defaultValue={settings.mailSendingIP}
               placeholder="203.0.113.10"
@@ -103,13 +90,8 @@ export function AdminForms({
               aria-describedby="sending-ip-help"
             />
           </label>
-          <p id="sending-ip-help" className="muted">
-            Use the sending IP assigned by turboSMTP. It is required before
-            provisioning tenant Mail accounts.
-          </p>
-          <label className="field">
-            Default email limit
-            <input
+          <p id="sending-ip-help" className="muted">{i18n.t("Use the sending IP assigned by turboSMTP. It is required before provisioning tenant Mail accounts.")}</p>
+          <label className="field">{i18n.t("Default email limit")}<input
               name="mailDefaultLimit"
               type="number"
               min={0}
@@ -119,44 +101,37 @@ export function AdminForms({
               required
             />
           </label>
-          <label className="field">
-            Mail region
-            <select name="mailRegion" defaultValue={settings.mailRegion}>
-              <option value="eu">Europe</option>
-              <option value="global">Global</option>
+          <label className="field">{i18n.t("Mail region")}<select name="mailRegion" defaultValue={settings.mailRegion}>
+              <option value="eu">{i18n.t("Europe")}</option>
+              <option value="global">{i18n.t("Global")}</option>
             </select>
           </label>
           <Feedback state={settingsState} />
           <button className="button" disabled={saving}>
-            {saving ? "Saving…" : "Save settings"}
+            {saving ? i18n.t("Saving…") : i18n.t("Save settings")}
           </button>
         </form>
       </section>
       <section className="auth-panel" aria-labelledby="mail-heading">
-        <h2 id="mail-heading">Mail provider</h2>
-        <p>
-          Connect the turboSMTP master account used to manage tenant Mail
-          accounts.
-        </p>
+        <h2 id="mail-heading">{i18n.t("Mail provider")}</h2>
+        <p>{i18n.t("Connect the turboSMTP master account used to manage tenant Mail accounts.")}</p>
         <p>
           <a
             href="https://dashboard.serversmtp.com"
             target="_blank"
             rel="noopener noreferrer"
-          >
-            Open turboSMTP dashboard ↗
-          </a>
+          >{i18n.t("Open turboSMTP dashboard ↗")}</a>
         </p>
         <p className="notice" role="status">
           {connection.configured
-            ? `Credentials configured${connection.consumerKeySuffix ? ` · Key ending in ${connection.consumerKeySuffix}` : ""}`
-            : "No credentials configured"}
+            ? i18n.t("Credentials configured") + (connection.consumerKeySuffix ? i18n.t(" · Key ending in {suffix}",{suffix:connection.consumerKeySuffix}) : "")
+            : i18n.t("No credentials configured")}
         </p>
         <details open={!connection.configured}>
           <summary>
             {connection.configured
-              ? "Replace provider credentials"
-              : "Connect provider credentials"}
+              ? i18n.t("Replace provider credentials")
+              : i18n.t("Connect provider credentials")}
           </summary>
           <form
             className="access-form"
@@ -164,41 +139,30 @@ export function AdminForms({
             autoComplete="off"
           >
             <input type="hidden" name="action" value="credentials" />
-            <label className="field">
-              Consumer key
-              <input
+            <label className="field">{i18n.t("Consumer key")}<input
                 name="consumerKey"
                 type="password"
                 autoComplete="new-password"
                 required
               />
             </label>
-            <label className="field">
-              Consumer secret
-              <input
+            <label className="field">{i18n.t("Consumer secret")}<input
                 name="consumerSecret"
                 type="password"
                 autoComplete="new-password"
                 required
               />
             </label>
-            <p className="muted">
-              Saved credentials are never displayed. Leave these fields
-              untouched to keep the current credentials; saving platform
-              settings does not replace them.
-            </p>
+            <p className="muted">{i18n.t("Saved credentials are never displayed. Leave these fields untouched to keep the current credentials; saving platform settings does not replace them.")}</p>
             <Feedback state={credentialsState} />
             <button className="button" disabled={savingCredentials || clearing}>
-              {savingCredentials ? "Saving…" : "Save credentials"}
+              {savingCredentials ? i18n.t("Saving…") : i18n.t("Save credentials")}
             </button>
           </form>
         </details>
         <form className="access-form" action={testAction}>
           <input type="hidden" name="action" value="test" />
-          <p className="muted">
-            Test the saved connection by reading the provider account list. No
-            email is sent.
-          </p>
+          <p className="muted">{i18n.t("Test the saved connection by reading the provider account list. No email is sent.")}</p>
           <Feedback state={testState} />
           <button
             className="button secondary"
@@ -206,30 +170,24 @@ export function AdminForms({
               !connection.configured || testing || savingCredentials || clearing
             }
           >
-            {testing ? "Testing…" : "Test connection"}
+            {testing ? i18n.t("Testing…") : i18n.t("Test connection")}
           </button>
         </form>
         {connection.configured && (
           <details>
-            <summary>Remove provider connection</summary>
+            <summary>{i18n.t("Remove provider connection")}</summary>
             <form className="access-form" action={clearAction}>
               <input type="hidden" name="action" value="clear" />
-              <h3>Remove credentials</h3>
-              <p className="muted">
-                Removing master credentials disables new live Mail operations.
-                Existing provider accounts are not deleted. Revoke the key
-                separately in turboSMTP if it should no longer be valid.
-              </p>
+              <h3>{i18n.t("Remove credentials")}</h3>
+              <p className="muted">{i18n.t("Removing master credentials disables new live Mail operations. Existing provider accounts are not deleted. Revoke the key separately in turboSMTP if it should no longer be valid.")}</p>
               <label className="check">
-                <input name="confirm" type="checkbox" value="yes" required /> I
-                want to remove the saved Mail credentials.
-              </label>
+                <input name="confirm" type="checkbox" value="yes" required />{i18n.t(" I want to remove the saved Mail credentials.")}</label>
               <Feedback state={clearState} />
               <button
                 className="button secondary"
                 disabled={clearing || savingCredentials}
               >
-                {clearing ? "Removing…" : "Remove credentials"}
+                {clearing ? i18n.t("Removing…") : i18n.t("Remove credentials")}
               </button>
             </form>
           </details>

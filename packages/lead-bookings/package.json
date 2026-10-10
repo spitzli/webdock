@@ -1,0 +1,17 @@
+{
+  "name": "@webdock/lead-bookings",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./model": "./src/model.ts",
+    "./calendar": "./src/calendar.ts"
+  },
+  "peerDependencies": {
+    "payload": "4.0.0-canary.37"
+  },
+  "scripts": {
+    "test": "node --import tsx --test tests/*.test.ts"
+  }
+}

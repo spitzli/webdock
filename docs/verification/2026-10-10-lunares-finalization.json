@@ -1,0 +1,578 @@
+{
+  "checked_at": "2026-10-10T10:14:45.884745+00:00",
+  "modules": [
+    {
+      "file": "cogs/__init__.py",
+      "loaded_in_current_pod": false,
+      "commands": [],
+      "listeners": [],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/add_role.py",
+      "loaded_in_current_pod": true,
+      "commands": [
+        {
+          "handler": "role",
+          "declaration": "app_commands.command(name='role', description='Öffnet ein Panel, um Rollen zu bestehenden Mitgliedern hinzuzufügen.')",
+          "line": 214
+        }
+      ],
+      "listeners": [],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/application_system.py",
+      "loaded_in_current_pod": true,
+      "commands": [],
+      "listeners": [
+        "on_raw_message_delete",
+        "on_raw_bulk_message_delete"
+      ],
+      "panel_verified": "Read/configuration views verified; live writes explicitly deferred",
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/automod.py",
+      "loaded_in_current_pod": true,
+      "commands": [],
+      "listeners": [
+        "on_message"
+      ],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/birthday_command.py",
+      "loaded_in_current_pod": false,
+      "commands": [
+        {
+          "handler": "geburtstag",
+          "declaration": "app_commands.command(name='geburtstag', description='Deinen Geburtstag im Format TT.MM speichern')",
+          "line": 31
+        }
+      ],
+      "listeners": [],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/bug_support.py",
+      "loaded_in_current_pod": true,
+      "commands": [],
+      "listeners": [
+        "on_ready",
+        "on_thread_update",
+        "on_message"
+      ],
+      "panel_verified": "Read/configuration views verified; live writes explicitly deferred",
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/channellog.py",
+      "loaded_in_current_pod": true,
+      "commands": [
+        {
+          "handler": "channellog",
+          "declaration": "app_commands.command(name='channellog', description='Erstellt einen strukturierten Eintrag im Lunares-Channellog.')",
+          "line": 286
+        }
+      ],
+      "listeners": [],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/clear.py",
+      "loaded_in_current_pod": true,
+      "commands": [
+        {
+          "handler": "clear",
+          "declaration": "app_commands.command(name='clear', description='Löscht alle löschbaren Nachrichten im aktuellen Kanal.')",
+          "line": 32
+        }
+      ],
+      "listeners": [],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/community_bridge.py",
+      "loaded_in_current_pod": true,
+      "commands": [
+        {
+          "handler": "geburtstag",
+          "declaration": "app_commands.command(name='geburtstag', description='Setzt oder entfernt deinen Geburtstag.')",
+          "line": 212
+        }
+      ],
+      "listeners": [
+        "on_member_join",
+        "on_member_remove"
+      ],
+      "panel_verified": "Read/configuration views verified; live writes explicitly deferred",
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/config_command.py",
+      "loaded_in_current_pod": true,
+      "commands": [
+        {
+          "handler": "config_command",
+          "declaration": "app_commands.command(name='config', description='Öffnet das Lunares-Konfigurationszentrum.')",
+          "line": 889
+        }
+      ],
+      "listeners": [],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/db_export.py",
+      "loaded_in_current_pod": true,
+      "commands": [
+        {
+          "handler": "export",
+          "declaration": "app_commands.command(name='export', description='Exportiert die Lunares-Datenbank als private ZIP-Sicherung.')",
+          "line": 57
+        }
+      ],
+      "listeners": [],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/disboard_bump.py",
+      "loaded_in_current_pod": true,
+      "commands": [],
+      "listeners": [
+        "on_message"
+      ],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/end_ticket.py",
+      "loaded_in_current_pod": true,
+      "commands": [],
+      "listeners": [],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/english.py",
+      "loaded_in_current_pod": true,
+      "commands": [
+        {
+          "handler": "englisch",
+          "declaration": "app_commands.command(name='englisch', description='Übersetzt die letzte Nachricht ins Englische.')",
+          "line": 74
+        }
+      ],
+      "listeners": [],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/full_bot_logger.py",
+      "loaded_in_current_pod": true,
+      "commands": [],
+      "listeners": [
+        "on_message",
+        "on_app_command_completion",
+        "on_app_command_error",
+        "on_command_completion",
+        "on_command_error",
+        "on_member_join",
+        "on_member_remove",
+        "on_member_update",
+        "on_message_delete",
+        "on_bulk_message_delete",
+        "on_message_edit",
+        "on_reaction_add",
+        "on_reaction_remove",
+        "on_guild_channel_create",
+        "on_guild_channel_delete",
+        "on_guild_channel_update",
+        "on_guild_role_create",
+        "on_guild_role_delete",
+        "on_guild_role_update",
+        "on_member_ban",
+        "on_member_unban",
+        "on_guild_update"
+      ],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/member_community.py",
+      "loaded_in_current_pod": false,
+      "commands": [
+        {
+          "handler": "memberpanel",
+          "declaration": "app_commands.command(name='memberpanel', description='Sendet das Mitglieder-Ticket-Panel')",
+          "line": 246
+        },
+        {
+          "handler": "birthday",
+          "declaration": "app_commands.command(name='birthday', description='Setzt deinen Geburtstag, z. B. 24.12 oder aus')",
+          "line": 255
+        },
+        {
+          "handler": "rank",
+          "declaration": "app_commands.command(name='rank', description='Zeigt Level und XP')",
+          "line": 267
+        },
+        {
+          "handler": "leaderboard",
+          "declaration": "app_commands.command(name='leaderboard', description='Zeigt die Level-Rangliste')",
+          "line": 275
+        },
+        {
+          "handler": "test",
+          "declaration": "app_commands.command(name='test', description='Testet Welcome, Farewell, Geburtstag, Level-Up, Tickets, Logs oder AutoRole')",
+          "line": 293
+        }
+      ],
+      "listeners": [
+        "on_member_join",
+        "on_member_remove",
+        "on_message"
+      ],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/member_suite.py",
+      "loaded_in_current_pod": true,
+      "commands": [
+        {
+          "handler": "memberpanel",
+          "declaration": "app_commands.command(name='memberpanel', description='Sendet das Panel für Mitglieder-Tickets.')",
+          "line": 250
+        },
+        {
+          "handler": "birthday",
+          "declaration": "app_commands.command(name='birthday', description='Setzt oder entfernt deinen Geburtstag (z. B. 24.12).')",
+          "line": 261
+        },
+        {
+          "handler": "level",
+          "declaration": "app_commands.command(name='level', description='Zeigt dein aktuelles Level und deine XP.')",
+          "line": 305
+        },
+        {
+          "handler": "rank",
+          "declaration": "app_commands.command(name='rank', description='Zeigt dein aktuelles Level und deine XP.')",
+          "line": 311
+        },
+        {
+          "handler": "leaderboard",
+          "declaration": "app_commands.command(name='leaderboard', description='Zeigt die besten Mitglieder nach Level und XP.')",
+          "line": 317
+        }
+      ],
+      "listeners": [
+        "on_message"
+      ],
+      "panel_verified": "Read/configuration views verified; live writes explicitly deferred",
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/member_suite_dashboard.py",
+      "loaded_in_current_pod": false,
+      "commands": [
+        {
+          "handler": "memberpanel",
+          "declaration": "app_commands.command(name='memberpanel', description='Sendet das Mitglieder-Ticket-Panel')",
+          "line": 236
+        },
+        {
+          "handler": "birthday",
+          "declaration": "app_commands.command(name='birthday', description='Setzt deinen Geburtstag, z. B. 24.12; mit aus löschen')",
+          "line": 245
+        },
+        {
+          "handler": "rank",
+          "declaration": "app_commands.command(name='rank', description='Zeigt Level und XP')",
+          "line": 259
+        },
+        {
+          "handler": "leaderboard",
+          "declaration": "app_commands.command(name='leaderboard', description='Zeigt die Level-Rangliste')",
+          "line": 272
+        }
+      ],
+      "listeners": [
+        "on_member_join",
+        "on_member_remove",
+        "on_message"
+      ],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/react_roles.py",
+      "loaded_in_current_pod": true,
+      "commands": [],
+      "listeners": [],
+      "panel_verified": "Read/configuration views verified; live writes explicitly deferred",
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/role_timers.py",
+      "loaded_in_current_pod": true,
+      "commands": [],
+      "listeners": [
+        "on_member_update"
+      ],
+      "panel_verified": "Read/configuration views verified; live writes explicitly deferred",
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/rules.py",
+      "loaded_in_current_pod": true,
+      "commands": [],
+      "listeners": [
+        "on_member_update",
+        "on_ready"
+      ],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/social_posts.py",
+      "loaded_in_current_pod": false,
+      "commands": [],
+      "listeners": [
+        "on_message"
+      ],
+      "panel_verified": "Read/configuration views verified; live writes explicitly deferred",
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/test_commands.py",
+      "loaded_in_current_pod": true,
+      "commands": [
+        {
+          "handler": "test",
+          "declaration": "app_commands.command(name='test', description='Führt eine Lunares-Funktion wie im echten Betrieb aus.')",
+          "line": 53
+        }
+      ],
+      "listeners": [],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/ticket_close.py",
+      "loaded_in_current_pod": true,
+      "commands": [
+        {
+          "handler": "ende",
+          "declaration": "app_commands.command(name='ende', description='Schließt ein normales Moderations-Ticket ab.')",
+          "line": 93
+        }
+      ],
+      "listeners": [],
+      "panel_verified": "Read/configuration views verified; live writes explicitly deferred",
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/ticket_panel.py",
+      "loaded_in_current_pod": true,
+      "commands": [
+        {
+          "handler": "panel",
+          "declaration": "app_commands.command(name='panel', description='Sendet oder aktualisiert das Ticket-Panel im Support-Kanal.')",
+          "line": 48
+        }
+      ],
+      "listeners": [],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    },
+    {
+      "file": "cogs/update_announcements.py",
+      "loaded_in_current_pod": true,
+      "commands": [],
+      "listeners": [
+        "on_ready"
+      ],
+      "panel_verified": false,
+      "functionality_verified": "Loaded in production; individual command/Discord side effects not live-tested. See module_scope and remaining_limits."
+    }
+  ],
+  "findings": [
+    "Stale PostgreSQL pool connection causes first request 503 AdminShutdown; local regression and checkout health check added, not deployed.",
+    "Three ticket families: moderation tickets, bug/report support threads, community member tickets.",
+    "Support owner rows are deleted on close; persistent support inventory added locally, not deployed.",
+    "Moderation close can mark database closed before transcript/channel finalization succeeds.",
+    "Member-ticket close updates database before Discord and does not revoke write permission.",
+    "Production application verification restoration logged errors; investigation pending."
+  ],
+  "status": "DEPLOYED_WITH_EXPLICIT_LIMITS",
+  "ticket_delivery": {
+    "checkedAt": "2026-10-10T09:47:31.174896+00:00",
+    "deploymentID": "dpl_2YBwPyHn1DJN7PgATX7NqfynLAEA",
+    "functionRoutes": 39,
+    "verifiedFunctionRegions": [
+      "fra1"
+    ],
+    "sourceBuild": "local_prebuilt",
+    "globalArtifactProcessing": true,
+    "botImage": "webdock.local/lunares@sha256:a1999ce8da870e82140aa4dace9449b8f28e626f44f511b22152c863e84b3d42",
+    "readyReplicas": 1,
+    "podRestarts": 0,
+    "pythonTests": 64,
+    "webTests": 35,
+    "browserLocalAdmin": true,
+    "moderationTickets": 4,
+    "supportTicketsReachable": 5,
+    "memberTickets": 0,
+    "supportDetailMessagesRendered": 11,
+    "mobileWidth": 390,
+    "horizontalOverflow": false,
+    "liveWrites": "User requested simulations only; real Discord write verification remains open",
+    "outstanding": "10 transcript channels without current ticket mapping; safe historical inventory enrichment in progress"
+  },
+  "module_validation": {
+    "pythonTests": 99,
+    "webTests": 36,
+    "typescript": "passed",
+    "localProductionBuild": "passed",
+    "offlineContainerCogsLoaded": 21,
+    "discordWriteTests": "simulated only, per explicit user instruction",
+    "review": "two independent review passes; findings corrected and regression tested",
+    "settingsRegression": "Existing empty self-role configuration neither rewrites on read nor resurrects legacy categories."
+  },
+  "module_scope": {
+    "tickets": "moderation, support/report/bug, member; historical archives unknown-state; shared close/claim/release services, journal, transcript/HTML download",
+    "applications": "server pagination/filter, decisions, jobs, questions, verification questions, panels, explicit publish",
+    "community": "existing persistent preferences, roles/channels validated, changed fields only, atomic batch",
+    "self-roles": "categories, assignments, publication, stale callbacks rejected; channel move blocked for published messages",
+    "social": "safe preferences and blocked-runtime status; polling/network not activated",
+    "system": "loaded cogs/extensions/commands/background tasks; admin business JSON export excluding secrets/settings"
+  },
+  "remaining_limits": [
+    "No real Discord write tests: explicitly deferred by user.",
+    "Social polling disabled and external Google/Twitch network access blocked; no activation or external checks.",
+    "Uncertain partial ticket operations require manual Discord/journal reconciliation; never clear or repeat blindly.",
+    "Legacy Discord /config does not participate in the workspace optimistic lock; settings batches are atomic but external concurrent edits are not fully CAS-coordinated.",
+    "System exposes diagnostics/export; existing ad-hoc moderation commands remain in Discord.",
+    "Vercel Functions in fra1; artifact handling/CDN/control plane remain global, no EU-only guarantee."
+  ],
+  "browser": {
+    "identity": "local admin",
+    "desktopWidth": 1280,
+    "mobileWidth": 390,
+    "horizontalOverflow": false,
+    "applicationManagementForms": 32,
+    "communityFieldsIncludingConfirmation": 39,
+    "selfRoleCategories": 7,
+    "selfRoleManagementForms": 30,
+    "socialPreferencesForms": 1,
+    "systemDiagnostics": true,
+    "businessExport": {
+      "status": 200,
+      "anonymousStatus": 403,
+      "settingsIncluded": false,
+      "cacheControl": "private, no-store"
+    },
+    "missingHtmlArchiveStatus": 404,
+    "historicalArchivesUnknownState": 10,
+    "readOnlyTests": true,
+    "dashboardConnected": true
+  },
+  "businessDataPreservation": {
+    "applications": {
+      "unchanged": true,
+      "rows": 21
+    },
+    "tickets": {
+      "unchanged": true,
+      "rows": 4
+    },
+    "ticket_targets": {
+      "unchanged": true,
+      "rows": 4
+    },
+    "application_jobs": {
+      "unchanged": true,
+      "rows": 2
+    },
+    "application_questions": {
+      "unchanged": true,
+      "rows": 16
+    },
+    "application_panels": {
+      "unchanged": true,
+      "rows": 1
+    },
+    "member_tickets": {
+      "unchanged": true,
+      "rows": 0
+    },
+    "transcript_messages": {
+      "unchanged": true,
+      "rows": 299
+    }
+  },
+  "artifactSafety": {
+    "clientFilesScanned": 38,
+    "privateValuesFound": false,
+    "envOrSqliteFilesInImage": false
+  },
+  "panelDeployment": {
+    "id": "dpl_HKTMQM93NX7mn66kp1DtVc7G68WD",
+    "url": "https://admin.schattenclan.de",
+    "status": "READY",
+    "verifiedFunctionRoutes": 43,
+    "deployedTo": [
+      "fra1"
+    ],
+    "sourceBuild": "local_prebuilt",
+    "globalArtifactProcessing": true
+  },
+  "runtimeCodeHash": {
+    "cogs/react_roles.py": "f2dc22a7730d75aed8be50dd26da1267c42e52af182901e863e614dedae1af4c",
+    "matchesLocal": true
+  },
+  "initialProduction": {
+    "replicas": 1,
+    "ready": 1,
+    "restarts": 0,
+    "image": "webdock.local/lunares@sha256:209a872f377fdf306d5260ff1857732bb37a0c5f251049d118ed7be0f2653abb",
+    "signed_api": "connected",
+    "panel_session": "local admin",
+    "applications": {
+      "total": 21,
+      "accepted": 17,
+      "rejected": 4,
+      "pending": 0
+    },
+    "social_polling": false,
+    "legacy_http_dashboards": false
+  },
+  "production": {
+    "panelDeploymentID": "dpl_HKTMQM93NX7mn66kp1DtVc7G68WD",
+    "panelReady": true,
+    "functionRoutes": 43,
+    "functionRegions": [
+      "fra1"
+    ],
+    "botImage": "webdock.local/lunares@sha256:9b4d54f7d0341717e98749233576dcf92e03a474e09a124dab190a453f84e8a8",
+    "webdockRevision": 17,
+    "webdockObservedRevision": 17,
+    "webdockStatus": "ready",
+    "operationID": "102346815944265728",
+    "operationOutcome": "succeeded",
+    "replicas": 1,
+    "readyReplicas": 1,
+    "restarts": 0,
+    "signedApi": "connected",
+    "localAdminSessionVerified": true
+  }
+}

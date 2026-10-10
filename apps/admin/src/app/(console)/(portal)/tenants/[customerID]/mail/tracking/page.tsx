@@ -1,15 +1,20 @@
+import {msgid} from '@webdock/i18n';
+
+import { getRequestI18n } from '@webdock/i18n/next';
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { AccessError } from "@/lib/access-management";
 import { getTenantTracking } from "@/lib/mail-tracking";
 import { TrackingForm } from "./form";
-export const metadata = { title: "Mail tracking" };
+export async function generateMetadata(){ const i18n = await getRequestI18n(); return { title: i18n.t("Mail tracking") }; }
 export default async function Tracking({
   params,
 }: {
   params: Promise<{ customerID: string }>;
 }) {
+  const i18n = await getRequestI18n();
+
   const { customerID } = await params,
     requestHeaders = await headers();
   if (!(await auth.api.getSession({ headers: requestHeaders })))
@@ -28,37 +33,29 @@ export default async function Tracking({
     <div className="access-page">
       <header className="account-heading">
         <div>
-          <h1>Mail tracking</h1>
+          <h1>{i18n.t("Mail tracking")}</h1>
           <p>
-            {data.tenant.name} · Track opens and clicks with your own domain.
-          </p>
+            {data.tenant.name}{i18n.t(" · Track opens and clicks with your own domain.")}</p>
         </div>
       </header>
       {data.unavailable && (
         <p className="notice">
-          {data.unavailable} Contact your Webdock operator to complete setup.
-        </p>
+          {i18n.error(data.unavailable)}{i18n.t(" Contact your Webdock operator to complete setup.")}</p>
       )}
       <section className="auth-panel">
-        <h2>Tracking settings</h2>
-        <p className="muted">
-          Values show the last successful provider check. No email is sent from
-          this screen.
-        </p>
+        <h2>{i18n.t("Tracking settings")}</h2>
+        <p className="muted">{i18n.t("Values show the last successful provider check. No email is sent from this screen.")}</p>
         {data.checkedAt && (
-          <p>
-            Last checked:{" "}
-            {new Date(data.checkedAt).toLocaleString("en-GB", {
+          <p>{i18n.t("Last checked:")}{" "}
+            {new Date(data.checkedAt).toLocaleString(i18n.locale === "de" ? "de-DE" : "en-GB", {
               timeZone: "UTC",
-            })}{" "}
-            UTC
-          </p>
+            })}{" "}{i18n.t("UTC")}</p>
         )}
         {editable && (
           <TrackingForm
             customer={customerID}
             action="refresh"
-            label="Refresh tracking status"
+            label={i18n.t("Refresh tracking status")}
           />
         )}
         <div className="access-grid">
@@ -66,13 +63,13 @@ export default async function Tracking({
             [
               [
                 "opening",
-                "Open tracking",
+                msgid("Open tracking"),
                 data.settings?.opening.enabled,
                 data.settings?.opening.forced,
               ],
               [
                 "click",
-                "Click tracking",
+                msgid("Click tracking"),
                 data.settings?.click.enabled,
                 data.settings?.click.forced,
               ],
@@ -84,37 +81,33 @@ export default async function Tracking({
               ],
               [
                 "matchSender",
-                "Match sender domain",
+                msgid("Match sender domain"),
                 data.settings?.info.match_sender,
                 false,
               ],
             ] as const
           ).map(([setting, label, enabled, forced]) => (
             <article className="access-record" key={setting}>
-              <h3>{label}</h3>
+              <h3>{i18n.t(label)}</h3>
               <p>
                 {enabled == null
-                  ? "Status unavailable — refresh to check"
+                  ? i18n.t("Status unavailable — refresh to check")
                   : enabled
-                    ? "Enabled"
-                    : "Disabled"}
-                {forced ? " · Required by account policy" : ""}
+                    ? i18n.t("Enabled")
+                    : i18n.t("Disabled")}
+                {forced ? i18n.t(" · Required by account policy") : ""}
               </p>
               {editable && !forced && (
                 <TrackingForm
                   customer={customerID}
                   action="setting"
-                  label={`Update ${label.toLowerCase()}`}
+                  label={i18n.t("Update {setting}",{setting:i18n.t(label)})}
                 >
                   <input type="hidden" name="setting" value={setting} />
-                  <label className="field">
-                    Choose state
-                    <select name="value" defaultValue="" required>
-                      <option value="" disabled>
-                        Select a state
-                      </option>
-                      <option value="yes">Enabled</option>
-                      <option value="no">Disabled</option>
+                  <label className="field">{i18n.t("Choose state")}<select name="value" defaultValue="" required>
+                      <option value="" disabled>{i18n.t("Select a state")}</option>
+                      <option value="yes">{i18n.t("Enabled")}</option>
+                      <option value="no">{i18n.t("Disabled")}</option>
                     </select>
                   </label>
                 </TrackingForm>
@@ -125,30 +118,25 @@ export default async function Tracking({
         {data.settings && (
           <p className="muted">
             {data.settings.info.all_domains_disabled
-              ? "All custom domains are disabled."
-              : "At least one custom domain is enabled."}{" "}
+              ? i18n.t("All custom domains are disabled.")
+              : i18n.t("At least one custom domain is enabled.")}{" "}
             {data.settings.info.no_default_domain
-              ? "No default tracking domain is selected."
-              : "A default tracking domain is selected."}
+              ? i18n.t("No default tracking domain is selected.")
+              : i18n.t("A default tracking domain is selected.")}
           </p>
         )}
       </section>
       <section className="account-section">
-        <h2>Custom tracking domains</h2>
-        <p>
-          Use a subdomain of a verified sender domain. Creating it does not
-          enable open or click tracking.
-        </p>
+        <h2>{i18n.t("Custom tracking domains")}</h2>
+        <p>{i18n.t("Use a subdomain of a verified sender domain. Creating it does not enable open or click tracking.")}</p>
         {editable &&
           (data.senders.length ? (
             <TrackingForm
               customer={customerID}
               action="create"
-              label="Create tracking domain"
+              label={i18n.t("Create tracking domain")}
             >
-              <label className="field">
-                Sender domain
-                <select name="senderDomainID" required>
+              <label className="field">{i18n.t("Sender domain")}<select name="senderDomainID" required>
                   {data.senders.map((sender) => (
                     <option key={sender.id} value={sender.id}>
                       {sender.domain}
@@ -156,9 +144,7 @@ export default async function Tracking({
                   ))}
                 </select>
               </label>
-              <label className="field">
-                Subdomain prefix
-                <input
+              <label className="field">{i18n.t("Subdomain prefix")}<input
                   name="prefix"
                   defaultValue="links"
                   required
@@ -166,15 +152,10 @@ export default async function Tracking({
                   pattern="[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?"
                 />
               </label>
-              <p className="muted">
-                For example, links with example.com creates links.example.com.
-              </p>
+              <p className="muted">{i18n.t("For example, links with example.com creates links.example.com.")}</p>
             </TrackingForm>
           ) : (
-            <p>
-              Add and verify a sender domain in Mail before creating a tracking
-              domain.
-            </p>
+            <p>{i18n.t("Add and verify a sender domain in Mail before creating a tracking domain.")}</p>
           ))}
         <div className="access-grid">
           {data.domains.map((domain) => (
@@ -182,17 +163,14 @@ export default async function Tracking({
               <h3>{domain.domain}</h3>
               {!domain.mapped ? (
                 <>
-                  <p className="notice">
-                    Creation needs reconciliation. Refresh to find the reserved
-                    domain; do not create another copy.
-                  </p>
+                  <p className="notice">{i18n.t("Creation needs reconciliation. Refresh to find the reserved domain; do not create another copy.")}</p>
                   {editable &&
                     (domain.cancellable ? (
                       <TrackingForm
                         customer={customerID}
                         action="cancel-reservation"
-                        label="Cancel unused reservation"
-                        confirm="Cancel this reservation only if the provider confirms no matching tracking domain exists."
+                        label={i18n.t("Cancel unused reservation")}
+                        confirm={i18n.t("Cancel this reservation only if the provider confirms no matching tracking domain exists.")}
                       >
                         <input
                           type="hidden"
@@ -201,60 +179,52 @@ export default async function Tracking({
                         />
                       </TrackingForm>
                     ) : (
-                      <p className="muted">
-                        An unused reservation can be cancelled after 15 minutes,
-                        once a fresh provider check confirms that no domain was
-                        created.
-                      </p>
+                      <p className="muted">{i18n.t("An unused reservation can be cancelled after 15 minutes, once a fresh provider check confirms that no domain was created.")}</p>
                     ))}
                 </>
               ) : (
                 <>
                   <p>
                     {domain.snapshot.verified === undefined
-                      ? "Status not checked"
+                      ? i18n.t("Status not checked")
                       : domain.snapshot.verified
-                        ? "Verified"
-                        : "DNS verification pending"}{" "}
+                        ? i18n.t("Verified")
+                        : i18n.t("DNS verification pending")}{" "}
                     ·{" "}
                     {domain.snapshot.ssl === undefined
-                      ? "HTTPS not checked"
+                      ? i18n.t("HTTPS not checked")
                       : domain.snapshot.ssl
-                        ? "HTTPS ready"
-                        : "HTTPS pending"}
+                        ? i18n.t("HTTPS ready")
+                        : i18n.t("HTTPS pending")}
                   </p>
                   <p>
                     {domain.snapshot.enabled === undefined
-                      ? "Sending status not checked"
+                      ? i18n.t("Sending status not checked")
                       : domain.snapshot.enabled
-                        ? "Enabled"
-                        : "Disabled"}{" "}
+                        ? i18n.t("Enabled")
+                        : i18n.t("Disabled")}{" "}
                     ·{" "}
                     {domain.snapshot.default === undefined
-                      ? "Domain mode not checked"
+                      ? i18n.t("Domain mode not checked")
                       : domain.snapshot.default
-                        ? "Default domain"
-                        : "Dedicated domain"}
+                        ? i18n.t("Default domain")
+                        : i18n.t("Dedicated domain")}
                   </p>
                   {domain.snapshot.domain_name &&
                     domain.snapshot.verification_domain && (
                       <>
-                        <p>
-                          Add both CNAME records at your DNS host, then verify.
-                          Your DNS host may append the parent domain
-                          automatically.
-                        </p>
+                        <p>{i18n.t("Add both CNAME records at your DNS host, then verify. Your DNS host may append the parent domain automatically.")}</p>
                         <dl>
                           {[
                             domain.snapshot.domain_name,
                             domain.snapshot.verification_domain,
                           ].map((name) => (
                             <div key={name}>
-                              <dt>CNAME name</dt>
+                              <dt>{i18n.t("CNAME name")}</dt>
                               <dd style={{ overflowWrap: "anywhere" }}>
                                 <code>{name}</code>
                               </dd>
-                              <dt>CNAME target</dt>
+                              <dt>{i18n.t("CNAME target")}</dt>
                               <dd>
                                 <code>smtptrack.com</code>
                               </dd>
@@ -268,7 +238,7 @@ export default async function Tracking({
                       <TrackingForm
                         customer={customerID}
                         action="verify"
-                        label="Verify tracking domain"
+                        label={i18n.t("Verify tracking domain")}
                       >
                         <input
                           type="hidden"
@@ -285,7 +255,7 @@ export default async function Tracking({
                           ],
                           [
                             "dedicated",
-                            "Dedicated to this sender domain",
+                            msgid("Dedicated to this sender domain"),
                             domain.snapshot.default === undefined
                               ? undefined
                               : !domain.snapshot.default,
@@ -296,7 +266,7 @@ export default async function Tracking({
                           key={action}
                           customer={customerID}
                           action={action}
-                          label={`Update ${label.toLowerCase()}`}
+                          label={i18n.t("Update {setting}",{setting:i18n.t(label)})}
                         >
                           <input
                             type="hidden"
@@ -304,7 +274,7 @@ export default async function Tracking({
                             value={domain.id}
                           />
                           <label className="field">
-                            {label}
+                            {i18n.t(label)}
                             <select
                               name="value"
                               required
@@ -316,11 +286,9 @@ export default async function Tracking({
                                     : "no"
                               }
                             >
-                              <option value="" disabled>
-                                Select a state
-                              </option>
-                              <option value="yes">Yes</option>
-                              <option value="no">No</option>
+                              <option value="" disabled>{i18n.t("Select a state")}</option>
+                              <option value="yes">{i18n.t("Yes")}</option>
+                              <option value="no">{i18n.t("No")}</option>
                             </select>
                           </label>
                         </TrackingForm>
@@ -328,8 +296,8 @@ export default async function Tracking({
                       <TrackingForm
                         customer={customerID}
                         action="remove"
-                        label="Remove tracking domain"
-                        confirm="Remove this tracking domain from the sending account. Existing tracked links may stop working."
+                        label={i18n.t("Remove tracking domain")}
+                        confirm={i18n.t("Remove this tracking domain from the sending account. Existing tracked links may stop working.")}
                       >
                         <input
                           type="hidden"
@@ -344,7 +312,7 @@ export default async function Tracking({
             </article>
           ))}
         </div>
-        {!data.domains.length && <p>No custom tracking domains yet.</p>}
+        {!data.domains.length && <p>{i18n.t("No custom tracking domains yet.")}</p>}
       </section>
     </div>
   );

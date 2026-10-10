@@ -1,0 +1,21 @@
+{
+  "name": "@webdock/hosting-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./react": "./src/resource-field.tsx",
+    "./vercel": "./src/vercel-api.ts"
+  },
+  "dependencies": {
+    "zod": "4.6.5",
+    "@webdock/i18n": "*"
+  },
+  "scripts": {
+    "test": "node --import tsx --test src/*.test.ts"
+  },
+  "peerDependencies": {
+    "react": "^19.2.8"
+  }
+}

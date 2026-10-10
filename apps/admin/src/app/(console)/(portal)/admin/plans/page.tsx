@@ -1,3 +1,5 @@
+
+import { getRequestI18n } from '@webdock/i18n/next';
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -10,8 +12,10 @@ import {
   PlanIdentity,
 } from "@/components/plan-fields";
 import { PlanForm } from "./form";
-export const metadata = { title: "Plans" };
+export async function generateMetadata(){ const i18n = await getRequestI18n(); return { title: i18n.t("Plans") }; }
 export default async function Plans() {
+  const i18n = await getRequestI18n();
+
   const requestHeaders = await headers();
   if (!(await auth.api.getSession({ headers: requestHeaders })))
     redirect("/api/sso/login?returnTo=%2Fadmin%2Fplans");
@@ -26,27 +30,22 @@ export default async function Plans() {
     <div className="access-page">
       <header className="account-heading">
         <div>
-          <h1>Plans</h1>
-          <p className="muted">
-            Reusable allocations for your customers. Assign a plan or prepare an
-            individual offer from a tenant’s usage page.
-          </p>
+          <h1>{i18n.t("Plans")}</h1>
+          <p className="muted">{i18n.t("Reusable allocations for your customers. Assign a plan or prepare an individual offer from a tenant’s usage page.")}</p>
         </div>
-        <Link className="button secondary" href="/admin">
-          Administration
-        </Link>
+        <Link className="button secondary" href="/admin">{i18n.t("Administration")}</Link>
       </header>
       <details className="auth-panel" open={plans.length === 0}>
-        <summary>Create a reusable plan</summary>
-        <PlanForm action="create-plan" label="Create plan">
+        <summary>{i18n.t("Create a reusable plan")}</summary>
+        <PlanForm action="create-plan" label={i18n.t("Create plan")}>
           <PlanIdentity />
           <PlanFields />
         </PlanForm>
       </details>
       <section className="account-section">
-        <h2>Plan library</h2>
+        <h2>{i18n.t("Plan library")}</h2>
         <p>
-          <Link href="/tenants">Choose a tenant to assign a plan</Link>
+          <Link href="/tenants">{i18n.t("Choose a tenant to assign a plan")}</Link>
         </p>
         <div className="access-grid">
           {plans.map((plan) => (
@@ -57,7 +56,7 @@ export default async function Plans() {
             </article>
           ))}
         </div>
-        {!plans.length && <p>No plans yet. Create your first plan above.</p>}
+        {!plans.length && <p>{i18n.t("No plans yet. Create your first plan above.")}</p>}
       </section>
     </div>
   );

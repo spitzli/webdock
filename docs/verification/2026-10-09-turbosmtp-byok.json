@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-09",
+  "status": "deployed",
+  "deployments": {
+    "auth": {
+      "id": "dpl_6fkdAP3yz8sUkwLeD2YTX12oR1LG",
+      "url": "webdock-auth-qkzenkwx1-spitzli.vercel.app",
+      "readyState": "READY",
+      "regions": [
+        "fra1"
+      ],
+      "target": "production"
+    },
+    "admin": {
+      "id": "dpl_9BSoqSLoAov1cWKZ8nWEZqseaRtB",
+      "url": "webdock-admin-gks60vxga-spitzli.vercel.app",
+      "readyState": "READY",
+      "regions": [
+        "fra1"
+      ],
+      "target": "production"
+    }
+  },
+  "build": "Local Node 24; prebuilt uploads; Functions verified fra1",
+  "regionException": "Owner explicitly permits turboSMTP management API without EU-only guarantee; sending configuration uses EU endpoints.",
+  "tests": {
+    "auth": 85,
+    "studio": 95,
+    "sharedContractsAndUI": 8,
+    "failed": 0,
+    "typechecks": [
+      "auth",
+      "studio"
+    ],
+    "gettextCatalogsVerified": true
+  },
+  "verification": {
+    "realProductionOperatorSession": true,
+    "pages": [
+      "/tenants/101711682211938304/mail",
+      "/customers/101711682211938304/hosting"
+    ],
+    "mobileLocalCustomerUI": true,
+    "managementPermissionAndDomainLimitControlsRendered": true,
+    "realCustomerCredentialsTested": false,
+    "emailsSent": false,
+    "productionTenantPermissionsAutomaticallyChanged": false,
+    "platformMailAccountsMigrated": false
+  },
+  "migration": {
+    "at": "2026-10-09T10:59:29.810Z",
+    "databaseRegionHost": "ep-divine-math-b1pzkn3s.c-5.eu-central-1.aws.neon.tech",
+    "before": {
+      "customers": 23,
+      "projects": 21,
+      "cms": 20
+    },
+    "after": {
+      "customers": 23,
+      "projects": 21,
+      "cms": 20
+    },
+    "security": {
+      "current_user": "webdock_auth_runtime",
+      "project_update": false,
+      "project_read": true,
+      "project_lock": true
+    },
+    "additive": true,
+    "testsAgainstProduction": false
+  },
+  "review": "No remaining important finding after tenant-layout revalidation on failed mail actions.",
+  "limits": [
+    "Only key fingerprints identify reuse; different keys for the same provider account are not detected. Dedicated provider account and explicit account-wide domain access confirmation required.",
+    "Consumer Key/Secret with API permission manages sender-domain inventory and registration. Provider key creation/revocation and billing remain at turboSMTP.",
+    "Domain allowance constrains registrations through Webdock; it is not a provider sending or spending cap.",
+    "No automatic application SMTP configuration or email sending. Existing platform-managed keys/tracking stay attached to their original subaccounts."
+  ],
+  "deferred": [
+    "Customer tenant card padding/button spacing explicitly postponed by owner."
+  ]
+}

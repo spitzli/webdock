@@ -1,16 +1,16 @@
 export const relatedID = (value: string | { id: string }) =>
   typeof value === "string" ? value : value.id;
-export const date = (value: string) =>
-  new Intl.DateTimeFormat("en", {
+export const date = (value: string, locale = "en") =>
+  new Intl.DateTimeFormat(locale === "de" ? "de-DE" : "en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
   }).format(new Date(value));
-export const hostname = (value?: string | null) => {
+export const hostname = (value?: string | null, fallback = "No domain yet") => {
   try {
-    return value ? new URL(value).hostname : "No domain yet";
+    return value ? new URL(value).hostname : fallback;
   } catch {
-    return "No domain yet";
+    return fallback;
   }
 };
 

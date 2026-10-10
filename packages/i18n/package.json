@@ -1,0 +1,20 @@
+{
+  "name": "@webdock/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/core.ts",
+    "./react": "./src/react.tsx",
+    "./next": "./src/next.ts",
+    "./preference": "./src/preference.ts",
+    "./picker": "./src/picker.tsx"
+  },
+  "scripts": {
+    "test": "node --import tsx --test tests/*.test.ts",
+    "extract": "python3 scripts/extract.py",
+    "compile": "python3 scripts/compile.py",
+    "catalog:check": "python3 scripts/compile.py --check"
+  },
+  "peerDependencies": { "next": "^16.3.8", "react": "^19.2.8" }
+}

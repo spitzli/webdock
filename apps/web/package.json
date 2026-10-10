@@ -27,7 +27,8 @@
     "sharp": "0.35.5",
     "@webdock/instance-kit": "*",
     "@webdock/payload-sso": "*",
-    "@webdock/cms-ui": "*"
+    "@webdock/cms-ui": "*",
+    "@webdock/i18n": "*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

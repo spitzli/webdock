@@ -1,3 +1,4 @@
+import {searchPage} from "@webdock/search";
 import { randomBytes } from "node:crypto";
 import { auth } from "./auth";
 import { database } from "./db";
@@ -85,10 +86,12 @@ async function website(binding: string) {
 }
 export async function listAccess(headers: Headers, search: string) {
   await requireAccessOperator(headers);
-  const query = `%${search.trim().slice(0, 160)}%`;
+  const term=search.trim().slice(0,160);
+  const query = `%${term}%`;
+  const searched=async (sql:string,text:(row:any)=>string,limit:number)=>({rows:(await searchPage(async page=>{const rows=(await database.query(sql+' LIMIT 300 OFFSET $1',[(page-1)*300])).rows;return {rows,hasMore:rows.length===300};},text,term,1,limit)).docs});
   const [users, organizations, bindings, grants, invitations, events] =
     await Promise.all([
-      database.query(
+      term?searched('SELECT id,name,email,role,banned,"emailVerified","mustChangePassword" FROM webdock_auth."user" ORDER BY "createdAt" DESC,id',r=>r.name+' '+r.email,100):database.query(
         'SELECT id,name,email,role,banned,"emailVerified","mustChangePassword" FROM webdock_auth."user" WHERE name ILIKE $1 OR email ILIKE $1 ORDER BY "createdAt" DESC LIMIT 100',
         [query],
       ),
@@ -98,11 +101,11 @@ export async function listAccess(headers: Headers, search: string) {
       database.query(
         'SELECT b.id,b.label,b.organization_id,c."redirectUris" FROM webdock_auth.app_binding b JOIN webdock_auth."oauthClient" c ON c."clientId"=b.client_id WHERE b.enabled AND NOT c.disabled ORDER BY b.label LIMIT 200',
       ),
-      database.query(
+      term?searched('SELECT g.id,g.role,g.enabled,u.name,u.email,b.label FROM webdock_auth.project_grant g JOIN webdock_auth."user" u ON u.id=g.user_id JOIN webdock_auth.app_binding b ON b.id=g.binding_id ORDER BY u.email,b.label,g.id',r=>r.name+' '+r.email,200):database.query(
         'SELECT g.id,g.role,g.enabled,u.name,u.email,b.label FROM webdock_auth.project_grant g JOIN webdock_auth."user" u ON u.id=g.user_id JOIN webdock_auth.app_binding b ON b.id=g.binding_id WHERE u.name ILIKE $1 OR u.email ILIKE $1 ORDER BY u.email,b.label LIMIT 200',
         [query],
       ),
-      database.query(
+      term?searched('SELECT i.id,i.email,i.status,i."expiresAt",o.name FROM webdock_auth.invitation i JOIN webdock_auth.organization o ON o.id=i."organizationId" ORDER BY i."createdAt" DESC,i.id',r=>r.email,100):database.query(
         'SELECT i.id,i.email,i.status,i."expiresAt",o.name FROM webdock_auth.invitation i JOIN webdock_auth.organization o ON o.id=i."organizationId" WHERE i.email ILIKE $1 ORDER BY i."createdAt" DESC LIMIT 100',
         [query],
       ),

@@ -1,3 +1,5 @@
+
+import { getRequestI18n } from '@webdock/i18n/next';
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -5,9 +7,11 @@ import { AccessError, requireAccessOperator } from "@/lib/access-management";
 import { getPlatformSettings, getMailConnectionStatus } from "@/lib/platform";
 import { AdminForms } from "./form";
 
-export const metadata = { title: "Platform settings" };
+export async function generateMetadata(){ const i18n = await getRequestI18n(); return { title: i18n.t("Platform settings") }; }
 
 export default async function Administration() {
+  const i18n = await getRequestI18n();
+
   try {
     await requireAccessOperator(await headers());
   } catch (error) {
@@ -22,10 +26,8 @@ export default async function Administration() {
     <div className="access-page">
       <header className="account-heading">
         <div>
-          <h1>Platform settings</h1>
-          <p className="muted">
-            Branding, customer access and Mail configuration.
-          </p>
+          <h1>{i18n.t("Platform settings")}</h1>
+          <p className="muted">{i18n.t("Branding, customer access and Mail configuration.")}</p>
         </div>
         <Link
           className="button secondary"
@@ -36,20 +38,13 @@ export default async function Administration() {
                 "https://auth.webdock.dev/api/auth",
             ).href
           }
-        >
-          Account & security
-        </Link>
+        >{i18n.t("Account & security")}</Link>
       </header>
       <p>
-        <Link className="button secondary" href="/admin/plans">
-          Plans and allowances
-        </Link>
+        <Link className="button secondary" href="/admin/plans">{i18n.t("Plans and allowances")}</Link>
       </p>
       <AdminForms settings={settings} connection={connection} />
-      <p className="muted">
-        Only platform operators can change these settings. Tenant administrators
-        manage their own tenant. Account registration remains invitation-only.
-      </p>
+      <p className="muted">{i18n.t("Only platform operators can change these settings. Tenant administrators manage their own tenant. Account registration remains invitation-only.")}</p>
     </div>
   );
 }

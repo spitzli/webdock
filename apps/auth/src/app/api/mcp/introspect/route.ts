@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { currentMCPClaims, mcpResource } from "@/lib/mcp";
+import { currentMCPClaims, currentHostingMCPClaims, mcpResource } from "@/lib/mcp";
 import { database } from "@/lib/db";
 
 export async function POST(request: Request) {
@@ -13,6 +13,6 @@ export async function POST(request: Request) {
     return Response.json({ active: false }, { headers: { "Cache-Control": "no-store" } });
   const { rows } = await database.query('SELECT metadata FROM webdock_auth."oauthClient" WHERE "clientId"=$1 AND NOT disabled', [token.client_id]);
   const metadata = typeof rows[0]?.metadata === "string" ? JSON.parse(rows[0].metadata) : rows[0]?.metadata;
-  const claims = metadata?.webdock_mcp === true ? await currentMCPClaims(token.sub) : { disabled: true };
+  const claims = metadata?.webdock_hosting === true ? await currentHostingMCPClaims(token.sub) : metadata?.webdock_mcp === true ? await currentMCPClaims(token.sub) : { disabled: true };
   return Response.json(claims.disabled ? { active: false } : { ...token, ...claims }, { headers: { "Cache-Control": "no-store" } });
 }

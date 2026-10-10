@@ -2,6 +2,7 @@
 import { APIError, serializeSignedCookie } from "better-call";
 import { auth } from "./auth";
 import { database } from "./db";
+import { currentTenantPreview, startTenantPreview, exitTenantPreview, dispatchTenantPreview } from "./tenant-preview";
 import { currentMCPClaims } from "./mcp";
 import { AccessError, accountSites, listAccess, manageAccess, requireAccessOperator } from "./access-management";
 import { listTenants, listTenantInvitations, getTenant, manageTenant } from "./tenants";
@@ -25,6 +26,7 @@ const isString = (value: unknown): value is string => typeof value === "string" 
 const isInput = (value: unknown): value is Record<string, string> => isObject(value) && Object.keys(value).length <= 100 && Object.values(value).every(isString);
 const isMailKeyInput = (value: unknown): value is MailKeyInput => isObject(value) && isString(value.action) && Object.entries(value).every(([key, field]) => ["permissions", "ips"].includes(key) ? Array.isArray(field) && field.length <= 100 && field.every(isString) : ["action", "label", "consumerKey", "confirm"].includes(key) && isString(field));
 const shapes: Record<string, ((value: unknown) => boolean)[]> = {
+  startTenantPreview: [isString], exitTenantPreview: [],
   session: [], requireAccessOperator: [], listAccess: [isString], manageAccess: [isInput], accountSites: [],
   listTenants: [], listTenantInvitations: [], getTenant: [isString], manageTenant: [isString, isInput],
   getPlans: [], getTenantPlan: [isString], managePlans: [isInput], getOffer: [isString], acceptOffer: [isString],
@@ -77,7 +79,10 @@ async function delegatedSession(request: Request, accessToken: string, dependenc
     // bridge transport; native OAuth verifies the exact supplied credentials.
     body: new URLSearchParams({ token: accessToken, token_type_hint: "access_token", client_id: clientID!, client_secret: credentials.slice(credentials.indexOf(":") + 1) }),
   }));
-  if (!response.ok) unauthorized();
+  if (!response.ok) {
+    if ([400, 401, 403].includes(response.status)) unauthorized();
+    fail(response.status === 429 ? 429 : 503, "Studio is temporarily unavailable. Try again.");
+  }
   const token: unknown = await response.json();
   if (!isObject(token) || token.active !== true || token.disabled === true || token.client_id !== clientID || !isString(token.sub) || !token.sub || !isString(token.sid) || !token.sid || typeof token.exp !== "number" || !Number.isFinite(token.exp) || token.exp * 1000 <= Date.now()) unauthorized();
   const session = (await database.query('SELECT token FROM webdock_auth.session WHERE id=$1 AND "userId"=$2 AND "expiresAt">now()', [token.sid, token.sub])).rows[0];
@@ -90,7 +95,7 @@ async function delegatedSession(request: Request, accessToken: string, dependenc
   const operator = !(await currentMCPClaims(native.user.id)).disabled;
   if (native.user.role !== "user" && !operator) unauthorized();
   const { id, name, email, role, emailVerified, twoFactorEnabled, mustChangePassword } = native.user;
-  return { headers, safe: { user: { id, name, email, role, emailVerified, twoFactorEnabled, mustChangePassword }, operator } };
+  return { headers, actor: { userID: id, sessionID: native.session.id }, safe: { user: { id, name, email, role, emailVerified, twoFactorEnabled, mustChangePassword }, operator } };
 }
 
 async function dispatch(operation: string, args: unknown[], headers: Headers, safe: Awaited<ReturnType<typeof delegatedSession>>["safe"]) {
@@ -139,8 +144,26 @@ export async function handleStudioRequest(request: Request, dependencies: Depend
   const responseHeaders = { "Cache-Control": "no-store", "Pragma": "no-cache" };
   try {
     const { operation, args, accessToken } = await readBody(request);
-    const { headers, safe } = await delegatedSession(request, accessToken, dependencies);
-    const data = await dispatch(operation, args, headers, safe);
+    const { headers, actor, safe } = await delegatedSession(request, accessToken, dependencies);
+    // The context comes from the authenticated central session, never a caller hint.
+    // An expired context remains present and restrictive until explicit exit.
+    const context = await currentTenantPreview(actor);
+    let data: unknown;
+    if (operation === "exitTenantPreview") data = await exitTenantPreview(actor);
+    else if (operation === "session" && context) data = { ...safe, user: { ...safe.user, role: "user" }, operator: false, preview: context.preview };
+    else if (context) {
+      try { data = await dispatchTenantPreview(context, operation, args, headers); }
+      catch (error) {
+        if (error instanceof AccessError) {
+          // readBody already restricted operation to our fixed shapes registry.
+          // Log the actual actor and scoped tenant, never arguments or tokens.
+          await database.query("INSERT INTO webdock_auth.access_event(actor_id,action,target_id,outcome) VALUES($1,$2,$3,'denied')", [actor.userID, `tenant-preview-denied:${operation}`, context.preview.customerID]);
+        }
+        throw error;
+      }
+    }
+    else if (operation === "startTenantPreview") data = await startTenantPreview(actor, args[0] as string);
+    else data = await dispatch(operation, args, headers, safe);
     return Response.json({ data: data ?? null }, { headers: responseHeaders });
   } catch (error) {
     const known = ([["AccessError", AccessError], ["PlanError", PlanError], ["TenantMailError", TenantMailError], ["MailDomainsError", MailDomainsError], ["MailKeysError", MailKeysError], ["TrackingError", TrackingError], ["StorageUsageError", StorageUsageError], ["PlatformError", PlatformError]] as const).find(([, type]) => error instanceof type);

@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-09",
+  "status": "implemented-and-verified-locally-not-deployed",
+  "productionChanges": false,
+  "lunaresChanges": false,
+  "databaseMigrationRequired": false,
+  "environment": {
+    "clusterContext": "webdock-byok-test",
+    "database": "webdock_hosting_preview_20261008",
+    "unitTestDatabase": "webdock_admin_test",
+    "helperUnit": "webdock-storage-test.service",
+    "clusterID": "102038541155962880",
+    "projectID": "102038541101436928"
+  },
+  "tests": {
+    "auth": 89,
+    "studio": 99,
+    "contracts": 9,
+    "python": 24,
+    "failures": 0,
+    "authBuild": "passed",
+    "studioBuild": "passed",
+    "gettext": "2645 messages validated; compiled catalog current",
+    "diffCheck": "passed"
+  },
+  "filesystemProbe": {
+    "reservedBytes": 134217728,
+    "writtenBytesBeforeENOSPC": 116391936,
+    "sqliteBackupRestore": true,
+    "coldRemountPersistence": true,
+    "missingImageRejected": true,
+    "missingDirectoryRevisionOneRejected": true,
+    "missingDirectoryPurgeRejected": true,
+    "foreignOwnershipRejected": true,
+    "interruptedPurgeRetry": true,
+    "unlinkBeforeJournalFsyncRegression": true
+  },
+  "browser": {
+    "adminSession": "real local fixture",
+    "desktopWidth": 1280,
+    "mobileWidth": 390,
+    "overflow": false,
+    "createdAppID": "102040992990892032",
+    "appDeleteOperation": "102041297451225088",
+    "storageDeleteOperation": "102041431538929664",
+    "mobileCompletionVerified": true,
+    "screenshots": [
+      "/home/newt/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mv1129p6-88700020.png",
+      "/home/newt/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mv113iof-025f9b9e.png"
+    ]
+  },
+  "systemd": {
+    "hostMountNamespace": "mnt:[4026534241]",
+    "helperMountNamespace": "mnt:[4026534241]",
+    "rootSocketAllowed": true,
+    "nonrootSocketDenied": true,
+    "sandboxedExecutorCreateAndPurge": true,
+    "helperRestartRemount": true
+  },
+  "cleanup": {
+    "apps": [
+      "102038541474729984",
+      "102040992990892032"
+    ],
+    "removedVia": "Studio administrator deletion and separate storage deletion",
+    "podsDeploymentsServicesPVCsPVRemaining": 0,
+    "allocatedBytesRemaining": 0,
+    "namespaceRetained": true,
+    "poolJournalRetained": true,
+    "localHelperStoppedAfterVerification": true
+  },
+  "review": {
+    "independentReviewer": true,
+    "remainingImportantFindings": 0,
+    "fixed": [
+      "revision-one missing-directory replacement",
+      "normal-agent mount privileges",
+      "SSH client dependency",
+      "missing storage falsely purged",
+      "purge directory fsync ordering",
+      "storage log protocol marker"
+    ]
+  },
+  "limitations": [
+    "No Contabo installation or production deployment",
+    "No complete host-reboot or physical power-loss test",
+    "No scheduled backups or restore UI",
+    "No resize, cross-node migration, replication or multiple writers",
+    "Cached local nginx test adapter uses verified-identical tag; production immutable-image rule unchanged"
+  ],
+  "sourceSHA256": {
+    "apps/hosting-agent/storage.py": "0c02222b62319b4936174bad4ab44cc235a1582018536f926e35521a90ca2144",
+    "apps/hosting-agent/storage_client.py": "8472f3d358c88d16f6bca69b4fb15051f9d3b7d7146af3b44969a2a7fe2e46e7",
+    "apps/hosting-agent/storage_service.py": "7016c108c6e7f6e3b8aa63f13ab6b31915a1efbd9c62abace11940d35fcc08c9",
+    "apps/hosting-agent/executor.py": "b1c9651598c48cbb11e8415d74c36a6f7844ab62a45a198e1c8ab6ac960a9105",
+    "apps/hosting-agent/observer.py": "ac5e595207a79e08849e9186201583053b4c9ab5c9508e0a1e27687aa00e32e9",
+    "apps/hosting-agent/connect.py": "c772fc9e27003aa3679df403445334625e11e670d1d83afd2f0fb5c7d6d87204",
+    "apps/hosting-agent/webdock-storage.service": "ced1c333f41d205a96fecffc9dbf56da9414cef969921dbbd212635572de7b93",
+    "apps/auth/src/lib/hosting/apps.ts": "d0329358193f5673527de4e5723b3dce267dcab4844887bcdf4380bfe5f96508",
+    "apps/auth/src/lib/hosting/operations.ts": "4fdb2672700c75ed91282752215a4a095c5b1f764f4e39cdd10fd7d5fd1e6f46",
+    "apps/auth/src/lib/hosting/service.ts": "7453b712685a7d94e0b181ca8422b5c6b1fad3daaeca51d84c16a9d91d1ec8d8",
+    "packages/hosting-contracts/src/index.ts": "7862e8fc96c8dc6e40052bb720cb8c670f831755203a320f2b22645c32b277aa"
+  }
+}

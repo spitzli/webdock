@@ -32,7 +32,8 @@ export async function studioCall<T>(operation: string, args: unknown[] = []): Pr
   if (!response.ok || result.error) throw studioError(result.error?.kind || "StudioError", result.error?.message || "This operation is unavailable.", response.status);
   return result.data as T;
 }
-export type StudioSession = { user: { id: string; name: string; email: string; role: "operator" | "user"; emailVerified: boolean; twoFactorEnabled: boolean; mustChangePassword: boolean }; operator: boolean };
+export type TenantPreview = { customerID: string; customerName: string; expiresAt: string; status: "active" | "expired"; readOnly: true; role: "admin" };
+export type StudioSession = { preview?: TenantPreview; user: { id: string; name: string; email: string; role: "operator" | "user"; emailVerified: boolean; twoFactorEnabled: boolean; mustChangePassword: boolean }; operator: boolean };
 export const getStudioSession = cache(async (): Promise<StudioSession | null> => {
   try { return await studioCall<StudioSession>("session"); } catch (error) { if (error instanceof AccessError && error.status === 401) return null; throw error; }
 });

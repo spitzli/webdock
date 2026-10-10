@@ -59,7 +59,7 @@ function totp(uri: string) {
   const at = h[h.length - 1] & 15;
   return String((h.readUInt32BE(at) & 0x7fffffff) % 1_000_000).padStart(6, "0");
 }
-test("Real Better Auth flow: closed signup, password change, MFA, OIDC and immediate authorization revocation", async () => {
+test("Real Better Auth flow: closed signup, password change, MFA, OIDC and immediate authorization revocation", async (t) => {
   await database.query(
     'TRUNCATE webdock_auth."user",webdock_auth."oauthClient",webdock_auth.organization,webdock_auth.verification,webdock_auth."rateLimit" CASCADE',
   );
@@ -233,7 +233,30 @@ test("Real Better Auth flow: closed signup, password change, MFA, OIDC and immed
     "UPDATE webdock_auth.app_binding SET enabled=true WHERE id=$1",
     [app.binding],
   );
-  await call("/sign-out", {});
+  const originalBrowserCookies = cookies;
+  cookies = "";
+  assert.equal((await call("/sign-in/email", { email: operator.email, password: changed })).status, 200);
+  assert.equal((await call("/two-factor/verify-backup-code", { code: setup.backupCodes[1] })).status, 200);
+  const otherBrowserCookies = cookies;
+  const otherBrowser = await auth.api.getSession({ headers: new Headers({ Cookie: otherBrowserCookies }) });
+  assert.ok(otherBrowser);
+  cookies = originalBrowserCookies;
+  // The provider verifies its hint through its public JWKS endpoint. Route that
+  // loopback request to the real handler without requiring a running web server.
+  t.mock.method(globalThis, "fetch", async (input: Request | URL | string) => {
+    assert.equal(String(input), origin + "/api/auth/jwks");
+    return auth.handler(new Request(String(input)));
+  });
+  const logout = await call("/oauth2/end-session?" + new URLSearchParams({
+    id_token_hint: tokens.id_token,
+    client_id: app.clientID,
+    post_logout_redirect_uri: "http://127.0.0.1:3120/login",
+  }));
+  assert.equal(logout.status, 302);
+  assert.equal(logout.headers.get("location"), "http://127.0.0.1:3120/login");
+  assert.ok(logout.headers.getSetCookie().some(value => value.includes("Max-Age=0")), "Central browser cookie is cleared");
+  assert.equal(await auth.api.getSession({ headers: new Headers({ Cookie: originalBrowserCookies }) }), null, "RP logout invalidates the central browser session");
+  assert.equal((await auth.api.getSession({ headers: new Headers({ Cookie: otherBrowserCookies }) }))?.session.id, otherBrowser.session.id, "Other devices remain signed in");
   assert.equal((await introspect()).active, false);
   assert.equal((await tokenRequest()).status, 400, "Code replay denied");
   const nextLogin = await call("/sign-in/email", {

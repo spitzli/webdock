@@ -35,7 +35,11 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sharp": "0.35.5",
-    "zod": "4.6.5"
+    "zod": "4.6.5",
+    "@webdock/page-builder": "*",
+    "@webdock/i18n": "*",
+    "@webdock/hosting-contracts": "*",
+    "@webdock/search": "*"
   },
   "devDependencies": {
     "@types/node": "^24",
