@@ -23,6 +23,7 @@ test("Webmail gateway pins mailbox sessions, authenticates every read, rejects C
     control: async body => {
       if (revoked) throw Error("private backend failure");
       if (body.action === "exchange") return { token: "t".repeat(43), scopeID: "123", customerID: "12", mailboxID: "34", expiresAt: new Date(Date.now()+60000).toISOString() };
+      if (body.action === "reserve") return {execute:true,operationID:'456',leaseToken:'11111111-1111-4111-8111-111111111111'};
       return { scopeID: "123", customerID: "12", mailboxID: "34", subject: "56", accountID: "group-a", senderName: "Support", senderAddress: "support@example.com", runtimeOrigin, authorization: "Basic private", expiresAt: new Date(Date.now()+60000).toISOString() };
     } });
   gateway.listen(0, "127.0.0.1"); await once(gateway, "listening");

@@ -7829,3 +7829,21 @@ msgstr "Der Anhang konnte nicht heruntergeladen werden."
 
 msgid "Mail sending is not available yet."
 msgstr "Der E-Mail-Versand ist noch nicht verfügbar."
+
+msgid "Cc"
+msgstr "Cc"
+
+msgid "Bcc"
+msgstr "Bcc"
+
+msgid "Saving draft…"
+msgstr "Entwurf wird gespeichert…"
+
+msgid "Edit draft"
+msgstr "Entwurf bearbeiten"
+
+msgid "Draft changed in another session. Reopen it before editing."
+msgstr "Der Entwurf wurde in einer anderen Sitzung geändert. Öffne ihn vor dem Bearbeiten erneut."
+
+msgid "Mailbox changed. Refresh before editing again."
+msgstr "Das Postfach wurde geändert. Aktualisiere die Ansicht vor dem weiteren Bearbeiten."

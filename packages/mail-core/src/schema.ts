@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS webdock_mail.instance (
  verified_at timestamptz,
  updated_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE webdock_mail.instance ADD COLUMN IF NOT EXISTS smtp_certificate_sha256 text;
+ALTER TABLE webdock_mail.instance ADD COLUMN IF NOT EXISTS smtp_certificate_revision bigint;
 `;
 
 export const nativeMailClusterSchemaSQL = `

@@ -113,3 +113,26 @@ test('attachments use fixed account paths, bounded uploads and message-owned dow
   assert.ok(paths.some(path=>path.includes('/jmap/download/account-a/blob1/')));
   assert.ok(!paths.some(path=>path.includes('/foreign/')));
 });
+
+test('draft replacement checks the current draft and uses an optimistic JMAP state fence',async t=>{
+  const changes:Record<string,unknown>[]=[];
+  t.mock.method(globalThis,'fetch',async (_url:string,init:RequestInit)=>{
+    const [method,args,tag]=JSON.parse(String(init.body)).methodCalls[0];
+    const result=method==='Identity/get'?{list:[{id:'sender',email:'alice@example.com'}]}:method==='Mailbox/get'?{list:[{id:'drafts',role:'drafts'}]}:method==='Email/get'?{state:'version1',list:[{id:'old-draft',from:[{email:'alice@example.com'}],keywords:{$draft:true}}]}:(changes.push(args),args.destroy?{destroyed:['old-draft'],newState:'version3'}:{created:{draft:{id:'new-draft'}},newState:'version2'});
+    return Response.json({methodResponses:[[method,{...result,accountId:args.accountId},tag]]});
+  });
+  const result=await new JmapClient(options).createDraft({identityId:'sender',to:[],subject:'Working draft',text:'Edited'},'old-draft');
+  assert.equal(result.id,'new-draft');assert.equal(changes[0].destroy,undefined);assert.equal(changes[0].ifInState,'version1');assert.deepEqual(changes[1].destroy,['old-draft']);assert.equal(changes[1].ifInState,'version2');
+});
+
+test('a failed replacement creation never deletes the last saved draft',async t=>{
+  let destroyed=false;
+  t.mock.method(globalThis,'fetch',async (_url:string,init:RequestInit)=>{
+    const [method,args,tag]=JSON.parse(String(init.body)).methodCalls[0];
+    if(args.destroy)destroyed=true;
+    const result=method==='Identity/get'?{list:[{id:'sender',email:'alice@example.com'}]}:method==='Mailbox/get'?{list:[{id:'drafts',role:'drafts'}]}:method==='Email/get'?{state:'version1',list:[{id:'old-draft',from:[{email:'alice@example.com'}],keywords:{$draft:true}}]}:{notCreated:{draft:{type:'overQuota'}},...(args.destroy?{destroyed:args.destroy}:{})};
+    return Response.json({methodResponses:[[method,{...result,accountId:args.accountId},tag]]});
+  });
+  await assert.rejects(new JmapClient(options).createDraft({identityId:'sender',to:[],subject:'Update',text:'Must retain old content'},'old-draft'));
+  assert.equal(destroyed,false);
+});

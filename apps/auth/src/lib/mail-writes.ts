@@ -13,7 +13,7 @@ type Receipt = { execute: boolean; operationID: string; leaseToken?: string; sta
 /** A lost response never authorizes a second write, even after a gateway restart. */
 export async function reserveWebmailWrite(db: Connection, input: unknown): Promise<Receipt> {
   const command = reserveWriteSchema.parse(input), access = await inspectWebmail(db, command.token);
-  if ((command.action === "draft") !== (command.resourceID === undefined)) mailUnavailable();
+  if (command.action !== "draft" && command.resourceID === undefined) mailUnavailable();
   await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", ["webmail-write:"+access.mailboxID]);
   const existing = (await db.query(`SELECT * FROM webdock_mail.webmail_write WHERE mailbox_id=$1 AND
     ((subject=$2 AND request_id=$3) OR (action='submit' AND $4='submit' AND resource_id=$5)) ORDER BY created_at LIMIT 1`, [access.mailboxID, access.subject, command.requestID, command.action, command.resourceID ?? null])).rows[0];
@@ -21,6 +21,12 @@ export async function reserveWebmailWrite(db: Connection, input: unknown): Promi
     if (existing.action !== command.action || existing.resource_id !== (command.resourceID ?? null) || existing.payload_hash !== command.payloadHash) mailUnavailable();
     return { execute: false, operationID: existing.id, state: existing.state, result: existing.result };
   }
+  // A draft must not be replaced while sending, or sent while replacement is in flight.
+  // Otherwise a fresh provider ID could bypass the one-submission fence after a timeout.
+  if(command.resourceID && ["draft","submit"].includes(command.action) && (await db.query(
+    "SELECT id FROM webdock_mail.webmail_write WHERE mailbox_id=$1 AND resource_id=$2 AND action=$3 AND state<>'rejected' LIMIT 1",
+    [access.mailboxID,command.resourceID,command.action==="draft"?"submit":"draft"],
+  )).rowCount) mailUnavailable();
   const count = (await db.query("SELECT count(*)::int AS count FROM webdock_mail.webmail_write WHERE mailbox_id=$1 AND created_at>now()-interval '1 hour'", [access.mailboxID])).rows[0].count;
   if (count >= 1000) mailUnavailable();
   const leaseToken = randomUUID();

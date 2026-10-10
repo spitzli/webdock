@@ -66,11 +66,14 @@ test("management does not grant mailbox access; explicit grants and current memb
     const write = { token:session.token,requestID:'11111111-1111-4111-8111-111111111111',action:'submit' as const,resourceID:'draft1',payloadHash:'a'.repeat(64) };
     const reservation=await transaction(db=>reserveWebmailWrite(db,write));
     assert.equal(reservation.execute,true);
+    await assert.rejects(transaction(db=>reserveWebmailWrite(db,{...write,action:'draft',requestID:'33333333-3333-4333-8333-333333333333'})));
     assert.equal((await transaction(db=>reserveWebmailWrite(db,write))).execute,false);
     assert.equal((await transaction(db=>reserveWebmailWrite(db,{...write,requestID:'22222222-2222-4222-8222-222222222222'}))).execute,false);
     await assert.rejects(transaction(db=>reserveWebmailWrite(db,{...write,payloadHash:'b'.repeat(64)})));
     await transaction(db=>finishWebmailWrite(db,{token:session.token,operationID:reservation.operationID,leaseToken:reservation.leaseToken!,state:'succeeded',result:{id:'receipt'}}));
     assert.deepEqual((await transaction(db=>reserveWebmailWrite(db,write))).result,{id:'receipt'});
+    await transaction(db=>reserveWebmailWrite(db,{...write,action:'draft',resourceID:'draft2',requestID:'44444444-4444-4444-8444-444444444444'}));
+    await assert.rejects(transaction(db=>reserveWebmailWrite(db,{...write,resourceID:'draft2',requestID:'55555555-5555-4555-8555-555555555555'})));
     await assert.rejects(transaction(db=>finishWebmailWrite(db,{token:session.token,operationID:reservation.operationID,leaseToken:reservation.leaseToken!,state:'uncertain'})));
     const secondLaunch=await transaction(db=>launchWebmail(db,actors[1],customerID,mailbox.id));
     const logout=await transaction(db=>exchangeWebmail(db,secondLaunch.code));

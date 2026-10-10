@@ -205,13 +205,16 @@ def execute_mail(packet, checkpoint):
             final, _ = mail_manifests(packet)
             apply(final, p)
             wait(ready)
-        client(credentials['username'], credentials['password']).verify()
+        permanent = client(credentials['username'], credentials['password'])
+        permanent.verify()
+        certificate = permanent.submission_certificate()
         if secret:
             observed = get('secret', secret['metadata']['name'], namespace)
             if observed:
                 guarded_delete('secrets', observed, p)
         return {'namespace': namespace, 'revision': packet['revision'], 'running': True,
-                'edition': 'community', 'recoveryDisabled': True}
+                'edition': 'community', 'recoveryDisabled': True,
+                'submissionCertificateSha256': certificate}
 
 
 def mail_capability(nodes):

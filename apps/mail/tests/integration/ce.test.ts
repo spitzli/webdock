@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { isIP } from "node:net";
+import { isIP, createServer as tcpServer, connect as tcpConnect, type Socket } from "node:net";
+import { connect as tlsConnect } from "node:tls";
+import { createHash } from "node:crypto";
+import { once } from "node:events";
+import { submitSMTP } from "../../src/sending/smtp.ts";
 import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -149,7 +153,10 @@ test("the user-scoped Webmail client composes, reads and replies through real JM
   const bob = new JmapClient({ url: a.url, allowInsecureHttp: true, authorization: basic(`bob@${a.domain}`, bobPassword), accountId: bobId });
   const aliceIdentity = (await alice.identities())[0].id;
   const attachment = {...await alice.upload(Buffer.from("Native attachment bytes"), "text/plain"), name:"note.txt"};
-  const draft = await alice.createDraft({ attachments:[attachment], identityId: aliceIdentity, to: [{ email: `bob@${a.domain}` }], subject: "Native Webmail roundtrip", text: "A real message for Bob." });
+  const initialDraft = await alice.createDraft({ identityId: aliceIdentity, to: [], subject: "Unfinished draft", text: "Initial text" });
+  const draft = await alice.createDraft({ attachments:[attachment], identityId: aliceIdentity, to: [{ email: `bob@${a.domain}` }], subject: "Native Webmail roundtrip", text: "A real message for Bob." },initialDraft.id);
+  await assert.rejects(alice.email(initialDraft.id));
+  await assert.rejects(alice.createDraft({identityId:aliceIdentity,to:[],subject:"Stale tab",text:"Must not overwrite"},initialDraft.id));
   assert.ok((await alice.submitDraft(draft.id, aliceIdentity)).id);
   await alice.fileSent(draft.id);
   const sent = (await alice.mailboxes()).list.find(row => row.role === "sent")!;
@@ -174,6 +181,20 @@ test("the user-scoped Webmail client composes, reads and replies through real JM
   });
   const denied = new JmapClient({ url: a.url, allowInsecureHttp: true, authorization: basic(`bob@${a.domain}`, bobPassword), accountId: accountIDs[0] });
   await assert.rejects(denied.emails());
+});
+
+test('native SMTP transport pins the real isolated CE certificate and submits once',async()=>{
+  const a=instances[0];
+  const probe=tlsConnect({host:a.ip,port:465,rejectUnauthorized:false});
+  await once(probe,'secureConnect');const certificateSha256=createHash('sha256').update(probe.getPeerCertificate().raw).digest('hex');probe.destroy();
+  const sockets=new Set<Socket>();
+  const proxy=tcpServer(socket=>{const backend=tcpConnect({host:a.ip,port:465});sockets.add(socket);sockets.add(backend);socket.pipe(backend).pipe(socket);socket.on('error',()=>backend.destroy());backend.on('error',()=>socket.destroy());socket.on('close',()=>{sockets.delete(socket);backend.destroy();});backend.on('close',()=>sockets.delete(backend));});
+  proxy.listen(0,'127.0.0.1');await once(proxy,'listening');const address=proxy.address();assert.ok(address && typeof address!=='string');
+  try{
+    await submitSMTP({host:'127.0.0.1',port:address.port,certificateSha256,username:`alice@${a.domain}`,password:a.password,allowLoopback:true},{from:`alice@${a.domain}`,to:[`alice@${a.domain}`],raw:Buffer.from(`From: alice@${a.domain}\r\nTo: alice@${a.domain}\r\nSubject: Native SMTP fixture\r\n\r\nA pinned single attempt.\r\n`)});
+    const client=new JmapClient({url:a.url,allowInsecureHttp:true,authorization:basic(`alice@${a.domain}`,a.password),accountId:accountIDs[0]});
+    await eventually(async()=>assert.equal((await client.emails({text:'Native SMTP fixture'})).list.length,1));
+  }finally{for(const socket of sockets)socket.destroy();await new Promise<void>(resolve=>proxy.close(()=>resolve()));}
 });
 
 test('CE DATA hook exposes authenticated sender context and fails closed when the policy service is unavailable',async()=>{

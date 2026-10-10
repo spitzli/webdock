@@ -60,6 +60,7 @@ export class JmapClient {
     const responses = object(body) ? body.methodResponses : undefined;
     const response = Array.isArray(responses) && responses.length === 1 ? responses[0] : undefined;
     if (!Array.isArray(response) || response.length !== 3 || response[2] !== "webdock" || !object(response[1])) throw new JmapError("Invalid Mail response.", mutation);
+    if (response[0] === "error" && response[1].type === "stateMismatch") throw new JmapError("Mailbox changed. Refresh before editing again.");
     if (response[0] === "error") throw new JmapError("Mail request rejected.", mutation && !["invalidArguments", "unknownMethod", "unknownCapability", "accountNotFound", "accountNotSupportedByMethod", "forbidden", "stateMismatch"].includes(String(response[1].type)));
     if (response[0] !== method) throw new JmapError("Invalid Mail response.", mutation);
     const result = response[1];
@@ -124,19 +125,26 @@ export class JmapClient {
     }
     return address({ email: item.email, ...(typeof item.name === "string" ? { name: item.name } : {}) });
   }
-  async createDraft(input: MailDraft) {
+  async createDraft(input: MailDraft, previousId?: string) {
     if (typeof input.subject !== "string" || input.subject.length > 998 || /[\r\n\0]/.test(input.subject) ||
         typeof input.text !== "string" || Buffer.byteLength(input.text) > 262144) throw new JmapError("Invalid Mail draft.");
     const recipients = [input.to, input.cc ?? [], input.bcc ?? []];
-    if (recipients.some(list => !Array.isArray(list)) || recipients.flat().length < 1 || recipients.flat().length > 100) throw new JmapError("Invalid Mail recipients.");
+    if (recipients.some(list => !Array.isArray(list)) || recipients.flat().length > 100) throw new JmapError("Invalid Mail recipients.");
     const [to, cc, bcc] = recipients.map(list => list.map(address));
     const attachments = input.attachments ?? [];
     if (!Array.isArray(attachments) || attachments.length > 10 || attachments.some(part => !part || typeof part.name !== "string" || !part.name || part.name.length > 200 || /[\r\n\0]/.test(part.name) || typeof part.type !== "string" || !/^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/i.test(part.type) || !Number.isSafeInteger(part.size) || part.size < 0 || !id(part.blobId)) || attachments.reduce((sum,part)=>sum+part.size,0)>MAX_ATTACHMENT_BYTES) throw new JmapError("Invalid Mail attachments.");
     for (const values of [input.inReplyTo, input.references]) if (values !== undefined && (!Array.isArray(values) || values.length > 50 || values.some(value => typeof value !== "string" || value.length > 998 || !/^[^<>\s]+@[^<>\s]+$/.test(value)))) throw new JmapError("Invalid Mail reply reference.");
     const from = await this.identity(input.identityId);
+    let previousState: string | undefined;
+    if(previousId){
+      const result=await this.call("Email/get",{ids:[id(previousId)],properties:["id","keywords","from"]});
+      const previous=this.list(result,[previousId])[0];
+      if(!previous || !object(previous.keywords) || !previous.keywords.$draft || !Array.isArray(previous.from) || previous.from.length!==1 || !object(previous.from[0]) || previous.from[0].email!==from.email || typeof result.state!=="string")throw new JmapError("Draft changed in another session. Reopen it before editing.");
+      previousState=result.state;
+    }
     const drafts = (await this.mailboxes()).list.find(row => row.role === "drafts");
     if (!drafts) throw new JmapError("Draft folder is unavailable.");
-    const result = await this.call("Email/set", { create: { draft: {
+    const result = await this.call("Email/set", { ...(previousId ? {ifInState:previousState} : {}), create: { draft: {
       mailboxIds: { [drafts.id]: true }, keywords: { $draft: true }, from: [from], to, cc, bcc,
       subject: input.subject, textBody: [{ partId: "body", type: "text/plain" }], bodyValues: { body: { value: input.text } },
       ...(attachments.length ? { attachments: attachments.map(part=>({ blobId: part.blobId, name: part.name, type: part.type, disposition: "attachment" })) } : {}),
@@ -144,6 +152,15 @@ export class JmapClient {
     } } });
     const created = object(result.created) ? result.created.draft : undefined;
     if (!object(created) || typeof created.id !== "string" || !/^[A-Za-z0-9_-]{1,255}$/.test(created.id)) throw new JmapError("Invalid Mail draft response.", true);
+    if(previousId){
+      // JMAP set can partially succeed: never destroy the old draft in the create call.
+      try{
+        if(typeof result.newState!=="string")throw new Error();
+        const cleanup=await this.call("Email/set",{ifInState:result.newState,destroy:[previousId]});
+        if(!Array.isArray(cleanup.destroyed) || !cleanup.destroyed.includes(previousId))throw new Error();
+        result.newState=cleanup.newState;
+      }catch{throw new JmapError("Draft replacement outcome is unknown. Check Drafts before editing.",true);}
+    }
     return { id: created.id, state: result.newState };
   }
   /** Caller durably reserves submission BEFORE invoking this non-retrying mutation. */

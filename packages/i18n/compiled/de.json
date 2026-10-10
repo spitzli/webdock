@@ -971,6 +971,9 @@
   "Batch requests are not supported": [
     "Sammelanfragen werden nicht unterstützt"
   ],
+  "Bcc": [
+    "Bcc"
+  ],
   "Bind Vercel target": [
     "Vercel-Ziel zuordnen"
   ],
@@ -1186,6 +1189,9 @@
   ],
   "Category": [
     "Kategorie"
+  ],
+  "Cc": [
+    "Cc"
   ],
   "Centre": [
     "Mittig"
@@ -2508,6 +2514,9 @@
   "Draft": [
     "Entwurf"
   ],
+  "Draft changed in another session. Reopen it before editing.": [
+    "Der Entwurf wurde in einer anderen Sitzung geändert. Öffne ihn vor dem Bearbeiten erneut."
+  ],
   "Draft preview": [
     "Vorschau des Entwurfs"
   ],
@@ -2576,6 +2585,9 @@
   ],
   "Edit data": [
     "Daten bearbeiten"
+  ],
+  "Edit draft": [
+    "Entwurf bearbeiten"
   ],
   "Edit products, variants, extras and prices.": [
     "Produkte, Varianten, Extras und Preise bearbeiten."
@@ -4070,6 +4082,9 @@
   ],
   "Mailbox change queued. Access is enabled only after server verification.": [
     "Postfachänderung vorgemerkt. Der Zugriff wird erst nach der Serverprüfung aktiviert."
+  ],
+  "Mailbox changed. Refresh before editing again.": [
+    "Das Postfach wurde geändert. Aktualisiere die Ansicht vor dem weiteren Bearbeiten."
   ],
   "Mailbox changes are being applied.": [
     "Postfachänderungen werden übernommen."
@@ -6230,6 +6245,9 @@
   ],
   "Saving change…": [
     "Änderung wird gespeichert …"
+  ],
+  "Saving draft…": [
+    "Entwurf wird gespeichert…"
   ],
   "Saving failed.": [
     "Speichern fehlgeschlagen."

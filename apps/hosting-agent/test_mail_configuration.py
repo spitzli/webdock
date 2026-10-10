@@ -34,5 +34,5 @@ class MailConfigurationTests(unittest.TestCase):
 
     def test_interactive_identities_cannot_bypass_native_send_policy(self):
         from mail_configuration import MAIL_PERMISSIONS
-        for permission in ['emailSend', 'jmapEmailSubmissionCreate', 'smtpAuth', 'sieveAuthenticate', 'jmapSieveScriptCreate']:
+        for permission in ['emailSend', 'jmapEmailSubmissionCreate', 'imapAuthenticate', 'sieveAuthenticate', 'jmapSieveScriptCreate']:
             self.assertNotIn(permission, MAIL_PERMISSIONS)

@@ -58,7 +58,7 @@ test("only the assigned cluster can claim, checkpoint and complete native Mail p
     await database.query("UPDATE webdock_auth.hosting_agent SET generation=2 WHERE cluster_id=$1", [agents[0].clusterID]);
     await assert.rejects(checkpointNativeMail({ ...agents[0], generation: 2 }, { ...input, generation: 2 }));
     await database.query("UPDATE webdock_auth.hosting_agent SET generation=1 WHERE cluster_id=$1", [agents[0].clusterID]);
-    const proof = { namespace: `wd-mail-${customerID}`, revision: 3, running: true, edition: "community", recoveryDisabled: true };
+    const proof = { namespace: `wd-mail-${customerID}`, revision: 3, running: true, edition: "community", recoveryDisabled: true, submissionCertificateSha256: "a".repeat(64) };
     await assert.rejects(completeNativeMail(agents[1], { ...input, outcome: "succeeded", proof }));
     await assert.rejects(completeNativeMail(agents[0], { ...input, outcome: "succeeded", proof: { ...proof, namespace: "kube-system" } }));
     assert.equal((await getMailService(database, customerID)).state, "provisioning");
@@ -67,6 +67,8 @@ test("only the assigned cluster can claim, checkpoint and complete native Mail p
     const instance = (await database.query("SELECT * FROM webdock_mail.instance WHERE customer_id=$1", [customerID])).rows[0];
     assert.equal(instance.internal_url, `http://app-${customerID}.wd-mail-${customerID}.svc.cluster.local:8080`);
     assert.equal(instance.public_url, `https://mail-${customerID}.mail.webdock.dev`);
+    assert.equal(instance.smtp_certificate_sha256,"a".repeat(64));
+    assert.equal(String(instance.smtp_certificate_revision),"3");
     const credentials = openSecret<Record<string, string>>(instance.encrypted_credentials, `instance:${customerID}`, process.env.MAIL_ENCRYPTION_KEY!);
     assert.equal(credentials.bootstrapPassword, undefined);
     await assert.rejects(completeNativeMail(agents[0], { ...input, outcome: "succeeded", proof }));

@@ -16,6 +16,7 @@ const checkpoint = lease.extend({ credentials: z.object({ username: credential, 
 const completion = lease.extend({ outcome: z.enum(["succeeded", "needs_review"]), proof: z.object({
   namespace: z.string(), revision: z.number().int().positive(), running: z.boolean(),
   edition: z.literal("community"), recoveryDisabled: z.literal(true),
+  submissionCertificateSha256: z.string().regex(/^[a-f0-9]{64}$/).optional(),
 }).strict().optional() }).strict();
 function conflict(): never { throw new HostingError(409, "Mail operation is no longer available to this agent."); }
 export function mailAgentConfig() {
@@ -108,6 +109,8 @@ export async function completeNativeMail(agent: Agent, input: unknown) {
         await saveCredentials(db, job.customerID, { username: value.username, password: value.password }, key);
         await db.query("UPDATE webdock_mail.instance SET internal_url=$2,public_url=$3,verified_at=now() WHERE customer_id=$1", [job.customerID,
           `http://app-${job.customerID}.wd-mail-${job.customerID}.svc.cluster.local:8080`, `https://mail-${job.customerID}.${suffix}`]);
+        // Old agents remain compatible, but their completions cannot enable native SMTP sending.
+        await db.query("UPDATE webdock_mail.instance SET smtp_certificate_sha256=$2,smtp_certificate_revision=$3 WHERE customer_id=$1", [job.customerID,p.submissionCertificateSha256??null,p.submissionCertificateSha256?job.revision:null]);
       }
     }
     if (!await finishMailOperationInTransaction(db, job, parsed.outcome)) conflict();

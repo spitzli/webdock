@@ -125,7 +125,7 @@ export function createMailGateway(options: Options) {
         let result: unknown;
         try { result = await perform(); }
         catch (error) {
-          const uncertain = !(error instanceof JmapError) || error.uncertain;
+          const uncertain = error instanceof GatewayError ? error.uncertain : !(error instanceof JmapError) || error.uncertain;
           await options.control({ action: "finish", write: { token: session.token, operationID, leaseToken, state: uncertain ? "uncertain" : "rejected" } }).catch(()=>{});
           throw error;
         }
@@ -144,13 +144,18 @@ export function createMailGateway(options: Options) {
         }
         case "read": fields(body, ["action", "emailId"]); data = await client.email(string(body.emailId)); break;
         case "draft": {
-          fields(body, ["action", "requestID", "draft"]);
+          fields(body, ["action", "requestID", "draft", "previousId"]);
           const draft = record(body.draft); fields(draft, ["identityId", "to", "cc", "bcc", "subject", "text", "inReplyTo", "references", "attachments"]);
-          if(draft.attachments!==undefined){
-            if(!Array.isArray(draft.attachments) || draft.attachments.length>10)throw new GatewayError(400,"Invalid Mail attachments.");
-            for(const item of draft.attachments){const attachment=record(item),owned=session.attachments.get(string(attachment.blobId));if(!owned || owned.name!==attachment.name || owned.type!==attachment.type || owned.size!==attachment.size)throw new GatewayError(403,"Mail attachment is not authorized for this session.");}
-          }
-          data = await write("draft", draft, undefined, () => client.createDraft(draft as MailDraft)); break;
+          const previousId=body.previousId===undefined?undefined:string(body.previousId);
+          data = await write("draft", draft, previousId, async () => {
+            const previous=previousId?await client.email(previousId):undefined;
+            const previousAttachments=Array.isArray(previous?.attachments)?previous.attachments:[];
+            if(draft.attachments!==undefined){
+              if(!Array.isArray(draft.attachments) || draft.attachments.length>10)throw new GatewayError(400,"Invalid Mail attachments.");
+              for(const item of draft.attachments){const attachment=record(item),owned=session.attachments.get(string(attachment.blobId))??previousAttachments.find(item=>record(item).blobId===attachment.blobId);if(!owned || owned.name!==attachment.name || owned.type!==attachment.type || owned.size!==attachment.size)throw new GatewayError(403,"Mail attachment is not authorized for this session.");}
+            }
+            return client.createDraft(draft as MailDraft,previousId);
+          }); break;
         }
         case "submit": {
           // The production sender must use the common SMTP policy/queue, never a JMAP bypass.
@@ -172,7 +177,7 @@ export function createMailGateway(options: Options) {
       json(response, 200, { data });
     } catch (error) {
       const status = error instanceof GatewayError ? error.status : error instanceof JmapError ? 502 : 503;
-      json(response, status, { error: error instanceof GatewayError ? error.message : "Mail request failed.", ...((error instanceof JmapError || error instanceof GatewayError) && error.uncertain ? { uncertain: true } : {}) });
+      json(response, status, { error: (error instanceof GatewayError || error instanceof JmapError) ? error.message : "Mail request failed.", ...((error instanceof JmapError || error instanceof GatewayError) && error.uncertain ? { uncertain: true } : {}) });
     } finally { if (running) running.active--; if (admitted) active--; }
   });
   server.requestTimeout = 30_000; server.headersTimeout = 10_000;

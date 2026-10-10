@@ -118,6 +118,7 @@ class MailExecutionTests(unittest.TestCase):
             return {'leaseUntil': packet['leaseUntil']}
         client = MagicMock()
         client.bootstrap.return_value = {'username': 'admin', 'password': 'permanent-fixture'}
+        client.submission_certificate.return_value = 'a' * 64
         with tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
             stack.enter_context(patch.dict(os.environ, {'WEBDOCK_EXECUTOR_LOCK': directory + '/lock'}))
             prepare = stack.enter_context(patch('executor.prepare_storage'))
@@ -133,6 +134,7 @@ class MailExecutionTests(unittest.TestCase):
             else:
                 proof = execute_mail(packet, checkpoint)
                 self.assertTrue(proof['recoveryDisabled'])
+                self.assertEqual(proof['submissionCertificateSha256'], 'a' * 64)
                 client.verify.assert_called_once()
                 client.configure_listeners.assert_called_once()
                 if revision > 1:

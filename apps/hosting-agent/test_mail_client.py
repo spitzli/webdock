@@ -56,6 +56,7 @@ class MailClientIntegrationTests(unittest.TestCase):
             docker('rm', '-f', name)
             permanent = MailClient(start(False), **credentials)
             eventually(permanent.verify)
+            self.assertRegex(permanent.submission_certificate(), r'^[a-f0-9]{64}$')
             with permanent.opener.open(Request(permanent.url + '/healthz/live'), timeout=5) as response:
                 self.assertEqual(response.status, 200)
             rows = permanent.call('x:NetworkListener/get', {'ids': None})['list']
@@ -77,6 +78,13 @@ class MailClientIntegrationTests(unittest.TestCase):
                     'methodCalls': [[method, {'accountId': account_id, 'ids': None}, 'fixture']]})['methodResponses'][0][0]
             self.assertEqual(jmap('Mailbox/get', proof['mailboxes']['22'], ['urn:ietf:params:jmap:mail']), 'Mailbox/get')
             self.assertEqual(jmap('Calendar/get', proof['identities']['33'], ['urn:ietf:params:jmap:calendars']), 'error')
+            denied = member.request('/jmap', {'using': ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:submission'],
+                'methodCalls': [['EmailSubmission/set', {'accountId': proof['mailboxes']['22'], 'create': {'forged': {'emailId': 'invalid', 'identityId': 'invalid'}}}, 'blocked']]})['methodResponses'][0]
+            self.assertEqual(denied[0], 'error')
+            self.assertEqual(denied[1]['type'], 'forbidden')
+            with smtplib.SMTP_SSL(urlsplit(permanent.url).hostname, 2465, timeout=5, context=ssl._create_unverified_context()) as smtp:
+                with self.assertRaises(smtplib.SMTPAuthenticationError):
+                    smtp.login(identity['username'], identity['password'])
             identity['enabled'] = False; identity['mailboxIds'] = []
             apply_configuration(permanent, config, lambda: None)
             with self.assertRaises(ValueError):

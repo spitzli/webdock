@@ -45,6 +45,19 @@ class MailClient:
             # Unknown writes are never retried and upstream responses never enter logs.
             raise ValueError('Mail management request failed; reconcile before retrying') from None
 
+    def submission_certificate(self):
+        import hashlib
+        import socket
+        import ssl
+        # Trust is established through the agent's owned ClusterIP, never a public caller URL.
+        host = urlsplit(self.url).hostname
+        with socket.create_connection((host, 2465), timeout=5) as connection:
+            with ssl._create_unverified_context().wrap_socket(connection, server_hostname=host) as secure:
+                certificate = secure.getpeercert(binary_form=True)
+                if not certificate:
+                    raise ValueError('Mail submission certificate unavailable')
+                return hashlib.sha256(certificate).hexdigest()
+
     def call(self, method, arguments):
         result = self.request('/jmap', {'using': ['urn:ietf:params:jmap:core', 'urn:stalwart:jmap'],
                                        'methodCalls': [[method, arguments, 'webdock']]})

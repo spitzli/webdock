@@ -17,7 +17,8 @@ The previous private-instance rollout remains documented separately in
 - Fixed-account JMAP reads, paginated search, draft creation, message changes,
   independent Sent filing and a durable write journal. Ambiguous submission
   outcomes never permit an automatic second submission.
-- Native Studio inbox/read/reply/compose views, folders, archive/trash, uploads and
+- Native Studio inbox/read/reply/compose views, CC/BCC, draft autosave/editing,
+  folders, archive/trash, uploads and
   downloads. Attachment references must belong to the current upload session or
   selected message; maximum 10 MiB total outgoing attachments, maximum ten files.
 - Sanitized HTML in an opaque sandbox with restrictive CSP. Remote images and
@@ -27,7 +28,7 @@ The previous private-instance rollout remains documented separately in
 ## Evidence
 
 - Auth suite: 136 passing; Studio suite: 106 passing.
-- Mail unit suite: 19 passing; real isolated CE suite: 8 passing.
+- Mail unit suite: 25 passing; real isolated CE suite: 9 passing.
 - Agent unit suite: 52 passing and one opt-in integration skipped at the broad
   run; the opt-in restricted-container test passed separately.
 - Auth, Studio and Mail TypeScript checks; Auth/Studio lint; catalog coverage pass.
@@ -67,9 +68,8 @@ Source: [Stalwart v0.16.25 route fallback](https://github.com/stalwartlabs/stalw
 
 The common SMTP outbox/policy/budget path, managed and Enterprise BYOK relay
 configuration, public ingress/TLS/DNS, native API keys/events/webhooks, forwarding,
-app access, tested backup/restore, and complete Webmail synchronization/draft
-editing remain unfinished. The initial Webmail UI also still needs CC/BCC,
-reply-all/forward, inline images, autosave/state conflicts and full authenticated
+app access and tested backup/restore remain unfinished. The initial Webmail UI also still needs
+reply-all/forward, inline images, SSE/Changes synchronization and full authenticated
 browser-to-Stalwart verification.
 
 Direct JMAP submission is only an explicitly enabled local test adapter.
@@ -78,3 +78,22 @@ Production gateway refuses it, and provisioned interactive identities have no
 the common SMTP path from the architecture spec. `WEBDOCK_NATIVE_MAILBOXES_ENABLED`
 remains disabled in production. No new Mail production credentials, routes,
 customer DNS or mailbox content were changed by this checkpoint.
+
+## Additional draft and SMTP evidence
+
+Draft replacement first creates and verifies the new message, then removes the
+old version with a second state fence. JMAP set operations can partially succeed;
+combining both actions could lose the last saved draft on quota failure. A
+regression test covers that failure. Sending and replacement reservations exclude
+one another, preventing a new draft ID from bypassing an uncertain send attempt.
+The browser fixture verifies two successive autosaves using the prior draft ID.
+
+The native single-attempt SMTP transport validates an instance certificate pin
+before AUTH and distinguishes a known negative response from a lost DATA reply.
+Four TLS fixtures pass, including no credential disclosure on a pin mismatch and
+no retry after an ambiguous submission. The real CE transport test confirms one
+received message. Assigned-agent completion can now persist the private SMTP
+certificate fingerprint with its service revision; old agents cannot enable
+sending without that proof. Actual restricted CE rejects interactive-user SMTP
+AUTH and JMAP EmailSubmission/set. These transport pieces are not yet connected
+to the required common submission queue and budgets.
