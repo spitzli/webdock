@@ -1,3 +1,4 @@
+import type { OwnInfrastructureView } from "@/lib/hosting-views";
 import Link from "next/link";
 import { randomUUID } from "node:crypto";
 import { getRequestI18n } from "@webdock/i18n/next";
@@ -12,7 +13,7 @@ export async function OwnInfrastructure({
   path: string;
 }) {
   const { t } = await getRequestI18n();
-  const data = await hostingPageCall<any>(
+  const data = await hostingPageCall<OwnInfrastructureView>(
       { action: "byok.list", customerID },
       path,
     ),
@@ -138,7 +139,7 @@ export async function OwnInfrastructure({
               {p.maxClusters}
             </p>
             <HostingTable
-              rows={data.clusters as any[]}
+              rows={data.clusters}
               rowKey={(r) => r.id}
               empty={t("No cluster connected yet.")}
               columns={[

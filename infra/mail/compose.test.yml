@@ -1,0 +1,34 @@
+# Isolated integration lab, never a production deployment template.
+services:
+  customer-a:
+    image: stalwartlabs/stalwart:v0.16.25@sha256:74e5a7d55303ba525d939c6bf97ed4e010df7521f52d80afc22a815b66bd53f3
+    environment:
+      STALWART_RECOVERY_ADMIN: admin:webdock-local-test-only-a
+      STALWART_PUBLIC_URL: http://customer-a:8080
+    volumes:
+      - config-a:/etc/stalwart
+      - data-a:/var/lib/stalwart
+    networks: [customer-a]
+    mem_limit: 1g
+    cpus: 1
+  customer-b:
+    image: stalwartlabs/stalwart:v0.16.25@sha256:74e5a7d55303ba525d939c6bf97ed4e010df7521f52d80afc22a815b66bd53f3
+    environment:
+      STALWART_RECOVERY_ADMIN: admin:webdock-local-test-only-b
+      STALWART_PUBLIC_URL: http://customer-b:8080
+    volumes:
+      - config-b:/etc/stalwart
+      - data-b:/var/lib/stalwart
+    networks: [customer-b]
+    mem_limit: 1g
+    cpus: 1
+networks:
+  customer-a:
+    internal: true
+  customer-b:
+    internal: true
+volumes:
+  config-a:
+  data-a:
+  config-b:
+  data-b:

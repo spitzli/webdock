@@ -67,6 +67,8 @@ def run_once(path):
     observation=heartbeat(path,state)
     operation=agent_request(state['endpoint'],state,'claim',{})
     if not operation:
+        mail = run_mail_once(path, state, observation)
+        if mail is not None: return mail
         return {'event':'heartbeat','clusterID':state['clusterID'],'nodes':len(observation['nodes'])}
     packet=operation.get('desired')
     valid=packet and packet.get('clusterID')==state['clusterID'] and packet.get('operationID')==operation.get('id') and packet.get('generation')==operation.get('generation')
@@ -78,6 +80,34 @@ def run_once(path):
     heartbeat(path,state)
     agent_request(state['endpoint'],state,'complete',{'id':operation['id'],'generation':operation['generation'],**outcome})
     return {'event':'operation','id':operation['id'],'outcome':outcome['outcome']}
+
+
+def run_mail_once(path, state, observation):
+    capability = observation.get('capabilities', {}).get('nativeMail')
+    if not capability:
+        return None
+    from mail_executor import execute_mail, validate_mail_packet
+    packet = agent_request(state['endpoint'], state, 'mail-claim', {})
+    if packet is None:
+        return None
+    validate_mail_packet(packet)
+    if packet['clusterID'] != state['clusterID'] or packet['generation'] != state['generation'] or packet['image'] != capability['image']:
+        raise ValueError('Mail operation does not belong to this agent')
+    identity = {key: packet[key] for key in ('operationID', 'leaseToken', 'generation')}
+    def checkpoint(credentials=None):
+        body = dict(identity)
+        if credentials is not None:
+            body['credentials'] = credentials
+        return agent_request(state['endpoint'], state, 'mail-checkpoint', body)
+    try:
+        proof = execute_mail(packet, checkpoint)
+        outcome = {'outcome': 'succeeded', 'proof': proof}
+    except Exception:
+        # An uncertain external mutation requires reconciliation, never an automatic replay.
+        outcome = {'outcome': 'needs_review'}
+    heartbeat(path, state)
+    agent_request(state['endpoint'], state, 'mail-complete', {**identity, **outcome})
+    return {'event': 'mail-operation', 'id': packet['operationID'], 'outcome': outcome['outcome']}
 
 
 def run_byok_once(path,allow_loopback=False):

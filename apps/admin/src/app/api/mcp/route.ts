@@ -4,7 +4,7 @@ import { hostingTokenCall } from "@/lib/hosting-client";
 import { introspectMCP, validateMCPToken, mcpOrigin, mcpIssuer, mcpResource } from "@/lib/mcp-auth";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { getCMS } from "@/lib/server";
-import { authenticateMCP, challenge, authorizeRegistry } from "@/lib/mcp-auth";
+import { challenge, authorizeRegistry } from "@/lib/mcp-auth";
 import { createRegistryMCP, mutationTools } from "@/lib/mcp-server";
 export const runtime = "nodejs";
 export const maxDuration = 120;

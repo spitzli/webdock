@@ -16,9 +16,16 @@ import { checkDemand } from "./reservations";
 import { replay, recordResult } from "./operations";
 import { totals, limits } from "./allowances";
 import {openEnvironment,patchEnvironment,sealEnvironment} from './environment';
+type AppRow = {
+  id: string; name: string; project_id: string; revision: number;
+  observed_revision: number; status: string; spec: AppSpec;
+  environment_encrypted: string | null; operation_id: string | null;
+  last_error: string | null; logs: string | null; cluster_id: string;
+  namespace: string; observed_uid: string | null;
+};
 const digest = (v: unknown) =>
   createHash("sha256").update(JSON.stringify(v)).digest("hex");
-export function safeApp(row: Record<string, any>) {
+export function safeApp(row: AppRow) {
   return {
     id: row.id,
     name: row.name,
@@ -43,7 +50,7 @@ async function getApp(db: Connection, id: string) {
   if (!row) throw new HostingError(404, "Application is unavailable.");
   return row;
 }
-function deletionPlan(row: Record<string, any>, storage = false) {
+function deletionPlan(row: AppRow, storage = false) {
   const plan = {
     appID: row.id,
     name: row.name,

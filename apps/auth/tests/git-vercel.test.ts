@@ -33,7 +33,7 @@ const configuration = {
   projects: ["prj_app"],
 };
 const fake =
-  (overrides: Record<string, unknown> = {}) =>
+  (overrides: Record<string, Record<string, unknown> | undefined> = {}) =>
   async (path: string, token: string, teamID: string) => {
     assert.equal(token, "publisher-secret");
     assert.equal(teamID, "team_customer");

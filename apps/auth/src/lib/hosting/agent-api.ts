@@ -1,3 +1,4 @@
+import { claimNativeMail, checkpointNativeMail, completeNativeMail } from "../mail-agent";
 import {saveInventory,byokAgentConfig,claimByokOperation,completeByokOperation} from "./byok";
 import { claimOperation, completeOperation } from "./operations";
 import { createHash } from "node:crypto";
@@ -23,7 +24,7 @@ export async function hostingAgentAPI(request: Request, path: string[]) {
     if (
       request.method !== "POST" ||
       path.length !== 1 ||
-      !["enroll", "heartbeat", "claim", "complete", "inventory", "config", "byok-claim", "byok-complete"].includes(path[0])
+      !["enroll", "heartbeat", "claim", "complete", "inventory", "config", "byok-claim", "byok-complete", "mail-claim", "mail-checkpoint", "mail-complete"].includes(path[0])
     )
       throw new HostingError(404, "Agent endpoint is unavailable.");
     const input = await readHostingJSON(request,path[0]==="inventory"?2_000_000:65536);
@@ -58,7 +59,10 @@ export async function hostingAgentAPI(request: Request, path: string[]) {
     } else {
       if (!credentials || !clusterID)
         throw new HostingError(401, "Cluster authentication failed.");
-      if(path[0]==="inventory")data=await saveInventory(agent!,input);
+      if(path[0]==="mail-claim"){z.object({}).strict().parse(input);data=await claimNativeMail(agent!);}
+      else if(path[0]==="mail-checkpoint")data=await checkpointNativeMail(agent!,input);
+      else if(path[0]==="mail-complete")data=await completeNativeMail(agent!,input);
+      else if(path[0]==="inventory")data=await saveInventory(agent!,input);
       else if(path[0]==="config"){z.object({}).strict().parse(input);data=await byokAgentConfig(agent!);}
       else if(path[0]==="byok-claim"){z.object({}).strict().parse(input);data=await claimByokOperation(agent!);}
       else if(path[0]==="byok-complete")data=await completeByokOperation(agent!,z.object({id:resourceID,generation:z.number().int().positive(),outcome:z.enum(["succeeded","failed"]),proof:z.unknown().optional()}).strict().parse(input));

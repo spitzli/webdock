@@ -7143,6 +7143,51 @@ msgstr "Reserviere Plattformkapazität und dokumentiere die geprüfte Sicherheit
 msgid "Retained data has been permanently removed. The storage allowance is available again."
 msgstr "Die aufbewahrten Daten wurden endgültig entfernt. Das Speicherkontingent steht wieder zur Verfügung."
 
+msgid "Webdock Mail"
+msgstr "Webdock Mail"
+
+msgid "Not activated"
+msgstr "Nicht aktiviert"
+
+msgid "Change queued"
+msgstr "Änderung vorgemerkt"
+
+msgid "Applying change"
+msgstr "Änderung wird umgesetzt"
+
+msgid "Suspended — data retained"
+msgstr "Deaktiviert — Daten bleiben erhalten"
+
+msgid "Activate email"
+msgstr "E-Mail aktivieren"
+
+msgid "Suspend email"
+msgstr "E-Mail deaktivieren"
+
+msgid "Activate email for this customer to set up its mail service. Suspending the service retains existing mailbox data."
+msgstr "Aktiviere E-Mail für diesen Kunden, um den Dienst einzurichten. Beim Deaktivieren bleiben vorhandene Postfachdaten erhalten."
+
+msgid "The previous change needs to be checked before setup can continue."
+msgstr "Die vorherige Änderung muss geprüft werden, bevor die Einrichtung fortgesetzt werden kann."
+
+msgid "Mail settings changed. Refresh before trying again."
+msgstr "Die E-Mail-Einstellungen wurden geändert. Lade die Seite vor einem erneuten Versuch neu."
+
+msgid "Mail change queued. Existing mailbox data will be retained."
+msgstr "Die E-Mail-Änderung ist vorgemerkt. Vorhandene Postfachdaten bleiben erhalten."
+
+msgid "Mail change recorded. An operator must reconcile the existing operation."
+msgstr "Die E-Mail-Änderung wurde gespeichert. Ein Administrator muss den bestehenden Auftrag abgleichen."
+
+msgid "Mail settings are unchanged."
+msgstr "Die E-Mail-Einstellungen sind unverändert."
+
+msgid "Native Mail is not available yet."
+msgstr "Webdock Mail ist noch nicht verfügbar."
+
+msgid "Mail settings could not be changed. Refresh before trying again."
+msgstr "Die E-Mail-Einstellungen konnten nicht geändert werden. Lade die Seite vor einem erneuten Versuch neu."
+
 msgid "GitHub connection expired. Start again."
 msgstr "Die GitHub-Verbindung ist abgelaufen. Starte erneut."
 
@@ -7562,6 +7607,9 @@ msgstr "Externe Build-Variablen werden nicht unterstützt."
 
 msgid "View build logs in GitHub Actions"
 msgstr "Build-Logs in GitHub Actions öffnen"
+
+msgid "Retry Mail operation"
+msgstr "E-Mail-Änderung erneut ausführen"
 
 msgid "Vercel healthcheck path"
 msgstr "Vercel-Healthcheck-Pfad"

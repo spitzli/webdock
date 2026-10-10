@@ -55,6 +55,16 @@ def collect_observation():
     if capacity is not None:
         observed['capacity']['volumeBytes']=capacity['capacityBytes']
         observed['capabilities'].update(storage=capacity['ready'],storageVersion=1)
+    if capacity is not None and capacity['ready']:
+        try:
+            from mail_executor import mail_capability
+            mail = mail_capability([node['id'] for node in observed['nodes']])
+        except ImportError:
+            # The observer-only SSH bridge and BYOK installer do not ship managed Mail execution.
+            mail = None
+        if mail is not None:
+            observed['capabilities']['nativeMail'] = mail
+
     import registry
     if registry.capability(command):observed['capabilities']['registryVersion']=1
     return observed

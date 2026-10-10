@@ -7,3 +7,15 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Mail deployment decision
+
+The owner selected Stalwart **Community Edition, one isolated instance per customer with explicitly activated email**, on 2026-10-10. Do not provision Mail for every new customer/project. Deactivation retains data; deletion is a separate operation. Follow `docs/architecture/mail-deployment-decision.md`; this supersedes the earlier shared-Enterprise recommendation. Webdock Mail and Webmail remain native; Enterprise BYOK is a Webdock entitlement independent of the Stalwart edition.
+
+Managed Mail belongs on the existing Webdock Kubernetes/Contabo cluster (owner confirmation 2026-10-10). Reuse hosting-agent security/operations; Docker is the isolated local test backend, not the production control plane.
+
+Private Mail provisioning is live on Contabo for the explicitly enabled Spitzli
+customer. See `docs/verification/2026-10-10-native-mail-rollout.json` for deployment
+IDs and the successful retained-volume suspend/resume test. This does not mean
+public delivery, managed/BYOK relay or Webmail is complete. Preserve the Mail
+encryption key, retained storage and server-side-apply replica ownership.

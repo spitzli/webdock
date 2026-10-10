@@ -27,6 +27,7 @@
     "test:cms-integration": "node --env-file=apps/admin/.env.test.local --import tsx --test packages/cms-ui/src/integration.test.ts"
   },
   "overrides": {
-    "nodemailer": "10.0.13"
+    "nodemailer": "10.0.13",
+    "dompurify": "3.4.16"
   }
 }

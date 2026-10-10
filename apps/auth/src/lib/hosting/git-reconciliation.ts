@@ -14,7 +14,11 @@ type Observation = {
 };
 type Observer = (
   db: Connection,
-  release: Record<string, any>,
+  release: {
+    id: string; recipe: string; operation_id: string | null; project_id: string;
+    target_id: string; customer_id: string; publication_target: { teamID?: string; healthPath?: unknown };
+    provider_deployment_id: string | null; created_at: Date | string;
+  },
 ) => Promise<Observation>;
 const observe: Observer = async (db, r) => {
   if (r.recipe === "dockerfile") {

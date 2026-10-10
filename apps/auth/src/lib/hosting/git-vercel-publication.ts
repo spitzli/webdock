@@ -4,7 +4,7 @@ type ProviderJSON = (
   path: string,
   token: string,
   teamID: string,
-) => Promise<any>;
+) => Promise<Record<string, unknown>>;
 const defaultJSON: ProviderJSON = async (path, token, teamID) =>
   (await import("./byok-vercel")).vercelJSON(path, token, teamID);
 const denied = () =>
@@ -13,11 +13,12 @@ function releaseID(value: string) {
   if (!/^[1-9][0-9]{0,19}$/.test(value)) throw denied();
   return value;
 }
-function deploymentID(value: string) {
-  if (!/^dpl_[A-Za-z0-9]+$/.test(value)) throw denied();
+function deploymentID(value: unknown) {
+  if (typeof value !== "string" || !/^dpl_[A-Za-z0-9]+$/.test(value)) throw denied();
   return value;
 }
-function deploymentURL(value: string) {
+function deploymentURL(value: unknown) {
+  if (typeof value !== "string") throw denied();
   let url: URL;
   try {
     url = new URL(value.includes("://") ? value : "https://" + value);
@@ -50,12 +51,12 @@ export function createGitVercelObserver(
     !/^prj_[A-Za-z0-9]+$/.test(credential.projectID)
   )
     throw denied();
-  function verified(row: any, expected: string) {
+  function verified(row: Record<string, unknown>, expected: string) {
     if (
       !row ||
       row.ownerId !== credential.teamID ||
       row.projectId !== credential.projectID ||
-      row.meta?.webdockReleaseID !== releaseID(expected) ||
+      (row.meta as Record<string, unknown> | undefined)?.webdockReleaseID !== releaseID(expected) ||
       row.prebuilt !== true ||
       row.target !== "production" ||
       row.deletedAt
@@ -106,16 +107,17 @@ export function createGitVercelObserver(
       for (const row of response.deployments)
         if (
           row.projectId === credential.projectID &&
-          row.meta?.webdockReleaseID === input.releaseID
+          (row.meta as Record<string, unknown> | undefined)?.webdockReleaseID === input.releaseID
         )
           candidates.add(deploymentID(row.uid ?? row.id));
       if (candidates.size > 1) return { status: "ambiguous" };
-      const next = response.pagination?.next;
+      const next = (response.pagination as Record<string, unknown> | undefined)?.next;
       if (next === null || next === undefined) {
         complete = true;
         break;
       }
       if (
+        typeof next !== "number" ||
         !Number.isSafeInteger(next) ||
         next < 0 ||
         (until !== undefined && next >= until)
@@ -155,7 +157,7 @@ export function createGitVercelObserver(
     );
     const identity = verified(row, input.releaseID);
     if (identity.deploymentID !== input.deploymentID) throw denied();
-    if (["ERROR", "CANCELED"].includes(row.readyState))
+    if (row.readyState === "ERROR" || row.readyState === "CANCELED")
       return {
         ...identity,
         status: "failed" as const,
@@ -167,7 +169,7 @@ export function createGitVercelObserver(
       !euRegions(row.regions) ||
       (row.passiveRegions !== undefined &&
         !Array.isArray(row.passiveRegions)) ||
-      (row.passiveRegions?.length && !euRegions(row.passiveRegions))
+      (Array.isArray(row.passiveRegions) && row.passiveRegions.length && !euRegions(row.passiveRegions))
     )
       return {
         ...identity,
@@ -178,7 +180,7 @@ export function createGitVercelObserver(
     if (row.functions !== undefined && row.functions !== null) {
       if (typeof row.functions !== "object" || Array.isArray(row.functions))
         throw denied();
-      for (const fn of Object.values(row.functions) as any[]) {
+      for (const fn of Object.values(row.functions) as Record<string, unknown>[]) {
         if (
           !fn ||
           typeof fn !== "object" ||
@@ -227,7 +229,7 @@ export function createGitVercelObserver(
         );
         const hosts: string[] = Array.isArray(aliases.aliases)
           ? aliases.aliases
-              .map((alias: any) => alias.alias)
+              .map((alias: unknown) => alias && typeof alias === "object" && "alias" in alias ? alias.alias : undefined)
               .filter(
                 (host: unknown): host is string =>
                   typeof host === "string" &&
@@ -239,14 +241,14 @@ export function createGitVercelObserver(
           .slice(0, 3)) {
           const path = "/v4/aliases/" + encodeURIComponent(host);
           const before = await json(path, credential.token, credential.teamID);
-          const matches = (alias: any) =>
+          const matches = (alias: Record<string, unknown>) =>
             alias.alias === host &&
             alias.projectId === credential.projectID &&
             alias.deploymentId === identity.deploymentID &&
             !alias.deletedAt &&
             !alias.redirect &&
             (!alias.deployment ||
-              alias.deployment.id === identity.deploymentID) &&
+              (typeof alias.deployment === "object" && "id" in alias.deployment && alias.deployment.id === identity.deploymentID)) &&
             typeof alias.uid === "string" &&
             Number.isSafeInteger(alias.updatedAt);
           if (!matches(before) || !(await probe("https://" + host))) continue;
