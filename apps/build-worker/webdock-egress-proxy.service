@@ -1,0 +1,21 @@
+[Unit]
+Description=Webdock package-only CONNECT proxy
+After=network-online.target
+
+[Service]
+User=webdock-egress
+Group=webdock-egress
+ExecStart=/usr/bin/python3 /opt/webdock-build-worker/egress_proxy.py --config /etc/webdock-build-worker/egress.json
+Restart=on-failure
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+MemoryMax=256M
+CPUQuota=100%
+TasksMax=32
+LimitNOFILE=128
+
+[Install]
+WantedBy=multi-user.target

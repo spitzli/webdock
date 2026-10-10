@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./react": "./src/resource-field.tsx",
-    "./vercel": "./src/vercel-api.ts"
+    "./vercel": "./src/vercel-api.ts",
+    "./git-oauth": "./src/git-oauth.ts"
   },
   "dependencies": {
     "zod": "4.6.5",

@@ -51,6 +51,7 @@ export default async function Applications({
   return (
     <>
       <h1>{t("Managed applications")}</h1>
+      <Link className="button secondary" href={`/hosting/projects/${projectID}/git`}>{t("Git deployments")}</Link>
       <HostingRefresh active={data.docs.some((a) => a.status === "pending")} />
       <section className="panel">
         <ListControls

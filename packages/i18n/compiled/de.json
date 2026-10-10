@@ -659,6 +659,9 @@
   "An administrator is required to restore versions.": [
     "Zum Wiederherstellen von Versionen sind Administratorrechte erforderlich."
   ],
+  "An exact commit is required.": [
+    "Ein bestimmter Commit ist erforderlich."
+  ],
   "An existing tracking domain was found and linked. Review it, then use Remove tracking domain if you want to delete it.": [
     "Eine vorhandene Tracking-Domain wurde gefunden und verknüpft. Prüfe sie und verwende bei Bedarf „Tracking-Domain entfernen“."
   ],
@@ -767,6 +770,9 @@
   "Appointments": [
     "Termine"
   ],
+  "Approve release": [
+    "Release freigeben"
+  ],
   "Architecture": [
     "Architektur"
   ],
@@ -793,6 +799,9 @@
   ],
   "Arrow keys: 1 px. Shift: 10 px. Press Escape to clear the selection.": [
     "Pfeiltasten: 1 px. Umschalt: 10 px. Auswahl mit Escape aufheben."
+  ],
+  "Artifact": [
+    "Artefakt"
   ],
   "Ask your operator to review the tracking domain count.": [
     "Bitte deinen Betreiber, die Anzahl der Tracking-Domains zu prüfen."
@@ -914,6 +923,9 @@
   "Batch requests are not supported": [
     "Sammelanfragen werden nicht unterstützt"
   ],
+  "Bind Vercel target": [
+    "Vercel-Ziel zuordnen"
+  ],
   "Binding changed. Preview again.": [
     "Die Zuordnung wurde geändert. Öffne die Vorschau erneut."
   ],
@@ -953,6 +965,9 @@
   "Box": [
     "Fläche"
   ],
+  "Branch": [
+    "Branch"
+  ],
   "Branding, customer access and Mail configuration.": [
     "Markenauftritt, Kundenzugriff und E-Mail-Konfiguration."
   ],
@@ -968,8 +983,47 @@
   "Browse repositories": [
     "Repositorys durchsuchen"
   ],
+  "Build environment exceeds the allowed size.": [
+    "Die Build-Umgebung überschreitet die zulässige Größe."
+  ],
+  "Build environment is too large.": [
+    "Die Build-Umgebung ist zu groß."
+  ],
+  "Build environment variables": [
+    "Build-Umgebungsvariablen"
+  ],
+  "Build failed. Review the logs and setup requirements.": [
+    "Build fehlgeschlagen. Prüfe die Protokolle und Einrichtungsvoraussetzungen."
+  ],
+  "Build latest commit": [
+    "Neuesten Commit bauen"
+  ],
+  "Build lease expired.": [
+    "Die Build-Zuweisung ist abgelaufen."
+  ],
+  "Build logs": [
+    "Build-Protokolle"
+  ],
+  "Build pages": [
+    "Build-Seiten"
+  ],
+  "Build pushes automatically": [
+    "Pushes automatisch bauen"
+  ],
+  "Build recipe": [
+    "Build-Verfahren"
+  ],
+  "Build variables must be explicitly approved and cannot contain provider credentials.": [
+    "Build-Variablen müssen ausdrücklich freigegeben sein und dürfen keine Anbieter-Zugangsdaten enthalten."
+  ],
+  "Build worker endpoint is unavailable.": [
+    "Der Build-Worker-Endpunkt ist nicht verfügbar."
+  ],
   "Building": [
     "Wird erstellt"
+  ],
+  "Builds": [
+    "Builds"
   ],
   "Built and managed by Spitzli Development.": [
     "Entwickelt und betreut von Spitzli Development."
@@ -1045,6 +1099,9 @@
   ],
   "Cancel appointment": [
     "Stornieren"
+  ],
+  "Cancel build": [
+    "Build abbrechen"
   ],
   "Cancel deployment": [
     "Bereitstellung abbrechen"
@@ -1199,6 +1256,9 @@
   "Choose an enabled customer website, not the operator studio.": [
     "Wähle eine aktivierte Kundenwebsite, nicht das Betreiber-Studio."
   ],
+  "Choose an installation and repository you can access. GitHub consent is completed on GitHub.": [
+    "Wähle eine Installation und ein Repository, auf die du Zugriff hast. Die Freigabe erfolgt bei GitHub."
+  ],
   "Choose enabled or disabled.": [
     "Wähle aktiviert oder deaktiviert."
   ],
@@ -1319,6 +1379,9 @@
   "Commercial terms (optional)": [
     "Vertragsbedingungen (optional)"
   ],
+  "Commit": [
+    "Commit"
+  ],
   "Company": [
     "Unternehmen"
   ],
@@ -1330,6 +1393,9 @@
   ],
   "Company, personal details & address": [
     "Unternehmen, persönliche Angaben & Adresse"
+  ],
+  "Complete GitHub authorization first.": [
+    "Schließe zuerst die GitHub-Autorisierung ab."
   ],
   "Complete operator security setup first.": [
     "Schließe zuerst die Sicherheitseinrichtung des Betreiberkontos ab."
@@ -1355,8 +1421,38 @@
   "Concurrent deployments": [
     "Gleichzeitige Bereitstellungen"
   ],
+  "Configure Frankfurt Functions and disable cross-region failover before publication.": [
+    "Konfiguriere Functions in Frankfurt und deaktiviere den regionsübergreifenden Failover vor der Veröffentlichung."
+  ],
+  "Configure Node.js 24 for this Vercel build target.": [
+    "Konfiguriere Node.js 24 für dieses Vercel-Build-Ziel."
+  ],
+  "Configure a Vercel hosting project first.": [
+    "Konfiguriere zuerst ein Vercel-Hosting-Projekt."
+  ],
+  "Configure a deployment target before enabling Git deployments.": [
+    "Konfiguriere ein Deployment-Ziel, bevor du Git-Deployments aktivierst."
+  ],
+  "Configure an explicitly bound platform Vercel deployment credential.": [
+    "Konfiguriere ausdrücklich zugeordnete Zugangsdaten für Vercel-Deployments der Plattform."
+  ],
+  "Configure the GitHub App ID and private key in the private Auth environment.": [
+    "Konfiguriere die GitHub-App-ID und den privaten Schlüssel in der privaten Auth-Umgebung."
+  ],
   "Configure the GitHub App with Metadata: read-only and no other permissions.": [
     "Konfiguriere die GitHub-App mit „Metadata: read-only“ und ohne weitere Berechtigungen."
+  ],
+  "Configure the GitHub webhook secret before enabling push builds.": [
+    "Konfiguriere das GitHub-Webhook-Geheimnis, bevor du Builds durch Pushes aktivierst."
+  ],
+  "Configure the platform Vercel team first.": [
+    "Konfiguriere zuerst das Vercel-Team der Plattform."
+  ],
+  "Configure verified EU artifact and registry storage.": [
+    "Konfiguriere überprüften EU-Speicher für Artefakte und die Registry."
+  ],
+  "Configure verified artifact and registry storage.": [
+    "Konfiguriere überprüften Speicher für Artefakte und die Registry."
   ],
   "Confirm an existing account matching the reserved email and provider ID.": [
     "Bestätige ein vorhandenes Konto, dessen E-Mail-Adresse und Anbieter-ID zur Reservierung passen."
@@ -1415,6 +1511,12 @@
   "Connect GitHub": [
     "GitHub verbinden"
   ],
+  "Connect GitHub and enable a verified source first.": [
+    "Verbinde zuerst GitHub und aktiviere eine überprüfte Quelle."
+  ],
+  "Connect GitHub interactively in Studio.": [
+    "Verbinde GitHub über den Anmeldedialog in Studio."
+  ],
   "Connect Vercel": [
     "Vercel verbinden"
   ],
@@ -1427,6 +1529,9 @@
   "Connect Vercel in Webdock before deleting this project.": [
     "Verbinde Vercel in Webdock, bevor du dieses Projekt löschst."
   ],
+  "Connect a repository to configure Git deployments.": [
+    "Verbinde ein Repository, um Git-Deployments zu konfigurieren."
+  ],
   "Connect cluster agent": [
     "Cluster-Agent verbinden"
   ],
@@ -1438,6 +1543,9 @@
   ],
   "Connect provider credentials": [
     "Anbieter-Zugangsdaten hinterlegen"
+  ],
+  "Connect repository": [
+    "Repository verbinden"
   ],
   "Connect selected Vercel projects to Webdock Studio with read-only access.": [
     "Verbinde ausgewählte Vercel-Projekte mit Webdock Studio über einen Lesezugriff."
@@ -1516,6 +1624,9 @@
   ],
   "Connection details": [
     "Verbindungsdaten"
+  ],
+  "Connection help": [
+    "Hilfe zur Verbindung"
   ],
   "Connection name": [
     "Verbindungsname"
@@ -1899,6 +2010,9 @@
   "Customer ID ": [
     "Kunden-ID "
   ],
+  "Customer Vercel connection": [
+    "Vercel-Verbindung des Kunden"
+  ],
   "Customer Vercel connections are not configured yet.": [
     "Kundeneigene Vercel-Verbindungen sind noch nicht eingerichtet."
   ],
@@ -2103,6 +2217,12 @@
   "Deployment settings": [
     "Bereitstellungseinstellungen"
   ],
+  "Deployment source": [
+    "Deployment-Quelle"
+  ],
+  "Deployment target": [
+    "Deployment-Ziel"
+  ],
   "Deployments": [
     "Bereitstellungen"
   ],
@@ -2163,6 +2283,9 @@
   "Disconnect": [
     "Verbindung trennen"
   ],
+  "Disconnect GitHub": [
+    "GitHub trennen"
+  ],
   "Disconnect Vercel": [
     "Vercel trennen"
   ],
@@ -2177,6 +2300,9 @@
   ],
   "Disconnect in Studio to delete its stored access token. Also uninstall Webdock Studio in your Vercel team’s integration settings to revoke permission at Vercel. Project mappings and audit records remain; contact us if you need them removed.": [
     "Trenne die Verbindung in Studio, um den dort gespeicherten Zugriffstoken zu löschen. Deinstalliere Webdock Studio zusätzlich in den Integrationseinstellungen deines Vercel-Teams, um die Berechtigung bei Vercel zu widerrufen. Projektzuordnungen und Prüfprotokolle bleiben erhalten. Kontaktiere uns, wenn sie entfernt werden sollen."
+  ],
+  "Disconnect native Vercel Git builds before enabling Webdock publication.": [
+    "Trenne die native Git-Build-Anbindung von Vercel, bevor du die Veröffentlichung durch Webdock aktivierst."
   ],
   "Disconnect storage": [
     "Speicher trennen"
@@ -2417,6 +2543,12 @@
   ],
   "English": [
     "Englisch"
+  ],
+  "Enroll verified EU isolated build capacity before requesting a build.": [
+    "Registriere überprüfte, isolierte EU-Build-Kapazität, bevor du einen Build anforderst."
+  ],
+  "Enroll verified isolated build capacity before requesting a build.": [
+    "Registriere überprüfte, isolierte Build-Kapazität, bevor du einen Build anforderst."
   ],
   "Enrollment expired or was already displayed. Create a new enrollment.": [
     "Die Anbindung ist abgelaufen oder wurde bereits angezeigt. Eine neue Anbindung erstellen."
@@ -2712,6 +2844,21 @@
   "German": [
     "Deutsch"
   ],
+  "Git deployment changed. Refresh and try again.": [
+    "Das Git-Deployment wurde geändert. Lade die Seite neu und versuche es erneut."
+  ],
+  "Git deployment changed. Review the source and release before reconciliation.": [
+    "Das Git-Deployment wurde geändert. Prüfe Quelle und Release vor dem Statusabgleich."
+  ],
+  "Git deployment is unavailable.": [
+    "Das Git-Deployment ist nicht verfügbar."
+  ],
+  "Git deployments": [
+    "Git-Deployments"
+  ],
+  "Git publication authorization changed. Review the release.": [
+    "Die Berechtigung zur Git-Veröffentlichung wurde geändert. Prüfe das Release."
+  ],
   "GitHub": [
     "GitHub"
   ],
@@ -2724,8 +2871,14 @@
   "GitHub access could not be checked. Reconnect or review the app’s installation and read-only metadata permission.": [
     "Der GitHub-Zugriff konnte nicht geprüft werden. Verbinde GitHub erneut oder prüfe die App-Installation und die schreibgeschützte Metadatenberechtigung."
   ],
+  "GitHub access could not be verified. Check installation and repository permissions.": [
+    "Der GitHub-Zugriff konnte nicht überprüft werden. Prüfe die Installations- und Repository-Berechtigungen."
+  ],
   "GitHub access is unavailable. Reconnect or check the app installation.": [
     "Der GitHub-Zugriff ist nicht verfügbar. Stelle die Verbindung erneut her oder prüfe die App-Installation."
+  ],
+  "GitHub account": [
+    "GitHub-Konto"
   ],
   "GitHub account or organisation": [
     "GitHub-Konto oder -Organisation"
@@ -2733,17 +2886,50 @@
   "GitHub authorization did not complete. Start Connect GitHub again.": [
     "Die GitHub-Autorisierung wurde nicht abgeschlossen. Starte „GitHub verbinden“ erneut."
   ],
+  "GitHub authorization was already used.": [
+    "Die GitHub-Autorisierung wurde bereits verwendet."
+  ],
+  "GitHub check reconciliation exceeds the supported limit.": [
+    "Der Abgleich der GitHub-Prüfungen überschreitet die unterstützte Grenze."
+  ],
   "GitHub connected. Choose an installation and a repository below.": [
     "GitHub verbunden. Wähle unten eine Installation und ein Repository aus."
+  ],
+  "GitHub connection": [
+    "GitHub-Verbindung"
   ],
   "GitHub connection expired. Connect again.": [
     "Die GitHub-Verbindung ist abgelaufen. Stelle sie erneut her."
   ],
+  "GitHub connection expired. Start again.": [
+    "Die GitHub-Verbindung ist abgelaufen. Starte erneut."
+  ],
+  "GitHub connection setup is incomplete.": [
+    "Die Einrichtung der GitHub-Verbindung ist unvollständig."
+  ],
+  "GitHub could not complete this request. Check the current state before retrying.": [
+    "GitHub konnte diese Anfrage nicht abschließen. Prüfe den aktuellen Status vor einem erneuten Versuch."
+  ],
+  "GitHub deployments are not configured yet.": [
+    "GitHub-Deployments sind noch nicht eingerichtet."
+  ],
   "GitHub disconnected from this browser. Existing project links are unchanged.": [
     "GitHub wurde in diesem Browser getrennt. Bestehende Projektverknüpfungen bleiben unverändert."
   ],
+  "GitHub event is too large.": [
+    "Das GitHub-Ereignis ist zu groß."
+  ],
+  "GitHub installation is unavailable.": [
+    "Die GitHub-Installation ist nicht verfügbar."
+  ],
   "GitHub installation pages": [
     "GitHub-Installationsseiten"
+  ],
+  "GitHub repository selection exceeds the supported limit.": [
+    "Die GitHub-Repository-Auswahl überschreitet die unterstützte Grenze."
+  ],
+  "GitHub webhooks are not configured yet.": [
+    "GitHub-Webhooks sind noch nicht eingerichtet."
   ],
   "Global": [
     "Global"
@@ -3000,6 +3186,9 @@
   "Install and connect": [
     "Installieren und verbinden"
   ],
+  "Install or update GitHub access": [
+    "GitHub-Zugriff installieren oder aktualisieren"
+  ],
   "Install the GitHub App": [
     "GitHub-App installieren"
   ],
@@ -3008,6 +3197,9 @@
   ],
   "Install the app with ": [
     "Installiere die App mit "
+  ],
+  "Install verified registry pull access on the target cluster.": [
+    "Richte überprüften Lesezugriff auf die Registry im Zielcluster ein."
   ],
   "Installing this integration does not itself create a paid subscription. Any Webdock development, hosting or support fees require a separate agreement. Your Vercel account remains subject to Vercel’s own terms and charges. Webdock Studio is provided by Spitzli Development, not by Vercel.": [
     "Die Installation dieser Integration begründet für sich genommen kein kostenpflichtiges Abonnement. Entgelte für Webdock-Entwicklung, Hosting oder Support bedürfen einer gesonderten Vereinbarung. Für dein Vercel-Konto gelten weiterhin die eigenen Bedingungen und Entgelte von Vercel. Webdock Studio wird von Spitzli Development bereitgestellt, nicht von Vercel."
@@ -3090,6 +3282,15 @@
   "Invalid backup code": [
     "Ungültiger Wiederherstellungscode"
   ],
+  "Invalid build lease.": [
+    "Ungültige Build-Zuweisung."
+  ],
+  "Invalid build result.": [
+    "Ungültiges Build-Ergebnis."
+  ],
+  "Invalid build worker.": [
+    "Ungültiger Build-Worker."
+  ],
   "Invalid calendar action.": [
     "Ungültige Kalenderaktion."
   ],
@@ -3153,6 +3354,9 @@
   "Invalid delegated authentication.": [
     "Die übertragene Anmeldung ist ungültig."
   ],
+  "Invalid delivery.": [
+    "Ungültige Ereigniszustellung."
+  ],
   "Invalid demo amount.": [
     "Ungültiger Demo-Betrag."
   ],
@@ -3188,6 +3392,12 @@
   ],
   "Invalid image URL.": [
     "Ungültige Bildadresse."
+  ],
+  "Invalid immutable artifact.": [
+    "Ungültiges unveränderliches Artefakt."
+  ],
+  "Invalid immutable registry image.": [
+    "Ungültiges unveränderliches Registry-Image."
   ],
   "Invalid instance schema": [
     "Ungültiges Instanzschema"
@@ -3242,6 +3452,9 @@
   ],
   "Invalid provider endpoint.": [
     "Ungültiger Anbieter-Endpunkt."
+  ],
+  "Invalid publication result.": [
+    "Ungültiges Veröffentlichungsergebnis."
   ],
   "Invalid query parameters.": [
     "Ungültige Abfrageparameter."
@@ -3491,6 +3704,9 @@
   ],
   "Load current content": [
     "Aktuellen Stand laden"
+  ],
+  "Load repositories": [
+    "Repositories laden"
   ],
   "Loading connection…": [
     "Verbindung wird geladen …"
@@ -3840,6 +4056,9 @@
   "Move up": [
     "Nach oben"
   ],
+  "Multiple GitHub checks match this build. Reconciliation is required.": [
+    "Mehrere GitHub-Prüfungen gehören zu diesem Build. Ein Statusabgleich ist erforderlich."
+  ],
   "Multiple matching provider domains were found. Ask your operator to reconcile this reservation.": [
     "Mehrere passende Anbieterdomains wurden gefunden. Bitte deinen Betreiber, diese Reservierung abzugleichen."
   ],
@@ -3939,6 +4158,9 @@
   "No Git branch recorded": [
     "Kein Git-Branch erfasst"
   ],
+  "No GitHub connection yet.": [
+    "Noch keine GitHub-Verbindung vorhanden."
+  ],
   "No MCP clients registered yet.": [
     "Noch keine MCP-Clients registriert."
   ],
@@ -3971,6 +4193,12 @@
   ],
   "No archived projects": [
     "Keine archivierten Projekte"
+  ],
+  "No build output yet.": [
+    "Noch keine Build-Ausgabe vorhanden."
+  ],
+  "No builds yet.": [
+    "Noch keine Builds vorhanden."
   ],
   "No changes recorded yet.": [
     "Noch keine Änderungen erfasst."
@@ -4136,6 +4364,9 @@
   ],
   "No recent deployments.": [
     "Keine aktuellen Deployments."
+  ],
+  "No releases yet.": [
+    "Noch keine Releases vorhanden."
   ],
   "No repositories are available on this page. Review the app’s selected repositories on GitHub.": [
     "Auf dieser Seite sind keine Repositories verfügbar. Prüfe die für die App ausgewählten Repositories auf GitHub."
@@ -4316,6 +4547,9 @@
   ],
   "Only the first 1,000 projects are shown. Narrow access in your Vercel integration if needed.": [
     "Die ersten 1.000 Projekte werden angezeigt. Begrenze bei Bedarf den Zugriff in deiner Vercel-Integration."
+  ],
+  "Only these build values reach repository code. Repository scripts can read them. Runtime variables are configured separately.": [
+    "Nur diese Build-Werte werden an den Repository-Code weitergegeben. Repository-Skripte können sie lesen. Laufzeitvariablen werden separat konfiguriert."
   ],
   "Only this tenant's customer administrator can accept the offer.": [
     "Nur der Kunden-Admin dieses Mandanten kann das Angebot annehmen."
@@ -4671,6 +4905,9 @@
   "Plans and allowances": [
     "Tarife und Kontingente"
   ],
+  "Platform Vercel connection": [
+    "Vercel-Verbindung der Plattform"
+  ],
   "Platform administrator": [
     "Plattformadministrator"
   ],
@@ -4953,8 +5190,17 @@
   "Publication": [
     "Veröffentlichung"
   ],
+  "Publication identity cannot be replaced.": [
+    "Die Veröffentlichungskennung kann nicht ersetzt werden."
+  ],
+  "Publication requires observed health and verified target location.": [
+    "Die Veröffentlichung erfordert eine bestätigte Funktionsprüfung und einen überprüften Zielstandort."
+  ],
   "Publish": [
     "Veröffentlichen"
+  ],
+  "Publish production automatically after checks pass": [
+    "Nach erfolgreichen Prüfungen automatisch in Produktion veröffentlichen"
   ],
   "Publish the current page revision before assigning it as the homepage.": [
     "Die aktuelle Seitenversion muss vor der Startseitenzuordnung veröffentlicht sein."
@@ -4973,6 +5219,9 @@
   ],
   "Published: {address}": [
     "Veröffentlicht: {address}"
+  ],
+  "Pushes build the configured branch. Production publication requires approval of an exact artifact.": [
+    "Pushes bauen den konfigurierten Branch. Die Veröffentlichung in Produktion erfordert die Freigabe eines bestimmten Artefakts."
   ],
   "Question": [
     "Frage"
@@ -5046,6 +5295,9 @@
   "Reconcile operation": [
     "Auftrag erneut abgleichen"
   ],
+  "Reconcile release": [
+    "Release-Status abgleichen"
+  ],
   "Reconnect GitHub": [
     "GitHub erneut verbinden"
   ],
@@ -5057,6 +5309,9 @@
   ],
   "Reconnect Vercel with deployment management permission.": [
     "Verbinde Vercel erneut mit der Berechtigung zum Verwalten von Bereitstellungen."
+  ],
+  "Reconnect Vercel with deployment write and project read permissions.": [
+    "Verbinde Vercel erneut mit Schreibrechten für Deployments und Leserechten für Projekte."
   ],
   "Reconnect Vercel with project management permission.": [
     "Verbinde Vercel erneut mit der Berechtigung zum Verwalten von Projekten."
@@ -5157,6 +5412,15 @@
   "Registration starts provider verification. Configure the DNS records shown in your turboSMTP dashboard, then refresh here.": [
     "Die Registrierung startet die Anbieterprüfung. Richte die DNS-Einträge aus deinem turboSMTP-Dashboard ein und aktualisiere anschließend den Status hier."
   ],
+  "Release health has not been verified.": [
+    "Die Funktionsfähigkeit des Releases wurde noch nicht bestätigt."
+  ],
+  "Release pages": [
+    "Release-Seiten"
+  ],
+  "Releases": [
+    "Releases"
+  ],
   "Reload": [
     "Neu laden"
   ],
@@ -5238,6 +5502,9 @@
   "Removing…": [
     "Wird entfernt…"
   ],
+  "Renew approval": [
+    "Freigabe erneuern"
+  ],
   "Replace image": [
     "Bild ersetzen"
   ],
@@ -5285,6 +5552,9 @@
   ],
   "Request pages": [
     "Anfragenseiten"
+  ],
+  "Request rollback": [
+    "Rollback anfordern"
   ],
   "Request saved.": [
     "Anfrage gespeichert."
@@ -5475,6 +5745,12 @@
   "Rollback": [
     "Vorherige Version wiederherstellen"
   ],
+  "Rollback requires a retained healthy release with compatible configuration.": [
+    "Ein Rollback erfordert ein aufbewahrtes, funktionsfähiges Release mit kompatibler Konfiguration."
+  ],
+  "Rollback reuses a retained artifact. It does not restore a database.": [
+    "Ein Rollback verwendet ein aufbewahrtes Artefakt erneut. Eine Datenbank wird dabei nicht wiederhergestellt."
+  ],
   "Room for ideas": [
     "Raum für Ideen"
   ],
@@ -5483,6 +5759,12 @@
   ],
   "Root admin": [
     "Plattformverwaltung"
+  ],
+  "Root directory": [
+    "Stammverzeichnis"
+  ],
+  "Runtime configuration changed. Build again before publication.": [
+    "Die Laufzeitkonfiguration wurde geändert. Erstelle vor der Veröffentlichung einen neuen Build."
   ],
   "SEO & contact": [
     "Suchmaschinen und Kontakt"
@@ -5537,6 +5819,9 @@
   ],
   "Save credentials": [
     "Zugangsdaten speichern"
+  ],
+  "Save deployment source": [
+    "Deployment-Quelle speichern"
   ],
   "Save draft": [
     "Entwurf speichern"
@@ -5685,6 +5970,12 @@
   "Select SMTP sending or API sending when creating the credential for your application.": [
     "Wähle beim Erstellen der Zugangsdaten für deine Anwendung SMTP-Versand oder API-Versand."
   ],
+  "Select a Vercel connection and project before enabling Git deployments.": [
+    "Wähle eine Vercel-Verbindung und ein Projekt, bevor du Git-Deployments aktivierst."
+  ],
+  "Select a Vercel deployment target before enabling Git deployments.": [
+    "Wähle ein Vercel-Deployment-Ziel, bevor du Git-Deployments aktivierst."
+  ],
   "Select a cluster only for k3s.": [
     "Nur für k3s einen Cluster auswählen."
   ],
@@ -5700,6 +5991,9 @@
   "Select a project to see deployments and domains.": [
     "Wähle ein Projekt aus, um Bereitstellungen und Domains zu sehen."
   ],
+  "Select a repository": [
+    "Repository auswählen"
+  ],
   "Select a state": [
     "Status auswählen"
   ],
@@ -5709,8 +6003,17 @@
   "Select an entry": [
     "Eintrag auswählen"
   ],
+  "Select an existing authorized Vercel project. Disable native Git builds and configure Frankfurt Functions before binding.": [
+    "Wähle ein vorhandenes Vercel-Projekt mit autorisiertem Zugriff. Deaktiviere native Git-Builds und konfiguriere Functions in Frankfurt vor der Zuordnung."
+  ],
   "Select an existing record.": [
     "Wähle einen vorhandenen Datensatz."
+  ],
+  "Select an installation": [
+    "Installation auswählen"
+  ],
+  "Select connection": [
+    "Verbindung auswählen"
   ],
   "Select content": [
     "Inhalt auswählen"
@@ -5720,6 +6023,9 @@
   ],
   "Select the featured products on the homepage.": [
     "Die empfohlenen Produkte der Startseite auswählen."
+  ],
+  "Select this project in the customer Vercel connection first.": [
+    "Wähle dieses Projekt zuerst in der Vercel-Verbindung des Kunden aus."
   ],
   "Select today or a future date.": [
     "Bitte ein heutiges oder zukünftiges Datum auswählen."
@@ -6231,6 +6537,9 @@
   "Temporary storage": [
     "Temporärer Speicher"
   ],
+  "Ten builds are already queued or running for this project.": [
+    "Für dieses Projekt warten oder laufen bereits zehn Builds."
+  ],
   "Tenant & invitations": [
     "Mandant & Einladungen"
   ],
@@ -6462,6 +6771,12 @@
   "The operation failed. No change was confirmed.": [
     "Der Vorgang ist fehlgeschlagen. Es wurde keine Änderung bestätigt."
   ],
+  "The original Vercel target is no longer accessible.": [
+    "Das ursprüngliche Vercel-Ziel ist nicht mehr zugänglich."
+  ],
+  "The original publication target could not be verified.": [
+    "Das ursprüngliche Veröffentlichungsziel konnte nicht überprüft werden."
+  ],
   "The original website is the homepage again.": [
     "Die ursprüngliche Website ist wieder die Startseite."
   ],
@@ -6618,8 +6933,14 @@
   "This CMS is already deployed": [
     "Dieses CMS ist bereits bereitgestellt"
   ],
+  "This GitHub installation belongs to another customer.": [
+    "Diese GitHub-Installation gehört zu einem anderen Kunden."
+  ],
   "This GitHub installation is no longer accessible.": [
     "Diese GitHub-Installation ist nicht mehr zugänglich."
+  ],
+  "This Vercel target is already bound to another hosting project or connection.": [
+    "Dieses Vercel-Ziel ist bereits einem anderen Hosting-Projekt oder einer anderen Verbindung zugeordnet."
   ],
   "This Vercel team is already assigned to another connection.": [
     "Dieses Vercel-Team ist bereits einer anderen Verbindung zugeordnet."
@@ -7233,6 +7554,12 @@
   "Vercel data we receive and why": [
     "Welche Vercel-Daten wir erhalten und wofür"
   ],
+  "Vercel deployment identity could not be verified.": [
+    "Die Vercel-Deployment-Kennung konnte nicht überprüft werden."
+  ],
+  "Vercel deployment target could not be verified.": [
+    "Das Vercel-Deployment-Ziel konnte nicht überprüft werden."
+  ],
   "Vercel disconnected from Studio.": [
     "Vercel wurde von Studio getrennt."
   ],
@@ -7290,11 +7617,20 @@
   "Verified": [
     "Bestätigt"
   ],
+  "Verified EU microVM capacity is required.": [
+    "Überprüfte MicroVM-Kapazität in der EU ist erforderlich."
+  ],
+  "Verified isolated build capacity is required.": [
+    "Überprüfte, isolierte Build-Kapazität ist erforderlich."
+  ],
   "Verified persistent storage is unavailable on this cluster.": [
     "Auf diesem Cluster ist kein geprüfter dauerhafter Speicher verfügbar."
   ],
   "Verify": [
     "Bestätigen"
+  ],
+  "Verify and bind target": [
+    "Ziel prüfen und zuordnen"
   ],
   "Verify and enable": [
     "Bestätigen und aktivieren"
@@ -7406,6 +7742,9 @@
   ],
   "Wait at least five minutes and inspect the provider state. Confirm the exact pending domain to allow a new operation.": [
     "Warte mindestens fünf Minuten und prüfe den Zustand beim Anbieter. Bestätige die genaue ausstehende Domain, um einen neuen Auftrag zu erlauben."
+  ],
+  "Wait before connecting GitHub again.": [
+    "Warte, bevor du GitHub erneut verbindest."
   ],
   "Wait before creating another enrollment.": [
     "Vor dem Erstellen einer weiteren Anbindung kurz warten."
@@ -7788,6 +8127,9 @@
   "Zoom": [
     "Zoom"
   ],
+  "active": [
+    "Aktiv"
+  ],
   "and": [
     "und"
   ],
@@ -7797,8 +8139,17 @@
   "and the": [
     "und den"
   ],
+  "awaiting-approval": [
+    "Wartet auf Freigabe"
+  ],
   "before connecting.": [
     "vor dem Verbinden."
+  ],
+  "cancelled": [
+    "Abgebrochen"
+  ],
+  "completed": [
+    "Abgeschlossen"
   ],
   "connected": [
     "Verbunden"
@@ -7811,6 +8162,12 @@
   ],
   "deleted": [
     "Gelöscht"
+  ],
+  "deploying": [
+    "Wird bereitgestellt"
+  ],
+  "disconnected": [
+    "Getrennt"
   ],
   "e.g. Consultation": [
     "z. B. Beratung"
@@ -7830,6 +8187,12 @@
   "for this setup.": [
     "für diese Einrichtung."
   ],
+  "in_progress": [
+    "In Bearbeitung"
+  ],
+  "needs-reconciliation": [
+    "Statusabgleich erforderlich"
+  ],
   "not specified": [
     "nicht angegeben"
   ],
@@ -7848,17 +8211,32 @@
   "project": [
     "Projekt"
   ],
+  "queued": [
+    "In der Warteschlange"
+  ],
   "ready": [
     "Bereit"
   ],
+  "revalidation-required": [
+    "Erneute Überprüfung erforderlich"
+  ],
   "revoked": [
     "Widerrufen"
+  ],
+  "running": [
+    "Läuft"
   ],
   "stale": [
     "Veraltet"
   ],
   "stopped": [
     "Gestoppt"
+  ],
+  "succeeded": [
+    "Erfolgreich"
+  ],
+  "superseded": [
+    "Ersetzt"
   ],
   "terms": [
     "Bedingungen"

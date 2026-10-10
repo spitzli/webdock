@@ -41,6 +41,8 @@ def run(args):
         raise ValueError('Invalid SSH destination')
     storage_client=Path(__file__).with_name('storage_client.py').read_text()
     dependency="import sys,types\nm=types.ModuleType('storage_client')\nexec(compile("+repr(storage_client)+",'<storage-client>','exec'),m.__dict__)\nsys.modules['storage_client']=m\n"
+    registry_module=Path(__file__).with_name('registry.py').read_text()
+    dependency+="r=types.ModuleType('registry')\nexec(compile("+repr(registry_module)+",'<registry>','exec'),r.__dict__)\nsys.modules['registry']=r\n"
     observer = dependency+Path(__file__).with_name('observer.py').read_text()
     executor = Path(__file__).with_name('executor.py').read_text() if args.manage else None
     with config_path.open('r+') as handle:

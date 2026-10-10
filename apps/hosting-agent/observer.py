@@ -55,6 +55,8 @@ def collect_observation():
     if capacity is not None:
         observed['capacity']['volumeBytes']=capacity['capacityBytes']
         observed['capabilities'].update(storage=capacity['ready'],storageVersion=1)
+    import registry
+    if registry.capability(command):observed['capabilities']['registryVersion']=1
     return observed
 
 

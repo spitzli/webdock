@@ -11,7 +11,7 @@ type Row = {
   removed: boolean;
   visible: boolean;
 };
-export function ApplicationEnvironment({ names = [] }: { names?: string[] }) {
+export function ApplicationEnvironment({ names = [], build = false }: { names?: string[]; build?: boolean }) {
   const { t } = useI18n(),
     result = useContext(HostingSaveContext),
     pending = useContext(HostingPendingContext),
@@ -39,13 +39,13 @@ export function ApplicationEnvironment({ names = [] }: { names?: string[] }) {
     .map((r) => ({ name: r.name, value: r.removed ? null : r.value }));
   return (
     <fieldset className="hosting-environment" disabled={pending}>
-      <legend>{t("Environment variables")}</legend>
+      <legend>{build ? t("Build environment variables") : t("Environment variables")}</legend>
       <p className="help">
-        {t(
+        {build ? t("Only these build values reach repository code. Repository scripts can read them. Runtime variables are configured separately.") : t(
           "Values are encrypted and hidden after saving. Changes take effect with the next application deployment. Do not print secrets in application logs.",
         )}
       </p>
-      <input type="hidden" name="environment" value={JSON.stringify(patch)} />
+      <input type="hidden" name={build ? "buildEnvironment" : "environment"} value={JSON.stringify(patch)} />
       {rows.length === 0 && (
         <p className="help">{t("No environment variables configured.")}</p>
       )}

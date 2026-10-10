@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 import storage_client as storage
+import registry
 
 class ExecutionError(Exception):
     pass
@@ -77,6 +78,10 @@ def manifests(p):
     pod={'automountServiceAccountToken':False,'serviceAccountName':'default','terminationGracePeriodSeconds':15,
       'securityContext':{'runAsNonRoot':True,'runAsUser':65532,'runAsGroup':65532,'fsGroup':65532,'seccompProfile':{'type':'RuntimeDefault'}},
       'containers':[container],'volumes':[{'name':'tmp','emptyDir':{'sizeLimit':str(s['ephemeralBytes'])}}]}
+    pull=registry.pull_configuration(p)
+    if pull:
+        container['imagePullPolicy']='IfNotPresent'
+        pod['imagePullSecrets']=[pull]
     if s.get('volumeBytes'):
         pod['volumes'].append({'name':'data','persistentVolumeClaim':{'claimName':name+'-data'}})
         container['volumeMounts'].append({'name':'data','mountPath':'/data'})

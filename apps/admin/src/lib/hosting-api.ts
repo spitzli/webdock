@@ -28,7 +28,7 @@ export async function handleHostingRequest(
       method = request.method;
     if(method==='POST'&&path.length===1&&area==='commands') {
       const parsed=commandSchema.parse(await readJSON(request));
-      if(!parsed.action.startsWith('byok.'))throw new HostingError(400,'Use the resource endpoint for this action.');
+      if(!parsed.action.startsWith('byok.') && !parsed.action.startsWith('git.'))throw new HostingError(400,'Use the resource endpoint for this action.');
       const data=await deps.call(token,parsed);return Response.json(data,{headers:{'Cache-Control':'no-store'}});
     }
     if (method === "GET") {

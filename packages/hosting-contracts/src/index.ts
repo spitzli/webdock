@@ -1,3 +1,5 @@
+import {gitCommands,gitReadActions} from "./git-deployments";
+export * from "./git-deployments";
 import {byokCommands} from "./byok";
 export * from "./byok";
 import { parseResourceInput } from "./units";
@@ -22,7 +24,7 @@ export type Enforcement =
 export type HostingActor = {
   subject: string;
   sessionID: string;
-  source: "studio" | "oauth";
+  source: "studio" | "oauth" | "git-policy";
   scopes: readonly string[];
 };
 export const resourceID = z
@@ -173,6 +175,7 @@ export const appViewSchema = z.object({
 export type HostingAppView = z.infer<typeof appViewSchema>;
 export const commandSchema = z.discriminatedUnion("action", [
   ...byokCommands,
+  ...gitCommands,
   z
     .object({
       action: z.literal("clusters.activate"),
@@ -367,6 +370,7 @@ export const commandSchema = z.discriminatedUnion("action", [
 ]);
 export type HostingCommand = z.infer<typeof commandSchema>;
 export const readActions = new Set<HostingCommand["action"]>([
+  ...gitReadActions,
   "byok.mail.get",
   "byok.policy.get", "byok.list", "byok.cluster", "byok.inventory", "byok.vercel.projects", "byok.vercel.resources",
   "apps.list",
@@ -428,6 +432,7 @@ export const observationSchema = z
         ingress: z.boolean(),
         environment: z.boolean().optional(),
         storageVersion: z.literal(1).optional(),
+        registryVersion: z.literal(1).optional(),
       })
       .strict(),
   })

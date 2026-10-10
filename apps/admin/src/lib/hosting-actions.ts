@@ -51,6 +51,22 @@ export async function saveHosting(
       }
     if (form.has("ownImagesPresent"))
       cmd.ownImages = form.get("ownImages") === "yes";
+    if (base.action === "git.source.configure") {
+      for (const field of ["connectionID", "repositoryID", "branch", "rootDirectory", "recipe", "targetID"]) {
+        if (form.has(field)) cmd[field] = String(form.get(field));
+      }
+      cmd.enabled = form.get("enabled") === "yes";
+      cmd.autoPublish = form.get("autoPublish") === "yes";
+      if (form.has("buildEnvironment")) {
+        const value = String(form.get("buildEnvironment"));
+        if (value.length > 131072) throw new HostingError(400, "Build environment is too large.");
+        cmd.buildEnvironment = JSON.parse(value);
+      }
+    }
+    if (base.action === "git.targets.bind") {
+      cmd.targetID = String(form.get("targetID") ?? "");
+      cmd.mode = String(form.get("mode") ?? base.mode);
+    }
     if (base.action === "projects.create" || base.action === "projects.update")
       cmd.confirmSharedImages = form.get("confirmSharedImages") === "yes";
     if (base.action === "byok.policy.set") {
