@@ -28,6 +28,7 @@ export function MailServicePanel({ data }: { data: NonNullable<NativeMailView> }
       <input type="hidden" name="action" value="reconcile" />
       <button className="button" type="submit" disabled={pending}>{i18n.t("Retry Mail operation")}</button>
     </form>}
+    <p><Link href={`/tenants/${service.customerID}/mail/sending`}>{i18n.t("Webdock Mail sending")}</Link></p>
     <p><Link href={`/tenants/${service.customerID}/mail/mailboxes`}>{i18n.t("Manage mailboxes")}</Link></p>
     {result.error && <p className="notice error" role="alert">{i18n.error(result.error)}</p>}
     {result.message && <p className="notice" role="status">{i18n.error(result.message, "Changes saved.")}</p>}

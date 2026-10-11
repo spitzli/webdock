@@ -1,3 +1,5 @@
+import {outboxSchemaSQL,outboxGrants} from '@webdock/mail-core/outbox';
+import {mailSendSchemaSQL,mailSendGrants} from '../src/lib/mail-send-schema';
 import { readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
 import { Pool } from "pg";
@@ -22,6 +24,10 @@ try {
   await database.query(mailboxGrants(env.AUTH_DB_ROLE || "webdock_auth_runtime"));
   await database.query(mailBudgetSchemaSQL);
   await database.query(mailBudgetGrants(env.AUTH_DB_ROLE || "webdock_auth_runtime"));
+  await database.query(outboxSchemaSQL);
+  await database.query(outboxGrants(env.AUTH_DB_ROLE || "webdock_auth_runtime"));
+  await database.query(mailSendSchemaSQL);
+  await database.query(mailSendGrants(env.AUTH_DB_ROLE || "webdock_auth_runtime"));
   await database.query("COMMIT");
   console.log("Native Mail activation registry, operation queue and scoped runtime grants ready.");
 } catch (error) {

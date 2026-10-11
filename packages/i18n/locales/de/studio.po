@@ -7868,3 +7868,51 @@ msgstr "Aktiviere den Mailempfang für Postfächer oder Weiterleitungen. Reiner 
 
 msgid "Reconcile pending sends before activating incoming Mail."
 msgstr "Kläre ausstehende Versandvorgänge, bevor du den Mailempfang aktivierst."
+
+msgid "Sending connection"
+msgstr "Versandverbindung"
+
+msgid "Own sending connection"
+msgstr "Eigene Versandverbindung"
+
+msgid "Configure sending"
+msgstr "Versand einrichten"
+
+msgid "Webdock sending endpoint"
+msgstr "Webdock-Versandendpunkt"
+
+msgid "Webdock API keys"
+msgstr "Webdock-API-Schlüssel"
+
+msgid "These keys can send mail and check their own submissions. They cannot read mailboxes."
+msgstr "Diese Schlüssel können E-Mails senden und ihre eigenen Versandvorgänge abfragen. Sie können keine Postfächer lesen."
+
+msgid "All verified sender domains"
+msgstr "Alle bestätigten Absenderdomains"
+
+msgid "Create Webdock key"
+msgstr "Webdock-Schlüssel erstellen"
+
+msgid "Revoke key"
+msgstr "Schlüssel widerrufen"
+
+msgid "Save this Webdock API key now. It is shown only once."
+msgstr "Speichere diesen Webdock-API-Schlüssel jetzt. Er wird nur einmal angezeigt."
+
+msgid "Webdock Mail sending"
+msgstr "Webdock-Mailversand"
+
+msgid "Native Mail sending is not available yet."
+msgstr "Der native Mailversand ist noch nicht verfügbar."
+
+msgid "Native Mail sending is configured."
+msgstr "Der native Mailversand ist eingerichtet."
+
+msgid "Webdock API key revoked."
+msgstr "Webdock-API-Schlüssel widerrufen."
+
+msgid "Use Webdock Mail sending to manage native API keys."
+msgstr "Verwalte native API-Schlüssel unter Webdock-Mailversand."
+
+msgid "Not configured"
+msgstr "Nicht eingerichtet"

@@ -14,6 +14,7 @@ export type MailKeyInput = { action: string; label?: string; permissions?: strin
 function fail(message: string): never { throw new MailKeysError(message); }
 async function accessToKeys(headers: Headers, customerID: string) {
  const access = await getTenant(headers, customerID);
+ if(process.env.WEBDOCK_NATIVE_MAIL_SENDING_ENABLED === "true" && !access.operator) fail("Use Webdock Mail sending to manage native API keys.");
  if (!access.canManage || access.tenant.status !== "active") fail("Active tenant administrator access is required.");
  return access;
 }
@@ -42,6 +43,7 @@ export async function manageTenantMailKeys(headers: Headers, customerID: string,
  const label = input.label?.trim() || "";
  const permissions = input.permissions || [], ips = input.ips || [];
  if (input.action === "create") {
+  if(process.env.WEBDOCK_NATIVE_MAIL_SENDING_ENABLED === "true") fail("Use Webdock Mail sending to manage native API keys.");
   if (!label || label.length > 100 || /[\x00-\x1f\x7f]/.test(label)) fail("Enter a readable label of up to 100 characters.");
   if (!permissions.length || permissions.length > 3 || permissions.some(p => !["SEND_SMTP", "SEND_API", ...(access.operator ? ["APIS"] : [])].includes(p))) fail("Choose the permitted sending access for this credential.");
   if (ips.length > 100 || ips.some(ip => !isIP(ip))) fail("Use individual IPv4 or IPv6 addresses, without CIDR ranges.");

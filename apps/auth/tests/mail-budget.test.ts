@@ -42,6 +42,15 @@ test('concurrent native sends reserve recipient units once and retain uncertain 
   const unlimited=(await database.query('SELECT webdock_auth.next_snowflake() AS id')).rows[0].id;
   await transaction(db=>reserveMailBudget(db,customerID,unlimited,100));
   assert.equal(String((await database.query('SELECT reserved FROM webdock_mail.month_usage WHERE customer_id=$1',[customerID])).rows[0].reserved),'106');
+  const currentPeriod=(await database.query("SELECT date_trunc('month',now() AT TIME ZONE 'UTC')::date::text AS period")).rows[0].period;
+  const oldPeriod=(await database.query("SELECT (date_trunc('month',now() AT TIME ZONE 'UTC')-interval '1 month')::date::text AS period")).rows[0].period;
+  await database.query('INSERT INTO webdock_mail.month_usage(customer_id,period_start,reserved) VALUES($1,$2,100)',[customerID,oldPeriod]);
+  await database.query('UPDATE webdock_mail.month_usage SET reserved=reserved-100 WHERE customer_id=$1 AND period_start=$2',[customerID,currentPeriod]);
+  await database.query('UPDATE webdock_mail.budget_reservation SET period_start=$2 WHERE reference_id=$1',[unlimited,oldPeriod]);
+  await transaction(db=>reserveMailBudget(db,customerID,unlimited,100));
+  await transaction(db=>reserveMailBudget(db,customerID,unlimited,100));
+  assert.equal((await database.query('SELECT reserved FROM webdock_mail.month_usage WHERE customer_id=$1 AND period_start=$2',[customerID,oldPeriod])).rows[0].reserved,'0');
+  assert.equal((await database.query('SELECT reserved FROM webdock_mail.month_usage WHERE customer_id=$1 AND period_start=$2',[customerID,currentPeriod])).rows[0].reserved,'106');
   // Once incoming Mail was activated, unavailable instances must never bypass the native route.
   await database.query(`INSERT INTO webdock_mail.service(customer_id,instance_key,host_id,desired_enabled,state,revision,applied_revision) VALUES($1,$2,'local-test',true,'pending',1,0)`,[customerID,'mail-'+customerID]);
   const routed=(await database.query('SELECT webdock_auth.next_snowflake() AS id')).rows[0].id;
@@ -58,6 +67,6 @@ test('concurrent native sends reserve recipient units once and retain uncertain 
   await database.query('DELETE FROM webdock_auth.tenant_customer WHERE customer_id=$1',[customerID]);
   await database.query('DELETE FROM webdock_admin.customers WHERE id=$1',[customerID]);
   await database.query('DELETE FROM webdock_auth.organization WHERE id=$1',[org]);
-  if(previous)await database.query('UPDATE webdock_auth.platform_settings SET settings=$1 WHERE id=true',[previous.settings]);
+  if(previous)await database.query('UPDATE webdock_auth.platform_settings SET settings=$1 WHERE id=true',[previous.settings]);else await database.query('DELETE FROM webdock_auth.platform_settings WHERE id=true');
  }
 });

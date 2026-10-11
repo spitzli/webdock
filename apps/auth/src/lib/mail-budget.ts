@@ -47,8 +47,8 @@ export async function reserveMailBudget(db:Connection,customerID:string,referenc
     fail("Incoming Mail is unavailable. Sending cannot bypass its configured route.");
   const path:SendPath=incoming?{kind:"stalwart",serviceRevision:String(incoming.revision)}:{kind:"direct"};
   await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))",["mail-budget:"+customerID]);
-  const existing=(await db.query("SELECT customer_id,units,state,send_path FROM webdock_mail.budget_reservation WHERE reference_id=$1",[reference])).rows[0];
-  if(existing){if(existing.customer_id!==customerID || existing.units!==units || existing.send_path?.kind!==path.kind || (path.kind==="stalwart" && existing.send_path.serviceRevision!==path.serviceRevision))fail();return {created:false,state:existing.state as string,path};}
+  const existing=(await db.query("SELECT customer_id,units,state,send_path,period_start::text AS period FROM webdock_mail.budget_reservation WHERE reference_id=$1",[reference])).rows[0];
+  if(existing){if(existing.customer_id!==customerID || existing.units!==units || existing.send_path?.kind!==path.kind || (path.kind==="stalwart" && existing.send_path.serviceRevision!==path.serviceRevision))fail();if(existing.state!=="reserved")return {created:false,state:existing.state as string,path};}
   const subscription=(await db.query("SELECT base,extras FROM webdock_auth.tenant_subscription WHERE customer_id=$1 FOR SHARE",[customerID])).rows[0];
   const allowance=subscription?.base?.mailMessages;
   const base=allowance===undefined?0:allowance,extra=subscription?.extras?.mailMessages??0;
@@ -58,7 +58,17 @@ export async function reserveMailBudget(db:Connection,customerID:string,referenc
   const period=(await db.query("SELECT date_trunc('month',now() AT TIME ZONE 'UTC')::date::text AS period")).rows[0].period;
   await db.query("INSERT INTO webdock_mail.month_usage(customer_id,period_start) VALUES($1,$2) ON CONFLICT DO NOTHING",[customerID,period]);
   const usage=(await db.query("SELECT reserved,accepted FROM webdock_mail.month_usage WHERE customer_id=$1 AND period_start=$2 FOR UPDATE",[customerID,period])).rows[0];
-  if(limit!==null && BigInt(usage.reserved)+BigInt(usage.accepted)+BigInt(units)>limit)fail("Monthly Mail allowance exhausted.");
+  const additional=existing?.period===period?0:units;
+  if(limit!==null && BigInt(usage.reserved)+BigInt(usage.accepted)+BigInt(additional)>limit)fail("Monthly Mail allowance exhausted.");
+  if(existing){
+    // Scheduled/backlogged mail is charged to the month of dispatch, without double reserving.
+    if(existing.period!==period){
+      await db.query("UPDATE webdock_mail.month_usage SET reserved=reserved-$3 WHERE customer_id=$1 AND period_start=$2",[customerID,existing.period,units]);
+      await db.query("UPDATE webdock_mail.month_usage SET reserved=reserved+$3 WHERE customer_id=$1 AND period_start=$2",[customerID,period,units]);
+      await db.query("UPDATE webdock_mail.budget_reservation SET period_start=$2 WHERE reference_id=$1",[reference,period]);
+    }
+    return {created:false,state:existing.state as string,path};
+  }
   await db.query("INSERT INTO webdock_mail.budget_reservation(reference_id,customer_id,period_start,units,send_path) VALUES($1,$2,$3,$4,$5)",[reference,customerID,period,units,JSON.stringify(path)]);
   await db.query("UPDATE webdock_mail.month_usage SET reserved=reserved+$3 WHERE customer_id=$1 AND period_start=$2",[customerID,period,units]);
   return {created:true,state:"reserved",path};

@@ -275,3 +275,27 @@ test('CE relay delivers to the sink; missing routes expose the upstream MX fallb
     const received=await (await fetch(`http://${policyIP}:8090/received`)).json();assert.ok(!received.some((row:{content:string})=>row.content.includes('No route fallback fixture')));
   }finally{mailer.close();const {id,...fields}=original[0];await a.client.call('x:MtaOutboundStrategy/set',{update:{singleton:fields}});await a.client.call('x:MtaRoute/set',{destroy:[routeID]});await a.client.call('x:MtaTlsStrategy/set',{destroy:[tlsID]});}
 });
+
+test('CE submission service can send for a scoped identity without mailbox or management access',async()=>{
+ const a=instances[0];
+ const domains=(await a.client.call('x:Domain/get',{ids:null})).list as {id:string;name:string}[];
+ const domain=domains.find(row=>row.name===a.domain)!;
+ const created=await a.client.call('x:Account/set',{create:{service:{'@type':'User',name:'webdock-submit',domainId:domain.id,roles:{'@type':'User'},permissions:{'@type':'Replace',enabledPermissions:{authenticate:true,emailSend:true},disabledPermissions:{}},credentials:{'0':{'@type':'Password',secret:a.password}},encryptionAtRest:{'@type':'Disabled'},quotas:{maxDiskQuota:1048576}}}});
+ const serviceID=(created.created as {service:{id:string}}).service.id,login=`webdock-submit@${a.domain}`;
+ const original=((await a.client.call('x:MtaStageAuth/get',{ids:['singleton']})).list as Record<string,unknown>[])[0];
+ const mailer=nodemailer.createTransport({host:a.ip,port:465,secure:true,auth:{user:login,pass:a.password},tls:{rejectUnauthorized:false},connectionTimeout:5000,socketTimeout:10000});
+ try{
+  assert.equal(await mailer.verify(),true);
+  await assert.rejects(mailer.sendMail({from:`alice@${a.domain}`,to:`alice@${a.domain}`,subject:'Service denied fixture',text:'Must require the scoped sender exception.'}),error=>(error as {responseCode?:number}).responseCode===501);
+  await a.client.call('x:MtaStageAuth/set',{update:{singleton:{mustMatchSender:{else:'true',match:{'0':{if:`authenticated_as == '${login}'`,then:'false'}}}}}});
+  compose('restart',a.service);await eventually(()=>a.client.call('x:MtaStageAuth/get',{ids:['singleton']}));
+  await mailer.sendMail({from:`alice@${a.domain}`,to:`alice@${a.domain}`,subject:'Scoped submission service fixture',text:'Sent with authenticate and emailSend only.'});
+  const client=new JmapClient({url:a.url,allowInsecureHttp:true,authorization:basic(`alice@${a.domain}`,a.password),accountId:accountIDs[0]});
+  await eventually(async()=>assert.ok((await client.emails({text:'Scoped submission service fixture'})).list.length));
+  const response=await fetch(a.url+'/jmap',{method:'POST',headers:{'Content-Type':'application/json',Authorization:basic(login,a.password)},body:JSON.stringify({using:['urn:ietf:params:jmap:core','urn:ietf:params:jmap:mail'],methodCalls:[['Email/query',{accountId:serviceID},'denied']]})});
+  const result=await response.json();assert.equal(result.methodResponses[0][0],'error');assert.equal(result.methodResponses[0][1].type,'forbidden');
+  const management=new StalwartClient({url:a.url,authorization:basic(login,a.password),allowInsecureHttp:true});await assert.rejects(management.call('x:Account/get',{ids:null}));
+ }finally{
+  mailer.close();const {id,...fields}=original;await a.client.call('x:MtaStageAuth/set',{update:{singleton:fields}});await a.client.call('x:Account/set',{destroy:[serviceID]});
+ }
+});

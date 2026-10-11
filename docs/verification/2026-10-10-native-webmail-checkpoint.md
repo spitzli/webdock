@@ -133,3 +133,48 @@ passed. The new activation/budget tests also passed after the full Auth run.
 No production rollout or merge was performed for this checkpoint. Public reception,
 forwarding, common durable sending, managed/BYOK credential binding and real authenticated
 browser-to-mail-server verification remain required before customer release.
+
+## 2026-10-11: durable native outgoing API
+
+The outgoing-only path is now connected locally: a native Webdock key authorizes
+`POST /v1/emails`; the dedicated Mail API validates/compiles MIME, stores an encrypted
+private payload and atomically admits a PostgreSQL job with its recipient budget.
+The worker rechecks the key, domain, transport revision, current allowance and BYOK
+entitlement immediately before committing its handoff and calling the relay API.
+`GET /v1/emails/:id` reports that key's submissions; `DELETE` cancels only before handoff.
+The local HTTP integration exercises the real relay adapter with a fixture fetch response,
+not an actual external provider delivery.
+
+The queue supports scheduling up to 30 days, source-scoped idempotency, concurrent
+workers, pre-handoff lease recovery, late receipt reconciliation and explicit unknown
+acceptance. Unknown handoffs cannot be dispatched again. Quota downgrade and month
+rollover are rechecked without double charging. BCC remains in the envelope only.
+A malformed/unreadable stored payload is rejected before network handoff.
+
+Studio now has `/mail/sending` for native, hash-only API keys, optional domain scope,
+revocation, and managed/BYOK connection setup. Managed provider keys have SEND_API only,
+remain encrypted server-side and use a reservation before external creation; lost
+creation responses require review. BYOK uses the existing entitlement and credential
+revision and never falls back to managed sending. Deleting a restricted key's domain
+cannot broaden that key. Once the new sending flag is enabled, legacy managed direct-key
+creation is blocked; operators retain legacy inspection/revocation for migration.
+
+The API has a standalone rootless image and uses a private retained filesystem;
+Auth carries bounded metadata, not MIME bodies. The restricted local image started
+successfully with read-only root, all capabilities dropped and no network, and returned
+health 200. A component browser fixture verified native key creation, one-time synthetic
+key display, German labels, absence of vendor branding and no overflow at 390px.
+This is not a real authenticated Studio production test.
+
+Verification: Auth 139/139, Studio 106/106, Mail 38 unit tests, two database tests,
+and 11 pinned CE integration tests passed. The new CE test proves a separate principal
+with only authenticate/emailSend can submit under an exact authenticated-as exception,
+while JMAP mailbox reads and management access remain forbidden. This principal test
+was isolated; it has not changed production Stalwart accounts.
+
+**Still disabled for production:** `WEBDOCK_NATIVE_MAIL_SENDING_ENABLED=false` by default.
+The incoming/Stalwart path is deliberately refused by admission until its private service
+principal, DATA policy, verified relay and egress rules are connected. Webmail is not yet
+connected to this outbox. Payload orphan/terminal cleanup, public DNS/TLS and deployment,
+real authorized delivery, reception/forwarding and backup/restore remain release gates.
+The existing private Spitzli instance and its retained volume were not modified.

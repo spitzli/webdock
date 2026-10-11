@@ -602,6 +602,9 @@
   "All tenants": [
     "Alle Mandanten"
   ],
+  "All verified sender domains": [
+    "Alle bestätigten Absenderdomains"
+  ],
   "Allocatable": [
     "Verfügbare Kapazität"
   ],
@@ -1517,6 +1520,9 @@
   "Configure build variables in GitHub Actions before using external builds.": [
     "Konfiguriere Build-Variablen in GitHub Actions, bevor du externe Builds verwendest."
   ],
+  "Configure sending": [
+    "Versand einrichten"
+  ],
   "Configure the GitHub App ID and private key in the private Auth environment.": [
     "Konfiguriere die GitHub-App-ID und den privaten Schlüssel in der privaten Auth-Umgebung."
   ],
@@ -1952,6 +1958,9 @@
   ],
   "Cover": [
     "Ausschnitt füllen"
+  ],
+  "Create Webdock key": [
+    "Webdock-Schlüssel erstellen"
   ],
   "Create a customer": [
     "Kunden erstellen"
@@ -4392,6 +4401,12 @@
   "Native Mail is not available yet.": [
     "Webdock Mail ist noch nicht verfügbar."
   ],
+  "Native Mail sending is configured.": [
+    "Der native Mailversand ist eingerichtet."
+  ],
+  "Native Mail sending is not available yet.": [
+    "Der native Mailversand ist noch nicht verfügbar."
+  ],
   "Neon’s data-processing agreement": [
     "Neons Vereinbarung zur Auftragsverarbeitung"
   ],
@@ -4746,6 +4761,9 @@
   "Not checked": [
     "Nicht geprüft"
   ],
+  "Not configured": [
+    "Nicht eingerichtet"
+  ],
   "Not connected": [
     "Nicht verbunden"
   ],
@@ -5048,6 +5066,9 @@
   ],
   "Own infrastructure is not enabled for this customer.": [
     "Eigene Infrastruktur ist für diesen Kunden nicht freigeschaltet."
+  ],
+  "Own sending connection": [
+    "Eigene Versandverbindung"
   ],
   "Own turboSMTP is not enabled for this customer.": [
     "Ein eigenes turboSMTP-Konto ist für diesen Kunden nicht freigeschaltet."
@@ -6069,6 +6090,9 @@
   "Revoke credential": [
     "Zugangsdaten widerrufen"
   ],
+  "Revoke key": [
+    "Schlüssel widerrufen"
+  ],
   "Revoke offer": [
     "Angebot widerrufen"
   ],
@@ -6218,6 +6242,9 @@
   ],
   "Save the total extras for this tenant. This replaces the previous extras.": [
     "Speichere die gesamten Zusatzkontingente für diesen Mandanten. Die vorherigen Zusatzkontingente werden dadurch ersetzt."
+  ],
+  "Save this Webdock API key now. It is shown only once.": [
+    "Speichere diesen Webdock-API-Schlüssel jetzt. Er wird nur einmal angezeigt."
   ],
   "Save this enrollment token now. It is displayed only once.": [
     "Dieses Anbindungstoken jetzt speichern. Es wird nur einmal angezeigt."
@@ -6461,6 +6488,9 @@
   ],
   "Sending account and domains": [
     "Versandkonto und Domains"
+  ],
+  "Sending connection": [
+    "Versandverbindung"
   ],
   "Sending controls & quota": [
     "Versandsteuerung & Kontingent"
@@ -7335,6 +7365,9 @@
   "These are configured allocations. Storage and transfer limits are not yet enforced. Mail sending is governed by the provider’s actual quota.": [
     "Dies sind konfigurierte Kontingente. Speicher- und Transferlimits werden noch nicht durchgesetzt. Für den Mail-Versand gilt das tatsächliche Kontingent des Anbieters."
   ],
+  "These keys can send mail and check their own submissions. They cannot read mailboxes.": [
+    "Diese Schlüssel können E-Mails senden und ihre eigenen Versandvorgänge abfragen. Sie können keine Postfächer lesen."
+  ],
   "These providers operate internationally, including in the United States. An EU application region does not mean all support, network or service processing stays in the EU. Their published transfer safeguards and subprocessors are described in": [
     "Diese Anbieter sind international tätig, auch in den USA. Eine Anwendungsregion in der EU bedeutet nicht, dass sämtliche Support-, Netzwerk- oder Dienstverarbeitungen in der EU stattfinden. Ihre veröffentlichten Schutzmaßnahmen für Datenübermittlungen und Unterauftragsverarbeiter sind beschrieben in"
   ],
@@ -7857,6 +7890,9 @@
   "Use Scale to choose the desired number of instances.": [
     "Wähle mit „Skalieren“ die gewünschte Anzahl an Instanzen."
   ],
+  "Use Webdock Mail sending to manage native API keys.": [
+    "Verwalte native API-Schlüssel unter Webdock-Mailversand."
+  ],
   "Use Webdock’s project registry from an MCP-compatible assistant. Authorization uses your central Webdock account.": [
     "Nutze Webdocks Projektverzeichnis über einen MCP-kompatiblen Assistenten. Die Autorisierung erfolgt über dein zentrales Webdock-Konto."
   ],
@@ -8244,6 +8280,12 @@
   "We process data needed to provide an agreed service under Article 6(1)(b) GDPR where you are the contracting party. Administration of team access, hosting visibility and security auditing rely on our legitimate interests in operating a secure project-management service under Article 6(1)(f). Where a legal obligation requires retention or disclosure, Article 6(1)(c) applies. Connecting Vercel grants technical access; it is not blanket consent to unrelated processing.": [
     "Daten, die zur Erbringung einer vereinbarten Leistung erforderlich sind, verarbeiten wir auf Grundlage von Artikel 6 Absatz 1 Buchstabe b DSGVO, sofern du Vertragspartei bist. Die Verwaltung von Teamzugängen, die Anzeige von Hostinginformationen und Sicherheitsprotokollierung beruhen auf unserem berechtigten Interesse am sicheren Betrieb eines Projektverwaltungsdienstes gemäß Artikel 6 Absatz 1 Buchstabe f. Erfordert eine gesetzliche Pflicht die Aufbewahrung oder Offenlegung, gilt Artikel 6 Absatz 1 Buchstabe c. Das Verbinden mit Vercel gewährt technischen Zugriff und stellt keine pauschale Einwilligung in sachfremde Verarbeitungen dar."
   ],
+  "Webdock API key revoked.": [
+    "Webdock-API-Schlüssel widerrufen."
+  ],
+  "Webdock API keys": [
+    "Webdock-API-Schlüssel"
+  ],
   "Webdock Account": [
     "Webdock-Konto"
   ],
@@ -8258,6 +8300,9 @@
   ],
   "Webdock Mail": [
     "Webdock Mail"
+  ],
+  "Webdock Mail sending": [
+    "Webdock-Mailversand"
   ],
   "Webdock Studio": [
     "Webdock Studio"
@@ -8291,6 +8336,9 @@
   ],
   "Webdock project ": [
     "Webdock-Projekt "
+  ],
+  "Webdock sending endpoint": [
+    "Webdock-Versandendpunkt"
   ],
   "Webdock settings saved.": [
     "Webdock-Einstellungen gespeichert."
