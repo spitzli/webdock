@@ -79,6 +79,8 @@ class MailClientIntegrationTests(unittest.TestCase):
                 return member.request('/jmap', {'using': ['urn:ietf:params:jmap:core', *capabilities],
                     'methodCalls': [[method, {'accountId': account_id, 'ids': None}, 'fixture']]})['methodResponses'][0][0]
             self.assertEqual(jmap('Mailbox/get', proof['mailboxes']['22'], ['urn:ietf:params:jmap:mail']), 'Mailbox/get')
+            folders=member.request('/jmap',{'using':['urn:ietf:params:jmap:core','urn:ietf:params:jmap:mail'],'methodCalls':[['Mailbox/get',{'accountId':proof['mailboxes']['22'],'ids':None},'folders']]})['methodResponses'][0][1]['list']
+            self.assertTrue({'inbox','drafts','sent'}.issubset({folder.get('role') for folder in folders}))
             self.assertEqual(jmap('Calendar/get', proof['identities']['33'], ['urn:ietf:params:jmap:calendars']), 'error')
             denied = member.request('/jmap', {'using': ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:submission'],
                 'methodCalls': [['EmailSubmission/set', {'accountId': proof['mailboxes']['22'], 'create': {'forged': {'emailId': 'invalid', 'identityId': 'invalid'}}}, 'blocked']]})['methodResponses'][0]
@@ -91,6 +93,23 @@ class MailClientIntegrationTests(unittest.TestCase):
             apply_configuration(permanent, config, lambda: None)
             with self.assertRaises(ValueError):
                 jmap('Mailbox/get', proof['mailboxes']['22'], ['urn:ietf:params:jmap:mail'])
+            from mail_submission import configure_submission
+            submission={'customerID':'123','hostname':'mail-123.example.com','username':'wd-submit@mail-123.example.com','password':uuid.uuid4().hex,'hookToken':'wd_hook_123_'+'t'*43,'relayHost':'pro.eu.turbo-smtp.com','relayUsername':'fixture-key','relayPassword':'fixture-secret','transportRevision':'1'}
+            submitted=configure_submission(permanent,submission,lambda:None)
+            self.assertEqual(configure_submission(permanent,submission,lambda:None),submitted)
+            submission['resourceIDs']=submitted
+            self.assertEqual(configure_submission(permanent,submission,lambda:None),submitted)
+            service=permanent.call('x:Account/get',{'ids':[submitted['accountID']]})['list'][0]
+            self.assertEqual(service['permissions']['enabledPermissions'],{'authenticate':True,'emailSend':True})
+            hook=permanent.call('x:MtaHook/get',{'ids':[submitted['hookID']]})['list'][0]
+            self.assertTrue(hook['tempFailOnError'])
+            route=permanent.call('x:MtaRoute/get',{'ids':[submitted['routeID']]})['list'][0]
+            self.assertTrue(route['implicitTls']);self.assertFalse(route['allowInvalidCerts'])
+            docker('restart',name);eventually(permanent.verify)
+            fingerprint=permanent.submission_certificate()
+            docker('restart',name);eventually(permanent.verify)
+            self.assertEqual(permanent.submission_certificate(),fingerprint)
+
 
         finally:
             for args in [('rm', '-f', name), ('volume', 'rm', name), ('network', 'rm', name)]:

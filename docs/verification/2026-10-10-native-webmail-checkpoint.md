@@ -149,7 +149,7 @@ The queue supports scheduling up to 30 days, source-scoped idempotency, concurre
 workers, pre-handoff lease recovery, late receipt reconciliation and explicit unknown
 acceptance. Unknown handoffs cannot be dispatched again. Quota downgrade and month
 rollover are rechecked without double charging. BCC remains in the envelope only.
-A malformed/unreadable stored payload is rejected before network handoff.
+An unreadable stored payload is held for review before network handoff; its data and budget reservation are retained. The private volume has an encrypted key marker, so a wrong deployment key fails before processing or deleting stored mail.
 
 Studio now has `/mail/sending` for native, hash-only API keys, optional domain scope,
 revocation, and managed/BYOK connection setup. Managed provider keys have SEND_API only,
@@ -178,3 +178,45 @@ principal, DATA policy, verified relay and egress rules are connected. Webmail i
 connected to this outbox. Payload orphan/terminal cleanup, public DNS/TLS and deployment,
 real authorized delivery, reception/forwarding and backup/restore remain release gates.
 The existing private Spitzli instance and its retained volume were not modified.
+
+
+## 2026-10-11: shared Webmail outbox and SMTP configuration v3
+
+This checkpoint supersedes the earlier open items about Webmail queue integration,
+SMTP configuration implementation and terminal payload cleanup. These are implemented
+and locally tested; deployment and live operational proof remain outstanding.
+
+- Webmail submission now uses the same staged encrypted outbox and recipient budget.
+  Current explicit grants are rechecked before dispatch; browser logout alone does not
+  cancel admitted intent. Sent filing is independent and repairable without resending.
+- Configuration v3 escrows a send-only principal, per-instance policy token and
+  persistent SMTP certificate. The DATA proof binds content, envelope, tenant and
+  configuration revisions. Only one queue ID may consume a reservation.
+- Managed private provider keys now request SEND_API and SEND_SMTP, without APIS.
+  Browser gateway and worker control credentials are distinct and mutually scoped.
+- Payload admission reserves metadata before writing, fsyncs before queue commit,
+  expires abandoned staging and cleans known terminal files idempotently. Unknown or
+  unreadable payloads are retained. AES-GCM rejects truncated tags and a volume key
+  marker prevents operations with a wrong encryption key.
+- Verification: Auth 141/141; Studio 106/106; Mail unit 42/42 and database 2/2;
+  agent 56 passed plus one optional test skipped, followed by that real restricted
+  container test passing separately; pinned CE 13/13. Type and lint checks passed.
+  The HTTP/Auth/DB/encrypted-file Webmail test uses fake JMAP/SMTP peers. A separate
+  real CE test proves scoped draft export, service SMTP and Sent filing.
+- Browser component fixture: one submit, accepted receipt and Sent repair without a
+  second send; no horizontal overflow at 390px. This is not production SSO evidence.
+
+After the owner unlocked the SSH agent, read-only Contabo verification succeeded.
+The node and Spitzli Mail pod are Ready, the retained 10-GiB PVC is Bound and the
+hosting agent is active on the old `mail-d00d15c` release. Instantaneous node use was
+about 17% CPU and memory. The observer's zero provisionable capacity and false generic
+capabilities are hard-coded conservative defaults, not a failed network test.
+The namespace has restricted Pod Security and deny/DNS/internal policies; policy
+presence alone does not prove enforcement. Updated submission-isolation runtime
+checks still need to run against the cluster.
+
+Production still lacks the shared gateway/API deployment, configured Spitzli sending
+account/domain/allowance and live end-to-end proof. Public reception, forwarding,
+accounting for server-generated mail, native DKIM DNS verification and backup/restore
+remain release gates. No production mutation or external mail occurred in this
+checkpoint; the Mail encryption key and existing retained volume were preserved.

@@ -32,7 +32,7 @@ test("only the assigned cluster can claim, checkpoint and complete native Mail p
   const clusters = (await database.query(`INSERT INTO webdock_auth.hosting_cluster(name,provider,country,region,location_evidence,verified,capacity)
     VALUES('Mail A','Contabo','DE','Germany','Local test',true,$1),('Mail B','Contabo','DE','Germany','Local test',true,$1) RETURNING id`, [JSON.stringify(mailInstanceDemand)])).rows;
   const agents = clusters.map(cluster => ({ clusterID: cluster.id, generation: 1, credentialHash: randomBytes(32).toString("hex") }));
-  for (const agent of agents) await database.query("INSERT INTO webdock_auth.hosting_agent(cluster_id,credential_hash,generation,last_seen,observation) VALUES($1,$2,1,now(),$3)", [agent.clusterID, agent.credentialHash, JSON.stringify({ version: "v1.36.5+k3s1", capabilities: { storageVersion: 1, nativeMail: { version: 1, configurationVersion: 2, image: process.env.MAIL_STALWART_IMAGE } } })]);
+  for (const agent of agents) await database.query("INSERT INTO webdock_auth.hosting_agent(cluster_id,credential_hash,generation,last_seen,observation) VALUES($1,$2,1,now(),$3)", [agent.clusterID, agent.credentialHash, JSON.stringify({ version: "v1.36.5+k3s1", capabilities: { storageVersion: 1, nativeMail: { version: 1, configurationVersion: 3, image: process.env.MAIL_STALWART_IMAGE } } })]);
   const priorSettings = (await database.query("SELECT settings FROM webdock_auth.platform_settings WHERE id=true")).rows[0];
   try {
     await database.query("INSERT INTO webdock_auth.platform_settings(id,settings) VALUES(true,'{\"mailEnabled\":true}') ON CONFLICT(id) DO UPDATE SET settings=excluded.settings");

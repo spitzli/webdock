@@ -8,7 +8,8 @@
     "./schema": "./src/schema.ts",
     "./secrets": "./src/secrets.ts",
     "./capacity": "./src/capacity.ts",
-    "./outbox": "./src/outbox.ts"
+    "./outbox": "./src/outbox.ts",
+    "./submission-proof": "./src/submission-proof.ts"
   },
   "dependencies": {
     "pg": "8.16.3"

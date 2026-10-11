@@ -18,7 +18,7 @@ export async function queueMailConfiguration(db: Connection, actor: MailActor, c
   const row = (await db.query(`INSERT INTO webdock_mail.configuration(customer_id) VALUES($1)
     ON CONFLICT(customer_id) DO UPDATE SET revision=configuration.revision+1 RETURNING revision`, [customerID])).rows[0];
   await db.query("UPDATE webdock_mail.configuration_operation SET state='superseded',finished_at=now() WHERE customer_id=$1 AND state='pending'", [customerID]);
-  await db.query("INSERT INTO webdock_mail.configuration_operation(customer_id,revision,requested_by) VALUES($1,$2,$3)", [customerID, row.revision, actor.subject]);
+  await db.query("INSERT INTO webdock_mail.configuration_operation(customer_id,revision,requested_by,reason) VALUES($1,$2,$3,$4)", [customerID, row.revision, actor.subject, action]);
   await db.query("INSERT INTO webdock_mail.access_event(customer_id,subject,action,target_id) VALUES($1,$2,$3,$4)", [customerID, actor.subject, action, targetID]);
 }
 

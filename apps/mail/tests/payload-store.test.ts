@@ -15,7 +15,10 @@ test('private payloads are encrypted, immutable and bound to both customer and r
   assert.deepEqual(await store.get('123',saved.ref),payload);
   const disk=await readFile(join(directory,saved.ref));assert.equal(disk.includes(payload),false);
   await assert.rejects(store.get('124',saved.ref));await assert.rejects(store.get('123','../../etc/passwd'));
-  await assert.rejects(new PrivatePayloadStore(directory,randomBytes(32).toString('base64')).get('123',saved.ref));
+  const wrongKey=new PrivatePayloadStore(directory,randomBytes(32).toString('base64'));
+  await assert.rejects(wrongKey.get('123',saved.ref));
+  await assert.rejects(wrongKey.remove(saved.ref));
+  assert.deepEqual(await store.get('123',saved.ref),payload);
   disk[disk.length-2]^=1;await writeFile(join(directory,saved.ref),disk);
   await assert.rejects(store.get('123',saved.ref));
   await store.remove(saved.ref);await store.remove(saved.ref);

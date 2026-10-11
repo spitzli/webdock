@@ -18,5 +18,11 @@ CREATE TABLE IF NOT EXISTS webdock_mail.send_transport (
  updated_at timestamptz NOT NULL DEFAULT now()
 );
 ALTER TABLE webdock_mail.send_transport ADD COLUMN IF NOT EXISTS pending_token uuid;
+ALTER TABLE webdock_mail.instance ADD COLUMN IF NOT EXISTS submission_resource_ids jsonb;
+ALTER TABLE webdock_mail.instance ADD COLUMN IF NOT EXISTS submission_state text;
+ALTER TABLE webdock_mail.instance ADD COLUMN IF NOT EXISTS encrypted_submission_credentials text;
+ALTER TABLE webdock_mail.instance ADD COLUMN IF NOT EXISTS submission_hook_token_hash text;
+ALTER TABLE webdock_mail.instance ADD COLUMN IF NOT EXISTS submission_transport_revision bigint;
+ALTER TABLE webdock_mail.instance ADD COLUMN IF NOT EXISTS submission_ready_revision bigint;
 `;
 export function mailSendGrants(role:string){if(!/^[a-z][a-z0-9_]{0,62}$/.test(role))throw Error('Invalid Mail database role');return `GRANT SELECT,INSERT,UPDATE ON webdock_mail.api_key,webdock_mail.send_transport TO "${role}";`;}

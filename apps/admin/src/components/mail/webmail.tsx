@@ -8,13 +8,14 @@ type Folder = { id: string; name: string; role?: string; unreadEmails: number };
 type Address = { email: string; name?: string };
 type Attachment = { blobId:string; name:string; type:string; size:number };
 type Email = { id: string; subject: string; from?: Address[]; replyTo?: Address[]; to?: Address[]; cc?:Address[]; bcc?:Address[]; receivedAt?: string; preview?: string; keywords?: Record<string, boolean>; messageId?: string[]; references?: string[]; inReplyTo?:string[]; textBody?: { partId: string }[]; htmlBody?: { partId:string; type:string }[]; bodyValues?: Record<string, { value: string; isTruncated?: boolean }>; hasAttachment?: boolean; attachments?:Attachment[] };
+type Submission = {id:string;state:string;filed?:boolean;filingState?:string};
 type Connection = { base: string; expiresAt: number };
 class MailError extends Error { constructor(message: string, readonly uncertain = false, readonly revoked = false) { super(message); } }
 async function request<T>(url: string, body: unknown): Promise<T> {
   let response: Response;
   try { response = await fetch(url, { method: "POST", credentials: "include", redirect: "error", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(30_000) }); }
   catch { throw new MailError("Mail connection interrupted. Check the mailbox before repeating a change.", true); }
-  const data = await response.json();
+  let data;try{data=await response.json();}catch{throw new MailError("Mail response could not be read. Check sending status before retrying.",true);}
   if (!response.ok) throw new MailError(typeof data.error === "string" ? data.error : "Mail request failed.", data.uncertain === true, [401,403].includes(response.status));
   return data as T;
 }
@@ -31,13 +32,14 @@ export function Webmail({ customerID, mailboxID, address }: { customerID: string
   const [identity,setIdentity] = useState("");
   const [compose,setCompose] = useState<{ to: string; cc?:string; bcc?:string; subject: string; text: string; inReplyTo?: string[]; references?: string[] }>();
   const [uncertain,setUncertain] = useState(false);
+  const [pendingSend,setPendingSend]=useState<Submission>();
   const [attachments,setAttachments] = useState<Attachment[]>([]);
   const [saving,setSaving] = useState(false),[saveFailed,setSaveFailed] = useState(false),[savedSignature,setSavedSignature] = useState("");
   const draftRef=useRef<{id?:string;signature?:string}>({}),pendingSave=useRef<Promise<{id:string}>|undefined>(undefined);
   const selection = useRef(0);
   const report = useCallback((cause: unknown) => {
     setError(cause instanceof Error ? cause.message : "Mail request failed.");
-    if (cause instanceof MailError && cause.revoked) { setConnection(undefined); setEmails([]); setMessage(undefined); setCompose(undefined); }
+    if (cause instanceof MailError && cause.revoked) { setConnection(undefined); setEmails([]); setMessage(undefined); setCompose(undefined); setPendingSend(undefined);setNotice(""); }
   }, []);
   useEffect(() => {
     let active = true, current: Connection | undefined;
@@ -86,6 +88,17 @@ export function Webmail({ customerID, mailboxID, address }: { customerID: string
     window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn);
   },[compose,attachments,savedSignature]);
   const call = useCallback(async <T,>(body: unknown) => { if(!connection)throw new MailError("Mail session required.");return (await request<{data:T}>(connection.base+"/mail",body)).data; },[connection]);
+  useEffect(()=>{
+    if(!connection || !pendingSend || ['rejected','cancelled','unknown','preparation_review'].includes(pendingSend.state) || pendingSend.state==='accepted' && (pendingSend.filed || pendingSend.filingState==='needs_review'))return;
+    let active=true,running=false;
+    const refreshSubmission=async()=>{if(running)return;running=true;try{const current=await call<Submission>({action:'submission',operation:'status',id:pendingSend.id});if(active){setPendingSend(current);if(current.state==='accepted')setRefresh(value=>value+1);}}catch(cause){if(active)report(cause);}finally{running=false;}};
+    const timer=setInterval(()=>void refreshSubmission(),5000);return()=>{active=false;clearInterval(timer);};
+  },[connection,pendingSend,call,report]);
+  const changeSubmission=async(operation:'status'|'cancel'|'file')=>{
+    if(!pendingSend || busy)return;setBusy(true);setError('');
+    try{const result=await call<Submission>({action:'submission',operation,id:pendingSend.id});setPendingSend(result);if(['rejected','cancelled'].includes(result.state))setUncertain(false);setRefresh(value=>value+1);}
+    catch(cause){report(cause);}finally{setBusy(false);}
+  };
   const ensureSaved=useCallback(async()=>{
     if(!compose)throw new MailError("No draft is open.");
     const list=(value:string)=>(value||"").split(/[,;]/).map(value=>({email:value.trim()})).filter(value=>value.email);
@@ -107,6 +120,7 @@ export function Webmail({ customerID, mailboxID, address }: { customerID: string
   const open = async (id: string) => {
     const version=++selection.current;setError("");
     try {const selected=await call<Email>({action:"read",emailId:id});if(version!==selection.current)return;setMessage(selected);
+      if(selected.keywords?.$draft){void call<Submission|null>({action:'submission-lookup',emailId:id}).then(value=>{if(version===selection.current && value?.id)setPendingSend(value);}).catch(()=>{});}
       if(!selected.keywords?.$seen){await call({action:"update",emailId:id,requestID:crypto.randomUUID(),change:{seen:true}});setRefresh(value=>value+1);}
     }catch(cause){if(version===selection.current)report(cause);}
   };
@@ -114,9 +128,13 @@ export function Webmail({ customerID, mailboxID, address }: { customerID: string
     event.preventDefault();if(!compose || busy || uncertain)return;setBusy(true);setError("");setNotice("");
     try {
       const draft=await ensureSaved();
-      const sent=await call<{filed:boolean}>({action:"submit",requestID:crypto.randomUUID(),emailId:draft.id,identityId:identity});
-      setCompose(undefined);setAttachments([]);draftRef.current={};setSavedSignature("");setNotice(sent.filed?"Message accepted for delivery.":"Message accepted for delivery. Filing in Sent needs review.");setRefresh(value=>value+1);
-    }catch(cause){if(cause instanceof MailError && cause.uncertain)setUncertain(true);report(cause);}finally{setBusy(false);}
+      const sent=await call<Submission>({action:"submit",requestID:crypto.randomUUID(),emailId:draft.id,identityId:identity});
+      if(sent.id && sent.state)setPendingSend(sent);
+      if(['unknown','preparation_review'].includes(sent.state)){setUncertain(true);return;}
+      if(['rejected','cancelled'].includes(sent.state)){setError('Message was not accepted. Your draft is retained.');return;}
+      setCompose(undefined);setAttachments([]);draftRef.current={};setSavedSignature("");
+      setNotice(sent.state && sent.state!=='accepted'?'Message queued for delivery.':sent.filed?'Message accepted for delivery.':'Message accepted for delivery. Filing in Sent needs review.');setRefresh(value=>value+1);
+    }catch(cause){if(cause instanceof MailError && cause.uncertain){setUncertain(true);if(draftRef.current.id)void call<Submission|null>({action:'submission-lookup',emailId:draftRef.current.id}).then(value=>{if(value?.id)setPendingSend(value);}).catch(()=>{});}report(cause);}finally{setBusy(false);}
   };
   const move = async (role:string) => {
     const destination=folders.find(item=>item.role===role);if(!message || !destination || busy)return;
@@ -135,7 +153,13 @@ export function Webmail({ customerID, mailboxID, address }: { customerID: string
     try{const response=await fetch(connection.base+"/download",{method:"POST",credentials:"include",redirect:"error",headers:{"Content-Type":"application/json"},body:JSON.stringify({emailId:message.id,blobId:attachment.blobId}),signal:AbortSignal.timeout(30_000)});if(!response.ok)throw new MailError("Attachment download failed.",false,[401,403].includes(response.status));const url=URL.createObjectURL(await response.blob()),link=document.createElement("a");link.href=url;link.download=attachment.name||"attachment";link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(cause){report(cause);}
   };
   return <section className="webmail" aria-label={i18n.t("Webmail")}>
-    {error && <p className="notice error webmail-notice" role="alert">{i18n.error(error)}</p>}{notice && <p className="notice webmail-notice" role="status">{i18n.t(notice)}</p>}
+    {error && <p className="notice error webmail-notice" role="alert">{i18n.error(error)}</p>}{notice && !pendingSend && <p className="notice webmail-notice" role="status">{i18n.t(notice)}</p>}
+    {pendingSend && <section className="notice webmail-notice" aria-label={i18n.t('Sending status')}>
+      <p role="status">{i18n.t(pendingSend.state==='accepted'?(pendingSend.filed?'Message accepted for delivery.':pendingSend.filingState==='needs_review'?'Message accepted for delivery. Filing in Sent needs review.':'Message accepted. Saving the Sent copy…'):pendingSend.state==='unknown'?'Delivery outcome is unknown. Do not resend this message.':pendingSend.state==='preparation_review'?'Sending needs review. Your draft is retained.':pendingSend.state==='rejected'?'Message was not accepted. Your draft is retained.':pendingSend.state==='cancelled'?'Sending cancelled. Your draft is retained.':'Message queued for delivery.')}</p>
+      <div className="webmail-toolbar"><button disabled={busy || !connection} onClick={()=>void changeSubmission('status')}>{i18n.t('Check sending status')}</button>
+      {['staging','queued','leased','preparation_review'].includes(pendingSend.state) && <button disabled={busy || !connection} onClick={()=>void changeSubmission('cancel')}>{i18n.t('Cancel queued sending')}</button>}
+      {pendingSend.state==='accepted' && !pendingSend.filed && <button disabled={busy || !connection} onClick={()=>void changeSubmission('file')}>{i18n.t('Finish saving to Sent')}</button>}</div>
+    </section>}
     {!connection && !error && <p role="status">{i18n.t("Connecting to mailbox…")}</p>}
     <aside className="webmail-folders"><button disabled={!connection || !identity || !!compose} onClick={()=>{setUncertain(false);setSaveFailed(false);draftRef.current={};setSavedSignature("");setAttachments([]);setCompose({to:"",subject:"",text:""});}}>{i18n.t("New message")}</button>
       <nav aria-label={i18n.t("Mail folders")}>{folders.map(item=><button key={item.id} aria-current={folder===item.id?"page":undefined} onClick={()=>{setFolder(item.id);setPosition(0);setMessage(undefined);selection.current++;}}>{item.role?i18n.t(({inbox:"Inbox",drafts:"Drafts",sent:"Sent",trash:"Trash",junk:"Junk",archive:"Archive"} as Record<string,string>)[item.role]??item.name):item.name}<span>{item.unreadEmails || ""}</span></button>)}</nav>

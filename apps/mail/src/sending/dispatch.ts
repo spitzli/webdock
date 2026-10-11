@@ -1,3 +1,4 @@
+import {messageDigest} from '@webdock/mail-core/submission-proof';
 import type {SendLease} from '@webdock/mail-core/outbox';
 import {submitRelayAPI,RelayAPIFailure} from './relay-api.ts';
 import {submitSMTP,SMTPFailure} from './smtp.ts';
@@ -10,7 +11,7 @@ type Receipt={state:'accepted'|'rejected'|'unknown';providerID?:string};
 export type DispatchControl={
  claim:()=>Promise<SendLease|null>;
  /** Reauthorize source, sender, route revision and budget; commit handoff before returning credentials. */
- begin:(job:SendLease)=>Promise<DispatchAuthorization|null>;
+ begin:(job:SendLease,digest:string)=>Promise<DispatchAuthorization|null>;
  finish:(job:SendLease,result:Receipt)=>Promise<boolean>;
  prepareFailed?:(job:SendLease)=>Promise<boolean>;
 };
@@ -20,7 +21,7 @@ export async function dispatchOne(control:DispatchControl,load:(job:SendLease)=>
  let message:DispatchMessage,prepared:ReturnType<typeof prepareMessage>;
  try{message=await load(job);prepared=prepareMessage(message.raw,message.sender,[...message.to,...message.cc??[],...message.bcc??[]]);}
  catch(error){await control.prepareFailed?.(job);throw error;}
- const authorization=await control.begin(job);if(!authorization)return true;
+ const authorization=await control.begin(job,messageDigest(prepared.raw));if(!authorization)return true;
  let result:Receipt;
  try{
   if(authorization.kind!==job.route.kind)throw Error('Mail route changed.');

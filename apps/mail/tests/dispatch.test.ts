@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {dispatchOne} from '../src/sending/dispatch.ts';
 import {RelayAPIFailure} from '../src/sending/relay-api.ts';
-const job={id:'123',customerID:'456',sourceID:'key:789',payloadRef:crypto.randomUUID(),payloadBytes:100,requestHash:'a'.repeat(64),route:{kind:'direct'},envelope:{},leaseToken:crypto.randomUUID()};
+const job={id:'123',customerID:'456',sourceID:'key:789',payloadRef:crypto.randomUUID(),payloadBytes:100,requestHash:'a'.repeat(64),payloadFormat:'request' as const,sourceContext:{},route:{kind:'direct'},envelope:{},leaseToken:crypto.randomUUID()};
 const message={sender:{email:'a@example.test'},to:['b@example.test'],subject:'Test',raw:Buffer.from('Subject: Test\r\n\r\nHello')};
 const authorization={kind:'direct' as const,account:{region:'eu' as const,consumerKey:'test',consumerSecret:'test'}};
 test('dispatch persists the handoff before exactly one transport attempt and records uncertainty',async()=>{
@@ -24,7 +24,7 @@ test('accepted and definite rejection receipts are distinct; lost completion nev
  }
 });
 
-test('unreadable private payload is definitively rejected before credentials or network handoff',async()=>{
+test('unreadable private payload is held for review before credentials or network handoff',async()=>{
  let rejected=0,begun=0;
  await assert.rejects(dispatchOne({claim:async()=>job,prepareFailed:async()=>{rejected++;return true;},begin:async()=>{begun++;return authorization;},finish:async()=>{throw Error('Must not finish a handoff');}},async()=>{throw Error('corrupt private payload');}));
  assert.equal(rejected,1);assert.equal(begun,0);

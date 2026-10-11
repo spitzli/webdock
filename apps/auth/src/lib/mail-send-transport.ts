@@ -1,9 +1,11 @@
+import {z} from 'zod';
+import type {Connection} from './hosting/authorization';
 import {randomUUID} from 'node:crypto';
-import {sealSecret} from '@webdock/mail-core/secrets';
+import {openSecret,sealSecret} from '@webdock/mail-core/secrets';
 import {transaction} from './hosting/db';
 import {authorizeMail,mailUnavailable,type MailActor} from './mail-access';
 import {requireNativeSending} from './mail-native-keys';
-import {mailProvider,getPlatformSettings} from './platform';
+import {mailProvider,getPlatformSettings,decryptMailSecret} from './platform';
 import {TurboSMTPClient} from './turbosmtp';
 import {byokPolicy} from './hosting/byok';
 type Providers={master?:()=>Promise<Pick<TurboSMTPClient,'getSubaccount'|'authorizeSubaccount'>>;child?:(token:string)=>Pick<TurboSMTPClient,'createConsumerKey'>};
@@ -51,7 +53,7 @@ export async function configureNativeTransport(actor:MailActor,customerID:string
   if(!account.active || account.id!==reservation.providerID || account.email?.toLowerCase()!==reservation.email?.toLowerCase())mailUnavailable();
   const auth=await master.authorizeSubaccount(reservation.email!);
   const child=providers.child?providers.child(auth):new TurboSMTPClient({apiKey:auth});
-  const secret=await child.createConsumerKey(auth,`Webdock private relay ${customerID}`,{permissions:['SEND_API'],ips:[]});
+  const secret=await child.createConsumerKey(auth,`Webdock private relay ${customerID}`,{permissions:['SEND_API','SEND_SMTP'],ips:[]});
   const sealed=sealSecret(secret,`send-transport:${customerID}:${reservation.revision}`,process.env.MAIL_ENCRYPTION_KEY||'');
   await transaction(async db=>{
    await authorizeMail(db,actor,customerID,true,false);
@@ -65,4 +67,24 @@ export async function configureNativeTransport(actor:MailActor,customerID:string
   await transaction(async db=>{await db.query("UPDATE webdock_mail.send_transport SET state='needs_review',updated_at=now() WHERE customer_id=$1 AND pending_token=$2 AND state='pending'",[customerID,token]);await db.query("UPDATE webdock_auth.access_event SET outcome='failed' WHERE id=$1",[reservation.event]);});
   mailUnavailable();
  }
+}
+
+/** Private, current connection for native adapters and the assigned configuration agent. */
+export async function nativeRelay(db:Connection,customerID:string){
+ requireNativeSending();
+ const row=(await db.query("SELECT * FROM webdock_mail.send_transport WHERE customer_id=$1 AND state='ready' FOR SHARE",[customerID])).rows[0];
+ if(!row)mailUnavailable();
+ let secret:unknown,domains:unknown[]=[];
+ if(row.mode==='byok'){
+  if(!(await byokPolicy(db,customerID)).turbosmtp)mailUnavailable();
+  const byok=(await db.query("SELECT * FROM webdock_auth.hosting_turbosmtp WHERE customer_id=$1 AND state='ready' AND pending_domain IS NULL FOR SHARE",[customerID])).rows[0];
+  if(!byok?.encrypted_secret || byok.revision!==row.byok_revision || row.region!=='eu')mailUnavailable();
+  secret=decryptMailSecret(byok.encrypted_secret,`byok-mail:${customerID}`);domains=Array.isArray(byok.snapshot)?byok.snapshot:[];
+ }else{
+  const managed=(await db.query("SELECT * FROM webdock_auth.mail_tenant_account WHERE customer_id=$1 AND state='ready' FOR SHARE",[customerID])).rows[0];
+  if(!managed || managed.provider_id!==row.provider_account_id || managed.snapshot?.active!==true || !row.encrypted_credentials)mailUnavailable();
+  secret=openSecret(row.encrypted_credentials,`send-transport:${customerID}:${row.revision}`,process.env.MAIL_ENCRYPTION_KEY||'');
+ }
+ const account=z.object({consumerKey:z.string().min(1).max(1024),consumerSecret:z.string().min(1).max(1024)}).strict().parse(secret);
+ return {transportRevision:String(row.revision),mode:row.mode as 'managed'|'byok',region:row.region as 'eu'|'global',credentials:account,domains};
 }

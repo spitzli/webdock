@@ -3,7 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { JmapClient, JmapError, MAX_ATTACHMENT_BYTES, type MailDraft, type MailAttachment } from "../stalwart/jmap.ts";
 
 type RecordValue = Record<string, unknown>;
-type Options = { allowedOrigins: string[]; control: (body: RecordValue) => Promise<unknown>; testRuntimeOrigin?: string; testDirectSubmission?: boolean };
+type Options = { allowedOrigins: string[]; control: (body: RecordValue) => Promise<unknown>; testRuntimeOrigin?: string; testDirectSubmission?: boolean; nativeSending?: (body:RecordValue)=>Promise<unknown> };
 type Session = { token: string; scopeID: string; customerID: string; mailboxID: string; expires: number; active: number; uploadedBytes: number; attachments: Map<string,MailAttachment> };
 class GatewayError extends Error {
   readonly status: number;
@@ -23,6 +23,11 @@ function string(value: unknown, maximum = 255): string {
 }
 function identifier(value: unknown) {
   const text = string(value, 19); if (!/^[1-9][0-9]{0,18}$/.test(text)) throw new GatewayError(400, "Invalid Mail scope."); return text;
+}
+function nativeReceipt(value:unknown){
+  const row=record(value),state=string(row.state,32);
+  if(!['staging','queued','leased','handoff','accepted','rejected','cancelled','unknown','preparation_review'].includes(state))throw new GatewayError(502,'Invalid Mail submission receipt.',true);
+  return {id:identifier(row.id),state,filed:row.filed===true,...(typeof row.filingState==='string' && ['pending','complete','needs_review'].includes(row.filingState)?{filingState:row.filingState}:{})};
 }
 function expires(value: unknown) {
   const time = Date.parse(string(value, 64));
@@ -157,8 +162,28 @@ export function createMailGateway(options: Options) {
             return client.createDraft(draft as MailDraft,previousId);
           }); break;
         }
+        case "submission-lookup": {
+          fields(body,['action','emailId']);if(!options.nativeSending)throw new GatewayError(503,'Mail sending is not available yet.');
+          const value=await options.nativeSending({action:'lookup',token:session.token,emailID:string(body.emailId)});
+          if(value===null){data=null;break;}
+          data=nativeReceipt(value);break;
+        }
+        case "submission": {
+          fields(body,['action','id','operation']);
+          if(!options.nativeSending || !['status','cancel','file'].includes(String(body.operation)))throw new GatewayError(400,'Unsupported Mail operation.');
+          const receipt=record(await options.nativeSending({action:body.operation,token:session.token,id:identifier(body.id)}));
+          data=nativeReceipt(receipt);break;
+        }
         case "submit": {
-          // The production sender must use the common SMTP policy/queue, never a JMAP bypass.
+          fields(body,['action','requestID','emailId','identityId']);
+          if(options.nativeSending){
+            if(!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(string(body.requestID,36)))throw new GatewayError(400,'Invalid Mail request ID.');
+            let receipt:RecordValue;
+            try{receipt=record(await options.nativeSending({action:'submit',token:session.token,requestID:body.requestID,emailID:string(body.emailId),identityID:string(body.identityId)}));}
+            catch{throw new GatewayError(503,'Mail submission acknowledgement is unavailable. Check sending status before retrying.',true);}
+            data=nativeReceipt(receipt);break;
+          }
+          // The isolated legacy protocol test cannot enable a production JMAP sending bypass.
           if (!options.testDirectSubmission) throw new GatewayError(503, "Mail sending is not available yet.");
           fields(body, ["action", "requestID", "emailId", "identityId"]);
           const emailId = string(body.emailId), identityId = string(body.identityId);

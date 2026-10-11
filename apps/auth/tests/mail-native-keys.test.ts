@@ -1,3 +1,5 @@
+import {mailboxSchemaSQL} from '../src/lib/mailbox-schema';
+import {prepareSubmissionConfiguration,completeSubmissionConfiguration,reconcileSubmissionConfiguration} from '../src/lib/mail-submission-configuration';
 import {encryptMailSecret} from '../src/lib/platform';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -17,13 +19,15 @@ import {PrivatePayloadStore} from '../../mail/src/sending/payload-store';
 import {submitRelayAPI} from '../../mail/src/sending/relay-api';
 import {processQueuedSend} from '../../mail/src/sending/queued-worker';
 import type {SendLease} from '@webdock/mail-core/outbox';
-import {preflightSubmission,admitSubmission,beginSubmission,finishSubmission,submissionStatus} from '../src/lib/mail-submissions';
+import {authorizeSubmissionPolicy,preflightSubmission,admitSubmission as stageSubmission,commitSubmissionPayload,abortSubmissionPayload,claimSubmission,submissionCleanup,finishSubmissionCleanup,reviewSubmissionPreparation,beginSubmission,finishSubmission,submissionStatus} from '../src/lib/mail-submissions';
 import {authorizeMailKey} from '../src/lib/mail-native-keys';
 const target=new URL(process.env.DATABASE_URL!);
 if(target.hostname!=='127.0.0.1' || target.pathname!=='/webdock_admin_test' || process.env.AUTH_TEST_MAIL!=='true')throw Error('Disposable local database required');
 test.after(()=>database.end());
-test('native keys bind the customer and domain, and deleting a restriction never creates an unrestricted key',async()=>{
- await database.query(mailSendSchemaSQL);await database.query(mailBudgetSchemaSQL);await database.query(outboxSchemaSQL);
+async function admitSubmission(db:Parameters<typeof stageSubmission>[0],input:unknown){const result=await stageSubmission(db,input);if('uploadToken' in result && result.uploadToken && 'customerID' in result)await commitSubmissionPayload(db,{id:result.id,customerID:result.customerID,payloadRef:result.payloadRef,uploadToken:result.uploadToken});return result;}
+
+test('native sending isolates keys, stages private payloads and rechecks managed, BYOK and SMTP authorization',async()=>{
+ await database.query(mailboxSchemaSQL);await database.query(mailSendSchemaSQL);await database.query(mailBudgetSchemaSQL);await database.query(outboxSchemaSQL);
  const customer=(await database.query("INSERT INTO webdock_admin.customers(id,name) VALUES(webdock_auth.next_snowflake(),'Native key fixture') RETURNING id")).rows[0].id;
  const token='wd_mail_'+randomBytes(32).toString('base64url');
  const before=(await database.query('SELECT settings FROM webdock_auth.platform_settings WHERE id=true')).rows[0];
@@ -62,10 +66,13 @@ test('native keys bind the customer and domain, and deleting a restriction never
   const directory=await mkdtemp(join(tmpdir(),'webdock-send-e2e-'));
   const store=new PrivatePayloadStore(directory,process.env.MAIL_ENCRYPTION_KEY!);
   const control=async(body:Record<string,unknown>):Promise<unknown>=>transaction(async db=>{
+   if(body.action==='send.authenticate')return authorizeMailKey(db,String(body.token));
+   if(body.action==='send.commitPayload')return commitSubmissionPayload(db,body.lease as Parameters<typeof commitSubmissionPayload>[1]);
+   if(body.action==='send.abortPayload')return abortSubmissionPayload(db,body.lease as Parameters<typeof abortSubmissionPayload>[1]);
    if(body.action==='send.preflight')return preflightSubmission(db,String(body.token),body.envelope);
-   if(body.action==='send.admit')return admitSubmission(db,body.submission);
-   if(body.action==='send.claim')return claimSend(db);
-   if(body.action==='send.begin')return beginSubmission(db,body.lease as SendLease);
+   if(body.action==='send.admit')return stageSubmission(db,body.submission);
+   if(body.action==='send.claim')return claimSubmission(db);
+   if(body.action==='send.begin')return beginSubmission(db,body.lease as SendLease,body.digest as string|undefined);
    if(body.action==='send.finish')return finishSubmission(db,body.lease as SendLease,body.result as {state:'accepted'|'rejected'|'unknown';providerID?:string});
    if(body.action==='send.status')return submissionStatus(db,String(body.token),String(body.id),body.cancel===true);
    throw Error('Unexpected control command');
@@ -83,6 +90,30 @@ test('native keys bind the customer and domain, and deleting a restriction never
    assert.equal(sent,1);assert.equal(await processQueuedSend(control,store),false);
    const state=await fetch(origin+'/v1/emails/'+receipt.id,{headers:{Authorization:'Bearer '+token}});assert.equal((await state.json() as {state:string}).state,'accepted');
   }finally{api.closeAllConnections();await new Promise<void>(resolve=>api.close(()=>resolve()));await rm(directory,{recursive:true,force:true});}
+  const staged=await transaction(db=>stageSubmission(db,{...command,idempotencyKey:'lost-upload',payloadRef:crypto.randomUUID()}));
+  assert.equal(staged.state,'staging');assert.equal(await transaction(db=>claimSubmission(db)),null);
+  const repeat=await transaction(db=>stageSubmission(db,{...command,idempotencyKey:'lost-upload',payloadRef:crypto.randomUUID()}));
+  assert.equal(repeat.created,false);assert.equal('uploadToken' in repeat,false);
+  await database.query("UPDATE webdock_mail.send_job SET lease_until=now()-interval '1 second' WHERE id=$1",[staged.id]);
+  assert.equal(await transaction(db=>claimSubmission(db)),null);
+  assert.equal((await database.query('SELECT state FROM webdock_mail.budget_reservation WHERE reference_id=$1',[staged.id])).rows[0].state,'released');
+  await database.query("UPDATE webdock_mail.send_job SET finished_at=now()-interval '2 minutes' WHERE id=$1",[staged.id]);
+  const garbage=await transaction(db=>submissionCleanup(db));const entry=garbage.find(item=>item.id===staged.id);assert.ok(entry);
+  await transaction(db=>finishSubmissionCleanup(db,[entry]));
+  assert.equal((await transaction(db=>submissionCleanup(db))).some(item=>item.id===staged.id),false);
+  const aborted=await transaction(db=>stageSubmission(db,{...command,idempotencyKey:'failed-upload',payloadRef:crypto.randomUUID()}));
+  assert.ok('uploadToken' in aborted && aborted.uploadToken && 'customerID' in aborted);
+  const upload={id:aborted.id,customerID:aborted.customerID,payloadRef:aborted.payloadRef,uploadToken:aborted.uploadToken};
+  assert.deepEqual(await transaction(db=>abortSubmissionPayload(db,{...upload,uploadToken:crypto.randomUUID()})),{aborted:false});
+  assert.deepEqual(await transaction(db=>abortSubmissionPayload(db,upload)),{aborted:true});
+  await assert.rejects(transaction(db=>commitSubmissionPayload(db,upload)));
+  const unreadable=await transaction(db=>admitSubmission(db,{...command,idempotencyKey:'unreadable-payload',payloadRef:crypto.randomUUID()}));
+  const unreadableLease=await transaction(db=>claimSubmission(db));assert.ok(unreadableLease);assert.equal(unreadableLease.id,unreadable.id);
+  assert.equal(await transaction(db=>reviewSubmissionPreparation(db,unreadableLease)),true);
+  assert.equal((await database.query('SELECT state FROM webdock_mail.send_job WHERE id=$1',[unreadable.id])).rows[0].state,'preparation_review');
+  assert.equal((await database.query('SELECT state FROM webdock_mail.budget_reservation WHERE reference_id=$1',[unreadable.id])).rows[0].state,'reserved');
+  assert.equal((await transaction(db=>submissionCleanup(db))).some(item=>item.id===unreadable.id),false);
+  assert.equal((await transaction(db=>submissionStatus(db,token,unreadable.id,true))).state,'cancelled');
   const downgrade=await transaction(db=>admitSubmission(db,{...command,idempotencyKey:'downgrade',payloadRef:crypto.randomUUID()}));
   await database.query(`UPDATE webdock_auth.tenant_subscription SET base='{"mailMessages":0}' WHERE customer_id=$1`,[customer]);
   const downgraded=await transaction(db=>claimSend(db));assert.ok(downgraded);assert.equal(downgraded.id,downgrade.id);
@@ -106,6 +137,46 @@ test('native keys bind the customer and domain, and deleting a restriction never
   await database.query('UPDATE webdock_auth.hosting_turbosmtp SET revision=revision+1 WHERE customer_id=$1',[customer]);
   const rotated=await transaction(db=>claimSend(db));assert.ok(rotated);
   assert.equal(await transaction(db=>beginSubmission(db,rotated)),null);
+  // Incoming jobs require verified instance credentials and a one-queue, content-bound DATA authorization.
+  process.env.MAIL_MANAGED_CLUSTER_ID='local-fixture';process.env.MAIL_HOSTNAME_SUFFIX='example.test';
+  const hookToken=`wd_hook_${customer}_${randomBytes(32).toString('base64url')}`;
+  const smtpCredentials={username:`wd-submit@mail-${customer}.example.test`,password:randomBytes(32).toString('base64url'),hookToken};
+  await database.query("UPDATE webdock_mail.send_transport SET mode='managed',revision=3,encrypted_credentials=$2 WHERE customer_id=$1",[customer,sealSecret(providerKey,`send-transport:${customer}:3`,process.env.MAIL_ENCRYPTION_KEY!)]);
+  await database.query("INSERT INTO webdock_mail.service(customer_id,instance_key,host_id,desired_enabled,state,revision,applied_revision) VALUES($1,$2,'local-fixture',true,'ready',1,1)",[customer,'mail-'+customer]);
+  await assert.rejects(transaction(db=>admitSubmission(db,{...command,idempotencyKey:'smtp-not-ready',payloadRef:crypto.randomUUID()})));
+  await database.query(`INSERT INTO webdock_mail.instance(customer_id,encrypted_credentials,verified_at,smtp_certificate_sha256,smtp_certificate_revision,encrypted_submission_credentials,submission_hook_token_hash,submission_transport_revision,submission_ready_revision,submission_state)
+   VALUES($1,'fixture-admin',now(),$2,1,$3,$4,3,1,'ready')`,[customer,'c'.repeat(64),sealSecret(smtpCredentials,`submission:${customer}`,process.env.MAIL_ENCRYPTION_KEY!),createHash('sha256').update(hookToken).digest('hex')]);
+  const native=await transaction(db=>admitSubmission(db,{...command,idempotencyKey:'smtp-ready',payloadRef:crypto.randomUUID()}));
+  const nativeLease=await transaction(db=>claimSend(db));assert.ok(nativeLease);assert.equal(nativeLease.id,native.id);
+  const nativeAuthorization=await transaction(db=>beginSubmission(db,nativeLease,'d'.repeat(64)));assert.equal(nativeAuthorization?.kind,'stalwart');
+  assert.ok(nativeAuthorization && nativeAuthorization.kind==='stalwart');
+  assert.equal(nativeAuthorization.smtp.username,smtpCredentials.username);
+  const policyCommand={customerID:customer,token:hookToken,id:native.id,proof:nativeAuthorization.proof,digest:'d'.repeat(64),username:smtpCredentials.username,queueID:'abc123',envelope:command.envelope};
+  assert.deepEqual(await transaction(db=>authorizeSubmissionPolicy(db,{...policyCommand,digest:'e'.repeat(64)})),{accept:false});
+  assert.deepEqual(await transaction(db=>authorizeSubmissionPolicy(db,{...policyCommand,envelope:{...command.envelope,to:['changed@example.test']}})),{accept:false});
+  assert.deepEqual(await transaction(db=>authorizeSubmissionPolicy(db,policyCommand)),{accept:true});
+  assert.deepEqual(await transaction(db=>authorizeSubmissionPolicy(db,policyCommand)),{accept:true});
+  assert.deepEqual(await transaction(db=>authorizeSubmissionPolicy(db,{...policyCommand,queueID:'abc124'})),{accept:false});
+  await transaction(db=>finishSubmission(db,nativeLease,{state:'accepted',providerID:native.id}));
+  assert.deepEqual(await transaction(db=>authorizeSubmissionPolicy(db,policyCommand)),{accept:false});
+  const hostname=`mail-${customer}.example.test`;
+  assert.equal(await transaction(db=>prepareSubmissionConfiguration(db,customer,hostname,'1')),null);
+  const preparation=await transaction(db=>prepareSubmissionConfiguration(db,customer,hostname,'1',true));assert.ok(preparation);
+  assert.equal(preparation.profile.password,smtpCredentials.password);
+  assert.equal(JSON.stringify(preparation.desired).includes(smtpCredentials.password),false);
+  await transaction(db=>completeSubmissionConfiguration(db,customer,'1',preparation.desired,{ready:false}));
+  assert.equal((await database.query('SELECT state FROM webdock_mail.service WHERE customer_id=$1',[customer])).rows[0].state,'ready');
+  assert.equal((await database.query('SELECT submission_state FROM webdock_mail.instance WHERE customer_id=$1',[customer])).rows[0].submission_state,'needs_review');
+  const retry=await transaction(db=>prepareSubmissionConfiguration(db,customer,hostname,'1',true));assert.ok(retry);
+  assert.equal(retry.profile.hookToken,hookToken);
+  await transaction(db=>completeSubmissionConfiguration(db,customer,'1',retry.desired,{ready:true,resources:{accountID:'submit-account',hookID:'hook',routeID:'route',tlsID:'tls',certificateID:'certificate'},certificateSha256:'c'.repeat(64)}));
+  await database.query('UPDATE webdock_mail.service SET revision=2,applied_revision=2 WHERE customer_id=$1',[customer]);
+  await transaction(db=>reconcileSubmissionConfiguration(db,'unassigned-cluster'));
+  assert.equal((await database.query('SELECT id FROM webdock_mail.configuration_operation WHERE customer_id=$1',[customer])).rowCount,0);
+  await transaction(db=>reconcileSubmissionConfiguration(db,'local-fixture'));
+  await transaction(db=>reconcileSubmissionConfiguration(db,'local-fixture'));
+  const reproof=(await database.query('SELECT reason,state FROM webdock_mail.configuration_operation WHERE customer_id=$1',[customer])).rows;
+  assert.deepEqual(reproof,[{reason:'submission_reconcile',state:'pending'}]);
   await database.query('DELETE FROM webdock_auth.mail_sender_domain WHERE id=$1',[domain]);
   await assert.rejects(transaction(db=>authorizeMailKey(db,token,'sender@other.example.test')));
   await database.query('UPDATE webdock_mail.api_key SET domain_restricted=false WHERE id=$1',[key]);
@@ -113,7 +184,7 @@ test('native keys bind the customer and domain, and deleting a restriction never
   await assert.rejects(transaction(db=>authorizeMailKey(db,token,'sender@other.example.test')));
  }finally{
   if(previous===undefined)delete process.env.WEBDOCK_NATIVE_MAIL_SENDING_ENABLED;else process.env.WEBDOCK_NATIVE_MAIL_SENDING_ENABLED=previous;
-  for(const table of ['send_job','budget_reservation','month_usage','send_transport'])await database.query(`DELETE FROM webdock_mail.${table} WHERE customer_id=$1`,[customer]);
+  for(const table of ['send_job','budget_reservation','month_usage','send_transport','configuration_operation','configuration','instance','service'])await database.query(`DELETE FROM webdock_mail.${table} WHERE customer_id=$1`,[customer]);
   for(const table of ['hosting_byok_policy','hosting_turbosmtp','mail_tenant_account','tenant_subscription'])await database.query(`DELETE FROM webdock_auth.${table} WHERE customer_id=$1`,[customer]);
   await database.query('DELETE FROM webdock_mail.api_key WHERE customer_id=$1',[customer]);await database.query('DELETE FROM webdock_auth.mail_sender_domain WHERE customer_id=$1',[customer]);
   const mapping=(await database.query('DELETE FROM webdock_auth.tenant_customer WHERE customer_id=$1 RETURNING organization_id',[customer])).rows[0];await database.query('DELETE FROM webdock_admin.customers WHERE id=$1',[customer]);await database.query('DELETE FROM webdock_auth.organization WHERE id=$1',[mapping.organization_id]);

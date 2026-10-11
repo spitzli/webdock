@@ -100,6 +100,14 @@ def mail_gateway_policy(packet):
                          'ports': [{'protocol': 'TCP', 'port': 8080}]}]}}
 
 
+def mail_isolation_policy(customer_id, cluster_id):
+    from executor import labels
+    return {'apiVersion':'networking.k8s.io/v1','kind':'NetworkPolicy',
+            'metadata':{'name':'webdock-internal','namespace':'wd-mail-'+customer_id,
+                        'labels':labels({'projectID':customer_id,'clusterID':cluster_id},False)},
+            'spec':{'podSelector':{},'policyTypes':['Ingress','Egress'],'ingress':[],'egress':[]}}
+
+
 def execute_mail(packet, checkpoint):
     """Provision one fixed profile; checkpoint credentials before removing recovery access."""
     import copy
@@ -179,6 +187,7 @@ def execute_mail(packet, checkpoint):
             # Known instances must never silently receive an empty replacement disk.
             storage_client.retained(p)
         prepare_namespace(p, namespace)
+        apply(mail_isolation_policy(packet['customerID'],packet['clusterID']),p)
         apply(mail_gateway_policy(packet), p)
         prepare_storage(p, initial_allocation=not bool(packet['credentials'].get('username')))
         renew()
@@ -233,6 +242,6 @@ def mail_capability(nodes):
         result = subprocess.run(['k3s', 'crictl', 'inspecti', config['image']], capture_output=True, text=True, check=True, timeout=15)
         if len(result.stdout) > 1048576 or config['image'] not in json.loads(result.stdout).get('status', {}).get('repoDigests', []):
             return None
-        return {'version': 1, 'image': config['image'], 'configurationVersion': 2}
+        return {'version': 1, 'image': config['image'], 'configurationVersion': 3}
     except (OSError, ValueError, KeyError, TypeError, StorageError, subprocess.SubprocessError):
         return None

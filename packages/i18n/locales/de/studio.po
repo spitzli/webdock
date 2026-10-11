@@ -7916,3 +7916,36 @@ msgstr "Verwalte native API-Schlüssel unter Webdock-Mailversand."
 
 msgid "Not configured"
 msgstr "Nicht eingerichtet"
+
+msgid "Mail response could not be read. Check sending status before retrying."
+msgstr "Die Antwort konnte nicht gelesen werden. Prüfe den Versandstatus vor einem erneuten Versuch."
+
+msgid "Mail submission acknowledgement is unavailable. Check sending status before retrying."
+msgstr "Die Versandbestätigung fehlt. Prüfe den Versandstatus vor einem erneuten Versuch."
+
+msgid "Message queued for delivery."
+msgstr "Nachricht für den Versand vorgemerkt."
+
+msgid "Message was not accepted. Your draft is retained."
+msgstr "Die Nachricht wurde nicht angenommen. Dein Entwurf bleibt erhalten."
+
+msgid "Message accepted. Saving the Sent copy…"
+msgstr "Nachricht angenommen. Die Kopie unter „Gesendet“ wird gespeichert…"
+
+msgid "Delivery outcome is unknown. Do not resend this message."
+msgstr "Das Versandergebnis ist unklar. Sende diese Nachricht nicht erneut."
+
+msgid "Sending needs review. Your draft is retained."
+msgstr "Der Versand muss geprüft werden. Dein Entwurf bleibt erhalten."
+
+msgid "Sending cancelled. Your draft is retained."
+msgstr "Versand abgebrochen. Dein Entwurf bleibt erhalten."
+
+msgid "Check sending status"
+msgstr "Versandstatus prüfen"
+
+msgid "Cancel queued sending"
+msgstr "Vorgemerkten Versand abbrechen"
+
+msgid "Finish saving to Sent"
+msgstr "Ablage unter „Gesendet“ abschließen"

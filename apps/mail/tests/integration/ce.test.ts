@@ -1,3 +1,8 @@
+import {mkdtempSync,readFileSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {X509Certificate} from 'node:crypto';
+import {messageDigest,hookMessageDigest} from '@webdock/mail-core/submission-proof';
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { isIP, createServer as tcpServer, connect as tcpConnect, type Socket } from "node:net";
@@ -234,9 +239,10 @@ test('CE DATA hook exposes authenticated sender context and fails closed when th
   await eventually(()=>a.client.call('x:MtaHook/get',{ids:[hookID]}));
   const mailer=nodemailer.createTransport({host:a.ip,port:465,secure:true,auth:{user:`alice@${a.domain}`,pass:a.password},tls:{rejectUnauthorized:false},connectionTimeout:5000,socketTimeout:10000});
   try{
-    await assert.rejects(mailer.sendMail({from:`alice@${a.domain}`,to:`alice@${a.domain}`,subject:'Policy denial fixture',text:'Must be rejected before acceptance'}),error=>(error as {responseCode?:number}).responseCode===550);
+    const fixture=Buffer.from(`From: alice@${a.domain}\r\nTo: alice@${a.domain}\r\nSubject: Policy denial\r\n folded fixture\r\n\r\nMust be rejected before acceptance.\r\n`);
+    await assert.rejects(mailer.sendMail({envelope:{from:`alice@${a.domain}`,to:[`alice@${a.domain}`]},raw:fixture}),error=>(error as {responseCode?:number}).responseCode===550);
     const captured=await (await fetch(policyOrigin+'/captured')).json();
-    assert.ok(captured);const context=captured.context as Record<string,unknown>;
+    assert.ok(captured);assert.equal(hookMessageDigest(captured.message),messageDigest(fixture));const context=captured.context as Record<string,unknown>;
     assert.deepEqual(context.sasl,{login:`alice@${a.domain}`});assert.equal(context.stage,'data');
     const envelope=captured.envelope as {from:{address:string};to:{address:string}[]};assert.equal(envelope.from.address,`alice@${a.domain}`);assert.equal(envelope.to[0].address,`alice@${a.domain}`);
     await fetch(policyOrigin+'/unavailable',{method:'POST'});
@@ -297,5 +303,60 @@ test('CE submission service can send for a scoped identity without mailbox or ma
   const management=new StalwartClient({url:a.url,authorization:basic(login,a.password),allowInsecureHttp:true});await assert.rejects(management.call('x:Account/get',{ids:null}));
  }finally{
   mailer.close();const {id,...fields}=original;await a.client.call('x:MtaStageAuth/set',{update:{singleton:fields}});await a.client.call('x:Account/set',{destroy:[serviceID]});
+ }
+});
+
+
+test('CE persisted private certificate keeps the submission pin stable across restarts',async()=>{
+ const a=instances[0],directory=mkdtempSync(join(tmpdir(),'webdock-ce-cert-'));
+ const settings=((await a.client.call('x:SystemSettings/get',{ids:['singleton']})).list as {defaultCertificateId?:string|null}[])[0];
+ let certificateID:string|undefined;
+ const fingerprint=async()=>{const socket=tlsConnect({host:a.ip,port:465,rejectUnauthorized:false});try{await once(socket,'secureConnect');return createHash('sha256').update(socket.getPeerCertificate().raw).digest('hex');}finally{socket.destroy();}};
+ try{
+  execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-days','2','-subj',`/CN=mail.${a.domain}`,'-addext',`subjectAltName=DNS:mail.${a.domain}`,'-keyout',join(directory,'key.pem'),'-out',join(directory,'cert.pem')],{stdio:'ignore'});
+  const certificate=readFileSync(join(directory,'cert.pem'),'utf8'),privateKey=readFileSync(join(directory,'key.pem'),'utf8');
+  const expected=createHash('sha256').update(new X509Certificate(certificate).raw).digest('hex');
+  const created=await a.client.call('x:Certificate/set',{create:{private:{certificate:{'@type':'Text',value:certificate},privateKey:{'@type':'Text',secret:privateKey}}}});
+  certificateID=(created.created as {private:{id:string}}).private.id;
+  await a.client.call('x:SystemSettings/set',{update:{singleton:{defaultCertificateId:certificateID}}});
+  for(let restart=0;restart<2;restart++){
+   compose('restart',a.service);await eventually(async()=>assert.equal(await fingerprint(),expected));
+  }
+ }finally{
+  await a.client.call('x:SystemSettings/set',{update:{singleton:{defaultCertificateId:settings.defaultCertificateId??null}}});
+  if(certificateID)await a.client.call('x:Certificate/set',{destroy:[certificateID]});
+  rmSync(directory,{recursive:true,force:true});
+ }
+});
+
+test('CE shared Webmail draft exports through restricted user credentials and files Sent after service SMTP',async()=>{
+ const a=instances[0],domain=((await a.client.call('x:Domain/get',{ids:null})).list as {id:string;name:string}[]).find(row=>row.name===a.domain)!;
+ const permissions=JSON.parse(execFileSync('python3',['-c',"import json,sys;sys.path.insert(0,'apps/hosting-agent');from mail_configuration import MAIL_PERMISSIONS;print(json.dumps(MAIL_PERMISSIONS))"],{encoding:'utf8'})) as string[];
+ const group=await a.client.call('x:Account/set',{create:{shared:{'@type':'Group',name:'shared-queue',domainId:domain.id,roles:{'@type':'Default'},permissions:{'@type':'Inherit'},quotas:{maxDiskQuota:10485760}}}});
+ const groupID=(group.created as {shared:{id:string}}).shared.id;
+ const principals=await a.client.call('x:Account/set',{create:{reader:{'@type':'User',name:'queue-reader',domainId:domain.id,roles:{'@type':'User'},permissions:{'@type':'Replace',enabledPermissions:Object.fromEntries(permissions.map(name=>[name,true])),disabledPermissions:{}},credentials:{'0':{'@type':'Password',secret:a.password}},memberGroupIds:{[groupID]:true},encryptionAtRest:{'@type':'Disabled'},quotas:{maxDiskQuota:1048576}},sender:{'@type':'User',name:'queue-submit',domainId:domain.id,roles:{'@type':'User'},permissions:{'@type':'Replace',enabledPermissions:{authenticate:true,emailSend:true},disabledPermissions:{}},credentials:{'0':{'@type':'Password',secret:a.password}},quotas:{maxDiskQuota:1048576}}}});
+ const ids=Object.values(principals.created as Record<string,{id:string}>).map(row=>row.id);
+ const original=((await a.client.call('x:MtaStageAuth/get',{ids:['singleton']})).list as Record<string,unknown>[])[0];
+ const login=`queue-submit@${a.domain}`,address=`shared-queue@${a.domain}`;
+ let proxy:ReturnType<typeof tcpServer>|undefined;
+ try{
+  await a.client.call('x:MtaStageAuth/set',{update:{singleton:{mustMatchSender:{else:'true',match:{'0':{if:`authenticated_as == '${login}'`,then:'false'}}}}}});
+  compose('restart',a.service);await eventually(()=>a.client.call('x:Account/get',{ids:[groupID]}));
+  const client=new JmapClient({url:a.url,allowInsecureHttp:true,authorization:basic(`queue-reader@${a.domain}`,a.password),accountId:groupID,sender:{email:address,name:'Shared support'}});
+  const identity=(await client.identities())[0];assert.ok(identity);
+  const draft=await client.createDraft({identityId:identity.id,to:[{email:`alice@${a.domain}`}],subject:'Shared native SMTP path',text:'A user-scoped group draft sent through the private service.'});
+  const exported=await client.exportDraft(draft.id,identity.id),message=prepareMessage(exported.raw,exported.sender,exported.to);
+  const socket=tlsConnect({host:a.ip,port:465,rejectUnauthorized:false});await once(socket,'secureConnect');const pin=createHash('sha256').update(socket.getPeerCertificate().raw).digest('hex');socket.destroy();
+  proxy=tcpServer(connection=>{const upstream=tcpConnect({host:a.ip,port:465});connection.pipe(upstream);upstream.pipe(connection);connection.on('error',()=>upstream.destroy());upstream.on('error',()=>connection.destroy());});
+  proxy.listen(0,'127.0.0.1');await once(proxy,'listening');
+  await submitSMTP({host:'127.0.0.1',port:(proxy.address() as {port:number}).port,allowLoopback:true,certificateSha256:pin,username:login,password:a.password},message);
+  await client.fileSent(draft.id);
+  const sent=(await client.mailboxes()).list.find(row=>row.role==='sent');assert.ok(sent);
+  assert.ok((await client.emails({mailboxId:sent.id})).list.some(row=>row.id===draft.id));
+  const alice=new JmapClient({url:a.url,allowInsecureHttp:true,authorization:basic(`alice@${a.domain}`,a.password),accountId:accountIDs[0]});
+  await eventually(async()=>assert.ok((await alice.emails({text:'Shared native SMTP path'})).list.length));
+ }finally{
+  if(proxy)await new Promise<void>(resolve=>proxy!.close(()=>resolve()));
+  const {id,...fields}=original;await a.client.call('x:MtaStageAuth/set',{update:{singleton:fields}});await a.client.call('x:Account/set',{destroy:[...ids,groupID]});
  }
 });

@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { openSecret } from "@webdock/mail-core/secrets";
 import type { Connection } from "./hosting/authorization";
-import { authorizeMailbox, mailUnavailable, type MailActor } from "./mail-access";
+import { authorizeQueuedMailbox, authorizeMailbox, mailUnavailable, type MailActor } from "./mail-access";
 
 const hash = (token: string) => createHash("sha256").update(token).digest("hex");
 const token = () => randomBytes(32).toString("base64url");
@@ -51,18 +51,24 @@ export async function inspectWebmail(db: Connection, value: string) {
   enabled(); validToken(value);
   const row = (await db.query("SELECT * FROM webdock_mail.webmail_session WHERE token_hash=$1 AND expires_at>now() FOR SHARE", [hash(value)])).rows[0] as BoundSession | undefined;
   if (!row) mailUnavailable();
-  const mailbox = await authorizeBound(db, row);
-  const service = (await db.query("SELECT host_id FROM webdock_mail.service WHERE customer_id=$1", [row.customer_id])).rows[0];
-  if (!process.env.MAIL_MANAGED_CLUSTER_ID || service.host_id !== process.env.MAIL_MANAGED_CLUSTER_ID) mailUnavailable();
-  const identity = (await db.query("SELECT encrypted_credentials FROM webdock_mail.identity WHERE id=$1 AND customer_id=$2", [mailbox.identityID, row.customer_id])).rows[0];
-  if (!identity?.encrypted_credentials) mailUnavailable();
-  const secret = openSecret<{ username: string; password: string }>(identity.encrypted_credentials, `identity:${row.customer_id}:${mailbox.identityID}`, process.env.MAIL_ENCRYPTION_KEY || "");
-  if (typeof secret.username !== "string" || !secret.username || /[:\r\n\0]/.test(secret.username) || typeof secret.password !== "string" || !secret.password || /[\r\n\0]/.test(secret.password)) mailUnavailable();
-  return { scopeID: row.id, subject: row.subject, customerID: row.customer_id, mailboxID: row.mailbox_id,
-    accountID: mailbox.accountID, senderName: mailbox.name, senderAddress: `${mailbox.localPart}@${mailbox.domain}`,
-    runtimeOrigin: `http://app-${row.customer_id}.wd-mail-${row.customer_id}.svc.cluster.local:8080`,
-    authorization: `Basic ${Buffer.from(`${secret.username}:${secret.password}`).toString("base64")}`,
-    expiresAt: new Date(row.expires_at).toISOString() };
+  return inspectRow(db,row);
+}
+async function inspectRow(db:Connection,row:BoundSession){
+  const mailbox=await authorizeBound(db,row);
+  return {...await mailboxConnection(db,row.customer_id,mailbox),scopeID:row.id,subject:row.subject,grantRevision:String(mailbox.grantRevision),expiresAt:new Date(row.expires_at).toISOString()};
+}
+/** Background processing is bound to a previously admitted mailbox/grant, not an arbitrary subject. */
+export async function inspectQueuedWebmail(db:Connection,context:{customerID:string;subject:string;mailboxID:string;grantRevision:string}){
+ enabled();const mailbox=await authorizeQueuedMailbox(db,context);return {...await mailboxConnection(db,context.customerID,mailbox),subject:context.subject};
+}
+async function mailboxConnection(db:Connection,customerID:string,mailbox:Awaited<ReturnType<typeof authorizeMailbox>>){
+ const service=(await db.query('SELECT host_id FROM webdock_mail.service WHERE customer_id=$1',[customerID])).rows[0];
+ if(!process.env.MAIL_MANAGED_CLUSTER_ID || service.host_id!==process.env.MAIL_MANAGED_CLUSTER_ID)mailUnavailable();
+ const identity=(await db.query('SELECT encrypted_credentials FROM webdock_mail.identity WHERE id=$1 AND customer_id=$2',[mailbox.identityID,customerID])).rows[0];
+ if(!identity?.encrypted_credentials)mailUnavailable();
+ const secret=openSecret<{username:string;password:string}>(identity.encrypted_credentials,`identity:${customerID}:${mailbox.identityID}`,process.env.MAIL_ENCRYPTION_KEY||'');
+ if(typeof secret.username!=='string' || !secret.username || /[:\r\n\0]/.test(secret.username) || typeof secret.password!=='string' || !secret.password || /[\r\n\0]/.test(secret.password))mailUnavailable();
+ return {customerID,mailboxID:mailbox.id,accountID:mailbox.accountID,senderName:mailbox.name,senderAddress:`${mailbox.localPart}@${mailbox.domain}`,runtimeOrigin:`http://app-${customerID}.wd-mail-${customerID}.svc.cluster.local:8080`,authorization:`Basic ${Buffer.from(`${secret.username}:${secret.password}`).toString('base64')}`};
 }
 export async function revokeWebmail(db: Connection, value: string) {
   validToken(value);

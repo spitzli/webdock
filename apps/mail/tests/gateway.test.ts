@@ -83,3 +83,22 @@ test("gateway reserves writes before JMAP and never resubmits after a lost resul
     assert.equal(submitted,1);
   }finally{gateway.closeAllConnections();upstream.closeAllConnections();await Promise.all([new Promise<void>(r=>gateway.close(()=>r())),new Promise<void>(r=>upstream.close(()=>r()))]);}
 });
+
+test('production Webmail submission delegates its bound session to the queue and never calls JMAP submission',async()=>{
+ const forwarded:Record<string,unknown>[]=[];
+ const gateway=createMailGateway({allowedOrigins:['https://studio.webdock.test'],control:async body=>{
+  const expiresAt=new Date(Date.now()+60000).toISOString();
+  if(body.action==='exchange')return {token:'t'.repeat(43),scopeID:'123',customerID:'12',mailboxID:'34',expiresAt};
+  assert.equal(body.action,'inspect');return {scopeID:'123',customerID:'12',mailboxID:'34',subject:'56',accountID:'group',senderName:'Support',senderAddress:'support@example.test',runtimeOrigin:'http://app-12.wd-mail-12.svc.cluster.local:8080',authorization:'Basic private',expiresAt};
+ },nativeSending:async body=>{forwarded.push(body);return {id:'789',state:'queued',filed:false,authorization:'must-not-leak',filingState:{private:'must-not-leak'}};}});
+ gateway.listen(0,'127.0.0.1');await once(gateway,'listening');const port=(gateway.address() as {port:number}).port;
+ const call=(path:string,body:unknown,cookie='')=>fetch(`http://127.0.0.1:${port}`+path,{method:'POST',headers:{Origin:'https://studio.webdock.test','Content-Type':'application/json',Cookie:cookie},body:JSON.stringify(body)});
+ try{
+  const launch=await call('/session',{code:'x'.repeat(43)}),cookie=launch.headers.get('set-cookie')!.split(';')[0];
+  const result=await call('/s/123/mail',{action:'submit',requestID:'11111111-1111-4111-8111-111111111111',emailId:'draft',identityId:'sender'},cookie);
+  assert.equal(result.status,200);assert.deepEqual(await result.json(),{data:{id:'789',state:'queued',filed:false}});
+  assert.equal(forwarded.length,1);assert.equal(forwarded[0].token,'t'.repeat(43));assert.equal(forwarded[0].emailID,'draft');
+  assert.equal((await call('/s/123/mail',{action:'submit',requestID:crypto.randomUUID(),emailId:'draft',identityId:'sender',customerID:'other'},cookie)).status,400);
+  assert.equal(forwarded.length,1);
+ }finally{gateway.closeAllConnections();await new Promise<void>(resolve=>gateway.close(()=>resolve()));}
+});

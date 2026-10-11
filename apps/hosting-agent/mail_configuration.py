@@ -22,8 +22,12 @@ def validate_configuration(p):
         if not isinstance(value, str) or len(value) > 253 or not re.fullmatch(r'(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9-]{2,63}', value):
             raise ValueError('Invalid Mail domain')
     try:
-        if set(p) != {'version','customerID','clusterID','operationID','generation','revision','leaseToken','leaseUntil','hostname','credentials','domains','mailboxes','identities'} or type(p['version']) is not int or p['version'] != 2:
+        if set(p) != {'version','customerID','clusterID','operationID','generation','revision','leaseToken','leaseUntil','hostname','credentials','domains','mailboxes','identities','submission'} or type(p['version']) is not int or p['version'] != 3:
             raise ValueError('Invalid Mail configuration packet')
+        if p['submission'] is not None:
+            from mail_submission import validate_submission
+            validate_submission(p['submission'])
+            if p['submission']['customerID']!=p['customerID'] or p['submission']['hostname']!=p['hostname']:raise ValueError('Submission instance changed')
         for key in ['customerID','clusterID','operationID','revision']: identifier(p[key])
         if type(p['generation']) is not int or p['generation'] < 1: raise ValueError('Invalid Mail generation')
         if not re.fullmatch(r'[A-Za-z0-9_-]{32,64}',p['leaseToken']): raise ValueError('Invalid Mail lease')
@@ -80,7 +84,7 @@ def apply_configuration(client, packet, guard):
     domains=call('x:Domain/get',{'ids':None})['list']
     internal=exact(domains,None,packet['hostname'])
     if not internal: raise ValueError('Mail identity domain is missing')
-    proof={'domains':{},'mailboxes':{},'identities':{},'dkim':{}}
+    proof={'domains':{},'mailboxes':{},'identities':{},'dkim':{},'submission':None}
     for item in packet['domains']:
         row=exact(domains,item['providerId'],item['name'])
         if not row:
@@ -179,4 +183,9 @@ def execute_configuration(packet, checkpoint):
         if any(e['name'].startswith('STALWART_RECOVERY') for e in env) or not any(e['name']=='STALWART_PUBLIC_URL' and e.get('value')=='https://'+packet['hostname'] for e in env):raise ValueError('Mail instance configuration changed')
         address=service['spec']['clusterIP']
         client=MailClient('http://'+('['+address+']' if ':' in address else address)+':8080',**packet['credentials'])
-        return apply_configuration(client,packet,guard)
+        proof=apply_configuration(client,packet,guard)
+        if packet['submission'] is not None:
+            from mail_submission import execute_submission
+            try:proof['submission']=execute_submission(client,packet,deployment,service,guard)
+            except Exception:proof['submission']={'ready':False}
+        return proof

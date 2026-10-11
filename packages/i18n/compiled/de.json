@@ -1172,6 +1172,9 @@
   "Cancel invitation": [
     "Einladung widerrufen"
   ],
+  "Cancel queued sending": [
+    "Vorgemerkten Versand abbrechen"
+  ],
   "Cancel the invitation and pending website access": [
     "Einladung und ausstehenden Website-Zugriff widerrufen"
   ],
@@ -1246,6 +1249,9 @@
   ],
   "Check connection and domains": [
     "Verbindung und Domains prüfen"
+  ],
+  "Check sending status": [
+    "Versandstatus prüfen"
   ],
   "Check the database configuration fields.": [
     "Bitte prüfe die Angaben zur Datenbank."
@@ -2331,6 +2337,9 @@
   "Delivery": [
     "Lieferung"
   ],
+  "Delivery outcome is unknown. Do not resend this message.": [
+    "Das Versandergebnis ist unklar. Sende diese Nachricht nicht erneut."
+  ],
   "Demo orders": [
     "Demo-Bestellungen"
   ],
@@ -2948,6 +2957,9 @@
   ],
   "Find {type}": [
     "{type} suchen"
+  ],
+  "Finish saving to Sent": [
+    "Ablage unter „Gesendet“ abschließen"
   ],
   "Finish the installation and return to Studio. Match an active Studio project to its Vercel project in Integrations.": [
     "Schließe die Installation ab und kehre zu Studio zurück. Ordne unter Integrationen ein aktives Studio-Projekt seinem Vercel-Projekt zu."
@@ -4062,6 +4074,9 @@
   "Mail request failed.": [
     "Die E-Mail-Anfrage ist fehlgeschlagen."
   ],
+  "Mail response could not be read. Check sending status before retrying.": [
+    "Die Antwort konnte nicht gelesen werden. Prüfe den Versandstatus vor einem erneuten Versuch."
+  ],
   "Mail sending is not available yet.": [
     "Der E-Mail-Versand ist noch nicht verfügbar."
   ],
@@ -4082,6 +4097,9 @@
   ],
   "Mail settings could not be changed. Refresh before trying again.": [
     "Die E-Mail-Einstellungen konnten nicht geändert werden. Lade die Seite vor einem erneuten Versuch neu."
+  ],
+  "Mail submission acknowledgement is unavailable. Check sending status before retrying.": [
+    "Die Versandbestätigung fehlt. Prüfe den Versandstatus vor einem erneuten Versuch."
   ],
   "Mail tracking": [
     "Mail-Tracking"
@@ -4317,8 +4335,17 @@
   "Message accepted for delivery. Filing in Sent needs review.": [
     "Nachricht zum Versand angenommen. Die Ablage unter Gesendet muss geprüft werden."
   ],
+  "Message accepted. Saving the Sent copy…": [
+    "Nachricht angenommen. Die Kopie unter „Gesendet“ wird gespeichert…"
+  ],
   "Message content": [
     "Nachrichteninhalt"
+  ],
+  "Message queued for delivery.": [
+    "Nachricht für den Versand vorgemerkt."
+  ],
+  "Message was not accepted. Your draft is retained.": [
+    "Die Nachricht wurde nicht angenommen. Dein Entwurf bleibt erhalten."
   ],
   "Method not allowed.": [
     "Methode nicht erlaubt."
@@ -6489,6 +6516,9 @@
   "Sending account and domains": [
     "Versandkonto und Domains"
   ],
+  "Sending cancelled. Your draft is retained.": [
+    "Versand abgebrochen. Dein Entwurf bleibt erhalten."
+  ],
   "Sending connection": [
     "Versandverbindung"
   ],
@@ -6500,6 +6530,9 @@
   ],
   "Sending is paused. Existing credentials can still be listed and revoked.": [
     "Der Versand ist pausiert. Vorhandene Zugangsdaten können weiterhin angezeigt und widerrufen werden."
+  ],
+  "Sending needs review. Your draft is retained.": [
+    "Der Versand muss geprüft werden. Dein Entwurf bleibt erhalten."
   ],
   "Sending status": [
     "Versandstatus"

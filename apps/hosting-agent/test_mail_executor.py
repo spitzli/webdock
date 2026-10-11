@@ -84,7 +84,7 @@ class MailCapabilityTests(unittest.TestCase):
             config.write_text(json.dumps({'image': image, 'node': 'fixture-node'}))
             with patch('storage.private', return_value=config), patch('subprocess.run') as run:
                 run.return_value.stdout = json.dumps({'status': {'repoDigests': [image]}})
-                self.assertEqual(mail_capability(['fixture-node']), {'version': 1, 'image': image, 'configurationVersion': 2})
+                self.assertEqual(mail_capability(['fixture-node']), {'version': 1, 'image': image, 'configurationVersion': 3})
                 self.assertIsNone(mail_capability(['other-node']))
                 self.assertIsNone(mail_capability(['fixture-node', 'another-node']))
                 run.return_value.stdout = json.dumps({'status': {'repoDigests': []}})

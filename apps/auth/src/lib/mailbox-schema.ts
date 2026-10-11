@@ -123,7 +123,9 @@ CREATE TABLE IF NOT EXISTS webdock_mail.webmail_write (
  UNIQUE(mailbox_id,subject,request_id),
  FOREIGN KEY(customer_id,mailbox_id) REFERENCES webdock_mail.mailbox(customer_id,id)
 );
-CREATE UNIQUE INDEX IF NOT EXISTS webmail_single_submission ON webdock_mail.webmail_write(mailbox_id,resource_id) WHERE action='submit';
+ALTER TABLE webdock_mail.webmail_write ADD COLUMN IF NOT EXISTS queue_preparing_until timestamptz;
+DROP INDEX IF EXISTS webdock_mail.webmail_single_submission;
+CREATE UNIQUE INDEX webmail_single_submission ON webdock_mail.webmail_write(mailbox_id,resource_id) WHERE action='submit' AND state<>'rejected';
 
 CREATE OR REPLACE FUNCTION webdock_mail.revoke_detached_member() RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS $$
 DECLARE next_revision bigint;

@@ -16,7 +16,7 @@ export async function reserveWebmailWrite(db: Connection, input: unknown): Promi
   if (command.action !== "draft" && command.resourceID === undefined) mailUnavailable();
   await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", ["webmail-write:"+access.mailboxID]);
   const existing = (await db.query(`SELECT * FROM webdock_mail.webmail_write WHERE mailbox_id=$1 AND
-    ((subject=$2 AND request_id=$3) OR (action='submit' AND $4='submit' AND resource_id=$5)) ORDER BY created_at LIMIT 1`, [access.mailboxID, access.subject, command.requestID, command.action, command.resourceID ?? null])).rows[0];
+    ((subject=$2 AND request_id=$3) OR (action='submit' AND $4='submit' AND resource_id=$5 AND state<>'rejected')) ORDER BY created_at LIMIT 1`, [access.mailboxID, access.subject, command.requestID, command.action, command.resourceID ?? null])).rows[0];
   if (existing) {
     if (existing.action !== command.action || existing.resource_id !== (command.resourceID ?? null) || existing.payload_hash !== command.payloadHash) mailUnavailable();
     return { execute: false, operationID: existing.id, state: existing.state, result: existing.result };

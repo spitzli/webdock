@@ -4,7 +4,7 @@ from mail_configuration import validate_configuration, apply_configuration
 
 
 def packet():
-    return {'version': 2, 'customerID': '123', 'clusterID': '789', 'operationID': '456', 'generation': 1,
+    return {'version': 3,'submission':None, 'customerID': '123', 'clusterID': '789', 'operationID': '456', 'generation': 1,
             'revision': '1', 'leaseToken': 'a' * 43, 'leaseUntil': (datetime.now(timezone.utc) + timedelta(seconds=100)).isoformat(),
             'hostname': 'mail-123.example.com', 'credentials': {'username': 'admin', 'password': 'fixture'},
             'domains': [{'id': '11', 'name': 'customer.example.com', 'providerId': None, 'ownershipVerified': True}],

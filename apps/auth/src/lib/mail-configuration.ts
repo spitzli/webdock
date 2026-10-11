@@ -1,3 +1,4 @@
+import {prepareSubmissionConfiguration,completeSubmissionConfiguration,reconcileSubmissionConfiguration,submissionConfigurationProof,type SubmissionDesired} from './mail-submission-configuration';
 import { createPublicKey, randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { HostingError, resourceID } from "@webdock/hosting-contracts";
@@ -12,11 +13,11 @@ const providerID = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
 const dkimKey=z.object({id:providerID,selector:z.string().regex(/^(?:webdock-rsa-|v1-rsa-)[a-z0-9-]{1,40}$/),publicKey:z.string().min(128).max(2048).regex(/^[A-Za-z0-9+/]+={0,2}$/).refine(value=>{
   try{const key=createPublicKey({key:Buffer.from(value,"base64"),format:"der",type:"spki"});return key.asymmetricKeyType==="rsa" && (key.asymmetricKeyDetails?.modulusLength??0)>=2048;}catch{return false;}
 })}).strict();
-const completionSchema = leaseSchema.extend({ outcome: z.enum(["succeeded", "needs_review"]), proof: z.object({ domains: z.record(resourceID, providerID), mailboxes: z.record(resourceID, providerID), identities: z.record(resourceID, providerID),dkim:z.record(resourceID,z.array(dkimKey).min(1).max(2)) }).strict().optional() }).strict();
+const completionSchema = leaseSchema.extend({ outcome: z.enum(["succeeded", "needs_review"]), proof: z.object({ domains: z.record(resourceID, providerID), mailboxes: z.record(resourceID, providerID), identities: z.record(resourceID, providerID),dkim:z.record(resourceID,z.array(dkimKey).min(1).max(2)),submission:submissionConfigurationProof.nullable().optional() }).strict().optional() }).strict();
 type Domain = { id: string; name: string; providerId: string | null; ownershipVerified: boolean };
 type Mailbox = { id: string; domainId: string; localPart: string; quotaBytes: number; providerId: string | null };
 type Identity = { id: string; subject: string; providerId: string | null; enabled: boolean; mailboxIds: string[] };
-type Desired = { serviceRevision: string; domains: Domain[]; mailboxes: Mailbox[]; identities: Identity[]; grants: { mailboxID: string; subject: string; revision: string }[] };
+type Desired = { submission?:SubmissionDesired|null;serviceRevision: string; domains: Domain[]; mailboxes: Mailbox[]; identities: Identity[]; grants: { mailboxID: string; subject: string; revision: string }[] };
 
 async function lock(db: Connection, agent: Agent, input: z.infer<typeof leaseSchema>) {
   await verifyMailAgent(db, agent);
@@ -35,10 +36,11 @@ export async function claimMailConfiguration(agent: Agent) {
   const settings = mailAgentConfig();
   return transaction(async db => {
     const active = await verifyMailAgent(db, agent);
-    if (active.observation?.capabilities?.nativeMail?.configurationVersion !== 2) return null;
+    if (active.observation?.capabilities?.nativeMail?.configurationVersion !== 3) return null;
+    await reconcileSubmissionConfiguration(db,agent.clusterID);
     await db.query(`UPDATE webdock_mail.configuration_operation o SET state='needs_review',finished_at=now()
       FROM webdock_mail.service s WHERE s.customer_id=o.customer_id AND s.host_id=$1 AND o.state='running' AND o.lease_until<now()`, [agent.clusterID]);
-    const candidate = (await db.query(`SELECT o.customer_id,o.id FROM webdock_mail.configuration_operation o
+    const candidate = (await db.query(`SELECT o.customer_id,o.id,o.reason FROM webdock_mail.configuration_operation o
       JOIN webdock_mail.configuration c USING(customer_id) JOIN webdock_mail.service s USING(customer_id)
       WHERE s.host_id=$1 AND s.desired_enabled AND s.state='ready' AND s.revision=s.applied_revision AND o.revision=c.revision AND o.state='pending'
       AND NOT EXISTS(SELECT 1 FROM webdock_mail.configuration_operation p WHERE p.customer_id=o.customer_id AND p.state IN ('running','needs_review'))
@@ -79,11 +81,12 @@ export async function claimMailConfiguration(agent: Agent) {
       const identity: Identity = { id: row.id, subject: row.subject, providerId: row.provider_id, enabled: mailboxIds.length > 0, mailboxIds };
       identities.push(identity); secrets.push({ ...identity, username, password: secret.password });
     }
-    const desired: Desired = { serviceRevision: String(current.revision), domains, mailboxes, identities, grants: grants.map(({ mailboxID, subject, revision }) => ({ mailboxID, subject, revision: String(revision) })) };
+    const submission=await prepareSubmissionConfiguration(db,customerID,hostname,String(current.revision),['submission.configure','configuration.retry'].includes(candidate.reason));
+    const desired: Desired = { submission:submission?.desired??null,serviceRevision: String(current.revision), domains, mailboxes, identities, grants: grants.map(({ mailboxID, subject, revision }) => ({ mailboxID, subject, revision: String(revision) })) };
     const token = randomUUID();
     const operation = (await db.query("UPDATE webdock_mail.configuration_operation SET state='running',lease_token=$2,lease_until=now()+interval '2 minutes',agent_generation=$3,desired=$4 WHERE id=$1 RETURNING revision,lease_until", [candidate.id, token, agent.generation, JSON.stringify(desired)])).rows[0];
-    return { version: 2, customerID, clusterID: agent.clusterID, operationID: candidate.id as string, generation: agent.generation, revision: String(operation.revision), leaseToken: token,
-      leaseUntil: new Date(operation.lease_until).toISOString(), hostname, credentials: { username: credentials.username, password: credentials.password }, domains, mailboxes, identities: secrets };
+    return { version: 3, customerID, clusterID: agent.clusterID, operationID: candidate.id as string, generation: agent.generation, revision: String(operation.revision), leaseToken: token,
+      leaseUntil: new Date(operation.lease_until).toISOString(), hostname, credentials: { username: credentials.username, password: credentials.password }, domains, mailboxes, identities: secrets,submission:submission?.profile??null };
   });
 }
 
@@ -106,7 +109,7 @@ export async function completeMailConfiguration(agent: Agent, input: unknown) {
     const succeeded = parsed.outcome === "succeeded" && service?.desired_enabled && service.state === "ready" && String(service.revision) === desired.serviceRevision;
     if (succeeded) {
       if (!parsed.proof) unavailable();
-      const accountIDs = [...Object.values(parsed.proof.mailboxes), ...Object.values(parsed.proof.identities)];
+      const accountIDs = [...Object.values(parsed.proof.mailboxes), ...Object.values(parsed.proof.identities),...(parsed.proof.submission?.ready?[parsed.proof.submission.resources.accountID]:[])];
       if (new Set(accountIDs).size !== accountIDs.length) unavailable();
       for (const [kind, table] of [["domains", "domain"], ["mailboxes", "mailbox"], ["identities", "identity"]] as const) {
         const expected = desired[kind], mapping = parsed.proof[kind];
@@ -123,6 +126,7 @@ export async function completeMailConfiguration(agent: Agent, input: unknown) {
         const keys=parsed.proof.dkim[domain.id];if(!keys || new Set(keys.map(key=>key.selector)).size!==keys.length)unavailable();
         await db.query("UPDATE webdock_mail.domain SET dkim_keys=$3 WHERE customer_id=$1 AND id=$2",[row.customer_id,domain.id,JSON.stringify(keys)]);
       }
+      if(desired.submission){if(!parsed.proof.submission)unavailable();await completeSubmissionConfiguration(db,row.customer_id,desired.serviceRevision,desired.submission,parsed.proof.submission);}
       await db.query("UPDATE webdock_mail.configuration SET applied_revision=$2 WHERE customer_id=$1", [row.customer_id, row.revision]);
     }
     await db.query("UPDATE webdock_mail.configuration_operation SET state=$2,finished_at=now() WHERE id=$1", [row.id, succeeded ? "succeeded" : "needs_review"]);

@@ -11,7 +11,7 @@ export function SendingPanel({data}:{data:NativeSendingView}){
    <form action={submit} className="access-form" aria-busy={pending}>
     <input type="hidden" name="customer" value={data.customerID}/><input type="hidden" name="action" value="configure"/>
     <label>{i18n.t('Sending connection')}<select name="mode" defaultValue={data.transport?.mode??'managed'}><option value="managed">{i18n.t('Email provided by Webdock')}</option>{data.byokAllowed && <option value="byok">{i18n.t('Own sending connection')}</option>}</select></label>
-    <button className="button" disabled={pending || ['pending','needs_review'].includes(data.transport?.state??'')}>{i18n.t('Configure sending')}</button>
+    <button className="button" disabled={pending || data.transport?.canConfigure===false}>{i18n.t('Configure sending')}</button>
    </form>
    {data.apiOrigin && <p>{i18n.t('Webdock sending endpoint')}: <code>{data.apiOrigin}/v1/emails</code></p>}
   </section>
