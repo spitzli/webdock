@@ -18,7 +18,7 @@ The renderer creates no secrets, volumes or PVCs. Before applying it:
    node's containerd image store, and pass their actual immutable repository digests.
    The manifest uses `imagePullPolicy: Never`; mutable tags are rejected. Registry
    publishing is not implied by this renderer.
-4. Configure Auth's `MAIL_API_ORIGIN=https://mail-api.webdock.dev` and
+4. Configure Auth's `MAIL_API_ORIGIN=https://api.webdock.dev` and
    `MAIL_GATEWAY_ORIGIN=https://mail.webdock.dev`. Set up those DNS records and verify
    the existing Traefik `webdock` certificate resolver. Keep customer feature flags
    off until migration, account, domain and quota checks are complete.

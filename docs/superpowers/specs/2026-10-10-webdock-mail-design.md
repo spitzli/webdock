@@ -298,7 +298,7 @@ Externe Weiterleitung wird gegen das Budget des empfangenden Mandanten gebucht, 
 
 ## 11. DNS, Branding und Provider-Sichtbarkeit
 
-Vorgeschlagene eigene Hostnamen: `mail-api.webdock.dev`, `smtp.mail.webdock.dev`, `imap.mail.webdock.dev`, `mx1.mail.webdock.dev`; Webmail bleibt in Studio. Namen sind Entwurfswerte und werden vor Deployment auf bestehende Nutzung geprüft.
+Vorgeschlagene eigene Hostnamen: `api.webdock.dev`, `smtp.mail.webdock.dev`, `imap.mail.webdock.dev`, `mx1.mail.webdock.dev`; Webmail bleibt in Studio. Namen sind Entwurfswerte und werden vor Deployment auf bestehende Nutzung geprüft.
 
 Domain-Onboarding zeigt getrennt:
 

@@ -69,7 +69,7 @@ def render(api_image, gateway_image):
     add('Service', 'mail-gateway', {'selector': {'app': 'mail-gateway'}, 'ports': [
         {'name': 'webmail', 'port': 3138, 'targetPort': 3138}, {'name': 'api', 'port': 3139, 'targetPort': 3139}]})
     rules = []
-    for host, port, paths in [('mail-api.webdock.dev', 3139, [('/v1/emails', 'Prefix')]),
+    for host, port, paths in [('api.webdock.dev', 3139, [('/v1/emails', 'Prefix')]),
                               ('mail.webdock.dev', 3138, [('/session', 'Exact'), ('/s/', 'Prefix')])]:
         rules.append({'host': host, 'http': {'paths': [{'path': path, 'pathType': match,
             'backend': {'service': {'name': 'mail-gateway', 'port': {'number': port}}}} for path, match in paths]}})
