@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-10 15:49+0200\n"
+"POT-Creation-Date: 2026-10-11 14:54+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -37,15 +37,15 @@ msgid "Type the exact application name"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/page.tsx:35
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:177
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:176
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:141
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:449
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:499
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:78
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:110
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:158
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:111
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:159
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:75
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:152
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:153
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "Status"
 msgstr ""
@@ -55,8 +55,8 @@ msgid "Revision"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/page.tsx:40
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:85
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:126
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:84
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:125
 msgid "Applications"
 msgstr ""
 
@@ -136,7 +136,7 @@ msgid "Retained data has been permanently removed. The storage allowance is avai
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/storage-delete/page.tsx:21
-#: apps/admin/src/components/hosting/form.tsx:47
+#: apps/admin/src/components/hosting/form.tsx:54
 msgid "Open application"
 msgstr ""
 
@@ -145,7 +145,7 @@ msgid "This permanently removes the retained filesystem and all its data. This c
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/enroll/[enrollmentID]/page.tsx:21
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:67
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:66
 msgid "Connect your cluster"
 msgstr ""
 
@@ -181,123 +181,123 @@ msgstr ""
 msgid "Check connection"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:57
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:56
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:74
 msgid "Customer-owned cluster"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:61
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:40
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:60
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:41
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:40
-#: apps/admin/src/components/hosting/customer.tsx:94
+#: apps/admin/src/components/hosting/customer.tsx:95
 #: apps/admin/src/components/navigation.tsx:102
 msgid "Hosting"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:70
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:69
 msgid "Install the agent on a host with access to your cluster. Your Kubernetes credentials stay on that host."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:76
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:75
 msgid "Set up connection"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:85
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:84
 msgid "Cluster resources"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:90
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:89
 msgid "Waiting for first scan"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:100
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:99
 msgid "Refresh inventory"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:107
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:106
 msgid "This inventory is out of date. Refresh it before making changes."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:114
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:113
 msgid "Some resources could not be scanned. Check the agent permissions."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:121
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:120
 msgid "Live CPU and memory usage is unavailable. Resource requests are still shown."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:127
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:126
 msgid "All resources"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:129
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:128
 msgid "Search and filters"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:137
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:136
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:61
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:52
-#: apps/admin/src/components/hosting/customer.tsx:115
-#: apps/admin/src/components/hosting/own-mail.tsx:125
+#: apps/admin/src/components/hosting/customer.tsx:116
+#: apps/admin/src/components/hosting/own-mail.tsx:126
 #: apps/auth/src/app/people/page.tsx:132 packages/cms-ui/src/client.tsx:1040
 msgid "Search"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:141
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:140
 msgid "Namespace"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:143
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:142
 msgid "All allowed namespaces"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:150
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:149
 msgid "Resource type"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:152
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:151
 msgid "All resource types"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:158
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:157
 msgid "Filter"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:163
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:162
 msgid "No resources match this view."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:166
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:165
 msgid "Application / resource"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:171
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:170
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:64
-#: apps/admin/src/components/hosting/customer.tsx:138
-#: apps/admin/src/components/hosting/customer.tsx:218
+#: apps/admin/src/components/hosting/customer.tsx:139
+#: apps/admin/src/components/hosting/customer.tsx:219
 msgid "Cluster"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:185
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:281
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:184
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:280
 #: apps/admin/src/components/hosting/app-spec.tsx:63
 msgid "Instances"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:192
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:352
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:191
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:351
 msgid "Resources"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:198
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:197
 msgid "Allocatable"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:199
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:198
 msgid "Container requests"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:205
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:204
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:71
 #: apps/admin/src/components/hosting/allowances.tsx:13
 #: apps/admin/src/components/hosting/app-spec.tsx:58
@@ -305,7 +305,7 @@ msgstr ""
 msgid "CPU cores"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:211
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:210
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:72
 #: apps/admin/src/components/hosting/allowances.tsx:14
 #: apps/admin/src/components/hosting/app-spec.tsx:58
@@ -313,60 +313,60 @@ msgstr ""
 msgid "Memory"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:221
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:220
 msgid "Actual usage"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:234
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:233
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:143
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:451
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:501
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:132
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:133
 msgid "Actions"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:238
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:237
 msgid "Manage"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:242
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:241
 msgid "Another controller manages this application. Changes are blocked."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:262
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:261
 msgid "Read logs"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:278
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:277
 msgid "Scale"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:348
-#: apps/admin/src/components/hosting/own-mail.tsx:147
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:347
+#: apps/admin/src/components/hosting/own-mail.tsx:148
 #: packages/cms-ui/src/client.tsx:1123
 msgid "Previous"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:358
-#: apps/admin/src/components/hosting/own-mail.tsx:157
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:357
+#: apps/admin/src/components/hosting/own-mail.tsx:158
 #: packages/cms-ui/src/client.tsx:1131
 msgid "Next"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:364
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:185
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:363
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:186
 msgid "Connection settings"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:370
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:369
 msgid "Disconnecting stops Webdock management. Applications keep running on your cluster."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:381
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:380
 msgid "Disconnect agent"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:385
+#: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:384
 msgid "Create new enrollment"
 msgstr ""
 
@@ -452,7 +452,7 @@ msgid "No logs available."
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/operations/[operationID]/page.tsx:37
-#: apps/admin/src/components/hosting/own-mail.tsx:257
+#: apps/admin/src/components/hosting/own-mail.tsx:258
 msgid "Confirm reviewed state"
 msgstr ""
 
@@ -525,7 +525,7 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx:201
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:39
-#: apps/admin/src/components/hosting/own-mail.tsx:77
+#: apps/admin/src/components/hosting/own-mail.tsx:78
 msgid "Connection"
 msgstr ""
 
@@ -689,7 +689,7 @@ msgstr ""
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:68
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:112
 #: apps/admin/src/components/databases/forms.tsx:24
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:146
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:147
 #: apps/admin/src/lib/ui-labels.ts:15
 #: apps/auth/src/app/tenants/[customerID]/page.tsx:34
 #: apps/auth/src/components/auth-forms.tsx:689
@@ -706,119 +706,119 @@ msgstr ""
 msgid "Application name"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:33
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:34
 msgid "Your Vercel projects"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:36
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:37
 msgid "Choose which projects Webdock can manage. Vercel continues to bill your own team."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:43
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:44
 #: apps/admin/src/components/navigation.tsx:15
 msgid "Projects"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:47
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:48
 msgid "Only the first 1,000 projects are shown. Narrow access in your Vercel integration if needed."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:59
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:60
 msgid "Save selected projects"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:91
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:92
 msgid "Select a project to see deployments and domains."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:100
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:101
 msgid "Usage data is not available through this connection. No spending cap is enforced by Webdock."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:103
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:104
 msgid "Deployments"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:107
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:108
 msgid "No deployments found."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:116
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:117
 #: apps/admin/src/lib/ui-labels.ts:10
 #: apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx:23
 msgid "Created"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:120
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:121
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:44
-#: apps/admin/src/components/hosting/customer.tsx:175
-#: apps/admin/src/components/hosting/own-mail.tsx:98
+#: apps/admin/src/components/hosting/customer.tsx:176
+#: apps/admin/src/components/hosting/own-mail.tsx:99
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:17
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:31
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
 msgid "Unavailable"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:123
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:124
 #: apps/auth/src/app/people/page.tsx:63 apps/web/src/components/dock.tsx:8
 msgid "Website"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:127
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:128
 msgid "Open website"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:144
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:145
 msgid "Cancel deployment"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:150
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:151
 msgid "Domains"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:154
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:155
 msgid "No domains found."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:156
-#: apps/admin/src/components/hosting/own-mail.tsx:132
-#: apps/admin/src/components/hosting/own-mail.tsx:187
-#: apps/admin/src/components/hosting/own-mail.tsx:260
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:157
+#: apps/admin/src/components/hosting/own-mail.tsx:133
+#: apps/admin/src/components/hosting/own-mail.tsx:188
+#: apps/admin/src/components/hosting/own-mail.tsx:261
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:77
 msgid "Domain"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:159
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:160
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:48
-#: apps/admin/src/components/hosting/own-mail.tsx:138
+#: apps/admin/src/components/hosting/own-mail.tsx:139
 #: apps/admin/src/lib/ui-labels.ts:7
 #: apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx:36
 #: apps/auth/src/lib/i18n-labels.ts:5
 msgid "Verified"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:159
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:160
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:48
 msgid "Not verified"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:165
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:166
 msgid "Deployment settings"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:168
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:169
 msgid "Set Frankfurt as the default for future Functions. Existing deployments and global Vercel services are not moved."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:177
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:178
 msgid "Use Frankfurt"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:188
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:189
 msgid "Disconnecting removes Webdock access. Vercel projects and deployments remain intact. Revoke the installation in Vercel to remove its provider permissions too."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:197
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:198
 msgid "Disconnect Vercel"
 msgstr ""
 
@@ -894,7 +894,7 @@ msgid "Application"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:11
-#: apps/admin/src/components/hosting/own-mail.tsx:138
+#: apps/admin/src/components/hosting/own-mail.tsx:139
 #: apps/admin/src/lib/ui-labels.ts:6 apps/auth/src/lib/i18n-labels.ts:4
 msgid "Pending"
 msgstr ""
@@ -916,7 +916,7 @@ msgid "Email"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 #: apps/admin/src/lib/customer-fields.ts:15 apps/admin/src/lib/tenants.ts:13
 #: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:152
 msgid "Phone"
@@ -947,183 +947,183 @@ msgstr ""
 msgid "Amount"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:13
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
 #: apps/admin/src/lib/cms-modules.ts:24
 msgid "Products"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:13
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
 msgid "Page content"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:13
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
 msgid "Demo orders"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:13
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
 #: apps/admin/src/components/navigation.tsx:16
 #: apps/admin/src/lib/cms-modules.ts:28
 msgid "Customers"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:13
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
 #: apps/admin/src/lib/cms-modules.ts:26
 msgid "Media"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:15
 msgid "Find products, adjust prices and manage availability."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:15
 msgid "Edit the homepage and shop information."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:15
 msgid "View simulated orders. No real delivery or payment."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:15
 msgid "Manage names and saved addresses."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:15
 msgid "View existing images. Assign them to a product or the homepage."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:13
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:14
 msgid "Pizza"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:13
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:14
 msgid "Burger"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:13
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:14
 msgid "Sides"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:13
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:14
 msgid "Drinks"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:13
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:14
 msgid "Dessert"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:14
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:15
 msgid "Vegetarian"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:14
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:15
 msgid "Vegan"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:14
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:15
 msgid "Spicy"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:14
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:15
 msgid "Favourite"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:15
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
 msgid "Homepage"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:15
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
 msgid "Business & contact"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:15
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
 msgid "Daily promotion"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 msgid "Headline"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 msgid "Introduction"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 msgid "Featured products heading"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 msgid "Featured products text"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 msgid "Business name"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 msgid "Street"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:105
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:106
 #: apps/admin/src/lib/customer-fields.ts:19 apps/admin/src/lib/tenants.ts:14
 #: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:43
 msgid "City"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 msgid "Opening hours"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 msgid "Notice"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 msgid "Promotion title"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 msgid "Valid from"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 msgid "Valid until"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 msgid "Homepage image"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 #: apps/admin/src/lib/cms-modules.ts:12
 msgid "Featured products"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:82
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:83
 msgid "Text, hero image and featured products"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:82
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:83
 msgid "Address, contact details and opening hours"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:82
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:83
 msgid "Dates and offer in the demo cart"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:105
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:106
 #: apps/admin/src/lib/ui-labels.ts:15
 #: apps/auth/src/app/tenants/[customerID]/mail/keys/form.tsx:13
 #: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:46
 msgid "Label"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:105
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:106
 #: apps/admin/src/lib/customer-fields.ts:16 apps/admin/src/lib/ui-labels.ts:16
 msgid "Street and number"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:105
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:106
 #: apps/admin/src/lib/customer-fields.ts:18 apps/admin/src/lib/tenants.ts:14
 #: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:157
 msgid "Postal code"
@@ -1150,6 +1150,11 @@ msgstr ""
 msgid "Open database"
 msgstr ""
 
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/inbox/page.tsx:14
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/page.tsx:8
+msgid "Mailboxes"
+msgstr ""
+
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/keys/form.tsx:132
 #: apps/auth/src/lib/i18n-messages.ts:62
 msgid "Copied."
@@ -1158,6 +1163,16 @@ msgstr ""
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/keys/form.tsx:134
 #: apps/auth/src/lib/i18n-messages.ts:63
 msgid "Copy failed. Select and copy the values above."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/forms.tsx:11
+#: apps/admin/src/components/databases/forms.tsx:14
+#: apps/admin/src/components/hosting/form.tsx:63
+#: apps/auth/src/app/admin/form.tsx:43 apps/auth/src/app/admin/form.tsx:57
+#: apps/auth/src/app/admin/plans/form.tsx:12
+#: apps/auth/src/app/people/form.tsx:32 apps/auth/src/app/tenants/form.tsx:15
+#: packages/cms-ui/src/client.tsx:942
+msgid "Saving…"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx:66
@@ -1216,7 +1231,7 @@ msgid "Disconnect storage"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/enroll/[enrollmentID]/page.tsx:11
-#: apps/admin/src/components/hosting/form.tsx:42
+#: apps/admin/src/components/hosting/form.tsx:49
 msgid "Connect cluster agent"
 msgstr ""
 
@@ -1243,7 +1258,7 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:51
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:115
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:196
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:197
 msgid "Location evidence"
 msgstr ""
 
@@ -1408,7 +1423,7 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:163
 #: apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx:44
-#: apps/admin/src/components/hosting/customer.tsx:248
+#: apps/admin/src/components/hosting/customer.tsx:249
 #: apps/admin/src/lib/ui-labels.ts:10 apps/admin/src/lib/ui-labels.ts:15
 #: apps/auth/src/app/people/page.tsx:73 apps/auth/src/app/people/page.tsx:105
 msgid "Customer"
@@ -1597,23 +1612,14 @@ msgstr ""
 msgid "Local changes discarded."
 msgstr ""
 
-#: apps/admin/src/components/databases/forms.tsx:14
-#: apps/admin/src/components/hosting/form.tsx:56
-#: apps/auth/src/app/admin/form.tsx:43 apps/auth/src/app/admin/form.tsx:57
-#: apps/auth/src/app/admin/plans/form.tsx:12
-#: apps/auth/src/app/people/form.tsx:32 apps/auth/src/app/tenants/form.tsx:15
-#: packages/cms-ui/src/client.tsx:942
-msgid "Saving…"
-msgstr ""
-
 #: apps/admin/src/components/databases/forms.tsx:20
 msgid "Register database"
 msgstr ""
 
 #: apps/admin/src/components/databases/forms.tsx:22
-#: apps/admin/src/components/hosting/customer.tsx:127
-#: apps/admin/src/components/hosting/customer.tsx:200
-#: apps/admin/src/components/hosting/customer.tsx:248
+#: apps/admin/src/components/hosting/customer.tsx:128
+#: apps/admin/src/components/hosting/customer.tsx:201
+#: apps/admin/src/components/hosting/customer.tsx:249
 #: apps/admin/src/lib/ui-labels.ts:10 apps/admin/src/lib/ui-labels.ts:15
 msgid "Project"
 msgstr ""
@@ -1747,7 +1753,7 @@ msgid "Set resources in cores, MB or GB. Existing applications keep their alloca
 msgstr ""
 
 #: apps/admin/src/components/hosting/allowances.tsx:65
-#: apps/admin/src/components/hosting/customer.tsx:164
+#: apps/admin/src/components/hosting/customer.tsx:165
 #: apps/auth/src/components/hosting-allowances.tsx:53
 #: packages/hosting-contracts/src/resource-field.tsx:47
 msgid "Unlimited"
@@ -1813,458 +1819,462 @@ msgstr ""
 msgid "Add argument"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:95
+#: apps/admin/src/components/hosting/customer.tsx:96
 msgid "Applications and hosting"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:98
+#: apps/admin/src/components/hosting/customer.tsx:99
 msgid "Allocated resources, reservations and measured usage are tracked separately."
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:106
+#: apps/admin/src/components/hosting/customer.tsx:107
 #: apps/admin/src/components/navigation.tsx:101
 msgid "Plan & usage"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:110
+#: apps/admin/src/components/hosting/customer.tsx:111
 msgid "Hosting projects"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:124
+#: apps/admin/src/components/hosting/customer.tsx:125
 msgid "No hosting projects assigned."
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:132
-#: apps/admin/src/components/hosting/customer.tsx:211
+#: apps/admin/src/components/hosting/customer.tsx:133
+#: apps/admin/src/components/hosting/customer.tsx:212
 msgid "Provider"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:134
-#: apps/admin/src/components/hosting/customer.tsx:300
+#: apps/admin/src/components/hosting/customer.tsx:135
+#: apps/admin/src/components/hosting/customer.tsx:301
 msgid "Mode"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:136
-#: apps/admin/src/components/hosting/customer.tsx:302
+#: apps/admin/src/components/hosting/customer.tsx:137
+#: apps/admin/src/components/hosting/customer.tsx:303
 msgid "Managed"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:136
-#: apps/admin/src/components/hosting/customer.tsx:303
+#: apps/admin/src/components/hosting/customer.tsx:137
+#: apps/admin/src/components/hosting/customer.tsx:304
 msgid "Selfservice"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:142
+#: apps/admin/src/components/hosting/customer.tsx:143
 msgid "Open a hosting project to manage its applications."
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:146
+#: apps/admin/src/components/hosting/customer.tsx:147
 msgid "Webdock hosting allowances"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:150
+#: apps/admin/src/components/hosting/customer.tsx:151
 msgid "Existing allocations exceed the current limit. New allocations are blocked; existing workloads remain intact."
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:159
+#: apps/admin/src/components/hosting/customer.tsx:160
 msgid "Resource"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:161
+#: apps/admin/src/components/hosting/customer.tsx:162
 #: packages/hosting-contracts/src/resource-field.tsx:41
 msgid "Limit"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:168
+#: apps/admin/src/components/hosting/customer.tsx:169
 msgid "Reserved"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:172
+#: apps/admin/src/components/hosting/customer.tsx:173
 msgid "Allocated"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:175
+#: apps/admin/src/components/hosting/customer.tsx:176
 msgid "Measured usage"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:180
+#: apps/admin/src/components/hosting/customer.tsx:181
 msgid "These allowances apply to Webdock-hosted applications. Your own infrastructure is managed separately."
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:187
+#: apps/admin/src/components/hosting/customer.tsx:188
 msgid "Assign project hosting"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:202
+#: apps/admin/src/components/hosting/customer.tsx:203
 msgid "Choose a project"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:221
+#: apps/admin/src/components/hosting/customer.tsx:222
 msgid "Choose a cluster for Kubernetes"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:234
+#: apps/admin/src/components/hosting/customer.tsx:235
 msgid "Limit overrides"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:237
+#: apps/admin/src/components/hosting/customer.tsx:238
 msgid "Overrides can restrict the package allowance; they cannot increase it. Unlimited here means no additional cap."
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:314
+#: apps/admin/src/components/hosting/customer.tsx:315
 msgid "Allow own container images"
 msgstr ""
 
-#: apps/admin/src/components/hosting/customer.tsx:318
+#: apps/admin/src/components/hosting/customer.tsx:319
 msgid "Also allow this project's images on a shared cluster (applications share the host kernel)"
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:42
+#: apps/admin/src/components/hosting/environment.tsx:46
 msgid "Build environment variables"
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:42
+#: apps/admin/src/components/hosting/environment.tsx:46
 msgid "Environment variables"
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:44
+#: apps/admin/src/components/hosting/environment.tsx:48
 msgid "Only these build values reach repository code. Repository scripts can read them. Runtime variables are configured separately."
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:45
+#: apps/admin/src/components/hosting/environment.tsx:49
 msgid "Values are encrypted and hidden after saving. Changes take effect with the next application deployment. Do not print secrets in application logs."
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:50
+#: apps/admin/src/components/hosting/environment.tsx:54
 msgid "No environment variables configured."
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:58
-#: apps/admin/src/components/hosting/environment.tsx:60
+#: apps/admin/src/components/hosting/environment.tsx:62
+#: apps/admin/src/components/hosting/environment.tsx:64
 msgid "Variable name"
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:74
-#: apps/admin/src/components/hosting/environment.tsx:85
+#: apps/admin/src/components/hosting/environment.tsx:78
+#: apps/admin/src/components/hosting/environment.tsx:89
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:85
 msgid "Value"
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:77
+#: apps/admin/src/components/hosting/environment.tsx:81
 msgid "Will be removed when saved"
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:81
+#: apps/admin/src/components/hosting/environment.tsx:85
 msgid "Saved value — hidden"
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:102
+#: apps/admin/src/components/hosting/environment.tsx:106
 msgid "Undo"
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:112
+#: apps/admin/src/components/hosting/environment.tsx:116
 msgid "Replace value"
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:121
+#: apps/admin/src/components/hosting/environment.tsx:125
 msgid "Hide value"
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:121
+#: apps/admin/src/components/hosting/environment.tsx:125
 msgid "Show value"
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:128
+#: apps/admin/src/components/hosting/environment.tsx:132
 msgid "Remove variable"
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:143
+#: apps/admin/src/components/hosting/environment.tsx:147
 #: apps/auth/src/components/passkeys.tsx:101 packages/cms-ui/src/client.tsx:332
 msgid "Remove"
 msgstr ""
 
-#: apps/admin/src/components/hosting/environment.tsx:169
+#: apps/admin/src/components/hosting/environment.tsx:174
 msgid "Add variable"
 msgstr ""
 
-#: apps/admin/src/components/hosting/form.tsx:37
+#: apps/admin/src/components/hosting/form.tsx:44
 msgid "View progress"
 msgstr ""
 
-#: apps/admin/src/components/hosting/form.tsx:52
+#: apps/admin/src/components/hosting/form.tsx:59
 msgid "Open cluster enrollment"
 msgstr ""
 
-#: apps/admin/src/components/hosting/form.tsx:71
+#: apps/admin/src/components/hosting/form.tsx:78
 msgid "The token expires after five minutes and can connect exactly one agent. Store agent credentials privately on your node."
 msgstr ""
 
-#: apps/admin/src/components/hosting/form.tsx:78
+#: apps/admin/src/components/hosting/form.tsx:85
 msgid "Save this enrollment token now. It is displayed only once."
 msgstr ""
 
-#: apps/admin/src/components/hosting/form.tsx:84
+#: apps/admin/src/components/hosting/form.tsx:91
 msgid "Expires at"
 msgstr ""
 
-#: apps/admin/src/components/hosting/form.tsx:89
+#: apps/admin/src/components/hosting/form.tsx:96
 msgid "Show enrollment token once"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:24
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:25
 msgid "Your infrastructure"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:27
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:28
 msgid "Connect your own Kubernetes cluster, Vercel team or turboSMTP account. Your provider bills you directly."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:34
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:35
 msgid "Selfservice permissions"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:38
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:39
 msgid "Save permissions"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:54
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:55
 msgid "Allow own Kubernetes clusters"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:55
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:56
 msgid "Allow own Vercel team"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:56
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:57
 msgid "Allow own turboSMTP account"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:57
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:58
 msgid "Manage existing applications"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:66
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:67
 msgid "Maximum clusters"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:77
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:78
 msgid "Maximum turboSMTP sender domains"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:88
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:89
 msgid "Limits new registrations through Webdock. Existing domains and provider sending limits stay unchanged."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:93
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:94
 msgid "Allowed namespaces"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:101
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:102
 msgid "Separate names with commas. System namespaces stay protected."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:112
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:113
 msgid "Your plan does not yet include own infrastructure. Your administrator can enable it here."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:122
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:123
 msgid "Connect your own sending account and manage its sender domains."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:129
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:130
 msgid "Manage own email"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:137
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:138
 msgid "Connected clusters"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:143
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:144
 msgid "No cluster connected yet."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:163
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:164
 msgid "Connect own cluster"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:174
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:175
 msgid "Add cluster"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:177
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:178
 msgid "Cluster name"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:181
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:182
 msgid "Cluster type"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:188
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:189
 msgid "EU location"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:192
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:193
 msgid "For example, Frankfurt"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:200
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:201
 msgid "Enter your provider location evidence. A declaration is not provider verification."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:214
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:215
 msgid "Connected"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:215
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:216
 msgid "Connect your own Vercel team to choose its projects."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:222
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:223
 msgid "Manage Vercel projects"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:229
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:230
 msgid "Reconnect Vercel"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:229
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:230
 msgid "Connect Vercel"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:235
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:236
 msgid "Provider billing and Webdock allowances are separate. Budgets shown here are not a Vercel spending cap."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:52
+#: apps/admin/src/components/hosting/own-mail.tsx:50
+msgid "Own sending connection"
+msgstr ""
+
+#: apps/admin/src/components/hosting/own-mail.tsx:53
 msgid "Your own turboSMTP account"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:55
+#: apps/admin/src/components/hosting/own-mail.tsx:56
 msgid "Use your own provider account. turboSMTP bills you directly; Webdock manages the connection and sender domains."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:64
+#: apps/admin/src/components/hosting/own-mail.tsx:65
 msgid "Manage selfservice permissions"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:70
+#: apps/admin/src/components/hosting/own-mail.tsx:71
 msgid "Own turboSMTP is not enabled for this customer."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:81
+#: apps/admin/src/components/hosting/own-mail.tsx:82
 msgid "Key ending"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:85
-#: apps/admin/src/components/hosting/own-mail.tsx:151
+#: apps/admin/src/components/hosting/own-mail.tsx:86
+#: apps/admin/src/components/hosting/own-mail.tsx:152
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:75
 msgid "Sender domains"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:91
+#: apps/admin/src/components/hosting/own-mail.tsx:92
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:46
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
 msgid "Last checked"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:105
+#: apps/admin/src/components/hosting/own-mail.tsx:106
 msgid "A sender-domain registration needs review. Refresh to check whether the provider completed it."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:117
+#: apps/admin/src/components/hosting/own-mail.tsx:118
 msgid "Check connection and domains"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:122
+#: apps/admin/src/components/hosting/own-mail.tsx:123
 msgid "Search domains"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:130
+#: apps/admin/src/components/hosting/own-mail.tsx:131
 msgid "No sender domains found in this account."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:163
+#: apps/admin/src/components/hosting/own-mail.tsx:164
 msgid "The domain allowance for this connection has been reached."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:171
+#: apps/admin/src/components/hosting/own-mail.tsx:172
 msgid "Add sender domain"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:174
+#: apps/admin/src/components/hosting/own-mail.tsx:175
 msgid "Registration starts provider verification. Configure the DNS records shown in your turboSMTP dashboard, then refresh here."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:184
+#: apps/admin/src/components/hosting/own-mail.tsx:185
 msgid "Register sender domain"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:202
+#: apps/admin/src/components/hosting/own-mail.tsx:203
 msgid "EU sending settings"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:208
+#: apps/admin/src/components/hosting/own-mail.tsx:209
 #: apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx:20
 msgid "Sending API"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:215
+#: apps/admin/src/components/hosting/own-mail.tsx:216
 msgid "Use your provider-issued sending credentials in your application. This connection does not send a test email or change existing application settings."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:220
+#: apps/admin/src/components/hosting/own-mail.tsx:221
 msgid "Manage sending keys and account billing in turboSMTP. This management key is never displayed again by Webdock."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:226
+#: apps/admin/src/components/hosting/own-mail.tsx:227
 msgid "Disconnect account"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:229
+#: apps/admin/src/components/hosting/own-mail.tsx:230
 msgid "Disconnecting removes the stored Webdock credential. Your turboSMTP account, domains and applications keep running. Revoke the key at turboSMTP if it should lose provider access too."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:238
+#: apps/admin/src/components/hosting/own-mail.tsx:239
 msgid "Disconnect turboSMTP"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:244
+#: apps/admin/src/components/hosting/own-mail.tsx:245
 msgid "Review uncertain registration"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:247
+#: apps/admin/src/components/hosting/own-mail.tsx:248
 msgid "Wait at least five minutes and inspect the provider state. Confirm the exact pending domain to allow a new operation."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:269
+#: apps/admin/src/components/hosting/own-mail.tsx:270
 msgid "No own turboSMTP account connected yet."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:276
+#: apps/admin/src/components/hosting/own-mail.tsx:277
 msgid "Replace management key"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:277
+#: apps/admin/src/components/hosting/own-mail.tsx:278
 msgid "Connect turboSMTP"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:281
+#: apps/admin/src/components/hosting/own-mail.tsx:282
 msgid "Create a dedicated Consumer Key and Consumer Secret with API management permission in turboSMTP. Use a separate account for this customer; all sender domains in that account will be visible here."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:294
+#: apps/admin/src/components/hosting/own-mail.tsx:295
 msgid "Verify and save connection"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:297
+#: apps/admin/src/components/hosting/own-mail.tsx:298
 msgid "Connection name"
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:334
+#: apps/admin/src/components/hosting/own-mail.tsx:335
 msgid "I control this provider account and authorize this customer to manage its sender domains."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-mail.tsx:342
+#: apps/admin/src/components/hosting/own-mail.tsx:343
 msgid "Sending uses EU endpoints. The separate provider management API is an approved exception without an EU-only guarantee. The Webdock domain allowance is not an email sending or spending limit."
 msgstr ""
 
@@ -2274,6 +2284,14 @@ msgstr ""
 
 #: apps/admin/src/components/login-form.tsx:38
 msgid "Sign in failed."
+msgstr ""
+
+#: apps/admin/src/components/mail/message-html.tsx:12
+msgid "External images and active content are blocked."
+msgstr ""
+
+#: apps/admin/src/components/mail/message-html.tsx:12
+msgid "Message content"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:17

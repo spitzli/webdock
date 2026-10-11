@@ -347,6 +347,9 @@
   "Access saved and invitation email sent.": [
     "Zugriff gespeichert und Einladung per E-Mail versendet."
   ],
+  "Access to your own sending connection has been revoked. Ask your operator to review it.": [
+    "Die Freigabe für deine eigene Versandverbindung wurde entzogen. Bitte deinen Betreiber um Prüfung."
+  ],
   "Account": [
     "Konto"
   ],
@@ -415,6 +418,9 @@
   ],
   "Activate incoming Mail for mailboxes or forwarding. Sending-only does not need a mailbox server. Suspending retains existing mailbox data.": [
     "Aktiviere den Mailempfang für Postfächer oder Weiterleitungen. Reiner Versand benötigt keinen Postfachserver. Beim Pausieren bleiben vorhandene Postfachdaten erhalten."
+  ],
+  "Activate incoming Mail to manage mailboxes and use Webmail. Sending-only does not require activation. Suspending retains mailbox data.": [
+    "Aktiviere eingehende E-Mails für Postfächer und Webmail. Für reinen Versand ist das nicht nötig. Beim Pausieren bleiben Postfachdaten erhalten."
   ],
   "Active": [
     "Aktiv"
@@ -946,6 +952,9 @@
   ],
   "Back to homepage": [
     "Zur Startseite"
+  ],
+  "Back to messages": [
+    "Zurück zu den Nachrichten"
   ],
   "Back to project": [
     "Zurück zum Projekt"
@@ -1871,6 +1880,9 @@
   ],
   "Copied.": [
     "Kopiert."
+  ],
+  "Copy API key": [
+    "API-Schlüssel kopieren"
   ],
   "Copy credentials": [
     "Zugangsdaten kopieren"
@@ -3828,6 +3840,9 @@
   "Leave customer preview before lifecycle operations.": [
     "Verlasse zuerst die Kundenansicht, bevor du Ressourcen verwaltest."
   ],
+  "Leave this page with unsaved draft changes?": [
+    "Diese Seite mit ungespeicherten Änderungen am Entwurf verlassen?"
+  ],
   "Left": [
     "Links"
   ],
@@ -3929,6 +3944,9 @@
   ],
   "Loading deployment information…": [
     "Deployment-Informationen werden geladen …"
+  ],
+  "Loading messages…": [
+    "Nachrichten werden geladen…"
   ],
   "Loading passkeys…": [
     "Passkeys werden geladen…"
@@ -4508,6 +4526,9 @@
   ],
   "No Mail account has been set up for this tenant.": [
     "Für diesen Mandanten wurde noch kein Mail-Konto eingerichtet."
+  ],
+  "No Webdock API keys yet.": [
+    "Noch keine Webdock-API-Schlüssel vorhanden."
   ],
   "No access": [
     "Kein Zugriff"
@@ -5706,6 +5727,9 @@
   "Reconnect the mail provider.": [
     "Verbinde den Mail-Anbieter erneut."
   ],
+  "Reconnect to mailbox": [
+    "Erneut mit dem Postfach verbinden"
+  ],
   "Record not found": [
     "Datensatz nicht gefunden"
   ],
@@ -6128,6 +6152,9 @@
   ],
   "Revoke this credential. Applications using it will immediately lose access.": [
     "Diese Zugangsdaten widerrufen. Anwendungen, die sie verwenden, verlieren sofort den Zugriff."
+  ],
+  "Revoke this key? Applications using it will no longer be able to send mail.": [
+    "Diesen Schlüssel widerrufen? Anwendungen, die ihn verwenden, können danach keine E-Mails mehr senden."
   ],
   "Revoke website access": [
     "Website-Zugriff widerrufen"
@@ -7335,6 +7362,12 @@
   "The sending account could not be verified. Contact your operator.": [
     "Das Versandkonto konnte nicht bestätigt werden. Wende dich an deinen Betreiber."
   ],
+  "The sending connection is being prepared. Refresh this page to check progress.": [
+    "Die Versandverbindung wird eingerichtet. Lade diese Seite neu, um den Fortschritt zu prüfen."
+  ],
+  "The sending connection is not configured yet.": [
+    "Die Versandverbindung ist noch nicht eingerichtet."
+  ],
   "The session is unavailable. Please sign in again.": [
     "Die Sitzung ist nicht verfügbar. Bitte erneut anmelden."
   ],
@@ -8142,6 +8175,12 @@
   "Verify": [
     "Bestätigen"
   ],
+  "Verify a sender domain first.": [
+    "Bestätige zuerst eine Absenderdomain."
+  ],
+  "Verify a sender domain, then configure the sending connection to create an API key.": [
+    "Bestätige eine Absenderdomain und richte die Versandverbindung ein. Danach kannst du einen API-Schlüssel erstellen."
+  ],
   "Verify and bind target": [
     "Ziel prüfen und zuordnen"
   ],
@@ -8615,6 +8654,9 @@
   ],
   "Your operator can assign a plan or send you an individual offer.": [
     "Dein Betreiber kann dir einen Tarif zuweisen oder ein individuelles Angebot senden."
+  ],
+  "Your operator must check the sending connection before you can create keys.": [
+    "Dein Betreiber muss die Versandverbindung prüfen, bevor du Schlüssel erstellen kannst."
   ],
   "Your own turboSMTP account": [
     "Dein eigenes turboSMTP-Konto"

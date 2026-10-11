@@ -39,6 +39,7 @@ export async function OwnMail({
     { action: "byok.mail.get", customerID },
     `/tenants/${customerID}/mail`,
   );
+  if (!data.operator && !data.enabled && !data.connected) return null;
   const page = Math.max(
     1,
     Math.min(20, Math.floor(Number(query.mailPage)) || 1),
@@ -46,7 +47,7 @@ export async function OwnMail({
   const search = (query.mailSearch ?? "").slice(0, 160);
   const domains=filterRows(data.domains,search,d=>d.domain);
   return (
-    <section id="own-mail" className="panel">
+    <details id="own-mail" className="panel" open={data.enabled || data.connected}><summary>{t("Own sending connection")}</summary>
       <div className="page-heading">
         <div>
           <h2>{t("Your own turboSMTP account")}</h2>
@@ -342,6 +343,6 @@ export async function OwnMail({
           "Sending uses EU endpoints. The separate provider management API is an approved exception without an EU-only guarantee. The Webdock domain allowance is not an email sending or spending limit.",
         )}
       </p>
-    </section>
+    </details>
   );
 }

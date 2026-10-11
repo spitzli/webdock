@@ -14,7 +14,7 @@ export function MailServicePanel({ data }: { data: NonNullable<NativeMailView> }
   return <section className="auth-panel">
     <h2>{i18n.t("Incoming Mail")}</h2>
     <p role="status">{labels[service.state]}</p>
-    <p className="muted">{i18n.t("Activate incoming Mail for mailboxes or forwarding. Sending-only does not need a mailbox server. Suspending retains existing mailbox data.")}</p>
+    <p className="muted">{i18n.t("Activate incoming Mail to manage mailboxes and use Webmail. Sending-only does not require activation. Suspending retains mailbox data.")}</p>
     {service.state === "needs_review" && <p className="notice">{i18n.t("The previous change needs to be checked before setup can continue.")}</p>}
     {allowed && <form action={submit} className="access-form" aria-busy={pending}>
       <input type="hidden" name="customer" value={service.customerID} />
@@ -28,8 +28,8 @@ export function MailServicePanel({ data }: { data: NonNullable<NativeMailView> }
       <input type="hidden" name="action" value="reconcile" />
       <button className="button" type="submit" disabled={pending}>{i18n.t("Retry Mail operation")}</button>
     </form>}
-    <p><Link href={`/tenants/${service.customerID}/mail/sending`}>{i18n.t("Webdock Mail sending")}</Link></p>
-    <p><Link href={`/tenants/${service.customerID}/mail/mailboxes`}>{i18n.t("Manage mailboxes")}</Link></p>
+    {data.sendingAvailable && <p><Link href={`/tenants/${service.customerID}/mail/sending`}>{i18n.t("Webdock Mail sending")}</Link></p>}
+    {data.mailboxesAvailable && <p><Link href={`/tenants/${service.customerID}/mail/mailboxes`}>{i18n.t("Manage mailboxes")}</Link></p>}
     {result.error && <p className="notice error" role="alert">{i18n.error(result.error)}</p>}
     {result.message && <p className="notice" role="status">{i18n.error(result.message, "Changes saved.")}</p>}
   </section>;

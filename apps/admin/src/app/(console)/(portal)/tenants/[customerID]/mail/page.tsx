@@ -74,10 +74,7 @@ export default async function TenantMail({
         </div>
       </header>
       {nativeService && <MailServicePanel data={nativeService} />}
-      {tenant.status === "active" && (
-        <OwnMail customerID={customerID} query={await searchParams} />
-      )}
-      <details className="panel" open={Boolean(account)}>
+      <details className="panel" open={true}>
         <summary>{i18n.t("Email provided by Webdock")}</summary>
         {!enabled && (
           <p className="notice" role="status">
@@ -91,7 +88,7 @@ export default async function TenantMail({
         )}
         {enabled && !configured && (
           <p className="notice" role="status">
-            {i18n.t("Mail provider credentials are not configured.")}{" "}
+            {i18n.t("The sending connection is not configured yet.")}{" "}
             {operator
               ? i18n.t("Connect the master account in Platform Mail settings.")
               : i18n.t(
@@ -512,6 +509,9 @@ export default async function TenantMail({
           {!domains.length && <p>{i18n.t("No sender domains added yet.")}</p>}
         </section>
       </details>
+      {tenant.status === "active" && (
+        <OwnMail customerID={customerID} query={await searchParams} />
+      )}
     </div>
   );
 }

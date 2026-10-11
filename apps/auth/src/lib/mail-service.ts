@@ -10,7 +10,7 @@ export async function getTenantMailService(headers: Headers, customerID: string)
   if (process.env.WEBDOCK_NATIVE_MAIL_ENABLED !== "true") return null;
   const [service, settings] = await Promise.all([getMailService(database, customerID), getPlatformSettings()]);
   const verified = access.operator && service.state === "needs_review" && (await database.query("SELECT customer_id FROM webdock_mail.instance WHERE customer_id=$1 AND verified_at IS NOT NULL", [customerID])).rowCount;
-  return { service, canReconcile: Boolean(verified) && (!service.enabled || (access.tenant.status === "active" && settings.mailEnabled)), canActivate: access.operator && access.tenant.status === "active" && settings.mailEnabled,
+  return { service, mailboxesAvailable: process.env.WEBDOCK_NATIVE_MAILBOXES_ENABLED === "true", sendingAvailable: process.env.WEBDOCK_NATIVE_MAIL_SENDING_ENABLED === "true", canReconcile: Boolean(verified) && (!service.enabled || (access.tenant.status === "active" && settings.mailEnabled)), canActivate: access.operator && access.tenant.status === "active" && settings.mailEnabled,
     canSuspend: access.operator && service.enabled };
 }
 

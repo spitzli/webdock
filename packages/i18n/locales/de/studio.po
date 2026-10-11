@@ -7949,3 +7949,45 @@ msgstr "Vorgemerkten Versand abbrechen"
 
 msgid "Finish saving to Sent"
 msgstr "Ablage unter „Gesendet“ abschließen"
+
+msgid "The sending connection is not configured yet."
+msgstr "Die Versandverbindung ist noch nicht eingerichtet."
+
+msgid "Activate incoming Mail to manage mailboxes and use Webmail. Sending-only does not require activation. Suspending retains mailbox data."
+msgstr "Aktiviere eingehende E-Mails für Postfächer und Webmail. Für reinen Versand ist das nicht nötig. Beim Pausieren bleiben Postfachdaten erhalten."
+
+msgid "Copy API key"
+msgstr "API-Schlüssel kopieren"
+
+msgid "The sending connection is being prepared. Refresh this page to check progress."
+msgstr "Die Versandverbindung wird eingerichtet. Lade diese Seite neu, um den Fortschritt zu prüfen."
+
+msgid "Your operator must check the sending connection before you can create keys."
+msgstr "Dein Betreiber muss die Versandverbindung prüfen, bevor du Schlüssel erstellen kannst."
+
+msgid "Verify a sender domain, then configure the sending connection to create an API key."
+msgstr "Bestätige eine Absenderdomain und richte die Versandverbindung ein. Danach kannst du einen API-Schlüssel erstellen."
+
+msgid "Access to your own sending connection has been revoked. Ask your operator to review it."
+msgstr "Die Freigabe für deine eigene Versandverbindung wurde entzogen. Bitte deinen Betreiber um Prüfung."
+
+msgid "Verify a sender domain first."
+msgstr "Bestätige zuerst eine Absenderdomain."
+
+msgid "No Webdock API keys yet."
+msgstr "Noch keine Webdock-API-Schlüssel vorhanden."
+
+msgid "Revoke this key? Applications using it will no longer be able to send mail."
+msgstr "Diesen Schlüssel widerrufen? Anwendungen, die ihn verwenden, können danach keine E-Mails mehr senden."
+
+msgid "Leave this page with unsaved draft changes?"
+msgstr "Diese Seite mit ungespeicherten Änderungen am Entwurf verlassen?"
+
+msgid "Reconnect to mailbox"
+msgstr "Erneut mit dem Postfach verbinden"
+
+msgid "Loading messages…"
+msgstr "Nachrichten werden geladen…"
+
+msgid "Back to messages"
+msgstr "Zurück zu den Nachrichten"

@@ -17,7 +17,7 @@ async function readJSON(request:IncomingMessage,limit=16*1024*1024){
 export function createMailAPI(control:MailControl,store:PrivatePayloadStore,options:{webmailSecret?:string;clientFactory?:WebmailClientFactory}={}){
  let active=0;const customers=new Set<string>();
  const server=createServer(async(request,response)=>{
-  if(request.url==='/health' && request.method==='GET'){reply(response,200,{ok:true});return;}
+  if((request.url==='/healthz' || request.url==='/health') && request.method==='GET'){reply(response,200,{ok:true});return;}
   if(active>=4){reply(response,429,{error:'Mail is busy. Try later.'});return;}active++;
   let customer:string|undefined,submissionID:string|undefined;
   try{

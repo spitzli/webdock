@@ -236,3 +236,40 @@ The connected Cloudflare account exposes neither spitzli.dev nor webdock.dev, an
 collaborative Studio browser requires a new operator login. DNS access/manual record
 setup and operator login have been requested. No live sender account, quota, DNS or
 mailbox was changed at this checkpoint.
+
+
+## 2026-10-11: final UI/UX review before merge
+
+The native Mail flow now leads the page; ineligible managed customers do not see
+an unrelated BYOK setup. Operators see that optional connection in a disclosure.
+Mailbox/sending navigation follows the corresponding feature availability. Sending
+setup distinguishes pending/review states, explains disabled key creation, keeps a
+revoked BYOK selection explicit, provides one-time key copying and confirms revocation.
+
+Webmail keeps the editor usable during autosave, warns before leaving with unsaved
+changes, shows loading separately from empty folders and offers reconnection after
+session loss. Draft editing waits for submission lookup and cannot edit an in-flight
+submitted draft. The backend independently fences replacement and submission. Mobile
+reading/composing uses a dedicated view with a return action and 44px controls.
+
+Browser component proof at 390px and desktop: reply recipient correct; 88 samples
+across delayed autosave kept the textarea editable; unsaved navigation cancel prevented
+leaving; one queue admission and separately repaired Sent filing produced only one
+send. Malicious message fixture produced zero remote-content canary requests. Native
+key creation returned the expected tenant/domain action, copy succeeded, no vendor
+branding or horizontal overflow appeared. These are synthetic component fixtures,
+not live production delivery tests.
+
+Fresh independent backend review found one merge blocker: generated Kubernetes probes
+requested /healthz while the API served /health. The API now supports both paths. A
+regression renders the actual manifest and calls all six startup/readiness/liveness
+probes against the real API/gateway servers: observed 401 before the fix, 200 after it.
+No remaining Critical/Important backend findings were reported. The reviewed feature
+gates must remain off until operational proof. Local recipients still count toward
+mailMessages; the separate external-recipient metric remains a release condition.
+
+Verification after these changes: Auth 141/141, Studio 106/106, Mail 43/43 unit tests,
+agent 56 passed plus one opt-in container test skipped; Auth/Studio/Mail typechecks,
+Auth/Studio lint and both production builds passed. The earlier two database tests and
+13 real CE tests remain the latest full protocol evidence; no protocol code changed in
+this UI pass. The PR has no GitHub check jobs configured, so this evidence is local.
