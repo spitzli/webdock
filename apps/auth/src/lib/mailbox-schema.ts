@@ -16,6 +16,7 @@ DO $$ BEGIN
  END IF;
 END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS mail_domain_provider ON webdock_mail.domain(customer_id,provider_id) WHERE provider_id IS NOT NULL;
+ALTER TABLE webdock_mail.domain ADD COLUMN IF NOT EXISTS dkim_keys jsonb NOT NULL DEFAULT '[]';
 CREATE TABLE IF NOT EXISTS webdock_mail.mailbox (
  id text PRIMARY KEY DEFAULT webdock_auth.next_snowflake(),
  customer_id text NOT NULL REFERENCES webdock_mail.service(customer_id),

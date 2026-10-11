@@ -35,7 +35,7 @@ export async function executeMailboxes(db: Connection, actor: MailActor, custome
       LEFT JOIN webdock_mail.mailbox_grant g ON g.mailbox_id=b.id AND g.customer_id=b.customer_id AND g.subject=$2
       LEFT JOIN webdock_mail.identity i ON i.customer_id=b.customer_id AND i.subject=$2
       WHERE b.customer_id=$1 AND ($3 OR g.enabled) ORDER BY b.name,b.id LIMIT 64`, [customerID, actor.subject, access.canManage, access.memberID, access.operator, Boolean(access.service?.ready)])).rows;
-    const domains = (await db.query("SELECT id,name,state FROM webdock_mail.domain WHERE customer_id=$1 ORDER BY name LIMIT 32", [customerID])).rows;
+    const domains = (await db.query("SELECT id,name,state,dkim_keys AS \"dkimKeys\" FROM webdock_mail.domain WHERE customer_id=$1 ORDER BY name LIMIT 32", [customerID])).rows;
     const verifiedDomains = access.canManage ? (await db.query("SELECT id,domain FROM webdock_auth.mail_sender_domain WHERE customer_id=$1 AND status='ownership_verified' ORDER BY domain LIMIT 32", [customerID])).rows : [];
     const people = access.canManage ? (await db.query(`SELECT u.id,u.name,u.email FROM webdock_auth."user" u WHERE NOT coalesce(u.banned,false) AND u."emailVerified" AND NOT u."mustChangePassword" AND
       (($2 AND u.role='operator' AND u."twoFactorEnabled") OR EXISTS(SELECT 1 FROM webdock_auth.member m JOIN webdock_auth.tenant_customer t ON t.organization_id=m."organizationId" WHERE m."userId"=u.id AND t.customer_id=$1)) ORDER BY u.name LIMIT 128`, [customerID, access.operator])).rows : [];

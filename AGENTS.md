@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Mail deployment decision
 
-The owner selected Stalwart **Community Edition, one isolated instance per customer with explicitly activated email**, on 2026-10-10. Do not provision Mail for every new customer/project. Deactivation retains data; deletion is a separate operation. Follow `docs/architecture/mail-deployment-decision.md`; this supersedes the earlier shared-Enterprise recommendation. Webdock Mail and Webmail remain native; Enterprise BYOK is a Webdock entitlement independent of the Stalwart edition.
+The owner selected Stalwart **Community Edition, one isolated instance per customer with explicitly activated incoming email** (mailboxes or forwarding), refined on 2026-10-11. Outgoing-only uses Webdock API → Turbo relay API without Stalwart; incoming uses Webdock API → Stalwart → Turbo. Do not provision Stalwart for outgoing-only or every new customer/project. Deactivation retains data; deletion is a separate operation. Follow `docs/architecture/mail-deployment-decision.md`; this supersedes the earlier shared-Enterprise recommendation. Webdock Mail and Webmail remain native; Enterprise BYOK is a Webdock entitlement independent of the Stalwart edition.
 
 Managed Mail belongs on the existing Webdock Kubernetes/Contabo cluster (owner confirmation 2026-10-10). Reuse hosting-agent security/operations; Docker is the isolated local test backend, not the production control plane.
 

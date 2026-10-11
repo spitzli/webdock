@@ -114,7 +114,7 @@ def run_mail_once(path, state, observation):
 
 def run_mail_configuration(path, state, observation):
     capability = observation.get('capabilities', {}).get('nativeMail', {})
-    if capability.get('configurationVersion') != 1:
+    if capability.get('configurationVersion') != 2:
         return None
     from mail_configuration import execute_configuration, validate_configuration
     packet = agent_request(state['endpoint'],state,'mail-configuration-claim',{})

@@ -1,12 +1,16 @@
 # Mail deployment decision
 
-Status: selected by the owner on 2026-10-10; private provisioning foundation deployed and verified on the managed cluster. Public email delivery and native Webmail remain pending. See [rollout evidence](../verification/2026-10-10-native-mail-rollout.json).
+Status: selected on 2026-10-10, refined by the owner on 2026-10-11; private provisioning foundation deployed and verified on the managed cluster. Public email delivery and native Webmail remain pending. See [rollout evidence](../verification/2026-10-10-native-mail-rollout.json).
 
 ## Binding decision
 
-Use **Stalwart Community Edition with one isolated instance per Webdock customer whose email service is activated**. Multiple domains and mailboxes of that customer use that same instance. Do not create an instance merely because a customer, project, domain, or CMS exists.
+Use **Stalwart Community Edition with one isolated instance per Webdock customer whose incoming email service is explicitly activated (mailboxes or forwarding)**. Multiple domains and mailboxes of that customer use that same instance. Do not create an instance merely because a customer, project, domain, or CMS exists.
 
-The customer's `mailEnabled` desired state starts false. An explicit activation requests provisioning; only verified provisioning makes the service ready. Keep desired activation, operation progress, and observed readiness separate. Repeated activation must reuse the same instance reservation. Platform-wide Mail suspension does not allocate or delete instances. Deactivation suspends the service and retains its data; retirement/export/deletion is a separate explicit lifecycle operation.
+Outgoing-only Mail uses **Webdock API → Turbo relay API**, with no Stalwart instance or volume. Incoming Mail uses **Webdock API → Stalwart → Turbo** for sending and the isolated instance for receiving. Both paths use the same Webdock authorization, sender verification, budgets, idempotency and customer-facing API; ordinary customers never receive Turbo credentials. Managed versus Enterprise BYOK selects the upstream account independently of this incoming/outgoing split. Forwarding-only is incoming Mail and requires Stalwart.
+
+The existing `webdock_mail.service.desired_enabled` flag describes incoming Mail, not permission to send. It starts false (an absent service row means incoming Mail was never activated). Explicit incoming activation requests provisioning; only verified provisioning makes the service ready. Keep desired activation, operation progress, and observed readiness separate. Repeated activation must reuse the same instance reservation. Platform-wide Mail suspension does not allocate or delete instances. Deactivation suspends incoming infrastructure and retains its data; retirement/export/deletion is a separate explicit lifecycle operation.
+
+A failed, pending or suspended incoming instance must never silently fall back to direct Turbo. Switching an existing receiving customer to outgoing-only is a separate controlled transition: stop new admissions and reconcile/drain already accepted or uncertain sends before changing the path; retain mailbox storage. Existing Spitzli provisioning is preserved by this decision.
 
 Each instance has its own configuration, data store/volume, credentials and network boundary. Instances may share an infrastructure host. No shared Stalwart CE directory or data store is used to emulate Enterprise tenancy. Webdock Studio, the public Mail API and worker code are shared. Application traffic is resolved against the server-side customer-to-instance registry, never a client-provided backend address.
 

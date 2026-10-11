@@ -15,7 +15,7 @@ Vom Auftrag vorgegeben:
 - **Webmail gehört in den ersten Kundenrelease:** Kunden lesen und beantworten ihre E-Mails unmittelbar in Webdock.
 - Dieser Auftrag liefert Konzept und Umsetzungsfahrplan. Er provisioniert keine Infrastruktur und verändert weder DNS noch laufende Mailkonten.
 
-Gewählte Architektur: getrennte Stalwart-CE-Instanz pro Mandant mit aktiviertem E-Mail-Dienst. Webdock betreibt die Infrastruktur; Spitzli erhält bei Aktivierung seine eigene Instanz. Native Webmail auf JMAP und vorhandenes Better Auth bleiben vorgesehen. Die frühere Empfehlung einer gemeinsamen Enterprise-Installation ist damit ersetzt.
+Gewählte Architektur: getrennte Stalwart-CE-Instanz nur pro Mandant mit aktiviertem Mailempfang (Postfächer oder Weiterleitung). Präzisierung vom 2026-10-11: Reiner Versand läuft über die Webdock-API direkt zur Turbo-Relay-API, ohne Stalwart. Webdock betreibt die Infrastruktur; Spitzli erhält bei Aktivierung seine eigene Instanz. Native Webmail auf JMAP und vorhandenes Better Auth bleiben vorgesehen. Die frühere Empfehlung einer gemeinsamen Enterprise-Installation ist damit ersetzt.
 
 Die anschließend angefragte Prüfung der übrigen Stalwart-Spezifikationen ist in der [Funktions- und Protokollmatrix](../../architecture/stalwart-capabilities.md) dokumentiert. CalDAV, CardDAV, JMAP-Kalender/-Kontakte, WebDAV-Dateien, Freigaben und automatische Benachrichtigungen werden im Fundament berücksichtigt. Native Kalender-/Kontakteoberflächen sind eine empfohlene nächste Erweiterung; Webmail bleibt verbindlich im ersten Release.
 
@@ -55,7 +55,7 @@ Untersuchte Grundlage: `/home/newt/Projects/Personal/turboSMTP/relaykit/`, insbe
 Gezielt ersetzen:
 
 - Neon-Auth-/`user_id`-Ressourcenmodell durch vorhandenes Webdock-`customer_id` und explizite Berechtigungen.
-- Direkten `mailer().send()`-Aufruf an Turbo durch Übergabe an Stalwart.
+- Transport serverseitig auswählen: reiner Versand direkt an die Turbo-Relay-API, bei aktiviertem Empfang Übergabe an Stalwart. Beide Wege behalten dieselben Webdock-Versandregeln.
 - Provider-Domain-ID als fachlichen Primärschlüssel durch eigene Webdock-ID.
 - UUIDs für neue Plattformobjekte durch bestehende Snowflake-IDs als Dezimalstrings; Alt-IDs als Referenzen behalten.
 - Den globalen Statusrang einer E-Mail durch Status **je Empfänger** plus abgeleitete Zusammenfassung. Ein Bounce bei B darf eine erfolgreiche Zustellung bei A nicht verdecken.
@@ -70,7 +70,7 @@ Nicht unverändert kopieren: Relaykits Sonderfall, der bei vollständig unterdr�
 | --- | --- | --- | --- |
 | Gemeinsames Stalwart Enterprise, Webdock davor | Native Mandanten, zentrale Administration, Postfächer und gemeinsame Betriebsabläufe | Laufende Lizenz, gemeinsamer Ausfallbereich | Alternative für einen späteren Wechsel |
 | Stalwart Community je aktiviertem Mandant | Isolation durch getrennte Instanzen/Stores, keine Enterprise-Mandantenfunktion nötig | Mehr Instanzen, Routing, Updates, Backups und Ressourcen | **Vom Nutzer gewählt** |
-| Relaykit direkt an Turbo, zusätzlicher Postfachdienst | Schnellster Weg zur bisherigen Versand-API | Zwei unterschiedliche Mailpfade, doppelte Regeln, kein durchgängiges Stalwart-Fundament | Erfüllt das gewünschte Ziel schlechter |
+| Native Webdock API direkt an Turbo ohne Empfang; Stalwart bei Empfang | Keine Instanzkosten für reine Versandkunden | Zwei Adapter mit gemeinsamen Webdock-Regeln | **Präzisierung des Nutzers vom 2026-10-11** |
 
 Stalwarts eingebaute Mandantentrennung ist ausdrücklich Enterprise-exklusiv. Mehrere Domains in einer gemeinsamen Community-Installation sind kein Ersatz für diese Sicherheitsgrenze. [Stalwart: Tenants](https://stalw.art/docs/auth/authorization/tenants/)
 
@@ -89,7 +89,9 @@ flowchart LR
   Apps[Kundenanwendungen] --> Mail
   Auth --> Mail
   Mail --> Jobs[Dauerhafte Aufträge und Versandregeln]
-  Jobs --> Stalwart[Stalwart: SMTP, IMAP, JMAP, Queue]
+  Jobs --> Choice{Mailempfang aktiviert?}
+  Choice -->|Ja| Stalwart[Stalwart: SMTP, IMAP, JMAP, Queue]
+  Choice -->|Nein: Relay-API| Route
   Clients[Mailprogramme] --> Stalwart
   Internet[Eingehende E-Mail] --> Stalwart
   Stalwart --> Inbox[Mandantenpostfach]
@@ -109,8 +111,8 @@ Stalwart unterstützt lokale Zustellung, MX-Zustellung und authentifizierte Rela
 
 | Profil | Zugang des Kunden | Externe Versandroute | Webdock-Funktionen |
 | --- | --- | --- | --- |
-| `managed` | Webdock-API bzw. Webdock-SMTP | Stalwart → Webdock-Turbo-Unterkonto dieses Mandanten | Verpflichtend, voller verwalteter Funktionsumfang |
-| `byok_gateway` | Webdock-API bzw. Webdock-SMTP | Stalwart → kundeneigenes Turbo | Native Funktionen; Turbo-Verbrauch auf Kundenkonto |
+| `managed` | Webdock-API bzw. Webdock-SMTP | Ohne Empfang direkt per Relay-API; mit Empfang Stalwart → Webdock-Turbo-Unterkonto | Verpflichtend, voller verwalteter Funktionsumfang |
+| `byok_gateway` | Webdock-API bzw. Webdock-SMTP | Ohne Empfang direkt per Relay-API; mit Empfang Stalwart → kundeneigenes Turbo | Native Funktionen; Turbo-Verbrauch auf Kundenkonto |
 | `byok_direct` | Eigene Turbo-API/SMTP des Kunden | Kundenanwendung → eigenes Turbo | Webdock-Versand-API optional abgewählt; keine Vollständigkeitszusage für fremden Direktverkehr |
 
 `byok_gateway` und `byok_direct` setzen eine serverseitige Berechtigung `mail.byok` voraus. Ein frei editierbarer Planname „Enterprise“ genügt nicht. Eine zusätzliche Berechtigung `mail.direct_transport` erlaubt den Direktbetrieb.

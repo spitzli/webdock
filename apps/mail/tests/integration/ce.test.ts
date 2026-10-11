@@ -5,6 +5,8 @@ import { connect as tlsConnect } from "node:tls";
 import { createHash } from "node:crypto";
 import { once } from "node:events";
 import { submitSMTP } from "../../src/sending/smtp.ts";
+import { prepareMessage } from "../../src/sending/message.ts";
+import { verifyFixtureDKIM } from "./dkim-check.ts";
 import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -191,10 +193,32 @@ test('native SMTP transport pins the real isolated CE certificate and submits on
   const proxy=tcpServer(socket=>{const backend=tcpConnect({host:a.ip,port:465});sockets.add(socket);sockets.add(backend);socket.pipe(backend).pipe(socket);socket.on('error',()=>backend.destroy());backend.on('error',()=>socket.destroy());socket.on('close',()=>{sockets.delete(socket);backend.destroy();});backend.on('close',()=>sockets.delete(backend));});
   proxy.listen(0,'127.0.0.1');await once(proxy,'listening');const address=proxy.address();assert.ok(address && typeof address!=='string');
   try{
-    await submitSMTP({host:'127.0.0.1',port:address.port,certificateSha256,username:`alice@${a.domain}`,password:a.password,allowLoopback:true},{from:`alice@${a.domain}`,to:[`alice@${a.domain}`],raw:Buffer.from(`From: alice@${a.domain}\r\nTo: alice@${a.domain}\r\nSubject: Native SMTP fixture\r\n\r\nA pinned single attempt.\r\n`)});
     const client=new JmapClient({url:a.url,allowInsecureHttp:true,authorization:basic(`alice@${a.domain}`,a.password),accountId:accountIDs[0]});
-    await eventually(async()=>assert.equal((await client.emails({text:'Native SMTP fixture'})).list.length,1));
+    const identity=(await client.identities())[0].id;
+    const draft=await client.createDraft({identityId:identity,to:[{email:`alice@${a.domain}`}],bcc:[{email:`bob@${a.domain}`}],subject:'Native SMTP fixture',text:'A pinned single attempt.'});
+    const exported=await client.exportDraft(draft.id,identity),prepared=prepareMessage(exported.raw,exported.sender,exported.to);
+    await submitSMTP({host:'127.0.0.1',port:address.port,certificateSha256,username:`alice@${a.domain}`,password:a.password,allowLoopback:true},prepared);
+    await client.fileSent(draft.id);
+    const inbox=(await client.mailboxes()).list.find(row=>row.role==='inbox')!;
+    const received=await eventually(async()=>{const messages=(await client.emails({text:'Native SMTP fixture',mailboxId:inbox.id})).list;assert.equal(messages.length,1);return client.email(messages[0].id);});
+    assert.equal(received.bcc,null);
   }finally{for(const socket of sockets)socket.destroy();await new Promise<void>(resolve=>proxy.close(()=>resolve()));}
+});
+
+test('CE generates Webdock-branded DKIM keys and signs a verifiable outgoing message',async()=>{
+  const a=instances[0];const domain=((await a.client.call('x:Domain/get',{ids:null})).list as {id:string;name:string}[]).find(row=>row.name===a.domain)!;
+  await a.client.call('x:Domain/set',{update:{[domain.id]:{dkimManagement:{'@type':'Automatic',algorithms:{Dkim1RsaSha256:true},selectorTemplate:'webdock-{algorithm}-{date-%Y%m%d}'}}}});
+  const keys=await eventually(async()=>{const keys=((await a.client.call('x:DkimSignature/get',{ids:null})).list as {domainId:string;selector:string;publicKey:string}[]).filter(key=>key.domainId===domain.id && key.selector.startsWith('webdock-'));assert.ok(keys.length);return keys;});
+  compose('restart',a.service);await eventually(()=>a.client.call('x:Domain/get',{ids:[domain.id]}));
+  const mailer=nodemailer.createTransport({host:a.ip,port:465,secure:true,auth:{user:`alice@${a.domain}`,pass:a.password},tls:{rejectUnauthorized:false},connectionTimeout:5000,socketTimeout:10000});
+  try{
+    await mailer.sendMail({from:`alice@${a.domain}`,to:`alice@${a.domain}`,subject:'Native DKIM fixture',text:'Signed by Webdock DKIM.'});
+    const client=new JmapClient({url:a.url,allowInsecureHttp:true,authorization:basic(`alice@${a.domain}`,a.password),accountId:accountIDs[0]});
+    const email=await eventually(async()=>{const email=(await client.emails({text:'Native DKIM fixture'})).list[0];assert.ok(email);return client.email(email.id);});
+    const raw=Buffer.from(await (await fetch(`${a.url}/jmap/download/${accountIDs[0]}/${email.blobId}/message.eml`,{headers:{Authorization:basic(`alice@${a.domain}`,a.password)}})).arrayBuffer());
+    verifyFixtureDKIM(raw,keys,a.domain);
+    assert.throws(()=>verifyFixtureDKIM(Buffer.from(raw.toString().replace('Signed by Webdock DKIM.','Altered body.')),keys,a.domain));
+  }finally{mailer.close();}
 });
 
 test('CE DATA hook exposes authenticated sender context and fails closed when the policy service is unavailable',async()=>{
@@ -213,10 +237,17 @@ test('CE DATA hook exposes authenticated sender context and fails closed when th
     await assert.rejects(mailer.sendMail({from:`alice@${a.domain}`,to:`alice@${a.domain}`,subject:'Policy denial fixture',text:'Must be rejected before acceptance'}),error=>(error as {responseCode?:number}).responseCode===550);
     const captured=await (await fetch(policyOrigin+'/captured')).json();
     assert.ok(captured);const context=captured.context as Record<string,unknown>;
-    assert.ok(context.sasl);assert.equal(context.stage,'data');
+    assert.deepEqual(context.sasl,{login:`alice@${a.domain}`});assert.equal(context.stage,'data');
     const envelope=captured.envelope as {from:{address:string};to:{address:string}[]};assert.equal(envelope.from.address,`alice@${a.domain}`);assert.equal(envelope.to[0].address,`alice@${a.domain}`);
     await fetch(policyOrigin+'/unavailable',{method:'POST'});
     await assert.rejects(mailer.sendMail({from:`alice@${a.domain}`,to:`alice@${a.domain}`,subject:'Policy outage fixture',text:'Must not bypass the unavailable policy'}),error=>{const code=(error as {responseCode?:number}).responseCode;return !!code && code>=400 && code<500;});
+    await fetch(policyOrigin+'/accept',{method:'POST'});
+    await mailer.sendMail({from:`alice@${a.domain}`,to:`alice@${a.domain}`,subject:'Hook sanitization fixture',text:'Accepted after a policy check.',headers:{'X-Webdock-Submission':'private-fixture-proof'}});
+    const client=new JmapClient({url:a.url,allowInsecureHttp:true,authorization:basic(`alice@${a.domain}`,a.password),accountId:accountIDs[0]});
+    await eventually(async()=>{const email=(await client.emails({text:'Hook sanitization fixture'})).list[0];assert.ok(email);
+      const response=await fetch(a.url+'/jmap',{method:'POST',headers:{'Content-Type':'application/json',Authorization:basic(`alice@${a.domain}`,a.password)},body:JSON.stringify({using:['urn:ietf:params:jmap:core','urn:ietf:params:jmap:mail'],methodCalls:[['Email/get',{accountId:accountIDs[0],ids:[email.id],properties:['id','header:X-Webdock-Submission:asText']},'headers']]})});
+      assert.equal((await response.json()).methodResponses[0][1].list[0]['header:X-Webdock-Submission:asText'],null);
+    });
   }finally{mailer.close();await a.client.call('x:MtaHook/set',{destroy:[hookID]});}
 });
 

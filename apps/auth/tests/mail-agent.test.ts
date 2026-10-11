@@ -4,7 +4,7 @@ import { claimMailConfiguration, checkpointMailConfiguration, completeMailConfig
 import { transaction } from "../src/lib/hosting/db";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { randomBytes } from "node:crypto";
+import { generateKeyPairSync, randomBytes } from "node:crypto";
 import { auth } from "../src/lib/auth";
 import { database } from "../src/lib/db";
 import { nativeMailSchemaSQL, nativeMailClusterSchemaSQL } from "@webdock/mail-core/schema";
@@ -32,7 +32,7 @@ test("only the assigned cluster can claim, checkpoint and complete native Mail p
   const clusters = (await database.query(`INSERT INTO webdock_auth.hosting_cluster(name,provider,country,region,location_evidence,verified,capacity)
     VALUES('Mail A','Contabo','DE','Germany','Local test',true,$1),('Mail B','Contabo','DE','Germany','Local test',true,$1) RETURNING id`, [JSON.stringify(mailInstanceDemand)])).rows;
   const agents = clusters.map(cluster => ({ clusterID: cluster.id, generation: 1, credentialHash: randomBytes(32).toString("hex") }));
-  for (const agent of agents) await database.query("INSERT INTO webdock_auth.hosting_agent(cluster_id,credential_hash,generation,last_seen,observation) VALUES($1,$2,1,now(),$3)", [agent.clusterID, agent.credentialHash, JSON.stringify({ version: "v1.36.5+k3s1", capabilities: { storageVersion: 1, nativeMail: { version: 1, configurationVersion: 1, image: process.env.MAIL_STALWART_IMAGE } } })]);
+  for (const agent of agents) await database.query("INSERT INTO webdock_auth.hosting_agent(cluster_id,credential_hash,generation,last_seen,observation) VALUES($1,$2,1,now(),$3)", [agent.clusterID, agent.credentialHash, JSON.stringify({ version: "v1.36.5+k3s1", capabilities: { storageVersion: 1, nativeMail: { version: 1, configurationVersion: 2, image: process.env.MAIL_STALWART_IMAGE } } })]);
   const priorSettings = (await database.query("SELECT settings FROM webdock_auth.platform_settings WHERE id=true")).rows[0];
   try {
     await database.query("INSERT INTO webdock_auth.platform_settings(id,settings) VALUES(true,'{\"mailEnabled\":true}') ON CONFLICT(id) DO UPDATE SET settings=excluded.settings");
@@ -89,11 +89,13 @@ test("only the assigned cluster can claim, checkpoint and complete native Mail p
     assert.ok(!storedIdentity.encrypted_credentials.includes(identity.password));
     const claim = { operationID: configuration.operationID, leaseToken: configuration.leaseToken, generation: agents[0].generation };
     await assert.rejects(checkpointMailConfiguration(agents[1], claim));
-    const configurationProof = { domains: { [domain.id]: 'domain' }, mailboxes: { [mailbox.id]: 'group' }, identities: { [identity.id]: 'principal' } };
+    const publicKey=generateKeyPairSync('rsa',{modulusLength:2048}).publicKey.export({format:'der',type:'spki'}).toString('base64');
+    const configurationProof = { dkim:{[domain.id]:[{id:'signature',selector:'webdock-rsa-20261010',publicKey}]},domains: { [domain.id]: 'domain' }, mailboxes: { [mailbox.id]: 'group' }, identities: { [identity.id]: 'principal' } };
     await assert.rejects(completeMailConfiguration(agents[1], { ...claim, outcome: 'succeeded', proof: configurationProof }));
     await assert.rejects(completeMailConfiguration(agents[0], { ...claim, outcome: 'succeeded', proof: { ...configurationProof, identities: { [identity.id]: 'group' } } }));
     await manage({ action: 'revoke', mailboxID: mailbox.id, subject: actor });
     await completeMailConfiguration(agents[0], { ...claim, outcome: 'succeeded', proof: configurationProof });
+    assert.deepEqual((await database.query('SELECT dkim_keys FROM webdock_mail.domain WHERE id=$1',[domain.id])).rows[0].dkim_keys,configurationProof.dkim[domain.id]);
     const revoked = (await database.query("SELECT enabled,revision,applied_revision FROM webdock_mail.mailbox_grant WHERE mailbox_id=$1", [mailbox.id])).rows[0];
     assert.equal(revoked.enabled, false); assert.notEqual(revoked.revision, revoked.applied_revision);
     const removal = await claimMailConfiguration(agents[0]); assert.ok(removal);

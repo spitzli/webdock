@@ -70,6 +70,7 @@ def mail_manifests(packet):
         container['env'].append({'name': 'STALWART_RECOVERY_ADMIN', 'valueFrom': {'secretKeyRef': {'name': 'mail-bootstrap-' + packet['operationID'], 'key': 'administrator'}}})
     service['spec']['ports'] = [{'name': name, 'port': port, 'targetPort': port} for name, port in ports]
     for metadata in [deployment['metadata'], service['metadata'], deployment['spec']['template']['metadata']]:
+        metadata['labels'].pop('security.webdock.dev/ingress', None)
         metadata['labels']['webdock.dev/mail-customer-id'] = packet['customerID']
     return deployment, service
 
@@ -232,6 +233,6 @@ def mail_capability(nodes):
         result = subprocess.run(['k3s', 'crictl', 'inspecti', config['image']], capture_output=True, text=True, check=True, timeout=15)
         if len(result.stdout) > 1048576 or config['image'] not in json.loads(result.stdout).get('status', {}).get('repoDigests', []):
             return None
-        return {'version': 1, 'image': config['image'], 'configurationVersion': 1}
+        return {'version': 1, 'image': config['image'], 'configurationVersion': 2}
     except (OSError, ValueError, KeyError, TypeError, StorageError, subprocess.SubprocessError):
         return None

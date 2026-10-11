@@ -41,6 +41,7 @@ export default async function Mailboxes({ params }: { params: Promise<{ customer
         <label>{i18n.t("Person")}<select name="subject" required>{data.people.map(person => <option key={person.id} value={person.id}>{person.name} · {person.email}</option>)}</select></label>
       </MailboxForm></section>}
     </>}
+    {data.canManage && data.domains.some(domain=>domain.dkimKeys.length>0) && <section className="auth-panel"><h2>{i18n.t("Webdock DKIM")}</h2><p className="muted">{i18n.t("Publish these TXT records to authenticate your domain's outgoing mail. Existing DNS records remain unchanged.")}</p>{data.domains.flatMap(domain=>domain.dkimKeys.map(key=><div className="mailbox-dkim-record" key={key.id}><strong>{domain.name}</strong><code>{key.selector}._domainkey.{domain.name}</code><code>v=DKIM1; k=rsa; p={key.publicKey}</code></div>))}</section>}
     {data.canManage && !!data.grants.filter(grant => grant.enabled).length && <section className="auth-panel"><h2>{i18n.t("Mailbox access")}</h2>{data.grants.filter(grant => grant.enabled).map(grant => <div key={`${grant.mailboxID}:${grant.subject}`}><p>{data.mailboxes.find(box => box.id === grant.mailboxID)?.address} · {data.people.find(person => person.id === grant.subject)?.name ?? i18n.t("Unavailable account")}</p><MailboxForm customerID={customerID} action="revoke" label={i18n.t("Revoke access")}><input type="hidden" name="mailboxID" value={grant.mailboxID} /><input type="hidden" name="subject" value={grant.subject} /></MailboxForm></div>)}</section>}
   </div>;
 }

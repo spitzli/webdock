@@ -67,7 +67,7 @@ export type NativeMailboxesView = {
   customerID: string; operator: boolean; canManage: boolean; canConfigure: boolean;
   configuration: { revision: string; appliedRevision: string; state: string } | null;
   mailboxes: { id: string; name: string; address: string; state: string; enabled: boolean; quotaBytes: string; canOpen: boolean }[];
-  domains: { id: string; name: string; state: string }[];
+  domains: { id: string; name: string; state: string; dkimKeys:{id:string;selector:string;publicKey:string}[] }[];
   verifiedDomains: { id: string; domain: string }[];
   people: { id: string; name: string; email: string }[];
   grants: { mailboxID: string; subject: string; enabled: boolean; revision: string }[];

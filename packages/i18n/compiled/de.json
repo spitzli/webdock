@@ -410,6 +410,12 @@
   "Activate email for this customer to set up its mail service. Suspending the service retains existing mailbox data.": [
     "Aktiviere E-Mail für diesen Kunden, um den Dienst einzurichten. Beim Deaktivieren bleiben vorhandene Postfachdaten erhalten."
   ],
+  "Activate incoming Mail": [
+    "Mailempfang aktivieren"
+  ],
+  "Activate incoming Mail for mailboxes or forwarding. Sending-only does not need a mailbox server. Suspending retains existing mailbox data.": [
+    "Aktiviere den Mailempfang für Postfächer oder Weiterleitungen. Reiner Versand benötigt keinen Postfachserver. Beim Pausieren bleiben vorhandene Postfachdaten erhalten."
+  ],
   "Active": [
     "Aktiv"
   ],
@@ -3342,6 +3348,9 @@
   "Inbox": [
     "Posteingang"
   ],
+  "Incoming Mail": [
+    "Mailempfang"
+  ],
   "Independent websites. A shared workspace.": [
     "Eigenständige Websites. Ein gemeinsamer Arbeitsbereich."
   ],
@@ -5523,6 +5532,9 @@
   "Publish the current page revision before assigning it as the homepage.": [
     "Die aktuelle Seitenversion muss vor der Startseitenzuordnung veröffentlicht sein."
   ],
+  "Publish these TXT records to authenticate your domain's outgoing mail. Existing DNS records remain unchanged.": [
+    "Veröffentliche diese TXT-Einträge, um ausgehende E-Mails deiner Domain zu authentifizieren. Bestehende DNS-Einträge bleiben unverändert."
+  ],
   "Publish this content to the website?": [
     "Diesen Inhalt auf der Website veröffentlichen?"
   ],
@@ -5615,6 +5627,9 @@
   ],
   "Reconcile operation": [
     "Auftrag erneut abgleichen"
+  ],
+  "Reconcile pending sends before activating incoming Mail.": [
+    "Kläre ausstehende Versandvorgänge, bevor du den Mailempfang aktivierst."
   ],
   "Reconcile release": [
     "Release-Status abgleichen"
@@ -6887,6 +6902,9 @@
   ],
   "Suspend email": [
     "E-Mail deaktivieren"
+  ],
+  "Suspend incoming Mail": [
+    "Mailempfang pausieren"
   ],
   "Suspended": [
     "Gesperrt"
@@ -8231,6 +8249,9 @@
   ],
   "Webdock Admin": [
     "Webdock-Verwaltung"
+  ],
+  "Webdock DKIM": [
+    "Webdock-DKIM"
   ],
   "Webdock MCP": [
     "Webdock MCP"

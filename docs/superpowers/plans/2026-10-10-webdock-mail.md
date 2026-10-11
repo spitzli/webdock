@@ -4,7 +4,7 @@
 
 **Ziel:** Native Webdock-Mailplattform mit verpflichtendem Managed-Versand, Enterprise-Turbo-BYOK, Stalwart-Postfächern, Weiterleitungen und Webmail im ersten Kundenrelease.
 
-**Architektur:** Vorhandenes Studio und Better Auth bleiben Oberfläche und Identitätsinstanz. Ein kleiner dauerhafter Maildienst übernimmt Versand-/JMAP-Integration und Worker. Stalwart besitzt Mailprotokolle, Mailboxinhalte und Zustellqueue; Turbo ist das gewählte externe Relay.
+**Architektur:** Vorhandenes Studio und Better Auth bleiben Oberfläche und Identitätsinstanz. Ein kleiner dauerhafter Maildienst übernimmt Versand-/JMAP-Integration und Worker. Nur Mandanten mit aktiviertem Empfang erhalten Stalwart für Mailprotokolle, Mailboxinhalte und Zustellqueue. Reiner Versand läuft Webdock API → Turbo Relay-API; mit Empfang Webdock API → Stalwart → Turbo; Turbo ist das gewählte externe Relay.
 
 **Stack:** vorhandenes Node 24, TypeScript, PostgreSQL/`pg`, Better Auth, Next.js 16.3.8 und React; Stalwart in fest gepinnter Version; bestehendes Nodemailer für MIME/SMTP wiederverwenden, wo passend.
 
@@ -16,7 +16,7 @@
 
 ## Globale Vorgaben
 
-- Stalwart CE: eine isolierte Instanz nur pro Mandant mit aktiviertem E-Mail-Dienst. Deaktivierung löscht keine Daten.
+- Stalwart CE: eine isolierte Instanz nur pro Mandant mit ausdrücklich aktiviertem Mailempfang (Postfächer oder Weiterleitung). Reiner Versand provisioniert keine Instanz. Deaktivierung löscht keine Daten.
 - Produktname Webdock Mail; normales Kundenprodukt ohne Relaykit-/Turbo-Zugänge oder Providerfehler.
 - Managed ist für normale Kunden verbindlich. BYOK und Direktbetrieb sind serverseitige Enterprise-Berechtigungen.
 - Webmail ist Bestandteil des ersten Kundenreleases.

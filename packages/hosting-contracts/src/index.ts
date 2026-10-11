@@ -432,7 +432,7 @@ export const observationSchema = z
         ingress: z.boolean(),
         environment: z.boolean().optional(),
         storageVersion: z.literal(1).optional(),
-        nativeMail: z.object({ version: z.literal(1), configurationVersion: z.literal(1).optional(), image: z.string().regex(/^[A-Za-z0-9.:-]+\/[A-Za-z0-9_./-]+@sha256:[a-f0-9]{64}$/) }).strict().optional(),
+        nativeMail: z.object({ version: z.literal(1), configurationVersion: z.union([z.literal(1),z.literal(2)]).optional(), image: z.string().regex(/^[A-Za-z0-9.:-]+\/[A-Za-z0-9_./-]+@sha256:[a-f0-9]{64}$/) }).strict().optional(),
 
         registryVersion: z.literal(1).optional(),
       })

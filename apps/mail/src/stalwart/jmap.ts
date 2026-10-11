@@ -202,6 +202,21 @@ export class JmapClient {
     if(!object(result) || result.accountId!==this.accountId || result.size!==bytes.length || typeof result.blobId!=="string" || typeof result.type!=="string")throw new JmapError("Invalid Mail attachment response.");
     return {blobId:id(result.blobId),size:bytes.length,type};
   }
+  async exportDraft(emailId:string,identityId:string){
+    const sender=await this.identity(identityId);
+    const row=this.list(await this.call("Email/get",{ids:[id(emailId)],properties:["id","blobId","size","keywords","from","to","cc","bcc"]}),[emailId])[0];
+    if(!row || !object(row.keywords) || row.keywords.$draft!==true || !Array.isArray(row.from) || row.from.length!==1 || !object(row.from[0]) || row.from[0].email!==sender.email || typeof row.blobId!=="string" || typeof row.size!=="number" || row.size>25*1024*1024)throw new JmapError("Draft sender does not match the selected identity.");
+    const lists=[row.to??[],row.cc??[],row.bcc??[]];
+    if(lists.some(list=>!Array.isArray(list)))throw new JmapError("Invalid Mail recipients.");
+    const recipients=(lists as unknown[][]).flat().map(item=>{
+      if(!object(item) || typeof item.email!=="string")throw new JmapError("Invalid Mail recipients.");
+      return address({email:item.email}).email;
+    });
+    if(!recipients.length || recipients.length>100)throw new JmapError("Invalid Mail recipients.");
+    const blobId=id(row.blobId);
+    const raw=await this.binary(`/jmap/download/${this.accountId}/${blobId}/message.eml?accept=message%2Frfc822`,{method:"GET"},25*1024*1024);
+    return {sender,to:recipients,raw,blobId};
+  }
   async downloadAttachment(emailId: string, blobId: string) {
     id(blobId);
     const email=await this.email(emailId);

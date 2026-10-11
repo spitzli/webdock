@@ -70,6 +70,8 @@ class MailClientIntegrationTests(unittest.TestCase):
             from test_mail_configuration import packet
             config = packet()
             proof = apply_configuration(permanent, config, lambda: None)
+            self.assertTrue(proof['dkim']['11'][0]['selector'].startswith('webdock-rsa-'))
+            self.assertRegex(proof['dkim']['11'][0]['publicKey'], r'^[A-Za-z0-9+/]+={0,2}$')
             self.assertEqual(apply_configuration(permanent, config, lambda: None), proof)
             identity = config['identities'][0]
             member = MailClient(permanent.url, identity['username'], identity['password'])

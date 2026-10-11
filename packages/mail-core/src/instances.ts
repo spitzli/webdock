@@ -35,6 +35,7 @@ export async function getMailService(pool: Pool, id: string): Promise<MailServic
   return view(customerID(id), (await pool.query("SELECT customer_id,desired_enabled,state,revision FROM webdock_mail.service WHERE customer_id=$1", [id])).rows[0]);
 }
 
+/** Explicit incoming Mail activation only; outgoing-only never calls this provisioner. */
 export async function requestMailService(pool: Pool, input: { customerID: string; enabled: boolean; actorID: string; expectedRevision: string; hostID: string; reconcile?: boolean }): Promise<MailService> {
   const id = customerID(input.customerID), host = hostID(input.hostID);
   if ((input.reconcile !== undefined && typeof input.reconcile !== "boolean") || typeof input.enabled !== "boolean" || !/^(0|[1-9][0-9]{0,18})$/.test(input.expectedRevision || "")) fail("Invalid mail activation request.");
@@ -62,6 +63,12 @@ export async function requestMailService(pool: Pool, input: { customerID: string
     }
     if (!input.reconcile && (current?.desired_enabled === input.enabled || (!current && !input.enabled))) return view(id, current);
     if (String(current?.revision ?? "0") !== input.expectedRevision) fail("Mail settings changed. Refresh before trying again.");
+    // Incoming activation changes the sending path. The customer lock fences concurrent admissions.
+    // The budget table is additive and may be absent on foundation-only installations.
+    if (!current && input.enabled && (await client.query("SELECT to_regclass('webdock_mail.budget_reservation') AS present")).rows[0].present) {
+      if ((await client.query("SELECT reference_id FROM webdock_mail.budget_reservation WHERE customer_id=$1 AND state='reserved' LIMIT 1", [id])).rowCount)
+        fail("Reconcile pending sends before activating incoming Mail.");
+    }
     const revision = current ? String(BigInt(current.revision) + 1n) : "1";
     const result = await client.query(`INSERT INTO webdock_mail.service(customer_id,instance_key,host_id,desired_enabled,state,revision)
       VALUES($1,$2,$3,$4,'pending',$5) ON CONFLICT(customer_id) DO UPDATE SET desired_enabled=$4,

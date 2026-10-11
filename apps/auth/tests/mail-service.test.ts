@@ -8,6 +8,7 @@ import { platformSchemaSQL } from "../src/lib/platform";
 import { createIdentity } from "../src/lib/bootstrap";
 import { getTenantMailService, manageTenantMailService } from "../src/lib/mail-service";
 import { nativeMailSchemaSQL, nativeMailClusterSchemaSQL } from "@webdock/mail-core/schema";
+import { mailBudgetSchemaSQL } from "../src/lib/mail-budget";
 import { mailInstanceDemand, nativeClusterDemand } from "@webdock/mail-core/capacity";
 import { hostingSchemaSQL } from "../src/lib/hosting/schema";
 import { getMailService, requestMailService, claimMailOperation, finishMailOperation } from "@webdock/mail-core";
@@ -39,6 +40,14 @@ test("activation is explicit and idempotent, pending changes serialize, and susp
     assert.deepEqual(await getMailService(database, customer), { customerID: customer, enabled: false, state: "disabled", revision: "0" });
     await request(false, "0");
     assert.equal((await database.query("SELECT count(*)::int AS n FROM webdock_mail.service WHERE customer_id=$1", [customer])).rows[0].n, 0);
+    await database.query(mailBudgetSchemaSQL);
+    const reference=(await database.query('SELECT webdock_auth.next_snowflake() AS id')).rows[0].id;
+    await database.query("INSERT INTO webdock_mail.month_usage(customer_id,period_start,reserved) VALUES($1,'2026-10-01',1)",[customer]);
+    await database.query(`INSERT INTO webdock_mail.budget_reservation(reference_id,customer_id,period_start,units,send_path) VALUES($1,$2,'2026-10-01',1,'{"kind":"direct"}')`,[reference,customer]);
+    await assert.rejects(request(true,"0"),/Reconcile pending sends/);
+    assert.equal((await database.query("SELECT customer_id FROM webdock_mail.service WHERE customer_id=$1",[customer])).rowCount,0);
+    await database.query("UPDATE webdock_mail.budget_reservation SET state='accepted' WHERE reference_id=$1",[reference]);
+    await database.query("UPDATE webdock_mail.month_usage SET reserved=0,accepted=1 WHERE customer_id=$1",[customer]);
     const results = await Promise.all(Array.from({ length: 6 }, () => request(true, "0")));
     assert.ok(results.every(result => result.revision === "1" && result.state === "pending"));
     assert.equal((await database.query("SELECT count(*)::int AS n FROM webdock_mail.operation WHERE customer_id=$1", [customer])).rows[0].n, 1);
@@ -84,6 +93,8 @@ test("activation is explicit and idempotent, pending changes serialize, and susp
     assert.equal((await getMailService(database, customer)).state, "ready");
 
   } finally {
+    await database.query("DELETE FROM webdock_mail.budget_reservation WHERE customer_id=$1",[customer]);
+    await database.query("DELETE FROM webdock_mail.month_usage WHERE customer_id=$1",[customer]);
     await database.query("DELETE FROM webdock_mail.instance WHERE customer_id=$1", [customer]);
     await database.query("DELETE FROM webdock_mail.operation WHERE customer_id=$1", [customer]);
     await database.query("DELETE FROM webdock_mail.service WHERE customer_id=$1", [customer]);

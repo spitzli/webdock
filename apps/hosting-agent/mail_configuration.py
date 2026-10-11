@@ -10,6 +10,8 @@ MAIL_PERMISSIONS = ['authenticate', 'jmapCoreEcho', 'jmapMailboxGet', 'jmapMailb
     'jmapIdentityGet', 'jmapIdentityChanges', 'jmapEmailSubmissionGet', 'jmapEmailSubmissionChanges',
     'jmapEmailSubmissionQuery', 'jmapEmailSubmissionQueryChanges',
     'jmapQuotaGet', 'jmapQuotaQuery', 'jmapBlobGet', 'jmapBlobUpload', 'jmapBlobLookup']
+NATIVE_DKIM = {'@type': 'Automatic', 'algorithms': {'Dkim1RsaSha256': True},
+               'selectorTemplate': 'webdock-{algorithm}-{date-%Y%m%d}'}
 
 
 def validate_configuration(p):
@@ -20,7 +22,7 @@ def validate_configuration(p):
         if not isinstance(value, str) or len(value) > 253 or not re.fullmatch(r'(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9-]{2,63}', value):
             raise ValueError('Invalid Mail domain')
     try:
-        if set(p) != {'version','customerID','clusterID','operationID','generation','revision','leaseToken','leaseUntil','hostname','credentials','domains','mailboxes','identities'} or type(p['version']) is not int or p['version'] != 1:
+        if set(p) != {'version','customerID','clusterID','operationID','generation','revision','leaseToken','leaseUntil','hostname','credentials','domains','mailboxes','identities'} or type(p['version']) is not int or p['version'] != 2:
             raise ValueError('Invalid Mail configuration packet')
         for key in ['customerID','clusterID','operationID','revision']: identifier(p[key])
         if type(p['generation']) is not int or p['generation'] < 1: raise ValueError('Invalid Mail generation')
@@ -78,12 +80,12 @@ def apply_configuration(client, packet, guard):
     domains=call('x:Domain/get',{'ids':None})['list']
     internal=exact(domains,None,packet['hostname'])
     if not internal: raise ValueError('Mail identity domain is missing')
-    proof={'domains':{},'mailboxes':{},'identities':{}}
+    proof={'domains':{},'mailboxes':{},'identities':{},'dkim':{}}
     for item in packet['domains']:
         row=exact(domains,item['providerId'],item['name'])
         if not row:
             if not item['ownershipVerified']: raise ValueError('Verify Mail domain ownership first')
-            value=created(call('x:Domain/set',{'create':{'resource':{'name':item['name']}}}))
+            value=created(call('x:Domain/set',{'create':{'resource':{'name':item['name'],'dkimManagement':NATIVE_DKIM}}}))
             row=exact(call('x:Domain/get',{'ids':[value]})['list'],value,item['name'])
         proof['domains'][item['id']]=row['id']
     def account(kind,item,name,domain_id,desired):
@@ -119,6 +121,32 @@ def apply_configuration(client, packet, guard):
              'quotas':{'maxDiskQuota':1048576},'encryptionAtRest':{'@type':'Disabled'},
              'credentials':{'0':{'@type':'Password','secret':item['password']}},
              'memberGroupIds':{proof['mailboxes'][value]:True for value in item['mailboxIds']}})
+    import time
+    import base64
+    for item in packet['domains']:
+        domain_id = proof['domains'][item['id']]
+        row = exact(call('x:Domain/get', {'ids': [domain_id]})['list'], domain_id, item['name'])
+        current = row.get('dkimManagement', {})
+        desired = NATIVE_DKIM
+        if any(current.get(key) != value for key, value in desired.items()):
+            call('x:Domain/set', {'update': {domain_id: {'dkimManagement': desired}}})
+        until = time.monotonic() + 20
+        while True:
+            rows = call('x:DkimSignature/get', {'ids': None, 'properties': ['id', 'domainId', 'selector', 'publicKey', 'stage']})['list']
+            keys = []
+            for key in rows:
+                if key.get('domainId') != domain_id or key.get('stage') != 'active' or not re.fullmatch(r'(?:webdock-rsa-|v1-rsa-)[a-z0-9-]{1,40}', key.get('selector', '')):
+                    continue
+                public = ''.join(key['publicKey'].split())
+                if not 128 <= len(base64.b64decode(public, validate=True)) <= 1024:
+                    raise ValueError('Invalid native DKIM public key')
+                keys.append({'id': key['id'], 'selector': key['selector'], 'publicKey': public})
+            if keys:
+                if len(keys) > 2: raise ValueError('Review active DKIM keys before continuing')
+                proof['dkim'][item['id']] = sorted(keys, key=lambda key: key['id'])
+                break
+            if time.monotonic() >= until: raise ValueError('Native DKIM generation was not confirmed')
+            time.sleep(.2)
     return proof
 
 

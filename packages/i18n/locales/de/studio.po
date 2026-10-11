@@ -7847,3 +7847,24 @@ msgstr "Der Entwurf wurde in einer anderen Sitzung geändert. Öffne ihn vor dem
 
 msgid "Mailbox changed. Refresh before editing again."
 msgstr "Das Postfach wurde geändert. Aktualisiere die Ansicht vor dem weiteren Bearbeiten."
+
+msgid "Webdock DKIM"
+msgstr "Webdock-DKIM"
+
+msgid "Publish these TXT records to authenticate your domain's outgoing mail. Existing DNS records remain unchanged."
+msgstr "Veröffentliche diese TXT-Einträge, um ausgehende E-Mails deiner Domain zu authentifizieren. Bestehende DNS-Einträge bleiben unverändert."
+
+msgid "Incoming Mail"
+msgstr "Mailempfang"
+
+msgid "Activate incoming Mail"
+msgstr "Mailempfang aktivieren"
+
+msgid "Suspend incoming Mail"
+msgstr "Mailempfang pausieren"
+
+msgid "Activate incoming Mail for mailboxes or forwarding. Sending-only does not need a mailbox server. Suspending retains existing mailbox data."
+msgstr "Aktiviere den Mailempfang für Postfächer oder Weiterleitungen. Reiner Versand benötigt keinen Postfachserver. Beim Pausieren bleiben vorhandene Postfachdaten erhalten."
+
+msgid "Reconcile pending sends before activating incoming Mail."
+msgstr "Kläre ausstehende Versandvorgänge, bevor du den Mailempfang aktivierst."

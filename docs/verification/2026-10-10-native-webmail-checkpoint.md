@@ -97,3 +97,39 @@ certificate fingerprint with its service revision; old agents cannot enable
 sending without that proof. Actual restricted CE rejects interactive-user SMTP
 AUTH and JMAP EmailSubmission/set. These transport pieces are not yet connected
 to the required common submission queue and budgets.
+
+## 2026-10-11: incoming/outgoing split and further local verification
+
+The owner refined the topology: outgoing-only uses Webdock API → Turbo relay API,
+without a Stalwart instance. Explicit incoming activation (including forwarding-only)
+provisions one isolated CE instance and selects Webdock API → Stalwart → Turbo.
+The existing native service registry now describes incoming infrastructure. The UI
+labels activation accordingly; the deployed Spitzli instance and retained data are unchanged.
+
+Recipient budgets no longer require a service row. Tests reserve exactly seven of
+20 concurrent requests against a seven-recipient allowance without allocating any
+instance. Each reservation records its send path; replay cannot change that path.
+Pending, suspended or unverified incoming revisions cannot silently choose direct
+sending. First incoming activation refuses outstanding direct-send reservations;
+the customer lock serializes this transition against admission.
+
+The new internal relay API adapter follows the [official send contract](https://serversmtp.com/turbo-api/turbo-smtp.yaml):
+fixed regional HTTPS endpoints, consumer credentials kept server-side, bounded
+request/response sizes, BCC preserved separately from sanitized MIME, exact 64-bit
+message IDs, and one HTTP attempt. A lost or malformed acceptance remains uncertain.
+Local fetch fixtures prove these properties; no real external email was sent.
+**The adapter and budget primitives are not yet wired into a public send endpoint/outbox.**
+
+Native domain configuration v2 creates Webdock DKIM keys and returns validated RSA
+public keys for Studio DNS instructions. Existing active native keys are retained.
+Pinned CE tests verify real signatures and reject a changed body. This does not prove
+public DNS propagation or relay readiness. Private Mail pods no longer carry the
+generic ingress label which would select the broad application ingress policy.
+
+Local verification: Auth 137/137, Studio 106/106, Mail unit 32/32, real CE 10/10;
+agent unit 52 passed plus one optional container test skipped, then that restricted
+container test passed separately. Auth/Studio/Mail TypeScript and Auth/Studio lint
+passed. The new activation/budget tests also passed after the full Auth run.
+No production rollout or merge was performed for this checkpoint. Public reception,
+forwarding, common durable sending, managed/BYOK credential binding and real authenticated
+browser-to-mail-server verification remain required before customer release.

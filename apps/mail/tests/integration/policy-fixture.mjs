@@ -2,17 +2,19 @@
 import {createServer} from 'node:http';
 import {createServer as tcpServer} from 'node:net';
 const received=[];
-let captured, unavailable=false;
+let captured, unavailable=false,accepted=false;
 createServer(async(req,res)=>{
  res.setHeader('Content-Type','application/json');
  if(req.url==='/received'){res.end(JSON.stringify(received));return;}
  if(req.url==='/healthz'){res.end('{}');return;}
  if(req.url==='/captured'){res.end(JSON.stringify(captured??null));return;}
+ if(req.url==='/accept'){unavailable=false;accepted=true;res.end('{}');return;}
  if(req.url==='/unavailable'){unavailable=true;res.end('{}');return;}
  if(req.headers.authorization!=='Bearer disposable-policy-token'){res.writeHead(401);res.end('{}');return;}
  const chunks=[];for await(const part of req)chunks.push(part);
  captured=JSON.parse(Buffer.concat(chunks).toString());
  if(unavailable){res.writeHead(503);res.end('{}');return;}
+ if(accepted){res.end(JSON.stringify({action:'accept',modifications:[{type:'deleteHeader',index:1,name:'X-Webdock-Submission'}]}));return;}
  res.end(JSON.stringify({action:'reject',response:{status:550,enhanced_status:'5.7.1',message:'Webdock fixture policy denied'}}));
 }).listen(8090,'0.0.0.0');
 

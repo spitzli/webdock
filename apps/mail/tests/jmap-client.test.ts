@@ -136,3 +136,14 @@ test('a failed replacement creation never deletes the last saved draft',async t=
   await assert.rejects(new JmapClient(options).createDraft({identityId:'sender',to:[],subject:'Update',text:'Must retain old content'},'old-draft'));
   assert.equal(destroyed,false);
 });
+
+test('SMTP draft export uses the selected account, validates From and retains BCC only in the envelope data',async t=>{
+ t.mock.method(globalThis,'fetch',async (url:URL,init:RequestInit)=>{
+  if(String(url).includes('/jmap/download/')){assert.match(String(url),/\/account-a\/blob1\//);return new Response('From: alice@example.com\r\nBcc: hidden@example.com\r\n\r\nBody');}
+  const [method,args,tag]=JSON.parse(String(init.body)).methodCalls[0];
+  const result=method==='Identity/get'?{list:[{id:'sender',email:'alice@example.com'}]}:{list:[{id:'draft1',blobId:'blob1',size:100,keywords:{$draft:true},from:[{email:'alice@example.com'}],to:[{email:'bob@example.com',name:null}],bcc:[{email:'hidden@example.com',name:null}]}]};
+  return Response.json({methodResponses:[[method,{...result,accountId:args.accountId},tag]]});
+ });
+ const message=await new JmapClient(options).exportDraft('draft1','sender');
+ assert.deepEqual(message.to,['bob@example.com','hidden@example.com']);assert.equal(message.sender.email,'alice@example.com');assert.ok(message.raw.includes('Body'));
+});
