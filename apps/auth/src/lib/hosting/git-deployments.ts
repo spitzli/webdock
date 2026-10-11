@@ -10,7 +10,6 @@ import {
   gitCommandSchema,
   gitReadActions,
   type HostingActor,
-  type GitDeploymentCommand,
 } from "@webdock/hosting-contracts";
 import { authorizeHosting, type Connection } from "./authorization";
 import { transaction, audit } from "./db";
@@ -20,7 +19,21 @@ const unavailable = () =>
   new HostingError(404, "Git deployment is unavailable.");
 const conflict = () =>
   new HostingError(409, "Git deployment changed. Refresh and try again.");
-const sourceView = (r: any) =>
+type SourceRow = {
+  health_path: string;
+  id: string; customer_id: string; project_id: string; connection_id: string;
+  repository_id: string; branch: string; root_directory: string; recipe: string;
+  build_provider: string; workflow_path: string; artifact_prefix: string; target_id: string;
+  revision: number; enabled: boolean; auto_publish: boolean; build_environment_encrypted: string | null;
+  connection_state: string; connection_generation: number; environment_revision: number;
+};
+type BuildRow = {
+  id: string; project_id: string; source_sha: string; status: string;
+  source_revision: number; generation: number; created_at: Date; finished_at: Date | null;
+  logs: string | null; failure_code: string | null;
+  actions_provenance: Awaited<ReturnType<ReturnType<typeof createGitHubProvider>["verifyActionsRun"]>> | null;
+};
+const sourceView = (r: SourceRow | undefined) =>
   r
     ? {
         id: r.id,
@@ -44,7 +57,7 @@ const sourceView = (r: any) =>
         ).sort(),
       }
     : null;
-const buildView = (r: any) => ({
+const buildView = (r: BuildRow) => ({
   id: r.id,
   projectID: r.project_id,
   sourceSHA: r.source_sha,
@@ -64,7 +77,10 @@ const buildView = (r: any) => ({
       : null,
   failureCode: r.failure_code,
 });
-const releaseView = (r: any) => ({
+const releaseView = (r: {
+  id: string; project_id: string; artifact_id: string; status: string; revision: number;
+  approved_by: string | null; operation_id: string | null; provider_deployment_id: string | null; created_at: Date;
+}) => ({
   id: r.id,
   projectID: r.project_id,
   artifactID: r.artifact_id,
@@ -75,7 +91,10 @@ const releaseView = (r: any) => ({
   providerDeploymentID: r.provider_deployment_id,
   createdAt: r.created_at,
 });
-async function connectionView(db: Connection, r: any) {
+async function connectionView(db: Connection, r: {
+  id: string; customer_id: string; installation_id: string; account_login: string;
+  state: string; generation: number; revision: number;
+}) {
   return {
     id: r.id,
     customerID: r.customer_id,
@@ -100,14 +119,14 @@ async function source(db: Connection, projectID: string) {
     )
   ).rows[0];
 }
-function active(s: any) {
+function active(s: SourceRow | undefined) {
   if (!s || !s.enabled || s.connection_state !== "active")
     throw new HostingError(
       409,
       "Connect GitHub and enable a verified source first.",
     );
 }
-export async function gitEnvironmentSnapshot(db: Connection, s: any) {
+export async function gitEnvironmentSnapshot(db: Connection, s: SourceRow) {
   if (s.recipe === "dockerfile") {
     const app = (
       await db.query(
@@ -116,7 +135,9 @@ export async function gitEnvironmentSnapshot(db: Connection, s: any) {
       )
     ).rows[0];
     if (!app) throw unavailable();
-    const { image, template, ...runtime } = app.spec;
+    const runtime = { ...app.spec };
+    delete runtime.image;
+    delete runtime.template;
     return {
       identity: hash(
         JSON.stringify({
@@ -223,7 +244,7 @@ async function cancelObsoleteGitBuilds(db: Connection) {
 }
 async function queue(
   db: Connection,
-  s: any,
+  s: SourceRow,
   sha: string,
   subject: string,
   key: string,
@@ -280,7 +301,7 @@ export async function executeGitDeployment(
   actor: HostingActor,
   raw: unknown,
   provider?: ReturnType<typeof createGitHubProvider>,
-): Promise<any> {
+) {
   const cmd = gitCommandSchema.parse(raw);
   if (cmd.action === "git.targets.bind")
     return (await import("./git-targets")).bindGitTarget(actor, cmd);
@@ -811,7 +832,7 @@ export async function claimGitBuild(credential: string) {
 }
 /** Refresh a short-lived download capability only for the fenced, immutable artifact. */
 export async function prepareGitActionsArtifact(
-  build: any,
+  build: BuildRow & Pick<SourceRow, "build_provider" | "repository_id" | "branch" | "workflow_path" | "artifact_prefix"> & { installation_id: string },
   provider = createGitHubProvider(),
 ) {
   const provenance = build.actions_provenance;
@@ -1187,7 +1208,8 @@ export async function processGitEvents(
             "github:" + e.installation_id,
             key,
           );
-          const { downloadURL: _downloadURL, ...artifact } = verified.artifact;
+          const artifact = { ...verified.artifact };
+          Reflect.deleteProperty(artifact, "downloadURL");
           await db.query(
             "UPDATE webdock_auth.git_build SET actions_provenance=$2 WHERE id=$1",
             [build.id, JSON.stringify({ ...verified, artifact })],

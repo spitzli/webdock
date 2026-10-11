@@ -205,9 +205,11 @@ def guarded_delete(kind,obj,p):
     kubectl('delete','--raw',endpoint,'-f','-',obj=options)
 
 
-def prepare_storage(p):
+def prepare_storage(p, initial_allocation=False):
     lease(p)
-    config,path=storage.ensure(p)
+    # Mail intent revisions can advance before any allocation has happened.
+    # Only its first-bootstrap path opts in; known instances retain the missing-disk guard.
+    config,path=storage.ensure({**p,'revision':1} if initial_allocation else p)
     name='app-'+p['appID']+'-data';pvname='wd-'+p['appID']+'-data'
     meta={'labels':labels(p),'annotations':{'webdock.dev/revision':str(p['revision'])}}
     pv={'apiVersion':'v1','kind':'PersistentVolume','metadata':{**meta,'name':pvname},'spec':{'capacity':{'storage':str(p['spec']['volumeBytes'])},'accessModes':['ReadWriteOnce'],'volumeMode':'Filesystem','persistentVolumeReclaimPolicy':'Retain','storageClassName':'','claimRef':{'namespace':p['namespace'],'name':name},'local':{'path':path},'nodeAffinity':{'required':{'nodeSelectorTerms':[{'matchExpressions':[{'key':'kubernetes.io/hostname','operator':'In','values':[config['node']]}]}]}}}}

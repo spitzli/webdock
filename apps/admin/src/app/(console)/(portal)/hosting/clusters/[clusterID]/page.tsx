@@ -1,3 +1,4 @@
+import type { OwnClusterView, OwnInventoryView } from "@/lib/hosting-views";
 import {LiveSearchForm} from "@webdock/search/form";
 import { uiLabel } from "@/lib/ui-labels";
 import Link from "next/link";
@@ -31,8 +32,8 @@ export default async function OwnCluster({
     { t, locale } = await getRequestI18n();
   const page = Math.max(1, Math.min(100, Number(q.page) || 1));
   const [c, inventory] = await Promise.all([
-    hostingPageCall<any>({ action: "byok.cluster", clusterID }, path),
-    hostingPageCall<any>(
+    hostingPageCall<OwnClusterView>({ action: "byok.cluster", clusterID }, path),
+    hostingPageCall<OwnInventoryView>(
       {
         action: "byok.inventory",
         view: q.view === "all" ? "all" : "applications",
@@ -40,9 +41,7 @@ export default async function OwnCluster({
         page,
         search: q.search ?? "",
         namespace: q.namespace || undefined,
-        kind: resourceKindSchema.safeParse(q.kind).success
-          ? (q.kind as any)
-          : undefined,
+        kind: resourceKindSchema.safeParse(q.kind).data,
       },
       path,
     ),

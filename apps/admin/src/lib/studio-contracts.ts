@@ -1,6 +1,7 @@
 // Public JSON data returned by Auth's fixed Studio API. Keep this file dependency-free.
 // Dates crossing this boundary are ISO strings; native sessions and credentials are excluded.
 export type ChangeResult = { message: string };
+export type NativeMailView = { service: import("@webdock/mail-core").MailService; mailboxesAvailable?: boolean; sendingAvailable?: boolean; canActivate: boolean; canSuspend: boolean; canReconcile: boolean } | null;
 export type Site = { id: string; name: string; url: string; role: string };
 export type AccountSummary = { id: string; name: string; email: string; role: string; banned: boolean | null; emailVerified: boolean; mustChangePassword: boolean };
 export type TenantSummary = { id: string; name: string; status: string; role: string | null };
@@ -60,4 +61,14 @@ export type MailKeysView = {
 export type StorageView = {
   stores: { id: string; label: string; environment: "production" | "preview"; prefix: string; storeID: string; bytes: number | null; objects: number | null; checkedAt: string | null; error: string | null }[];
   productionBytes: number | null; previewBytes: number | null;
+};
+
+export type NativeMailboxesView = {
+  customerID: string; operator: boolean; canManage: boolean; canConfigure: boolean;
+  configuration: { revision: string; appliedRevision: string; state: string } | null;
+  mailboxes: { id: string; name: string; address: string; state: string; enabled: boolean; quotaBytes: string; canOpen: boolean }[];
+  domains: { id: string; name: string; state: string; dkimKeys:{id:string;selector:string;publicKey:string}[] }[];
+  verifiedDomains: { id: string; domain: string }[];
+  people: { id: string; name: string; email: string }[];
+  grants: { mailboxID: string; subject: string; enabled: boolean; revision: string }[];
 };

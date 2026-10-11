@@ -4,7 +4,6 @@ import {
   byokCommands,
   gitCommands,
   readActions,
-  HostingError,
   hostingError,
   type HostingCommand,
 } from "@webdock/hosting-contracts";
@@ -51,7 +50,8 @@ export function registerHostingTools(
     const action = schema.shape.action.value,
       read = readActions.has(action);
     if (!read && !canWrite) continue;
-    const { action: _, ...shape } = schema.shape;
+    const { action: actionSchema, ...shape } = schema.shape;
+    void actionSchema;
     server.registerTool(
       hostingTools[action],
       {

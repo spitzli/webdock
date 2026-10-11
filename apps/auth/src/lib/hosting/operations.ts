@@ -9,7 +9,7 @@ import {
   type HostingActor,
   type HostingOperationStatus,
 } from "@webdock/hosting-contracts";
-import { transaction, audit } from "./db";
+import { transaction } from "./db";
 import type { Connection } from "./authorization";
 import { verifyAgent, type Agent } from "./clusters";
 export function transition(

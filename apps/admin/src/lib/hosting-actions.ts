@@ -217,7 +217,6 @@ export async function saveHosting(
 }
 export async function displayEnrollment(
   enrollmentID: string,
-  _previous: HostingFormState,
 ): Promise<HostingFormState> {
   try {
     const data = await hostingCall<{ token: string; expiresAt: string }>({

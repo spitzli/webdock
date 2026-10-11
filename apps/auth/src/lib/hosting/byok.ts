@@ -80,7 +80,7 @@ export async function executeByok(
   actor: HostingActor,
   cmd: HostingCommand,
   runtime?:VercelRuntime,
-): Promise<any> {
+) {
   if(cmd.action.startsWith("byok.mail.")){const {executeByokMail}=await import("./byok-mail");return executeByokMail(actor,cmd);}
   if (cmd.action.startsWith("byok.vercel.")) {
     const { executeByokVercel } = await import("./byok-vercel");
@@ -154,7 +154,8 @@ export async function executeByok(
             409,
             "Settings changed. Refresh and try again.",
           );
-        const { action, customerID, revision, ...input } = cmd;
+        const { action, customerID, ...input } = cmd;
+        Reflect.deleteProperty(input, "revision");
         const value={...input,turbosmtp:input.turbosmtp??policy.turbosmtp,maxMailDomains:input.maxMailDomains??policy.maxMailDomains};
         const result = (
           await db.query(

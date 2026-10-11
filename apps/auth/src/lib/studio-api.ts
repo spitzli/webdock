@@ -1,3 +1,6 @@
+import {getNativeSending,manageNativeSending} from './mail-sending';
+import { getTenantMailboxes, manageTenantMailboxes } from "./mailboxes";
+import { launchTenantWebmail } from "./mail-sessions";
 // Server-only delegation boundary: native cookies never leave this module.
 import { APIError, serializeSignedCookie } from "better-call";
 import { auth } from "./auth";
@@ -8,6 +11,7 @@ import { AccessError, accountSites, listAccess, manageAccess, requireAccessOpera
 import { listTenants, listTenantInvitations, getTenant, manageTenant } from "./tenants";
 import { PlanError, getPlans, getTenantPlan, managePlans, getOffer, acceptOffer } from "./plans";
 import { TenantMailError, getTenantMail, manageTenantMail } from "./tenant-mail";
+import { MailServiceError, getTenantMailService, manageTenantMailService } from "./mail-service";
 import { MailDomainsError, getTenantSenderDomains, manageTenantSenderDomain } from "./mail-domains";
 import { MailKeysError, getTenantMailKeys, manageTenantMailKeys, type MailKeyInput } from "./mail-keys";
 import { TrackingError, getTenantTracking, manageTenantTracking } from "./mail-tracking";
@@ -31,6 +35,10 @@ const shapes: Record<string, ((value: unknown) => boolean)[]> = {
   listTenants: [], listTenantInvitations: [], getTenant: [isString], manageTenant: [isString, isInput],
   getPlans: [], getTenantPlan: [isString], managePlans: [isInput], getOffer: [isString], acceptOffer: [isString],
   getTenantMail: [isString], manageTenantMail: [isString, isInput],
+  getTenantMailboxes: [isString], manageTenantMailboxes: [isString, isInput],
+  launchTenantWebmail: [isString, isString],
+  getNativeSending: [isString], manageNativeSending: [isString, isInput],
+  getTenantMailService: [isString], manageTenantMailService: [isString, isInput],
   getTenantSenderDomains: [isString], manageTenantSenderDomain: [isString, value => isInput(value) && ["register", "refresh", "unregister"].includes(value.action) && isString(value.domainID)],
   getTenantMailKeys: [isString], manageTenantMailKeys: [isString, isMailKeyInput],
   getTenantTracking: [isString], manageTenantTracking: [isString, isInput],
@@ -117,6 +125,13 @@ async function dispatch(operation: string, args: unknown[], headers: Headers, sa
     case "getOffer": return getOffer(headers, text);
     case "acceptOffer": return acceptOffer(headers, text);
     case "getTenantMail": return getTenantMail(headers, text);
+    case "getTenantMailboxes": return getTenantMailboxes(headers, text);
+    case "launchTenantWebmail": return launchTenantWebmail(headers, text, args[1] as string);
+    case "manageTenantMailboxes": return manageTenantMailboxes(headers, text, tenantInput);
+    case "getNativeSending": return getNativeSending(headers,text);
+    case "manageNativeSending": return manageNativeSending(headers,text,tenantInput);
+    case "getTenantMailService": return getTenantMailService(headers, text);
+    case "manageTenantMailService": return manageTenantMailService(headers, text, tenantInput);
     case "manageTenantMail": return manageTenantMail(headers, text, tenantInput);
     case "getTenantSenderDomains": return getTenantSenderDomains(headers, text);
     case "manageTenantSenderDomain": return manageTenantSenderDomain(headers, text, args[1] as Parameters<typeof manageTenantSenderDomain>[2]);
@@ -166,7 +181,7 @@ export async function handleStudioRequest(request: Request, dependencies: Depend
     else data = await dispatch(operation, args, headers, safe);
     return Response.json({ data: data ?? null }, { headers: responseHeaders });
   } catch (error) {
-    const known = ([["AccessError", AccessError], ["PlanError", PlanError], ["TenantMailError", TenantMailError], ["MailDomainsError", MailDomainsError], ["MailKeysError", MailKeysError], ["TrackingError", TrackingError], ["StorageUsageError", StorageUsageError], ["PlatformError", PlatformError]] as const).find(([, type]) => error instanceof type);
+    const known = ([["AccessError", AccessError], ["PlanError", PlanError], ["TenantMailError", TenantMailError], ["MailServiceError", MailServiceError], ["MailDomainsError", MailDomainsError], ["MailKeysError", MailKeysError], ["TrackingError", TrackingError], ["StorageUsageError", StorageUsageError], ["PlatformError", PlatformError]] as const).find(([, type]) => error instanceof type);
     const status = error instanceof RequestError ? error.status : error instanceof AccessError || error instanceof APIError ? 403 : known ? 400 : 500;
     const kind = known?.[0] || (status < 500 ? "AccessError" : "Error");
     const message = error instanceof RequestError || known && error instanceof Error ? error.message : status === 403 ? "This action is unavailable for your account or tenant." : status === 400 ? "Could not complete this action. Check the supplied details and current settings." : "Studio is temporarily unavailable. Try again.";

@@ -8,6 +8,7 @@ import {
   hostingDimensions,
   hostingLabels,
   type HostingAllowances,
+  type HostingClusterView,
   type HostingProjectView,
   type HostingPage,
   type HostingUsageView,
@@ -30,7 +31,7 @@ export async function CustomerHosting({
   search?: string;
   sort?: "name" | "-name";
 }) {
-  const { t, number, locale } = await getRequestI18n();
+  const { t, locale } = await getRequestI18n();
   const [usage, projects] = await Promise.all([
     hostingPageCall<HostingUsageView>(
       { action: "usage.get", customerID },
@@ -50,7 +51,7 @@ export async function CustomerHosting({
   ]);
   const operator = projects.operator === true;
   let availableProjects: { id: string; name: string }[] = [];
-  let availableClusters: any[] = [];
+  let availableClusters: HostingClusterView[] = [];
   if (operator) {
     const { payload, user } = await requireOperator();
     const choices = await payload.find({
@@ -71,12 +72,12 @@ export async function CustomerHosting({
       name: p.name,
     }));
     availableClusters = (
-      await hostingPageCall<any>(
+      await hostingPageCall<HostingPage<HostingClusterView>>(
         { action: "clusters.list", page: 1, limit: 50, search: "" },
         path,
       )
     ).docs.filter(
-      (c: any) =>
+      (c) =>
         c.workloadReady &&
         (!c.dedicatedCustomerID || c.dedicatedCustomerID === customerID),
     );

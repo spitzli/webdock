@@ -7143,6 +7143,51 @@ msgstr "Reserviere Plattformkapazität und dokumentiere die geprüfte Sicherheit
 msgid "Retained data has been permanently removed. The storage allowance is available again."
 msgstr "Die aufbewahrten Daten wurden endgültig entfernt. Das Speicherkontingent steht wieder zur Verfügung."
 
+msgid "Webdock Mail"
+msgstr "Webdock Mail"
+
+msgid "Not activated"
+msgstr "Nicht aktiviert"
+
+msgid "Change queued"
+msgstr "Änderung vorgemerkt"
+
+msgid "Applying change"
+msgstr "Änderung wird umgesetzt"
+
+msgid "Suspended — data retained"
+msgstr "Deaktiviert — Daten bleiben erhalten"
+
+msgid "Activate email"
+msgstr "E-Mail aktivieren"
+
+msgid "Suspend email"
+msgstr "E-Mail deaktivieren"
+
+msgid "Activate email for this customer to set up its mail service. Suspending the service retains existing mailbox data."
+msgstr "Aktiviere E-Mail für diesen Kunden, um den Dienst einzurichten. Beim Deaktivieren bleiben vorhandene Postfachdaten erhalten."
+
+msgid "The previous change needs to be checked before setup can continue."
+msgstr "Die vorherige Änderung muss geprüft werden, bevor die Einrichtung fortgesetzt werden kann."
+
+msgid "Mail settings changed. Refresh before trying again."
+msgstr "Die E-Mail-Einstellungen wurden geändert. Lade die Seite vor einem erneuten Versuch neu."
+
+msgid "Mail change queued. Existing mailbox data will be retained."
+msgstr "Die E-Mail-Änderung ist vorgemerkt. Vorhandene Postfachdaten bleiben erhalten."
+
+msgid "Mail change recorded. An operator must reconcile the existing operation."
+msgstr "Die E-Mail-Änderung wurde gespeichert. Ein Administrator muss den bestehenden Auftrag abgleichen."
+
+msgid "Mail settings are unchanged."
+msgstr "Die E-Mail-Einstellungen sind unverändert."
+
+msgid "Native Mail is not available yet."
+msgstr "Webdock Mail ist noch nicht verfügbar."
+
+msgid "Mail settings could not be changed. Refresh before trying again."
+msgstr "Die E-Mail-Einstellungen konnten nicht geändert werden. Lade die Seite vor einem erneuten Versuch neu."
+
 msgid "GitHub connection expired. Start again."
 msgstr "Die GitHub-Verbindung ist abgelaufen. Starte erneut."
 
@@ -7563,8 +7608,386 @@ msgstr "Externe Build-Variablen werden nicht unterstützt."
 msgid "View build logs in GitHub Actions"
 msgstr "Build-Logs in GitHub Actions öffnen"
 
+msgid "Retry Mail operation"
+msgstr "E-Mail-Änderung erneut ausführen"
+
 msgid "Vercel healthcheck path"
 msgstr "Vercel-Healthcheck-Pfad"
 
 msgid "Use a public health endpoint that returns HTTP 200 without a redirect."
 msgstr "Verwende einen öffentlichen Healthcheck-Endpunkt, der HTTP 200 ohne Weiterleitung zurückgibt."
+
+msgid "Mailboxes"
+msgstr "Postfächer"
+
+msgid "Manage mailboxes"
+msgstr "Postfächer verwalten"
+
+msgid "Mailbox access is unavailable in customer preview."
+msgstr "Postfachzugriff ist in der Kundenvorschau nicht verfügbar."
+
+msgid "Mailbox management is not available yet."
+msgstr "Die Postfachverwaltung ist noch nicht verfügbar."
+
+msgid "Mail addresses and explicit access for your team."
+msgstr "E-Mail-Adressen und gezielte Zugriffsfreigaben für dein Team."
+
+msgid "Mailbox changes are being applied."
+msgstr "Postfachänderungen werden übernommen."
+
+msgid "Your mailboxes"
+msgstr "Deine Postfächer"
+
+msgid "No mailboxes are available for your account."
+msgstr "Für dein Konto sind keine Postfächer verfügbar."
+
+msgid "Mailbox"
+msgstr "Postfach"
+
+msgid "Storage limit"
+msgstr "Speicherlimit"
+
+msgid "Open mailbox"
+msgstr "Postfach öffnen"
+
+msgid "No mailbox access assigned"
+msgstr "Kein Postfachzugriff zugewiesen"
+
+msgid "Enable a mailbox domain"
+msgstr "Domain für Postfächer aktivieren"
+
+msgid "Verify domain ownership under Mail & Domains first."
+msgstr "Bestätige zuerst den Domainbesitz unter E-Mail & Domains."
+
+msgid "Enable domain"
+msgstr "Domain aktivieren"
+
+msgid "Create mailbox"
+msgstr "Postfach erstellen"
+
+msgid "Address before @"
+msgstr "Adresse vor dem @"
+
+msgid "Storage limit (MiB)"
+msgstr "Speicherlimit (MiB)"
+
+msgid "Grant mailbox access"
+msgstr "Postfachzugriff gewähren"
+
+msgid "Access allows reading, organizing and sending from this mailbox. Administration alone does not grant access."
+msgstr "Die Freigabe erlaubt das Lesen, Organisieren und Senden über dieses Postfach. Administrationsrechte allein gewähren keinen Zugriff."
+
+msgid "Grant access"
+msgstr "Zugriff gewähren"
+
+msgid "Mailbox access"
+msgstr "Postfachzugriff"
+
+msgid "Unavailable account"
+msgstr "Nicht verfügbares Konto"
+
+msgid "Webmail"
+msgstr "Webmail"
+
+msgid "Connecting to mailbox…"
+msgstr "Verbindung zum Postfach wird hergestellt…"
+
+msgid "New message"
+msgstr "Neue Nachricht"
+
+msgid "Mail folders"
+msgstr "E-Mail-Ordner"
+
+msgid "Inbox"
+msgstr "Posteingang"
+
+msgid "Drafts"
+msgstr "Entwürfe"
+
+msgid "Sent"
+msgstr "Gesendet"
+
+msgid "Trash"
+msgstr "Papierkorb"
+
+msgid "Junk"
+msgstr "Spam"
+
+msgid "Archive"
+msgstr "Archiv"
+
+msgid "Search messages"
+msgstr "Nachrichten suchen"
+
+msgid "No subject"
+msgstr "Kein Betreff"
+
+msgid "Attachments"
+msgstr "Anhänge"
+
+msgid "No messages in this view."
+msgstr "Keine Nachrichten in dieser Ansicht."
+
+msgid "To"
+msgstr "An"
+
+msgid "Subject"
+msgstr "Betreff"
+
+msgid "Sending…"
+msgstr "Wird gesendet…"
+
+msgid "Send message"
+msgstr "Nachricht senden"
+
+msgid "Discard this unsaved message?"
+msgstr "Diese ungespeicherte Nachricht verwerfen?"
+
+msgid "Close draft"
+msgstr "Entwurf schließen"
+
+msgid "The result is unknown. Check Drafts and Sent before composing this message again."
+msgstr "Das Ergebnis ist unklar. Prüfe Entwürfe und Gesendet, bevor du diese Nachricht erneut verfasst."
+
+msgid "Reply"
+msgstr "Antworten"
+
+msgid "Move to trash"
+msgstr "In den Papierkorb verschieben"
+
+msgid "This message has no plain-text body."
+msgstr "Diese Nachricht enthält keinen Textteil."
+
+msgid "Select a message to read it."
+msgstr "Wähle eine Nachricht zum Lesen aus."
+
+msgid "Message accepted for delivery."
+msgstr "Nachricht zum Versand angenommen."
+
+msgid "Message accepted for delivery. Filing in Sent needs review."
+msgstr "Nachricht zum Versand angenommen. Die Ablage unter Gesendet muss geprüft werden."
+
+msgid "Mail connection interrupted. Check the mailbox before repeating a change."
+msgstr "E-Mail-Verbindung unterbrochen. Prüfe das Postfach, bevor du eine Änderung wiederholst."
+
+msgid "Mail request failed."
+msgstr "Die E-Mail-Anfrage ist fehlgeschlagen."
+
+msgid "Mail session expired. Reload to reconnect."
+msgstr "Die Postfachsitzung ist abgelaufen. Lade die Seite neu, um die Verbindung wiederherzustellen."
+
+msgid "Mail session required."
+msgstr "Eine Postfachsitzung ist erforderlich."
+
+msgid "Mail access is unavailable."
+msgstr "Der Postfachzugriff ist nicht verfügbar."
+
+msgid "Mail access expired or was revoked."
+msgstr "Der Postfachzugriff ist abgelaufen oder wurde entzogen."
+
+msgid "Mail change outcome is unknown. Check the mailbox before taking further action."
+msgstr "Das Ergebnis der Änderung ist unklar. Prüfe zuerst das Postfach."
+
+msgid "Mail change outcome could not be recorded. Do not repeat it."
+msgstr "Das Ergebnis konnte nicht gespeichert werden. Wiederhole die Änderung nicht."
+
+msgid "Mail change was rejected."
+msgstr "Die E-Mail-Änderung wurde abgelehnt."
+
+msgid "Mailbox change queued. Access is enabled only after server verification."
+msgstr "Postfachänderung vorgemerkt. Der Zugriff wird erst nach der Serverprüfung aktiviert."
+
+msgid "Mail & Domains"
+msgstr "E-Mail & Domains"
+
+msgid "External images and active content are blocked."
+msgstr "Externe Bilder und aktive Inhalte sind blockiert."
+
+msgid "Message content"
+msgstr "Nachrichteninhalt"
+
+msgid "Attachments (up to 10 MiB)"
+msgstr "Anhänge (bis zu 10 MiB)"
+
+msgid "Remove attachment"
+msgstr "Anhang entfernen"
+
+msgid "This message is truncated."
+msgstr "Diese Nachricht wird gekürzt angezeigt."
+
+msgid "Attachment"
+msgstr "Anhang"
+
+msgid "Choose up to 10 attachments, totaling at most 10 MiB."
+msgstr "Wähle bis zu 10 Anhänge mit insgesamt höchstens 10 MiB."
+
+msgid "Attachment upload failed."
+msgstr "Der Anhang konnte nicht hochgeladen werden."
+
+msgid "Attachment download failed."
+msgstr "Der Anhang konnte nicht heruntergeladen werden."
+
+msgid "Mail sending is not available yet."
+msgstr "Der E-Mail-Versand ist noch nicht verfügbar."
+
+msgid "Cc"
+msgstr "Cc"
+
+msgid "Bcc"
+msgstr "Bcc"
+
+msgid "Saving draft…"
+msgstr "Entwurf wird gespeichert…"
+
+msgid "Edit draft"
+msgstr "Entwurf bearbeiten"
+
+msgid "Draft changed in another session. Reopen it before editing."
+msgstr "Der Entwurf wurde in einer anderen Sitzung geändert. Öffne ihn vor dem Bearbeiten erneut."
+
+msgid "Mailbox changed. Refresh before editing again."
+msgstr "Das Postfach wurde geändert. Aktualisiere die Ansicht vor dem weiteren Bearbeiten."
+
+msgid "Webdock DKIM"
+msgstr "Webdock-DKIM"
+
+msgid "Publish these TXT records to authenticate your domain's outgoing mail. Existing DNS records remain unchanged."
+msgstr "Veröffentliche diese TXT-Einträge, um ausgehende E-Mails deiner Domain zu authentifizieren. Bestehende DNS-Einträge bleiben unverändert."
+
+msgid "Incoming Mail"
+msgstr "Mailempfang"
+
+msgid "Activate incoming Mail"
+msgstr "Mailempfang aktivieren"
+
+msgid "Suspend incoming Mail"
+msgstr "Mailempfang pausieren"
+
+msgid "Activate incoming Mail for mailboxes or forwarding. Sending-only does not need a mailbox server. Suspending retains existing mailbox data."
+msgstr "Aktiviere den Mailempfang für Postfächer oder Weiterleitungen. Reiner Versand benötigt keinen Postfachserver. Beim Pausieren bleiben vorhandene Postfachdaten erhalten."
+
+msgid "Reconcile pending sends before activating incoming Mail."
+msgstr "Kläre ausstehende Versandvorgänge, bevor du den Mailempfang aktivierst."
+
+msgid "Sending connection"
+msgstr "Versandverbindung"
+
+msgid "Own sending connection"
+msgstr "Eigene Versandverbindung"
+
+msgid "Configure sending"
+msgstr "Versand einrichten"
+
+msgid "Webdock sending endpoint"
+msgstr "Webdock-Versandendpunkt"
+
+msgid "Webdock API keys"
+msgstr "Webdock-API-Schlüssel"
+
+msgid "These keys can send mail and check their own submissions. They cannot read mailboxes."
+msgstr "Diese Schlüssel können E-Mails senden und ihre eigenen Versandvorgänge abfragen. Sie können keine Postfächer lesen."
+
+msgid "All verified sender domains"
+msgstr "Alle bestätigten Absenderdomains"
+
+msgid "Create Webdock key"
+msgstr "Webdock-Schlüssel erstellen"
+
+msgid "Revoke key"
+msgstr "Schlüssel widerrufen"
+
+msgid "Save this Webdock API key now. It is shown only once."
+msgstr "Speichere diesen Webdock-API-Schlüssel jetzt. Er wird nur einmal angezeigt."
+
+msgid "Webdock Mail sending"
+msgstr "Webdock-Mailversand"
+
+msgid "Native Mail sending is not available yet."
+msgstr "Der native Mailversand ist noch nicht verfügbar."
+
+msgid "Native Mail sending is configured."
+msgstr "Der native Mailversand ist eingerichtet."
+
+msgid "Webdock API key revoked."
+msgstr "Webdock-API-Schlüssel widerrufen."
+
+msgid "Use Webdock Mail sending to manage native API keys."
+msgstr "Verwalte native API-Schlüssel unter Webdock-Mailversand."
+
+msgid "Not configured"
+msgstr "Nicht eingerichtet"
+
+msgid "Mail response could not be read. Check sending status before retrying."
+msgstr "Die Antwort konnte nicht gelesen werden. Prüfe den Versandstatus vor einem erneuten Versuch."
+
+msgid "Mail submission acknowledgement is unavailable. Check sending status before retrying."
+msgstr "Die Versandbestätigung fehlt. Prüfe den Versandstatus vor einem erneuten Versuch."
+
+msgid "Message queued for delivery."
+msgstr "Nachricht für den Versand vorgemerkt."
+
+msgid "Message was not accepted. Your draft is retained."
+msgstr "Die Nachricht wurde nicht angenommen. Dein Entwurf bleibt erhalten."
+
+msgid "Message accepted. Saving the Sent copy…"
+msgstr "Nachricht angenommen. Die Kopie unter „Gesendet“ wird gespeichert…"
+
+msgid "Delivery outcome is unknown. Do not resend this message."
+msgstr "Das Versandergebnis ist unklar. Sende diese Nachricht nicht erneut."
+
+msgid "Sending needs review. Your draft is retained."
+msgstr "Der Versand muss geprüft werden. Dein Entwurf bleibt erhalten."
+
+msgid "Sending cancelled. Your draft is retained."
+msgstr "Versand abgebrochen. Dein Entwurf bleibt erhalten."
+
+msgid "Check sending status"
+msgstr "Versandstatus prüfen"
+
+msgid "Cancel queued sending"
+msgstr "Vorgemerkten Versand abbrechen"
+
+msgid "Finish saving to Sent"
+msgstr "Ablage unter „Gesendet“ abschließen"
+
+msgid "The sending connection is not configured yet."
+msgstr "Die Versandverbindung ist noch nicht eingerichtet."
+
+msgid "Activate incoming Mail to manage mailboxes and use Webmail. Sending-only does not require activation. Suspending retains mailbox data."
+msgstr "Aktiviere eingehende E-Mails für Postfächer und Webmail. Für reinen Versand ist das nicht nötig. Beim Pausieren bleiben Postfachdaten erhalten."
+
+msgid "Copy API key"
+msgstr "API-Schlüssel kopieren"
+
+msgid "The sending connection is being prepared. Refresh this page to check progress."
+msgstr "Die Versandverbindung wird eingerichtet. Lade diese Seite neu, um den Fortschritt zu prüfen."
+
+msgid "Your operator must check the sending connection before you can create keys."
+msgstr "Dein Betreiber muss die Versandverbindung prüfen, bevor du Schlüssel erstellen kannst."
+
+msgid "Verify a sender domain, then configure the sending connection to create an API key."
+msgstr "Bestätige eine Absenderdomain und richte die Versandverbindung ein. Danach kannst du einen API-Schlüssel erstellen."
+
+msgid "Access to your own sending connection has been revoked. Ask your operator to review it."
+msgstr "Die Freigabe für deine eigene Versandverbindung wurde entzogen. Bitte deinen Betreiber um Prüfung."
+
+msgid "Verify a sender domain first."
+msgstr "Bestätige zuerst eine Absenderdomain."
+
+msgid "No Webdock API keys yet."
+msgstr "Noch keine Webdock-API-Schlüssel vorhanden."
+
+msgid "Revoke this key? Applications using it will no longer be able to send mail."
+msgstr "Diesen Schlüssel widerrufen? Anwendungen, die ihn verwenden, können danach keine E-Mails mehr senden."
+
+msgid "Leave this page with unsaved draft changes?"
+msgstr "Diese Seite mit ungespeicherten Änderungen am Entwurf verlassen?"
+
+msgid "Reconnect to mailbox"
+msgstr "Erneut mit dem Postfach verbinden"
+
+msgid "Loading messages…"
+msgstr "Nachrichten werden geladen…"
+
+msgid "Back to messages"
+msgstr "Zurück zu den Nachrichten"

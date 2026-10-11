@@ -11,6 +11,8 @@ import { TenantMailError, getTenantMail } from "@/lib/tenant-mail";
 import { PlatformError } from "@/lib/platform";
 import { MailForm } from "./form";
 import { getTenantSenderDomains } from "@/lib/mail-domains";
+import { getTenantMailService, MailServiceError } from "@/lib/mail-service";
+import { MailServicePanel } from "./service-panel";
 
 export async function generateMetadata() {
   const i18n = await getRequestI18n();
@@ -32,12 +34,13 @@ export default async function TenantMail({
     redirect(
       `/api/sso/login?returnTo=${encodeURIComponent(`/tenants/${customerID}/mail`)}`,
     );
-  let data;
+  let data, nativeService;
   try {
     data = await getTenantMail(requestHeaders, customerID);
+    nativeService = await getTenantMailService(requestHeaders, customerID);
   } catch (error) {
     if (error instanceof AccessError) notFound();
-    if (error instanceof TenantMailError || error instanceof PlatformError)
+    if (error instanceof TenantMailError || error instanceof PlatformError || error instanceof MailServiceError)
       return (
         <section className="auth-panel">
           <h1>{i18n.t("Mail")}</h1>
@@ -70,10 +73,8 @@ export default async function TenantMail({
           </p>
         </div>
       </header>
-      {tenant.status === "active" && (
-        <OwnMail customerID={customerID} query={await searchParams} />
-      )}
-      <details className="panel" open={Boolean(account)}>
+      {nativeService && <MailServicePanel data={nativeService} />}
+      <details className="panel" open={true}>
         <summary>{i18n.t("Email provided by Webdock")}</summary>
         {!enabled && (
           <p className="notice" role="status">
@@ -87,7 +88,7 @@ export default async function TenantMail({
         )}
         {enabled && !configured && (
           <p className="notice" role="status">
-            {i18n.t("Mail provider credentials are not configured.")}{" "}
+            {i18n.t("The sending connection is not configured yet.")}{" "}
             {operator
               ? i18n.t("Connect the master account in Platform Mail settings.")
               : i18n.t(
@@ -508,6 +509,9 @@ export default async function TenantMail({
           {!domains.length && <p>{i18n.t("No sender domains added yet.")}</p>}
         </section>
       </details>
+      {tenant.status === "active" && (
+        <OwnMail customerID={customerID} query={await searchParams} />
+      )}
     </div>
   );
 }

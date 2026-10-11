@@ -11,7 +11,7 @@ export default async function Operation({
 }) {
   const { operationID } = await params,
     { t } = await getRequestI18n();
-  const op = await hostingPageCall<any>(
+  const op = await hostingPageCall<{ status: string; resourceName?: string; result?: { error?: string; logs?: string }; reconciliation?: { resourceVersion: string }; clusterID?: string }>(
     { action: "operations.get", operationID },
     `/hosting/operations/${operationID}`,
   );

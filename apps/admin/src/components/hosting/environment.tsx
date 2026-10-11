@@ -1,5 +1,5 @@
 "use client";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import { useI18n } from "@webdock/i18n/react";
 import { HostingSaveContext, HostingPendingContext } from "./form";
 type Row = {
@@ -15,10 +15,10 @@ export function ApplicationEnvironment({ names = [], build = false }: { names?: 
   const { t } = useI18n(),
     result = useContext(HostingSaveContext),
     pending = useContext(HostingPendingContext),
-    serial = useRef(0);
+    serial = useRef(names.length);
   const makeRows = () =>
-    names.map((name) => ({
-      id: serial.current++,
+    names.map((name, id) => ({
+      id,
       name,
       value: "",
       saved: true,
@@ -27,9 +27,13 @@ export function ApplicationEnvironment({ names = [], build = false }: { names?: 
       visible: false,
     }));
   const [rows, setRows] = useState<Row[]>(makeRows);
-  useEffect(() => {
-    if (result.message && !result.error) setRows(current=>result.environmentReset?[]:current.filter(row=>!row.removed).map(row=>({...row,value:'',saved:true,editing:false,visible:false})));
-  }, [result]);
+  const [previousResult, setPreviousResult] = useState(result);
+  if (result !== previousResult) {
+    setPreviousResult(result);
+    if (result.message && !result.error) {
+      setRows(current => result.environmentReset ? [] : current.filter(row => !row.removed).map(row => ({ ...row, value: "", saved: true, editing: false, visible: false })));
+    }
+  }
   const edit = (id: number, patch: Partial<Row>) =>
     setRows((current) =>
       current.map((row) => (row.id === id ? { ...row, ...patch } : row)),
@@ -151,11 +155,12 @@ export function ApplicationEnvironment({ names = [], build = false }: { names?: 
         <button
           type="button"
           className="button secondary"
-          onClick={() =>
+          onClick={() => {
+            const id = serial.current++;
             setRows((current) => [
               ...current,
               {
-                id: serial.current++,
+                id,
                 name: "",
                 value: "",
                 saved: false,
@@ -163,8 +168,8 @@ export function ApplicationEnvironment({ names = [], build = false }: { names?: 
                 removed: false,
                 visible: false,
               },
-            ])
-          }
+            ]);
+          }}
         >
           {t("Add variable")}
         </button>

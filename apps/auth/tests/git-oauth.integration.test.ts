@@ -162,9 +162,10 @@ test("Git OAuth flows bind tenant, actor and session and consume code/finish exa
   const connected = (
     finishes.find(
       (v) => v.status === "fulfilled",
-    ) as PromiseFulfilledResult<any>
+    ) as PromiseFulfilledResult<Awaited<ReturnType<typeof executeGitOAuth>>>
   ).value;
   assert.equal(connected.customerID, customer);
+  assert.ok(connected.connection);
   assert.equal(connected.connection.customerID, customer);
   const consumed = (
     await database.query(

@@ -1,0 +1,44 @@
+.webmail button { border:1px solid var(--line); border-radius:8px; padding:10px 12px; background:var(--soft); color:var(--ink); min-height:44px; }
+.webmail button:disabled { cursor:not-allowed; }
+.webmail-folders>button,.webmail-compose button[type=submit] { background:var(--ink); color:var(--panel); font-weight:600; }
+.webmail-folders>button { width:100%; }
+.webmail { display:grid; grid-template-columns:180px minmax(230px,320px) minmax(280px,1fr); background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); min-height:65vh; overflow:hidden; }
+.webmail-notice { grid-column:1/-1; margin:0; border-radius:0; }
+.webmail-folders { padding:18px 12px; border-right:1px solid var(--line); }
+.webmail-folders nav { display:grid; gap:4px; margin-top:22px; }
+.webmail-folders nav button { display:flex; justify-content:space-between; text-align:left; background:transparent; color:var(--ink); border:0; padding:10px; }
+.webmail-folders nav button[aria-current] { background:var(--soft); font-weight:700; }
+.webmail-messages { border-right:1px solid var(--line); min-width:0; display:flex; flex-direction:column; }
+.webmail-search { display:flex; gap:6px; padding:12px; border-bottom:1px solid var(--line); }
+.webmail-search label { min-width:0; margin:0; }
+.webmail-search input { width:100%; }
+.webmail-message-list { flex:1; max-height:65vh; overflow:auto; }
+.webmail-message-list>button { display:grid; gap:4px; width:100%; text-align:left; padding:14px; background:transparent; color:var(--ink); border:0; border-bottom:1px solid var(--line); border-radius:0; }
+.webmail-message-list>button[aria-pressed=true] { background:var(--soft); box-shadow:inset 3px 0 var(--accent); }
+.webmail-message-list>button span,.webmail-message-list>button strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.webmail-message-list>button strong { font-weight:400; }
+.webmail-message-list>button.unread strong,.webmail-message-list>button.unread .webmail-sender { font-weight:700; }
+.webmail-pagination { display:flex; align-items:center; justify-content:space-between; gap:6px; padding:10px; font-size:12px; }
+.webmail-pagination button { padding:6px; }
+.webmail-reader { padding:24px; min-width:0; max-height:80vh; overflow:auto; }
+.webmail-toolbar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px; }
+.webmail-body { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; line-height:1.7; max-width:76ch; }
+.webmail-empty { padding:48px 0; text-align:center; }
+.webmail-compose fieldset { padding:0; margin:0 0 12px; border:0; min-width:0; }
+.webmail-compose label { display:grid; gap:6px; margin-bottom:14px; }
+.webmail-compose textarea { width:100%; resize:vertical; font:inherit; }
+@media(max-width:1150px) { .webmail { grid-template-columns:140px minmax(200px,1fr); }.webmail-reader { grid-column:1/-1; border-top:1px solid var(--line); }.webmail-messages { border-right:0; } }
+@media(max-width:600px) { .webmail { grid-template-columns:1fr; }.webmail-folders { border-right:0; border-bottom:1px solid var(--line); }.webmail-folders nav { display:flex; flex-wrap:wrap; gap:4px; margin-top:12px; }.webmail-reader { padding:16px; } }
+
+.webmail-html { width:100%; height:52vh; border:0; background:white; }
+
+.webmail-back { display:none; margin-bottom:16px; }
+.webmail-reader h2,.webmail-reader p { overflow-wrap:anywhere; }
+.webmail-message-list>p { padding:16px; }
+.webmail button { min-height:44px; }
+@media(max-width:600px) {
+ .webmail[data-reader-open=true] .webmail-folders,.webmail[data-reader-open=true] .webmail-messages { display:none; }
+ .webmail-back { display:inline-flex; }
+ .webmail-reader { max-height:none; }
+ .webmail-compose input,.webmail-compose textarea { font-size:16px; }
+}

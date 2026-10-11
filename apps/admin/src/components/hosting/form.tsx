@@ -1,8 +1,8 @@
 "use client";
-import { createContext, useActionState, useState, useEffect } from "react";
+import { createContext, useActionState, useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@webdock/i18n/react";
-import { saveHosting, displayEnrollment } from "@/lib/hosting-actions";
+import { saveHosting, displayEnrollment, type HostingFormState } from "@/lib/hosting-actions";
 import type { HostingCommand } from "@webdock/hosting-contracts";
 export const HostingSaveContext=createContext<{message?:string;error?:string;environmentReset?:boolean}>({});
 export const HostingPendingContext=createContext(false);
@@ -19,9 +19,16 @@ export function HostingForm({
 }) {
   const [initialCommand,setInitialCommand] = useState(command);
   const { t, error } = useI18n();
-  const [state, action, pending] = useActionState(saveHosting, {});
-  useEffect(()=>{if(state.message)setInitialCommand(previous=>previous.action==='apps.create'||previous.action==='apps.update'?{...previous,idempotencyKey:crypto.randomUUID(),...('revision' in previous&&state.revision!==undefined?{revision:state.revision}:{})}:previous);},[state]);
-  useEffect(()=>{if(state.revision!==undefined)setInitialCommand(previous=>'revision' in previous?{...previous,revision:state.revision!}:previous);},[state.revision]);
+  const [state, action, pending] = useActionState(async (previous: HostingFormState, formData: FormData) => {
+    const result = await saveHosting(previous, formData);
+    const idempotencyKey = result.message ? crypto.randomUUID() : undefined;
+    setInitialCommand(current => ({
+      ...current,
+      ...("revision" in current && result.revision !== undefined ? { revision: result.revision } : {}),
+      ...(idempotencyKey && (current.action === "apps.create" || current.action === "apps.update") ? { idempotencyKey } : {}),
+    }));
+    return result;
+  }, {});
   return (
     <HostingSaveContext.Provider value={state}><HostingPendingContext.Provider value={pending}><form action={action} className="hosting-form">
       <input

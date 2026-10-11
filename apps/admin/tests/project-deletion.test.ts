@@ -26,7 +26,7 @@ async function fixture(t: TestContext) {
   const instance = { id: '301', project: projectID, schemaName: schema, adminURL: 'https://studio.webdock.dev/sites/401', provider: 'vercel', providerProjectID: 'prj_fixture' };
   const identity = { bindingID: '401', customerID: '201', origin: project.url, clientID: '701', organizationID: '801', label: project.name, planHash: 'a'.repeat(64), alreadyRemoved: false };
   const encrypted = await sealData({ kind: 'vercel-credential', accessToken: 'fixture-token', teamID: 'team_fixture', configurationID: 'icfg_fixture' }, { password: createHash('sha256').update('webdock:vercel:stored-credential:' + cookieSecret).digest('hex'), ttl: 0 });
-  let job: Record<string, any> | undefined;
+  let job: { plan: { name: unknown }; plan_hash: unknown; completed_steps: string[]; status: string } | undefined;
   const state = { fail: '', shared: false, sharedLink: false, sharedLinkAfterLock: false, owner: `${schema}_runtime`, dependencies: false, absent: false };
   const query = async (sql: string, args: unknown[] = []) => {
     if (sql.startsWith('LOCK TABLE') && state.sharedLinkAfterLock) state.sharedLink = true;

@@ -26,6 +26,7 @@ export default async function MailKeys({
     data = await getTenantMailKeys(requestHeaders, customerID);
   } catch (error) {
     if (error instanceof AccessError) notFound();
+    if (error instanceof MailKeysError && error.message === "Use Webdock Mail sending to manage native API keys.") redirect(`/tenants/${customerID}/mail/sending`);
     if (error instanceof MailKeysError)
       return (
         <section className="auth-panel">

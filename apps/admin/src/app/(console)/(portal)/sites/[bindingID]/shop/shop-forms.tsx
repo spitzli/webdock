@@ -1,4 +1,5 @@
 'use client';
+import Image from "next/image";
 import {useOramaRows} from "@webdock/search/react";
 import { msgid } from '@webdock/i18n';
 
@@ -72,10 +73,10 @@ export function ProductForm({bindingID,product:p,media=[],imageOrigin,onStatus,c
 function imageURL(value:string,origin=''){if(value==='none'||!value)return '';if(/^\/[a-zA-Z0-9/_.-]+$/.test(value)&&!value.split('/').slice(1).some(p=>!p||p==='.'||p==='..'))return origin+value;try{const u=new URL(value);if(u.protocol==='https:'&&!u.username&&!u.password&&!/\s|\\/.test(value))return value;}catch{}return '';}
 function ImageField({value,origin}:{value:string;origin:string}){
   const i18n = useI18n();
-const [image,setImage]=useState(value);const url=imageURL(image,origin);return <div className="shop-image-control"><label>{i18n.t("Image URL")}<input name="image" value={image} onChange={e=>setImage(e.target.value)} required maxLength={2000}/></label><p className="shop-help">{i18n.t("Local path or HTTPS URL. “none” means no fallback image.")}</p>{url&&<img className="shop-image-preview" src={url} alt={i18n.t("Preview of the product image URL")} referrerPolicy="no-referrer"/>}</div>;}
+const [image,setImage]=useState(value);const url=imageURL(image,origin);return <div className="shop-image-control"><label>{i18n.t("Image URL")}<input name="image" value={image} onChange={e=>setImage(e.target.value)} required maxLength={2000}/></label><p className="shop-help">{i18n.t("Local path or HTTPS URL. “none” means no fallback image.")}</p>{url&&<Image unoptimized width={320} height={240} className="shop-image-preview" src={url} alt={i18n.t("Preview of the product image URL")} referrerPolicy="no-referrer"/>}</div>;}
 function MediaPicker({name,label,value,media}:{name:string;label:string;value:number|null;media:ShopMedia[]}){
   const i18n = useI18n();
-const [selected,setSelected]=useState(value?String(value):'');const current=media.find(m=>String(m.id)===selected);return <div className="shop-image-control"><label>{label}<select name={name} value={selected} onChange={e=>setSelected(e.target.value)}><option value="">{i18n.t("Do not use media")}</option>{value&&!media.some(m=>m.id===value)&&<option value={value}>{i18n.t("Current selection #")}{value}</option>}{media.map(m=><option key={m.id} value={m.id}>{m.alt||i18n.t("Image")} · #{m.id}</option>)}</select></label>{current&&imageURL(current.url)&&<img className="shop-image-preview" src={current.url} alt={current.alt||i18n.t("Media preview")} referrerPolicy="no-referrer"/>}{!media.length&&<p className="shop-help">{i18n.t("No media yet. Select existing images here.")}</p>}</div>;}
+const [selected,setSelected]=useState(value?String(value):'');const current=media.find(m=>String(m.id)===selected);return <div className="shop-image-control"><label>{label}<select name={name} value={selected} onChange={e=>setSelected(e.target.value)}><option value="">{i18n.t("Do not use media")}</option>{value&&!media.some(m=>m.id===value)&&<option value={value}>{i18n.t("Current selection #")}{value}</option>}{media.map(m=><option key={m.id} value={m.id}>{m.alt||i18n.t("Image")} · #{m.id}</option>)}</select></label>{current&&imageURL(current.url)&&<Image unoptimized width={320} height={240} className="shop-image-preview" src={current.url} alt={current.alt||i18n.t("Media preview")} referrerPolicy="no-referrer"/>}{!media.length&&<p className="shop-help">{i18n.t("No media yet. Select existing images here.")}</p>}</div>;}
 export function SettingsWorkspace({bindingID,sections,media=[],products=[],writable}:{bindingID:string;sections:ShopContent[];media?:ShopMedia[];products?:{id:number;name:string}[];writable:boolean}){
   const i18n = useI18n();
 

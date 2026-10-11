@@ -192,7 +192,13 @@ export function createGitHubProvider(
     }
   }
   async function pages(path: string, token: string, key: string) {
-    const result: any[] = [];
+    const result: {
+      id?: unknown; app_id?: unknown; suspended_at?: unknown;
+      account?: { id?: unknown; login?: unknown }; owner?: { login?: unknown };
+      name?: unknown; default_branch?: unknown; permissions?: { pull?: unknown };
+      expired?: unknown; digest?: unknown; size_in_bytes?: unknown; created_at?: unknown;
+      workflow_run?: {id?: unknown; repository_id?: unknown; head_repository_id?: unknown; head_sha?: unknown};
+    }[] = [];
     for (let page = 1; page <= 20; page++) {
       const r = await json(path + "?per_page=100&page=" + page, token);
       if (!Array.isArray(r[key])) throw denied();
@@ -262,7 +268,7 @@ export function createGitHubProvider(
       throw denied();
     return r.token;
   }
-  function repository(r: any) {
+  function repository(r: {id?: unknown; owner?: {login?: unknown}; name?: unknown; default_branch?: unknown}) {
     return {
       repositoryID: id(r.id),
       owner: name(r.owner?.login),
@@ -555,7 +561,9 @@ export function createGitHubProvider(
     const artifact = matches[0];
     if (
       artifact.expired !== false ||
-      !/^sha256:[a-f0-9]{64}$/.test(artifact.digest ?? "") ||
+      typeof artifact.digest !== "string" ||
+      !/^sha256:[a-f0-9]{64}$/.test(artifact.digest) ||
+      typeof artifact.size_in_bytes !== "number" ||
       !Number.isSafeInteger(artifact.size_in_bytes) ||
       artifact.size_in_bytes < 1 ||
       artifact.size_in_bytes > 600_000_000 ||
@@ -563,6 +571,7 @@ export function createGitHubProvider(
       id(artifact.workflow_run?.repository_id) !== input.repositoryID ||
       id(artifact.workflow_run?.head_repository_id) !== input.repositoryID ||
       artifact.workflow_run?.head_sha !== revision ||
+      typeof artifact.created_at !== "string" ||
       Date.parse(artifact.created_at) < Date.parse(run.created_at) ||
       !Number.isFinite(Date.parse(artifact.created_at))
     )
@@ -780,7 +789,13 @@ export function parseGitHubWebhook(
     throw denied();
   const deliveryID = headers.get("x-github-delivery") ?? "";
   if (!/^[A-Za-z0-9-]{1,100}$/.test(deliveryID)) throw denied();
-  let payload: any;
+  let payload: {
+    installation?: {id?: unknown}; repository?: {id?: unknown}; ref?: unknown;
+    deleted?: unknown; after?: unknown; action?: unknown;
+    workflow_run?: {run_attempt?: unknown; path?: unknown; conclusion?: unknown;
+      head_repository?: {id?: unknown}; head_branch?: unknown; head_sha?: unknown; id?: unknown};
+    repositories_added?: {id?: unknown}[]; repositories_removed?: {id?: unknown}[];
+  };
   try {
     payload = JSON.parse(Buffer.from(rawBody).toString());
   } catch {
@@ -811,6 +826,7 @@ export function parseGitHubWebhook(
     if (
       payload.action !== "completed" ||
       !run ||
+      typeof run.run_attempt !== "number" ||
       !Number.isSafeInteger(run.run_attempt) ||
       run.run_attempt < 1 ||
       typeof run.path !== "string" ||
@@ -824,7 +840,7 @@ export function parseGitHubWebhook(
       deliveryID,
       event,
       installationID,
-      repositoryID: id(payload.repository.id),
+      repositoryID: id(payload.repository?.id),
       branch: branchName(run.head_branch),
       sha: sha(run.head_sha),
       runID: id(run.id),
@@ -854,7 +870,7 @@ export function parseGitHubWebhook(
       "edited",
     ],
   };
-  if (!event || !actions[event]?.includes(payload.action)) throw denied();
+  if (!event || typeof payload.action !== "string" || !actions[event]?.includes(payload.action)) throw denied();
   const repositoryIDs =
     event === "repository"
       ? [id(payload.repository?.id)]

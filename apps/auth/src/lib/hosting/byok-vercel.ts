@@ -87,7 +87,7 @@ export async function vercelJSON(
     } finally {
       reader.releaseLock();
     }
-    return JSON.parse(Buffer.concat(chunks).toString()) as any;
+    return JSON.parse(Buffer.concat(chunks).toString()) as Record<string, unknown>;
   } catch (e) {
     if (e instanceof HostingError) throw e;
     throw new HostingError(
@@ -100,7 +100,7 @@ export async function executeByokVercel(
   actor: HostingActor,
   cmd: HostingCommand,
   runtime?:VercelRuntime,
-): Promise<any> {
+) {
   return transaction(async (db) => {
     if (cmd.action === "byok.vercel.finish") {
       if (actor.source !== "studio")
@@ -139,7 +139,7 @@ export async function executeByokVercel(
         token.installation_id !== cmd.configurationID ||
         typeof token.access_token !== "string" ||
         token.access_token.length > 8192 ||
-        token.token_type?.toLowerCase() !== "bearer"
+        (typeof token.token_type !== "string" || token.token_type.toLowerCase() !== "bearer")
       )
         throw new HostingError(403, "Vercel connection could not be verified.");
       const installation = await vercelJSON(
@@ -337,7 +337,7 @@ export async function executeByokVercel(
       );
       if (
         deployment.projectId !== cmd.projectID ||
-        !["QUEUED", "BUILDING", "INITIALIZING"].includes(deployment.readyState)
+        (typeof deployment.readyState !== "string" || !["QUEUED", "BUILDING", "INITIALIZING"].includes(deployment.readyState))
       )
         throw new HostingError(409, "This deployment cannot be canceled.");
       await vercelJSON(

@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { handleHostingRequest } from "../src/lib/hosting-api";
-import { HostingError } from "@webdock/hosting-contracts";
+import { HostingError, type HostingCommand } from "@webdock/hosting-contracts";
 test("hosting REST strictly maps routes and keeps operator/membership enforcement in the shared service", async () => {
-  const commands: unknown[] = [];
+  const commands: HostingCommand[] = [];
   const deps = {
     origin: "http://localhost:3120",
-    call: async (token: string, command: any) => {
+    call: async (token: string, command: HostingCommand) => {
       commands.push(command);
       if (token === "customer" && command.action === "limits.set")
         throw new HostingError(403, "Platform operator access is required.");
@@ -74,7 +74,7 @@ test("hosting REST strictly maps routes and keeps operator/membership enforcemen
   assert.equal((await call(["apps","123","storage-deletion"],"GET","operator")).status,200);
   assert.deepEqual(commands.at(-1),{action:'apps.storageDeletion',appID:'123'});
   assert.equal((await call(["apps","123","storage"],"DELETE","operator",{confirmName:'Fixture',planHash:'a'.repeat(64),idempotencyKey:'storage-purge-fixture'})).status,200);
-  assert.equal((commands.at(-1) as any).action,'apps.purgeStorage');
+  assert.equal(commands.at(-1)?.action,'apps.purgeStorage');
   assert.equal(
     (await call(["customers", "123", "limits"])).headers.get("cache-control"),
     "no-store",

@@ -133,6 +133,8 @@ export async function checkDemand(
   ).rows;
   const all = totals(rows.filter((r) => r.customer_id === customerID)),
     onCluster = totals(rows.filter((r) => r.cluster_id === clusterID));
+  const mail = await nativeClusterDemand(db, clusterID);
+  for (const key of hostingDimensions) onCluster[key] = key === "replicasPerApp" ? Math.max(onCluster[key], mail[key]) : onCluster[key] + mail[key];
   const clusterCap = normalizeHostingAllowances(
     c.capacity ?? c.observation?.capacity,
   );
@@ -182,3 +184,4 @@ export async function checkDemand(
       throw new HostingError(409, "Verified cluster capacity is insufficient.");
   }
 }
+import { nativeClusterDemand } from "@webdock/mail-core/capacity";
