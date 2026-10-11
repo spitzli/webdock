@@ -220,3 +220,19 @@ account/domain/allowance and live end-to-end proof. Public reception, forwarding
 accounting for server-generated mail, native DKIM DNS verification and backup/restore
 remain release gates. No production mutation or external mail occurred in this
 checkpoint; the Mail encryption key and existing retained volume were preserved.
+
+### Shared gateway preparation and owner-selected live test
+
+The secret-free shared gateway renderer passed three tests for public-route allowlisting,
+immutable images and browser/worker secret-volume separation. A Kubernetes client dry-run
+on the actual Contabo node accepted all six resources; none were applied. Auth and Studio
+production builds passed. Commits `b00348a` and `fcad367` are pushed to PR #5.
+
+The owner selected **spitzli.dev with 100 outgoing emails per month** for customer
+`99868132637671424`. This selection is not yet a configured account or subscription.
+The current public MX points to Proton Mail; SPF already includes Proton and Turbo and
+DMARC uses quarantine. Preserve the current receiving setup during sender verification.
+The connected Cloudflare account exposes neither spitzli.dev nor webdock.dev, and the
+collaborative Studio browser requires a new operator login. DNS access/manual record
+setup and operator login have been requested. No live sender account, quota, DNS or
+mailbox was changed at this checkpoint.
