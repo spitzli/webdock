@@ -32,7 +32,7 @@ def publish_vercel(output,settings,token,release_id,runner=worker.run_bounded):
     """Any error after starting a write is ambiguous: the caller MUST reconcile."""
     if not worker.ID.fullmatch(release_id):raise worker.Rejected('invalid_release')
     if not re.fullmatch(r'prj_[A-Za-z0-9]+',settings['projectId']) or not re.fullmatch(r'(team|user)_[A-Za-z0-9]+',settings['orgId']):raise worker.Rejected('invalid_target')
-    if VERCEL_VERSION not in runner(['/usr/local/bin/vercel','--version'],timeout=10).decode():raise worker.Rejected('cli_version_mismatch')
+    if VERCEL_VERSION not in runner(['/usr/local/bin/vercel','--version'],env={'PATH':'/usr/local/bin:/usr/bin:/bin','CI':'1','VERCEL_TELEMETRY_DISABLED':'1'},timeout=10).decode():raise worker.Rejected('cli_version_mismatch')
     with worker.vercel_workspace(output,settings) as workspace, tempfile.TemporaryDirectory(prefix='wd-vercel-auth-') as auth:
         authfile=Path(auth)/'auth.json';authfile.write_text(json.dumps({'token':token}));authfile.chmod(0o600)
         command=['/usr/local/bin/vercel','deploy','--prebuilt','--prod','--yes','--no-wait','--global-config',auth,'--meta','webdockReleaseID='+release_id]

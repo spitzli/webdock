@@ -10,7 +10,10 @@ class PublisherTests(unittest.TestCase):
         calls=[]
         def run(command,**kwargs):
             calls.append(command)
-            if '--version' in command:return b'63.1.2'
+            if '--version' in command:
+                self.assertIn('/usr/local/bin',kwargs.get('env',{}).get('PATH','').split(':'))
+                self.assertNotIn('VERCEL_TOKEN',kwargs['env'])
+                return b'63.1.2'
             self.assertNotIn('private-secret',str(command))
             self.assertEqual(set(p.name for p in kwargs['cwd'].iterdir()),{'.vercel','vercel.json'})
             self.assertNotIn('VERCEL_TOKEN',kwargs['env'])
