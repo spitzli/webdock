@@ -44,8 +44,8 @@ export async function assertQuotaCapacity(db:PoolClient,customerID:string,recipi
   const base=subscription?subscription.base.mailMessages:(settings?.mailDefaultLimit??1000),extra=subscription?.extras?.mailMessages??0;
   if((base!==null&&(!Number.isSafeInteger(base)||base<0))||!Number.isSafeInteger(extra)||extra<0)throw new MailError(503,'quota_unavailable','Mail quota configuration is unavailable');
   const budget=base===null?null:BigInt(base)+BigInt(extra);
-  const usage=(await db.query('SELECT coalesce(sum(reserved+consumed),0)::text AS used FROM webdock_auth.mail_usage_period WHERE customer_id=$1 AND period=$2',[customerID,period])).rows[0];
-  const native=(await db.query("SELECT to_regclass('webdock_mail.month_usage') AS present")).rows[0].present?BigInt((await db.query('SELECT coalesce(sum(reserved+accepted),0)::text AS used FROM webdock_mail.month_usage WHERE customer_id=$1 AND period_start=$2',[customerID,period])).rows[0].used):0n;
+  const usage=(await db.query(process.env.DATABASE_RLS_SECRET?'SELECT webdock_rls.mail_usage_total($1,$2) AS used':'SELECT coalesce(sum(reserved+consumed),0)::text AS used FROM webdock_auth.mail_usage_period WHERE customer_id=$1 AND period=$2',[customerID,period])).rows[0];
+  const native=!process.env.DATABASE_RLS_SECRET&&(await db.query("SELECT to_regclass('webdock_mail.month_usage') AS present")).rows[0].present?BigInt((await db.query('SELECT coalesce(sum(reserved+accepted),0)::text AS used FROM webdock_mail.month_usage WHERE customer_id=$1 AND period_start=$2',[customerID,period])).rows[0].used):0n;
   if(budget!==null&&BigInt(usage.used)+native+BigInt(recipientCount)>budget)throw new MailError(429,'quota_exceeded','Monthly recipient allowance exhausted');
  return budget;
 }

@@ -4708,3 +4708,6 @@ msgstr "Ein Kunden-Owner muss aktiv und verifiziert sein und die Kontoeinrichtun
 
 msgid "Keep at least one active verified customer owner."
 msgstr "Mindestens ein aktiver, verifizierter Kunden-Owner muss erhalten bleiben."
+
+msgid "This database hosts the Webdock control plane. Use the reviewed offline maintenance procedure."
+msgstr "Diese Datenbank betreibt die Webdock-Plattform. Verwende dafür das geprüfte Offline-Wartungsverfahren."

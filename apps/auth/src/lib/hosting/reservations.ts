@@ -109,12 +109,18 @@ export async function checkDemand(
       409,
       "The subscription changed. Refresh and try again.",
     );
-  const c = (
-    await db.query(
-      "SELECT c.verified,c.capacity,a.revoked,a.last_seen,a.observation FROM webdock_auth.hosting_cluster c JOIN webdock_auth.hosting_agent a ON a.cluster_id=c.id WHERE c.id=$1",
-      [clusterID],
-    )
-  ).rows[0];
+  const c = process.env.DATABASE_RLS_SECRET
+    ? (
+        await db.query("SELECT webdock_rls.cluster_snapshot($1) AS cluster", [
+          clusterID,
+        ])
+      ).rows[0]?.cluster
+    : (
+        await db.query(
+          "SELECT c.verified,c.capacity,a.revoked,a.last_seen,a.observation FROM webdock_auth.hosting_cluster c JOIN webdock_auth.hosting_agent a ON a.cluster_id=c.id WHERE c.id=$1",
+          [clusterID],
+        )
+      ).rows[0];
   if (
     !c?.verified ||
     c.revoked ||
@@ -132,9 +138,15 @@ export async function checkDemand(
     )
   ).rows;
   const all = totals(rows.filter((r) => r.customer_id === customerID)),
-    onCluster = totals(rows.filter((r) => r.cluster_id === clusterID));
+    onCluster = process.env.DATABASE_RLS_SECRET
+      ? await clusterCapacityDemand(db, clusterID, "apps")
+      : totals(rows.filter((r) => r.cluster_id === clusterID));
   const mail = await nativeClusterDemand(db, clusterID);
-  for (const key of hostingDimensions) onCluster[key] = key === "replicasPerApp" ? Math.max(onCluster[key], mail[key]) : onCluster[key] + mail[key];
+  for (const key of hostingDimensions)
+    onCluster[key] =
+      key === "replicasPerApp"
+        ? Math.max(onCluster[key], mail[key])
+        : onCluster[key] + mail[key];
   const clusterCap = normalizeHostingAllowances(
     c.capacity ?? c.observation?.capacity,
   );
@@ -184,4 +196,7 @@ export async function checkDemand(
       throw new HostingError(409, "Verified cluster capacity is insufficient.");
   }
 }
-import { nativeClusterDemand } from "@webdock/mail-core/capacity";
+import {
+  nativeClusterDemand,
+  clusterCapacityDemand,
+} from "@webdock/mail-core/capacity";

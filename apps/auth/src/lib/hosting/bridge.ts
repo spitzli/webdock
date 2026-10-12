@@ -10,7 +10,7 @@ import {
   type HostingActor,
 } from "@webdock/hosting-contracts";
 import { auth } from "../auth";
-import { database } from "../db";
+import { authDatabase as database } from "../db";
 import { mcpResource, currentHostingMCPClaims } from "../mcp";
 import { executeHosting } from "./service";
 import { issueEnrollment } from "./clusters";

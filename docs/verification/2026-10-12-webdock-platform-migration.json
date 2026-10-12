@@ -1,0 +1,63 @@
+{
+  "status": "preparing-cutover",
+  "scope": "Webdock platform only; independent customer databases excluded",
+  "sourceSchemas": [
+    "public",
+    "webdock",
+    "webdock_admin",
+    "webdock_auth",
+    "webdock_mail"
+  ],
+  "archiveSchema": "public",
+  "target": {
+    "databaseID": "103217546714419200",
+    "backendID": "103217546630533120",
+    "database": "db_103217546714419200",
+    "host": "db-103217546630533120.pg.webdock.dev",
+    "directPort": 32000,
+    "tls": "TLSv1.3",
+    "rolesProvisioned": true,
+    "offlineRoleSuperuser": false,
+    "offlineRoleBypassRls": false,
+    "platformTablesAtPreflight": 0,
+    "poolerServicePoolSize": 1,
+    "poolerDatabaseConnectionBudget": 10
+  },
+  "agent": {
+    "node": "wd-eu-02",
+    "databasesModuleSha256": "9caedf9fc89d0dc58e8b27011df06a262c96e5649c1448b856e780569d78c949",
+    "persistentServiceRoleAllowlist": true,
+    "selfMaintenanceProtected": true
+  },
+  "sourceFenced": false,
+  "applicationConnectionsSwitched": false,
+  "tabularisSwitched": false,
+  "automatedBackupsEnabled": false,
+  "verification": {
+    "isolatedRestore": true,
+    "realNonOwnerRlsTests": true,
+    "pgBouncerTransactionReuse": true,
+    "authBrowserSignInAndTenantList": true,
+    "payloadAdminAndWebsiteRead": true,
+    "unrelatedIncomingForeignKeys": 0,
+    "authRegressionPassed": 238,
+    "authRlsOptInTestsPassedSeparately": 3,
+    "studioTestsPassed": 115,
+    "applicationBuilds": [
+      "auth",
+      "admin",
+      "web",
+      "cms"
+    ],
+    "manifestVersion": 2,
+    "realArchiveDataAndStructureEqual": true,
+    "mailNoLateCommit": true,
+    "sourceForeignKeyIsolation": true
+  },
+  "pending": [
+    "Final code/build verification and compatible deployment",
+    "Source freeze and final v2 structural/content-verified import",
+    "RLS installation on target, environment switch and Tabularis rollout",
+    "Deployed end-to-end checks and offline-role cleanup"
+  ]
+}

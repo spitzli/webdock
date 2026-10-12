@@ -16,7 +16,7 @@ async function clientFor(actor:MailActor){
  if(c.kind==='byok')return new TurboDomainsClient(await resolveSendingCredential(actor),mailFetch);
  const row=(await database.query("SELECT provider_id,email FROM webdock_auth.mail_tenant_account WHERE customer_id=$1 AND state='ready'",[actor.customerID])).rows[0];
  if(!row||row.provider_id!==c.provider_account_id)mailUnavailable();
- const master=await mailProvider(mailFetch),confirmed=await master.getSubaccount(row.provider_id);
+ const master=await mailProvider(mailFetch,actor.customerID,actor.connectionID),confirmed=await master.getSubaccount(row.provider_id);
  if(confirmed.id!==row.provider_id||confirmed.email?.toLowerCase()!==row.email.toLowerCase()||!confirmed.active)mailUnavailable();
  return new TurboDomainsClient({apiKey:await master.authorizeSubaccount(row.email)},mailFetch);
 }
@@ -40,7 +40,8 @@ export async function assertVerifiedSender(actor:MailActor,domain:string,options
   if(matches.length!==1)throw new MailError(422,'sender_not_verified','Provider verification unavailable');
   observation=matches[0];
   await assertMailAccess(actor,'send');
-  await database.query('UPDATE webdock_auth.mail_connection_domain SET provider_snapshot=$3,provider_checked_at=now() WHERE connection_id=$1 AND domain_id=$2',[actor.connectionID,row.id,JSON.stringify(observation)]);
+  if(process.env.DATABASE_RLS_SECRET)await database.query('SELECT webdock_rls.mail_refresh_domain($1,$2,$3,$4)',[actor.customerID,actor.connectionID,row.id,JSON.stringify(observation)]);
+  else await database.query('UPDATE webdock_auth.mail_connection_domain SET provider_snapshot=$3,provider_checked_at=now() WHERE connection_id=$1 AND domain_id=$2',[actor.connectionID,row.id,JSON.stringify(observation)]);
  }
  if(!observation||observation.id!==row.provider_id||observation.domain!==name||!observation.spf_verified||!observation.dkim_verified)throw new MailError(422,'sender_not_verified','Sender DNS is not verified');
  // Recheck the local proof after any network wait.

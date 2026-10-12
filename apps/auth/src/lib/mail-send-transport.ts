@@ -48,7 +48,7 @@ export async function configureNativeTransport(actor:MailActor,customerID:string
  });
  if(reservation.done)return {ready:true};
  try{
-  const master=await (providers.master??mailProvider)();
+  const master=await (providers.master??(()=>mailProvider(undefined,customerID)))();
   const account=await master.getSubaccount(reservation.providerID!);
   if(!account.active || account.id!==reservation.providerID || account.email?.toLowerCase()!==reservation.email?.toLowerCase())mailUnavailable();
   const auth=await master.authorizeSubaccount(reservation.email!);

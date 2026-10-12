@@ -4,9 +4,52 @@
 The output includes Kubernetes Secrets: keep input/output outside Git, mode 0600.
 SQLite claims must already reference the approved project volume; never copy a live DB.
 """
-import argparse, json, os, pathlib, subprocess, re
+import argparse, json, os, pathlib, subprocess, re, ssl, ipaddress
 p=argparse.ArgumentParser(); p.add_argument('--inventory',required=True); p.add_argument('--private-dir',required=True); p.add_argument('--gateway-image',required=True); p.add_argument('--runtime-image',required=True); p.add_argument('--tls-image',required=True); p.add_argument('--runtime-commit',required=True); p.add_argument('--output',required=True); a=p.parse_args()
 os.umask(0o077); private=pathlib.Path(a.private_dir); inventory=json.loads(pathlib.Path(a.inventory).read_text()); namespace='webdock-databases'; resources=[]
+database_ingress=[]
+def database_target(row):
+ if 'databaseTLSCA' not in row and 'databaseTarget' not in row:return None
+ # Never include inventory values in validation failures: they may contain secrets.
+ def require(valid):
+  if not valid:raise ValueError('Invalid private database target configuration')
+ target=row.get('databaseTarget');ca_path=row.get('databaseTLSCA')
+ require(row.get('engine')=='postgresql' and isinstance(target,dict) and isinstance(ca_path,str) and bool(ca_path))
+ dns=lambda value:isinstance(value,str) and len(value)<=63 and re.fullmatch(r'[a-z0-9](?:[a-z0-9-]*[a-z0-9])?',value)
+ external=set(target)=={'host','port','addressIPv4'}
+ host=target.get('host')
+ if external:
+  require(isinstance(host,str) and len(host)<=253 and '.' in host and all(dns(part) for part in host.split('.')))
+  require(type(target['port']) is int and 1<=target['port']<=65535)
+  require(isinstance(target['addressIPv4'],str))
+  try:address=ipaddress.IPv4Address(target['addressIPv4'])
+  except Exception:raise ValueError('Invalid private database target address') from None
+  require(address.is_global and not address.is_multicast)
+ else:
+  require(set(target)=={'namespace','podLabels','host'})
+  require(dns(target['namespace']))
+  labels=target['podLabels'];require(isinstance(labels,dict) and bool(labels))
+  for key,value in labels.items():
+   require(isinstance(key,str) and isinstance(value,str))
+   parts=key.split('/');require(len(parts)<=2)
+   if len(parts)==2:require(len(parts[0])<=253 and all(dns(part) for part in parts[0].split('.')))
+   label=lambda part:len(part)<=63 and re.fullmatch(r'[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?',part)
+   require(label(parts[-1]) and label(value))
+  suffix='.'+target['namespace']+'.svc.cluster.local'
+  require(isinstance(host,str) and host.endswith(suffix) and dns(host[:-len(suffix)]))
+ connections=row.get('connections');require(isinstance(connections,list) and len(connections)==1)
+ connection=connections[0];require(isinstance(connection,dict))
+ params=connection.get('params');require(isinstance(params,dict))
+ require(params.get('driver') in ('postgres','postgresql') and params.get('host')==host and params.get('port')==target.get('port',5432)
+         and params.get('ssl_mode')=='verify-full' and params.get('ssl_ca')=='/database-trust/ca.crt')
+ try:
+  ca=pathlib.Path(ca_path).read_text()
+  require(re.fullmatch(r'\s*(?:-----BEGIN CERTIFICATE-----\s+[A-Za-z0-9+/=\s]+-----END CERTIFICATE-----\s*)+',ca))
+  ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT).load_verify_locations(cadata=ca)
+ except Exception:raise ValueError('Invalid database CA certificate file') from None
+ return target,ca
+# Validate every optional target before rendering any resources or certificates.
+targets=[database_target(row) for row in inventory]
 def add(kind,name,spec=None,**extra):
  item={'apiVersion':'apps/v1' if kind=='Deployment' else 'networking.k8s.io/v1' if kind in ['NetworkPolicy','Ingress'] else 'v1','kind':kind,'metadata':{'name':name,'namespace':namespace,'labels':{'app.kubernetes.io/part-of':'webdock-database-browser'}}}
  if kind=='Namespace':item['metadata'].pop('namespace')
@@ -23,7 +66,7 @@ add('NetworkPolicy','default-deny',{'podSelector':{},'policyTypes':['Ingress','E
 add('NetworkPolicy','dns',{'podSelector':{},'policyTypes':['Egress'],'egress':[{'to':[{'namespaceSelector':{'matchLabels':{'kubernetes.io/metadata.name':'kube-system'}},'podSelector':{'matchLabels':{'k8s-app':'kube-dns'}}}], 'ports':[{'protocol':p,'port':53} for p in ['UDP','TCP']]}]})
 public={'ipBlock':{'cidr':'0.0.0.0/0','except':['10.0.0.0/8','172.16.0.0/12','192.168.0.0/16','127.0.0.0/8','169.254.0.0/16']}}
 add('NetworkPolicy','gateway-network',{'podSelector':{'matchLabels':{'app':'database-gateway'}},'policyTypes':['Ingress','Egress'],'ingress':[{'from':[{'namespaceSelector':{'matchLabels':{'kubernetes.io/metadata.name':'kube-system'}},'podSelector':{'matchLabels':{'app.kubernetes.io/name':'traefik'}}}], 'ports':[{'port':3137}]}], 'egress':[{'to':[public],'ports':[{'port':443}]},{'to':[{'podSelector':{'matchLabels':{'component':'database-runtime'}}}],'ports':[{'port':8443}]}]})
-for row in inventory:
+for row,target_config in zip(inventory,targets):
  assert row['namespace']==namespace and re.fullmatch(r'[a-z0-9-]{1,50}',row['slug'])
  name='db-'+row['slug'];host=f'{name}.{namespace}.svc.cluster.local';key=private/(name+'.key');crt=private/(name+'.crt')
  if not crt.exists():
@@ -34,6 +77,11 @@ for row in inventory:
  add('PersistentVolumeClaim',name+'-state',{'accessModes':['ReadWriteOnce'],'resources':{'requests':{'storage':'128Mi'}},'storageClassName':'local-path'})
  volumes=[{'name':'state','persistentVolumeClaim':{'claimName':name+'-state'}},{'name':'credentials','secret':{'secretName':name,'defaultMode':288}},{'name':'tls-config','configMap':{'name':'database-runtime-tls'}},{'name':'tmp','emptyDir':{'sizeLimit':'128Mi'}}]
  mounts=[{'name':'state','mountPath':'/data'},{'name':'tmp','mountPath':'/tmp'}]
+ if target_config:
+  target,ca=target_config
+  add('ConfigMap',name+'-database-ca',data={'ca.crt':ca})
+  volumes.append({'name':'database-trust','configMap':{'name':name+'-database-ca'}})
+  mounts.append({'name':'database-trust','mountPath':'/database-trust','readOnly':True})
  if row.get('pvc'):volumes.append({'name':'project-data','persistentVolumeClaim':{'claimName':row['pvc']}});mounts.append({'name':'project-data','mountPath':'/project-data'})
  pod={'automountServiceAccountToken':False,'securityContext':security,'volumes':volumes,'initContainers':[{'name':'initialize','image':'busybox:1.37','command':['sh','-c','cp /credentials/connections.json /data/connections.json; if [ ! -f /data/config.json ]; then cp /credentials/config.json /data/config.json; fi; chmod 600 /data/connections.json /data/config.json'],'securityContext':container_security,'resources':limits('100m','64Mi'),'volumeMounts':[{'name':'state','mountPath':'/data'},{'name':'credentials','mountPath':'/credentials','readOnly':True}]}], 'containers':[
  {'name':'tabularis','image':a.runtime_image,'imagePullPolicy':'Never','args':['--public-url',row['runtimeOrigin'],'--allowed-origin',row['runtimeOrigin']], 'env':[{'name':'TABULARIS_WEB_PROXY_SECRET','valueFrom':{'secretKeyRef':{'name':name,'key':'proxy-secret'}}}], 'securityContext':container_security,'resources':limits('750m','512Mi'),'volumeMounts':mounts},
@@ -46,9 +94,16 @@ for row in inventory:
  add('Service',name,{'selector':{'app':name},'ports':[{'port':8443,'targetPort':8443}]})
  policy={'podSelector':{'matchLabels':{'app':name}},'policyTypes':['Ingress','Egress'],'ingress':[{'from':[{'podSelector':{'matchLabels':{'app':'database-gateway'}}}],'ports':[{'port':8443}]}],'egress':[]}
  if row['engine']=='postgresql':policy['egress']=[{'to':[public],'ports':[{'port':5432}]}]
+ if target_config and 'addressIPv4' in target:
+  policy['egress']=[{'to':[{'ipBlock':{'cidr':target['addressIPv4']+'/32'}}],'ports':[{'protocol':'TCP','port':target['port']}]}]
+ if target_config and 'namespace' in target:
+  policy['egress']=[{'to':[{'namespaceSelector':{'matchLabels':{'kubernetes.io/metadata.name':target['namespace']}},'podSelector':{'matchLabels':target['podLabels']}}],'ports':[{'protocol':'TCP','port':5432}]}]
+  database_ingress.append({'apiVersion':'networking.k8s.io/v1','kind':'NetworkPolicy','metadata':{'name':name+'-browser','namespace':target['namespace'],'labels':{'app.kubernetes.io/part-of':'webdock-database-browser'}},'spec':{'podSelector':{'matchLabels':target['podLabels']},'policyTypes':['Ingress'],'ingress':[{'from':[{'namespaceSelector':{'matchLabels':{'kubernetes.io/metadata.name':namespace}},'podSelector':{'matchLabels':{'app':name}}}],'ports':[{'protocol':'TCP','port':5432}]}]}})
  add('NetworkPolicy',name,policy)
 add('Secret','database-gateway',type='Opaque',stringData={'WEBDOCK_DATABASE_GATEWAY_SECRET':(private/'gateway-secret').read_text()})
 add('Deployment','database-gateway',{'replicas':1,'strategy':{'type':'Recreate'},'selector':{'matchLabels':{'app':'database-gateway'}},'template':{'metadata':{'labels':{'app':'database-gateway'}},'spec':{'automountServiceAccountToken':False,'securityContext':security,'containers':[{'name':'gateway','image':a.gateway_image,'imagePullPolicy':'Never','securityContext':container_security,'resources':limits('500m','256Mi'),'envFrom':[{'secretRef':{'name':'database-gateway'}}],'env':[{'name':k,'value':v} for k,v in {'WEBDOCK_AUTH_ORIGIN':'https://auth.webdock.dev','WEBDOCK_DATABASE_GATEWAY_ORIGIN':'https://database.webdock.dev','WEBDOCK_DATABASE_BROWSER_ORIGINS':'https://studio.webdock.dev','WEBDOCK_DATABASE_RUNTIME_ORIGINS':','.join(r['runtimeOrigin'] for r in inventory),'TABULARIS_EXPECTED_COMMIT':a.runtime_commit,'NODE_EXTRA_CA_CERTS':'/trust/ca.crt'}.items()],'ports':[{'containerPort':3137}],'readinessProbe':{'httpGet':{'path':'/healthz','port':3137}},'livenessProbe':{'httpGet':{'path':'/healthz','port':3137}},'startupProbe':{'httpGet':{'path':'/healthz','port':3137},'failureThreshold':30,'periodSeconds':5},'volumeMounts':[{'name':'trust','mountPath':'/trust','readOnly':True}]}],'volumes':[{'name':'trust','configMap':{'name':'database-runtime-ca'}}]}}})
 add('Service','database-gateway',{'selector':{'app':'database-gateway'},'ports':[{'port':3137,'targetPort':3137}]})
 ing=add('Ingress','database-gateway',{'ingressClassName':'traefik','rules':[{'host':'database.webdock.dev','http':{'paths':[{'path':'/','pathType':'Prefix','backend':{'service':{'name':'database-gateway','port':{'number':3137}}}}]}}],'tls':[{'hosts':['database.webdock.dev']}]});ing['metadata']['annotations']={'traefik.ingress.kubernetes.io/router.entrypoints':'websecure','traefik.ingress.kubernetes.io/router.tls':'true','traefik.ingress.kubernetes.io/router.tls.certresolver':'webdock'}
 pathlib.Path(a.output).write_text(json.dumps({'apiVersion':'v1','kind':'List','items':resources}));print(f'Rendered {len(resources)} resources; secret-bearing output retained locally.')
+if database_ingress:
+ pathlib.Path(a.output+'.database-ingress.json').write_text(json.dumps({'apiVersion':'v1','kind':'List','items':database_ingress}))

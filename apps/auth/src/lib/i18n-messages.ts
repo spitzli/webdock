@@ -1,6 +1,7 @@
 // Public feedback registration only. Auth responses and error codes remain unchanged.
 import { msgid } from "@webdock/i18n";
 export const authFeedbackMessages = [
+ msgid("This database hosts the Webdock control plane. Use the reviewed offline maintenance procedure."),
  msgid("A mapped tracking domain belonging to this tenant is required."),
  msgid("A pending invitation already exists. Resend it, or cancel it before choosing another role."),
  msgid("A ready sending account is required."),

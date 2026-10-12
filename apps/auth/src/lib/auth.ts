@@ -8,7 +8,7 @@ import {
   APIError,
   getSessionFromCtx,
 } from "better-auth/api";
-import { database } from "./db";
+import { authDatabase } from "./db";
 import { guardOrganizationRequest } from "./tenant-policy";
 import { cookiePolicy } from "./cookie-policy";
 import { offlineProvisioning } from "./offline";
@@ -22,7 +22,7 @@ export const auth = lazyAuth(() => betterAuth({
   baseURL,
   basePath: "/api/auth",
   secret: process.env.BETTER_AUTH_SECRET,
-  database,
+  database: authDatabase,
   trustedOrigins: [baseURL],
   disabledPaths: ["/token", "/admin/impersonate-user"],
   advanced: {
@@ -55,7 +55,7 @@ export const auth = lazyAuth(() => betterAuth({
     revokeSessionsOnPasswordReset: true,
     onPasswordReset: async ({ user }) => {
       // The one-time reset link proves mailbox access for a provisioned invitee.
-      await database.query('UPDATE webdock_auth."user" SET "emailVerified"=true,"mustChangePassword"=false WHERE id=$1 AND "mustChangePassword"=true', [user.id]);
+      await authDatabase.query('UPDATE webdock_auth."user" SET "emailVerified"=true,"mustChangePassword"=false WHERE id=$1 AND "mustChangePassword"=true', [user.id]);
     },
     sendResetPassword: async ({ user, url }) =>
       sendAuthMail({
@@ -108,7 +108,7 @@ export const auth = lazyAuth(() => betterAuth({
         ctx.context.session?.user.twoFactorEnabled === false &&
         ctx.context.newSession?.user.twoFactorEnabled === true
       )
-        await database.query(
+        await authDatabase.query(
           'DELETE FROM webdock_auth.session WHERE "userId"=$1 AND id<>$2',
           [ctx.context.newSession.user.id, ctx.context.newSession.session.id],
         );
@@ -117,7 +117,7 @@ export const auth = lazyAuth(() => betterAuth({
         ctx.context.session?.user.id &&
         !(ctx.context.returned instanceof APIError)
       )
-        await database.query(
+        await authDatabase.query(
           'UPDATE webdock_auth."user" SET "mustChangePassword"=false WHERE id=$1',
           [ctx.context.session.user.id],
         );
@@ -132,7 +132,7 @@ export const auth = lazyAuth(() => betterAuth({
     organization({
       allowUserToCreateOrganization: async (user) => {
         const row = (
-          await database.query(
+          await authDatabase.query(
             'SELECT role FROM webdock_auth."user" WHERE id=$1',
             [user.id],
           )
@@ -142,7 +142,7 @@ export const auth = lazyAuth(() => betterAuth({
       disableOrganizationDeletion: true,
       requireEmailVerificationOnInvitation: true,
       sendInvitationEmail: async (data) => {
-        const user = (await database.query('SELECT "mustChangePassword","emailVerified" FROM webdock_auth."user" WHERE lower(email)=lower($1)', [data.email])).rows[0];
+        const user = (await authDatabase.query('SELECT "mustChangePassword","emailVerified" FROM webdock_auth."user" WHERE lower(email)=lower($1)', [data.email])).rows[0];
         if (user?.mustChangePassword && !user.emailVerified) {
           await auth.api.requestPasswordReset({ body: { email: data.email, redirectTo: `${baseURL}/reset-password?invitation=${encodeURIComponent(data.id)}` } });
         } else await sendAuthMail({

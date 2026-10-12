@@ -1,3 +1,5 @@
+
+import {withAuthenticatedDatabase} from '@/lib/database-context';
 import { authLabel } from "@/lib/i18n-labels";
 import { getRequestI18n } from "@webdock/i18n/next";
 import { headers } from "next/headers";
@@ -8,12 +10,14 @@ import { database } from "@/lib/db";
 import { accountSites } from "@/lib/access-management";
 export async function generateMetadata() { const { t } = await getRequestI18n(); return { title: t("Your websites") }; }
 export default async function Sites() {
+
  const { t } = await getRequestI18n();
   const requestHeaders = await headers();
   const session = await auth.api.getSession({ headers: requestHeaders });
   if (!session) redirect("/sign-in?returnTo=sites");
   if (!session.user.emailVerified || session.user.mustChangePassword)
     redirect("/account");
+  return withAuthenticatedDatabase(await headers(), async () => {
   const [sites, invites] = await Promise.all([
     accountSites(requestHeaders),
     database.query(
@@ -50,4 +54,6 @@ export default async function Sites() {
       </p>
     </section>
   );
+
+});
 }

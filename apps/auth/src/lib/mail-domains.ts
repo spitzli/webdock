@@ -1,3 +1,4 @@
+import { withAuthenticatedDatabase } from './database-context';
 import { randomUUID } from "node:crypto";
 import { auth } from "./auth";
 import { database } from "./db";
@@ -30,6 +31,8 @@ async function accessToDomains(headers: Headers, customerID: string) {
  return access;
 }
 export async function getTenantSenderDomains(headers: Headers, customerID: string, dependencies: Dependencies = {}): Promise<{ domains: TenantSenderDomain[] }> {
+  return withAuthenticatedDatabase(headers, async () => {
+
  await getTenant(headers, customerID);
  const rows = (await database.query("SELECT id,domain,status,token,checked_at,provider_id,provider_snapshot,provider_checked_at,provider_operation,provider_operation_started_at FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND customer_id=$1 ORDER BY domain", [customerID])).rows;
  const domains: TenantSenderDomain[] = [];
@@ -43,8 +46,12 @@ export async function getTenantSenderDomains(headers: Headers, customerID: strin
  }
  await getTenant(headers, customerID);
  return { domains };
+
+  });
 }
 export async function manageTenantSenderDomain(headers: Headers, customerID: string, input: { action: "register" | "refresh" | "unregister"; domainID: string; confirm?: string }, dependencies: Dependencies = {}): Promise<{ message: string }> {
+  return withAuthenticatedDatabase(headers, async () => {
+
  await accessToDomains(headers, customerID);
  if (!["register", "refresh", "unregister"].includes(input.action) || typeof input.domainID !== "string") fail("Unknown sender-domain action.");
  if (input.action === "unregister" && input.confirm !== "yes") fail("Confirm removal of this provider sender domain.");
@@ -82,7 +89,7 @@ export async function manageTenantSenderDomain(headers: Headers, customerID: str
    const current = (await database.query("SELECT d.status,d.provider_operation,a.provider_id,a.email,a.state FROM webdock_auth.mail_sender_domain d JOIN webdock_auth.mail_tenant_account a USING(customer_id) WHERE d.deleted_at IS NULL AND d.customer_id=$1 AND d.id=$2", [customerID,local.id])).rows[0];
    if (!current || current.provider_operation !== operation || current.provider_id !== stored.provider_id || current.email !== stored.email || current.state !== "ready" || input.action !== "unregister" && current.status !== "ownership_verified") fail("Sender-domain ownership or account mapping changed. Refresh before retrying.");
   };
-  const master = await (dependencies.provider || mailProvider)();
+  const master = await (dependencies.provider || (()=>mailProvider(undefined,customerID)))();
   const account = await master.getSubaccount(stored.provider_id);
   if (account.id !== stored.provider_id || account.email?.toLowerCase() !== stored.email.toLowerCase()) fail("The sending account could not be verified.");
   if (!account.active) fail("Sending is paused.");
@@ -126,4 +133,6 @@ export async function manageTenantSenderDomain(headers: Headers, customerID: str
  } finally {
   if (reserved) await database.query("UPDATE webdock_auth.mail_sender_domain SET provider_operation=NULL,provider_operation_started_at=NULL WHERE deleted_at IS NULL AND customer_id=$1 AND id=$2 AND provider_operation=$3", [customerID,input.domainID,operation]);
  }
+
+  });
 }

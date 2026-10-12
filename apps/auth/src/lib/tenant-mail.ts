@@ -1,3 +1,4 @@
+import { withAuthenticatedDatabase } from './database-context';
 import { randomBytes } from "node:crypto";
 import { domainToASCII } from "node:url";
 import { auth } from "./auth";
@@ -51,6 +52,8 @@ export function normalizeMailDomain(value: string) {
  return result;
 }
 export async function getTenantMail(headers: Headers, customerID: string): Promise<MailView> {
+  return withAuthenticatedDatabase(headers, async () => {
+
  const access = await getTenant(headers, customerID);
  const [settings, connection, accounts, domains] = await Promise.all([
   getPlatformSettings(), getMailConnectionStatus(),
@@ -63,6 +66,8 @@ export async function getTenantMail(headers: Headers, customerID: string): Promi
   account: row ? { state: stale ? "needs_review" : row.state, providerID: row.provider_id, email: row.email, ...snapshot(row.snapshot), checkedAt: timestamp(row.checked_at), ...(row.state === "needs_review" || stale ? { issue: stale ? "Provisioning has not completed. An operator must reconcile the existing provider account; do not create it again." : "An operator must reconcile the provider account before provisioning again." } : {}) } : null,
   domains: domains.rows.map(row => ({ id: row.id, domain: row.domain, token: row.token, status: row.status, checkedAt: timestamp(row.checked_at) })),
  };
+
+  });
 }
 async function verifyDNS(domain: string, token: string, fetchImpl: typeof fetch) {
  const url = new URL("https://cloudflare-dns.com/dns-query"); url.searchParams.set("name", `_webdock-mail.${domain}`); url.searchParams.set("type", "TXT");
@@ -85,6 +90,8 @@ async function verifyDNS(domain: string, token: string, fetchImpl: typeof fetch)
  finally { clearTimeout(timer); controller.abort(); void reader?.cancel().catch(() => {}); }
 }
 export async function manageTenantMail(headers: Headers, customerID: string, input: Record<string, string>, dependencies: Dependencies = {}): Promise<{ message: string }> {
+  return withAuthenticatedDatabase(headers, async () => {
+
  const access = await getTenant(headers, customerID);
  if (!access.canManage || access.tenant.status !== "active") failure("Active tenant administrator access is required.");
  const settings = await getPlatformSettings();
@@ -112,7 +119,7 @@ export async function manageTenantMail(headers: Headers, customerID: string, inp
     if (!verified) failure("The public DNS ownership token does not match yet.");
    }
   } else {
-   const provider = await (dependencies.provider || mailProvider)();
+   const provider = await (dependencies.provider || (()=>mailProvider(undefined,customerID)))();
    const stored = (await database.query("SELECT * FROM webdock_auth.mail_tenant_account WHERE customer_id=$1", [customerID])).rows[0];
    let result: TurboSMTPSubaccount;
    if (action === "provision") {
@@ -177,4 +184,6 @@ export async function manageTenantMail(headers: Headers, customerID: string, inp
   if ((error as { code?: string }).code === "23505") failure("This account or domain is already registered or verified elsewhere.");
   return failure("Mail operation failed. Retry reads safely; ask an operator to review uncertain provider changes.");
  }
+
+  });
 }

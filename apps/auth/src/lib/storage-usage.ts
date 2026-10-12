@@ -1,3 +1,4 @@
+import { withAuthenticatedDatabase } from './database-context';
 import { randomUUID } from "node:crypto";
 import { list, type ListBlobResult, type ListCommandOptions } from "@vercel/blob";
 import type { PoolClient } from "pg";
@@ -70,6 +71,8 @@ export async function measureStorage(storeID: string, token: string, prefix: str
  finally { clearTimeout(timer); controller.abort(); }
 }
 export async function getTenantStorage(headers: Headers, customerID: string): Promise<{ stores: Store[]; productionBytes: number | null; previewBytes: number | null }> {
+  return withAuthenticatedDatabase(headers, async () => {
+
  await getTenant(headers, customerID);
  const rows = (await database.query("SELECT id,label,environment,prefix,store_id,bytes,objects,checked_at,error FROM webdock_auth.tenant_storage WHERE customer_id=$1 ORDER BY environment,label,id", [customerID])).rows;
  const stores: Store[] = rows.map(row => ({ id: row.id, label: row.label, environment: row.environment, prefix: row.prefix, storeID: row.store_id, bytes: row.bytes === null ? null : Number(row.bytes), objects: row.objects, checkedAt: row.checked_at ? new Date(row.checked_at).toISOString() : null, error: row.error }));
@@ -80,6 +83,8 @@ export async function getTenantStorage(headers: Headers, customerID: string): Pr
   return Number.isSafeInteger(sum) ? sum : null;
  };
  return { stores, productionBytes: total("production"), previewBytes: total("preview") };
+
+  });
 }
 async function operator(headers: Headers, customerID: string) {
  const access = await getTenant(headers, customerID);
@@ -103,6 +108,8 @@ async function save(headers: Headers, customerID: string, action: string, work: 
  finally { connection.release(); }
 }
 export async function manageTenantStorage(headers: Headers, customerID: string, input: Record<string, string>, dependencies: Dependencies = {}): Promise<{ message: string }> {
+  return withAuthenticatedDatabase(headers, async () => {
+
  await operator(headers, customerID);
  if (!["add", "refresh", "remove"].includes(input.action)) fail("Unknown storage action.");
  try {
@@ -143,6 +150,8 @@ export async function manageTenantStorage(headers: Headers, customerID: string, 
   if (error instanceof StorageUsageError) throw error;
   return fail("Storage operation failed. No credentials are shown; check the mapping and retry.");
  }
+
+  });
 }
 
 /** Trusted scheduled job only: callers must authenticate the scheduler before invoking this function. */

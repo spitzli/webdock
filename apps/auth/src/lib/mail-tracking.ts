@@ -1,3 +1,4 @@
+import { withAuthenticatedDatabase } from './database-context';
 import {productTrackingContext} from './mail-product/tracking-context';
 import { randomBytes } from "node:crypto";
 import { auth } from "./auth";
@@ -30,6 +31,8 @@ export function trackingHostname(sender: string, prefix = "links") {
  return `${label}.${sender}`;
 }
 export async function getTenantTracking(headers: Headers, customerID: string, connectionID?:string) {
+  return withAuthenticatedDatabase(headers, async () => {
+
  const access = await getTenant(headers, customerID),product=connectionID?await productTrackingContext(headers,customerID,connectionID):null;
  const [settings, connection, accounts, senders, domains, snapshots] = await Promise.all([
   getPlatformSettings(), getMailConnectionStatus(),
@@ -41,8 +44,12 @@ export async function getTenantTracking(headers: Headers, customerID: string, co
  const account = accounts.rows[0];
  const unavailable = product?(!settings.mailGatewayEnabled||product.kind==='platform'&&!settings.mailEnabled?"Mail is disabled.":product.state!=='ready'?"An active, ready Mail account is required.":null):!settings.mailEnabled ? "Mail is disabled." : !connection.configured ? "The Mail connection is not configured." : account?.state !== "ready" || account.snapshot.active !== true ? "An active, ready Mail account is required." : access.tenant.status !== "active" ? "This tenant is archived." : null;
  return { tenant: { name: access.tenant.name }, canManage: access.canManage, unavailable, senders: senders.rows as { id: string; domain: string }[], settings: snapshots.rows[0]?.snapshot as TrackingSettings | undefined, checkedAt: snapshots.rows[0]?.updated_at as Date | undefined, domains: domains.rows.map(row => ({ id: row.id as string, domain: row.domain as string, mapped: !!row.provider_id, cancellable: !row.provider_id && new Date(row.updated_at).getTime() <= Date.now() - 900000, snapshot: row.snapshot as Partial<TrackingDomain> })) };
+
+  });
 }
 export async function manageTenantTracking(headers: Headers, customerID: string, input: Record<string, string>, dependencies: Dependencies = {}, connectionID?:string): Promise<{ message: string }> {
+  return withAuthenticatedDatabase(headers, async () => {
+
  const access = await getTenant(headers, customerID);
  if (!access.canManage || access.tenant.status !== "active") return fail("Active tenant administrator access is required.");
  const product=connectionID?await productTrackingContext(headers,customerID,connectionID,true,dependencies.fetcher):null;
@@ -184,6 +191,8 @@ export async function manageTenantTracking(headers: Headers, customerID: string,
  } finally {
   if (locked) await database.query("DELETE FROM webdock_auth.mail_tracking_operation WHERE customer_id=$1 AND token=$2", [customerID, operationToken]);
  }
+
+  });
 }
 
 /** Legacy routes may see managed bindings only; explicit product requests select exactly one connection. */

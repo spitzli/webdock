@@ -1,8 +1,11 @@
+import { withAuthenticatedDatabase } from '../database-context';
 import {mailDatabase as database} from './store';
 import {authorizeMailSession,assertMailAccess,MailError} from './access';
 import {mailManagementHeaders,resolveSendingCredential} from './provider-credentials';
 import {TrackingClient} from '../turbo-tracking';import {mailFetch} from './deadline';
 export async function productTrackingContext(headers:Headers,customerID:string,connectionID:string,write=false,fetcher:typeof fetch=mailFetch){
+  return withAuthenticatedDatabase(headers, async () => {
+
  const actor=await authorizeMailSession(headers,customerID,connectionID,write?'manage':'read');
  const connection=(await database.query('SELECT kind,state,revision FROM webdock_auth.mail_connection WHERE id=$1 AND customer_id=$2 AND deleted_at IS NULL',[connectionID,customerID])).rows[0];
  if(!connection)throw new MailError(404,'not_found','Mail connection unavailable');
@@ -17,4 +20,6 @@ export async function productTrackingContext(headers:Headers,customerID:string,c
   await assertCurrent();const credentials=await mailManagementHeaders(actor,{requireActive:true});
   return new TrackingClient('Authorization' in credentials?credentials.Authorization:{consumerKey:credentials.consumerKey,consumerSecret:credentials.consumerSecret},fetcher);
  }};
+
+  });
 }

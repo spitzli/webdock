@@ -1,4 +1,4 @@
-import { database } from "./db";
+import { authDatabase as database } from "./db";
 export const mcpResource = process.env.WEBDOCK_MCP_RESOURCE || "https://studio.webdock.dev/api/mcp";
 export const mcpScopes = ["webdock:read", "webdock:write"] as const;
 

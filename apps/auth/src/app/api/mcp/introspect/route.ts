@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { currentMCPClaims, currentHostingMCPClaims, mcpResource } from "@/lib/mcp";
-import { database } from "@/lib/db";
+import { authDatabase as database } from "@/lib/db";
 
 export async function POST(request: Request) {
   // Native OAuth introspection authenticates the resource-server client and

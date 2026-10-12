@@ -39,7 +39,8 @@
     "@webdock/database-contracts": "*",
     "@webdock/mail-contracts": "*",
     "ipaddr.js": "2.3.0",
-    "@scalar/api-reference": "1.73.1"
+    "@scalar/api-reference": "1.73.1",
+    "@webdock/database-runtime": "*"
   },
   "devDependencies": {
     "@types/node": "^24",

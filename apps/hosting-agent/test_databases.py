@@ -1,7 +1,8 @@
 import copy
 from datetime import datetime,timedelta,timezone
 from unittest import TestCase
-from databases import validate_packet,backend_manifests,role_names,sql_configuration
+from databases import validate_packet,backend_manifests,role_names,sql_configuration,hba,execute_database
+from unittest.mock import patch
 
 
 def packet():
@@ -52,3 +53,29 @@ class DatabaseTests(TestCase):
         self.assertNotIn(' SUPERUSER',sql['roles'])
         self.assertNotIn(packet()['database']['credentials']['applicationPassword'],sql['enable'])
         self.assertIn('SCRAM-SHA-256$',sql['enable'])
+
+class PlatformDatabaseTests(TestCase):
+    def test_platform_service_pools_fit_the_existing_connection_budget(self):
+        p=packet();p['backend']['kind']='dedicated';p['database']['kind']='dedicated'
+        config={'image':'postgres@sha256:'+'a'*64,'poolerImage':'pgbouncer@sha256:'+'b'*64,'issuer':'issuer','apiCIDRs':['10.0.0.2/32'],'podCIDRs':['10.42.0.0/16'],'platformDatabases':{'300':['webdock_auth_runtime']}}
+        pooler=next(o for o in backend_manifests(p,config) if o['kind']=='Pooler')
+        self.assertEqual(pooler['spec']['pgbouncer']['parameters']['default_pool_size'],'1')
+        self.assertEqual(pooler['spec']['pgbouncer']['parameters']['max_db_connections'],'10')
+    def test_explicit_platform_logins_are_bound_to_one_dedicated_database(self):
+        p=packet();p['backend']['kind']='dedicated';p['database']['kind']='dedicated'
+        config={'platformDatabases':{'300':['webdock_auth_runtime','webdock_browser_website']}}
+        rows=hba(p,config)
+        self.assertIn('webdock_auth_runtime',rows[0]);self.assertIn('webdock_browser_website',rows[0]);self.assertTrue(rows[0].startswith('hostssl db_300 '))
+        p['members'][0]['enabled']=False;self.assertEqual(hba(p,config),['host all all all reject'])
+        other={'platformDatabases':{'301':['webdock_auth_runtime']}};p['members'][0]['enabled']=True;self.assertNotIn('webdock_auth_runtime',str(hba(p,other)))
+    def test_platform_database_cannot_hibernate_its_own_control_plane(self):
+        p=packet();p['backend']['kind']='dedicated';p['database']['kind']='dedicated';p['action']='pause'
+        with patch('databases.configuration',return_value={'platformDatabases':{'300':['webdock_auth_runtime']}}),patch('databases.get') as get:
+            with self.assertRaisesRegex(ValueError,'offline maintenance'):execute_database(p,lambda **kw:None)
+            get.assert_not_called()
+    def test_platform_member_is_protected_when_packet_omits_logical_database(self):
+        for action in ['pause','restart','resize','delete','purge','rotateCredentials','migrate']:
+            p=packet();p['backend']['kind']='dedicated';p['database']=None;p['action']=action
+            with self.subTest(action=action),patch('databases.configuration',return_value={'platformDatabases':{'300':['webdock_auth_runtime']}}),patch('databases.get') as get,patch('databases.purge_installation') as purge:
+                with self.assertRaisesRegex(ValueError,'offline maintenance'):execute_database(p,lambda **kw:None)
+                get.assert_not_called();purge.assert_not_called()

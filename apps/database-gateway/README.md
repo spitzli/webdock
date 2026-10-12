@@ -49,3 +49,72 @@ Build the gateway with `npm run build -w @webdock/database-gateway`, then build 
 The cluster's admission policy also requires the `security.webdock.dev/ready=true` namespace label. Set it only after applying and inspecting the rendered ResourceQuota, network policies and Restricted Pod Security labels. Build `deploy/TLS.Dockerfile` for the TLS sidecar: it removes Caddy's privileged-port file capability, allowing port 8443 with all capabilities dropped. No admission policy exemption is required.
 
 After authenticated runtime checks pass, the explicitly invoked offline Auth script `scripts/provision-database-browser.ts <private-inventory.json>` can register the verified schema-access grants. It requires `WEBDOCK_DATABASE_OPERATOR_ID`, an active MFA-enabled operator, and validates each subject's existing customer membership. Use the Auth production environment and keep inventory secrets out of logs/Git. Running it again replaces those grants and revokes their previous sessions through the revision increment.
+
+## Moving one PostgreSQL browser runtime
+
+The optional private inventory fields below enable verified database TLS and replace
+only that runtime's public-5432 egress rule. Keep its existing connection ID,
+binding, user, profile, proxy secret and state claim. Supply the target database
+credentials privately; the renderer never generates or changes them.
+
+For the existing browser cluster connecting to a separate database cluster:
+
+```json
+{
+  "databaseTLSCA": "/private/managed-postgres-ca.crt",
+  "databaseTarget": {
+    "host": "db-103217546630533120.pg.webdock.dev",
+    "port": 32000,
+    "addressIPv4": "79.143.177.157"
+  }
+}
+```
+
+Use the verified current endpoint/IP from deployment inventory. Egress allows only
+that public IPv4 `/32` and port, plus the existing DNS policy. The hostname remains
+the TLS verification identity; the renderer does not resolve it or change DNS.
+For a runtime in the same cluster, use this alternative target:
+
+```json
+{
+  "databaseTarget": {
+    "host": "postgres-rw.wd-db-103217546630533120.svc.cluster.local",
+    "namespace": "wd-db-103217546630533120",
+    "podLabels": { "cnpg.io/cluster": "postgres" }
+  }
+}
+```
+
+Both forms require `databaseTLSCA`, a public PEM certificate file (never a private
+key), and exactly one saved PostgreSQL connection. Its existing `params` must have
+matching `host` and `port` (5432 for internal targets), `ssl_mode: "verify-full"`
+and `ssl_ca: "/database-trust/ca.crt"`. Other connection values remain unchanged.
+The CA gets a per-runtime ConfigMap and read-only mount. Gateway-to-runtime TLS
+trust is unchanged. Incomplete, wildcard or inconsistent targets fail validation.
+
+Internal targets additionally produce `<output>.database-ingress.json`, containing
+only a separate database-side NetworkPolicy selecting the supplied database pods
+and allowing TCP 5432 from this exact runtime pod in `webdock-databases`. Apply it
+to the **database cluster** after review. External targets produce no ingress
+manifest. Always use a fresh output path to avoid confusing an older ingress file
+with the current render. Existing inventory rows without these fields retain
+legacy manifests, including customer runtime connections and network policies.
+
+For a targeted rollout, render to a fresh private mode-0600 path, then select only
+the affected runtime's Secret, Deployment, NetworkPolicy and new CA ConfigMap into
+a separate private manifest. Do not apply the entire rendered inventory: it also
+contains shared gateway resources, quotas and unrelated customer workloads. Run a
+server-side dry run and review the selected object names without printing Secret
+data. Confirm managed HBA and role lifecycle permit the dedicated browser login;
+the renderer does not grant database access. Revoke the affected browser grant,
+quiesce its runtime during final copy, apply the selected resources and restart
+only that deployment: the init container copies saved connections on pod startup.
+Verify authenticated SQL, schema browsing/editing, tenant denial and revocation
+before re-enabling the grant with a new revision. Keep the old private config for
+rollback; after target writes, rollback requires data reconciliation.
+
+Renderer validation (disposable certificates and synthetic credentials only):
+
+```sh
+python3 -m unittest discover -s apps/database-gateway/tests -p 'test_render.py'
+```

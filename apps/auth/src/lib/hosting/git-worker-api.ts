@@ -1,3 +1,6 @@
+import {createHash} from "node:crypto";
+import {withDatabaseScope} from "@webdock/database-runtime";
+import {authDatabase} from "../db";
 import { z } from "zod";
 import {
   HostingError,
@@ -71,7 +74,8 @@ export async function gitWorkerAPI(request: Request, path: string[]) {
       .get("authorization")
       ?.match(/^Bearer ([A-Za-z0-9_-]{43})$/)?.[1];
     if (!credential) throw new HostingError(401, "Invalid build worker.");
-    await transaction((db) => authenticateGitWorker(db, credential));
+    if (!(await authDatabase.query("SELECT 1 FROM webdock_auth.git_worker WHERE credential_hash=$1 AND enabled",[createHash("sha256").update(credential).digest("hex")])).rowCount) throw new HostingError(401,"Invalid build worker.");
+    return await withDatabaseScope({kind:"system",purpose:"git-worker"}, async () => {
     let data: unknown;
     if (
       request.method === "GET" &&
@@ -357,6 +361,7 @@ export async function gitWorkerAPI(request: Request, path: string[]) {
       }
     }
     return Response.json(data, { headers: { "Cache-Control": "no-store" } });
+    });
   } catch (error) {
     const safe = hostingError(error);
     return Response.json(

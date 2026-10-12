@@ -1,3 +1,4 @@
+import {withDatabaseScope} from "@webdock/database-runtime";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { MailServiceError } from "@webdock/mail-core";
@@ -53,7 +54,7 @@ export async function mailGateway(request: Request) {
     if(!browser && !worker)throw new HostingError(401,'Mail gateway authentication required.');
     const body = command.parse(await readHostingJSON(request, 65536));
     if(body.action.startsWith('send.')?!worker:(!browser && body.action!=='inspect'))throw new HostingError(403,'Mail control scope is unavailable.');
-    const data = await transaction<unknown>(db => {
+    const data = await withDatabaseScope({kind:"system",purpose: worker ? "mail-send-gateway" : "mail-webmail-gateway"},()=>transaction<unknown>(db => {
       if(body.action==='send.webmail.lookup')return lookupWebmailSend(db,body.token,body.emailID);
       if(body.action==='send.webmail.prepare')return prepareWebmailSend(db,body.submission);
       if(body.action==='send.webmail.stage')return stageWebmailSend(db,body.submission);
@@ -80,7 +81,7 @@ export async function mailGateway(request: Request) {
       if (body.action === "reserve") return reserveWebmailWrite(db, body.write);
       if (body.action === "finish") return finishWebmailWrite(db, body.write);
       return revokeWebmail(db, body.token);
-    });
+    }));
     return Response.json({ data }, { headers });
   } catch (error) {
     const status = error instanceof HostingError ? error.status : error instanceof MailServiceError ? 403 : error instanceof z.ZodError ? 400 : 503;

@@ -1,3 +1,4 @@
+import { withAuthenticatedDatabase } from './database-context';
 import {searchPage} from "@webdock/search";
 import { randomBytes } from "node:crypto";
 import { auth } from "./auth";
@@ -28,12 +29,16 @@ const name = (value: string | undefined) => {
   return result;
 };
 export async function requireAccessOperator(headers: Headers) {
+  return withAuthenticatedDatabase(headers, async () => {
+
   const session = await auth.api.getSession({ headers });
   if (!session || (await currentMCPClaims(session.user.id)).disabled)
     throw new AccessError(
       "Operator access with completed security setup is required.",
     );
   return session;
+
+  });
 }
 export function websiteURL(redirectUris: unknown) {
   if (!Array.isArray(redirectUris)) return null;
@@ -85,6 +90,8 @@ async function website(binding: string) {
   return row;
 }
 export async function listAccess(headers: Headers, search: string) {
+  return withAuthenticatedDatabase(headers, async () => {
+
   await requireAccessOperator(headers);
   const term=search.trim().slice(0,160);
   const query = `%${term}%`;
@@ -121,8 +128,12 @@ export async function listAccess(headers: Headers, search: string) {
     invitations: invitations.rows,
     events: events.rows,
   };
+
+  });
 }
 export async function accountSites(headers: Headers) {
+  return withAuthenticatedDatabase(headers, async () => {
+
   const session = await auth.api.getSession({ headers });
   if (!session) throw new AccessError("Sign in to view your websites.");
   const rows = (
@@ -142,11 +153,15 @@ export async function accountSites(headers: Headers) {
     }),
   );
   return sites.filter((site) => site !== null);
+
+  });
 }
 export async function manageAccess(
   headers: Headers,
   input: Record<string, string>,
 ): Promise<{ id?: string; message: string }> {
+  return withAuthenticatedDatabase(headers, async () => {
+
   const session = await requireAccessOperator(headers);
   const actions = [
     "create-organization",
@@ -346,4 +361,6 @@ export async function manageAccess(
     );
     throw error;
   }
+
+  });
 }

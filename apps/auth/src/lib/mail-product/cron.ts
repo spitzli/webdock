@@ -1,3 +1,4 @@
+import {withDatabaseScope} from "@webdock/database-runtime";
 import {createHash,timingSafeEqual} from 'node:crypto';import {mailJobs,runMailJob,type MailJob} from './jobs';
 export async function handleMailCron(request:Request,job:string,options:{env?:Record<string,string|undefined>;run?:typeof runMailJob}={}):Promise<Response>{
  const env=options.env??process.env,headers={'Cache-Control':'no-store'};
@@ -7,5 +8,5 @@ export async function handleMailCron(request:Request,job:string,options:{env?:Re
  if(!production||!env.CRON_SECRET)return new Response(null,{status:503,headers});
  const supplied=request.headers.get('authorization')??'',expected='Bearer '+env.CRON_SECRET;
  if(!timingSafeEqual(createHash('sha256').update(supplied).digest(),createHash('sha256').update(expected).digest()))return new Response(null,{status:401,headers});
- try{const result=await(options.run??runMailJob)(job as MailJob,new Date(Date.now()+45000));return Response.json(result,{status:result.failed?503:200,headers});}catch{return Response.json({job,failed:true},{status:503,headers});}
+ try{const result=await withDatabaseScope({kind:"system",purpose:"mail-cron"},()=> (options.run??runMailJob)(job as MailJob,new Date(Date.now()+45000)));return Response.json(result,{status:result.failed?503:200,headers});}catch{return Response.json({job,failed:true},{status:503,headers});}
 }

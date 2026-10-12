@@ -1,3 +1,4 @@
+import { withAuthenticatedDatabase } from './database-context';
 import { isIP } from "node:net";
 import { auth } from "./auth";
 import { database } from "./db";
@@ -22,13 +23,15 @@ async function accessToKeys(headers: Headers, customerID: string) {
 async function childAccount(customerID: string, dependencies: Dependencies) {
  const stored = (await database.query("SELECT provider_id,email,state FROM webdock_auth.mail_tenant_account WHERE customer_id=$1", [customerID])).rows[0];
  if (!stored?.provider_id || stored.state !== "ready") fail("A ready sending account is required. Ask your operator to complete setup.");
- const master = await (dependencies.provider || mailProvider)();
+ const master = await (dependencies.provider || (()=>mailProvider(undefined,customerID)))();
  const account = await master.getSubaccount(stored.provider_id);
  if (account.id !== stored.provider_id || account.email?.toLowerCase() !== stored.email.toLowerCase()) fail("The sending account could not be verified. Contact your operator.");
  const token = await master.authorizeSubaccount(stored.email);
  return { active: account.active, token, client: dependencies.childProvider ? dependencies.childProvider(token) : new TurboSMTPClient({ apiKey: token }) };
 }
 export async function getTenantMailKeys(headers: Headers, customerID: string, dependencies: Dependencies = {}) {
+  return withAuthenticatedDatabase(headers, async () => {
+
  const access = await accessToKeys(headers, customerID);
  try {
   const settings = await getPlatformSettings();
@@ -37,8 +40,12 @@ export async function getTenantMailKeys(headers: Headers, customerID: string, de
   await accessToKeys(headers, customerID);
   return { tenant: { id: String(access.tenant.id), name: String(access.tenant.name) }, operator: access.operator, enabled: settings.mailEnabled, active: child.active, smtpHost: settings.mailRegion === "eu" ? "pro.eu.turbo-smtp.com" : "pro.turbo-smtp.com", sendAPI: settings.mailRegion === "eu" ? "https://api.eu.turbo-smtp.com/api/v2/mail/send" : "https://api.turbo-smtp.com/api/v2/mail/send", keys: listed.results.filter(key => !isInternalMailKey(key.label)).map(({ consumerKey, label, creation_time, ips, is_legacy, permissions }) => ({ consumerKey, label, creation_time, ips, is_legacy, permissions })) };
  } catch (error) { if (error instanceof MailKeysError) throw error; fail("Could not load credentials. Contact your operator if this persists."); }
+
+  });
 }
 export async function manageTenantMailKeys(headers: Headers, customerID: string, input: MailKeyInput, dependencies: Dependencies = {}): Promise<{ message: string; created?: { consumerKey: string; consumerSecret: string } }> {
+  return withAuthenticatedDatabase(headers, async () => {
+
  const access = await accessToKeys(headers, customerID);
  if (!["create", "revoke"].includes(input.action)) fail("Unknown credential action.");
  const label = input.label?.trim() || "";
@@ -72,4 +79,6 @@ export async function manageTenantMailKeys(headers: Headers, customerID: string,
   if (error instanceof MailKeysError) throw error;
   fail("Could not complete this credential change. Refresh the list before retrying; a creation may have completed.");
  }
+
+  });
 }

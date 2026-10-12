@@ -1,3 +1,4 @@
+import {withMailDatabase} from "../database-context";
 import {MailError} from './access';
 export async function readBoundedText(request:Request,maxBytes=4_000_000):Promise<string>{
  if(!Number.isSafeInteger(maxBytes)||maxBytes<1||maxBytes>4_000_000)throw Error('Invalid JSON body limit');
@@ -24,9 +25,11 @@ import {consumeMailRate} from './rate-limit';import {mailDatabase as database} f
 export type MailRouteContext={params?:Promise<Record<string,string>>};
 export function mailEndpoint(permission:Permission,handler:(request:Request,actor:MailActor,context:{params:Record<string,string>;body:unknown})=>Promise<ApiResult>,route:string){
  return async(request:Request,context:MailRouteContext={}):Promise<Response>=>{
-  const started=Date.now();let requestID:string=randomUUID(),actor:MailActor|undefined,logID:string|undefined,body:unknown=null,result:ApiResult;
+  const started=Date.now();let requestID:string=randomUUID(),logID:string|undefined,body:unknown=null,result:ApiResult;
   try{
-   actor=await authorizeMailKey(request,permission);await consumeMailRate(actor,{requests:1,recipients:0,keys:0});
+   const actor=await authorizeMailKey(request,permission);
+   return await withMailDatabase(actor, async () => {
+   try { await consumeMailRate(actor,{requests:1,recipients:0,keys:0});
    logID=(await database.query('INSERT INTO webdock_auth.mail_request_log(customer_id,connection_id,key_id,route,method,status,duration_ms,request_id) VALUES($1,$2,$3,$4,$5,0,0,$6) RETURNING id',[actor.customerID,actor.connectionID,actor.principal.kind==='api_key'?actor.principal.keyID:null,route,request.method,requestID]).catch(()=>({rows:[]}))).rows[0]?.id;
    const accept=request.headers.get('accept');if(accept&&!accept.includes('application/json')&&!accept.includes('*/*'))throw new MailError(406,'not_acceptable','Request application/json');
    if(['POST','PATCH'].includes(request.method))body=request.body?await readBoundedJson(request):{};
@@ -39,5 +42,10 @@ export function mailEndpoint(permission:Permission,handler:(request:Request,acto
   if(result.body&&typeof result.body==='object'&&'request_id' in result.body&&typeof result.body.request_id==='string')requestID=result.body.request_id;
   if(logID)await database.query('UPDATE webdock_auth.mail_request_log SET status=$2,duration_ms=$3,request_id=$4,request_body=$5,response_body=$6 WHERE id=$1',[logID,result.status,Date.now()-started,requestID,JSON.stringify(redactMailLog(body)),JSON.stringify(redactMailLog(result.body))]).catch(()=>{});
   return Response.json(result.body,{status:result.status,headers:{'Cache-Control':'no-store','X-Request-ID':requestID,...(result.status===429?{'Retry-After':'60'}:{})}});
+   });
+  } catch(error) {
+   const status=error instanceof MailError?error.status:503;
+   return Response.json({statusCode:status,name:error instanceof MailError?error.code:"service_unavailable",message:error instanceof MailError?error.message:"Mail service is temporarily unavailable",request_id:requestID},{status,headers:{"Cache-Control":"no-store","X-Request-ID":requestID}});
+  }
  };
 }

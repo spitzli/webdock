@@ -1,3 +1,4 @@
+import {withDatabaseScope} from "@webdock/database-runtime";
 import { HostingError, hostingError } from "@webdock/hosting-contracts";
 import { parseGitHubWebhook } from "@/lib/hosting/git-github";
 import { receiveGitEvent } from "@/lib/hosting/git-deployments";
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
       request.headers,
       secret,
     );
-    const receipt = await receiveGitEvent(event);
+    const receipt = await withDatabaseScope({kind:"system",purpose:"git-webhook"},()=>receiveGitEvent(event));
     return Response.json(receipt, {
       status: 202,
       headers: { "Cache-Control": "no-store" },

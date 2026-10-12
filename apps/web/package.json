@@ -28,7 +28,8 @@
     "@webdock/instance-kit": "*",
     "@webdock/payload-sso": "*",
     "@webdock/cms-ui": "*",
-    "@webdock/i18n": "*"
+    "@webdock/i18n": "*",
+    "@webdock/database-runtime": "*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

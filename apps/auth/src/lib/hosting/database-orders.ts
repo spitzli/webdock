@@ -1,3 +1,4 @@
+import {assertDatabaseMaintenanceAllowed} from "./database-protection";
 import { randomBytes, createHash } from "node:crypto";
 import {
   databasePlanSchema,
@@ -18,7 +19,11 @@ import { clusterLock, audit } from "./db";
 import { replay, recordResult } from "./operations";
 import { encryptMailSecret } from "../platform";
 import { totals } from "./allowances";
-import { nativeClusterDemand } from "@webdock/mail-core/capacity";
+import {
+  nativeClusterDemand,
+  clusterCapacityDemand,
+  databasePoolCapacity,
+} from "@webdock/mail-core/capacity";
 type ClusterRecord = {
   id: string;
   revision: number;
@@ -67,12 +72,18 @@ type SourceRecord = {
   state: string;
 };
 export async function freshDatabaseCluster(db: Connection, clusterID: string) {
-  const c = (
-    await db.query<ClusterRecord>(
-      "SELECT c.*,a.last_seen,a.revoked,a.observation FROM webdock_auth.hosting_cluster c JOIN webdock_auth.hosting_agent a ON a.cluster_id=c.id WHERE c.id=$1",
-      [resourceID.parse(clusterID)],
-    )
-  ).rows[0];
+  const c: ClusterRecord | undefined = process.env.DATABASE_RLS_SECRET
+    ? (
+        await db.query("SELECT webdock_rls.cluster_snapshot($1) AS cluster", [
+          resourceID.parse(clusterID),
+        ])
+      ).rows[0]?.cluster
+    : (
+        await db.query<ClusterRecord>(
+          "SELECT c.*,a.last_seen,a.revoked,a.observation FROM webdock_auth.hosting_cluster c JOIN webdock_auth.hosting_agent a ON a.cluster_id=c.id WHERE c.id=$1",
+          [resourceID.parse(clusterID)],
+        )
+      ).rows[0];
   if (
     !c ||
     c.ownership !== "platform" ||
@@ -182,14 +193,16 @@ export async function createDatabaseBackend(
     replicasPerApp: 1,
     concurrentDeployments: 1,
   };
-  const apps = totals(
-    (
-      await db.query(
-        "SELECT demand,status FROM webdock_auth.hosting_reservation WHERE cluster_id=$1 AND status<>'released'",
-        [clusterID],
-      )
-    ).rows,
-  );
+  const apps = process.env.DATABASE_RLS_SECRET
+    ? await clusterCapacityDemand(db, clusterID, "apps")
+    : totals(
+        (
+          await db.query(
+            "SELECT demand,status FROM webdock_auth.hosting_reservation WHERE cluster_id=$1 AND status<>'released'",
+            [clusterID],
+          )
+        ).rows,
+      );
   const native = await nativeClusterDemand(db, clusterID);
   const cap = normalizeHostingAllowances(c.capacity);
   for (const k of hostingDimensions) {
@@ -203,18 +216,25 @@ export async function createDatabaseBackend(
         "Cluster capacity is insufficient for this database.",
       );
   }
-  const physical = (
-    await db.query(
-      "SELECT id,node,pool_id,demand FROM webdock_auth.hosting_database_backend WHERE cluster_id=$1 AND state<>'purged'",
-      [clusterID],
-    )
-  ).rows;
-  const registered = (
-    await db.query(
-      "SELECT node,pool_id,capacity_bytes FROM webdock_auth.hosting_database_pool WHERE cluster_id=$1",
-      [clusterID],
-    )
-  ).rows;
+  const physical = process.env.DATABASE_RLS_SECRET
+    ? []
+    : (
+        await db.query(
+          "SELECT id,node,pool_id,demand FROM webdock_auth.hosting_database_backend WHERE cluster_id=$1 AND state<>'purged'",
+          [clusterID],
+        )
+      ).rows;
+  const aggregatePools = process.env.DATABASE_RLS_SECRET
+    ? await databasePoolCapacity(db, clusterID)
+    : null;
+  const registered =
+    aggregatePools ??
+    (
+      await db.query(
+        "SELECT node,pool_id,capacity_bytes FROM webdock_auth.hosting_database_pool WHERE cluster_id=$1",
+        [clusterID],
+      )
+    ).rows;
   const pools = c.observation.capabilities.databasePools ?? [];
   const pool = pools.find((p) => {
     if (
@@ -228,17 +248,26 @@ export async function createDatabaseBackend(
       (selected && (p.node !== selected.node || p.poolID !== selected.poolID))
     )
       return false;
-    const held = physical
-      .filter((r) => r.node === p.node)
-      .reduce(
-        (n, r) => ({
-          cpu: n.cpu + r.demand.cpuMillicores,
-          memory: n.memory + r.demand.memoryBytes,
-          volume:
-            n.volume + (r.pool_id === p.poolID ? r.demand.volumeBytes : 0),
-        }),
-        { cpu: 0, memory: 0, volume: 0 },
-      );
+    const aggregated = aggregatePools?.find(
+      (r) => r.node === p.node && r.pool_id === p.poolID,
+    );
+    const held = aggregated
+      ? {
+          cpu: aggregated.held_cpu,
+          memory: aggregated.held_memory,
+          volume: aggregated.held_volume,
+        }
+      : physical
+          .filter((r) => r.node === p.node)
+          .reduce(
+            (n, r) => ({
+              cpu: n.cpu + r.demand.cpuMillicores,
+              memory: n.memory + r.demand.memoryBytes,
+              volume:
+                n.volume + (r.pool_id === p.poolID ? r.demand.volumeBytes : 0),
+            }),
+            { cpu: 0, memory: 0, volume: 0 },
+          );
     const node = c.observation.nodes.find((n) => n.id === p.node);
     if (!node) return false;
     const known = new Set(
@@ -247,11 +276,17 @@ export async function createDatabaseBackend(
     const actual = (p.observedDatabases ?? []).filter((r) =>
       known.has(r.installationID),
     );
-    const knownCPU = actual.reduce((sum, r) => sum + r.cpuMillicores, 0),
-      knownMemory = actual.reduce((sum, r) => sum + r.memoryBytes, 0);
-    const allocated = (p.allocations ?? [])
-      .filter((r) => known.has(r.installationID))
-      .reduce((sum, r) => sum + r.volumeBytes, 0);
+    const knownCPU =
+        aggregated?.known_cpu ??
+        actual.reduce((sum, r) => sum + r.cpuMillicores, 0),
+      knownMemory =
+        aggregated?.known_memory ??
+        actual.reduce((sum, r) => sum + r.memoryBytes, 0);
+    const allocated =
+      aggregated?.allocated ??
+      (p.allocations ?? [])
+        .filter((r) => known.has(r.installationID))
+        .reduce((sum, r) => sum + r.volumeBytes, 0);
     const unknownVolume = Math.max(0, (p.allocatedBytes ?? 0) - allocated),
       pending = Math.max(0, held.volume - allocated);
     return (
@@ -408,18 +443,26 @@ export async function acceptDatabaseOrder(
       )
     ).rows;
     for (const candidate of candidates) {
-      const use = (
-        await db.query(
-          "SELECT count(*)::int AS count,COALESCE(sum((p.plan->>'logicalStorageAllowanceBytes')::bigint),0)::text AS bytes FROM webdock_auth.hosting_database d JOIN webdock_auth.hosting_database_plan p ON p.id=COALESCE(d.pending_plan_revision_id,d.plan_revision_id) WHERE d.backend_id=$1 AND d.state<>'purged'",
-          [candidate.id],
-        )
-      ).rows[0];
-      const retained = (
-        await db.query(
-          "SELECT count(*)::int AS count,COALESCE(sum(source_allowance_bytes),0)::text AS bytes FROM webdock_auth.hosting_database_migration WHERE source_backend_id=$1 AND state='retained'",
-          [candidate.id],
-        )
-      ).rows[0];
+      const use = process.env.DATABASE_RLS_SECRET
+        ? (
+            await db.query("SELECT * FROM webdock_rls.capacity_slots($1)", [
+              candidate.id,
+            ])
+          ).rows[0]
+        : (
+            await db.query(
+              "SELECT count(*)::int AS count,COALESCE(sum((p.plan->>'logicalStorageAllowanceBytes')::bigint),0)::text AS bytes FROM webdock_auth.hosting_database d JOIN webdock_auth.hosting_database_plan p ON p.id=COALESCE(d.pending_plan_revision_id,d.plan_revision_id) WHERE d.backend_id=$1 AND d.state<>'purged'",
+              [candidate.id],
+            )
+          ).rows[0];
+      const retained = process.env.DATABASE_RLS_SECRET
+        ? { count: 0, bytes: "0" }
+        : (
+            await db.query(
+              "SELECT count(*)::int AS count,COALESCE(sum(source_allowance_bytes),0)::text AS bytes FROM webdock_auth.hosting_database_migration WHERE source_backend_id=$1 AND state='retained'",
+              [candidate.id],
+            )
+          ).rows[0];
       if (
         use.count + retained.count < candidate.max_databases &&
         BigInt(use.bytes) +
@@ -537,6 +580,7 @@ async function acceptUpgrade(
       [d.backend_id],
     )
   ).rows[0];
+  assertDatabaseMaintenanceAllowed(d.id,"upgrade");
   const old = databasePlanSchema.parse(d.plan);
   if (plan.kind !== d.kind || plan.volumeBytes !== old.volumeBytes)
     return acceptMigration(
@@ -554,12 +598,19 @@ async function acceptUpgrade(
   if (plan.kind === "shared") {
     if (plan.logicalStorageAllowanceBytes! < old.logicalStorageAllowanceBytes!)
       throw new HostingError(409, "Storage allowance cannot shrink.");
-    const used = (
-      await db.query(
-        "SELECT COALESCE(sum((p.plan->>'logicalStorageAllowanceBytes')::bigint),0)::text AS bytes FROM webdock_auth.hosting_database d JOIN webdock_auth.hosting_database_plan p ON p.id=COALESCE(d.pending_plan_revision_id,d.plan_revision_id) WHERE d.backend_id=$1 AND d.id<>$2 AND d.state<>'purged'",
-        [backend.id, d.id],
-      )
-    ).rows[0].bytes;
+    const used = process.env.DATABASE_RLS_SECRET
+      ? (
+          await db.query("SELECT * FROM webdock_rls.capacity_slots($1,$2)", [
+            backend.id,
+            d.id,
+          ])
+        ).rows[0].bytes
+      : (
+          await db.query(
+            "SELECT COALESCE(sum((p.plan->>'logicalStorageAllowanceBytes')::bigint),0)::text AS bytes FROM webdock_auth.hosting_database d JOIN webdock_auth.hosting_database_plan p ON p.id=COALESCE(d.pending_plan_revision_id,d.plan_revision_id) WHERE d.backend_id=$1 AND d.id<>$2 AND d.state<>'purged'",
+            [backend.id, d.id],
+          )
+        ).rows[0].bytes;
     if (
       BigInt(used) + BigInt(plan.logicalStorageAllowanceBytes!) >
       BigInt(backend.logical_capacity_bytes)
@@ -581,14 +632,16 @@ async function acceptUpgrade(
     const c = await freshDatabaseCluster(db, clusterID),
       cap = normalizeHostingAllowances(c.capacity),
       native = await nativeClusterDemand(db, clusterID);
-    const apps = totals(
-      (
-        await db.query(
-          "SELECT demand,status FROM webdock_auth.hosting_reservation WHERE cluster_id=$1 AND status<>'released'",
-          [clusterID],
-        )
-      ).rows,
-    );
+    const apps = process.env.DATABASE_RLS_SECRET
+      ? await clusterCapacityDemand(db, clusterID, "apps")
+      : totals(
+          (
+            await db.query(
+              "SELECT demand,status FROM webdock_auth.hosting_reservation WHERE cluster_id=$1 AND status<>'released'",
+              [clusterID],
+            )
+          ).rows,
+        );
     const pool = c.observation.capabilities.databasePools?.find(
       (p) => p.node === backend.node && p.poolID === backend.pool_id && p.ready,
     );
@@ -598,12 +651,24 @@ async function acceptUpgrade(
         409,
         "Database placement requires a fresh qualified storage node.",
       );
-    const held = (
-      await db.query(
-        "SELECT id,demand FROM webdock_auth.hosting_database_backend WHERE cluster_id=$1 AND node=$2 AND state<>'purged'",
-        [clusterID, backend.node],
-      )
-    ).rows;
+    const aggregatePool = process.env.DATABASE_RLS_SECRET
+      ? (await databasePoolCapacity(db, clusterID)).find(
+          (r) => r.node === backend.node && r.pool_id === backend.pool_id,
+        )
+      : null;
+    if (process.env.DATABASE_RLS_SECRET && !aggregatePool)
+      throw new HostingError(
+        409,
+        "Database placement capacity is unavailable.",
+      );
+    const held = process.env.DATABASE_RLS_SECRET
+      ? []
+      : (
+          await db.query(
+            "SELECT id,demand FROM webdock_auth.hosting_database_backend WHERE cluster_id=$1 AND node=$2 AND state<>'purged'",
+            [clusterID, backend.node],
+          )
+        ).rows;
     for (const key of ["cpuMillicores", "memoryBytes"] as const) {
       if (cap[key] === null || apps[key] + native[key] + delta[key] > cap[key]!)
         throw new HostingError(
@@ -615,10 +680,18 @@ async function acceptUpgrade(
           ? pool.requestedCpuMillicores
           : pool.requestedMemoryBytes;
       const known = new Set(held.map((r) => r.id));
-      const observed = (pool.observedDatabases ?? [])
-        .filter((r) => known.has(r.installationID))
-        .reduce((sum, r) => sum + r[key], 0);
-      const reserved = held.reduce((sum, r) => sum + r.demand[key], 0);
+      const observed = aggregatePool
+        ? key === "cpuMillicores"
+          ? aggregatePool.known_cpu
+          : aggregatePool.known_memory
+        : (pool.observedDatabases ?? [])
+            .filter((r) => known.has(r.installationID))
+            .reduce((sum, r) => sum + r[key], 0);
+      const reserved = aggregatePool
+        ? key === "cpuMillicores"
+          ? aggregatePool.held_cpu
+          : aggregatePool.held_memory
+        : held.reduce((sum, r) => sum + r.demand[key], 0);
       if (
         Math.max(0, requested - observed) + reserved + apps[key] + delta[key] >
         Math.floor(node[key] * 0.8)

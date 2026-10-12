@@ -1,3 +1,4 @@
+import { withAuthenticatedDatabase } from '../database-context';
 import type {MailActor,MailCapability,Permission} from '@webdock/mail-contracts';
 import type {PoolClient} from 'pg';
 import {parseID} from '@webdock/mail-contracts/validation';
@@ -48,9 +49,13 @@ export async function assertMailAccess(actor:MailActor,capability:MailCapability
  }
 }
 export async function authorizeMailSession(headers:Headers,customerID:string,connectionID:string,capability:MailCapability):Promise<MailActor>{
+  return withAuthenticatedDatabase(headers, async () => {
+
  const session=await auth.api.getSession({headers});if(!session)mailUnavailable();
  const actor:MailActor={customerID,connectionID,principal:{kind:'session',userID:session.user.id,sessionID:session.session.id}};
  await assertMailAccess(actor,capability);return actor;
+
+  });
 }
 export async function authorizeMailKey(request:Request,permission:Permission):Promise<MailActor>{
  const {authorizeMailKey:authorize}=await import('./api-keys');return authorize(request,permission);

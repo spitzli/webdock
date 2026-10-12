@@ -1,3 +1,4 @@
+import { withAuthenticatedDatabase } from './database-context';
 import { getMailService, requestMailService, MailServiceError } from "@webdock/mail-core";
 import { database } from "./db";
 import { getTenant } from "./tenants";
@@ -6,15 +7,21 @@ import { getPlatformSettings } from "./platform";
 export { MailServiceError };
 
 export async function getTenantMailService(headers: Headers, customerID: string) {
+  return withAuthenticatedDatabase(headers, async () => {
+
   const access = await getTenant(headers, customerID);
   if (process.env.WEBDOCK_NATIVE_MAIL_ENABLED !== "true") return null;
   const [service, settings] = await Promise.all([getMailService(database, customerID), getPlatformSettings()]);
   const verified = access.operator && service.state === "needs_review" && (await database.query("SELECT customer_id FROM webdock_mail.instance WHERE customer_id=$1 AND verified_at IS NOT NULL", [customerID])).rowCount;
   return { service, mailboxesAvailable: process.env.WEBDOCK_NATIVE_MAILBOXES_ENABLED === "true", sendingAvailable: process.env.WEBDOCK_NATIVE_MAIL_SENDING_ENABLED === "true", canReconcile: Boolean(verified) && (!service.enabled || (access.tenant.status === "active" && settings.mailEnabled)), canActivate: access.operator && access.tenant.status === "active" && settings.mailEnabled,
     canSuspend: access.operator && service.enabled };
+
+  });
 }
 
 export async function manageTenantMailService(headers: Headers, customerID: string, input: Record<string, string>) {
+  return withAuthenticatedDatabase(headers, async () => {
+
   if (process.env.WEBDOCK_NATIVE_MAIL_ENABLED !== "true") throw new MailServiceError("Native Mail is not available yet.");
   const session = await requireAccessOperator(headers);
   await getTenant(headers, customerID);
@@ -27,4 +34,6 @@ export async function manageTenantMailService(headers: Headers, customerID: stri
   return { message: result.state === "needs_review" ? "Mail change recorded. An operator must reconcile the existing operation."
     : result.state === "pending" || result.state === "provisioning" ? "Mail change queued. Existing mailbox data will be retained."
     : "Mail settings are unchanged." };
+
+  });
 }
