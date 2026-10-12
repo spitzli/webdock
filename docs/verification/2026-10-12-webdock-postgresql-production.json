@@ -1,0 +1,110 @@
+{
+  "mergeSHA": "6b3e76e5c779b3c9227923a1b203e18191ed1c2f",
+  "pullRequest": 12,
+  "customerID": "103216044377636864",
+  "projectID": "103216298636345344",
+  "planID": "103217262441271296",
+  "clusterID": "102835722657992704",
+  "node": "wd-eu-02",
+  "poolID": "00f527e4-8a81-43c6-9d0e-ab548cedc290",
+  "dns": "*.pg.webdock.dev",
+  "address": "79.143.177.157",
+  "backups": "not-configured",
+  "database": {
+    "id": "103217546714419200",
+    "name": "Webdock Plattform",
+    "state": "ready",
+    "backend_id": "103217546630533120",
+    "operation_id": "103217546781528064",
+    "host": "db-103217546630533120.pg.webdock.dev",
+    "direct_port": 32000,
+    "pooled_port": 32001,
+    "cnpg_uid": "07eae67e-02f1-4f93-a258-14f42af7d3b1"
+  },
+  "verifiedAt": "2026-10-12T19:55:00.405Z",
+  "schemas": [
+    "webdock_auth",
+    "webdock_admin",
+    "webdock",
+    "webdock_mail"
+  ],
+  "existingDataMigrated": false,
+  "publicCatalogEnabled": false,
+  "availability": "operator-pilot",
+  "postgresMemoryBytes": 1073741824,
+  "volumeBytes": 10737418240,
+  "poolCapacityBytes": 34359738368,
+  "appPoolBytes": 115640261632,
+  "clusterStorageBytes": 430000000000,
+  "hostReserveBytes": 20000000000,
+  "clientVerification": {
+    "observedAt": "2026-10-12T19:55:00.405Z",
+    "environment": "production",
+    "client": "pg",
+    "connections": [
+      {
+        "port": 32000,
+        "role": "wd_app_103217546714419200",
+        "tls": true,
+        "schemas": [
+          "webdock",
+          "webdock_admin",
+          "webdock_auth",
+          "webdock_mail"
+        ]
+      },
+      {
+        "port": 32000,
+        "role": "wd_migrate_103217546714419200",
+        "tls": true,
+        "schemas": [
+          "webdock",
+          "webdock_admin",
+          "webdock_auth",
+          "webdock_mail"
+        ]
+      },
+      {
+        "port": 32001,
+        "role": "wd_app_103217546714419200",
+        "tls": true,
+        "schemas": [
+          "webdock",
+          "webdock_admin",
+          "webdock_auth",
+          "webdock_mail"
+        ]
+      },
+      {
+        "port": 32001,
+        "role": "wd_migrate_103217546714419200",
+        "tls": true,
+        "schemas": [
+          "webdock",
+          "webdock_admin",
+          "webdock_auth",
+          "webdock_mail"
+        ]
+      }
+    ],
+    "badPasswordDenied": true,
+    "badHostnameDenied": true,
+    "existingDataMigrated": false
+  },
+  "deployment": {
+    "auth": "webdock-auth-gob52roo8-spitzli.vercel.app",
+    "studio": "webdock-admin-ec20jad9p-spitzli.vercel.app",
+    "state": "READY",
+    "commit": "6b3e76e5c779b3c9227923a1b203e18191ed1c2f"
+  },
+  "preservedSourceHashes": {
+    "storage.py": "32844f9cb71bad27a57d2f984b546c01667b58d5f9e4839ecad1bf6ee67d0a1e",
+    "storage_service.py": "b58c116386cb534af27a450b8e0ec6a1d4cf26c25bf7e0478e85abe1b9a3bf93"
+  },
+  "privateCA": true,
+  "publicPorts": [
+    32000,
+    32001
+  ],
+  "local24HourPilot": "still running, not complete"
+}
