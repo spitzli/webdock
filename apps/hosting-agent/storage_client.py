@@ -5,8 +5,8 @@ import socket
 import stat
 
 
-def request(action, value):
-    path=os.environ.get('WEBDOCK_STORAGE_SOCKET','/run/webdock-storage/control.sock')
+def request(action, value, socket_path=None):
+    path=socket_path or os.environ.get('WEBDOCK_STORAGE_SOCKET','/run/webdock-storage/control.sock')
     info=os.stat(path,follow_symlinks=False)
     if not stat.S_ISSOCK(info.st_mode) or info.st_uid!=0 or info.st_mode & 0o077:raise ValueError('Unsafe storage socket')
     with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as client:

@@ -7,7 +7,7 @@ export function mainArea(path: string, operator: boolean): string | null {
     if (within(path, '/tenants') || within(path, '/hosting')) return 'workspace';
     return null;
   }
-  if (path === '/' || ['/projects', '/sites', '/hosting/projects', '/hosting/apps'].some(base => within(path, base))) return 'projects';
+  if (path === '/' || ['/projects', '/sites', '/hosting/projects', '/hosting/apps', '/hosting/databases'].some(base => within(path, base))) return 'projects';
   if (['/customers', '/tenants', '/hosting/clusters', '/hosting/vercel'].some(base => within(path, base))) return 'customers';
   if (['/operations', '/infrastructure', '/activity', '/hosting/operations'].some(base => within(path, base))) return 'operations';
   if (within(path, '/people')) return 'people';

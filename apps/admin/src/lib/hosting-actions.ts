@@ -162,7 +162,8 @@ export async function saveHosting(
     }
     if (base.action === "apps.scale")
       cmd.replicas = Number(form.get("replicas"));
-    if (base.action === "apps.delete" || base.action === "apps.purgeStorage")
+    if (base.action === "databases.plans.setAvailability") cmd.availability = String(form.get("availability"));
+    if (base.action === "databases.purgeMigrationSource" || base.action === "databases.delete" || base.action === "databases.purge" || base.action === "apps.delete" || base.action === "apps.purgeStorage")
       cmd.confirmName = String(form.get("confirmName") ?? "");
     const result = await hostingCall<{
       setupPath?: string;
@@ -172,7 +173,7 @@ export async function saveHosting(
       status?: string;
       revision?: number;
     }>(commandSchema.parse(cmd));
-    revalidatePath("/infrastructure");
+    revalidatePath("/infrastructure", "layout");
     revalidatePath("/hosting", "layout");
     revalidatePath("/customers", "layout");
     revalidatePath("/tenants", "layout");

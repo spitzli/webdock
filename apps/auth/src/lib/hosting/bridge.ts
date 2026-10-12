@@ -1,3 +1,4 @@
+import {displayDatabaseCredentials} from "./database-credentials";
 import { z } from "zod";
 import { gitOAuthCommandSchema } from "@webdock/hosting-contracts/git-oauth";
 import { executeGitOAuth } from "./git-oauth";
@@ -22,6 +23,7 @@ const bodySchema = z
     command: z.union([
       commandSchema,
       gitOAuthCommandSchema,
+      z.object({action:z.literal("databases.credentials.display"),databaseID:resourceID}).strict(),
       z
         .object({
           action: z.literal("enrollment.display"),
@@ -119,7 +121,9 @@ export async function hostingBridge(request: Request) {
     const input = bodySchema.parse(await readHostingJSON(request));
     const actor = await hostingIdentity(request, input.accessToken);
     const data =
-      input.command.action === "enrollment.display"
+      input.command.action === "databases.credentials.display"
+        ? await displayDatabaseCredentials(actor,input.command.databaseID)
+        : input.command.action === "enrollment.display"
         ? await issueEnrollment(actor, input.command.enrollmentID)
         : input.command.action.startsWith("git.oauth.")
           ? await executeGitOAuth(actor, gitOAuthCommandSchema.parse(input.command))

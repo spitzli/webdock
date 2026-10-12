@@ -1,4 +1,6 @@
 import { AreaNavigation } from "@/components/area-navigation";
+import {hostingPageCall} from "@/lib/hosting-client";
+import type {DatabaseBillingView} from "@webdock/hosting-contracts";
 import {uiLabel} from "@/lib/ui-labels";
 
 import { getRequestI18n } from '@webdock/i18n/next';
@@ -55,6 +57,7 @@ export default async function Usage({
   const query = await searchParams;
   const view = tenantData.operator && (query.view === "plan" || query.view === "sources") ? query.view : "overview";
   const base = `/tenants/${customerID}/usage`;
+  const databases=await hostingPageCall<DatabaseBillingView>({action:'databases.orders.list',customerID},`/tenants/${customerID}/usage`);
   const storageLimit = data.subscription?.effective.storageBytes;
   return (
     <div className="access-page">
@@ -140,6 +143,11 @@ export default async function Usage({
           </p>
           <p className="muted">{i18n.t("Transfer usage is not currently measured here.")}</p>
         </section>
+      <section className="auth-panel"><h2>{i18n.t("Managed PostgreSQL billing")}</h2>
+        <p>{new Intl.NumberFormat(i18n.locale,{style:'currency',currency:'EUR'}).format(databases.activeMonthlyNetCents/100)} {i18n.t("net / month")}</p>
+        <p>{i18n.t("Accepted orders start billing only after confirmed provisioning. Invoice handling remains manual.")}</p>
+        {databases.orders.map(order=><div key={order.id}><p>{order.databaseID?<Link href={`/hosting/databases/${order.databaseID}`}>{order.name}</Link>:order.name} · {new Intl.NumberFormat(i18n.locale,{style:'currency',currency:'EUR'}).format(order.monthlyPriceCents/100)} {i18n.t("net / month")}</p><p>{order.endedAt?i18n.t("Ended"):order.billingStartedAt?i18n.t("Active"):i18n.t("Awaiting provisioning")}{order.billingStartedAt?` · ${i18n.date(order.billingStartedAt)}`:''}</p></div>)}
+      </section>
       </div>}
       {view === "sources" && <section className="account-section">
         <h2>{i18n.t("Storage measurements")}</h2>

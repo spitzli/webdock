@@ -20,7 +20,7 @@ test("lifecycle authenticates, binds its preview, isolates deletion and proves r
   const original = { ...row };
   const events = new Set<string>();
   const statements: string[] = [];
-  let failDelete = false, managedHosting = false;
+  let failDelete = false, managedHosting = false, managedPostgres = false;
   t.mock.method(auth, "handler", async (request: Request) => {
     const body = new URLSearchParams(await request.text());
     assert.equal(body.get("client_id"), "123");
@@ -38,6 +38,7 @@ test("lifecycle authenticates, binds its preview, isolates deletion and proves r
       statements.push(sql);
       if (sql.startsWith('SELECT s.id')) return { rows: activeSession ? [{ id: "session" }] : [] };
       if (sql.startsWith('SELECT session_id')) return { rows: preview ? [{}] : [] };
+      if (sql.includes('FROM webdock_auth.hosting_database_offer')) return {rows:managedPostgres?[{project_id:'222'}]:[]};
       if (sql.startsWith('SELECT project_id FROM webdock_auth.hosting_project')) return {rows:managedHosting?[{project_id:'222'}]:[]};
       if (sql.startsWith('SELECT customer_id,url FROM webdock_admin.projects')) return {rows:[{customer_id:'999',url:'https://demo.example'}]};
       if (sql.startsWith('SELECT b.id')) return { rows: row ? [row] : [] };
@@ -53,6 +54,11 @@ test("lifecycle authenticates, binds its preview, isolates deletion and proves r
   assert.equal((await call()).status,409,'older clients cannot bypass managed-hosting protection');
   assert.equal(statements.some(sql=>sql.startsWith('DELETE')),false);
   managedHosting=false;
+  managedPostgres=true;
+  assert.equal((await call({projectID:'222'})).status,409,'PostgreSQL history must block deletion before external side effects');
+  assert.equal((await call()).status,409,'older clients cannot bypass PostgreSQL protection');
+  assert.equal(statements.some(sql=>sql.startsWith('DELETE')),false);
+  managedPostgres=false;
   assert.equal((await call({}, "Bearer invalid")).status, 401);
   introspectionOK = false; assert.equal((await call()).status, 401); introspectionOK = true;
   role = "admin"; assert.equal((await call()).status, 403); role = "operator";

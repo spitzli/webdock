@@ -99,7 +99,7 @@ export async function claimOperation(agent: Agent) {
     );
     const row = (
       await db.query(
-        `SELECT o.* FROM webdock_auth.hosting_operation o WHERE o.cluster_id=$1 AND o.status='queued' AND o.action<>'byok.workload'
+        `SELECT o.* FROM webdock_auth.hosting_operation o WHERE o.cluster_id=$1 AND o.status='queued' AND o.action<>'byok.workload' AND o.action NOT LIKE 'databases.%'
  AND (o.desired->>'storageVersion' IS DISTINCT FROM '1' OR EXISTS(SELECT 1 FROM webdock_auth.hosting_agent a WHERE a.cluster_id=o.cluster_id AND a.observation->'capabilities'->>'storageVersion'='1' AND (a.observation->'capabilities'->>'storage'='true' OR o.action IN ('apps.delete','apps.purgeStorage','apps.logs'))))
  AND (o.desired->>'environmentVersion' IS DISTINCT FROM '1' OR EXISTS(SELECT 1 FROM webdock_auth.hosting_agent a WHERE a.cluster_id=o.cluster_id AND a.observation->'capabilities'->>'environment'='true'))
  AND NOT EXISTS(SELECT 1 FROM webdock_auth.hosting_operation busy WHERE busy.project_id=o.project_id AND (busy.status='running' OR (busy.status='needs-reconciliation' AND o.action<>'apps.logs')))

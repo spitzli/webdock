@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {redirect} from "next/navigation";
 import {formatResource} from "@webdock/hosting-contracts";
 import { HostingAllowanceFields,HostingAllowanceList } from "@/components/hosting/allowances";
@@ -27,6 +28,7 @@ export default async function Cluster({
       <div className="page-heading">
         <div>
           <h1>{c.name}</h1>
+          <Link className="button secondary" href={`/infrastructure/${clusterID}/databases`}>{t("PostgreSQL operator management")}</Link>
           <p>
             {c.provider} · {c.region}, {c.country ?? t("Country unverified")}
           </p>

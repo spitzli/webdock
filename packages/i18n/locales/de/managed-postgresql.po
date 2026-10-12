@@ -1,0 +1,359 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Webdock\n"
+"PO-Revision-Date: 2026-10-12 18:00+0200\n"
+"Last-Translator: Webdock\n"
+"Language-Team: German\n"
+"MIME-Version: 1.0\n"
+"Language: de\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Add database"
+msgstr "Datenbank hinzufügen"
+
+msgid "All project databases"
+msgstr "Alle Projektdatenbanken"
+
+msgid "Application role"
+msgstr "Anwendungsrolle"
+
+msgid "Availability"
+msgstr "Verfügbarkeit"
+
+msgid "Backup TODO"
+msgstr "Backups: noch offen"
+
+msgid "Backups"
+msgstr "Datensicherungen"
+
+msgid "Backups are not configured. No recovery window is included."
+msgstr "Backups sind nicht eingerichtet. Ein Wiederherstellungszeitraum ist nicht enthalten."
+
+msgid "Backups are not configured. Permanent deletion cannot be undone."
+msgstr "Backups sind nicht eingerichtet. Eine endgültige Löschung kann nicht rückgängig gemacht werden."
+
+msgid "Billing starts after confirmed provisioning. Pausing does not reduce the monthly price."
+msgstr "Die Abrechnung beginnt nach bestätigter Bereitstellung. Pausieren verringert den Monatspreis nicht."
+
+msgid "Bounded database filesystem"
+msgstr "Begrenztes Datenbank-Dateisystem"
+
+msgid "Cancellation requested. Retained data is deleted separately by an operator."
+msgstr "Kündigung angefordert. Aufbewahrte Daten werden separat durch einen Betreiber gelöscht."
+
+msgid "Connection credentials"
+msgstr "Verbindungsdaten"
+
+msgid "Contract terms"
+msgstr "Vertragsbedingungen"
+
+msgid "Copy password"
+msgstr "Passwort kopieren"
+
+msgid "Create disabled plan"
+msgstr "Deaktivierten Tarif anlegen"
+
+msgid "Create shared pool"
+msgstr "Shared-Pool anlegen"
+
+msgid "Customer self-service"
+msgstr "Kundenselbstbedienung"
+
+msgid "Database"
+msgstr "Datenbank"
+
+msgid "Database actions"
+msgstr "Datenbankaktionen"
+
+msgid "Database catalog"
+msgstr "Datenbankkatalog"
+
+msgid "Database installations"
+msgstr "Datenbankinstallationen"
+
+msgid "Database kind"
+msgstr "Datenbankart"
+
+msgid "Database plan"
+msgstr "Datenbanktarif"
+
+msgid "Database plan saved as disabled."
+msgstr "Datenbanktarif wurde deaktiviert gespeichert."
+
+msgid "Dedicated PostgreSQL process and bounded database filesystem."
+msgstr "Eigener PostgreSQL-Prozess und begrenztes Datenbank-Dateisystem."
+
+msgid "Dedicated instance"
+msgstr "Eigene Instanz"
+
+msgid "Direct / pooled port"
+msgstr "Direkter Port / Pooler-Port"
+
+msgid "Download CA certificate"
+msgstr "CA-Zertifikat herunterladen"
+
+msgid "End service and retain data"
+msgstr "Dienst beenden und Daten aufbewahren"
+
+msgid "External backups, WAL archiving, PITR and restore verification are deferred. No backup service is active."
+msgstr "Externe Backups, WAL-Archivierung, zeitpunktbezogene Wiederherstellung und Wiederherstellungstests sind zurückgestellt. Es ist kein Backupdienst aktiv."
+
+msgid "Hide credentials"
+msgstr "Zugangsdaten ausblenden"
+
+msgid "Host"
+msgstr "Host"
+
+msgid "I accept this monthly price and the displayed terms."
+msgstr "Ich akzeptiere diesen Monatspreis und die angezeigten Bedingungen."
+
+msgid "ID"
+msgstr "ID"
+
+msgid "Loading…"
+msgstr "Wird geladen…"
+
+msgid "Logical data size"
+msgstr "Logische Datenmenge"
+
+msgid "Managed PostgreSQL"
+msgstr "Verwaltetes PostgreSQL"
+
+msgid "Measured logical allowance"
+msgstr "Gemessenes logisches Kontingent"
+
+msgid "Migration role"
+msgstr "Migrationsrolle"
+
+msgid "Monthly net price (EUR)"
+msgstr "Monatspreis netto (EUR)"
+
+msgid "No PostgreSQL installations."
+msgstr "Keine PostgreSQL-Installationen vorhanden."
+
+msgid "No database plans are available yet."
+msgstr "Derzeit sind keine Datenbanktarife verfügbar."
+
+msgid "No databases ordered."
+msgstr "Keine Datenbanken bestellt."
+
+msgid "No qualified PostgreSQL storage agent is available."
+msgstr "Es ist kein geprüfter PostgreSQL-Speicheragent verfügbar."
+
+msgid "Node"
+msgstr "Knoten"
+
+msgid "Operator pilot"
+msgstr "Betreiberpilot"
+
+msgid "Order database with payment obligation"
+msgstr "Datenbank kostenpflichtig bestellen"
+
+msgid "Ordering…"
+msgstr "Wird bestellt…"
+
+msgid "Pause database access"
+msgstr "Datenbankzugang pausieren"
+
+msgid "Pause instance"
+msgstr "Instanz pausieren"
+
+msgid "Pausing interrupts connections and keeps the fixed monthly price. Shared pause affects only your own roles."
+msgstr "Pausieren unterbricht Verbindungen; der feste Monatspreis bleibt bestehen. Bei Shared werden nur die eigenen Rollen gesperrt."
+
+msgid "Permanently delete database"
+msgstr "Datenbank endgültig löschen"
+
+msgid "Permanently delete retained database"
+msgstr "Aufbewahrte Datenbank endgültig löschen"
+
+msgid "Physical resources are reserved once per installation. Paused and retained resources keep their reservation."
+msgstr "Physische Ressourcen werden einmal je Installation reserviert. Pausierte und aufbewahrte Ressourcen behalten ihre Reservierung."
+
+msgid "Plan terms and prices are immutable. Create a new revision to change them; existing orders keep their accepted terms."
+msgstr "Tarifbedingungen und Preise sind unveränderlich. Änderungen erfordern eine neue Fassung; bestehende Bestellungen behalten ihre angenommenen Bedingungen."
+
+msgid "PostgreSQL operator management"
+msgstr "PostgreSQL-Betreiberverwaltung"
+
+msgid "Provision shared pool"
+msgstr "Shared-Pool bereitstellen"
+
+msgid "Public ordering requires a separate product release decision."
+msgstr "Öffentliche Bestellungen erfordern eine gesonderte Produktfreigabe."
+
+msgid "Reconcile observed state"
+msgstr "Beobachteten Zustand abgleichen"
+
+msgid "Request cancellation"
+msgstr "Kündigung anfordern"
+
+msgid "Restart instance"
+msgstr "Instanz neu starten"
+
+msgid "Resume database"
+msgstr "Datenbank fortsetzen"
+
+msgid "Retain database and end service"
+msgstr "Datenbank aufbewahren und Dienst beenden"
+
+msgid "Retained until"
+msgstr "Aufbewahrt bis"
+
+msgid "Retention has not expired."
+msgstr "Die Aufbewahrungsfrist ist noch nicht abgelaufen."
+
+msgid "Reveal credentials"
+msgstr "Zugangsdaten anzeigen"
+
+msgid "Review database deletion"
+msgstr "Datenbanklöschung prüfen"
+
+msgid "Review paid order"
+msgstr "Kostenpflichtige Bestellung prüfen"
+
+msgid "Rotate credentials"
+msgstr "Zugangsdaten erneuern"
+
+msgid "Set plan availability"
+msgstr "Tarifverfügbarkeit festlegen"
+
+msgid "Shared"
+msgstr "Gemeinsam genutzt"
+
+msgid "Shared CPU and memory; measured logical storage allowance."
+msgstr "Gemeinsam genutzte CPU und RAM; gemessenes logisches Speicherkontingent."
+
+msgid "Shared pool"
+msgstr "Shared-Pool"
+
+msgid "Shared resources"
+msgstr "Gemeinsam genutzte Ressourcen"
+
+msgid "Storage allowance"
+msgstr "Speicherkontingent"
+
+msgid "The shared profile reserves PostgreSQL, pooler and job resources. Customer orders use separate logical slots."
+msgstr "Das Shared-Profil reserviert Ressourcen für PostgreSQL, Pooler und Aufträge. Kundenbestellungen nutzen separate logische Plätze."
+
+msgid "This action affects only this logical database and its roles. The shared pool and other customers remain intact."
+msgstr "Diese Aktion betrifft nur diese logische Datenbank und ihre Rollen. Der Shared-Pool und andere Kunden bleiben unverändert."
+
+msgid "This action affects this dedicated PostgreSQL installation."
+msgstr "Diese Aktion betrifft diese eigene PostgreSQL-Installation."
+
+msgid "Type the exact database name to confirm"
+msgstr "Zur Bestätigung den exakten Datenbanknamen eingeben"
+
+msgid "Unknown or stale"
+msgstr "Unbekannt oder veraltet"
+
+msgid "Use the direct port for migrations and the pooled port for application connections. Always verify TLS."
+msgstr "Den direkten Port für Migrationen und den Pooler-Port für Anwendungsverbindungen verwenden. TLS immer vollständig prüfen."
+
+msgid "Username"
+msgstr "Benutzername"
+
+msgid "net / month"
+msgstr "netto / Monat"
+
+msgid "Upgrade database plan"
+msgstr "Datenbanktarif erweitern"
+
+msgid "Reserve observed database pool"
+msgstr "Geprüften Datenbankpool reservieren"
+
+msgid "I agree to interrupt database connections for this upgrade now."
+msgstr "Ich stimme zu, Datenbankverbindungen für dieses Upgrade jetzt zu unterbrechen."
+
+msgid "Application schema"
+msgstr "Anwendungsschema"
+
+msgid "Choose a project to order and manage PostgreSQL."
+msgstr "Wähle ein Projekt, um PostgreSQL zu bestellen und zu verwalten."
+
+msgid "Database filesystem usage"
+msgstr "Belegung des Datenbank-Dateisystems"
+
+msgid "Delete retained migration source"
+msgstr "Aufbewahrte Migrationsquelle löschen"
+
+msgid "Delete retained source"
+msgstr "Aufbewahrte Quelle löschen"
+
+msgid "No active projects."
+msgstr "Keine aktiven Projekte."
+
+msgid "Retained migration sources"
+msgstr "Aufbewahrte Migrationsquellen"
+
+msgid "Review source cleanup"
+msgstr "Löschung der Quelle prüfen"
+
+msgid "Source installation"
+msgstr "Quellinstallation"
+
+msgid "Your measured storage allowance is nearly reached."
+msgstr "Dein gemessenes Speicherkontingent ist nahezu erreicht."
+
+msgid "The database filesystem is nearly full. Review capacity before importing more data."
+msgstr "Das Datenbank-Dateisystem ist nahezu voll. Prüfe die Kapazität vor weiteren Datenimporten."
+
+msgid "pausing"
+msgstr "Wird pausiert"
+
+msgid "resuming"
+msgstr "Wird fortgesetzt"
+
+msgid "updating"
+msgstr "Wird aktualisiert"
+
+msgid "restoring"
+msgstr "Wird wiederhergestellt"
+
+msgid "preparing"
+msgstr "Wird vorbereitet"
+
+msgid "copying"
+msgstr "Wird kopiert"
+
+msgid "purged"
+msgstr "Endgültig gelöscht"
+
+msgid "retained"
+msgstr "Aufbewahrt"
+
+msgid "paused"
+msgstr "Pausiert"
+
+msgid "provisioning"
+msgstr "Wird bereitgestellt"
+
+msgid "deleting"
+msgstr "Wird stillgelegt"
+
+msgid "degraded"
+msgstr "Beeinträchtigt"
+
+msgid "This deletes only the retained source copy. The current database remains active."
+msgstr "Dies löscht nur die aufbewahrte Quellkopie. Die aktuelle Datenbank bleibt aktiv."
+
+msgid "Managed PostgreSQL billing"
+msgstr "Abrechnung für Managed PostgreSQL"
+
+msgid "Accepted orders start billing only after confirmed provisioning. Invoice handling remains manual."
+msgstr "Die Abrechnung bestätigter Bestellungen beginnt erst nach nachgewiesener Bereitstellung. Die Rechnungsstellung erfolgt weiterhin manuell."
+
+msgid "Ended"
+msgstr "Beendet"
+
+msgid "Awaiting provisioning"
+msgstr "Wartet auf Bereitstellung"
+
+msgid "Database areas"
+msgstr "Datenbankbereiche"
+
+msgid "Browse data"
+msgstr "Daten durchsuchen"

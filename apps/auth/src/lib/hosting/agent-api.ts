@@ -1,3 +1,5 @@
+import {databaseObservationConfig,reportDatabaseObservations} from "./database-observations";
+import {claimDatabaseOperation,checkpointDatabaseOperation,completeDatabaseOperation,guardDatabaseOperation} from "./database-agent";
 import { claimMailConfiguration, checkpointMailConfiguration, completeMailConfiguration } from "../mail-configuration";
 import { claimNativeMail, checkpointNativeMail, completeNativeMail } from "../mail-agent";
 import {saveInventory,byokAgentConfig,claimByokOperation,completeByokOperation} from "./byok";
@@ -25,10 +27,10 @@ export async function hostingAgentAPI(request: Request, path: string[]) {
     if (
       request.method !== "POST" ||
       path.length !== 1 ||
-      !["enroll", "heartbeat", "claim", "complete", "inventory", "config", "byok-claim", "byok-complete", "mail-claim", "mail-checkpoint", "mail-complete", "mail-configuration-claim", "mail-configuration-checkpoint", "mail-configuration-complete"].includes(path[0])
+      !["database-config", "database-observation", "database-claim", "database-checkpoint", "database-complete", "database-guard", "enroll", "heartbeat", "claim", "complete", "inventory", "config", "byok-claim", "byok-complete", "mail-claim", "mail-checkpoint", "mail-complete", "mail-configuration-claim", "mail-configuration-checkpoint", "mail-configuration-complete"].includes(path[0])
     )
       throw new HostingError(404, "Agent endpoint is unavailable.");
-    const input = await readHostingJSON(request,path[0]==="inventory"?2_000_000:65536);
+    const input = await readHostingJSON(request,path[0]==="inventory"?2_000_000:path[0]==="database-checkpoint"?300_000:65536);
     const credentials = request.headers
       .get("authorization")
       ?.match(/^Bearer ([A-Za-z0-9_-]{43})$/)?.[1];
@@ -60,7 +62,13 @@ export async function hostingAgentAPI(request: Request, path: string[]) {
     } else {
       if (!credentials || !clusterID)
         throw new HostingError(401, "Cluster authentication failed.");
-      if(path[0]==="mail-configuration-claim"){z.object({}).strict().parse(input);data=await claimMailConfiguration(agent!);}
+      if(path[0]==="database-config"){z.object({}).strict().parse(input);data=await databaseObservationConfig(agent!);}
+      else if(path[0]==="database-observation")data=await reportDatabaseObservations(agent!,input);
+      else if(path[0]==="database-claim"){z.object({}).strict().parse(input);data=await claimDatabaseOperation(agent!);}
+      else if(path[0]==="database-checkpoint")data=await checkpointDatabaseOperation(agent!,input);
+      else if(path[0]==="database-guard")data=await guardDatabaseOperation(agent!,input);
+      else if(path[0]==="database-complete")data=await completeDatabaseOperation(agent!,input);
+      else if(path[0]==="mail-configuration-claim"){z.object({}).strict().parse(input);data=await claimMailConfiguration(agent!);}
       else if(path[0]==="mail-configuration-checkpoint")data=await checkpointMailConfiguration(agent!,input);
       else if(path[0]==="mail-configuration-complete")data=await completeMailConfiguration(agent!,input);
       else if(path[0]==="mail-claim"){z.object({}).strict().parse(input);data=await claimNativeMail(agent!);}

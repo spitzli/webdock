@@ -1,0 +1,44 @@
+{
+  "environment": "disposable-local",
+  "productionChanges": false,
+  "observedAt": "2026-10-12T19:12:32.160Z",
+  "databases": [
+    {
+      "id": "103203321434607616",
+      "name": "Customer A shared",
+      "kind": "shared",
+      "state": "ready",
+      "revision": 3,
+      "backend_id": "103201903336230912",
+      "cnpg_uid": "ebbb50cd-45aa-4697-b806-72395747b588",
+      "billing_started_at": "2026-10-12T18:53:54.934Z",
+      "ended_at": null
+    },
+    {
+      "id": "103207844957917184",
+      "name": "Customer B dedicated",
+      "kind": "dedicated",
+      "state": "ready",
+      "revision": 1,
+      "backend_id": "103207844949528576",
+      "cnpg_uid": "bf4f767c-f9f1-41bf-8e07-8e84b03f8327",
+      "billing_started_at": "2026-10-12T19:12:05.516Z",
+      "ended_at": null
+    }
+  ],
+  "journeys": {
+    "operatorPoolRegistration": true,
+    "operatorSharedProvisioning": true,
+    "customerASharedOrder": true,
+    "customerAPauseResume": true,
+    "customerBCrossTenantDenied": true,
+    "customerBDedicatedOrder": true,
+    "customerCredentialReveal": true,
+    "mobileViewport": 390,
+    "mobileHorizontalOverflow": false,
+    "operatorPreviewReadOnly": true
+  },
+  "backups": "explicitly-deferred",
+  "externalVercelClient": "not-tested",
+  "duration24Hours": "running since 2026-10-12T19:15:42Z; completion not yet verified"
+}

@@ -1,0 +1,1039 @@
+{
+  "admissionApproved": false,
+  "nodes": [
+    {
+      "name": "wd-eu-01",
+      "kubeletVersion": "v1.36.5+k3s1",
+      "allocatable": {
+        "cpuMillicores": 5500,
+        "memoryBytes": 10669621248,
+        "ephemeralBytes": 182069701529
+      },
+      "unschedulable": false,
+      "taints": [],
+      "conditions": {
+        "EtcdIsVoter": "True",
+        "MemoryPressure": "False",
+        "DiskPressure": "False",
+        "PIDPressure": "False",
+        "Ready": "True"
+      },
+      "requests": {
+        "cpuMillicores": 10,
+        "memoryBytes": 67108864,
+        "ephemeralBytes": 8388608
+      },
+      "declaredLimits": {
+        "cpuMillicores": 500,
+        "memoryBytes": 268435456,
+        "ephemeralBytes": 67108864
+      },
+      "unboundedLimitDimensions": [],
+      "guardedHeadroom": {
+        "cpuMillicores": 4390,
+        "memoryBytes": 8468588134,
+        "ephemeralBytes": 145647372615
+      }
+    },
+    {
+      "name": "wd-eu-02",
+      "kubeletVersion": "v1.36.5+k3s1",
+      "allocatable": {
+        "cpuMillicores": 5500,
+        "memoryBytes": 10669629440,
+        "ephemeralBytes": 182069701529
+      },
+      "unschedulable": false,
+      "taints": [],
+      "conditions": {
+        "EtcdIsVoter": "True",
+        "MemoryPressure": "False",
+        "DiskPressure": "False",
+        "PIDPressure": "False",
+        "Ready": "True"
+      },
+      "requests": {
+        "cpuMillicores": 750,
+        "memoryBytes": 759463936,
+        "ephemeralBytes": 272777216
+      },
+      "declaredLimits": {
+        "cpuMillicores": 600,
+        "memoryBytes": 790921216,
+        "ephemeralBytes": 272777216
+      },
+      "unboundedLimitDimensions": [
+        "cpuMillicores",
+        "ephemeralBytes",
+        "memoryBytes"
+      ],
+      "guardedHeadroom": {
+        "cpuMillicores": 3650,
+        "memoryBytes": 7776239616,
+        "ephemeralBytes": 145382984007
+      }
+    },
+    {
+      "name": "wd-eu-03",
+      "kubeletVersion": "v1.36.5+k3s1",
+      "allocatable": {
+        "cpuMillicores": 5500,
+        "memoryBytes": 10669596672,
+        "ephemeralBytes": 182069701529
+      },
+      "unschedulable": false,
+      "taints": [],
+      "conditions": {
+        "EtcdIsVoter": "True",
+        "MemoryPressure": "False",
+        "DiskPressure": "False",
+        "PIDPressure": "False",
+        "Ready": "True"
+      },
+      "requests": {
+        "cpuMillicores": 190,
+        "memoryBytes": 509607936,
+        "ephemeralBytes": 41943040
+      },
+      "declaredLimits": {
+        "cpuMillicores": 1600,
+        "memoryBytes": 1621098496,
+        "ephemeralBytes": 218103808
+      },
+      "unboundedLimitDimensions": [
+        "cpuMillicores",
+        "ephemeralBytes",
+        "memoryBytes"
+      ],
+      "guardedHeadroom": {
+        "cpuMillicores": 4210,
+        "memoryBytes": 8026069401,
+        "ephemeralBytes": 145613818183
+      }
+    }
+  ],
+  "unplacedRequests": {
+    "cpuMillicores": 0,
+    "memoryBytes": 0,
+    "ephemeralBytes": 0
+  },
+  "workloads": [
+    {
+      "namespace": "cert-manager",
+      "name": "cert-manager-5f8fc94447-74vwv",
+      "node": "wd-eu-03",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 20,
+        "memoryBytes": 134217728,
+        "ephemeralBytes": 8388608
+      },
+      "declaredLimits": {
+        "cpuMillicores": 500,
+        "memoryBytes": 536870912,
+        "ephemeralBytes": 67108864
+      },
+      "unboundedLimitDimensions": [],
+      "images": [
+        "quay.io/jetstack/cert-manager-controller:v1.21.2"
+      ]
+    },
+    {
+      "namespace": "cert-manager",
+      "name": "cert-manager-cainjector-84d6988479-pvnbg",
+      "node": "wd-eu-03",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 10,
+        "memoryBytes": 134217728,
+        "ephemeralBytes": 8388608
+      },
+      "declaredLimits": {
+        "cpuMillicores": 500,
+        "memoryBytes": 536870912,
+        "ephemeralBytes": 67108864
+      },
+      "unboundedLimitDimensions": [],
+      "images": [
+        "quay.io/jetstack/cert-manager-cainjector:v1.21.2"
+      ]
+    },
+    {
+      "namespace": "cert-manager",
+      "name": "cert-manager-webhook-dfbbf8f55-qlgl5",
+      "node": "wd-eu-03",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 10,
+        "memoryBytes": 67108864,
+        "ephemeralBytes": 8388608
+      },
+      "declaredLimits": {
+        "cpuMillicores": 500,
+        "memoryBytes": 268435456,
+        "ephemeralBytes": 67108864
+      },
+      "unboundedLimitDimensions": [],
+      "images": [
+        "quay.io/jetstack/cert-manager-webhook:v1.21.2"
+      ]
+    },
+    {
+      "namespace": "cert-manager",
+      "name": "cert-manager-webhook-dfbbf8f55-qpqlr",
+      "node": "wd-eu-01",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 10,
+        "memoryBytes": 67108864,
+        "ephemeralBytes": 8388608
+      },
+      "declaredLimits": {
+        "cpuMillicores": 500,
+        "memoryBytes": 268435456,
+        "ephemeralBytes": 67108864
+      },
+      "unboundedLimitDimensions": [],
+      "images": [
+        "quay.io/jetstack/cert-manager-webhook:v1.21.2"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "name": "coredns-7cfb7bc9c7-lrk2n",
+      "node": "wd-eu-02",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 100,
+        "memoryBytes": 73400320,
+        "ephemeralBytes": 0
+      },
+      "declaredLimits": {
+        "cpuMillicores": 0,
+        "memoryBytes": 178257920,
+        "ephemeralBytes": 0
+      },
+      "unboundedLimitDimensions": [
+        "cpuMillicores",
+        "ephemeralBytes"
+      ],
+      "images": [
+        "rancher/mirrored-coredns-coredns:1.14.7"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "name": "coredns-7cfb7bc9c7-xm2t9",
+      "node": "wd-eu-03",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 100,
+        "memoryBytes": 73400320,
+        "ephemeralBytes": 0
+      },
+      "declaredLimits": {
+        "cpuMillicores": 0,
+        "memoryBytes": 178257920,
+        "ephemeralBytes": 0
+      },
+      "unboundedLimitDimensions": [
+        "cpuMillicores",
+        "ephemeralBytes"
+      ],
+      "images": [
+        "rancher/mirrored-coredns-coredns:1.14.7"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "name": "local-path-provisioner-77b9867795-bghl6",
+      "node": "wd-eu-02",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 0,
+        "memoryBytes": 0,
+        "ephemeralBytes": 0
+      },
+      "declaredLimits": {
+        "cpuMillicores": 0,
+        "memoryBytes": 0,
+        "ephemeralBytes": 0
+      },
+      "unboundedLimitDimensions": [
+        "cpuMillicores",
+        "memoryBytes",
+        "ephemeralBytes"
+      ],
+      "images": [
+        "rancher/local-path-provisioner:v0.0.37"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "name": "metrics-server-6dc596dfb8-rmccw",
+      "node": "wd-eu-02",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 100,
+        "memoryBytes": 73400320,
+        "ephemeralBytes": 0
+      },
+      "declaredLimits": {
+        "cpuMillicores": 0,
+        "memoryBytes": 0,
+        "ephemeralBytes": 0
+      },
+      "unboundedLimitDimensions": [
+        "cpuMillicores",
+        "memoryBytes",
+        "ephemeralBytes"
+      ],
+      "images": [
+        "rancher/mirrored-metrics-server:v0.9.0"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "name": "svclb-traefik-df359d2e-742gc",
+      "node": "wd-eu-02",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 0,
+        "memoryBytes": 0,
+        "ephemeralBytes": 0
+      },
+      "declaredLimits": {
+        "cpuMillicores": 0,
+        "memoryBytes": 0,
+        "ephemeralBytes": 0
+      },
+      "unboundedLimitDimensions": [
+        "cpuMillicores",
+        "memoryBytes",
+        "ephemeralBytes"
+      ],
+      "images": [
+        "rancher/klipper-lb:v0.4.17",
+        "rancher/klipper-lb:v0.4.17"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "name": "svclb-traefik-df359d2e-7s6n9",
+      "node": "wd-eu-03",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 0,
+        "memoryBytes": 0,
+        "ephemeralBytes": 0
+      },
+      "declaredLimits": {
+        "cpuMillicores": 0,
+        "memoryBytes": 0,
+        "ephemeralBytes": 0
+      },
+      "unboundedLimitDimensions": [
+        "cpuMillicores",
+        "memoryBytes",
+        "ephemeralBytes"
+      ],
+      "images": [
+        "rancher/klipper-lb:v0.4.17",
+        "rancher/klipper-lb:v0.4.17"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "name": "traefik-678858ccc5-hjsp5",
+      "node": "wd-eu-03",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 0,
+        "memoryBytes": 0,
+        "ephemeralBytes": 0
+      },
+      "declaredLimits": {
+        "cpuMillicores": 0,
+        "memoryBytes": 0,
+        "ephemeralBytes": 0
+      },
+      "unboundedLimitDimensions": [
+        "cpuMillicores",
+        "memoryBytes",
+        "ephemeralBytes"
+      ],
+      "images": [
+        "rancher/mirrored-library-traefik:3.7.13"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "name": "traefik-678858ccc5-s4p5q",
+      "node": "wd-eu-02",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 0,
+        "memoryBytes": 0,
+        "ephemeralBytes": 0
+      },
+      "declaredLimits": {
+        "cpuMillicores": 0,
+        "memoryBytes": 0,
+        "ephemeralBytes": 0
+      },
+      "unboundedLimitDimensions": [
+        "cpuMillicores",
+        "memoryBytes",
+        "ephemeralBytes"
+      ],
+      "images": [
+        "rancher/mirrored-library-traefik:3.7.13"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "name": "webdock-discord-egress-79958d4c87-hxtl2",
+      "node": "wd-eu-03",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 50,
+        "memoryBytes": 100663296,
+        "ephemeralBytes": 16777216
+      },
+      "declaredLimits": {
+        "cpuMillicores": 100,
+        "memoryBytes": 100663296,
+        "ephemeralBytes": 16777216
+      },
+      "unboundedLimitDimensions": [],
+      "images": [
+        "webdock.local/lunares@sha256:9e94e955df82fab1e06182562901ad23d23e8ea0096f222af5cbe53ead3c6f33"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "name": "webdock-discord-egress-79958d4c87-qhq5v",
+      "node": "wd-eu-02",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 50,
+        "memoryBytes": 100663296,
+        "ephemeralBytes": 16777216
+      },
+      "declaredLimits": {
+        "cpuMillicores": 100,
+        "memoryBytes": 100663296,
+        "ephemeralBytes": 16777216
+      },
+      "unboundedLimitDimensions": [],
+      "images": [
+        "webdock.local/lunares@sha256:9e94e955df82fab1e06182562901ad23d23e8ea0096f222af5cbe53ead3c6f33"
+      ]
+    },
+    {
+      "namespace": "wd-101713101337919488",
+      "name": "app-102047516467400704-8446b675bf-x9ghj",
+      "node": "wd-eu-02",
+      "phase": "Running",
+      "requests": {
+        "cpuMillicores": 500,
+        "memoryBytes": 512000000,
+        "ephemeralBytes": 256000000
+      },
+      "declaredLimits": {
+        "cpuMillicores": 500,
+        "memoryBytes": 512000000,
+        "ephemeralBytes": 256000000
+      },
+      "unboundedLimitDimensions": [],
+      "images": [
+        "127.0.0.1:5443/customers/101711682211938304/projects/101713101337919488@sha256:6d563b4e8efdf578792408c2e3a65badb5f09497daa23ab4dbc0febcb0455504"
+      ]
+    }
+  ],
+  "observedAt": "2026-10-12T14:13:00.238671+00:00",
+  "hosts": {
+    "wd-eu-01": {
+      "storage": {
+        "node": "wd-eu-01",
+        "clusterID": "102835722657992704",
+        "poolID": "81799926-07a6-43f0-9d01-fbe4d45dfbde",
+        "capacityBytes": 130000000000,
+        "reserveBytes": 20000000000
+      },
+      "journalPoolID": "81799926-07a6-43f0-9d01-fbe4d45dfbde",
+      "volumes": [],
+      "filesystemAvailableBytes": 178570551296,
+      "agentSourceSHA256": {
+        "observer.py": "ac5e595207a79e08849e9186201583053b4c9ab5c9508e0a1e27687aa00e32e9",
+        "storage.py": "32844f9cb71bad27a57d2f984b546c01667b58d5f9e4839ecad1bf6ee67d0a1e",
+        "storage_client.py": "01f55b3d099bf0bb7035510f1059f44e843a5653ff0b57f2509a3ff33a7e19b5",
+        "storage_service.py": "b58c116386cb534af27a450b8e0ec6a1d4cf26c25bf7e0478e85abe1b9a3bf93",
+        "storage_router.py": "d46b5bee6ea18056e8aea35dc17ce5d289bc0065a120feab786342a0bf13791c",
+        "storage_rpc.py": "f25b691da0dc042ba836ad3a513b36a27f749691a9734ece08fb1a6d22a039ba"
+      },
+      "services": {
+        "k3s": "active",
+        "webdock-storage": "active",
+        "webdock-hosting-agent": "inactive"
+      },
+      "mounts": {
+        "filesystems": [
+          {
+            "target": "/",
+            "fstype": "ext4",
+            "size": 207071854592,
+            "avail": 178570551296
+          }
+        ]
+      }
+    },
+    "wd-eu-02": {
+      "storage": {
+        "node": "wd-eu-02",
+        "clusterID": "102835722657992704",
+        "poolID": "889fb3b2-cda8-4ab4-b1cb-689c11099235",
+        "capacityBytes": 150000000000,
+        "reserveBytes": 20000000000
+      },
+      "journalPoolID": "889fb3b2-cda8-4ab4-b1cb-689c11099235",
+      "volumes": [
+        {
+          "appID": "102047516467400704",
+          "projectID": "101713101337919488",
+          "clusterID": "102835722657992704",
+          "bytes": 1000000000,
+          "uuid": "9d731003-188d-4754-9695-99726b532a54",
+          "state": "ready"
+        }
+      ],
+      "filesystemAvailableBytes": 200549580800,
+      "agentSourceSHA256": {
+        "daemon.py": "1b13f10a07e9c6d1a83e511e2d5d5620f1f8b2565e89950db390ca3936903835",
+        "executor.py": "6b717829eec29c1b15fa42c531d3ac6dd2442ea6c8214efa1698e1a9fcc65b33",
+        "observer.py": "ac5e595207a79e08849e9186201583053b4c9ab5c9508e0a1e27687aa00e32e9",
+        "storage.py": "32844f9cb71bad27a57d2f984b546c01667b58d5f9e4839ecad1bf6ee67d0a1e",
+        "storage_client.py": "01f55b3d099bf0bb7035510f1059f44e843a5653ff0b57f2509a3ff33a7e19b5",
+        "storage_service.py": "b58c116386cb534af27a450b8e0ec6a1d4cf26c25bf7e0478e85abe1b9a3bf93",
+        "storage_router.py": "d46b5bee6ea18056e8aea35dc17ce5d289bc0065a120feab786342a0bf13791c",
+        "storage_rpc.py": "f25b691da0dc042ba836ad3a513b36a27f749691a9734ece08fb1a6d22a039ba"
+      },
+      "services": {
+        "k3s": "active",
+        "webdock-storage": "active",
+        "webdock-hosting-agent": "active"
+      },
+      "mounts": {
+        "filesystems": [
+          {
+            "target": "/",
+            "fstype": "ext4",
+            "size": 207071854592,
+            "avail": 200549580800
+          },
+          {
+            "target": "/var/lib/webdock-storage/102047516467400704/mount",
+            "fstype": "ext4",
+            "size": 965046272,
+            "avail": 947834880
+          }
+        ]
+      }
+    },
+    "wd-eu-03": {
+      "storage": {
+        "node": "wd-eu-03",
+        "clusterID": "102835722657992704",
+        "poolID": "67c39464-058b-4466-b0e9-f408500fa337",
+        "capacityBytes": 150000000000,
+        "reserveBytes": 20000000000
+      },
+      "journalPoolID": "67c39464-058b-4466-b0e9-f408500fa337",
+      "volumes": [],
+      "filesystemAvailableBytes": 201494470656,
+      "agentSourceSHA256": {
+        "observer.py": "ac5e595207a79e08849e9186201583053b4c9ab5c9508e0a1e27687aa00e32e9",
+        "storage.py": "32844f9cb71bad27a57d2f984b546c01667b58d5f9e4839ecad1bf6ee67d0a1e",
+        "storage_client.py": "01f55b3d099bf0bb7035510f1059f44e843a5653ff0b57f2509a3ff33a7e19b5",
+        "storage_service.py": "b58c116386cb534af27a450b8e0ec6a1d4cf26c25bf7e0478e85abe1b9a3bf93",
+        "storage_router.py": "d46b5bee6ea18056e8aea35dc17ce5d289bc0065a120feab786342a0bf13791c",
+        "storage_rpc.py": "f25b691da0dc042ba836ad3a513b36a27f749691a9734ece08fb1a6d22a039ba"
+      },
+      "services": {
+        "k3s": "active",
+        "webdock-storage": "active",
+        "webdock-hosting-agent": "inactive"
+      },
+      "mounts": {
+        "filesystems": [
+          {
+            "target": "/",
+            "fstype": "ext4",
+            "size": 207071854592,
+            "avail": 201494470656
+          }
+        ]
+      }
+    }
+  },
+  "resourceQuotas": [
+    {
+      "namespace": "cert-manager",
+      "name": "controller-bounds",
+      "hard": {
+        "limits.cpu": "5",
+        "limits.ephemeral-storage": "1Gi",
+        "limits.memory": "3Gi",
+        "pods": "10",
+        "requests.cpu": "1",
+        "requests.ephemeral-storage": "128Mi",
+        "requests.memory": "1Gi",
+        "secrets": "20",
+        "services": "5",
+        "services.loadbalancers": "0",
+        "services.nodeports": "0"
+      },
+      "used": {
+        "limits.cpu": "2",
+        "limits.ephemeral-storage": "256Mi",
+        "limits.memory": "1536Mi",
+        "pods": "4",
+        "requests.cpu": "50m",
+        "requests.ephemeral-storage": "32Mi",
+        "requests.memory": "384Mi",
+        "secrets": "2",
+        "services": "3",
+        "services.loadbalancers": "0",
+        "services.nodeports": "0"
+      }
+    },
+    {
+      "namespace": "default",
+      "name": "webdock-baseline",
+      "hard": {
+        "count/configmaps": "20",
+        "count/jobs.batch": "10",
+        "count/secrets": "20",
+        "limits.cpu": "1",
+        "limits.ephemeral-storage": "2Gi",
+        "limits.memory": "1Gi",
+        "persistentvolumeclaims": "4",
+        "pods": "10",
+        "requests.cpu": "1",
+        "requests.ephemeral-storage": "2Gi",
+        "requests.memory": "1Gi",
+        "requests.storage": "10Gi",
+        "services": "10",
+        "services.loadbalancers": "0",
+        "services.nodeports": "0"
+      },
+      "used": {
+        "count/configmaps": "1",
+        "count/jobs.batch": "0",
+        "count/secrets": "0",
+        "limits.cpu": "0",
+        "limits.ephemeral-storage": "0",
+        "limits.memory": "0",
+        "persistentvolumeclaims": "0",
+        "pods": "0",
+        "requests.cpu": "0",
+        "requests.ephemeral-storage": "0",
+        "requests.memory": "0",
+        "requests.storage": "0",
+        "services": "1",
+        "services.loadbalancers": "0",
+        "services.nodeports": "0"
+      }
+    },
+    {
+      "namespace": "hermes-infra",
+      "name": "hermes-bounds",
+      "hard": {
+        "limits.cpu": "2400m",
+        "limits.ephemeral-storage": "1664Mi",
+        "limits.memory": "2944Mi",
+        "persistentvolumeclaims": "2",
+        "pods": "4",
+        "requests.cpu": "400m",
+        "requests.ephemeral-storage": "208Mi",
+        "requests.memory": "640Mi",
+        "requests.storage": "10Gi",
+        "secrets": "10",
+        "services": "4",
+        "services.loadbalancers": "0",
+        "services.nodeports": "0"
+      },
+      "used": {
+        "limits.cpu": "0",
+        "limits.ephemeral-storage": "0",
+        "limits.memory": "0",
+        "persistentvolumeclaims": "2",
+        "pods": "0",
+        "requests.cpu": "0",
+        "requests.ephemeral-storage": "0",
+        "requests.memory": "0",
+        "requests.storage": "6Gi",
+        "secrets": "6",
+        "services": "2",
+        "services.loadbalancers": "0",
+        "services.nodeports": "0"
+      }
+    },
+    {
+      "namespace": "wd-101713101337919488",
+      "name": "webdock-allocation",
+      "hard": {
+        "count/configmaps": "20",
+        "count/jobs.batch": "0",
+        "count/secrets": "20",
+        "limits.cpu": "700m",
+        "limits.ephemeral-storage": "323108864",
+        "limits.memory": "579108864",
+        "persistentvolumeclaims": "14",
+        "pods": "20",
+        "requests.cpu": "525m",
+        "requests.ephemeral-storage": "264388608",
+        "requests.memory": "545554432",
+        "requests.storage": "1G",
+        "services": "2",
+        "services.loadbalancers": "0",
+        "services.nodeports": "0"
+      },
+      "used": {
+        "count/configmaps": "1",
+        "count/jobs.batch": "0",
+        "count/secrets": "3",
+        "limits.cpu": "500m",
+        "limits.ephemeral-storage": "256M",
+        "limits.memory": "512M",
+        "persistentvolumeclaims": "1",
+        "pods": "1",
+        "requests.cpu": "500m",
+        "requests.ephemeral-storage": "256M",
+        "requests.memory": "512M",
+        "requests.storage": "1G",
+        "services": "1",
+        "services.loadbalancers": "0",
+        "services.nodeports": "0"
+      }
+    },
+    {
+      "namespace": "wdv-101713101337919488",
+      "name": "webdock-allocation",
+      "hard": {
+        "count/configmaps": "20",
+        "count/jobs.batch": "0",
+        "count/secrets": "20",
+        "limits.cpu": "700m",
+        "limits.ephemeral-storage": "323108864",
+        "limits.memory": "579108864",
+        "persistentvolumeclaims": "14",
+        "pods": "20",
+        "requests.cpu": "525m",
+        "requests.ephemeral-storage": "264388608",
+        "requests.memory": "545554432",
+        "requests.storage": "1G",
+        "services": "2",
+        "services.loadbalancers": "0",
+        "services.nodeports": "0"
+      },
+      "used": {
+        "count/configmaps": "1",
+        "count/jobs.batch": "0",
+        "count/secrets": "0",
+        "limits.cpu": "0",
+        "limits.ephemeral-storage": "0",
+        "limits.memory": "0",
+        "persistentvolumeclaims": "0",
+        "pods": "0",
+        "requests.cpu": "0",
+        "requests.ephemeral-storage": "0",
+        "requests.memory": "0",
+        "requests.storage": "0",
+        "services": "0",
+        "services.loadbalancers": "0",
+        "services.nodeports": "0"
+      }
+    }
+  ],
+  "networkPolicies": [
+    {
+      "namespace": "cert-manager",
+      "name": "controller-boundary"
+    },
+    {
+      "namespace": "default",
+      "name": "webdock-default-deny"
+    },
+    {
+      "namespace": "default",
+      "name": "webdock-dns"
+    },
+    {
+      "namespace": "default",
+      "name": "webdock-ingress"
+    },
+    {
+      "namespace": "default",
+      "name": "webdock-project-internal"
+    },
+    {
+      "namespace": "hermes-infra",
+      "name": "acme-solver"
+    },
+    {
+      "namespace": "hermes-infra",
+      "name": "default-deny"
+    },
+    {
+      "namespace": "hermes-infra",
+      "name": "headroom"
+    },
+    {
+      "namespace": "hermes-infra",
+      "name": "nine-router"
+    },
+    {
+      "namespace": "hermes-infra",
+      "name": "nine-router-traefik"
+    },
+    {
+      "namespace": "kube-system",
+      "name": "webdock-discord-egress"
+    },
+    {
+      "namespace": "wd-101713101337919488",
+      "name": "lunares-external-access"
+    },
+    {
+      "namespace": "wd-101713101337919488",
+      "name": "webdock-acme-solver"
+    },
+    {
+      "namespace": "wd-101713101337919488",
+      "name": "webdock-deny"
+    },
+    {
+      "namespace": "wd-101713101337919488",
+      "name": "webdock-dns"
+    },
+    {
+      "namespace": "wd-101713101337919488",
+      "name": "webdock-ingress"
+    },
+    {
+      "namespace": "wd-101713101337919488",
+      "name": "webdock-internal"
+    },
+    {
+      "namespace": "wdv-101713101337919488",
+      "name": "webdock-deny"
+    },
+    {
+      "namespace": "wdv-101713101337919488",
+      "name": "webdock-dns"
+    },
+    {
+      "namespace": "wdv-101713101337919488",
+      "name": "webdock-ingress"
+    },
+    {
+      "namespace": "wdv-101713101337919488",
+      "name": "webdock-internal"
+    }
+  ],
+  "admissionPolicies": [
+    {
+      "name": "webdock-application-safety",
+      "spec": {
+        "failurePolicy": "Fail",
+        "matchConstraints": {
+          "matchPolicy": "Equivalent",
+          "namespaceSelector": {
+            "matchExpressions": [
+              {
+                "key": "kubernetes.io/metadata.name",
+                "operator": "NotIn",
+                "values": [
+                  "kube-system",
+                  "cert-manager"
+                ]
+              }
+            ]
+          },
+          "objectSelector": {},
+          "resourceRules": [
+            {
+              "apiGroups": [
+                ""
+              ],
+              "apiVersions": [
+                "v1"
+              ],
+              "operations": [
+                "CREATE",
+                "UPDATE"
+              ],
+              "resources": [
+                "pods",
+                "pods/ephemeralcontainers"
+              ],
+              "scope": "*"
+            }
+          ]
+        },
+        "validations": [
+          {
+            "expression": "has(namespaceObject.metadata.labels) && 'security.webdock.dev/ready' in namespaceObject.metadata.labels && namespaceObject.metadata.labels['security.webdock.dev/ready'] == 'true' && 'pod-security.kubernetes.io/enforce' in namespaceObject.metadata.labels && namespaceObject.metadata.labels['pod-security.kubernetes.io/enforce'] == 'restricted'",
+            "message": "Webdock: namespace requires resource quotas, network policies and Restricted Pod Security before workloads can start."
+          },
+          {
+            "expression": "has(object.spec.automountServiceAccountToken) && object.spec.automountServiceAccountToken == false",
+            "message": "Webdock: automatic API token mounting must be explicitly disabled."
+          },
+          {
+            "expression": "!has(object.spec.volumes) || object.spec.volumes.all(v,\n  !has(v.projected) || v.projected.sources.all(s, !has(s.serviceAccountToken)))",
+            "message": "Webdock: application pods must not request projected API tokens."
+          },
+          {
+            "expression": "object.spec.containers.all(c,\n  has(c.securityContext) && has(c.securityContext.readOnlyRootFilesystem) && c.securityContext.readOnlyRootFilesystem) &&\n(!has(object.spec.initContainers) || object.spec.initContainers.all(c,\n  has(c.securityContext) && has(c.securityContext.readOnlyRootFilesystem) && c.securityContext.readOnlyRootFilesystem)) &&\n(!has(object.spec.ephemeralContainers) || object.spec.ephemeralContainers.all(c,\n  has(c.securityContext) && has(c.securityContext.readOnlyRootFilesystem) && c.securityContext.readOnlyRootFilesystem))",
+            "message": "Webdock: every application, init and debug container requires a read-only root filesystem; use explicit volumes for writable data."
+          },
+          {
+            "expression": "object.spec.containers.all(c, has(c.resources) && has(dyn(c.resources).requests) && has(dyn(c.resources).limits) &&\n  ['cpu', 'memory', 'ephemeral-storage'].all(r, r in dyn(c.resources).requests && r in dyn(c.resources).limits &&\n    quantity(dyn(c.resources).requests[r]).isGreaterThan(quantity(\"0\")) &&\n    quantity(dyn(c.resources).limits[r]).isGreaterThan(quantity(\"0\")))) &&\n(!has(object.spec.initContainers) || object.spec.initContainers.all(c,\n  has(c.resources) && has(dyn(c.resources).requests) && has(dyn(c.resources).limits) &&\n  ['cpu', 'memory', 'ephemeral-storage'].all(r, r in dyn(c.resources).requests && r in dyn(c.resources).limits &&\n    quantity(dyn(c.resources).requests[r]).isGreaterThan(quantity(\"0\")) &&\n    quantity(dyn(c.resources).limits[r]).isGreaterThan(quantity(\"0\")))))",
+            "message": "Webdock: CPU, memory and ephemeral-storage requests and limits are required."
+          },
+          {
+            "expression": "object.spec.restartPolicy != 'Always' || object.spec.containers.all(c,\n  has(c.readinessProbe) && has(c.livenessProbe) && has(c.startupProbe))",
+            "message": "Webdock: long-running application containers require readiness, liveness and startup probes."
+          }
+        ]
+      }
+    },
+    {
+      "name": "webdock-service-safety",
+      "spec": {
+        "failurePolicy": "Fail",
+        "matchConstraints": {
+          "matchPolicy": "Equivalent",
+          "namespaceSelector": {
+            "matchExpressions": [
+              {
+                "key": "kubernetes.io/metadata.name",
+                "operator": "NotIn",
+                "values": [
+                  "kube-system"
+                ]
+              }
+            ]
+          },
+          "objectSelector": {},
+          "resourceRules": [
+            {
+              "apiGroups": [
+                ""
+              ],
+              "apiVersions": [
+                "v1"
+              ],
+              "operations": [
+                "CREATE",
+                "UPDATE"
+              ],
+              "resources": [
+                "services"
+              ],
+              "scope": "*"
+            }
+          ]
+        },
+        "validations": [
+          {
+            "expression": "object.spec.type == 'ClusterIP' && (!has(object.spec.externalIPs) || size(object.spec.externalIPs) == 0)",
+            "message": "Webdock: applications expose ClusterIP services through managed ingress only; external IPs, ExternalName, NodePort and LoadBalancer are forbidden."
+          }
+        ]
+      }
+    }
+  ],
+  "admissionBindings": [
+    {
+      "name": "webdock-application-safety",
+      "spec": {
+        "policyName": "webdock-application-safety",
+        "validationActions": [
+          "Deny"
+        ]
+      }
+    },
+    {
+      "name": "webdock-service-safety",
+      "spec": {
+        "policyName": "webdock-service-safety",
+        "validationActions": [
+          "Deny"
+        ]
+      }
+    }
+  ],
+  "customResourceDefinitions": [
+    "accesscontrolpolicies.hub.traefik.io",
+    "addons.k3s.cattle.io",
+    "aiservices.hub.traefik.io",
+    "apiauths.hub.traefik.io",
+    "apibundles.hub.traefik.io",
+    "apicatalogitems.hub.traefik.io",
+    "apiplans.hub.traefik.io",
+    "apiportalauths.hub.traefik.io",
+    "apiportals.hub.traefik.io",
+    "apiratelimits.hub.traefik.io",
+    "apis.hub.traefik.io",
+    "apiversions.hub.traefik.io",
+    "backendtlspolicies.gateway.networking.k8s.io",
+    "certificaterequests.cert-manager.io",
+    "certificates.cert-manager.io",
+    "challenges.acme.cert-manager.io",
+    "clusterissuers.cert-manager.io",
+    "contentitems.hub.traefik.io",
+    "etcdsnapshotfiles.k3s.cattle.io",
+    "gatewayclasses.gateway.networking.k8s.io",
+    "gateways.gateway.networking.k8s.io",
+    "grpcroutes.gateway.networking.k8s.io",
+    "helmchartconfigs.helm.cattle.io",
+    "helmcharts.helm.cattle.io",
+    "httproutes.gateway.networking.k8s.io",
+    "ingressroutes.traefik.io",
+    "ingressroutetcps.traefik.io",
+    "ingressrouteudps.traefik.io",
+    "issuers.cert-manager.io",
+    "listenersets.gateway.networking.k8s.io",
+    "managedapplications.hub.traefik.io",
+    "managedsubscriptions.hub.traefik.io",
+    "middlewares.traefik.io",
+    "middlewaretcps.traefik.io",
+    "orders.acme.cert-manager.io",
+    "referencegrants.gateway.networking.k8s.io",
+    "serverstransports.traefik.io",
+    "serverstransporttcps.traefik.io",
+    "tcproutes.gateway.networking.k8s.io",
+    "tlsoptions.traefik.io",
+    "tlsroutes.gateway.networking.k8s.io",
+    "tlsstores.traefik.io",
+    "traefikservices.traefik.io",
+    "udproutes.gateway.networking.k8s.io",
+    "uplinks.hub.traefik.io"
+  ],
+  "nodePorts": [
+    {
+      "namespace": "kube-system",
+      "name": "traefik",
+      "port": 30344
+    },
+    {
+      "namespace": "kube-system",
+      "name": "traefik",
+      "port": 31870
+    }
+  ],
+  "completedAt": "2026-10-12T14:13:14.101724+00:00"
+}

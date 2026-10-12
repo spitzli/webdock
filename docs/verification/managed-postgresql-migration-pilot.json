@@ -1,0 +1,16 @@
+{
+  "sharedToDedicated": true,
+  "sourceRetainedAndFenced": true,
+  "rows": 5000,
+  "neighborWrites": 18,
+  "neighborFailures": 0,
+  "proof": {
+    "installationID": "130",
+    "databaseID": "9300",
+    "cnpgUID": "b9f9178d-6164-4012-818a-0db55ab50c0a",
+    "revision": 2,
+    "state": "ready",
+    "endpointReady": true,
+    "copySHA256": "495abc8bb1b7d4001167c386259733c1377528d514669e73b3359031a89e5e1e"
+  }
+}

@@ -1,3 +1,7 @@
+import {resourceID, idempotencyKey as key, resourceRevision as revision} from "./validation";
+export {resourceID} from "./validation";
+import {databaseCommands,databaseReadActions} from "./databases";
+export * from "./databases";
 import {gitCommands,gitReadActions} from "./git-deployments";
 export * from "./git-deployments";
 import {byokCommands} from "./byok";
@@ -27,12 +31,6 @@ export type HostingActor = {
   source: "studio" | "oauth" | "git-policy";
   scopes: readonly string[];
 };
-export const resourceID = z
-  .string()
-  .regex(/^[1-9][0-9]{0,18}$/)
-  .refine(
-    (v) => /^[1-9][0-9]{0,18}$/.test(v) && BigInt(v) <= 9223372036854775807n,
-  );
 const quantity = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 export const allowanceSchema = z
   .object(
@@ -93,12 +91,6 @@ export const hostingLabels: Record<HostingDimension, string> = {
   concurrentDeployments: "Concurrent deployments",
 };
 const name = z.string().trim().min(1).max(160);
-const revision = z.number().int().nonnegative().max(2147483646);
-const key = z
-  .string()
-  .min(16)
-  .max(128)
-  .regex(/^[A-Za-z0-9_-]+$/);
 const provider = z.enum(["k3s", "vercel"]);
 const mode = z.enum(["managed", "selfservice"]);
 const paging = {
@@ -174,6 +166,7 @@ export const appViewSchema = z.object({
 });
 export type HostingAppView = z.infer<typeof appViewSchema>;
 export const commandSchema = z.discriminatedUnion("action", [
+  ...databaseCommands,
   ...byokCommands,
   ...gitCommands,
   z
@@ -372,6 +365,7 @@ export const commandSchema = z.discriminatedUnion("action", [
 ]);
 export type HostingCommand = z.infer<typeof commandSchema>;
 export const readActions = new Set<HostingCommand["action"]>([
+  ...databaseReadActions,
   ...gitReadActions,
   "byok.mail.get",
   "byok.policy.get", "byok.list", "byok.cluster", "byok.inventory", "byok.vercel.projects", "byok.vercel.resources",
@@ -436,6 +430,9 @@ export const observationSchema = z
         ingress: z.boolean(),
         environment: z.boolean().optional(),
         storageVersion: z.literal(1).optional(),
+        databaseVersion: z.literal(1).optional(),
+        databasePools: z.array(z.object({node:name,poolID:z.uuid(),capacityBytes:quantity,availableBytes:quantity,ready:z.boolean(),requestedCpuMillicores:quantity,requestedMemoryBytes:quantity,observedDatabases:z.array(z.object({installationID:resourceID,cpuMillicores:quantity,memoryBytes:quantity}).strict()).max(1000).optional(),allocatedBytes:quantity.optional(),allocations:z.array(z.object({installationID:resourceID,volumeBytes:quantity}).strict()).max(1000).optional()}).strict()).max(200).optional(),
+        databaseNodePorts: z.array(z.number().int().min(30000).max(32767)).max(2768).optional(),
         nativeMail: z.object({ version: z.literal(1), configurationVersion: z.union([z.literal(1),z.literal(2),z.literal(3)]).optional(), image: z.string().regex(/^[A-Za-z0-9.:-]+\/[A-Za-z0-9_./-]+@sha256:[a-f0-9]{64}$/) }).strict().optional(),
 
         registryVersion: z.literal(1).optional(),

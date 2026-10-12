@@ -72,6 +72,8 @@ export async function lifecycle(request: Request): Promise<Response> {
       }
       const managed=(await connection.query('SELECT project_id FROM webdock_auth.hosting_project WHERE customer_id=$1 AND ($2::varchar IS NULL OR project_id=$2) LIMIT 1',[value.customerID,value.projectID??null])).rows[0];
       if(managed)fail(409,'Managed container hosting must be retired before project deletion.');
+      const postgres=(await connection.query('SELECT project_id FROM webdock_auth.hosting_database_offer WHERE customer_id=$1 AND ($2::varchar IS NULL OR project_id=$2) LIMIT 1',[value.customerID,value.projectID??null])).rows[0];
+      if(postgres)fail(409,'Managed PostgreSQL resources or order history belong to this project. Archive the project instead of deleting it.');
 
       const row = (await connection.query(`SELECT b.id,b.client_id,b.organization_id,b.label,c."redirectUris",c.metadata,t.customer_id FROM webdock_auth.app_binding b JOIN webdock_auth."oauthClient" c ON c."clientId"=b.client_id JOIN webdock_auth.tenant_customer t ON t.organization_id=b.organization_id WHERE b.id=$1 FOR UPDATE OF b,c`, [value.bindingID])).rows[0];
       const target = digest([value.bindingID, value.customerID, value.origin, value.planHash]);

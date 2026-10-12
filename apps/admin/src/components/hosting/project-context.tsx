@@ -20,6 +20,7 @@ export async function HostingProjectHeader({ projectID, leaf, showNavigation = t
       ...(data.operator ? [{href:`/projects/${projectID}`,label:t('Project overview'),exact:true}] : []),
       {href:base,label:t('Applications'),exact:true},
       {href:base+'/git',label:t('Deployments')},
+      {href:base+'/databases',label:t('Databases')},
     ]}/>}
   </header>;
 }

@@ -3,11 +3,13 @@ import {
   commandSchema,
   byokCommands,
   gitCommands,
+  databaseCommands,
   readActions,
   hostingError,
   type HostingCommand,
 } from "@webdock/hosting-contracts";
 export const hostingTools: Record<HostingCommand["action"], string> = {
+  ...Object.fromEntries(databaseCommands.map(s=>[s.shape.action.value,s.shape.action.value.replaceAll(".","_")])) as Record<(typeof databaseCommands)[number]["shape"]["action"]["value"],string>,
   ...Object.fromEntries(gitCommands.map(s => [s.shape.action.value, s.shape.action.value.replaceAll(".", "_")])) as Record<(typeof gitCommands)[number]["shape"]["action"]["value"], string>,
   ...Object.fromEntries(byokCommands.map(s=>[s.shape.action.value,s.shape.action.value.replaceAll(".","_")])) as Record<(typeof byokCommands)[number]["shape"]["action"]["value"],string>,
   "clusters.activate": "activate_hosting_cluster",
@@ -62,13 +64,13 @@ export function registerHostingTools(
         annotations: {
           readOnlyHint: read,
           destructiveHint:
-            action === "clusters.revoke" || action === "apps.delete" || action === "apps.purgeStorage",
+            action === "databases.purgeMigrationSource" || action === "databases.delete" || action === "databases.purge" || action === "clusters.revoke" || action === "apps.delete" || action === "apps.purgeStorage",
           idempotentHint:
             read ||
             action === "clusters.register" ||
             action === "projects.create" ||
-            action.startsWith("apps."),
-          openWorldHint: action.startsWith("apps."),
+            action.startsWith("apps.") || action.startsWith("databases."),
+          openWorldHint: action.startsWith("apps.") || action.startsWith("databases."),
         },
       },
       async (input: Record<string, unknown>) => {

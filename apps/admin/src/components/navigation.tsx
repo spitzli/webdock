@@ -72,7 +72,8 @@ export function TenantNavigation({ customerID, canManage = false, preview = fals
   return <AreaNavigation label={i18n.t("Workspace navigation")} links={[
     {href:overviewHref || base,label:msgid("Overview"),exact:true},
     {href:base+"/hosting",label:msgid("Applications")},
-    ...(!preview ? [{href:base+"/databases",label:msgid("Databases")},{href:base+"/mail",label:msgid("Mail")}] : []),
+    {href:base+(preview?"/managed-databases":"/databases"),label:msgid("Databases"),activePaths:[base+"/managed-databases",base+"/databases"]},
+    ...(!preview ? [{href:base+"/mail",label:msgid("Mail")}] : []),
     ...(canManage ? [{href:base+"/team",label:msgid("Team")}] : []),
     {href:base+"/usage",label:msgid("Plan & usage")},
     {href:base+"/profile",label:msgid("Profile")},

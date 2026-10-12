@@ -1,0 +1,88 @@
+[
+  {
+    "action": "pause",
+    "proof": {
+      "installationID": "127",
+      "databaseID": "12710",
+      "cnpgUID": "e0414789-ff33-4cd5-ad77-a3d71525cbd5",
+      "revision": 2,
+      "state": "paused",
+      "endpointReady": false
+    }
+  },
+  {
+    "action": "resume",
+    "proof": {
+      "installationID": "127",
+      "databaseID": "12710",
+      "cnpgUID": "e0414789-ff33-4cd5-ad77-a3d71525cbd5",
+      "revision": 3,
+      "state": "ready",
+      "endpointReady": true
+    }
+  },
+  {
+    "action": "restart",
+    "proof": {
+      "installationID": "127",
+      "databaseID": "12710",
+      "cnpgUID": "e0414789-ff33-4cd5-ad77-a3d71525cbd5",
+      "revision": 4,
+      "state": "ready",
+      "endpointReady": true
+    }
+  },
+  {
+    "action": "resize",
+    "proof": {
+      "installationID": "127",
+      "databaseID": "12710",
+      "cnpgUID": "e0414789-ff33-4cd5-ad77-a3d71525cbd5",
+      "revision": 5,
+      "state": "ready",
+      "endpointReady": true
+    }
+  },
+  {
+    "action": "rotateCredentials",
+    "proof": {
+      "installationID": "127",
+      "databaseID": "12710",
+      "cnpgUID": "e0414789-ff33-4cd5-ad77-a3d71525cbd5",
+      "revision": 6,
+      "state": "ready",
+      "endpointReady": true
+    }
+  },
+  {
+    "action": "delete",
+    "proof": {
+      "installationID": "127",
+      "databaseID": "12710",
+      "cnpgUID": "e0414789-ff33-4cd5-ad77-a3d71525cbd5",
+      "revision": 7,
+      "state": "retained",
+      "endpointReady": false
+    }
+  },
+  {
+    "action": "purge",
+    "proof": {
+      "installationID": "127",
+      "databaseID": "12710",
+      "cnpgUID": "e0414789-ff33-4cd5-ad77-a3d71525cbd5",
+      "revision": 8,
+      "state": "purged",
+      "endpointReady": false
+    }
+  },
+  {
+    "dedicatedLifecycle": true,
+    "persistentData": true,
+    "pauseResume": true,
+    "restart": true,
+    "resize": true,
+    "rotation": true,
+    "retainedThenPurged": true
+  }
+]
