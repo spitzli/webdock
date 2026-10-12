@@ -34,7 +34,8 @@
     "@webdock/i18n": "*",
     "@webdock/hosting-contracts": "*",
     "@webdock/search": "*",
-    "@webdock/database-contracts": "*"
+    "@webdock/database-contracts": "*",
+    "@webdock/mail-contracts": "*"
   },
   "devDependencies": {
     "@types/node": "^24",

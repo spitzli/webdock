@@ -1,0 +1,12 @@
+{
+  "name": "@webdock/mail-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./validation": "./src/validation.ts",
+    "./limits": "./src/limits.ts",
+    "./events": "./src/events.ts"
+  }
+}
