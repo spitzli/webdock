@@ -285,8 +285,11 @@ Before re-enabling the grant, exercise authenticated Tabularis RPC from its priv
 TLS endpoint using the existing protected proxy credentials and runtime CA, or the
 normal native gateway after a controlled temporary operator grant. Negotiate
 `/api/v1/session`, require pinned server commit
-`fdd6c0a6f979ede0acb38415fa12b25c04aa9c4e`, use its CSRF/session values and invoke
-`test_connection` for the saved connection. Then execute through that same runtime:
+`fdd6c0a6f979ede0acb38415fa12b25c04aa9c4e`, use its CSRF/session values and execute `SELECT 1` through the saved connection ID.
+The restricted upstream `test_connection` endpoint rejects inline host certificate
+paths. The gateway therefore implements its browser-facing connection test as a
+fixed query against the saved connection, preserving the CA and verify-full mode.
+Then execute through that same runtime:
 
 ```sql
 SELECT current_database() AS database, current_user AS role,
@@ -312,3 +315,13 @@ sessions. Separately confirm Spitzli and both Lunares connections still negotiat
 and read their own metadata. Rollback restores the old Secret connection and egress,
 removes only the added mount/volume, and restarts this one runtime; never remove the
 source fence or point back after target writes without reconciling data first.
+
+### Cleanup when the root signer is unavailable
+
+Do not leave the temporary credential active. The offline role can clear its own
+password with `ALTER ROLE webdock_offline_migrate PASSWORD NULL`. Commit that
+change, terminate its other database sessions, then close the last session.
+Verify fresh authentication fails on both direct PostgreSQL and PgBouncer and
+that no offline-role backend remains. This is containment, not full cleanup:
+restore privileged access to run `cleanup.sql` and remove the temporary HBA
+entry. Record the pending LOGIN/CREATEROLE/membership cleanup explicitly.

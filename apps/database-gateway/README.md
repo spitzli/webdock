@@ -118,3 +118,10 @@ Renderer validation (disposable certificates and synthetic credentials only):
 ```sh
 python3 -m unittest discover -s apps/database-gateway/tests -p 'test_render.py'
 ```
+
+The gateway implements embedded `test_connection` as a fixed `SELECT 1` through
+the runtime's saved connection ID, returning the upstream-compatible success string.
+This retains the saved TLS CA and verification settings without sending host-file
+parameters through Tabularis's restricted remote connection-test endpoint. Supplied
+client parameters are ignored; the probe uses normal query limits, deadlines,
+revocation checks and cancellation.
