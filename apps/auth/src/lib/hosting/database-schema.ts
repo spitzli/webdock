@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS webdock_auth.hosting_database_backend (
  host text NOT NULL, direct_port integer NOT NULL CHECK(direct_port BETWEEN 30000 AND 32767),
  pooled_port integer NOT NULL CHECK(pooled_port BETWEEN 30000 AND 32767),
  endpoint_ready boolean NOT NULL DEFAULT false, observed_at timestamptz,
- created_at timestamptz NOT NULL DEFAULT now(), 
+ created_at timestamptz NOT NULL DEFAULT now(),
  CHECK(direct_port<>pooled_port)
 );
 ALTER TABLE webdock_auth.hosting_database_backend DROP CONSTRAINT IF EXISTS hosting_database_backend_cluster_id_direct_port_key;
