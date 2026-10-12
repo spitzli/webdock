@@ -1,3 +1,4 @@
+import { AreaNavigation } from "@/components/area-navigation";
 import {uiLabel} from "@/lib/ui-labels";
 
 import { getRequestI18n } from '@webdock/i18n/next';
@@ -18,9 +19,9 @@ const bytes = (value: number | null, locale: string, unavailable: string) =>
     ? unavailable
     : `${(value / 1_000_000).toLocaleString(locale === "de" ? "de-DE" : "en-GB", { maximumFractionDigits: 3 })} MB`;
 export default async function Usage({
-  params,
+  params, searchParams,
 }: {
-  params: Promise<{ customerID: string }>;
+  params: Promise<{ customerID: string }>; searchParams:Promise<{view?:string}>;
 }) {
   const i18n = await getRequestI18n();
 
@@ -51,6 +52,9 @@ export default async function Usage({
   // This request-bound Server Component compares stored snapshots with the server clock.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
+  const query = await searchParams;
+  const view = tenantData.operator && (query.view === "plan" || query.view === "sources") ? query.view : "overview";
+  const base = `/tenants/${customerID}/usage`;
   const storageLimit = data.subscription?.effective.storageBytes;
   return (
     <div className="access-page">
@@ -60,7 +64,8 @@ export default async function Usage({
           <p className="muted">{tenantData.tenant.name}</p>
         </div>
       </header>
-      <div className="access-grid">
+      <AreaNavigation links={[{href:base+"?view=overview",label:i18n.t("Usage"),exact:true},...(tenantData.operator ? [{href:base+"?view=plan",label:i18n.t("Plan & offers"),exact:true},{href:base+"?view=sources",label:i18n.t("Measurement sources"),exact:true}] : [])]}/>
+      {view === "overview" && <div className="access-grid">
         <section className="auth-panel">
           <h2>{data.subscription?.name || i18n.t("No plan assigned")}</h2>
           {data.subscription ? (
@@ -135,8 +140,8 @@ export default async function Usage({
           </p>
           <p className="muted">{i18n.t("Transfer usage is not currently measured here.")}</p>
         </section>
-      </div>
-      <section className="account-section">
+      </div>}
+      {view === "sources" && <section className="account-section">
         <h2>{i18n.t("Storage measurements")}</h2>
         {!storage.stores.length && (
           <p>{i18n.t("No storage connections yet. Usage is unavailable until a store is connected and measured.")}</p>
@@ -168,7 +173,7 @@ export default async function Usage({
             </article>
           ))}
         </div>
-      </section>
+      </section>}
       {!tenantData.operator && (
         <section className="account-section">
           <h2>{i18n.t("Offers")}</h2>
@@ -188,7 +193,7 @@ export default async function Usage({
           )}
         </section>
       )}
-      {tenantData.operator && (
+      {tenantData.operator && view !== "overview" && (
         <>
           <p>
             <Link href="/admin/plans">{i18n.t("Manage reusable plans")}</Link>
@@ -199,6 +204,7 @@ export default async function Usage({
               plans={plans}
               data={data}
               storage={storage}
+              mode={view === "sources" ? "storage" : "plan"}
             />
           ) : (
             <p className="notice">{i18n.t("This tenant is archived. Changes are disabled.")}</p>

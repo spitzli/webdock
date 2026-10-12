@@ -1,5 +1,6 @@
 'use client';
 import {useOramaRows} from '@webdock/search/react';
+import {contentSections} from '@/lib/content-fields';
 import {msgid} from '@webdock/i18n';
 import { useI18n } from '@webdock/i18n/react';
 
@@ -19,6 +20,8 @@ export function ContentWorkspace({ bindingID, fields, variant, writable, origin 
   const [selected, setSelected] = useState(fields[0]?.key || '');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
+  const [section, setSection] = useState('');
+  const sections = contentSections(fields);
   const [saving, setSaving] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, ContentDraft>>(() => Object.fromEntries(fields.map(field => [field.key, initialContentDraft(field)])));
   const editor = useRef<HTMLElement>(null);
@@ -46,7 +49,7 @@ export function ContentWorkspace({ bindingID, fields, variant, writable, origin 
   }, [drafts, storageKey, writable]);
   const dirtyCount = Object.values(drafts).filter(draft => draft.value !== draft.savedValue).length;
   const matches=useOramaRows(fields,query,field=>`${field.label} ${drafts[field.key].savedValue}`);
-  const visible=matches.filter(field=>filter==='all'||field.kind===filter);
+  const visible=matches.filter(field=>(filter==='all'||field.kind===filter)&&(!section||field.section===section));
   const active = visible.find(field => field.key === selected) || visible[0];
 
   // Field switching keeps all drafts. Leaving this editor requires explicit consent.
@@ -79,7 +82,7 @@ export function ContentWorkspace({ bindingID, fields, variant, writable, origin 
   return <div className="content-workspace">
     <div className="content-topline">
       <nav className="content-segment" aria-label={i18n.t("Website view")}>
-        <a href="?variant=modern" aria-current={variant === 'modern' ? 'page' : undefined}>{i18n.t("New design")}</a>
+        <a href="?variant=modern" aria-current={variant === 'modern' ? 'page' : undefined}>{i18n.t("Current design")}</a>
         <a href="?variant=old" aria-current={variant === 'old' ? 'page' : undefined}>{i18n.t("Original view")}</a>
       </nav>
       <div className="content-session-status" role="status">{dirtyCount ? i18n.n("{count} unsaved field", "{count} unsaved fields", dirtyCount) : writable ? i18n.t("Saving publishes your changes") : i18n.t("Read access")}</div>
@@ -92,6 +95,7 @@ export function ContentWorkspace({ bindingID, fields, variant, writable, origin 
             {([["all", msgid("All")], ["text", msgid("Texts")], ["image", msgid("Images")]] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)} disabled={saving}>{i18n.t(label)}<span>{value === 'all' ? fields.length : fields.filter(field => field.kind === value).length}</span></button>)}
           </div>
         </div>
+        {sections.length > 0 && <label className="field">{i18n.t("Page or section")}<select value={section} onChange={event=>setSection(event.target.value)} disabled={saving}><option value="">{i18n.t("All content")}</option>{sections.map(name=><option key={name} value={name}>{name}</option>)}</select></label>}
         <div className="content-list-heading"><span>{i18n.n("{count} field", "{count} fields", visible.length)}</span><span>{i18n.t("Select content")}</span></div>
         <ul className="content-field-list">{visible.map(field => {
           const draft = drafts[field.key];
@@ -101,7 +105,7 @@ export function ContentWorkspace({ bindingID, fields, variant, writable, origin 
             {draft.value !== draft.savedValue && <span className="content-draft-marker" title={i18n.t("Unsaved")} aria-label={i18n.t("Unsaved")} />}
           </button></li>;
         })}</ul>
-        {!visible.length && <div className="content-no-results"><p>{i18n.t("No matching content.")}</p><button type="button" className="text-button" onClick={() => { setQuery(''); setFilter('all'); }}>{i18n.t("Reset filters")}</button></div>}
+        {!visible.length && <div className="content-no-results"><p>{i18n.t("No matching content.")}</p><button type="button" className="text-button" onClick={() => { setQuery(''); setFilter('all'); setSection(''); }}>{i18n.t("Reset filters")}</button></div>}
       </aside>
       <section className="content-editor-panel cms-panel" id="content-selected-editor" ref={editor} tabIndex={-1} aria-label={i18n.t("Selected content")}>
         {active ? <ContentEditor key={active.key} bindingID={bindingID} field={active} draft={drafts[active.key]} writable={writable} origin={origin}
@@ -141,7 +145,7 @@ function ContentEditor({ bindingID, field, draft, writable, origin, onChange, on
         {state.error && <p className="content-feedback content-feedback-error" role="alert">{i18n.error(state.error)} <a href={`?variant=${field.variant}`}>{i18n.t("Load current content")}</a></p>}
         {!dirty && state.message && <p className="content-feedback" role="status">{i18n.t("Saved. The website displays the updated content.")}</p>}
       </div>
-      <footer className="cms-savebar content-savebar"><span>{pending ? i18n.t("Saving change…") : dirty ? i18n.t("Unsaved change") : writable ? i18n.t("All changes saved") : i18n.t("This field is read-only")}</span>{writable && <div className="content-save-actions">{dirty && <button type="button" className="text-button" disabled={pending} onClick={() => { if (window.confirm(i18n.t("Discard changes to this field?"))) onReset(); }}>{i18n.t("Reset")}</button>}<button type="submit" className="button" disabled={pending || !dirty}>{pending ? i18n.t("Saving…") : i18n.t("Save change")}</button></div>}</footer>
+      <footer className="cms-savebar content-savebar"><span>{pending ? i18n.t("Saving change…") : dirty ? i18n.t("Unsaved change") : writable ? i18n.t("All changes saved") : i18n.t("This field is read-only")}</span>{writable && <div className="content-save-actions">{dirty && <button type="button" className="text-button" disabled={pending} onClick={() => { if (window.confirm(i18n.t("Discard changes to this field?"))) onReset(); }}>{i18n.t("Reset")}</button>}<button type="submit" className="button" disabled={pending || !dirty}>{pending ? i18n.t("Saving…") : i18n.t("Save and publish")}</button></div>}</footer>
     </form>
   </>;
 }

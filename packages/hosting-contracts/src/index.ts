@@ -335,6 +335,8 @@ export const commandSchema = z.discriminatedUnion("action", [
     })
     .strict(),
   z.object({ action: z.literal("usage.get"), customerID: resourceID }).strict(),
+  z.object({ action: z.literal("projects.get"), projectID: resourceID }).strict(),
+  z.object({ action: z.literal("operations.overview"), ...paging }).strict(),
   z
     .object({
       action: z.literal("projects.list"),
@@ -383,6 +385,8 @@ export const readActions = new Set<HostingCommand["action"]>([
   "limits.get",
   "usage.get",
   "projects.list",
+  "projects.get",
+  "operations.overview",
   "operations.get",
 ]);
 export type HostingOperationStatus =
@@ -469,6 +473,22 @@ export type HostingProjectView = {
   clusterName: string | null;
   country: string | null;
   region: string | null;
+};
+export type HostingProjectContext = {
+  projectID: string;
+  name: string;
+  customerID: string;
+  customerName: string;
+  operator: boolean;
+  configured: boolean;
+  provider: "k3s" | "vercel" | null;
+};
+export type HostingOverview = HostingPage<{
+  id: string; name: string; status: string; projectID: string; projectName: string;
+  customerID: string; customerName: string; revision: number; observedRevision: number;
+}> & {
+  readAt: string;
+  operations: { id: string; action: string; status: HostingOperationStatus; createdAt: string; projectID: string | null; projectName: string | null; customerName: string | null }[];
 };
 export type HostingLimitView = {
   effective: HostingAllowances;

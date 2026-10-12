@@ -37,7 +37,7 @@ export async function OwnMail({
   const { t, date, number } = await getRequestI18n();
   const data = await hostingPageCall<OwnMailView>(
     { action: "byok.mail.get", customerID },
-    `/tenants/${customerID}/mail`,
+    `/tenants/${customerID}/mail/settings`,
   );
   if (!data.operator && !data.enabled && !data.connected) return null;
   const page = Math.max(
@@ -118,7 +118,7 @@ export async function OwnMail({
               label={t("Check connection and domains")}
             />
           )}
-          <LiveSearchForm className="hosting-filters" path={`/tenants/${customerID}/mail`} pageKey="mailPage">
+          <LiveSearchForm className="hosting-filters" path={`/tenants/${customerID}/mail/settings`} pageKey="mailPage">
             <label>
               {t("Search domains")}
               <input name="mailSearch" type="search" data-search-default="" maxLength={160} defaultValue={search} />

@@ -143,7 +143,7 @@ export async function CustomerHosting({
         <p>{t("Open a hosting project to manage its applications.")}</p>
       </section>
       <OwnInfrastructure customerID={customerID} path={path} />
-      <section className="panel">
+      {projects.totalDocs > 0 && <section className="panel">
         <h2>{t("Webdock hosting allowances")}</h2>
         {usage.overallocated && (
           <p role="status">
@@ -173,19 +173,19 @@ export async function CustomerHosting({
               label: t("Allocated"),
               render: (k) => formatResource(k, usage.allocated[k], locale),
             },
-            { label: t("Measured usage"), render: () => t("Unavailable") },
           ]}
         />
+        <p className="muted">{t("Measured usage is not available yet. These values describe limits and allocations.")}</p>
         <p>
           {t(
             "These allowances apply to Webdock-hosted applications. Your own infrastructure is managed separately.",
           )}
         </p>
-      </section>
+      </section>}
       {operator && (
         <>
-          <section className="panel">
-            <h2>{t("Assign project hosting")}</h2>
+          <details className="workspace-disclosure">
+            <summary>{t("Assign project hosting")}</summary>
             <HostingForm
               command={{
                 action: "projects.create",
@@ -230,9 +230,9 @@ export async function CustomerHosting({
               </label>
               <ModeFields t={t} />
             </HostingForm>
-          </section>
-          <section className="panel">
-            <h2>{t("Limit overrides")}</h2>
+          </details>
+          <details className="workspace-disclosure">
+            <summary>{t("Limit overrides")}</summary>
             <p>
               {t(
                 "Overrides can restrict the package allowance; they cannot increase it. Unlimited here means no additional cap.",
@@ -263,7 +263,7 @@ export async function CustomerHosting({
                 </details>
               );
             })}
-          </section>
+          </details>
           {projects.docs.map((p) => (
             <section className="panel" key={p.projectID}>
               <h2>{p.name}</h2>

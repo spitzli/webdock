@@ -1,3 +1,4 @@
+import { AreaNavigation } from "@/components/area-navigation";
 import {LiveSearchForm} from "@webdock/search/form";
 import {uiLabel} from "@/lib/ui-labels";
 
@@ -12,7 +13,7 @@ export async function generateMetadata(){ const i18n = await getRequestI18n(); r
 export default async function People({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; view?: string }>;
 }) {
   const i18n = await getRequestI18n();
 
@@ -20,7 +21,9 @@ export default async function People({
   const session = await auth.api.getSession({ headers: requestHeaders });
   if (!session) redirect("/api/sso/login?returnTo=%2Fpeople");
   if (session.user.role !== "operator") redirect("/tenants");
-  const raw = (await searchParams).q;
+  const query = await searchParams;
+  const view = ["overview","permissions","invitations","websites","history"].includes(query.view ?? "") ? query.view! : "overview";
+  const raw = query.q;
   const q = typeof raw === "string" ? raw.slice(0, 160) : "";
   const data = await listAccess(requestHeaders, q);
   return (
@@ -41,8 +44,9 @@ export default async function People({
           }
         >{i18n.t("Account & security")}</Link>
       </header>
+      <AreaNavigation links={[["overview",i18n.t("Accounts")],["permissions",i18n.t("Website permissions")],["invitations",i18n.t("Invitations")],["websites",i18n.t("Customers & websites")],["history",i18n.t("Recent access changes")]].map(([key,label])=>({href:"/people?"+new URLSearchParams({view:key,...(q?{q}:{})}),label,exact:true}))}/>
       <div className="access-grid">
-        <section className="auth-panel">
+        {view === "invitations" && <section className="auth-panel">
           <h2>{i18n.t("Invite to a website")}</h2>
           <p>{i18n.t("New customers receive a secure link to choose their password. Existing accounts receive an invitation. Website access starts when customer membership is accepted.")}</p>
           <AccessForm action="invite" label={i18n.t("Save access and send invitation")}>
@@ -73,8 +77,8 @@ export default async function People({
             <RoleSelect />
           </AccessForm>
           <p className="help">{i18n.t("Website roles do not grant infrastructure or platform-operator access. Sending again updates the selected website role and resends a pending invitation.")}</p>
-        </section>
-        <section className="auth-panel">
+        </section>}
+        {view === "websites" && <section className="auth-panel">
           <h2>{i18n.t("Customers & websites")}</h2>
           <p>{i18n.t("Group website access by customer. Public sign-up remains closed.")}</p>
           <AccessForm
@@ -109,9 +113,9 @@ export default async function People({
               )}
             </article>
           ))}
-        </section>
+        </section>}
       </div>
-      <LiveSearchForm className="access-search" path="/people">
+      <LiveSearchForm className="access-search" path="/people"><input type="hidden" name="view" value={view}/>
         <label className="field">{i18n.t("Find a person")}<input
             type="search"
             name="q"
@@ -123,14 +127,14 @@ export default async function People({
           />
         </label>
         <noscript><button className="button">{i18n.t("Search")}</button></noscript>
-        {q && <Link href="/people">{i18n.t("Clear")}</Link>}
+        {q && <Link href={"/people?"+new URLSearchParams({view})}>{i18n.t("Clear")}</Link>}
       </LiveSearchForm>
-      <section className="account-section">
+      {view === "overview" && <section className="account-section">
         <h2>{i18n.t("Accounts")}</h2>
         <p className="muted">{i18n.t("Up to 100 matching accounts. Platform operators are protected from suspension here.")}</p>
-        <div className="access-grid">
+        <div className="workspace-list">
           {data.users.map((user) => (
-            <article className="access-record" key={user.id}>
+            <article key={user.id}>
               <h3>{user.name}</h3>
               <p>
                 {user.email}
@@ -170,8 +174,8 @@ export default async function People({
           ))}
         </div>
         {!data.users.length && <p>{i18n.t("No matching accounts.")}</p>}
-      </section>
-      <section className="account-section">
+      </section>}
+      {view === "permissions" && <section className="account-section">
         <h2>{i18n.t("Website permissions")}</h2>
         <p className="muted">{i18n.t("Up to 200 matching permissions. Customer membership and an active account are also required.")}</p>
         <div className="access-grid">
@@ -205,8 +209,8 @@ export default async function People({
           ))}
         </div>
         {!data.grants.length && <p>{i18n.t("No website permissions yet.")}</p>}
-      </section>
-      <section className="account-section">
+      </section>}
+      {view === "invitations" && <section className="account-section">
         <h2>{i18n.t("Invitations")}</h2>
         <p className="muted">{i18n.t("Up to 100 matching invitations. Resend from the invitation form above.")}</p>
         {data.invitations.map((invite) => (
@@ -230,8 +234,8 @@ export default async function People({
             )}
           </article>
         ))}
-      </section>
-      <section className="account-section">
+      </section>}
+      {view === "history" && <section className="account-section">
         <h2>{i18n.t("Recent access changes")}</h2>
         {data.events.map((event) => (
           <p key={event.id} className="access-event">
@@ -245,7 +249,7 @@ export default async function People({
             <small>{event.actor || event.actor_id}</small>
           </p>
         ))}
-      </section>
+      </section>}
     </div>
   );
 }

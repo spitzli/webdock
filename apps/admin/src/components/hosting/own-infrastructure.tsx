@@ -18,6 +18,7 @@ export async function OwnInfrastructure({
       path,
     ),
     p = data.policy;
+  if (!data.operator && !p.kubernetes && !p.vercel && !p.turbosmtp && !data.clusters.length && !data.vercel) return null;
   return (
     <section className="panel hosting-own">
       <div className="page-heading">
@@ -125,7 +126,7 @@ export async function OwnInfrastructure({
             </p>
             <Link
               className="button secondary"
-              href={`/tenants/${customerID}/mail#own-mail`}
+              href={`/tenants/${customerID}/mail/settings#own-mail`}
             >
               {t("Manage own email")}
             </Link>

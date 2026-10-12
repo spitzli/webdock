@@ -8,6 +8,6 @@ export const sso: ReturnType<typeof configurePayloadSSO> | null = process.env.WE
       logoutPath: '/login',
       centralLogout: true,
       allowUnmappedPortalUsers: true,
-      returnToPrefixes: ['/tenants', '/offers', '/people', '/sites', '/customers', '/projects', '/activity', '/integrations', '/infrastructure', '/hosting'],
+      returnToPrefixes: ['/tenants', '/offers', '/people', '/sites', '/customers', '/projects', '/activity', '/integrations', '/infrastructure', '/hosting', '/operations'],
     })
   : null;

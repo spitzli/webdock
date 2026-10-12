@@ -3221,7 +3221,7 @@ msgstr "Es können nur offene Demo-Anfragen erstellt werden."
 
 
 msgid "Only platform operators can change these settings. Tenant administrators manage their own tenant. Account registration remains invitation-only."
-msgstr "Nur Plattformbetreiber können diese Einstellungen ändern. Mandanten-Admins verwalten ihren eigenen Mandanten. Konten werden weiterhin nur auf Einladung erstellt."
+msgstr "Nur Plattformbetreiber können diese Einstellungen ändern. Arbeitsbereich-Admins verwalten ihren eigenen Mandanten. Konten werden weiterhin nur auf Einladung erstellt."
 
 
 msgid "Only select repositories"
@@ -4669,7 +4669,7 @@ msgstr "Mandanten-Mail"
 
 
 msgid "Tenant admin"
-msgstr "Mandanten-Admin"
+msgstr "Arbeitsbereich-Admin"
 
 
 msgid "Tenant admin · View only"

@@ -1,11 +1,11 @@
 "use client";
-import { createContext, useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
 import Link from "next/link";
 import { useI18n } from "@webdock/i18n/react";
 import { saveHosting, displayEnrollment, type HostingFormState } from "@/lib/hosting-actions";
 import type { HostingCommand } from "@webdock/hosting-contracts";
-export const HostingSaveContext=createContext<{message?:string;error?:string;environmentReset?:boolean}>({});
-export const HostingPendingContext=createContext(false);
+import { HostingSaveContext, HostingPendingContext, HostingDirtyContext } from "./form-state";
+export { HostingSaveContext, HostingPendingContext } from "./form-state";
 export function HostingForm({
   command,
   children,
@@ -18,9 +18,25 @@ export function HostingForm({
   preserveRevision?: boolean;
 }) {
   const [initialCommand,setInitialCommand] = useState(command);
+  const [dirty, setDirty] = useState(false);
   const { t, error } = useI18n();
+  useEffect(() => {
+    if (!dirty) return;
+    const unload = (event: BeforeUnloadEvent) => event.preventDefault();
+    const navigate = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+      if (!(link instanceof HTMLAnchorElement) || link.target === '_blank' || link.hasAttribute('download')) return;
+      if (link.href === window.location.href) return;
+      if (!window.confirm(t('Leave without saving these changes?'))) { event.preventDefault(); event.stopPropagation(); }
+    };
+    window.addEventListener('beforeunload', unload);
+    document.addEventListener('click', navigate, true);
+    return () => { window.removeEventListener('beforeunload', unload); document.removeEventListener('click', navigate, true); };
+  }, [dirty, t]);
   const [state, action, pending] = useActionState(async (previous: HostingFormState, formData: FormData) => {
     const result = await saveHosting(previous, formData);
+    if (result.message) setDirty(false);
     const idempotencyKey = result.message ? crypto.randomUUID() : undefined;
     setInitialCommand(current => ({
       ...current,
@@ -30,7 +46,7 @@ export function HostingForm({
     return result;
   }, {});
   return (
-    <HostingSaveContext.Provider value={state}><HostingPendingContext.Provider value={pending}><form action={action} className="hosting-form">
+    <HostingDirtyContext.Provider value={() => setDirty(true)}><HostingSaveContext.Provider value={state}><HostingPendingContext.Provider value={pending}><form action={action} className="hosting-form" onChange={() => setDirty(true)}>
       <input
         type="hidden"
         name="command"
@@ -62,7 +78,7 @@ export function HostingForm({
       <button className="button" disabled={pending}>
         {pending ? t("Saving…") : t(label)}
       </button>
-    </form></HostingPendingContext.Provider></HostingSaveContext.Provider>
+    </form></HostingPendingContext.Provider></HostingSaveContext.Provider></HostingDirtyContext.Provider>
   );
 }
 export function EnrollmentForm({ enrollmentID }: { enrollmentID: string }) {

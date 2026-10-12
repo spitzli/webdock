@@ -1,3 +1,4 @@
+import { applicationState } from "@/lib/workspace-navigation";
 import { ListControls, Pagination } from "@/components/list-controls";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
@@ -75,7 +76,7 @@ export default async function Applications({
                 <Link href={`/hosting/apps/${a.id}`}>{a.name}</Link>
               ),
             },
-            { label: t("Status"), render: (a) => t(a.status) },
+            { label: t("Status"), render: (a) => t(applicationState(a.status)) },
             { label: t("Replicas"), render: (a) => a.spec.replicas },
           ]}
         />
@@ -86,8 +87,8 @@ export default async function Applications({
         />
       </section>
       {data.canManage && (
-        <section className="panel">
-          <h2>{t("Deploy application")}</h2>
+        <details className="workspace-disclosure">
+          <summary>{t("Deploy application")}</summary>
           <HostingForm
             preserveRevision
             command={{
@@ -106,7 +107,7 @@ export default async function Applications({
             </label>
             <AppSpecFields spec={spec} custom={data.ownImages} />
           </HostingForm>
-        </section>
+        </details>
       )}
     </>
   );

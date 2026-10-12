@@ -68,7 +68,7 @@ export async function currentTenantPreview(actor: PreviewActor): Promise<Preview
 async function previewSites(context: PreviewContext) {
  if (!(await getPlatformSettings()).cmsEnabled) return [];
  const rows = (await database.query(`SELECT b.id,b.label,c."redirectUris" FROM webdock_auth.app_binding b JOIN webdock_auth."oauthClient" c ON c."clientId"=b.client_id WHERE b.organization_id=$1 AND b.enabled AND NOT c.disabled ORDER BY b.label`, [context.organizationID])).rows;
- return rows.flatMap(row => { const url = websiteURL(row.redirectUris); return url ? [{ id: row.id as string, name: row.label as string, url, role: 'admin' as const }] : []; });
+ return rows.flatMap(row => { const url = websiteURL(row.redirectUris); return url ? [{ id: row.id as string, name: row.label as string, url, role: 'admin' as const, customerID:context.preview.customerID, customerName:context.preview.customerName }] : []; });
 }
 export async function dispatchTenantPreview(context: PreviewContext, operation: string, args: unknown[], headers: Headers) {
  if (context.preview.status !== 'active') throw new AccessError('Die Kundenansicht ist abgelaufen oder nicht mehr verfügbar. Bitte die Vorschau verlassen.');

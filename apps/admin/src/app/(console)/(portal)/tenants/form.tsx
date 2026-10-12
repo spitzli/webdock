@@ -50,7 +50,7 @@ export function TenantRole({ value = "member" }: { value?: string }) {
   const i18n = useI18n();
 
   return (
-    <label className="field">{i18n.t("Tenant role")}<select name="role" defaultValue={value === "owner" ? "admin" : value}>
+    <label className="field">{i18n.t("Workspace role")}<select name="role" defaultValue={value === "owner" ? "admin" : value}>
         <option value="member">{i18n.t("Member — view customer profile")}</option>
         <option value="admin">{i18n.t("Administrator — edit profile and invite people")}</option>
       </select>

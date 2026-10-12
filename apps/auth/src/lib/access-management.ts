@@ -127,7 +127,7 @@ export async function accountSites(headers: Headers) {
   if (!session) throw new AccessError("Sign in to view your websites.");
   const rows = (
     await database.query(
-      'SELECT b.id,b.label,c."redirectUris" FROM webdock_auth.app_binding b JOIN webdock_auth."oauthClient" c ON c."clientId"=b.client_id WHERE b.enabled AND NOT c.disabled ORDER BY b.label LIMIT 200',
+      'SELECT b.id,b.label,c."redirectUris",t.customer_id,customer.name AS customer_name FROM webdock_auth.app_binding b JOIN webdock_auth."oauthClient" c ON c."clientId"=b.client_id LEFT JOIN webdock_auth.tenant_customer t ON t.organization_id=b.organization_id LEFT JOIN webdock_admin.customers customer ON customer.id=t.customer_id WHERE b.enabled AND NOT c.disabled ORDER BY b.label LIMIT 200',
     )
   ).rows;
   const sites = await Promise.all(
@@ -137,7 +137,7 @@ export async function accountSites(headers: Headers) {
         ? await currentClaims(session.user.id, row.id)
         : { disabled: true };
       return !claims.disabled && url
-        ? { id: row.id, name: row.label, url, role: claims.webdock_role }
+        ? { id: row.id, name: row.label, url, role: claims.webdock_role, ...(row.customer_id ? {customerID: row.customer_id as string, customerName: row.customer_name as string} : {}) }
         : null;
     }),
   );
