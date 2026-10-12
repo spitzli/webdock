@@ -11,8 +11,12 @@ test("gateway authenticates each RPC, strips credentials and stops revoked sessi
   let revoked = false, lastHeaders: Record<string, unknown> = {};
   const audit: unknown[] = [];
   let lastBody: unknown;
+  let lastPath = "", queryFailure = false;
+  const upstreamPaths: string[] = [];
+  const cancellations: {connectionId: string; queryRequestId: string}[] = [];
   const upstream = createServer(async (req, res) => {
     lastHeaders = req.headers;
+    lastPath = req.url!; upstreamPaths.push(lastPath);
     res.setHeader("Content-Type", "application/json");
     if (req.url === "/api/v1/session") {
       res.setHeader("Set-Cookie", "tabularis_session=upstream-private; HttpOnly");
@@ -20,7 +24,11 @@ test("gateway authenticates each RPC, strips credentials and stops revoked sessi
     }
     let raw = ""; for await (const chunk of req) raw += chunk;
     lastBody = raw ? JSON.parse(raw) : null;
-    setTimeout(() => res.end(JSON.stringify({ ok: true, data: [{ id: "internal", name: "Orders", params: { driver: storedDriver, database: "orders", password: "never-expose" } }] })), 25);
+    if (req.url === "/api/v1/rpc/cancel_query") { cancellations.push(lastBody as {connectionId: string; queryRequestId: string}); return res.end(JSON.stringify({ok:true,data:null})); }
+    if (req.url === "/api/v1/rpc/execute_query") {
+      return setTimeout(() => res.end(JSON.stringify(queryFailure ? { ok: false, error: { code: "QUERY_ERROR", message: "Saved connection TLS verification failed" } } : { ok: true, data: { columns: ["?column?"], rows: [[1]] } })), 50);
+    }
+    setTimeout(() => res.end(JSON.stringify({ ok: true, data: [{ id: "internal", name: "Orders", params: { driver: storedDriver, database: "orders", password: "never-expose", ssl_mode: "verify-full", ssl_ca: "/database-trust/ca.crt" } }] })), 25);
   });
   const upstreamEvents = new WebSocketServer({ server: upstream });
   upstreamEvents.on("connection", client => client.send(JSON.stringify({ type: "event", event: "query-progress", payload: { connectionId: "internal" }, sequence: 1 })));
@@ -80,7 +88,7 @@ test("gateway authenticates each RPC, strips credentials and stops revoked sessi
     nextInspectionDelay = 50;
     for (let sequence = 2; sequence <= 131; sequence++) floodSource.send(JSON.stringify({ type: "event", sequence }));
     assert.equal((await overflowClosed)[0], 1008, "Authorization queues must remain bounded");
-    const rpc = (command: string, body: unknown) => call("/s/123/api/v1/rpc/"+command, { method: "POST", headers: { Cookie: cookie, "Content-Type": "application/json", "X-Tabularis-Csrf": sessionData.csrfToken, "X-Tabularis-User": "attacker" }, body: JSON.stringify(body) });
+    const rpc = (command: string, body: unknown, signal?: AbortSignal) => call("/s/123/api/v1/rpc/"+command, { method: "POST", signal, headers: { Cookie: cookie, "Content-Type": "application/json", "X-Tabularis-Csrf": sessionData.csrfToken, "X-Tabularis-User": "attacker" }, body: JSON.stringify(body) });
     const rows = await rpc("get_connections", null);
     assert.equal(rows.status, 200);
     assert.equal((await rows.json()).data[0].id, "123");
@@ -88,8 +96,35 @@ test("gateway authenticates each RPC, strips credentials and stops revoked sessi
     assert.equal(lastHeaders["x-tabularis-proxy-secret"], "trusted-secret");
     storedDriver = "sqlite";
     assert.equal((await rpc("test_connection", { request: { connection_id: "123", params: { database: "/etc/passwd" } } })).status, 200, "SQLite uses only the registered runtime connection");
-    assert.deepEqual(lastBody, { request: { connection_id: "internal", params: { driver: "sqlite", database: "orders", password: "never-expose" } } });
+    assert.equal(lastPath, "/api/v1/rpc/execute_query");
+    assert.deepEqual(lastBody, { connectionId: "internal", query: "SELECT 1", limit: 1 });
     storedDriver = "postgres";
+    const beforeProbe = upstreamPaths.length;
+    const probe = await rpc("test_connection", { request: { connection_id: "123", params: { host: "attacker.invalid", ssl_mode: "disable", ssl_ca: "/etc/passwd" } } });
+    assert.deepEqual(await probe.json(), { ok: true, data: "Connection successful!" });
+    assert.deepEqual(upstreamPaths.slice(beforeProbe), ["/api/v1/rpc/execute_query"], "No credentials or CA paths are fetched or sent inline");
+    assert.deepEqual(lastBody, { connectionId: "internal", query: "SELECT 1", limit: 1 });
+    assert.equal(lastHeaders["x-tabularis-deadline-ms"], "30000");
+    const beforeForged = upstreamPaths.length;
+    assert.equal((await rpc("test_connection", { request: { connection_id: "other", params: {} } })).status, 403);
+    assert.equal(upstreamPaths.length, beforeForged);
+    queryFailure = true;
+    const failedProbe = await rpc("test_connection", { request: { connection_id: "123", params: {} } });
+    assert.deepEqual(await failedProbe.json(), { ok: false, error: { code: "QUERY_ERROR", message: "Saved connection TLS verification failed" } });
+    queryFailure = false;
+    const probes = await Promise.all(Array.from({ length: 8 }, () => rpc("test_connection", { request: { connection_id: "123", params: {} } })));
+    assert.ok(probes.some(response => response.status === 429), "Connection probes consume the same bounded query slots");
+    assert.ok(audit.some(event => (event as { command: string }).command === "test_connection"));
+    const aborted = new AbortController();
+    const beforeAbort = upstreamPaths.length;
+    const abortProbe = rpc("test_connection", { request: { connection_id: "123", params: {} } }, aborted.signal);
+    const rejectedProbe = assert.rejects(abortProbe);
+    for (let attempt = 0; attempt < 50 && upstreamPaths.length === beforeAbort; attempt++) await new Promise(resolve => setTimeout(resolve, 2));
+    aborted.abort(); await rejectedProbe;
+    for (let attempt = 0; attempt < 50 && !cancellations.length; attempt++) await new Promise(resolve => setTimeout(resolve, 2));
+    assert.equal(cancellations[0]?.connectionId, "internal", "Abandoned connection tests cancel the bound query");
+    assert.match(cancellations[0]?.queryRequestId, /^[a-f0-9-]+$/);
+
     const initialReads = await Promise.all(Array.from({ length: 12 }, () => rpc("get_connections", null)));
     assert.ok(initialReads.every(response => response.status === 200), "Workspace bootstrap metadata must fit the concurrency limit");
     assert.equal((await rpc("save_connection", {})).status, 403);

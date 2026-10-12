@@ -67,6 +67,9 @@ try {
   if (!schemas.every(s=>tables.some(t=>t.schema===s))) throw Error('Restore all selected platform schemas before installing policies');
   const plan = buildDatabaseRls(tables);
   if (plan.unknownTables.length) throw Error('Unclassified tables: '+plan.unknownTables.join(', '));
+  // ALTER FUNCTION OWNER requires CREATE for the new owner, even when the
+  // offline caller already inherits both owner roles.
+  await db.query('GRANT USAGE,CREATE ON SCHEMA webdock_rls TO webdock_platform_owner');
   for(const schema of schemas) await db.query(`REVOKE ALL ON SCHEMA ${q(schema)} FROM PUBLIC,${loginRoles.join(',')}`);
   for(const table of tables) {
     const columns=table.columns.map(q).join(',');
@@ -110,6 +113,7 @@ try {
     ALTER DEFAULT PRIVILEGES FOR ROLE webdock_website_owner REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
     ALTER DEFAULT PRIVILEGES FOR ROLE webdock_platform_owner REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
     ALTER DEFAULT PRIVILEGES FOR ROLE webdock_policy_owner REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;`);
+  await db.query('REVOKE CREATE ON SCHEMA webdock_rls FROM webdock_platform_owner');
   await db.query('COMMIT');
   console.log(JSON.stringify({installed:true,tables:tables.length,forceRls:true,archiveRuntimeAccess:false}));
 } catch(error) {
