@@ -2054,3 +2054,18 @@ td small {
 
 .studio-portal .mailbox-dkim-record { margin-top: 16px; padding: 12px; background: var(--soft); border-radius: 8px; }
 .studio-portal .mailbox-dkim-record code { display: block; overflow-wrap: anywhere; margin-top: 8px; }
+
+/* Mail reuses the Studio form controls and keeps long addresses inside their cells. */
+.studio-portal .mail-filter-form {display:flex;flex-wrap:wrap;align-items:end;gap:14px;}
+.studio-portal .mail-filter-form > .field {flex:1 1 180px;min-width:0;}
+.studio-portal .mail-filter-form > .check {flex:0 1 auto;}
+.studio-portal .mail-product-form > fieldset {grid-template-columns:repeat(2,minmax(0,1fr));}
+.studio-portal .mail-product-form > fieldset > .field:has(textarea),
+.studio-portal .mail-product-form > fieldset > .check,
+.studio-portal .mail-product-form > fieldset > fieldset,
+.studio-portal .mail-product-form > fieldset > button {grid-column:1/-1;}
+.studio-portal .mail-product-form > fieldset > button {justify-self:start;}
+@media(max-width:700px){.studio-portal .mail-product-form > fieldset {grid-template-columns:minmax(0,1fr);}.studio-portal .mail-filter-form > .field{flex-basis:100%;}}
+.studio-portal .webmail-html {display:block;box-sizing:border-box;width:100%;min-height:260px;border:1px solid var(--border,#dce3ec);border-radius:6px;background:#fff;}
+
+.mail-metric > p { font-size: 2rem; font-weight: 650; line-height: 1.15; margin-block: .65rem 0; }

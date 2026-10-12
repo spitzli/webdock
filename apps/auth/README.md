@@ -55,3 +55,15 @@ local WebAuthn registrations/assertions and checks origin/device verification,
 direct passkey sessions, password MFA session withholding, setup restrictions,
 listing and safe deletion. It uses
 an in-memory database and never reads real MFA material or resets a local DB.
+
+### Tenant Mail API
+
+The additive Mail API is under `/api/mail/v1`; `/mail/docs` serves the pinned local
+Scalar reference and `/api/mail/v1/openapi.json` its schema. Interactive requests
+require explicit session-only key entry. API, dispatch and webhook gates default
+off. Offline scripts cover migrations, metadata backfill, optional Relaykit import
+and authenticated operator diagnostics. See
+[Mail operations](../../docs/architecture/mail-operations.md) and
+[Mail migration](../../docs/architecture/mail-migration.md) before any release.
+Use `npm run test:mail:setup` and `npm run test:mail` only with the guarded disposable
+local PostgreSQL database. Real provider evidence is separate from simulator tests.

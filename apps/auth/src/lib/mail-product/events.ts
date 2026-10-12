@@ -5,7 +5,7 @@ import {withMailTransaction} from './store';
 import {MailError,mailUnavailable} from './access';
 import {emptyRecipientState,projectRecipient} from './projections';
 /** Internal event ingestion; callback sources are authenticated before this boundary. */
-export async function recordMailEvent(event:MailEventInput,transaction?:PoolClient):Promise<{inserted:boolean}>{
+export async function recordMailEvent(event:MailEventInput,transaction?:PoolClient,options:{outbox?:boolean}={}):Promise<{inserted:boolean}>{
  parseID(event.customerID);parseID(event.connectionID);parseID(event.resourceID);
  const at=new Date(event.occurredAt);
  if(!isMailEvent(event.type)||!['application','provider','simulator','reconciliation'].includes(event.source)||!Number.isFinite(at.getTime())||at.getTime()>Date.now()+300_000||!event.dedupeKey||event.dedupeKey.length>512)throw new MailError(422,'invalid_event','Invalid canonical event');
@@ -32,7 +32,7 @@ export async function recordMailEvent(event:MailEventInput,transaction?:PoolClie
    }
   }
   const body=JSON.stringify({version:1,id:saved.id,type:event.type,created_at:at.toISOString(),data:{id:event.resourceID,simulated:!!message?.simulated,...(recipient&&target?.category!=='bcc'?{recipient}:{}),...details}});
-  await db.query(`INSERT INTO webdock_auth.mail_webhook_delivery(customer_id,connection_id,webhook_id,event_id,body)
+  if(options.outbox!==false)await db.query(`INSERT INTO webdock_auth.mail_webhook_delivery(customer_id,connection_id,webhook_id,event_id,body)
    SELECT customer_id,connection_id,id,$3,$4 FROM webdock_auth.mail_webhook WHERE customer_id=$1 AND connection_id=$2 AND deleted_at IS NULL AND events ? $5
    ON CONFLICT(webhook_id,event_id) DO NOTHING`,[event.customerID,event.connectionID,saved.id,body,event.type]);
   return {inserted:true};

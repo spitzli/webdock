@@ -1,6 +1,7 @@
+import type {PoolClient} from 'pg';
 import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypto';
 import type {EmailRequest} from '@webdock/mail-contracts';
-import {database} from '../db';
+import {mailDatabase as database} from './store';
 type Context={customerID:string;messageID:string};
 function key(secret:string|undefined){if(!secret||secret.length<32)throw Error('Mail content encryption unavailable');return createHash('sha256').update('webdock-mail-attachments-v1\0'+secret).digest();}
 const aad=(context:Context,index:number)=>Buffer.from(`${context.customerID}:${context.messageID}:${index}`);
@@ -27,3 +28,10 @@ export function openMailAttachments(context:Context,sealed:string,secret=process
  }catch{throw Error('Stored Mail attachments cannot be opened');}
 }
 export async function eraseAttachmentContent(messageID:string):Promise<void>{await database.query('UPDATE webdock_auth.mail_message_content SET encrypted_attachments=NULL WHERE message_id=$1',[messageID]);}
+
+/** Expiry is monotonic: a late acceptance must not make an already hidden body readable again. */
+export async function discardExpiredUncertainContent(db:PoolClient,messageID:string):Promise<void>{
+ await db.query('SELECT id FROM webdock_auth.mail_message WHERE id=$1 FOR UPDATE',[messageID]);
+ await db.query(`DELETE FROM webdock_auth.mail_message_content c USING webdock_auth.mail_message m WHERE c.message_id=m.id AND m.id=$1
+  AND (c.expires_at<=now() OR (m.dispatch_status IN ('dispatching','outcome_unknown') AND coalesce(m.handoff_started_at,m.created_at)+interval '7 days'<=now()))`,[messageID]);
+}

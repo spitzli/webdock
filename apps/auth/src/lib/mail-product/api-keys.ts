@@ -1,15 +1,16 @@
 import {createHash,randomBytes} from 'node:crypto';
 import type {MailActor,Permission} from '@webdock/mail-contracts';
 import {parseID} from '@webdock/mail-contracts/validation';
-import {database} from '../db';
+import {mailDatabase as database} from './store';
 import {assertMailAccess,mailUnavailable,MailError} from './access';
 import {withMailTransaction} from './store';
 const hash=(value:string)=>createHash('sha256').update(value).digest('hex');
 export async function authorizeMailKey(request:Request,permission:Permission):Promise<MailActor>{
  const header=request.headers.get('authorization')??'';
- if(!/^Bearer wdm_[A-Za-z0-9_-]{43}$/.test(header))mailUnavailable();
- const row=(await database.query('SELECT id,customer_id,connection_id FROM webdock_auth.mail_api_key WHERE key_hash=$1 AND revoked_at IS NULL',[hash(header.slice(7))])).rows[0];
- if(!row)mailUnavailable();
+ if(!/^Bearer wdm_[A-Za-z0-9_-]{43}$/.test(header))throw new MailError(401,'missing_api_key','A valid Mail API key is required');
+ const row=(await database.query('SELECT id,customer_id,connection_id,permission FROM webdock_auth.mail_api_key WHERE key_hash=$1 AND revoked_at IS NULL',[hash(header.slice(7))])).rows[0];
+ if(!row)throw new MailError(401,'invalid_api_key','Mail API key is invalid or revoked');
+ if(permission==='full_access'&&row.permission!=='full_access')throw new MailError(403,'restricted_api_key','Full Mail API access is required');
  const actor:MailActor={customerID:row.customer_id,connectionID:row.connection_id,principal:{kind:'api_key',keyID:row.id}};
  await assertMailAccess(actor,permission==='sending_access'?'send':'read',database,false);
  await database.query("UPDATE webdock_auth.mail_api_key SET last_used_at=now() WHERE id=$1 AND (last_used_at IS NULL OR last_used_at<now()-interval '1 minute')",[row.id]);

@@ -4695,3 +4695,16 @@ msgstr "Variablennamen dürfen nicht doppelt vorkommen."
 
 msgid "Undo"
 msgstr "Rückgängig"
+
+
+msgid "Choose owner, administrator or member."
+msgstr "Wähle Owner, Administrator oder Mitglied."
+
+msgid "Tenant owner access is required to manage administrators and owners."
+msgstr "Nur Kunden-Owner dürfen Administratoren und Owner verwalten."
+
+msgid "A tenant owner must be active, verified and have completed account setup."
+msgstr "Ein Kunden-Owner muss aktiv und verifiziert sein und die Kontoeinrichtung abgeschlossen haben."
+
+msgid "Keep at least one active verified customer owner."
+msgstr "Mindestens ein aktiver, verifizierter Kunden-Owner muss erhalten bleiben."

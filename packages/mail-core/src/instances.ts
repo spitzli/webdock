@@ -69,6 +69,10 @@ export async function requestMailService(pool: Pool, input: { customerID: string
       if ((await client.query("SELECT reference_id FROM webdock_mail.budget_reservation WHERE customer_id=$1 AND state='reserved' LIMIT 1", [id])).rowCount)
         fail("Reconcile pending sends before activating incoming Mail.");
     }
+    if (!current && input.enabled && (await client.query("SELECT to_regclass('webdock_auth.mail_message') AS present")).rows[0].present) {
+      if ((await client.query("SELECT id FROM webdock_auth.mail_message WHERE customer_id=$1 AND NOT simulated AND dispatch_status IN ('scheduled','dispatching','outcome_unknown') LIMIT 1",[id])).rowCount)
+        fail("Reconcile pending sends before activating incoming Mail.");
+    }
     const revision = current ? String(BigInt(current.revision) + 1n) : "1";
     const result = await client.query(`INSERT INTO webdock_mail.service(customer_id,instance_key,host_id,desired_enabled,state,revision)
       VALUES($1,$2,$3,$4,'pending',$5) ON CONFLICT(customer_id) DO UPDATE SET desired_enabled=$4,

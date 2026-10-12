@@ -1,3 +1,4 @@
+import {MailGatewayOverview} from "@/components/mail/gateway-overview";
 import { OwnMail } from "@/components/hosting/own-mail";
 import { uiLabel } from "@/lib/ui-labels";
 
@@ -24,7 +25,7 @@ export default async function TenantMail({
   searchParams,
 }: {
   params: Promise<{ customerID: string }>;
-  searchParams: Promise<{ mailPage?: string; mailSearch?: string }>;
+  searchParams: Promise<{ mailPage?: string; mailSearch?: string;connection?:string }>;
 }) {
   const i18n = await getRequestI18n();
 
@@ -73,6 +74,7 @@ export default async function TenantMail({
           </p>
         </div>
       </header>
+      <MailGatewayOverview props={{params:Promise.resolve({customerID}),searchParams}} nativeIncoming={!!nativeService&&nativeService.service.revision!=='0'}/>
       {nativeService && <MailServicePanel data={nativeService} />}
       <details className="panel" open={true}>
         <summary>{i18n.t("Email provided by Webdock")}</summary>

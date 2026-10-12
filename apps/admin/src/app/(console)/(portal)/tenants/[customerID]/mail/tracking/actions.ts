@@ -1,4 +1,5 @@
 "use server";
+import {mailCall} from "@/lib/mail-product";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { AccessError } from "@/lib/access-management";
@@ -10,7 +11,8 @@ export async function trackingAction(
   const value = (name: string) =>
     typeof form.get(name) === "string" ? String(form.get(name)) : "";
   try {
-    return await manageTenantTracking(
+    const send=(headers:Headers,customer:string,input:Record<string,string>)=>value("connection")?mailCall<{message:string}>("mailTrackingUpdate",customer,value("connection"),input):manageTenantTracking(headers,customer,input);
+    return await send(
       await headers(),
       value("customer"),
       Object.fromEntries(

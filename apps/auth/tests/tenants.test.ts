@@ -108,6 +108,7 @@ test("Two tenants isolate profiles, membership, invitations, native endpoints an
   assert.equal((await currentClaims(member.id, site.binding)).disabled, true, "Ordinary membership alone cannot edit a CMS");
   await database.query('UPDATE webdock_auth.member SET role=\'owner\' WHERE "userId"=$1 AND "organizationId"=$2', [user.id, org(one.id)]);
   assert.equal((await currentClaims(user.id, site.binding)).webdock_role, "admin", "Mapped tenant owners inherit CMS administration");
+  await manageTenant(operator.headers, one.id, { action: "role", member: adminMembership, role: "owner" });
   await database.query('UPDATE webdock_auth.member SET role=\'admin\' WHERE "userId"=$1 AND "organizationId"=$2', [user.id, org(one.id)]);
   for (const [column, blocked, restored] of [["emailVerified", false, true], ["mustChangePassword", true, false]] as const) {
     await database.query(`UPDATE webdock_auth."user" SET "${column}"=$1 WHERE id=$2`, [blocked, user.id]);
@@ -160,7 +161,7 @@ test("Two tenants isolate profiles, membership, invitations, native endpoints an
   const invitedMembership = (await database.query('SELECT id FROM webdock_auth.member WHERE "userId"=$1 AND "organizationId"=$2', [user.id, org(one.id)])).rows[0].id;
   const concurrentDemotions = await Promise.allSettled([adminMembership, invitedMembership].map(memberID => manageTenant(operator.headers, one.id, { action: "role", member: memberID, role: "member" })));
   assert.equal(concurrentDemotions.filter(result => result.status === "fulfilled").length, 1, "Concurrent demotions preserve one usable customer administrator");
-  await manageTenant(operator.headers, one.id, { action: "role", member: adminMembership, role: "admin" });
+  await manageTenant(operator.headers, one.id, { action: "role", member: adminMembership, role: "owner" });
   await manageTenant(operator.headers, one.id, { action: "role", member: invitedMembership, role: "member" });
   assert.equal((await getTenant(invitedHeaders, one.id)).canManage, false);
   await manageTenant(operator.headers, one.id, { action: "remove", member: invitedMembership });

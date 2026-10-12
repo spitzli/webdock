@@ -1,0 +1,35 @@
+{
+  "accountID": "26191165",
+  "mid": "2220973297026318336",
+  "inboxUID": "2221",
+  "parts": [
+    {
+      "filename": "relaykit-pixel.png",
+      "type": "image/png",
+      "contentID": "<relaykit-07aaf2a0-e1df-4b1d-999d-d63f77c1dfdc@spitzli.me>",
+      "bytes": 68,
+      "sha256": "12c5f2d047c104162162d8a5a74281257ecd3b38e225d4fb8bda77e3427d65dd"
+    },
+    {
+      "filename": "relaykit-test.txt",
+      "type": "text/plain",
+      "contentID": null,
+      "bytes": 72,
+      "sha256": "21b910c543e942d04e4a02c973279fdc094dae609adeb52db5dc7d721a6bbce7"
+    }
+  ],
+  "textAttachmentMatches": true,
+  "imageMatches": true,
+  "cidMatchesHTML": true,
+  "replyToMatches": true,
+  "customHeaderMatches": true,
+  "htmlPresent": true,
+  "plainBodyPresent": false,
+  "mimeTypes": [
+    "multipart/mixed",
+    "multipart/related",
+    "text/html",
+    "image/png",
+    "text/plain"
+  ]
+}

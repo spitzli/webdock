@@ -44,6 +44,30 @@ test('incoming Mail cannot silently bypass the required Stalwart submission path
    const result=await submitMail(f.actorA,{from:'sender@'+f.domainA.name,to:'recipient@example.com',subject:'Incoming route',text:'Hello'},{key:'incoming',send:async()=>{calls++;return {kind:'accepted',mid:'123'};}});
    assert.notEqual(result.status,200);assert.equal(calls,0);
    assert.equal((await f.db.query('SELECT error_code FROM webdock_auth.mail_message WHERE customer_id=$1',[f.actorA.customerID])).rows[0].error_code,'native_submission_required');
+   await f.db.query("UPDATE webdock_mail.service SET desired_enabled=false,state='suspended' WHERE customer_id=$1",[f.actorA.customerID]);
+   const suspended=await submitMail(f.actorA,{from:'sender@'+f.domainA.name,to:'recipient@example.com',subject:'Suspended incoming route',text:'Hello'},{key:'incoming-suspended',send:async()=>{calls++;return {kind:'accepted',mid:'124'};}});
+   assert.notEqual(suspended.status,200);assert.equal(calls,0);
   }finally{await f.db.query('DELETE FROM webdock_auth.mail_tenant_account WHERE customer_id=$1',[f.actorA.customerID]);await f.db.query('DELETE FROM webdock_mail.service WHERE customer_id=$1',[f.actorA.customerID]);}
  });
 });
+test('dispatch kill switch also blocks immediate API handoffs',async()=>withMailProductFixture(async f=>{
+ await f.db.query(`UPDATE webdock_auth.platform_settings SET settings=jsonb_set(settings,'{mailDispatchEnabled}','false') WHERE id=true`);
+ let calls=0;
+ const result=await submitMail(f.actorA,{from:'sender@'+f.domainA.name,to:'recipient@example.invalid',subject:'disabled',text:'test'},{key:'disabled',send:async()=>{calls++;return {kind:'accepted',mid:'123'};}});
+ assert.equal(result.status,503);assert.equal(calls,0);
+ assert.equal((await f.db.query('SELECT handoff_started_at FROM webdock_auth.mail_message WHERE connection_id=$1',[f.actorA.connectionID])).rows[0].handoff_started_at,null);
+}));
+test('simulation uses verified local proof without provider refresh when cached observation ages',async()=>withMailProductFixture(async f=>{
+ await f.db.query("UPDATE webdock_auth.mail_connection_domain SET provider_checked_at=now()-interval '1 day' WHERE connection_id=$1",[f.actorA.connectionID]);
+ const original=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;throw Error('Simulator must stay offline');};
+ try{const result=await submitMail(f.actorA,{from:'sender@'+f.domainA.name,to:'delivered@test.mail.webdock.dev',subject:'Offline simulation',text:'Test'},{key:'offline-sim'});assert.equal(result.status,200);assert.equal(calls,0);}
+ finally{globalThis.fetch=original;}
+}));
+test('a lost response record still exposes the durable unknown message without another handoff',async()=>withMailProductFixture(async f=>{
+ const body={from:'sender@'+f.domainA.name,to:'delivered@test.mail.webdock.dev',subject:'Lost response',text:'Test',scheduled_at:new Date(Date.now()+3600000).toISOString()};
+ const admitted=await submitMail(f.actorA,body,{key:'lost-response'}),id=(admitted.body as {id:string}).id;
+ await f.db.query("UPDATE webdock_auth.mail_message SET dispatch_status='outcome_unknown',handoff_started_at=now() WHERE id=$1",[id]);
+ await f.db.query("UPDATE webdock_auth.mail_idempotency SET status='unknown',response_status=NULL,response_body=NULL,expires_at=NULL WHERE message_id=$1",[id]);
+ let calls=0;const retry=await submitMail(f.actorA,body,{key:'lost-response',send:async()=>{calls++;return {kind:'accepted',mid:'123'};}});
+ assert.equal(retry.status,502);assert.equal((retry.body as {email_id:string}).email_id,id);assert.equal(calls,0);
+}));

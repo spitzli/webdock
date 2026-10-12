@@ -69,11 +69,7 @@ export function parseEmail(value:unknown,now:Date,options:{ignoreScheduleTime?:b
   for(const key of ['filename','content_type','content_id']) if(a[key]!==undefined && (typeof a[key]!=='string'||!a[key]||String(a[key]).length>255||controls.test(String(a[key]))))fail('Invalid attachment metadata');
   if(a.filename && /[\\/]/.test(String(a.filename)))fail('Invalid attachment filename');
  }
- if(input.scheduled_at!==undefined){
-  if(typeof input.scheduled_at!=='string'||!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,3})?(?:Z|[+-]\d\d:\d\d)$/.test(input.scheduled_at))fail('Schedule requires explicit timezone');
-  const time=Date.parse(input.scheduled_at as string);
-  if(!Number.isFinite(time)||(!options.ignoreScheduleTime&&(time<=now.getTime()||time>now.getTime()+L.scheduleDays*86400_000)))fail('Invalid schedule time');
- }
+ if(input.scheduled_at!==undefined)parseScheduleTime(input.scheduled_at,now,options.ignoreScheduleTime);
  if(options.batch && (input.scheduled_at!==undefined||input.attachments!==undefined))fail('Batch cannot contain attachments or schedules');
  const simulated=recipients.filter(r=>r.email.endsWith('@test.mail.webdock.dev'));
  if(simulated.length && (simulated.length!==recipients.length||simulated.some(r=>!['delivered','bounced','complained'].includes(r.email.split('@')[0]))))fail('Invalid mixed simulator recipients');
@@ -82,4 +78,15 @@ export function parseEmail(value:unknown,now:Date,options:{ignoreScheduleTime?:b
   ...(input.text!==undefined?{text:input.text as string}:{}),...(input.html!==undefined?{html:input.html as string}:{}),
   ...(input.attachments!==undefined?{attachments:input.attachments as EmailRequest['attachments']}:{}),...(input.scheduled_at!==undefined?{scheduled_at:input.scheduled_at as string}:{})};
  return {request,fromEmail,recipients,attachmentBytes,simulated:simulated.length>0};
+}
+
+export function parseScheduleTime(value:unknown,now=new Date(),ignoreTime=false):Date{
+ if(typeof value!=='string')fail('Schedule requires explicit timezone');
+ const match=/^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)(?:\.\d{1,3})?(?:Z|[+-]\d\d:\d\d)$/.exec(value as string);
+ if(!match)fail('Schedule requires explicit timezone');
+ const [year,month,day,hour,minute,second]=match!.slice(1).map(Number);
+ if(month<1||month>12||day<1||day>new Date(Date.UTC(year,month,0)).getUTCDate()||hour>23||minute>59||second>59)fail('Invalid schedule calendar time');
+ const at=new Date(value as string);
+ if(!Number.isFinite(at.getTime())||(!ignoreTime&&(at.getTime()<=now.getTime()||at.getTime()>now.getTime()+L.scheduleDays*86400_000)))fail('Invalid schedule time');
+ return at;
 }

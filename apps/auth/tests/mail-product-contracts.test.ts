@@ -30,3 +30,7 @@ test('boundary IDs and pagination reject ambiguous values',()=>{
  assert.deepEqual(parsePageQuery({}),{limit:20});
  assert.throws(()=>parsePageQuery({limit:101}));
 });
+test('schedule validation rejects normalized calendar mistakes and invalid clocks',()=>{
+ for(const scheduled_at of ['2027-02-29T12:00:00Z','2026-04-31T12:00:00+02:00','2026-10-13T24:00:00Z'])assert.throws(()=>parseEmail({...email,scheduled_at},now,{ignoreScheduleTime:true}));
+ assert.doesNotThrow(()=>parseEmail({...email,scheduled_at:'2028-02-29T12:00:00+02:00'},now,{ignoreScheduleTime:true}));
+});

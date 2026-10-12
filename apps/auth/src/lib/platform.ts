@@ -6,11 +6,11 @@ import { TurboSMTPClient } from "./turbosmtp";
 
 export class PlatformError extends Error {}
 export type PlatformSettings = {
-  name: string; supportEmail: string; cmsEnabled: boolean; mailEnabled: boolean; mailSendingIP: string;
+  name: string; supportEmail: string; cmsEnabled: boolean; mailEnabled: boolean; mailGatewayEnabled: boolean; mailDispatchEnabled: boolean; mailWebhooksEnabled: boolean; mailSendingIP: string;
   mailDefaultLimit: number; mailRegion: "eu" | "global";
 };
 export const platformDefaults: PlatformSettings = {
-  name: "Webdock", supportEmail: "dominik@spitzli.dev", cmsEnabled: true, mailEnabled: false,
+  name: "Webdock", supportEmail: "dominik@spitzli.dev", cmsEnabled: true, mailEnabled: false, mailGatewayEnabled: false, mailDispatchEnabled: false, mailWebhooksEnabled: false,
   mailSendingIP: "", mailDefaultLimit: 1000, mailRegion: "eu",
 };
 export const platformSchemaSQL = `
@@ -31,7 +31,7 @@ export function validatePlatformSettings(input: Record<string, string>): Platfor
   if (mailSendingIP && isIP(mailSendingIP) !== 4) throw new PlatformError("Use the IPv4 sending address assigned by the mail provider.");
   if (!/^\d{1,10}$/.test(limit) || Number(limit) > 1_000_000_000) throw new PlatformError("Choose a default mail limit from 0 to 1,000,000,000.");
   if (!["eu", "global"].includes(input.mailRegion)) throw new PlatformError("Choose EU or global sending infrastructure.");
-  return { name, supportEmail, mailSendingIP, cmsEnabled: input.cmsEnabled === "yes", mailEnabled: input.mailEnabled === "yes", mailDefaultLimit: Number(limit), mailRegion: input.mailRegion as "eu" | "global" };
+  return { name, supportEmail, mailSendingIP, cmsEnabled: input.cmsEnabled === "yes", mailEnabled: input.mailEnabled === "yes", mailGatewayEnabled: input.mailGatewayEnabled === "yes", mailDispatchEnabled: input.mailDispatchEnabled === "yes", mailWebhooksEnabled: input.mailWebhooksEnabled === "yes", mailDefaultLimit: Number(limit), mailRegion: input.mailRegion as "eu" | "global" };
 }
 export async function getPlatformSettings(): Promise<PlatformSettings> {
   const row = (await database.query("SELECT settings FROM webdock_auth.platform_settings WHERE id=true")).rows[0];
@@ -93,12 +93,12 @@ export async function clearMailCredentials(actorID: string) {
   await rootWrite(actorID, "mail-credentials-removed", "DELETE FROM webdock_auth.platform_mail_credential WHERE id=true", []);
 }
 /** Server-side only; never pass this result to a React client or action response. */
-export async function mailProvider() {
+export async function mailProvider(fetcher?:typeof fetch) {
   const row = (await database.query("SELECT encrypted_secret FROM webdock_auth.platform_mail_credential WHERE id=true")).rows[0];
   if (!row) throw new PlatformError("Connect the mail provider in Webdock administration first.");
   const credentials = decryptMailSecret<{ consumerKey: string; consumerSecret: string }>(row.encrypted_secret, "platform-master");
   if (!credentials.consumerKey || !credentials.consumerSecret) throw new PlatformError("Reconnect the mail provider.");
-  return new TurboSMTPClient(credentials);
+  return new TurboSMTPClient(credentials,fetcher);
 }
 export async function testMailConnection() {
   const result = await (await mailProvider()).listSubaccounts({ limit: 1 });

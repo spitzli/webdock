@@ -1,6 +1,6 @@
 import type {MailActor} from '@webdock/mail-contracts';
 import {parseAddress} from '@webdock/mail-contracts/validation';
-import {database} from '../db';
+import {mailDatabase as database} from './store';
 import {assertMailAccess,MailError} from './access';
 import {withMailTransaction} from './store';
 export async function getSuppressedRecipients(customerID:string,emails:string[]):Promise<Set<string>>{

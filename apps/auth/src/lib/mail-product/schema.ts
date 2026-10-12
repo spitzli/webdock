@@ -198,3 +198,45 @@ export const mailProductDispatchSchemaSQL = `
 ALTER TABLE webdock_auth.mail_idempotency ADD COLUMN IF NOT EXISTS operation_token uuid NOT NULL DEFAULT gen_random_uuid();
 ALTER TABLE webdock_auth.mail_recipient ADD COLUMN IF NOT EXISTS first_delivered_at timestamptz;
 `;
+
+export const mailProductQueueSchemaSQL = `
+ALTER TABLE webdock_auth.mail_message ADD COLUMN IF NOT EXISTS handoff_started_at timestamptz;
+ALTER TABLE webdock_auth.mail_message ADD COLUMN IF NOT EXISTS blocked_reason text;
+ALTER TABLE webdock_auth.mail_recipient ADD COLUMN IF NOT EXISTS included_in_handoff boolean NOT NULL DEFAULT false;
+ALTER TABLE webdock_auth.mail_batch ADD COLUMN IF NOT EXISTS claim_token uuid;
+ALTER TABLE webdock_auth.mail_batch ADD COLUMN IF NOT EXISTS lease_until timestamptz;
+ALTER TABLE webdock_auth.mail_callback_source ADD COLUMN IF NOT EXISTS rate_window timestamptz;
+ALTER TABLE webdock_auth.mail_callback_source ADD COLUMN IF NOT EXISTS rate_count integer NOT NULL DEFAULT 0;
+`;
+export const mailProductTrackingSchemaSQL = `
+CREATE TABLE IF NOT EXISTS webdock_auth.mail_connection_tracking_settings (
+ customer_id varchar NOT NULL,connection_id text NOT NULL,snapshot jsonb NOT NULL,updated_at timestamptz NOT NULL DEFAULT now(),
+ PRIMARY KEY(connection_id),FOREIGN KEY(customer_id,connection_id) REFERENCES webdock_auth.mail_connection(customer_id,id)
+);
+ALTER TABLE webdock_auth.mail_tracking_domain DROP CONSTRAINT IF EXISTS mail_tracking_domain_customer_id_provider_id_key;
+CREATE UNIQUE INDEX IF NOT EXISTS mail_tracking_provider_per_connection ON webdock_auth.mail_tracking_domain(connection_id,provider_id) WHERE connection_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS mail_tracking_provider_legacy ON webdock_auth.mail_tracking_domain(customer_id,provider_id) WHERE connection_id IS NULL;
+`;
+export const mailProductRetentionIndexSQL = `
+CREATE INDEX IF NOT EXISTS mail_event_message ON webdock_auth.mail_event(message_id) WHERE message_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS mail_event_retention ON webdock_auth.mail_event(created_at,id);
+CREATE INDEX IF NOT EXISTS mail_webhook_attempt_delivery ON webdock_auth.mail_webhook_attempt(delivery_id,created_at,id);
+CREATE INDEX IF NOT EXISTS mail_delivery_event ON webdock_auth.mail_webhook_delivery(event_id);
+CREATE INDEX IF NOT EXISTS mail_delivery_retention ON webdock_auth.mail_webhook_delivery(finished_at,id) WHERE status IN ('succeeded','failed','canceled');
+CREATE INDEX IF NOT EXISTS mail_batch_item_message ON webdock_auth.mail_batch_item(message_id);
+CREATE INDEX IF NOT EXISTS mail_idempotency_message ON webdock_auth.mail_idempotency(message_id) WHERE message_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS mail_idempotency_batch ON webdock_auth.mail_idempotency(batch_id) WHERE batch_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS mail_idempotency_retention ON webdock_auth.mail_idempotency(expires_at) WHERE status='completed';
+CREATE INDEX IF NOT EXISTS mail_message_retention ON webdock_auth.mail_message(terminal_at,id) WHERE terminal_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS mail_content_retention ON webdock_auth.mail_message_content(expires_at,message_id) WHERE expires_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS mail_callback_processed ON webdock_auth.mail_callback_inbox(processed_at,id) WHERE status='processed';
+CREATE INDEX IF NOT EXISTS mail_request_log_retention ON webdock_auth.mail_request_log(created_at,id);
+`;
+export const mailProductMigrations = [
+ ['2026-10-12-mail-product-v1',mailProductSchemaSQL],
+ ['2026-10-12-mail-product-domains-v1',mailProductDomainSchemaSQL],
+ ['2026-10-12-mail-product-dispatch-v1',mailProductDispatchSchemaSQL],
+ ['2026-10-12-mail-product-queue-v1',mailProductQueueSchemaSQL],
+ ['2026-10-12-mail-product-tracking-v1',mailProductTrackingSchemaSQL],
+ ['2026-10-12-mail-product-retention-index-v1',mailProductRetentionIndexSQL],
+] as const;

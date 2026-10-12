@@ -29,7 +29,7 @@ export type TenantPlanView = {
 };
 export type OfferView = { customerID: string; customerName: string; name: string; description: string; terms: string; base: Allowances; extras: Allowances; effective: Allowances; status: string; expiresAt: string; canAccept: boolean };
 export type PlatformSettings = {
-  name: string; supportEmail: string; cmsEnabled: boolean; mailEnabled: boolean; mailSendingIP: string;
+  name: string; supportEmail: string; cmsEnabled: boolean; mailEnabled: boolean; mailGatewayEnabled: boolean; mailDispatchEnabled: boolean; mailWebhooksEnabled: boolean; mailSendingIP: string;
   mailDefaultLimit: number; mailRegion: "eu" | "global";
 };
 export type MailView = {

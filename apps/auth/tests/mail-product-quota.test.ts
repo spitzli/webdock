@@ -24,3 +24,30 @@ test('last available recipient is reserved once, unknown retains it and settleme
   await settleMailQuota(loser,'rejected');
  });
 });
+test('native and product gateways share the last tenant recipient allowance',async()=>withMailProductFixture(async f=>{
+ const {nativeMailSchemaSQL}=await import('@webdock/mail-core/schema');const {mailBudgetSchemaSQL,reserveMailBudget}=await import('../src/lib/mail-budget');const {withMailTransaction}=await import('../src/lib/mail-product/store');
+ await f.db.query(nativeMailSchemaSQL);await f.db.query(mailBudgetSchemaSQL);
+ const customer=f.actorA.customerID;
+ await f.db.query(`INSERT INTO webdock_auth.tenant_subscription(customer_id,name,description,base,extras,revision,updated_by) VALUES($1,'Quota fixture','Quota fixture','{"mailMessages":1}','{}',1,'fixture')`,[customer]);
+ try{
+  const id=(await f.db.query("INSERT INTO webdock_auth.mail_message(customer_id,connection_id,domain_id,from_address,subject,dispatch_status,provider_reference) VALUES($1,$2,$3,'sender@example.com','shared quota','scheduled',$4) RETURNING id",[customer,f.actorA.connectionID,f.domainA.id,randomUUID()])).rows[0].id;
+  await f.db.query("INSERT INTO webdock_auth.mail_recipient(customer_id,connection_id,message_id,email,category) VALUES($1,$2,$3,'to@example.com','to')",[customer,f.actorA.connectionID,id]);
+  const native=(await f.db.query('SELECT webdock_auth.next_snowflake() AS id')).rows[0].id;
+  const outcomes=await Promise.allSettled([reserveMailQuota(f.actorA,id,1,new Date()),withMailTransaction(db=>reserveMailBudget(db,customer,native,1))]);
+  assert.equal(outcomes.filter(r=>r.status==='fulfilled').length,1);
+  const product=Number((await f.db.query('SELECT coalesce(sum(reserved+consumed),0) AS used FROM webdock_auth.mail_usage_period WHERE customer_id=$1',[customer])).rows[0].used),legacy=Number((await f.db.query('SELECT coalesce(sum(reserved+accepted),0) AS used FROM webdock_mail.month_usage WHERE customer_id=$1',[customer])).rows[0].used);
+  assert.equal(product+legacy,1);
+ }finally{await f.db.query('DELETE FROM webdock_mail.budget_reservation WHERE customer_id=$1',[customer]);await f.db.query('DELETE FROM webdock_mail.month_usage WHERE customer_id=$1',[customer]);await f.db.query('DELETE FROM webdock_auth.tenant_subscription WHERE customer_id=$1',[customer]);}
+}));
+test('incoming activation cannot change the route of pending product work',async()=>withMailProductFixture(async f=>{
+ const {nativeMailSchemaSQL}=await import('@webdock/mail-core/schema');const {requestMailService}=await import('@webdock/mail-core');await f.db.query(nativeMailSchemaSQL);
+ const customer=f.actorA.customerID;
+ const id=(await f.db.query("INSERT INTO webdock_auth.mail_message(customer_id,connection_id,domain_id,from_address,subject,dispatch_status,provider_reference) VALUES($1,$2,$3,'sender@example.com','pending route','scheduled',$4) RETURNING id",[customer,f.actorA.connectionID,f.domainA.id,randomUUID()])).rows[0].id;
+ const request={customerID:customer,enabled:true,actorID:f.operator.id,expectedRevision:'0',hostID:'local-test'};
+ try{
+  await assert.rejects(requestMailService(f.db,request),/Reconcile pending sends/);
+  assert.equal((await f.db.query('SELECT count(*) FROM webdock_mail.service WHERE customer_id=$1',[customer])).rows[0].count,'0');
+  await f.db.query("UPDATE webdock_auth.mail_message SET dispatch_status='failed' WHERE id=$1",[id]);
+  assert.equal((await requestMailService(f.db,request)).state,'pending');
+ }finally{await f.db.query('DELETE FROM webdock_mail.operation WHERE customer_id=$1',[customer]);await f.db.query('DELETE FROM webdock_mail.service WHERE customer_id=$1',[customer]);}
+}));

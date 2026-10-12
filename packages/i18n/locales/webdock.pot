@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-11 14:54+0200\n"
+"POT-Creation-Date: 2026-10-12 19:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -895,6 +895,7 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:11
 #: apps/admin/src/components/hosting/own-mail.tsx:139
+#: apps/admin/src/components/mail/product-page.tsx:16
 #: apps/admin/src/lib/ui-labels.ts:6 apps/auth/src/lib/i18n-labels.ts:4
 msgid "Pending"
 msgstr ""
@@ -1175,22 +1176,22 @@ msgstr ""
 msgid "Saving…"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx:66
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx:68
 #: apps/auth/src/lib/i18n-messages.ts:142
 msgid "Open tracking"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx:72
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx:74
 #: apps/auth/src/lib/i18n-messages.ts:44
 msgid "Click tracking"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx:84
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx:86
 #: apps/auth/src/lib/i18n-messages.ts:129
 msgid "Match sender domain"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx:258
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx:260
 #: apps/auth/src/lib/i18n-messages.ts:89
 msgid "Dedicated to this sender domain"
 msgstr ""
@@ -2294,6 +2295,119 @@ msgstr ""
 msgid "Message content"
 msgstr ""
 
+#: apps/admin/src/components/mail/product-actions.ts:23
+msgid "Unknown Mail action."
+msgstr ""
+
+#: apps/admin/src/components/mail/product-actions.ts:25
+msgid "Confirm this change first."
+msgstr ""
+
+#: apps/admin/src/components/mail/product-actions.ts:32
+msgid "Mail request accepted."
+msgstr ""
+
+#: apps/admin/src/components/mail/product-actions.ts:34
+#: apps/auth/src/lib/i18n-messages.ts:120
+msgid "Mail change saved."
+msgstr ""
+
+#: apps/admin/src/components/mail/product-actions.ts:36
+msgid "Mail is temporarily unavailable. Retry with the same request."
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:80
+msgid "Ownership verified"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Sending only"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Full Mail API access"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Manual"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Complaint"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Unsubscribed"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Scheduled"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Sending"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/lib/ui-labels.ts:6 apps/auth/src/lib/i18n-labels.ts:4
+msgid "Accepted"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/lib/ui-labels.ts:9 apps/auth/src/lib/i18n-labels.ts:6
+msgid "Failed"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Outcome unknown"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Canceled"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Suppressed"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Delivered"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Bounced"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/lib/ui-labels.ts:7 apps/auth/src/lib/i18n-labels.ts:5
+msgid "Ready"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Paused"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Needs review"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Disconnected"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Clicked"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Opened"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:16
+msgid "Delivery delayed"
+msgstr ""
+
 #: apps/admin/src/components/navigation.tsx:17
 #: apps/auth/src/app/people/page.tsx:11 apps/auth/src/app/people/page.tsx:29
 #: apps/auth/src/components/auth-forms.tsx:319
@@ -2336,14 +2450,6 @@ msgstr ""
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:33
 #: apps/auth/src/app/tenants/[customerID]/page.tsx:21
 msgid "Mail"
-msgstr ""
-
-#: apps/admin/src/components/navigation.tsx:105
-msgid "Credentials"
-msgstr ""
-
-#: apps/admin/src/components/navigation.tsx:105
-msgid "Tracking"
 msgstr ""
 
 #: apps/admin/src/components/plan-fields.tsx:10
@@ -3349,10 +3455,6 @@ msgstr ""
 msgid "Active"
 msgstr ""
 
-#: apps/admin/src/lib/ui-labels.ts:6 apps/auth/src/lib/i18n-labels.ts:4
-msgid "Accepted"
-msgstr ""
-
 #: apps/admin/src/lib/ui-labels.ts:6 apps/admin/src/lib/ui-labels.ts:7
 #: apps/auth/src/lib/i18n-labels.ts:4
 msgid "Cancelled"
@@ -3397,10 +3499,6 @@ msgstr ""
 msgid "Revoked"
 msgstr ""
 
-#: apps/admin/src/lib/ui-labels.ts:7 apps/auth/src/lib/i18n-labels.ts:5
-msgid "Ready"
-msgstr ""
-
 #: apps/admin/src/lib/ui-labels.ts:7
 msgid "Building"
 msgstr ""
@@ -3441,10 +3539,6 @@ msgstr ""
 
 #: apps/admin/src/lib/ui-labels.ts:9
 msgid "Provisioning"
-msgstr ""
-
-#: apps/admin/src/lib/ui-labels.ts:9 apps/auth/src/lib/i18n-labels.ts:6
-msgid "Failed"
 msgstr ""
 
 #: apps/admin/src/lib/ui-labels.ts:9
@@ -4545,10 +4639,6 @@ msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:77
 msgid "Add domain"
-msgstr ""
-
-#: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:80
-msgid "Ownership verified"
 msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:80
@@ -6065,10 +6155,6 @@ msgstr ""
 msgid "Local mapping removed. Stored files are unchanged."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:120
-msgid "Mail change saved."
-msgstr ""
-
 #: apps/auth/src/lib/i18n-messages.ts:121
 msgid "Mail credential encryption is not configured."
 msgstr ""
@@ -6846,6 +6932,22 @@ msgstr ""
 msgid "This tenant is archived."
 msgstr ""
 
+#: apps/auth/src/lib/i18n-messages.ts:339
+msgid "Choose owner, administrator or member."
+msgstr ""
+
+#: apps/auth/src/lib/i18n-messages.ts:340
+msgid "Tenant owner access is required to manage administrators and owners."
+msgstr ""
+
+#: apps/auth/src/lib/i18n-messages.ts:341
+msgid "A tenant owner must be active, verified and have completed account setup."
+msgstr ""
+
+#: apps/auth/src/lib/i18n-messages.ts:342
+msgid "Keep at least one active verified customer owner."
+msgstr ""
+
 #: apps/cms/src/app/layout.tsx:5
 msgid "Website administration — Webdock"
 msgstr ""
@@ -7088,94 +7190,102 @@ msgid "Mail mappings and domain records remain until removed through the applica
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:33
-msgid "Legal bases"
+msgid "For tenants using the Mail API, Webdock stores sender and recipient details, message content, delivery events, schedules and suppression records to process and display their mail activity. Provider credentials and retained attachment contents are encrypted; Webdock API keys are stored as hashes. Request logs contain redacted structural metadata. Configured customer webhooks receive signed event data; message bodies, credentials and Bcc addresses are excluded from those event payloads."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:34
-msgid "We process data needed to provide an agreed service under Article 6(1)(b) GDPR where you are the contracting party. Administration of team access, hosting visibility and security auditing rely on our legitimate interests in operating a secure project-management service under Article 6(1)(f). Where a legal obligation requires retention or disclosure, Article 6(1)(c) applies. Connecting Vercel grants technical access; it is not blanket consent to unrelated processing."
+msgid "Mail API message text and HTML are retained for 30 days after final acceptance, failure or cancellation. Attachments are removed after a definitive result. Uncertain-send content is removed after seven days, while the unresolved outcome and duplicate-prevention record remain. Active schedules retain content needed for execution. Message metadata and events are retained for 90 days, redacted request logs and finished webhook attempts for 30 days, and processed or quarantined provider callbacks for seven days. Cleanup preserves records still needed by active work. Suppressions remain until explicitly removed. These periods cover Webdock’s operational database; provider records and backups have separate lifecycles."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:35
-msgid "Hosting, recipients and international processing"
+msgid "Legal bases"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:36
-msgid "Vercel provides hosting and the connected API; Neon provides the PostgreSQL database used to store integration records. Authorised Webdock operators can access the integration’s project information. Data is not sold or used by this integration for advertising or automated decisions with legal or similarly significant effects."
+msgid "We process data needed to provide an agreed service under Article 6(1)(b) GDPR where you are the contracting party. Administration of team access, hosting visibility and security auditing rely on our legitimate interests in operating a secure project-management service under Article 6(1)(f). Where a legal obligation requires retention or disclosure, Article 6(1)(c) applies. Connecting Vercel grants technical access; it is not blanket consent to unrelated processing."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:37
-msgid "These providers operate internationally, including in the United States. An EU application region does not mean all support, network or service processing stays in the EU. Their published transfer safeguards and subprocessors are described in"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:37
-msgid "Vercel’s data-processing addendum"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:37
-msgid "and"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:37
-msgid "Neon’s data-processing agreement"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:37
-msgid ". Contact us for information about safeguards applicable to your project."
+msgid "Hosting, recipients and international processing"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:38
-msgid "Cookies and technical requests"
+msgid "Vercel provides hosting and the connected API; Neon provides the PostgreSQL database used to store integration records. Authorised Webdock operators can access the integration’s project information. Data is not sold or used by this integration for advertising or automated decisions with legal or similarly significant effects."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:39
-msgid "The connection flow uses a secure, HTTP-only cookie lasting up to ten minutes to bind the Vercel callback to the operator who started it. Studio also requires an authenticated Webdock session. These cookies support authentication and protect against request forgery. These public pages store an explicitly selected colour theme in your browser’s local storage and load fonts locally."
+msgid "These providers operate internationally, including in the United States. An EU application region does not mean all support, network or service processing stays in the EU. Their published transfer safeguards and subprocessors are described in"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:39
+msgid "Vercel’s data-processing addendum"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:39
+msgid "and"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:39
+msgid "Neon’s data-processing agreement"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:39
+msgid ". Contact us for information about safeguards applicable to your project."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:40
-msgid "Serving requests entails processing technical data such as IP address, requested URL, timestamp and browser information for delivery, fault diagnosis and abuse prevention. Hosting providers may retain technical logs under their service settings and policies. See"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:40
-msgid "Vercel’s privacy notice"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:40
-msgid "for its own processing."
+msgid "Cookies and technical requests"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:41
-msgid "Retention and disconnection"
+msgid "The connection flow uses a secure, HTTP-only cookie lasting up to ten minutes to bind the Vercel callback to the operator who started it. Studio also requires an authenticated Webdock session. These cookies support authentication and protect against request forgery. These public pages store an explicitly selected colour theme in your browser’s local storage and load fonts locally."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:42
-msgid "Customer profiles and memberships are retained while needed for the customer relationship and its administration. Archiving a tenant or disabling an account restricts access but does not itself erase the records. Request correction or deletion through the contact above; necessary legal retention and unresolved contractual or security matters are assessed before erasure. Authentication sessions expire after eight hours; account security settings and credentials remain until replaced or removed."
+msgid "Serving requests entails processing technical data such as IP address, requested URL, timestamp and browser information for delivery, fault diagnosis and abuse prevention. Hosting providers may retain technical logs under their service settings and policies. See"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:42
+msgid "Vercel’s privacy notice"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:42
+msgid "for its own processing."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:43
-msgid "The stored Vercel credential remains until the connection is replaced or disconnected. Disconnecting in Studio deletes that credential from the active database. It does not uninstall the integration at Vercel: revoke that separately in Vercel’s integration settings. Project mappings remain until removed with the project or through an administrative deletion request."
+msgid "Retention and disconnection"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:44
-msgid "Audit records remain available for security investigations and accountability; disconnection does not automatically erase them. Retention depends on the continuing security purpose, applicable contractual or legal requirements and any unresolved claims. Deletion requests are assessed against those needs. Provider backups and technical logs follow their separate retention lifecycles and are not immediately erased by disconnecting."
+msgid "Customer profiles and memberships are retained while needed for the customer relationship and its administration. Archiving a tenant or disabling an account restricts access but does not itself erase the records. Request correction or deletion through the contact above; necessary legal retention and unresolved contractual or security matters are assessed before erasure. Authentication sessions expire after eight hours; account security settings and credentials remain until replaced or removed."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:45
-msgid "Your choices and rights"
+msgid "The stored Vercel credential remains until the connection is replaced or disconnected. Disconnecting in Studio deletes that credential from the active database. It does not uninstall the integration at Vercel: revoke that separately in Vercel’s integration settings. Project mappings remain until removed with the project or through an administrative deletion request."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:46
+msgid "Audit records remain available for security investigations and accountability; disconnection does not automatically erase them. Retention depends on the continuing security purpose, applicable contractual or legal requirements and any unresolved claims. Deletion requests are assessed against those needs. Provider backups and technical logs follow their separate retention lifecycles and are not immediately erased by disconnecting."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:47
+msgid "Your choices and rights"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:48
 msgid "Connecting Vercel is optional; without it, Studio cannot display live Vercel information. You can restrict the projects selected during installation and revoke access at Vercel."
 msgstr ""
 
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:47
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:49
 msgid "Subject to the applicable conditions, you can request access, correction, erasure, restriction and portability of your personal data, and object to processing based on legitimate interests. You can complain to a data-protection supervisory authority, including where you live or work. Contact us using the email above; we may need to verify your identity before disclosing account data. The"
 msgstr ""
 
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:47
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:49
 msgid "EU’s information on data-protection rights"
 msgstr ""
 
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:47
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:49
 msgid "explains these rights further."
 msgstr ""
 

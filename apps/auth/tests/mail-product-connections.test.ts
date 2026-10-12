@@ -29,3 +29,18 @@ test('private SEND_API lifecycle persists encrypted exact child credentials and 
   }finally{await f.db.query('DELETE FROM webdock_auth.mail_tenant_account WHERE customer_id=$1',[f.actorA.customerID]);}
  });
 });
+test('managed credential rotation stores the new version before revoking the old child key',async()=>withMailProductFixture(async f=>{
+ const {rotateManagedSendingCredential}=await import('../src/lib/mail-product/provider-credentials');
+ const operator={...f.actorA,principal:f.operator.principal},account={id:'fixture-'+f.actorA.customerID,email:f.suffix+'@example.invalid',active:true};
+ await f.db.query("INSERT INTO webdock_auth.mail_tenant_account(customer_id,provider_id,email,state,snapshot) VALUES($1,$2,$3,'ready',$4)",[f.actorA.customerID,account.id,account.email,JSON.stringify({active:true})]);
+ let version=0,revoked=0;
+ const deps={master:async()=>({getSubaccount:async()=>account,authorizeSubaccount:async()=> 'child'}),child:()=>({createConsumerKey:async()=>({consumerKey:'key-'+(++version),consumerSecret:'secret-'+version}),deleteConsumerKey:async(key:string)=>{
+  assert.equal(key,'key-1');assert.equal((await resolveSendingCredential(f.actorA)).consumerKey,'key-2');revoked++;
+ }})};
+ try{
+  await ensureManagedSendingCredential(operator,deps);await rotateManagedSendingCredential(operator,deps);
+  assert.equal(revoked,1);
+  const rows=(await f.db.query('SELECT version,active,revoked_at IS NOT NULL AS revoked FROM webdock_auth.mail_connection_secret WHERE connection_id=$1 ORDER BY version',[f.actorA.connectionID])).rows;
+  assert.deepEqual(rows,[{version:1,active:false,revoked:true},{version:2,active:true,revoked:false}]);
+ }finally{await f.db.query('DELETE FROM webdock_auth.mail_tenant_account WHERE customer_id=$1',[f.actorA.customerID]);}
+}));

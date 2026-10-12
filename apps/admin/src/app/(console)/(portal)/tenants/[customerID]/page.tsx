@@ -181,7 +181,8 @@ export default async function Tenant({
           </section>
           <section className="account-section">
             <h2>{i18n.t("People")}</h2>
-            <p className="muted">{i18n.t("Administrators can edit this profile and invite people. Existing role changes and removals are managed by your Webdock operator.")}</p>
+            <p className="muted">{i18n.t("Administrators manage members. Owners manage administrators and owners. Website permissions are assigned separately.")}</p>
+            {!members.some(member=>member.role==='owner'&&!member.banned&&member.emailVerified&&!member.mustChangePassword)&&<p className="notice">{i18n.t("An operator must explicitly assign the first active customer owner.")}</p>}
             <div className="access-grid">
               {members.map((member) => (
                 <article className="access-record" key={member.id}>
@@ -196,7 +197,7 @@ export default async function Tenant({
                         ? i18n.t("Setup pending")
                         : i18n.t("Active")}
                   </p>
-                  {operator && (
+                  {(operator || tenant.member_role==="owner" || member.role==="member") && (
                     <details>
                       <summary>{i18n.t("Manage membership")}</summary>
                       <TenantForm
@@ -205,7 +206,7 @@ export default async function Tenant({
                         label={i18n.t("Update tenant role")}
                       >
                         <input type="hidden" name="member" value={member.id} />
-                        <TenantRole value={member.role} />
+                        <TenantRole value={member.role} allowOwner={operator || tenant.member_role==="owner"} memberOnly={!operator && tenant.member_role!=="owner"} />
                       </TenantForm>
                       <TenantForm
                         customer={customerID}

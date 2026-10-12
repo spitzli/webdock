@@ -4,18 +4,23 @@ Implementation environment: isolated `t3code/clarify-relay-kit-docs-work` worktr
 
 ## Evidence and outstanding release gates
 
-| Contract | Available evidence | Release status |
+| Contract | Evidence | Release status |
 | --- | --- | --- |
-| Child authorization and Consumer pair | Existing `turbosmtp.test.ts` and prior `platform-mail.md` evidence | Adapter tested; sending permission still requires controlled account verification |
-| BYOK real account identity | No sanitized authoritative account response supplied | Block new connection activation until verified |
-| Parent versus child callback scope | Not observed here | Block callback cutover |
-| Reference echo and 64-bit MID | Synthetic parser fixtures only | Block sending pilot pending controlled observation |
-| Callback status aliases | Spec references REPORT/UNSUBSCRIBED; synthetic examples | Live confirmation outstanding |
-| Provider recipient accounting | No controlled single/multi-recipient run authorized | No equivalence/billing guarantee |
-| Minute scheduler | Existing K8s available; no scheduler enabled | Deployment decision/verification outstanding |
-| Restore and isolated preview | Dedicated local test DB exists | Production restore/preview evidence outstanding |
+| Child authorization and Consumer pair | Exact authorized child account/key inventory; two successful real deliveries | Proved for the BYOK pilot |
+| BYOK real account identity | `GET /user/info` returns exact ID26191165 and active=1 | Generic binding implemented and locally isolated |
+| SEND_API permission | Empty `{}` send probe: SEND_API/APIS400, APIS-only401, invalid secret401 | Non-delivering permission discrimination observed; temporary control key revoked |
+| Parent versus child callback scope | No live scoped callback observed | Callback cutover blocked |
+| Reference echo and 64-bit MID | Real MID2220893013169782784 and analytics exact match; reference submitted | MID proved; callback reference echo outstanding |
+| Callback statuses | Official reference plus synthetic parser/projection fixtures | Live status matrix outstanding |
+| Provider recipient accounting | Two messages to the same approved recipient delivered | Multi-recipient/billing equivalence unproved |
+| BYOK tracking reads | `/tools`, `/tools/link_branding/domains_info`, `/tools/link_branding` all200 with bound pair | Read contract observed; no live tracking mutation |
+| Callback configuration read | `/tools/webhook`500; aggregate tools reports webhook disabled on test account | No configuration contract inferred or changed |
+| Minute scheduler | Suspended K8s template, authenticated production-only handlers | Not installed/enabled |
+| Restore/load | Local restored messages/secrets and100k/1M metadata benchmark | Production restore and due-lag evidence outstanding |
 
-No provider account, key, callback, DNS record or real message was created by this test setup. Synthetic fixtures must never be described as a successful live provider test.
+No production application, callback, DNS record or existing Stalwart instance was
+changed. The explicitly authorized live account and two-message test below are
+separate from synthetic fixtures.
 
 ## Local reproduction
 
@@ -37,6 +42,26 @@ The owner authorized `spitzli.me`, a separate new turboSMTP subaccount used as B
 - Read-only provider analytics returned that exact ID and `SUCCESS` at **11:56:54Z**.
 - Actual recipient inbox independently confirmed via the existing IMAP tool: INBOX UID **2216**, matching sender, recipient, subject reference and body reference.
 
-This proves this controlled child account's identity, Consumer sending/management authentication, DNS readiness, EU submission, lossless MID and actual reception. It does **not** prove the future customer API, callback delivery/reference echo, generic external-BYOK self-identification, all recipient accounting cases, or the complete F01–F21 integration. No callback configuration was changed and no application was cut over.
+This proves this controlled child account's identity, Consumer sending/management authentication, DNS readiness, EU submission, lossless MID and actual reception. It does **not** prove the future customer API, callback delivery/reference echo, all recipient accounting cases, or the complete F01–F21 integration. The subsequent `/user/info` observation now supplies generic external-BYOK identity verification. No callback configuration was changed and no application was cut over.
 
-Full Auth regression after environment setup correction: **162 passed, 0 failed** (Node 24.21.0, dedicated local PostgreSQL). This is a development checkpoint, not final plan acceptance.
+Current local regression: **214 Auth tests passed**, plus **106 Admin tests passed**. Provider callbacks and the production pilot remain separate acceptance gates. The official [event reference](https://serversmtp.com/event-webhook-reference/) documents callback shapes; its example payloads are not live evidence for account scoping or reference echo.
+
+## HTML/attachment pilot, 2026-10-12T17:14:57Z
+
+A second explicitly scoped test used the same account, sender and authorized
+recipient. MID **2220973297026318336**, reference
+**07aaf2a0-e1df-4b1d-999d-d63f77c1dfdc** was accepted; analytics reported SUCCESS at
+17:15:19Z. The recipient inbox contained it at UID **2221**. The existing mailsort
+reader fetched only that message; instrumentation of its MIME parser compared the
+attachment hashes without changing the mailbox tool or reading other messages.
+
+[Received MIME evidence](2026-10-12-mail-product-mime-receipt.json) confirms HTML,
+byte-exact text and PNG attachments, matching CID reference, normalized Reply-To
+and the custom test header. The provider appended `@spitzli.me` to the supplied CID
+local part. Supplying text and HTML yielded HTML without a separate plain-text
+alternative; this limitation is documented in Quickstart. The first message
+separately proved text-only delivery.
+
+Total real test messages: **two**, both received by the approved address. No CC/Bcc
+recipient, callback setting, DNS record or existing account was changed. This
+still does not establish live callbacks or multi-recipient billing semantics.

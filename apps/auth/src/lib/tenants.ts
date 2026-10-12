@@ -90,7 +90,6 @@ export async function manageTenant(headers: Headers, customerID: string, input: 
   const tenant = await tenantFor(user, customerID);
   if (tenant.status !== "active" || (!user.operator && !["admin", "owner"].includes(tenant.member_role))) throw new AccessError("Tenant administrator access is required.");
   if (!["profile", "invite", "resend", "cancel", "role", "remove"].includes(input.action)) throw new AccessError("Unknown tenant action.");
-  if (["role", "remove"].includes(input.action) && !user.operator) throw new AccessError("Only a platform operator may change existing memberships.");
   const event = (await database.query("INSERT INTO webdock_auth.access_event(actor_id,action,target_id,outcome) VALUES($1,$2,$3,'started') RETURNING id", [user.id, `tenant-${input.action}`, customerID])).rows[0].id;
   try {
     let email = "", invitee = "", invitationRole = input.role;
@@ -108,13 +107,24 @@ export async function manageTenant(headers: Headers, customerID: string, input: 
       await connection.query('SELECT id FROM webdock_auth.organization WHERE id=$1 FOR UPDATE', [tenant.organization_id]);
       const current = await tenantFor(user, customerID, connection);
       if (current.status !== "active" || (!user.operator && !["admin", "owner"].includes(current.member_role))) throw new AccessError("Tenant administrator access is required.");
+      const currentUser=(await connection.query('SELECT role,banned,"emailVerified","mustChangePassword","twoFactorEnabled" FROM webdock_auth."user" WHERE id=$1',[user.id])).rows[0];
+      if(!currentUser || currentUser.banned || !currentUser.emailVerified || currentUser.mustChangePassword || (user.operator ? currentUser.role!=="operator" || !currentUser.twoFactorEnabled : currentUser.role!=="user")) throw new AccessError("Sign in and complete account setup first.");
       if (input.action === "profile") {
         const profile = validateTenantProfile(input), keys = Object.keys(profile);
         await connection.query(`UPDATE webdock_admin.customers SET ${keys.map((key, i) => `${key}=$${i + 2}`).join(",")},updated_at=now() WHERE id=$1`, [customerID, ...keys.map((key) => profile[key])]);
       } else if (["role", "remove"].includes(input.action)) {
         const target = (await connection.query('SELECT m.id,m.role,m."userId" FROM webdock_auth.member m JOIN webdock_auth."user" u ON u.id=m."userId" WHERE m.id=$1 AND m."organizationId"=$2 AND u.role=\'user\' FOR UPDATE OF m', [validID(input.member), tenant.organization_id])).rows[0];
         if (!target) throw new AccessError("Customer membership not found.");
-        if (input.action === "role" && !["admin", "member"].includes(input.role)) throw new AccessError("Choose administrator or member.");
+        if (input.action === "role" && !["owner", "admin", "member"].includes(input.role)) throw new AccessError("Choose owner, administrator or member.");
+        if (!user.operator && current.member_role!=="owner" && (target.role!=="member" || (input.action==="role" && input.role!=="member"))) throw new AccessError("Tenant owner access is required to manage administrators and owners.");
+        if(input.action==="role" && input.role==="owner") {
+          const eligible=(await connection.query(`SELECT 1 FROM webdock_auth."user" WHERE id=$1 AND role='user' AND NOT coalesce(banned,false) AND "emailVerified" AND NOT "mustChangePassword" FOR UPDATE`,[target.userId])).rowCount;
+          if(!eligible) throw new AccessError("A tenant owner must be active, verified and have completed account setup.");
+        }
+        if(target.role==="owner" && (input.action==="remove" || input.role!=="owner")) {
+          const owners=(await connection.query(`SELECT 1 FROM webdock_auth.member m JOIN webdock_auth."user" u ON u.id=m."userId" WHERE m."organizationId"=$1 AND m.id<>$2 AND m.role='owner' AND u.role='user' AND NOT coalesce(u.banned,false) AND u."emailVerified" AND NOT u."mustChangePassword" LIMIT 1`,[tenant.organization_id,target.id])).rowCount;
+          if(!owners) throw new AccessError("Keep at least one active verified customer owner.");
+        }
         if (["owner", "admin"].includes(target.role) && (input.action === "remove" || input.role === "member")) {
           const remaining = (await connection.query('SELECT count(*)::int AS count FROM webdock_auth.member m JOIN webdock_auth."user" u ON u.id=m."userId" WHERE m."organizationId"=$1 AND m.id<>$2 AND m.role IN (\'owner\',\'admin\') AND u.role=\'user\' AND NOT coalesce(u.banned,false) AND u."emailVerified" AND NOT u."mustChangePassword"', [tenant.organization_id, target.id])).rows[0].count;
           if (!remaining) throw new AccessError("Keep at least one customer administrator.");

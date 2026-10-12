@@ -1,34 +1,32 @@
+import {mailFetch} from './deadline';
 import {randomBytes,randomUUID} from 'node:crypto';
 import type {MailActor} from '@webdock/mail-contracts';
 import {parseID} from '@webdock/mail-contracts/validation';
-import {database} from '../db';
+import {mailDatabase as database} from './store';
 import {normalizeMailDomain} from '../tenant-mail';
 import {lookupMailTxt,planMailRecords} from '../mail-dns';
 import {mailProvider} from '../platform';
 import {TurboDomainsClient,senderDomain} from '../turbo-domains';
 import {assertMailAccess,mailUnavailable,MailError} from './access';
 import {withMailTransaction} from './store';
+import {resolveSendingCredential} from './provider-credentials';
 async function clientFor(actor:MailActor){
  const c=(await database.query('SELECT * FROM webdock_auth.mail_connection WHERE id=$1 AND customer_id=$2 AND deleted_at IS NULL',[actor.connectionID,actor.customerID])).rows[0];
  if(!c)mailUnavailable();
- if(c.kind==='byok'){
-  const row=(await database.query("SELECT encrypted_secret FROM webdock_auth.hosting_turbosmtp WHERE customer_id=$1 AND state='ready' AND pending_domain IS NULL",[actor.customerID])).rows[0];
-  if(!row?.encrypted_secret)mailUnavailable();
-  // BYOK connections are not activated until the account-identity proof is available.
-  throw new MailError(409,'account_verification_required','Provider account identity requires verification');
- }
+ if(c.kind==='byok')return new TurboDomainsClient(await resolveSendingCredential(actor),mailFetch);
  const row=(await database.query("SELECT provider_id,email FROM webdock_auth.mail_tenant_account WHERE customer_id=$1 AND state='ready'",[actor.customerID])).rows[0];
  if(!row||row.provider_id!==c.provider_account_id)mailUnavailable();
- const master=await mailProvider(),confirmed=await master.getSubaccount(row.provider_id);
+ const master=await mailProvider(mailFetch),confirmed=await master.getSubaccount(row.provider_id);
  if(confirmed.id!==row.provider_id||confirmed.email?.toLowerCase()!==row.email.toLowerCase()||!confirmed.active)mailUnavailable();
- return new TurboDomainsClient({apiKey:await master.authorizeSubaccount(row.email)});
+ return new TurboDomainsClient({apiKey:await master.authorizeSubaccount(row.email)},mailFetch);
 }
-export async function assertVerifiedSender(actor:MailActor,domain:string):Promise<{domainID:string}>{
+export async function assertVerifiedSender(actor:MailActor,domain:string,options:{simulation?:boolean}={}):Promise<{domainID:string}>{
  await assertMailAccess(actor,'send');
  const name=normalizeMailDomain(domain);
  const row=(await database.query(`SELECT d.id,d.domain,b.provider_id,b.provider_snapshot,b.provider_checked_at FROM webdock_auth.mail_sender_domain d
  JOIN webdock_auth.mail_connection_domain b ON b.domain_id=d.id AND b.customer_id=d.customer_id
- WHERE d.customer_id=$1 AND b.connection_id=$2 AND d.domain=$3 AND d.deleted_at IS NULL AND d.status='ownership_verified' AND d.provider_operation IS NULL AND d.provider_id=b.provider_id`,[actor.customerID,actor.connectionID,name])).rows[0];
+ JOIN webdock_auth.mail_connection c ON c.id=b.connection_id
+ WHERE d.customer_id=$1 AND b.connection_id=$2 AND d.domain=$3 AND d.deleted_at IS NULL AND d.status='ownership_verified' AND d.provider_operation IS NULL AND (c.kind='byok' OR d.provider_id=b.provider_id)`,[actor.customerID,actor.connectionID,name])).rows[0];
  if(!row)throw new MailError(422,'sender_not_verified','Sender ownership is not verified');
  if(actor.principal.kind==='api_key'){
   const key=(await database.query('SELECT domain_id FROM webdock_auth.mail_api_key WHERE id=$1 AND revoked_at IS NULL',[actor.principal.keyID])).rows[0];
@@ -36,7 +34,7 @@ export async function assertVerifiedSender(actor:MailActor,domain:string):Promis
  }
  let observation;
  try{observation=senderDomain(row.provider_snapshot);}catch{observation=undefined;}
- if(!row.provider_checked_at||Date.now()-new Date(row.provider_checked_at).getTime()>300_000){
+ if(!options.simulation&&(!row.provider_checked_at||Date.now()-new Date(row.provider_checked_at).getTime()>300_000)){
   const provider=await clientFor(actor);
   const matches=(await provider.listSenderDomains()).filter(d=>d.id===row.provider_id&&d.domain===name);
   if(matches.length!==1)throw new MailError(422,'sender_not_verified','Provider verification unavailable');
@@ -73,6 +71,7 @@ export async function listMailDomains(actor:MailActor){
  await assertMailAccess(actor,'read');
  return (await database.query(`SELECT d.id,d.domain,d.status,d.token,d.deleted_at,b.provider_snapshot,b.provider_checked_at FROM webdock_auth.mail_sender_domain d
  JOIN webdock_auth.mail_connection_domain b ON b.domain_id=d.id AND b.customer_id=d.customer_id
+ JOIN webdock_auth.mail_connection c ON c.id=b.connection_id
  WHERE d.customer_id=$1 AND b.connection_id=$2 AND d.deleted_at IS NULL ORDER BY d.domain LIMIT 100`,[actor.customerID,actor.connectionID])).rows;
 }
 export async function verifyMailDomain(actor:MailActor,id:string,deps:{lookup?:typeof lookupMailTxt;provider?:()=>Promise<Pick<TurboDomainsClient,'registerSenderDomain'|'listSenderDomains'>>}={}){
@@ -96,7 +95,7 @@ export async function verifyMailDomain(actor:MailActor,id:string,deps:{lookup?:t
   if(matching.length!==1)throw new MailError(409,'verification_pending','Provider verification is pending');
   await withMailTransaction(async db=>{
    await assertMailAccess(actor,'manage',db);
-   if(!(await db.query('UPDATE webdock_auth.mail_sender_domain SET provider_id=$4,provider_snapshot=$5,provider_checked_at=now() WHERE id=$1 AND customer_id=$2 AND provider_operation=$3 AND deleted_at IS NULL RETURNING id',[id,actor.customerID,operation,matching[0].id,JSON.stringify(matching[0])])).rowCount)mailUnavailable();
+   if(!(await db.query(`UPDATE webdock_auth.mail_sender_domain SET provider_id=CASE WHEN (SELECT kind FROM webdock_auth.mail_connection WHERE id=$6)='platform' THEN $4 ELSE provider_id END,provider_snapshot=CASE WHEN (SELECT kind FROM webdock_auth.mail_connection WHERE id=$6)='platform' THEN $5::jsonb ELSE provider_snapshot END,provider_checked_at=now() WHERE id=$1 AND customer_id=$2 AND provider_operation=$3 AND deleted_at IS NULL RETURNING id`,[id,actor.customerID,operation,matching[0].id,JSON.stringify(matching[0]),actor.connectionID])).rowCount)mailUnavailable();
    await db.query('UPDATE webdock_auth.mail_connection_domain SET provider_id=$3,provider_snapshot=$4,provider_checked_at=now() WHERE connection_id=$1 AND domain_id=$2',[actor.connectionID,id,matching[0].id,JSON.stringify(matching[0])]);
   });
   return {id,domain:row.domain,ownershipVerified:true,provider:matching[0],records};
@@ -106,4 +105,11 @@ export async function verifyMailDomain(actor:MailActor,id:string,deps:{lookup?:t
  }finally{
   await database.query('UPDATE webdock_auth.mail_sender_domain SET provider_operation=NULL,provider_operation_started_at=NULL WHERE id=$1 AND customer_id=$2 AND provider_operation=$3',[id,actor.customerID,operation]);
  }
+}
+export async function getMailDomain(actor:MailActor,id:string){
+ parseID(id);await assertMailAccess(actor,'read');
+ const row=(await database.query(`SELECT d.id,d.domain,d.status,d.token,b.provider_snapshot,b.provider_checked_at FROM webdock_auth.mail_sender_domain d
+ JOIN webdock_auth.mail_connection_domain b ON b.domain_id=d.id AND b.customer_id=d.customer_id WHERE d.id=$1 AND d.customer_id=$2 AND b.connection_id=$3 AND d.deleted_at IS NULL`,[id,actor.customerID,actor.connectionID])).rows[0];if(!row)mailUnavailable();
+ let txt;let dnsIssue:string|undefined;try{txt=await lookupMailTxt(row.domain);}catch{txt={root:[],dkim:[],dmarc:[],ownership:[]};dnsIssue='dns_lookup_unavailable';}
+ return {...row,records:planMailRecords(row.domain,row.token,txt),...(dnsIssue?{dnsIssue}:{})};
 }

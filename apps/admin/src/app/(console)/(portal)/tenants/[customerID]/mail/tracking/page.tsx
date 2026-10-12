@@ -1,3 +1,4 @@
+import {mailRead,type MailConnection} from '@/lib/mail-product';import type {TrackingView} from '@/lib/studio-contracts';
 import {msgid} from '@webdock/i18n';
 
 import { getRequestI18n } from '@webdock/i18n/next';
@@ -9,9 +10,9 @@ import { getTenantTracking } from "@/lib/mail-tracking";
 import { TrackingForm } from "./form";
 export async function generateMetadata(){ const i18n = await getRequestI18n(); return { title: i18n.t("Mail tracking") }; }
 export default async function Tracking({
-  params,
+  params,searchParams,
 }: {
-  params: Promise<{ customerID: string }>;
+  params: Promise<{ customerID: string }>;searchParams:Promise<Record<string,string|string[]|undefined>>;
 }) {
   const i18n = await getRequestI18n();
 
@@ -21,9 +22,10 @@ export default async function Tracking({
     redirect(
       `/api/sso/login?returnTo=${encodeURIComponent(`/tenants/${customerID}/mail/tracking`)}`,
     );
+  const query=await searchParams;if(query.connection!==undefined&&typeof query.connection!=='string')notFound();const connectionID=query.connection??(await mailRead<MailConnection[]>('mailConnections',customerID))[0]?.id;
   let data;
   try {
-    data = await getTenantTracking(requestHeaders, customerID);
+    data = connectionID?await mailRead<TrackingView>('mailTracking',customerID,connectionID):await getTenantTracking(requestHeaders, customerID);
   } catch (error) {
     if (error instanceof AccessError) notFound();
     throw error;
@@ -53,7 +55,7 @@ export default async function Tracking({
         )}
         {editable && (
           <TrackingForm
-            customer={customerID}
+            customer={customerID} connection={connectionID}
             action="refresh"
             label={i18n.t("Refresh tracking status")}
           />
@@ -99,7 +101,7 @@ export default async function Tracking({
               </p>
               {editable && !forced && (
                 <TrackingForm
-                  customer={customerID}
+                  customer={customerID} connection={connectionID}
                   action="setting"
                   label={i18n.t("Update {setting}",{setting:i18n.t(label)})}
                 >
@@ -132,7 +134,7 @@ export default async function Tracking({
         {editable &&
           (data.senders.length ? (
             <TrackingForm
-              customer={customerID}
+              customer={customerID} connection={connectionID}
               action="create"
               label={i18n.t("Create tracking domain")}
             >
@@ -167,7 +169,7 @@ export default async function Tracking({
                   {editable &&
                     (domain.cancellable ? (
                       <TrackingForm
-                        customer={customerID}
+                        customer={customerID} connection={connectionID}
                         action="cancel-reservation"
                         label={i18n.t("Cancel unused reservation")}
                         confirm={i18n.t("Cancel this reservation only if the provider confirms no matching tracking domain exists.")}
@@ -236,7 +238,7 @@ export default async function Tracking({
                   {editable && (
                     <>
                       <TrackingForm
-                        customer={customerID}
+                        customer={customerID} connection={connectionID}
                         action="verify"
                         label={i18n.t("Verify tracking domain")}
                       >
@@ -264,7 +266,7 @@ export default async function Tracking({
                       ).map(([action, label, enabled]) => (
                         <TrackingForm
                           key={action}
-                          customer={customerID}
+                          customer={customerID} connection={connectionID}
                           action={action}
                           label={i18n.t("Update {setting}",{setting:i18n.t(label)})}
                         >
@@ -294,7 +296,7 @@ export default async function Tracking({
                         </TrackingForm>
                       ))}
                       <TrackingForm
-                        customer={customerID}
+                        customer={customerID} connection={connectionID}
                         action="remove"
                         label={i18n.t("Remove tracking domain")}
                         confirm={i18n.t("Remove this tracking domain from the sending account. Existing tracked links may stop working.")}

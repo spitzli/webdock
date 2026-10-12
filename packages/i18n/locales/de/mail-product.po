@@ -1,0 +1,561 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Webdock\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: 2026-10-12 12:00+0000\n"
+"Last-Translator: Webdock\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "30 days"
+msgstr "30 Tage"
+
+msgid "7 days"
+msgstr "7 Tage"
+
+msgid "90 days"
+msgstr "90 Tage"
+
+msgid "A 202 batch response is still processing. Poll GET /batches/{id} with a Full key. Repeating the original idempotency key returns its original response."
+msgstr "Eine Batch-Antwort mit Status 202 wird noch verarbeitet. Frage GET /batches/{id} mit einem Schlüssel mit vollem Zugriff ab. Derselbe Idempotenzschlüssel liefert wieder die ursprüngliche Antwort."
+
+msgid "API keys"
+msgstr "API-Schlüssel"
+
+msgid "Acceptance is uncertain. Inspect the message; do not send it again with a new request."
+msgstr "Die Annahme ist unklar. Prüfe die Nachricht und versende sie nicht mit einer neuen Anfrage erneut."
+
+msgid "Accepted messages"
+msgstr "Angenommene Nachrichten"
+
+msgid "Accepted recipients"
+msgstr "Angenommene Empfänger"
+
+msgid "Accepted recipients by UTC day"
+msgstr "Angenommene Empfänger je UTC-Tag"
+
+msgid "Add suppression"
+msgstr "Sperre hinzufügen"
+
+msgid "All verified domains"
+msgstr "Alle verifizierten Domains"
+
+msgid "Analytics"
+msgstr "Auswertung"
+
+msgid "Ask your operator to prepare a sending connection."
+msgstr "Bitte den Betreiber, eine Versandverbindung einzurichten."
+
+msgid "Attempts"
+msgstr "Versuche"
+
+msgid "Back to domains"
+msgstr "Zurück zu den Domains"
+
+msgid "Before sending"
+msgstr "Vor dem Versand"
+
+msgid "Bounced"
+msgstr "Unzustellbar"
+
+msgid "Cancel scheduled message"
+msgstr "Geplante Nachricht abbrechen"
+
+msgid "Canceled"
+msgstr "Abgebrochen"
+
+msgid "Clicked"
+msgstr "Angeklickt"
+
+msgid "Complaint"
+msgstr "Beschwerde"
+
+msgid "Confirm this change first."
+msgstr "Bestätige zuerst diese Änderung."
+
+msgid "Confirm this change."
+msgstr "Diese Änderung bestätigen."
+
+msgid "Connect a sending account and verify domain ownership and DNS."
+msgstr "Verbinde ein Versandkonto und bestätige Domaininhaberschaft und DNS-Einträge."
+
+msgid "Connect a sending account to view Mail activity."
+msgstr "Verbinde ein Versandkonto, um die Mail-Aktivität anzuzeigen."
+
+msgid "Connect your turboSMTP account"
+msgstr "Eigenes turboSMTP-Konto verbinden"
+
+msgid "Copy"
+msgstr "Kopieren"
+
+msgid "Create API key"
+msgstr "API-Schlüssel erstellen"
+
+msgid "Create a Webdock API key and keep it on your server."
+msgstr "Erstelle einen Webdock-API-Schlüssel und bewahre ihn auf deinem Server auf."
+
+msgid "Create key"
+msgstr "Schlüssel erstellen"
+
+msgid "Create webhook"
+msgstr "Webhook erstellen"
+
+msgid "Current values"
+msgstr "Aktuelle Werte"
+
+msgid "DNS lookup is temporarily unavailable."
+msgstr "Die DNS-Abfrage ist vorübergehend nicht verfügbar."
+
+msgid "DNS records"
+msgstr "DNS-Einträge"
+
+msgid "Daily recipients"
+msgstr "Empfänger pro Tag"
+
+msgid "Date (UTC)"
+msgstr "Datum (UTC)"
+
+msgid "Delete webhook"
+msgstr "Webhook löschen"
+
+msgid "Delivered"
+msgstr "Zugestellt"
+
+msgid "Delivery ID"
+msgstr "Zustellungs-ID"
+
+msgid "Delivery attempts"
+msgstr "Zustellversuche"
+
+msgid "Delivery delayed"
+msgstr "Zustellung verzögert"
+
+msgid "Delivery rate"
+msgstr "Zustellrate"
+
+msgid "Delivery rate uses accepted recipients. Open and click rates use confirmed deliveries. Days are grouped in UTC."
+msgstr "Die Zustellrate bezieht sich auf angenommene Empfänger. Öffnungs- und Klickraten beziehen sich auf bestätigte Zustellungen. Die Tage werden nach UTC gruppiert."
+
+msgid "Disconnected"
+msgstr "Getrennt"
+
+msgid "Domain ownership"
+msgstr "Domaininhaberschaft"
+
+msgid "Domain restriction"
+msgstr "Domainbeschränkung"
+
+msgid "Duration (ms)"
+msgstr "Dauer (ms)"
+
+msgid "Enable webhook"
+msgstr "Webhook aktivieren"
+
+msgid "Endpoint URL"
+msgstr "Endpunkt-URL"
+
+msgid "Events"
+msgstr "Ereignisse"
+
+msgid "Find a Mail page"
+msgstr "Mail-Seite suchen"
+
+msgid "Full Mail API access"
+msgstr "Voller Mail-API-Zugriff"
+
+msgid "ISO time with timezone"
+msgstr "ISO-Zeit mit Zeitzone"
+
+msgid "Include simulator messages"
+msgstr "Simulatornachrichten einbeziehen"
+
+msgid "Key prefix"
+msgstr "Schlüsselpräfix"
+
+msgid "Last used"
+msgstr "Zuletzt verwendet"
+
+msgid "Loading Mail…"
+msgstr "Mail wird geladen…"
+
+msgid "Local suppressions apply to both sending connections. Removing one does not remove a provider-side suppression."
+msgstr "Lokale Sperren gelten für beide Versandverbindungen. Ihre Entfernung hebt keine Sperre beim Anbieter auf."
+
+msgid "Logs contain redacted metadata, never message bodies, Bcc or credentials."
+msgstr "Protokolle enthalten bereinigte Metadaten, niemals Nachrichteninhalte, Bcc-Adressen oder Zugangsdaten."
+
+msgid "Mail is temporarily unavailable."
+msgstr "Mail ist vorübergehend nicht verfügbar."
+
+msgid "Mail is temporarily unavailable. Retry with the same request."
+msgstr "Mail ist vorübergehend nicht verfügbar. Wiederhole dieselbe Anfrage."
+
+msgid "Mail navigation"
+msgstr "Mail-Navigation"
+
+msgid "Mail overview"
+msgstr "Mail-Übersicht"
+
+msgid "Mail request accepted."
+msgstr "Mail-Anfrage angenommen."
+
+msgid "Mail settings"
+msgstr "Mail-Einstellungen"
+
+msgid "Managed Mail"
+msgstr "Verwaltetes Mailkonto"
+
+msgid "Managed Mail gateway"
+msgstr "Verwalteter Mailversand"
+
+msgid "Message ID"
+msgstr "Nachrichten-ID"
+
+msgid "Message content has expired or is unavailable."
+msgstr "Der Nachrichteninhalt ist abgelaufen oder nicht verfügbar."
+
+msgid "Messages"
+msgstr "Nachrichten"
+
+msgid "Method"
+msgstr "Methode"
+
+msgid "More examples"
+msgstr "Weitere Beispiele"
+
+msgid "Needs review"
+msgstr "Prüfung erforderlich"
+
+msgid "Next attempt"
+msgstr "Nächster Versuch"
+
+msgid "Next page"
+msgstr "Nächste Seite"
+
+msgid "No entries yet."
+msgstr "Noch keine Einträge vorhanden."
+
+msgid "Open API reference"
+msgstr "API-Referenz öffnen"
+
+msgid "Open rate"
+msgstr "Öffnungsrate"
+
+msgid "Opened"
+msgstr "Geöffnet"
+
+msgid "Optional schedule: ISO time with timezone"
+msgstr "Optionaler Versandtermin: ISO-Zeit mit Zeitzone"
+
+msgid "Outcome unknown"
+msgstr "Ausgang unklar"
+
+msgid "Own provider"
+msgstr "Eigener Anbieter"
+
+msgid "Ownership"
+msgstr "Inhaberschaft"
+
+msgid "Pause sending"
+msgstr "Versand pausieren"
+
+msgid "Pause webhook"
+msgstr "Webhook pausieren"
+
+msgid "Pausing stops new sends. History and accepted work remain attached to this connection."
+msgstr "Pausieren stoppt neue Sendungen. Verlauf und bereits angenommene Aufträge bleiben dieser Verbindung zugeordnet."
+
+msgid "Period"
+msgstr "Zeitraum"
+
+msgid "Prepare managed sending"
+msgstr "Verwalteten Versand vorbereiten"
+
+msgid "Public HTTPS endpoint"
+msgstr "Öffentlicher HTTPS-Endpunkt"
+
+msgid "Publish the DNS records at your DNS provider, then verify them here."
+msgstr "Veröffentliche die DNS-Einträge bei deinem DNS-Anbieter und prüfe sie anschließend hier."
+
+msgid "Publish the ownership record before sending."
+msgstr "Veröffentliche vor dem Versand den Eintrag zum Nachweis der Inhaberschaft."
+
+msgid "Quickstart"
+msgstr "Schnellstart"
+
+msgid "Reason"
+msgstr "Grund"
+
+msgid "Recipient"
+msgstr "Empfänger"
+
+msgid "Recipients"
+msgstr "Empfänger"
+
+msgid "Redacted request"
+msgstr "Bereinigte Anfrage"
+
+msgid "Redacted response"
+msgstr "Bereinigte Antwort"
+
+msgid "Remove local suppression"
+msgstr "Lokale Sperre entfernen"
+
+msgid "Removing the local claim does not delete DNS records or provider registrations. Shared domains must be detached first."
+msgstr "Das Entfernen des lokalen Domainanspruchs löscht keine DNS-Einträge oder Anbieterregistrierungen. Gemeinsam genutzte Domains müssen zuerst getrennt werden."
+
+msgid "Replay"
+msgstr "Erneut zustellen"
+
+msgid "Request ID"
+msgstr "Anfrage-ID"
+
+msgid "Request log"
+msgstr "Anfrageprotokoll"
+
+msgid "Request logs"
+msgstr "Anfrageprotokolle"
+
+msgid "Required value"
+msgstr "Erforderlicher Wert"
+
+msgid "Reschedule"
+msgstr "Termin ändern"
+
+msgid "Resume sending"
+msgstr "Versand fortsetzen"
+
+msgid "Rotate signing secret"
+msgstr "Signaturgeheimnis wechseln"
+
+msgid "Rotation immediately applies to pending retries. Update the receiver before the next attempt."
+msgstr "Der Wechsel gilt sofort für ausstehende Wiederholungen. Aktualisiere den Empfänger vor dem nächsten Versuch."
+
+msgid "Route"
+msgstr "Route"
+
+msgid "SMTP credentials"
+msgstr "SMTP-Zugangsdaten"
+
+msgid "SPF, DKIM and DMARC are separate provider checks."
+msgstr "SPF, DKIM und DMARC werden vom Anbieter getrennt geprüft."
+
+msgid "Save this secret now. It is shown only once."
+msgstr "Speichere dieses Geheimnis jetzt. Es wird nur einmal angezeigt."
+
+msgid "Schedule"
+msgstr "Versandtermin"
+
+msgid "Scheduled"
+msgstr "Geplant"
+
+msgid "Send a test message"
+msgstr "Testnachricht senden"
+
+msgid "Sender"
+msgstr "Absender"
+
+msgid "Sending"
+msgstr "Wird gesendet"
+
+msgid "Sending only"
+msgstr "Nur Versand"
+
+msgid "Start with a simulator recipient; use a stable idempotency key for each message."
+msgstr "Beginne mit einem Simulator-Empfänger und verwende für jede Nachricht einen festen Idempotenzschlüssel."
+
+msgid "Suppress recipient"
+msgstr "Empfänger sperren"
+
+msgid "Suppressed"
+msgstr "Gesperrt"
+
+msgid "Suppressions"
+msgstr "Sperrliste"
+
+msgid "This is a Webdock Mail test message."
+msgstr "Dies ist eine Webdock-Mail-Testnachricht."
+
+msgid "Timeline"
+msgstr "Ereignisverlauf"
+
+msgid "To cancel a schedule, POST /emails/{id}/cancel with its revision in If-Match. Unknown outcomes must be reconciled, never resent."
+msgstr "Zum Abbrechen eines Versandtermins: POST /emails/{id}/cancel mit der Revision in If-Match. Unklare Ausgänge müssen abgeglichen werden; sie dürfen nicht erneut versendet werden."
+
+msgid "Unknown Mail action."
+msgstr "Unbekannte Mail-Aktion."
+
+msgid "Unsubscribed"
+msgstr "Abgemeldet"
+
+msgid "Use a Consumer key with SEND_API and APIS permissions. Webdock verifies the real account identity; changing accounts never moves old schedules."
+msgstr "Verwende einen Consumer-Schlüssel mit SEND_API- und APIS-Berechtigung. Webdock prüft die tatsächliche Kontoidentität. Ein Kontowechsel überträgt keine alten Versandtermine."
+
+msgid "Use delivered@test.mail.webdock.dev for a simulator message. Real recipients receive a real email."
+msgstr "Verwende delivered@test.mail.webdock.dev für eine Simulatornachricht. Echte Empfänger erhalten eine echte E-Mail."
+
+msgid "Uses the explicitly assigned managed account and a private sending credential."
+msgstr "Verwendet das ausdrücklich zugeordnete verwaltete Konto und einen internen Versandschlüssel."
+
+msgid "Verified sender"
+msgstr "Verifizierter Absender"
+
+msgid "Verify DNS"
+msgstr "DNS prüfen"
+
+msgid "Verify and save account"
+msgstr "Konto prüfen und speichern"
+
+msgid "View message"
+msgstr "Nachricht anzeigen"
+
+msgid "Webdock Mail test"
+msgstr "Webdock-Mail-Test"
+
+msgid "Webhook"
+msgstr "Webhook"
+
+msgid "Webhooks"
+msgstr "Webhooks"
+
+msgid "Webhooks sign the exact raw body. Verify the timestamp within five minutes and deduplicate webhook-id atomically."
+msgstr "Webhooks signieren den unveränderten Nachrichtenkörper. Prüfe einen Zeitstempel innerhalb von fünf Minuten und verhindere doppelte Verarbeitung anhand von webhook-id atomar."
+
+msgid "Your messages are retained. Refresh the page to load the current state."
+msgstr "Deine Nachrichten bleiben erhalten. Lade die Seite neu, um den aktuellen Stand abzurufen."
+
+msgid "Simulator"
+msgstr "Simulator"
+
+msgid "Simulator message. No email was sent to a real recipient."
+msgstr "Simulatornachricht. Es wurde keine E-Mail an einen echten Empfänger gesendet."
+
+msgid "Mail gateway controls"
+msgstr "Mail-Gateway steuern"
+
+msgid "Enable Mail API for managed and own accounts"
+msgstr "Mail-API für verwaltete und eigene Konten aktivieren"
+
+msgid "Enable Mail dispatch"
+msgstr "Mail-Versand aktivieren"
+
+msgid "Enable customer webhook delivery"
+msgstr "Kunden-Webhooks zustellen"
+
+msgid "These controls do not stop authentication emails or direct SMTP. Accepted work and history are retained while dispatch is paused."
+msgstr "Diese Schalter stoppen weder Anmeldemails noch direkten SMTP-Versand. Angenommene Aufträge und Verlauf bleiben während einer Versandpause erhalten."
+
+msgid "Owner — manage administrators and owners"
+msgstr "Owner — Administratoren und Owner verwalten"
+
+msgid "Administrators manage members. Owners manage administrators and owners. Website permissions are assigned separately."
+msgstr "Administratoren verwalten Mitglieder. Owner verwalten Administratoren und Owner. Website-Rechte werden separat vergeben."
+
+msgid "An operator must explicitly assign the first active customer owner."
+msgstr "Ein Operator muss den ersten aktiven Kunden-Owner ausdrücklich zuweisen."
+
+msgid "Mail uses your existing tenant team. Removing a person immediately revokes their tenant access. Tenant API keys and schedules remain active until explicitly revoked or canceled."
+msgstr "Mail verwendet das bestehende Kundenteam. Entfernte Personen verlieren ihren Kundenzugriff sofort. API-Keys und geplante Sendungen des Kunden bleiben bis zum ausdrücklichen Widerruf oder Abbruch aktiv."
+
+msgid "Manage API keys"
+msgstr "API-Keys verwalten"
+
+msgid "Mail operations"
+msgstr "Mail-Betrieb"
+
+msgid "Mail API"
+msgstr "Mail-API"
+
+msgid "Dispatch"
+msgstr "Versand"
+
+msgid "Sending credential"
+msgstr "Versandzugang"
+
+msgid "Provider callback"
+msgstr "Provider-Callback"
+
+msgid "Blocked schedules"
+msgstr "Blockierte geplante Sendungen"
+
+msgid "Pending webhook deliveries"
+msgstr "Ausstehende Webhook-Zustellungen"
+
+msgid "No successful dispatch tick in the last three minutes."
+msgstr "Kein erfolgreicher Versandlauf in den letzten drei Minuten."
+
+msgid "Scheduled work is more than five minutes overdue."
+msgstr "Geplante Sendungen sind seit mehr als fünf Minuten überfällig."
+
+msgid "A send has had an unknown outcome for more than five minutes."
+msgstr "Der Ausgang einer Sendung ist seit mehr als fünf Minuten unklar."
+
+msgid "Last successful tick"
+msgstr "Letzter erfolgreicher Lauf"
+
+msgid "Private sending credential"
+msgstr "Privater Versandzugang"
+
+msgid "Rotation stores a new private credential before revoking the previous provider key."
+msgstr "Bei der Rotation wird ein neuer privater Zugang gespeichert, bevor der bisherige Provider-Key widerrufen wird."
+
+msgid "Rotate private sending credential"
+msgstr "Privaten Versandzugang rotieren"
+
+msgid "Reconcile provider status"
+msgstr "Providerstatus abgleichen"
+
+msgid "Provider callback queue"
+msgstr "Provider-Callbacks in der Warteschlange"
+
+msgid "Quarantined"
+msgstr "In Quarantäne"
+
+msgid "Provider callbacks have waited more than two minutes."
+msgstr "Provider-Callbacks warten seit mehr als zwei Minuten."
+
+msgid "For tenants using the Mail API, Webdock stores sender and recipient details, message content, delivery events, schedules and suppression records to process and display their mail activity. Provider credentials and retained attachment contents are encrypted; Webdock API keys are stored as hashes. Request logs contain redacted structural metadata. Configured customer webhooks receive signed event data; message bodies, credentials and Bcc addresses are excluded from those event payloads."
+msgstr "Für Kunden mit Mail-API speichert Webdock Absender- und Empfängerdaten, Nachrichteninhalte, Zustellereignisse, geplante Sendungen und Sperrlisten, um die Mail-Aktivität zu verarbeiten und anzuzeigen. Provider-Zugangsdaten und aufbewahrte Anhangsinhalte werden verschlüsselt, Webdock-API-Keys als Hash gespeichert. Anfrageprotokolle enthalten redigierte Strukturmetadaten. Eingerichtete Kunden-Webhooks erhalten signierte Ereignisdaten; Nachrichteninhalte, Zugangsdaten und Bcc-Adressen sind darin nicht enthalten."
+
+msgid "Mail API message text and HTML are retained for 30 days after final acceptance, failure or cancellation. Attachments are removed after a definitive result. Uncertain-send content is removed after seven days, while the unresolved outcome and duplicate-prevention record remain. Active schedules retain content needed for execution. Message metadata and events are retained for 90 days, redacted request logs and finished webhook attempts for 30 days, and processed or quarantined provider callbacks for seven days. Cleanup preserves records still needed by active work. Suppressions remain until explicitly removed. These periods cover Webdock’s operational database; provider records and backups have separate lifecycles."
+msgstr "Text und HTML von Mail-API-Nachrichten bleiben 30 Tage nach endgültiger Annahme, Fehlschlag oder Abbruch gespeichert. Anhänge werden nach einem eindeutigen Ergebnis entfernt. Inhalte unklarer Sendungen werden nach sieben Tagen entfernt; der ungeklärte Ausgang und der Schutz vor doppeltem Versand bleiben erhalten. Aktive geplante Sendungen behalten die für ihre Ausführung benötigten Inhalte. Nachrichtenmetadaten und Ereignisse bleiben 90 Tage, redigierte Anfrageprotokolle und abgeschlossene Webhook-Versuche 30 Tage sowie verarbeitete oder in Quarantäne gehaltene Provider-Callbacks sieben Tage gespeichert. Noch für laufende Aufträge benötigte Datensätze bleiben von der Bereinigung ausgenommen. Sperrlisten bleiben bis zur ausdrücklichen Entfernung bestehen. Diese Fristen gelten für die operative Webdock-Datenbank; Provider-Daten und Backups haben eigene Aufbewahrungszyklen."
+
+msgid "Recent attempts"
+msgstr "Letzte Versuche"
+
+msgid "HTTP status (0 = unfinished)"
+msgstr "HTTP-Status (0 = nicht abgeschlossen)"
+
+msgid "Unfinished"
+msgstr "Nicht abgeschlossen"
+
+msgid "This customer uses native incoming Mail. Send through the native Mail path; the new Mail API does not yet submit through Stalwart."
+msgstr "Dieser Kunde verwendet nativen Mailempfang. Nutze den nativen Versandweg; die neue Mail-API übergibt noch nicht an Stalwart."
+
+msgid "Last 7 days · simulator activity excluded"
+msgstr "Letzte 7 Tage · ohne Simulator-Aktivität"
+
+msgid "Recent messages"
+msgstr "Letzte Nachrichten"
+
+msgid "Team"
+msgstr "Team"
+
+msgid "Manual"
+msgstr "Manuell"
+
+msgid "Apply filters"
+msgstr "Filter anwenden"
+
+msgid "All domains"
+msgstr "Alle Domains"
+
+msgid "Click rate"
+msgstr "Klickrate"
+
+msgid "For CID images, use the content ID followed by @your-sender-domain in the HTML image URL. The current provider sends HTML without a separate text alternative when both are supplied."
+msgstr "Verwende für CID-Bilder die Content-ID mit @deiner-absenderdomain in der HTML-Bildadresse. Wenn Text und HTML angegeben sind, versendet der aktuelle Provider HTML ohne separate Textalternative."

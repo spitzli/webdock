@@ -24,12 +24,17 @@ function tool(v: unknown, expected: string): TrackingTool {
  return { id: expected, forced: typeof row.forced === "boolean" ? row.forced : null, enabled: row.enabled, settings };
 }
 export class TrackingClient {
- constructor(private token: string, private fetchImpl: typeof fetch = fetch) { if (!text(token, 4096) || !/^[\x21-\x7e]+$/.test(token)) fail(); }
+ private credentialHeaders:Record<string,string>;
+ constructor(token: string|{consumerKey:string;consumerSecret:string}, private fetchImpl: typeof fetch = fetch) {
+  const values=typeof token==='string'?[token]:[token.consumerKey,token.consumerSecret];
+  if(values.some(value=>!text(value,4096)||!/^[\x21-\x7e]+$/.test(value)))fail();
+  this.credentialHeaders=typeof token==='string'?{Authorization:token}:{consumerKey:token.consumerKey,consumerSecret:token.consumerSecret};
+ }
  async #request(path: string, method = "GET", body?: object, json = true): Promise<unknown> {
   const controller = new AbortController(); let reader: ReadableStreamDefaultReader<Uint8Array> | undefined; let timer: ReturnType<typeof setTimeout> | undefined;
   try {
    return await Promise.race([new Promise<never>((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new TrackingProviderError()); }, 10000); }), (async () => {
-    const response = await this.fetchImpl(`https://pro.api.serversmtp.com/api/v2${path}`, { method, redirect: "error", cache: "no-store", signal: controller.signal, headers: { Authorization: this.token, Accept: "application/json", ...(body ? { "Content-Type": "application/json" } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
+    const response = await this.fetchImpl(`https://pro.api.serversmtp.com/api/v2${path}`, { method, redirect: "error", cache: "no-store", signal: controller.signal, headers: { ...this.credentialHeaders, Accept: "application/json", ...(body ? { "Content-Type": "application/json" } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
     if (!response.ok || Number(response.headers.get("content-length")) > 1048576) return fail();
     reader = response.body?.getReader(); let result = "", size = 0; const decoder = new TextDecoder("utf-8", { fatal: true });
     if (reader) for (;;) { const chunk = await reader.read(); if (chunk.done) break; size += chunk.value.byteLength; if (size > 1048576) return fail(); result += decoder.decode(chunk.value, { stream: true }); }

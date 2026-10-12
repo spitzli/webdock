@@ -1,5 +1,5 @@
 import type {MailActor} from '@webdock/mail-contracts';
-import {database} from '../db';
+import {mailDatabase as database} from './store';
 import {assertMailAccess} from './access';
 import {withMailTransaction} from './store';
 export async function getMailConnections(actor:MailActor){

@@ -2,7 +2,7 @@ import type {MailActor,MailCapability,Permission} from '@webdock/mail-contracts'
 import type {PoolClient} from 'pg';
 import {parseID} from '@webdock/mail-contracts/validation';
 import {auth} from '../auth';
-import {database} from '../db';
+import {mailDatabase as database} from './store';
 export class MailError extends Error {
  constructor(public status:number,public code:string,message:string){super(message);this.name=code;}
 }

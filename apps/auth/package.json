@@ -14,7 +14,9 @@
     "lint": "eslint",
     "test": "node --env-file=.env.test.local --import tsx --test --test-concurrency=1 tests/*.test.ts",
     "test:mail": "node --env-file=.env.test.local --import tsx --test --test-concurrency=1 tests/mail-product-*.test.ts tests/tenant-mail.test.ts tests/mail-dns.test.ts tests/mail-domains.test.ts tests/mail-keys.test.ts tests/mail-tracking.test.ts tests/turbo*.test.ts",
-    "test:mail:setup": "node --env-file=.env.test.local --import tsx scripts/setup-mail-test.ts"
+    "test:mail:setup": "node --env-file=.env.test.local --import tsx scripts/setup-mail-test.ts",
+    "prebuild": "node scripts/copy-scalar.mjs",
+    "predev": "node scripts/copy-scalar.mjs"
   },
   "dependencies": {
     "@webdock/mail-core": "*",
@@ -35,7 +37,9 @@
     "@webdock/hosting-contracts": "*",
     "@webdock/search": "*",
     "@webdock/database-contracts": "*",
-    "@webdock/mail-contracts": "*"
+    "@webdock/mail-contracts": "*",
+    "ipaddr.js": "2.3.0",
+    "@scalar/api-reference": "1.73.1"
   },
   "devDependencies": {
     "@types/node": "^24",

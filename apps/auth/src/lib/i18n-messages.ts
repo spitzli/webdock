@@ -335,4 +335,9 @@ msgid("Provisioning has not completed. An operator must reconcile the existing p
 msgid("An operator must reconcile the provider account before provisioning again."),
 msgid("The Mail connection is not configured."),
 msgid("This tenant is archived."),
+
+msgid("Choose owner, administrator or member."),
+msgid("Tenant owner access is required to manage administrators and owners."),
+msgid("A tenant owner must be active, verified and have completed account setup."),
+msgid("Keep at least one active verified customer owner."),
 ];

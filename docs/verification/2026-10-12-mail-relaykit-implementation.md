@@ -1,56 +1,88 @@
-# Relaykit integration implementation checkpoint
+# Relaykit integration implementation checkpoint — 2026-10-12
 
-This is **not final acceptance** of the 20-task plan. The new customer API, Studio console, workers and production rollout are not complete or enabled. For customers with activated incoming Mail, the new send service fails closed with `native_submission_required` until its Stalwart submission integration exists; it never silently sends around the mandated native route.
+The public API, Studio pages and operational tools are implemented in this isolated
+worktree. They are **not deployed or enabled in production**, and this is not final
+F01–F21 acceptance. Production callback scope/reference echo, native incoming
+submission integration and the 24-hour rollout pilot remain release gates.
 
-## Implemented locally
+## Current implementation
 
-- Dedicated disposable PostgreSQL test setup, real Better Auth sessions and tenant fixtures; guarded before connecting.
-- Shared Mail contracts and validation; additive, checksummed schema migrations with explicit target selection and separate runtime grants.
-- Current session/key access checks, preview denial, hashed `wdm_` keys, domain scope, revocation and operator separation.
-- Managed internal SEND_API credential reservation/encryption and fail-closed handling of lost creation responses. Internal credentials are hidden/protected in legacy key management.
-- Connection-scoped sender checks, manual DNS verification, shared operation fencing and domain tombstones. Native mailbox/sending checks exclude tombstoned ownership. Shared/native domain deletion is rejected instead of invalidating another connection.
-- Canonical recipient projection, tenant suppressions with reason precedence, atomic event + recipient + suppression + redacted webhook-outbox writes.
-- Durable fenced idempotency, tenant-wide recipient budget reservation/settlement, database rate counters, bounded JSON and log-redaction helpers.
-- Durable single-send service, separately encrypted attachments, simulator and tested one-attempt EU/global provider adapter. Unknown handoffs retain their message/reservation and cannot be retried automatically.
-- Basic schedule acceptance, revision-checked rescheduling/cancellation and bounded due-dispatch helper.
+- Additive checksummed schema, explicit migration target and DML-only runtime grants;
+  tenant/connection foreign keys, tombstoned domains and retention indexes.
+- Real session/tenant authorization, preview denial, hashed/revocable scoped `wdm_`
+  keys, verified BYOK account identity, source-revision checks and managed private
+  SEND_API credential creation/rotation. Provider secrets stay server-side.
+- Durable single sends and sequential batches, revision-fenced schedules, local
+  recipient suppressions, shared native/product customer budgets, rate limits,
+  bounded JSON and redacted request logs. Unknown outcomes never automatically resend.
+- Authenticated callback inbox, scoped exact-MID/reference/recipient association,
+  canonical events and operator reconciliation; atomic settlement and attachment
+  erasure. Signed, encrypted-secret customer webhooks have SSRF-safe transport,
+  leases, bounded retries, rotation, replay and paginated attempt metadata.
+- All 29 public Mail operations, generated OpenAPI and self-hosted Scalar 1.73.1.
+  Interactive key use is explicit, session-only, and reset on reload.
+- Studio overview, messages and safe HTML, domains/DNS copy, keys, webhooks,
+  suppressions, logs/search, UTC analytics/domain filters, settings, team and examples.
+  Existing native Mail/Webmail panels remain available.
+- Shared owner-governed tenant management, including database protection against
+  last-owner removal/ban races and current operator/MFA rechecks after lock waits.
+- One job orchestration path with tenant fairness, absolute SQL/network deadlines,
+  default-off gateway/dispatch/webhook switches, health and operator CLI. A suspended
+  Kubernetes job template is prepared; no scheduler was installed.
+- Read-only source Relaykit import and metadata backfill, stable mapping/checkpoint
+  checksums, preserved unknown work and paused execution, original retention anchors,
+  encrypted webhook secrets and no identity/API-key migration.
 
-These are backend services, not a completed user-facing Mail product. Request-log persistence, complete scheduler semantics/fairness, reconciliation and callback integration still need connected work and further race tests.
+## Verification
 
-## Confirmed live test
-
-Owner-authorized separate account **26191165**, sender domain **spitzli.me**, provider limit **10**. Exactly one message from `relaykit-test@spitzli.me` to `dominik@spitzli.dev` was accepted, marked SUCCESS by provider analytics, and independently found in the recipient's inbox. See [provider evidence](2026-10-12-mail-provider-contracts.md).
-
-This live test exercised the provider adapter, not the unfinished public Webdock API or Studio flow. Existing provider accounts, callbacks, DNS and Stalwart instances were not changed. Test account secrets are encrypted outside the repository and the test account remains active.
-
-## Remaining plan work
-
-| Tasks | Remaining work |
-| --- | --- |
-| T01–T02 | Complete provider callback/reference/accounting evidence; representative index/load measurements and release-role checks |
-| T03–T05 | Complete Studio contracts, generic external BYOK identity/rotation/onboarding, shared connection tracking and domain lifecycle integration |
-| T06–T07 | Provider suppression readback, remaining event race cases, persisted request logs and integrated HTTP error/request-ID contracts |
-| T08–T09 | Full crash/DB-failure/race matrix, paused/archived due-job behavior, immutable schedule eligibility, remaining calendar/limit checks |
-| T10–T14 | Durable batches, authenticated callback inbox/reconciliation, outbound webhooks/SSRF protection, analytics, full routes/OpenAPI |
-| T15–T17 | New Studio pages/navigation/i18n/accessibility, complete DNS/setup flows, owner-governed team changes |
-| T18–T20 | Fair jobs/retention/health, migration/import tooling, complete browser acceptance, release/runbook, production rollout and 24-hour pilot |
-
-No claim of F01–F21 completion, production readiness, or deployed customer functionality is made.
-
-## Review decisions
-
-A separate static review found five correctness/security issues. Regression tests now cover native tombstoned ownership, shared-domain deletion, provider-operation fencing, paused idempotency replay and suppression reason precedence; these issues were corrected.
-
-Two explicit implementation decisions remain relevant: shared-domain deletion currently returns `domain_in_use` until a complete detach workflow exists, and generic BYOK activation stays closed until provider account identity can be proved. The controlled pilot's child-account identity is proved separately through explicit child authorization/key inventory.
-
-The initial full Auth test run exposed local setup gaps: Better Auth's NODE_ENV=test bypassed Origin security and the existing registry lock function was missing. Setup now uses development-mode security and installs the actual registry lock SQL; no production authorization test was weakened.
-
-## Verified checkpoint checks
-
-- Full Auth suite: **172 passed, 0 failed**, including native-path bypass prevention.
+- Full Auth suite: **216 passed, 0 failed**.
 - Full Admin suite: **106 passed, 0 failed**.
-- Auth and Admin TypeScript checks and ESLint: passed.
-- Auth and Admin production builds against synthetic local configuration: passed. Builds did not run migrations or use production provider credentials.
-- `git diff --check`: passed.
-- No production application deploy, database migration, callback cutover, DNS write or new public API activation.
+- Auth/Admin typechecks, ESLint and production builds passed using synthetic local
+  configuration. Final production builds are recorded in the acceptance matrix.
+- Restricted Auth-role grant-shape test exercises the owner trigger without
+  superuser privileges. Native and product budget races share one allowance.
+- [Local metadata benchmark](2026-10-12-mail-product-local-benchmark.json): 100
+  tenants, 100,000 messages, 1,000,000 events. List p95 1.97 ms, analytics p95 6.32 ms,
+  in-process API p95 297.29 ms at 20 offered requests/second. This is not a production
+  SLA and does not measure real-provider due lag.
+- [Local restore](2026-10-12-mail-product-local-restore.json): accepted/scheduled/
+  unknown messages, pending delivery and idempotency rows restored; encrypted
+  sentinel and webhook secret decrypted correctly; unknown outcome preserved.
+- Browser uses real local SSO. UI and API simulator sends produced two messages,
+  three accepted recipients, two deliveries and one bounce; analytics matched.
+  Attachment content was erased while metadata remained. Scripts/images/forms/meta
+  refresh were absent from sandboxed HTML. Mobile/desktop light/dark layouts checked.
+- Browser exercised one-time API-key display and revocation (subsequent HTTP401),
+  webhook creation/rotation/pause/delete, return-to-list after deletion, connection
+  pause/resume, team member removal and Ctrl/Cmd+K navigation filtering.
+- Public privacy retention paragraphs rendered HTTP200 in English and German.
+  The unrelated full public-site test harness requires its own populated CMS server;
+  it was not claimed passing against the privacy-only dev server.
 
-The build/tests validate this partial code checkpoint; they do not replace the remaining API, browser, callback, operational, migration or 24-hour acceptance work.
+## Live provider evidence
+
+The approved separate BYOK account **26191165**, domain **spitzli.me**, provider
+limit **10** remains the sole live test account. Exactly **two** actual messages were
+sent, from `relaykit-test@spitzli.me` to `dominik@spitzli.dev`; provider analytics
+and recipient INBOX UIDs2216 and2221 independently confirmed them. The second message also proved HTML, byte-exact attachments, CID, Reply-To and a custom header. Subsequent permission
+probes used empty payloads that cannot create a message, and tracking/account checks
+were read-only. See [provider evidence](2026-10-12-mail-provider-contracts.md).
+
+## Explicit limitations and release gates
+
+1. The new product dispatcher rejects customers with an existing native incoming
+   service, including suspended/retained instances, until Stalwart product submission
+   is integrated. Existing native sending remains available; no direct-Turbo fallback.
+2. Provider callback granularity/reference echo and a managed-provider end-to-end
+   pilot are not proved. No existing callback consumer was changed. The authenticated
+   inbox and reconciliation tests are local fixtures, not live callback evidence.
+3. Shared/native domain removal currently returns `domain_in_use`; it cannot
+   invalidate another connection. A generalized detach workflow remains separate.
+4. No production SQL migration, application deployment, scheduler activation,
+   account cutover, production restore or 24-hour monitoring run has occurred.
+5. Provider-side suppression readback and the full live multi-recipient accounting/
+   delivery matrix remain unverified. Local suppressions are explicitly local.
+
+The [operations runbook](../architecture/mail-operations.md) and
+[migration runbook](../architecture/mail-migration.md) describe controlled release
+and rollback. Do not mark the whole 20-task plan complete from local tests alone.
