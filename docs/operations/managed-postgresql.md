@@ -50,7 +50,7 @@ For control-plane rollback, disable catalog availability, stop new DB claims and
 
 UI shows observation time, measured logical size, dedicated filesystem use, warning thresholds and unknown/stale state. Missing observations cannot start billing. A shared logical allowance is measured, not a hard per-customer filesystem cap. Review pool growth and connection demand; a full Shared filesystem affects all occupants.
 
-Local evidence covers SQL/role isolation, direct/pooler TLS, pg/Prisma clients, ENOSPC/fail-closed storage, lifecycle and migration. Production DNS/firewall/TLS, multi-node deployment compatibility, real external client paths, sustained load and 24-hour observation remain launch checks. External alert delivery is not proven.
+Local evidence covers SQL/role isolation, direct/pooler TLS, pg/Prisma clients, ENOSPC/fail-closed storage, lifecycle and migration. Initial production DNS/firewall/TLS and external pg connections are now verified for the internal Webdock instance below. External Vercel/Prisma production clients, sustained load, 24-hour observation and external alert delivery remain broader launch checks.
 
 ## TODO: backups
 

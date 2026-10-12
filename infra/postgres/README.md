@@ -1,6 +1,6 @@
 # Managed PostgreSQL qualification
 
-Implementation includes native ordering, operator pools/catalog, the CNPG agent, SQL isolation, lifecycle and logical migration. See the [operations runbook](../../docs/operations/managed-postgresql.md) and [qualification evidence](../../docs/verification/managed-postgresql-lifecycle-pilot.json). All executed provisioning tests used disposable local infrastructure; no production deployment is claimed. Backups and backup-dependent recovery are explicitly deferred by the owner.
+Implementation includes native ordering, operator pools/catalog, the CNPG agent, SQL isolation, lifecycle and logical migration. See the [operations runbook](../../docs/operations/managed-postgresql.md) and [qualification evidence](../../docs/verification/managed-postgresql-lifecycle-pilot.json). The initial qualification used disposable local infrastructure. The first internal Webdock production instance is now verified in the [production evidence](../../docs/verification/2026-10-12-webdock-postgresql-production.json). Backups and backup-dependent recovery are explicitly deferred by the owner.
 
 ## Refresh the live inventory
 
@@ -43,4 +43,4 @@ Load the reviewed `versions.env` into these shell variables first. Cosign is an 
 
 Use a disposable cluster and explicit kubeconfig. `Pilot.Dockerfile` supplies the isolated k3s test node; `boundary.py` installs reviewed admission rules. `check_boundary.py`, `check_bounded_volume.py`, `check_sql_isolation.py`, `check_lifecycle.py` and `check_migration.py` exercise actual infrastructure and require explicit synthetic identities. Read their CLI help and guards before use. Never run destructive storage probes against customer data.
 
-The checked-in evidence records completed local runs. The production deployment reconciliation, external endpoint/client check and 24-hour pilot are still outstanding. Barman provenance and all backup work remain TODO, not prerequisites for implementing the owner-authorized no-backup product.
+The checked-in evidence records completed local runs. The initial production overlay and external pg endpoint are verified; broader external client coverage and the 24-hour pilot remain outstanding. Barman provenance and all backup work remain TODO, not prerequisites for implementing the owner-authorized no-backup product.
