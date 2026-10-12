@@ -20,9 +20,11 @@ CREATE TABLE IF NOT EXISTS webdock_auth.mail_sender_domain (
  customer_id text NOT NULL REFERENCES webdock_auth.tenant_customer(customer_id),
  domain text NOT NULL, token text NOT NULL,
  status text NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','ownership_verified')),
- checked_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(customer_id,domain)
+ checked_at timestamptz, deleted_at timestamptz, created_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE UNIQUE INDEX IF NOT EXISTS mail_verified_domain ON webdock_auth.mail_sender_domain(domain) WHERE status='ownership_verified';`;
+ALTER TABLE webdock_auth.mail_sender_domain ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+CREATE UNIQUE INDEX IF NOT EXISTS mail_sender_domain_live_claim ON webdock_auth.mail_sender_domain(customer_id,domain) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS mail_verified_domain ON webdock_auth.mail_sender_domain(domain) WHERE status='ownership_verified' AND deleted_at IS NULL;`;
 export type MailView = {
  tenant: { id: string; name: string; status: string }; operator: boolean; canManage: boolean;
  enabled: boolean; configured: boolean; region: "eu" | "global"; defaultLimit: number;
@@ -53,7 +55,7 @@ export async function getTenantMail(headers: Headers, customerID: string): Promi
  const [settings, connection, accounts, domains] = await Promise.all([
   getPlatformSettings(), getMailConnectionStatus(),
   database.query("SELECT state,provider_id,email,snapshot,checked_at,created_at FROM webdock_auth.mail_tenant_account WHERE customer_id=$1", [customerID]),
-  database.query("SELECT id,domain,token,status,checked_at FROM webdock_auth.mail_sender_domain WHERE customer_id=$1 ORDER BY domain", [customerID]),
+  database.query("SELECT id,domain,token,status,checked_at FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND customer_id=$1 ORDER BY domain", [customerID]),
  ]);
  const row = accounts.rows[0];
  const stale = row?.state === "provisioning" && new Date(row.created_at).getTime() < Date.now() - 600_000;
@@ -96,17 +98,17 @@ export async function manageTenantMail(headers: Headers, customerID: string, inp
   if (action === "add-domain") {
    await database.query("INSERT INTO webdock_auth.mail_sender_domain(customer_id,domain,token) VALUES($1,$2,$3)", [customerID, normalizeMailDomain(input.domain), randomBytes(24).toString("hex")]);
   } else if (["verify-domain", "remove-domain"].includes(action)) {
-   const domain = (await database.query("SELECT id,domain,token FROM webdock_auth.mail_sender_domain WHERE id=$1 AND customer_id=$2", [input.domainID, customerID])).rows[0];
+   const domain = (await database.query("SELECT id,domain,token FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND id=$1 AND customer_id=$2", [input.domainID, customerID])).rows[0];
    if (!domain) failure("Domain not found.");
    if (action === "remove-domain") {
     if (input.confirm !== "yes") failure("Confirm removal of this local domain entry.");
-    const removed = await database.query("DELETE FROM webdock_auth.mail_sender_domain WHERE id=$1 AND customer_id=$2 AND provider_id IS NULL AND provider_operation IS NULL AND provider_checked_at IS NULL", [domain.id, customerID]);
+    const removed = await database.query("DELETE FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND id=$1 AND customer_id=$2 AND provider_id IS NULL AND provider_operation IS NULL AND provider_checked_at IS NULL", [domain.id, customerID]);
     if (!removed.rowCount) failure("Remove or reconcile the sending registration before removing its local domain entry.");
    } else {
     const verified = await verifyDNS(domain.domain, domain.token, dependencies.dnsFetch || fetch);
     // Recheck current authorization after network I/O; unique index arbitrates concurrent claims.
     if (!(await getTenant(headers, customerID)).canManage) failure("Tenant administrator access is required.");
-    await database.query("UPDATE webdock_auth.mail_sender_domain SET status=$3,checked_at=now() WHERE id=$1 AND customer_id=$2", [domain.id, customerID, verified ? "ownership_verified" : "pending"]);
+    await database.query("UPDATE webdock_auth.mail_sender_domain SET status=$3,checked_at=now() WHERE deleted_at IS NULL AND id=$1 AND customer_id=$2", [domain.id, customerID, verified ? "ownership_verified" : "pending"]);
     if (!verified) failure("The public DNS ownership token does not match yet.");
    }
   } else {

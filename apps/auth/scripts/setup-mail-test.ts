@@ -37,5 +37,8 @@ try {
     const exports = await import(`../src/lib/${module}.ts`);
     await database.query(exports[name]);
   }
+  await database.query("DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='webdock_auth_runtime') THEN CREATE ROLE webdock_auth_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE; END IF; END $$");
+  const {hostingRegistryLockSQL}=await import('../src/lib/hosting/registry-access');
+  await database.query(hostingRegistryLockSQL);
   console.log('Disposable Mail test database initialized; no provider requests.');
 } finally { await database.end(); }

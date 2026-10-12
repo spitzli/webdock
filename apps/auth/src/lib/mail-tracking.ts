@@ -33,7 +33,7 @@ export async function getTenantTracking(headers: Headers, customerID: string) {
  const [settings, connection, accounts, senders, domains, snapshots] = await Promise.all([
   getPlatformSettings(), getMailConnectionStatus(),
   database.query("SELECT state,snapshot FROM webdock_auth.mail_tenant_account WHERE customer_id=$1", [customerID]),
-  database.query("SELECT id,domain FROM webdock_auth.mail_sender_domain WHERE customer_id=$1 AND status='ownership_verified' AND provider_id IS NOT NULL AND (provider_operation IS NULL OR provider_operation_started_at < now()-interval '5 minutes') ORDER BY domain", [customerID]),
+  database.query("SELECT id,domain FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND customer_id=$1 AND status='ownership_verified' AND provider_id IS NOT NULL AND (provider_operation IS NULL OR provider_operation_started_at < now()-interval '5 minutes') ORDER BY domain", [customerID]),
   database.query("SELECT id,domain,provider_id,snapshot,updated_at FROM webdock_auth.mail_tracking_domain WHERE customer_id=$1 ORDER BY domain", [customerID]),
   database.query("SELECT snapshot,updated_at FROM webdock_auth.mail_tracking_settings WHERE customer_id=$1", [customerID]),
  ]);
@@ -56,7 +56,7 @@ export async function manageTenantTracking(headers: Headers, customerID: string,
   const row = ["verify", "remove", "cancel-reservation", "enabled", "dedicated"].includes(input.action) ? (await database.query("SELECT * FROM webdock_auth.mail_tracking_domain WHERE id=$1 AND customer_id=$2", [input.domainID, customerID])).rows[0] : undefined;
   if (["verify", "remove", "enabled", "dedicated"].includes(input.action) && !row?.provider_id) return fail("A mapped tracking domain belonging to this tenant is required.");
   if (input.action === "cancel-reservation" && (!row || row.provider_id || new Date(row.updated_at).getTime() > Date.now() - 900000)) return fail("Only an unmapped reservation older than 15 minutes can be cancelled. Refresh to reconcile it first.");
-  const sender = input.action === "create" ? (await database.query("SELECT id,domain FROM webdock_auth.mail_sender_domain WHERE id=$1 AND customer_id=$2 AND status='ownership_verified' AND provider_id IS NOT NULL", [input.senderDomainID, customerID])).rows[0] : undefined;
+  const sender = input.action === "create" ? (await database.query("SELECT id,domain FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND id=$1 AND customer_id=$2 AND status='ownership_verified' AND provider_id IS NOT NULL", [input.senderDomainID, customerID])).rows[0] : undefined;
   if (input.action === "create" && !sender) return fail("Choose a verified, registered sender domain belonging to this tenant.");
   if (["remove", "cancel-reservation"].includes(input.action) && input.confirm !== "yes") return fail("Confirm removal of this tracking domain.");
   if (["enabled", "dedicated", "setting"].includes(input.action) && !["yes", "no"].includes(input.value)) return fail("Choose enabled or disabled.");
@@ -93,7 +93,7 @@ export async function manageTenantTracking(headers: Headers, customerID: string,
    const reservation = await database.connect(); let reserved: { id: string };
    try {
     await reservation.query("BEGIN");
-    const owned = (await reservation.query("SELECT status,provider_id,provider_operation,provider_operation_started_at FROM webdock_auth.mail_sender_domain WHERE customer_id=$1 AND id=$2 FOR UPDATE", [customerID, sender.id])).rows[0];
+    const owned = (await reservation.query("SELECT status,provider_id,provider_operation,provider_operation_started_at FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND customer_id=$1 AND id=$2 FOR UPDATE", [customerID, sender.id])).rows[0];
     if (!owned || owned.status !== "ownership_verified" || !owned.provider_id || owned.provider_operation && (!owned.provider_operation_started_at || new Date(owned.provider_operation_started_at).getTime() > Date.now() - 300000)) return fail("The sender domain is changing. Refresh before creating a tracking domain.");
     reserved = (await reservation.query("INSERT INTO webdock_auth.mail_tracking_domain(customer_id,sender_domain_id,domain) VALUES($1,$2,$3) RETURNING id", [customerID, sender.id, hostname])).rows[0];
     await reservation.query("COMMIT");

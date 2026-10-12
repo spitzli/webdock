@@ -184,3 +184,17 @@ CREATE TABLE IF NOT EXISTS webdock_auth.mail_import_map (
  PRIMARY KEY(source,kind,legacy_id),FOREIGN KEY(customer_id,connection_id) REFERENCES webdock_auth.mail_connection(customer_id,id)
 );
 `;
+
+export const mailProductDomainSchemaSQL = `
+ALTER TABLE webdock_auth.mail_sender_domain ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+ALTER TABLE webdock_auth.mail_sender_domain DROP CONSTRAINT IF EXISTS mail_sender_domain_customer_id_domain_key;
+DROP INDEX IF EXISTS webdock_auth.mail_verified_domain;
+CREATE UNIQUE INDEX mail_verified_domain ON webdock_auth.mail_sender_domain(domain) WHERE status='ownership_verified' AND deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS mail_sender_domain_live_claim ON webdock_auth.mail_sender_domain(customer_id,domain) WHERE deleted_at IS NULL;
+ALTER TABLE webdock_auth.mail_tracking_domain ADD COLUMN IF NOT EXISTS connection_id text REFERENCES webdock_auth.mail_connection(id);
+`;
+
+export const mailProductDispatchSchemaSQL = `
+ALTER TABLE webdock_auth.mail_idempotency ADD COLUMN IF NOT EXISTS operation_token uuid NOT NULL DEFAULT gen_random_uuid();
+ALTER TABLE webdock_auth.mail_recipient ADD COLUMN IF NOT EXISTS first_delivered_at timestamptz;
+`;
