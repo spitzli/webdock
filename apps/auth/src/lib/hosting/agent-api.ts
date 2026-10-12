@@ -1,3 +1,5 @@
+import {withDatabaseScope} from "@webdock/database-runtime";
+import {authDatabase} from "../db";
 import {databaseObservationConfig,reportDatabaseObservations} from "./database-observations";
 import {claimDatabaseOperation,checkpointDatabaseOperation,completeDatabaseOperation,guardDatabaseOperation} from "./database-agent";
 import { claimMailConfiguration, checkpointMailConfiguration, completeMailConfiguration } from "../mail-configuration";
@@ -42,6 +44,9 @@ export async function hostingAgentAPI(request: Request, path: string[]) {
         : null;
     if (path[0] !== "enroll" && !agent)
       throw new HostingError(401, "Cluster authentication failed.");
+    const enrollmentInput = path[0] === "enroll" ? enrollment.parse(input) : null;
+    if (enrollmentInput && !(await authDatabase.query("SELECT 1 FROM webdock_auth.hosting_enrollment WHERE cluster_id=$1 AND token_hash=$2 AND consumed_at IS NULL AND expires_at>now()", [enrollmentInput.clusterID,createHash("sha256").update(enrollmentInput.token).digest("hex")])).rowCount) throw new HostingError(401,"Enrollment is invalid.");
+    return await withDatabaseScope({kind:"system",purpose: enrollmentInput ? "agent-enrollment" : "agent",clusterID:enrollmentInput?.clusterID ?? agent!.clusterID}, async () => {
     const bucket =
       path[0] === "enroll"
         ? "enrollment"
@@ -105,6 +110,7 @@ export async function hostingAgentAPI(request: Request, path: string[]) {
         );
     }
     return Response.json(data, { headers: { "Cache-Control": "no-store" } });
+    });
   } catch (error) {
     const safe = hostingError(error);
     return Response.json(

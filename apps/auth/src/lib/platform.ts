@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { isIP } from "node:net";
-import { database } from "./db";
+import { database, authDatabase } from "./db";
 import { currentMCPClaims } from "./mcp";
 import { TurboSMTPClient } from "./turbosmtp";
 
@@ -39,7 +39,7 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
 }
 // Public branding must not prevent access to the sign-in page during a database outage.
 export async function publicPlatformSettings() {
-  try { const { name, supportEmail } = await getPlatformSettings(); return { name, supportEmail }; }
+  try { const row = (await authDatabase.query("SELECT settings FROM webdock_auth.platform_settings WHERE id=true")).rows[0]; const { name, supportEmail } = {...platformDefaults,...row?.settings}; return { name, supportEmail }; }
   catch { return { name: platformDefaults.name, supportEmail: platformDefaults.supportEmail }; }
 }
 async function requireRoot(actorID: string) {
@@ -81,6 +81,7 @@ export async function savePlatformSettings(actorID: string, input: Record<string
   await rootWrite(actorID, "platform-settings", "INSERT INTO webdock_auth.platform_settings(id,settings,updated_by) VALUES(true,$1,$2) ON CONFLICT(id) DO UPDATE SET settings=$1,updated_by=$2,updated_at=now()", [JSON.stringify(settings), actorID]);
 }
 export async function getMailConnectionStatus(): Promise<{ configured: boolean; consumerKeySuffix?: string }> {
+  if(process.env.DATABASE_RLS_SECRET)return (await database.query("SELECT webdock_rls.mail_connection_status() AS status")).rows[0].status;
   const row = (await database.query("SELECT key_suffix FROM webdock_auth.platform_mail_credential WHERE id=true")).rows[0];
   return row ? { configured: true, consumerKeySuffix: row.key_suffix } : { configured: false };
 }
@@ -93,9 +94,9 @@ export async function clearMailCredentials(actorID: string) {
   await rootWrite(actorID, "mail-credentials-removed", "DELETE FROM webdock_auth.platform_mail_credential WHERE id=true", []);
 }
 /** Server-side only; never pass this result to a React client or action response. */
-export async function mailProvider(fetcher?:typeof fetch) {
-  const row = (await database.query("SELECT encrypted_secret FROM webdock_auth.platform_mail_credential WHERE id=true")).rows[0];
-  if (!row) throw new PlatformError("Connect the mail provider in Webdock administration first.");
+export async function mailProvider(fetcher?:typeof fetch,customerID?:string,connectionID?:string) {
+  const row = process.env.DATABASE_RLS_SECRET ? (await database.query("SELECT webdock_rls.mail_provider_secret($1,$2) AS encrypted_secret",[customerID??null,connectionID??null])).rows[0] : (await database.query("SELECT encrypted_secret FROM webdock_auth.platform_mail_credential WHERE id=true")).rows[0];
+  if (!row?.encrypted_secret) throw new PlatformError("Connect the mail provider in Webdock administration first.");
   const credentials = decryptMailSecret<{ consumerKey: string; consumerSecret: string }>(row.encrypted_secret, "platform-master");
   if (!credentials.consumerKey || !credentials.consumerSecret) throw new PlatformError("Reconnect the mail provider.");
   return new TurboSMTPClient(credentials,fetcher);

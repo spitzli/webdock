@@ -1,3 +1,5 @@
+import {authDatabase} from "../db";
+import {withDatabaseScope} from "@webdock/database-runtime";
 import {discardExpiredUncertainContent} from './content';
 import {createHash,timingSafeEqual,randomUUID} from 'node:crypto';
 import type {PoolClient} from 'pg';import type {EventType} from '@webdock/mail-contracts';
@@ -28,12 +30,13 @@ export function parseProviderEvents(raw:string):NormalizedProviderEvent[]{return
 export async function acceptProviderEvents(sourceID:string,request:Request):Promise<Response>{
  try{
   parseID(sourceID);if(request.method!=='POST')return new Response(null,{status:405});
-  const source=(await database.query('SELECT secret_hash FROM webdock_auth.mail_callback_source WHERE id=$1 AND enabled AND verified_at IS NOT NULL',[sourceID])).rows[0];
+  const source=(await authDatabase.query('SELECT secret_hash FROM webdock_auth.mail_callback_source WHERE id=$1 AND enabled AND verified_at IS NOT NULL',[sourceID])).rows[0];
   const header=request.headers.get('authorization')??'';
   const credentials=/^Basic [A-Za-z0-9+/]+={0,2}$/.test(header)?Buffer.from(header.slice(6),'base64').toString('utf8'):'';
   const secret=credentials.startsWith('webdock:')?credentials.slice(8):'';
   const expected=Buffer.from(source?.secret_hash??'0'.repeat(64),'hex'),actual=createHash('sha256').update(secret).digest();
   if(!source||!secret||expected.length!==32||!timingSafeEqual(expected,actual))return new Response(null,{status:401});
+  return await withDatabaseScope({kind:"system",purpose:"mail-callback"},async()=>{
   const raw=await readBoundedText(request,1048576);let entries:unknown[];
   try{entries=decoded(raw);}catch(error){return new Response(null,{status:error instanceof MailError?error.status:406});}
   let quarantined=0;
@@ -49,6 +52,7 @@ export async function acceptProviderEvents(sourceID:string,request:Request):Prom
    }
   });
   return Response.json({received:entries.length,quarantined});
+  });
  }catch(error){return new Response(null,{status:error instanceof MailError?error.status:503});}
 }
 /** Apply only a source-authorized event to an actual, nonsuppressed handoff recipient. */

@@ -1,3 +1,4 @@
+import { verifiedPostgresConfig } from "@webdock/database-runtime";
 import { lexicalEditor } from '@payloadcms/richtext-lexical';
 import { formBuilderPlugin } from '@payloadcms/plugin-form-builder';
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob';
@@ -21,6 +22,8 @@ import { LandingPage } from './cms/landing';
 import { editor, isSuperAdmin, selfOrSuperAdmin, signedIn, superAdmin, updateOwnAccount } from './cms/access';
 import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant';
 
+const databaseURL = process.env.PAYLOAD_MIGRATING === "true" ? process.env.DATABASE_URL_UNPOOLED : process.env.DATABASE_URL;
+const databaseConnection = process.env.DATABASE_CA_CERT && databaseURL ? verifiedPostgresConfig(databaseURL, process.env.DATABASE_CA_CERT) : {connectionString: databaseURL};
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 if (!process.env.PAYLOAD_SECRET || process.env.PAYLOAD_SECRET.length < 32) throw new Error('PAYLOAD_SECRET must have at least 32 characters.');
 if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error('BLOB_READ_WRITE_TOKEN is required for persistent media storage.');
@@ -66,7 +69,7 @@ export default buildConfig({
   sharp,
   upload: { limits: { fileSize: 10 * 1024 * 1024 }, abortOnLimit: true },
   db: postgresAdapter({
-    pool: { connectionString: process.env.PAYLOAD_MIGRATING === 'true' ? process.env.DATABASE_URL_UNPOOLED : process.env.DATABASE_URL, max: 3 },
+    pool: { ...databaseConnection, max: 3 },
     push: false,
     migrationDir: path.resolve(dirname, 'migrations'),
   }),

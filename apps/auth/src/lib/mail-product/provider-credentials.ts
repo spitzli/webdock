@@ -25,7 +25,7 @@ export async function ensureManagedSendingCredential(actor:MailActor,deps:Depend
  });
  if(!reserved)return;
  try{
-  const master=await (deps.master??mailProvider)();
+  const master=await (deps.master??(()=>mailProvider(undefined,actor.customerID,actor.connectionID)))();
   const account=await master.getSubaccount(reserved.account.provider_id);
   if(account.id!==reserved.account.provider_id||account.email?.toLowerCase()!==reserved.account.email.toLowerCase()||!account.active)mailUnavailable();
   const token=await master.authorizeSubaccount(reserved.account.email);
@@ -83,7 +83,7 @@ export async function mailManagementHeaders(actor:MailActor,options:{requireActi
  const connection=(await database.query('SELECT kind,provider_account_id FROM webdock_auth.mail_connection WHERE id=$1 AND customer_id=$2',[actor.connectionID,actor.customerID])).rows[0];if(!connection)mailUnavailable();
  if(connection.kind==='platform'){
   const source=(await database.query('SELECT provider_id,email FROM webdock_auth.mail_tenant_account WHERE customer_id=$1',[actor.customerID])).rows[0];if(!source||source.provider_id!==connection.provider_account_id)mailUnavailable();
-  const master=await mailProvider(),confirmed=await master.getSubaccount(source.provider_id);if(confirmed.id!==source.provider_id||confirmed.email?.toLowerCase()!==source.email.toLowerCase()||(options.requireActive&&!confirmed.active))mailUnavailable();
+  const master=await mailProvider(undefined,actor.customerID,actor.connectionID),confirmed=await master.getSubaccount(source.provider_id);if(confirmed.id!==source.provider_id||confirmed.email?.toLowerCase()!==source.email.toLowerCase()||(options.requireActive&&!confirmed.active))mailUnavailable();
   return {Authorization:await master.authorizeSubaccount(source.email)};
  }
  const stored=(await database.query('SELECT version,encrypted_secret FROM webdock_auth.mail_connection_secret WHERE connection_id=$1 AND customer_id=$2 AND active AND revoked_at IS NULL',[actor.connectionID,actor.customerID])).rows[0];if(!stored)mailUnavailable();

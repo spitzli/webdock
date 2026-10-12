@@ -1,3 +1,5 @@
+
+import {withHostingDatabase} from '../database-context';
 import { HostingError, type HostingActor } from "@webdock/hosting-contracts";
 import { transaction, audit } from "./db";
 import { authorizeHosting } from "./authorization";
@@ -7,6 +9,8 @@ export async function displayDatabaseCredentials(
   actor: HostingActor,
   databaseID: string,
 ) {
+return withHostingDatabase(actor, async () => {
+
   if (actor.source !== "studio")
     throw new HostingError(403, "Open database credentials in Studio.");
   return transaction(async (db) => {
@@ -67,4 +71,6 @@ export async function displayDatabaseCredentials(
       caCertificate: backend.ca_certificate,
     };
   });
+
+});
 }

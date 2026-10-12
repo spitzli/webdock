@@ -62,12 +62,16 @@ def validate_packet(p):
     return p
 
 
-def hba(p):
+def hba(p,config=None):
     rows=[]
+    platform=(config or {}).get("platformDatabases",{})
     for member in p['members']:
         if member['enabled']:
             _,migration,app=role_names(member['id'])
-            rows.append(f"hostssl {member['databaseName']} {migration},{app} all scram-sha-256")
+            extra=platform.get(member['id'],[])
+            if extra and p['backend']['kind']!='dedicated':raise ValueError('Platform service roles require a dedicated installation')
+            users=','.join([migration,app,*extra])
+            rows.append(f"hostssl {member['databaseName']} {users} all scram-sha-256")
     return rows+['host all all all reject']
 
 
@@ -92,9 +96,9 @@ def backend_manifests(p,config):
         'storage':{'size':str(r['volumeBytes']),'storageClass':'','pvcTemplate':{'volumeName':'wd-db-'+b['id'],'accessModes':['ReadWriteOnce']}},
         'certificates':{'serverTLSSecret':'server-tls','serverCASecret':'server-ca'},
         'bootstrap':{'initdb':{'postInitSQL':['REVOKE ALL ON DATABASE postgres, template0, template1 FROM PUBLIC']}},
-        'postgresql':{'enableAlterSystem':False,'parameters':{'password_encryption':'scram-sha-256','shared_buffers':str(max(32,r['memoryBytes']//4194304))+'MB','max_connections':'100','max_wal_size':'256MB','min_wal_size':'64MB','log_statement':'none'},'pg_hba':hba(p)}}},
+        'postgresql':{'enableAlterSystem':False,'parameters':{'password_encryption':'scram-sha-256','shared_buffers':str(max(32,r['memoryBytes']//4194304))+'MB','max_connections':'100','max_wal_size':'256MB','min_wal_size':'64MB','log_statement':'none'},'pg_hba':hba(p,config)}}},
       {'apiVersion':'postgresql.cnpg.io/v1','kind':'Pooler','metadata':meta('pooler'),'spec':{'cluster':{'name':'postgres'},'instances':1,'type':'rw',
-        'pgbouncer':{'poolMode':'transaction','parameters':{'max_client_conn':'80','default_pool_size':'5','max_db_connections':'10','max_user_connections':'10','server_connect_timeout':'10','client_tls_sslmode':'require','server_tls_sslmode':'verify-full'}},
+        'pgbouncer':{'poolMode':'transaction','parameters':{'max_client_conn':'80','default_pool_size':'1' if any(m['id'] in config.get('platformDatabases',{}) for m in p['members']) else '5','max_db_connections':'10','max_user_connections':'10','server_connect_timeout':'10','client_tls_sslmode':'require','server_tls_sslmode':'verify-full'}},
         'template':{'spec':{'nodeSelector':{'kubernetes.io/hostname':b['node']},'initContainers':[{'name':'bootstrap-controller','resources':{'requests':{'cpu':'100m','memory':'268435456','ephemeral-storage':'67108864'},'limits':{'cpu':'100m','memory':'268435456','ephemeral-storage':'67108864'}}}],'containers':[{'name':'pgbouncer','image':config['poolerImage'],'resources':{'requests':{'cpu':'100m','memory':'134217728','ephemeral-storage':'67108864'},'limits':{'cpu':'100m','memory':'134217728','ephemeral-storage':'67108864'}}}]}}}},
     ]
 
@@ -147,7 +151,13 @@ def configuration():
     info=path.stat()
     if path.is_symlink() or info.st_uid!=os.getuid() or info.st_mode&0o077:raise ValueError('Private database configuration required')
     config=json.loads(path.read_text())
-    if set(config)!={'image','poolerImage','issuer','apiCIDRs','podCIDRs','storageSocket','caFile'}:raise ValueError('Invalid database configuration')
+    required={'image','poolerImage','issuer','apiCIDRs','podCIDRs','storageSocket','caFile'}
+    if not required<=set(config)<=required|{'platformDatabases'}:raise ValueError('Invalid database configuration')
+    platform=config.get('platformDatabases',{})
+    if not isinstance(platform,dict) or len(platform)>10:raise ValueError('Invalid platform database map')
+    for identity,roles in platform.items():
+        identifier(identity)
+        if not isinstance(roles,list) or not 1<=len(roles)<=32 or any(not isinstance(r,str) or not re.fullmatch(r'webdock_[a-z][a-z0-9_]{0,53}',r) for r in roles) or len(set(roles))!=len(roles):raise ValueError('Invalid platform database roles')
     for key in ['image','poolerImage']:
         if not re.fullmatch(r'[A-Za-z0-9_.:/-]+@sha256:[a-f0-9]{64}',config[key]):raise ValueError('Pinned database images required')
     if not re.fullmatch(r'.+:18\.[0-9][A-Za-z0-9_.-]*@sha256:[a-f0-9]{64}',config['image']):raise ValueError('PostgreSQL major tag and digest are both required')
@@ -274,6 +284,10 @@ def execute_database(p,checkpoint):
     validate_packet(p)
     if p['phase']=='uncertain':raise ValueError('Interrupted mutation requires operator reconciliation')
     config=configuration();b=p['backend'];ns=b['namespace'];d=p['database']
+    affected={m['id'] for m in p['members']}
+    if d:affected.add(d['id'])
+    if affected.intersection(config.get('platformDatabases',{})) and p['action'] in ['pause','restart','resize','delete','purge','rotateCredentials','migrate']:
+        raise ValueError('Platform database requires reviewed offline maintenance')
     if p['action']=='migrate':
         from database_migrations import execute_migration
         return execute_migration(p,checkpoint,config)
@@ -315,7 +329,7 @@ def execute_database(p,checkpoint):
                 if p['action']!='create':raise ValueError('Missing database; refusing empty replacement')
                 guard();sql(p,statements['create']);sql(p,statements['mark'])
             guard();sql(p,statements['database']);sql(p,statements['schema'],d['name'])
-            guard();kubectl('patch','cluster','postgres','-n',ns,'--type=merge','-p',json.dumps({'spec':{'postgresql':{'pg_hba':hba(p)}}}))
+            guard();kubectl('patch','cluster','postgres','-n',ns,'--type=merge','-p',json.dumps({'spec':{'postgresql':{'pg_hba':hba(p,config)}}}))
             guard();sql(p,statements['enable'])
         elif p['action'] in ['pause','delete'] and d:
             if not database_exists(p):raise ValueError('Database identity missing')

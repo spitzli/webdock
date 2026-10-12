@@ -1,3 +1,5 @@
+
+import {withHostingDatabase} from '../database-context';
 import { createHash, randomBytes } from "node:crypto";
 import { HostingError, type HostingActor } from "@webdock/hosting-contracts";
 import {
@@ -47,6 +49,8 @@ export async function executeGitOAuth(
   raw: GitOAuthCommand,
   runtime?: ReturnType<typeof createGitHubProvider>,
 ) {
+return withHostingDatabase(actor, async () => {
+
   if (actor.source !== "studio")
     throw new HostingError(403, "Connect GitHub interactively in Studio.");
   const command = gitOAuthCommandSchema.parse(raw);
@@ -146,4 +150,6 @@ export async function executeGitOAuth(
     );
     return { customerID: flow.customer_id, connection };
   });
+
+});
 }

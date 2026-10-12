@@ -8595,6 +8595,9 @@
   "This customer uses native incoming Mail. Send through the native Mail path; the new Mail API does not yet submit through Stalwart.": [
     "Dieser Kunde verwendet nativen Mailempfang. Nutze den nativen Versandweg; die neue Mail-API übergibt noch nicht an Stalwart."
   ],
+  "This database hosts the Webdock control plane. Use the reviewed offline maintenance procedure.": [
+    "Diese Datenbank betreibt die Webdock-Plattform. Verwende dafür das geprüfte Offline-Wartungsverfahren."
+  ],
   "This database is not registered for managed deletion.": [
     "Diese Datenbank ist nicht für die verwaltete Löschung registriert."
   ],

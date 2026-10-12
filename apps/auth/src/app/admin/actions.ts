@@ -1,4 +1,6 @@
 "use server";
+import {withAuthenticatedDatabase} from '@/lib/database-context';
+
 
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
@@ -15,6 +17,7 @@ export type AdminState = { error?: string; message?: string };
 
 export async function adminAction(_state: AdminState, form: FormData): Promise<AdminState> {
   try {
+    return await withAuthenticatedDatabase(await headers(), async () => {
     const session = await requireAccessOperator(await headers());
     const value = (name: string) => typeof form.get(name) === "string" ? String(form.get(name)) : "";
     let message: string;
@@ -49,7 +52,9 @@ export async function adminAction(_state: AdminState, form: FormData): Promise<A
     }
     revalidatePath("/admin");
     return { message };
+    });
   } catch (error) {
     return { error: error instanceof PlatformError || error instanceof AccessError ? error.message : "Could not complete this request. Check your operator session and Mail configuration, then try again." };
   }
+
 }

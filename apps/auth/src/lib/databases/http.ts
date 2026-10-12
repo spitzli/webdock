@@ -1,3 +1,5 @@
+import {withDatabaseScope} from "@webdock/database-runtime";
+import {withHostingDatabase} from "../database-context";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { HostingError } from "@webdock/hosting-contracts";
@@ -16,7 +18,7 @@ export async function databaseBridge(request: Request) {
     requireHostingEnvironment();
     const body = z.object({ accessToken: z.string().min(1).max(16384), command: z.unknown() }).strict().parse(await readHostingJSON(request));
     const actor = await hostingIdentity(request, body.accessToken);
-    const data = await transaction(db => executeDatabase(db, actor, body.command));
+    const data = await withHostingDatabase(actor,()=>transaction(db => executeDatabase(db, actor, body.command)));
     return Response.json({ data }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return responseError(error); }
 }
@@ -34,12 +36,12 @@ export async function databaseGateway(request: Request) {
       z.object({ action: z.literal("inspect"), token: z.string().length(43) }).strict(),
       z.object({ action: z.literal("logout"), token: z.string().length(43) }).strict(),
     ]).parse(await readHostingJSON(request, 2048));
-    const data = await transaction(async db => {
+    const data = await withDatabaseScope({kind:"system",purpose:"database-gateway"},()=>transaction(async db => {
       if (body.action === "exchange") return exchangeLaunch(db, body.code);
       if (body.action === "inspect") return inspectSession(db, body.token);
       await db.query("DELETE FROM webdock_auth.database_session WHERE token_hash=$1", [createHash("sha256").update(body.token).digest("hex")]);
       return { ok: true };
-    });
+    }));
     return Response.json({ data }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return responseError(error); }
 }

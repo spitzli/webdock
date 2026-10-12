@@ -1,3 +1,4 @@
+import { verifiedPostgresConfig } from "@webdock/database-runtime";
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildConfig } from 'payload';
@@ -10,6 +11,8 @@ export { sso } from './lib/sso';
 import { LandingPage } from './cms/landing';
 import { protectUsers, protectContent, isOperator } from './lib/instance-users';
 
+const databaseURL = process.env.PAYLOAD_MIGRATING === "true" ? process.env.DATABASE_URL_UNPOOLED : process.env.DATABASE_URL;
+const databaseConnection = process.env.DATABASE_CA_CERT && databaseURL ? verifiedPostgresConfig(databaseURL, process.env.DATABASE_CA_CERT) : {connectionString: databaseURL};
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const serverURL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3114';
 
@@ -30,7 +33,7 @@ export default buildConfig({
   jobs: { access: { run: isOperator, queue: isOperator, cancel: isOperator } },
   db: postgresAdapter({
     schemaName: 'webdock', disableCreateDatabase: true, allowIDOnCreate: true,
-    pool: { connectionString: process.env.PAYLOAD_MIGRATING === 'true' ? process.env.DATABASE_URL_UNPOOLED : process.env.DATABASE_URL, max: 3 },
+    pool: { ...databaseConnection, max: 3 },
     push: false,
     migrationDir: path.resolve(dirname, 'migrations-instance'),
   }),

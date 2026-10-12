@@ -1,3 +1,4 @@
+import { withAuthenticatedDatabase } from '../database-context';
 import {getTenantTracking,manageTenantTracking} from '../mail-tracking';
 import {rotateManagedSendingCredential} from './provider-credentials';
 import {getMailHealth} from './health';
@@ -20,6 +21,8 @@ export const mailStudioShapes:Record<string,((value:unknown)=>boolean)[]>={
  mailSuppressions:[text,text,object],mailSuppressionSet:[text,text,object],mailSuppressionRemove:[text,text,text],mailLogs:[text,text,object],mailLog:[text,text,text],mailConnectionUpdate:[text,text,object],mailReconcile:[text,text,text],
 };
 export async function dispatchMailStudio(operation:string,args:unknown[],headers:Headers):Promise<unknown>{
+  return withAuthenticatedDatabase(headers, async () => {
+
  const shape=mailStudioShapes[operation];if(!shape||shape.length!==args.length||shape.some((check,index)=>!check(args[index])))throw new MailError(422,'validation_error','Invalid Mail operation arguments');
  const customerID=parseID(args[0]);
  if(operation==='mailConnections')return listTenantMailConnections(headers,customerID);
@@ -68,6 +71,8 @@ export async function dispatchMailStudio(operation:string,args:unknown[],headers
   case 'mailConnectionUpdate':return updateConnection(actor,input);
  }
  throw new MailError(422,'validation_error','Unknown Mail operation');
+
+  });
 }
 async function updateConnection(actor:MailActor,input:Record<string,unknown>){
  if(!['pause','resume'].includes(String(input.action))||!Number.isSafeInteger(input.revision))throw new MailError(422,'validation_error','Invalid connection update');

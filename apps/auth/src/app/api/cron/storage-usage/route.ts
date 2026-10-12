@@ -1,3 +1,4 @@
+import {withDatabaseScope} from "@webdock/database-runtime";
 import { timingSafeEqual } from "node:crypto";
 import { refreshStorageBatch } from "@/lib/storage-usage";
 
@@ -11,5 +12,5 @@ export async function GET(request: Request) {
   if (!secret || actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-  return Response.json(await refreshStorageBatch(), { headers: { "Cache-Control": "no-store" } });
+  return Response.json(await withDatabaseScope({kind:"system",purpose:"storage-cron"},()=>refreshStorageBatch()), { headers: { "Cache-Control": "no-store" } });
 }

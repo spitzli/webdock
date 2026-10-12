@@ -29,7 +29,7 @@ export async function submitMail(actor:MailActor,body:EmailRequest,options:Optio
      await assertMailAccess(actor,'send',db);
      if(parsed.request.scheduled_at){
       await db.query('SELECT id FROM webdock_admin.customers WHERE id=$1 FOR UPDATE',[actor.customerID]);
-      if(Number((await db.query("SELECT count(*) FROM webdock_auth.mail_message WHERE customer_id=$1 AND dispatch_status='scheduled'",[actor.customerID])).rows[0].count)>=1000)throw new MailError(429,'schedule_limit_exceeded','Pending schedule limit reached');
+      if(Number((await db.query(process.env.DATABASE_RLS_SECRET?"SELECT webdock_rls.mail_admission_count($1,'scheduled') AS count":"SELECT count(*) FROM webdock_auth.mail_message WHERE customer_id=$1 AND dispatch_status='scheduled'",[actor.customerID])).rows[0].count)>=1000)throw new MailError(429,'schedule_limit_exceeded','Pending schedule limit reached');
      }
      const row={id:await persistMailMessage(db,actor,parsed,domain.domainID)};
      if(!(await db.query("UPDATE webdock_auth.mail_idempotency SET message_id=$4 WHERE customer_id=$1 AND connection_id=$2 AND key=$3 AND operation_token=$5 AND status='pending'",[actor.customerID,actor.connectionID,key,row.id,token])).rowCount)throw new MailError(409,'idempotency_conflict','Request reservation changed');

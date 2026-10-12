@@ -1,3 +1,4 @@
+import { withAuthenticatedDatabase } from './database-context';
 import { z } from "zod";
 import { MailServiceError } from "@webdock/mail-core";
 import { resourceID } from "@webdock/hosting-contracts";
@@ -103,17 +104,25 @@ export async function executeMailboxes(db: Connection, actor: MailActor, custome
 }
 
 export async function getTenantMailboxes(headers: Headers, customerID: string) {
+  return withAuthenticatedDatabase(headers, async () => {
+
   const { getTenant } = await import("./tenants");
   await getTenant(headers, customerID);
   if (process.env.WEBDOCK_NATIVE_MAILBOXES_ENABLED !== "true") return null;
   const { auth } = await import("./auth"), { transaction } = await import("./hosting/db");
   const session = await auth.api.getSession({ headers }); if (!session) mailUnavailable();
   return transaction(db => executeMailboxes(db, { subject: session.user.id, sessionID: session.session.id }, customerID, { action: "list" }));
+
+  });
 }
 export async function manageTenantMailboxes(headers: Headers, customerID: string, input: Record<string, string>) {
+  return withAuthenticatedDatabase(headers, async () => {
+
   if (process.env.WEBDOCK_NATIVE_MAILBOXES_ENABLED !== "true") mailUnavailable();
   const { auth } = await import("./auth"), { transaction } = await import("./hosting/db");
   const session = await auth.api.getSession({ headers }); if (!session) mailUnavailable();
   await transaction(db => executeMailboxes(db, { subject: session.user.id, sessionID: session.session.id }, customerID, input));
   return { message: "Mailbox change queued. Access is enabled only after server verification." };
+
+  });
 }

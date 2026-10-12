@@ -1,3 +1,5 @@
+
+import {withHostingDatabase} from '../database-context';
 import {executeDatabaseCommand} from "./databases";
 import {executeGitDeployment} from "./git-deployments";
 import { msgid } from "@webdock/i18n";
@@ -20,6 +22,8 @@ import { limits, usage } from "./allowances";
 import { clusterView } from "./clusters";
 import { replay, recordResult } from "./operations";
 export async function executeHosting(actor: HostingActor, raw: unknown, runtime?:VercelRuntime) {
+return withHostingDatabase(actor, async () => {
+
   const cmd = commandSchema.parse(raw);
   if (cmd.action.startsWith("databases.")) return executeDatabaseCommand(actor,cmd);
   if (cmd.action.startsWith("git.")) return executeGitDeployment(actor,cmd);
@@ -431,4 +435,6 @@ export async function executeHosting(actor: HostingActor, raw: unknown, runtime?
     }
     throw new HostingError(400, "Unknown hosting action.");
   });
+
+});
 }

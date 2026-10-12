@@ -1,3 +1,5 @@
+import { withDatabaseScope } from "@webdock/database-runtime";
+import { assertDatabaseMaintenanceAllowed } from "./database-protection";
 import { migrationMaintenance } from "./database-migration-maintenance";
 import { databaseBilling } from "./database-billing";
 import { databaseMaintenance } from "./database-maintenance";
@@ -8,6 +10,7 @@ import {
   freshDatabaseCluster,
 } from "./database-orders";
 import {
+  resourceID,
   databaseCommandSchema,
   databasePlanSchema,
   databaseViewSchema,
@@ -98,6 +101,53 @@ export async function executeDatabaseCommand(
       403,
       "Database orders require a customer administrator.",
     );
+  if (
+    process.env.DATABASE_RLS_SECRET &&
+    cmd.action === "databases.acceptOrder"
+  ) {
+    // Admission derives both identifiers from authorized server data. The worker
+    // transaction below revalidates the actor and immutable offer before writes.
+    const admission = await transaction(async (db) => {
+      const access = await authorizeHosting(
+        actor,
+        { projectID: cmd.projectID, write: true, tenantAdmin: true },
+        db,
+      );
+      if (!access.customerID)
+        throw new HostingError(403, "Choose an authorized hosting customer.");
+      const offer = (
+        await db.query(
+          "SELECT snapshot FROM webdock_auth.hosting_database_offer WHERE id=$1 AND project_id=$2 AND customer_id=$3",
+          [cmd.offerID, cmd.projectID, access.customerID],
+        )
+      ).rows[0];
+      if (!offer) throw new HostingError(404, "Database offer is unavailable.");
+      const source = offer.snapshot.sourceDatabaseID
+        ? (
+            await db.query(
+              "SELECT b.cluster_id FROM webdock_auth.hosting_database d JOIN webdock_auth.hosting_database_backend b ON b.id=d.backend_id WHERE d.id=$1 AND d.project_id=$2 AND d.customer_id=$3",
+              [
+                offer.snapshot.sourceDatabaseID,
+                cmd.projectID,
+                access.customerID,
+              ],
+            )
+          ).rows[0]
+        : null;
+      if (offer.snapshot.sourceDatabaseID && !source)
+        throw new HostingError(404, "Database source is unavailable.");
+      return {
+        customerID: access.customerID,
+        clusterID:
+          source?.cluster_id ??
+          resourceID.parse(process.env.WEBDOCK_DATABASE_CLUSTER_ID),
+      };
+    });
+    return withDatabaseScope(
+      { kind: "system", purpose: "database-order", ...admission },
+      () => transaction((db) => acceptDatabaseOrder(db, actor, cmd)),
+    );
+  }
   return transaction(async (db) => {
     if (
       [
@@ -229,6 +279,7 @@ export async function executeDatabaseCommand(
       let source;
       if (cmd.databaseID) {
         source = await databaseAccess(db, actor, cmd.databaseID, true);
+        assertDatabaseMaintenanceAllowed(source.id, "upgrade");
         if (
           source.project_id !== cmd.projectID ||
           source.state !== "ready" ||

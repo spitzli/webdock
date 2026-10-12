@@ -1,3 +1,4 @@
+import { withAuthenticatedDatabase } from './database-context';
 import { createHash, randomBytes } from "node:crypto";
 import { openSecret } from "@webdock/mail-core/secrets";
 import type { Connection } from "./hosting/authorization";
@@ -77,7 +78,11 @@ export async function revokeWebmail(db: Connection, value: string) {
 }
 
 export async function launchTenantWebmail(headers: Headers, customerID: string, mailboxID: string) {
+  return withAuthenticatedDatabase(headers, async () => {
+
   const { auth } = await import("./auth"), { transaction } = await import("./hosting/db");
   const session = await auth.api.getSession({ headers }); if (!session) mailUnavailable();
   return transaction(db => launchWebmail(db, { subject: session.user.id, sessionID: session.session.id }, customerID, mailboxID));
+
+  });
 }

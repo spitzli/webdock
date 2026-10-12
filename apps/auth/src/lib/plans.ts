@@ -1,3 +1,4 @@
+import { withAuthenticatedDatabase } from './database-context';
 import { effectiveHostingAllowances, parseHostingFields, type HostingAllowances } from "@webdock/hosting-contracts";
 import { createHash, randomBytes } from "node:crypto";
 import type { PoolClient } from "pg";
@@ -116,10 +117,16 @@ function offerStatus(row: { status: string; expires_at: Date; expected_revision:
   return row.status !== "pending" ? row.status : row.expires_at.getTime() <= Date.now() ? "expired" : row.expected_revision !== revision ? "stale" : "pending";
 }
 export async function getPlans(headers: Headers): Promise<Plan[]> {
+  return withAuthenticatedDatabase(headers, async () => {
+
   requireOperator(await actor(headers));
   return (await database.query('SELECT id,name,description,allowances,created_at AS "createdAt" FROM webdock_auth.plan_template ORDER BY created_at DESC,id DESC')).rows.map(row => ({ ...row, createdAt: row.createdAt.toISOString() }));
+
+  });
 }
 export async function getTenantPlan(headers: Headers, customerID: string) {
+  return withAuthenticatedDatabase(headers, async () => {
+
   await tenant(await actor(headers), customerID, database, false, true);
   const row = await subscription(customerID), revision: number = row?.revision || 0;
   const offers = (await database.query("SELECT id,name,status,expires_at,accepted_at,expected_revision FROM webdock_auth.plan_offer WHERE customer_id=$1 ORDER BY created_at DESC LIMIT 100", [customerID])).rows;
@@ -128,8 +135,12 @@ export async function getTenantPlan(headers: Headers, customerID: string) {
     revision,
     offers: offers.map(offer => ({ id: offer.id as string, name: offer.name as string, status: offerStatus(offer, revision), expiresAt: offer.expires_at.toISOString() as string, acceptedAt: offer.accepted_at?.toISOString() as string | undefined })),
   };
+
+  });
 }
 export async function managePlans(headers: Headers, input: Record<string, string>): Promise<{ message: string; offerURL?: string }> {
+  return withAuthenticatedDatabase(headers, async () => {
+
   const initialUser = await actor(headers); requireOperator(initialUser);
   if (!["create-plan", "assign", "extras", "create-offer", "revoke-offer"].includes(input.action)) throw new PlanError("Unknown plan action.");
   const connection = await database.connect();
@@ -176,6 +187,8 @@ export async function managePlans(headers: Headers, input: Record<string, string
     return { message: offerURL ? "Offer created. Copy the private link now; it is only shown once." : "Plan change saved.", ...(offerURL ? { offerURL } : {}) };
   } catch (error) { await connection.query("ROLLBACK"); throw error; }
   finally { connection.release(); }
+
+  });
 }
 async function offerByToken(token: string, connection: Connection = database) {
   if (!/^[A-Za-z0-9_-]{43}$/.test(token || "")) throw new PlanError("Offer not found.");
@@ -184,12 +197,18 @@ async function offerByToken(token: string, connection: Connection = database) {
   return row;
 }
 export async function getOffer(headers: Headers, token: string) {
+  return withAuthenticatedDatabase(headers, async () => {
+
   const user = await actor(headers), row = await offerByToken(token), customer = await tenant(user, row.customer_id);
   const current = await subscription(row.customer_id), extras: Allowances = row.offered_extras;
   const status = offerStatus(row, current?.revision || 0);
   return { customerID: row.customer_id as string, customerName: customer.name as string, name: row.name as string, description: row.description as string, terms: row.terms as string, base: row.base as Allowances, extras, effective: effective(row.base, extras), status, expiresAt: row.expires_at.toISOString() as string, canAccept: customer.admin && status === "pending" };
+
+  });
 }
 export async function acceptOffer(headers: Headers, token: string): Promise<{ message: string; customerID: string }> {
+  return withAuthenticatedDatabase(headers, async () => {
+
   const initialUser = await actor(headers);
   const connection = await database.connect();
   try {
@@ -212,4 +231,6 @@ export async function acceptOffer(headers: Headers, token: string): Promise<{ me
     return { message: "Offer accepted. Your plan allocation has been updated; no payment was charged.", customerID: row.customer_id };
   } catch (error) { await connection.query("ROLLBACK"); throw error; }
   finally { connection.release(); }
+
+  });
 }

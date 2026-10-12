@@ -1,3 +1,4 @@
+import {assertDatabaseMaintenanceAllowed} from "./database-protection";
 import { createHash, randomBytes } from "node:crypto";
 import {
   HostingError,
@@ -36,6 +37,7 @@ export async function databaseMaintenance(
     !preview,
     preview || destructive,
   );
+  assertDatabaseMaintenanceAllowed(row.id,cmd.action);
   const backend = (
     await db.query(
       "SELECT * FROM webdock_auth.hosting_database_backend WHERE id=$1",

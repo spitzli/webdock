@@ -1,6 +1,7 @@
+import {withDatabaseScope} from "@webdock/database-runtime";
 import { createHash } from "node:crypto";
 import { auth } from "./auth";
-import { database } from "./db";
+import { database, authDatabase } from "./db";
 import { currentMCPClaims, mcpResource } from "./mcp";
 
 class LifecycleError extends Error {
@@ -42,7 +43,7 @@ async function operator(request: Request, value: Input) {
   if (token.client_id !== clientID) {
     const audiences = Array.isArray(token.aud) ? token.aud : [token.aud];
     const scopes = typeof token.scope === "string" ? token.scope.split(" ") : [];
-    const client = (await database.query('SELECT metadata FROM webdock_auth."oauthClient" WHERE "clientId"=$1 AND NOT disabled', [token.client_id])).rows[0];
+    const client = (await authDatabase.query('SELECT metadata FROM webdock_auth."oauthClient" WHERE "clientId"=$1 AND NOT disabled', [token.client_id])).rows[0];
     let metadata; try { metadata = typeof client?.metadata === "string" ? JSON.parse(client.metadata) : client?.metadata; } catch { /* Invalid metadata fails closed. */ }
     if (!audiences.includes(mcpResource) || metadata?.webdock_mcp !== true || !scopes.includes("webdock:read") || ((value.operation === "delete" || value.requireWrite) && !scopes.includes("webdock:write"))) fail(403, "Operator MCP scope required.");
   }
@@ -57,6 +58,7 @@ export async function lifecycle(request: Request): Promise<Response> {
     let raw; try { raw = JSON.parse(text); } catch { fail(400, "Invalid JSON."); }
     const value = input(raw);
     const actor = await operator(request, value);
+    return await withDatabaseScope({kind:"session",subject:actor.userID,sessionID:actor.sessionID},async()=>{
     const connection = await database.connect();
     try {
       await connection.query("BEGIN");
@@ -106,6 +108,7 @@ export async function lifecycle(request: Request): Promise<Response> {
       return Response.json(data, { headers: { "Cache-Control": "no-store" } });
     } catch (error) { await connection.query("ROLLBACK"); throw error; }
     finally { connection.release(); }
+    });
   } catch (error) {
     return Response.json({ error: error instanceof LifecycleError ? error.message : "Identity lifecycle operation failed." }, { status: error instanceof LifecycleError ? error.status : 500, headers: { "Cache-Control": "no-store" } });
   }

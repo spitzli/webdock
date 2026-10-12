@@ -1,3 +1,4 @@
+import { withAuthenticatedDatabase } from './database-context';
 import {queueMailConfiguration} from './mailboxes';
 import {byokPolicy} from './hosting/byok';
 import {auth} from './auth';
@@ -7,6 +8,8 @@ import {manageNativeMailKey,requireNativeSending} from './mail-native-keys';
 import {configureNativeTransport} from './mail-send-transport';
 async function actor(headers:Headers){const session=await auth.api.getSession({headers});if(!session)mailUnavailable();return {subject:session.user.id,sessionID:session.session.id};}
 export async function getNativeSending(headers:Headers,customerID:string){
+  return withAuthenticatedDatabase(headers, async () => {
+
  if(process.env.WEBDOCK_NATIVE_MAIL_SENDING_ENABLED!=='true')return null;
  const identity=await actor(headers);
  let apiOrigin:string|null=null;
@@ -21,8 +24,12 @@ export async function getNativeSending(headers:Headers,customerID:string){
   const domains=(await db.query("SELECT id,domain FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND customer_id=$1 AND status='ownership_verified' ORDER BY domain",[customerID])).rows;
   return {customerID,transport,keys,domains,byokAllowed:(await byokPolicy(db,customerID)).turbosmtp,apiOrigin};
  });
+
+  });
 }
 export async function manageNativeSending(headers:Headers,customerID:string,input:Record<string,string>){
+  return withAuthenticatedDatabase(headers, async () => {
+
  requireNativeSending();const identity=await actor(headers);
  if(input.action==='configure'){
   if(!['managed','byok'].includes(input.mode))mailUnavailable();
@@ -32,4 +39,6 @@ export async function manageNativeSending(headers:Headers,customerID:string,inpu
  const command=input.action==='create'?{action:'create',label:input.label,...(input.domainID?{domainID:input.domainID}:{})}:{action:input.action,keyID:input.keyID};
  const result=await transaction(db=>manageNativeMailKey(db,identity,customerID,command));
  return {message:result.token?'Save this Webdock API key now. It is shown only once.':'Webdock API key revoked.',...('token' in result?{token:result.token}:{})};
+
+  });
 }

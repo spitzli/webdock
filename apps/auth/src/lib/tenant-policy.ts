@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { APIError } from "better-auth/api";
-import { database } from "./db";
+import { authDatabase as database } from "./db";
 import { currentMCPClaims } from "./mcp";
 
 // Only the authorized tenant service can enter this scope; never read from HTTP.

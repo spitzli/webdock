@@ -1,3 +1,6 @@
+import { authDatabase } from "../db";
+
+import {withHostingDatabase} from '../database-context';
 import {byokCluster,byokPolicy} from "./byok";
 import { randomBytes, createHash, timingSafeEqual } from "node:crypto";
 import {
@@ -40,10 +43,11 @@ export async function authenticateAgent(
   resourceID.parse(clusterID);
   if (!/^[A-Za-z0-9_-]{43}$/.test(credential))
     throw new HostingError(401, "Cluster authentication failed.");
-  return transaction(async (db) => {
+  const db = authDatabase;
+  {
     const row = (
       await db.query(
-        "SELECT generation FROM webdock_auth.hosting_agent WHERE cluster_id=$1",
+        "SELECT generation,credential_hash,revoked FROM webdock_auth.hosting_agent WHERE cluster_id=$1",
         [clusterID],
       )
     ).rows[0];
@@ -52,14 +56,16 @@ export async function authenticateAgent(
       generation: row?.generation ?? 0,
       credentialHash: digest(credential),
     };
-    await verifyAgent(db, agent);
+    if (!row || row.revoked || !timingSafeEqual(Buffer.from(row.credential_hash,"hex"),Buffer.from(agent.credentialHash,"hex"))) throw new HostingError(401,"Cluster authentication failed.");
     return agent;
-  });
+  }
 }
 export async function issueEnrollment(
   actor: HostingActor,
   enrollmentID: string,
 ) {
+return withHostingDatabase(actor, async () => {
+
   return transaction(async (db) => {
     if (actor.source !== "studio")
       throw new HostingError(403, "Open cluster setup in Studio.");
@@ -94,6 +100,8 @@ export async function issueEnrollment(
       expiresAt: row.expires_at.toISOString(),
     };
   });
+
+});
 }
 export async function consumeEnrollment(clusterID: string, token: string) {
   resourceID.parse(clusterID);
@@ -173,7 +181,9 @@ export async function reportCluster(agent: Agent, input: unknown) {
   });
 }
 export async function clusterView(db: Connection, id: string) {
-  const c = (
+  const c = process.env.DATABASE_RLS_SECRET
+    ? (await db.query("SELECT webdock_rls.cluster_snapshot($1) AS value",[id])).rows[0].value
+    : (
     await db.query(
       `SELECT c.id,c.name,c.ownership,c.provider,c.country,c.region,c.location_evidence AS "locationEvidence",c.dedicated_customer_id AS "dedicatedCustomerID",c.revision,c.verified,c.capacity,c.verification_evidence AS "verificationEvidence",a.revoked,a.last_seen AS "lastSeen",a.observation
  FROM webdock_auth.hosting_cluster c LEFT JOIN webdock_auth.hosting_agent a ON a.cluster_id=c.id WHERE c.id=$1`,
@@ -193,6 +203,6 @@ export async function clusterView(db: Connection, id: string) {
           ? "connected"
           : "stale",
     workloadReady: !!c.verified && !!fresh && !c.revoked,
-    lastSeen: c.lastSeen?.toISOString() ?? null,
+    lastSeen: c.lastSeen ? new Date(c.lastSeen).toISOString() : null,
   };
 }

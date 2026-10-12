@@ -7,7 +7,8 @@ import { launchTenantWebmail } from "./mail-sessions";
 // Server-only delegation boundary: native cookies never leave this module.
 import { APIError, serializeSignedCookie } from "better-call";
 import { auth } from "./auth";
-import { database } from "./db";
+import { database, authDatabase } from "./db";
+import {withDatabaseScope} from "@webdock/database-runtime";
 import { currentTenantPreview, startTenantPreview, exitTenantPreview, dispatchTenantPreview } from "./tenant-preview";
 import { currentMCPClaims } from "./mcp";
 import { AccessError, accountSites, listAccess, manageAccess, requireAccessOperator } from "./access-management";
@@ -97,7 +98,7 @@ async function delegatedSession(request: Request, accessToken: string, dependenc
   }
   const token: unknown = await response.json();
   if (!isObject(token) || token.active !== true || token.disabled === true || token.client_id !== clientID || !isString(token.sub) || !token.sub || !isString(token.sid) || !token.sid || typeof token.exp !== "number" || !Number.isFinite(token.exp) || token.exp * 1000 <= Date.now()) unauthorized();
-  const session = (await database.query('SELECT token FROM webdock_auth.session WHERE id=$1 AND "userId"=$2 AND "expiresAt">now()', [token.sid, token.sub])).rows[0];
+  const session = (await authDatabase.query('SELECT token FROM webdock_auth.session WHERE id=$1 AND "userId"=$2 AND "expiresAt">now()', [token.sid, token.sub])).rows[0];
   if (!session) unauthorized();
   const context = await auth.$context;
   const cookie = await serializeSignedCookie(context.authCookies.sessionToken.name, session.token, context.secret);
@@ -165,6 +166,7 @@ export async function handleStudioRequest(request: Request, dependencies: Depend
   try {
     const { operation, args, accessToken } = await readBody(request);
     const { headers, actor, safe } = await delegatedSession(request, accessToken, dependencies);
+    return await withDatabaseScope({kind:"session",subject:actor.userID,sessionID:actor.sessionID}, async () => {
     // The context comes from the authenticated central session, never a caller hint.
     // An expired context remains present and restrictive until explicit exit.
     const context = await currentTenantPreview(actor);
@@ -185,6 +187,7 @@ export async function handleStudioRequest(request: Request, dependencies: Depend
     else if (operation === "startTenantPreview") data = await startTenantPreview(actor, args[0] as string);
     else data = await dispatch(operation, args, headers, safe);
     return Response.json({ data: data ?? null }, { headers: responseHeaders });
+    });
   } catch (error) {
     if(error instanceof MailError||error instanceof MailValidationError)return Response.json({error:{kind:'MailProductError',message:error.message}},{status:error instanceof MailError?error.status:422,headers:responseHeaders});
     const known = ([["AccessError", AccessError], ["PlanError", PlanError], ["TenantMailError", TenantMailError], ["MailServiceError", MailServiceError], ["MailDomainsError", MailDomainsError], ["MailKeysError", MailKeysError], ["TrackingError", TrackingError], ["StorageUsageError", StorageUsageError], ["PlatformError", PlatformError]] as const).find(([, type]) => error instanceof type);

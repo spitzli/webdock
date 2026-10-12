@@ -1,5 +1,5 @@
-import { database } from "./db";
-import { getPlatformSettings } from "./platform";
+import { authDatabase as database } from "./db";
+
 export async function currentClaims(
   subject: string | undefined,
   binding: unknown,
@@ -41,7 +41,7 @@ export async function currentClaims(
       : { disabled: true };
   }
   if (!row.organization_id) return { disabled: true };
-  if (!(await getPlatformSettings()).cmsEnabled) return { disabled: true };
+  if ((await database.query('SELECT settings FROM webdock_auth.platform_settings WHERE id=true')).rows[0]?.settings?.cmsEnabled === false) return { disabled: true };
   // Only mapped, active customer administrators inherit website access.
   // An explicit revoked or mismatched site grant still fails closed.
   const access = (

@@ -1,8 +1,9 @@
+import { withAuthenticatedDatabase } from './database-context';
 import { randomBytes } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
 import type { PoolClient } from "pg";
 import { auth } from "./auth";
-import { database } from "./db";
+import { database, authDatabase } from "./db";
 import { AccessError, websiteURL } from "./access-management";
 import { currentClaims } from "./authorization";
 import { currentMCPClaims } from "./mcp";
@@ -47,14 +48,24 @@ async function tenantFor(user: Awaited<ReturnType<typeof actor>>, customerID: st
   return row;
 }
 export async function listTenants(headers: Headers) {
+  return withAuthenticatedDatabase(headers, async () => {
+
   const user = await actor(headers);
   return (await database.query(`SELECT c.id,c.name,c.status,m.role FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id LEFT JOIN webdock_auth.member m ON m."organizationId"=t.organization_id AND m."userId"=$1 WHERE $2 OR (c.status='active' AND m.id IS NOT NULL) ORDER BY c.name,c.id`, [user.id, user.operator])).rows;
+
+  });
 }
 export async function listTenantInvitations(headers: Headers) {
+  return withAuthenticatedDatabase(headers, async () => {
+
   const user = await actor(headers);
   return (await database.query('SELECT i.id,i.role,o.name FROM webdock_auth.invitation i JOIN webdock_auth.organization o ON o.id=i."organizationId" JOIN webdock_auth.tenant_customer t ON t.organization_id=o.id JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE lower(i.email)=lower($1) AND i.status=\'pending\' AND i."expiresAt">now() AND c.status=\'active\' ORDER BY i."createdAt" DESC', [user.email])).rows;
+
+  });
 }
 export async function getTenant(headers: Headers, customerID: string) {
+  return withAuthenticatedDatabase(headers, async () => {
+
   const user = await actor(headers), tenant = await tenantFor(user, customerID);
   const canManage = tenant.status === "active" && (user.operator || ["owner", "admin"].includes(tenant.member_role));
   const [members, invitations, bindings] = await Promise.all([
@@ -67,15 +78,17 @@ export async function getTenant(headers: Headers, customerID: string) {
     return url && !claims.disabled ? { id: binding.id, name: binding.label, url, role: claims.webdock_role } : null;
   }))).filter((site) => site !== null);
   return { tenant, canManage, operator: user.operator, members: members.rows, invitations: invitations.rows, sites };
+
+  });
 }
 async function provisionInvitee(email: string, name: string) {
-  const existing = (await database.query('SELECT id,role,banned FROM webdock_auth."user" WHERE lower(email)=$1', [email])).rows[0];
+  const existing = (await authDatabase.query('SELECT id,role,banned FROM webdock_auth."user" WHERE lower(email)=$1', [email])).rows[0];
   if (existing) {
     if (existing.role !== "user" || existing.banned) throw new AccessError("Operator or suspended accounts cannot receive customer invitations.");
     return existing.id as string;
   }
   const password = await hashPassword(randomBytes(40).toString("base64url"));
-  const connection = await database.connect();
+  const connection = await authDatabase.connect();
   try {
     await connection.query("BEGIN");
     const user = (await connection.query('INSERT INTO webdock_auth."user"(name,email,role,"emailVerified","mustChangePassword") VALUES($1,$2,\'user\',false,true) RETURNING id', [name, email])).rows[0];
@@ -86,6 +99,8 @@ async function provisionInvitee(email: string, name: string) {
   finally { connection.release(); }
 }
 export async function manageTenant(headers: Headers, customerID: string, input: Record<string, string>) {
+  return withAuthenticatedDatabase(headers, async () => {
+
   const user = await actor(headers);
   const tenant = await tenantFor(user, customerID);
   if (tenant.status !== "active" || (!user.operator && !["admin", "owner"].includes(tenant.member_role))) throw new AccessError("Tenant administrator access is required.");
@@ -160,4 +175,6 @@ export async function manageTenant(headers: Headers, customerID: string, input: 
     await database.query("UPDATE webdock_auth.access_event SET outcome='failed' WHERE id=$1", [event]);
     throw error;
   }
+
+  });
 }

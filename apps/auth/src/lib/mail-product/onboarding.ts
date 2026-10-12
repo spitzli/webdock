@@ -1,3 +1,4 @@
+import { withAuthenticatedDatabase } from '../database-context';
 import type {PoolClient} from 'pg';
 import {TurboDomainsClient,type SenderDomain} from '../turbo-domains';
 import {createHash} from 'node:crypto';import {auth} from '../auth';import {mailDatabase as database} from './store';import {getTenant} from '../tenants';import {currentTenantPreview} from '../tenant-preview';import {byokPolicy} from '../hosting/byok';
@@ -7,8 +8,14 @@ async function tenantIdentity(headers:Headers,customerID:string,manage=false){
  if(await currentTenantPreview({userID:session.user.id,sessionID:session.session.id}))throw new MailError(403,'preview_read_only','Mail gateway is unavailable in customer preview');
  const tenant=await getTenant(headers,customerID);if(tenant.tenant.status!=='active'||(manage&&!tenant.canManage))throw new MailError(404,'not_found','Tenant unavailable');return {tenant,session};
 }
-export async function listTenantMailConnections(headers:Headers,customerID:string){await tenantIdentity(headers,customerID);return (await database.query('SELECT id,kind,region,state,revision,created_at FROM webdock_auth.mail_connection WHERE customer_id=$1 AND deleted_at IS NULL ORDER BY created_at,id',[customerID])).rows;}
+export async function listTenantMailConnections(headers:Headers,customerID:string){
+  return withAuthenticatedDatabase(headers, async () => {
+await tenantIdentity(headers,customerID);return (await database.query('SELECT id,kind,region,state,revision,created_at FROM webdock_auth.mail_connection WHERE customer_id=$1 AND deleted_at IS NULL ORDER BY created_at,id',[customerID])).rows;
+  });
+}
 export async function connectByokMail(headers:Headers,customerID:string,input:{consumerKey:string;consumerSecret:string;expectedRevision:number},deps:{verify?:typeof verifyTurboSendingAccount;domains?:(pair:{consumerKey:string;consumerSecret:string})=>Promise<SenderDomain[]>}={}):Promise<{id:string;revision:string}>{
+  return withAuthenticatedDatabase(headers, async () => {
+
  const identity=await tenantIdentity(headers,customerID,true);
  if(!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0)throw new MailError(422,'invalid_revision','Current provider revision is required');
  if(!(await byokPolicy(database,customerID)).turbosmtp)throw new MailError(403,'byok_unavailable','Own Mail provider is not enabled');
@@ -35,6 +42,8 @@ export async function connectByokMail(headers:Headers,customerID:string,input:{c
   await db.query("INSERT INTO webdock_auth.access_event(actor_id,action,target_id,outcome) VALUES($1,'mail-byok-bound',$2,'succeeded')",[identity.session.user.id,customerID]);
   return {id:connection.id,revision:String(connection.revision)};
  });}catch(error){if((error as {code?:string}).code==='23505')throw new MailError(409,'account_already_bound','Provider account already has a binding');throw error;}
+
+  });
 }
 
 async function assertCurrentManager(db:PoolClient,userID:string,sessionID:string,customerID:string){
@@ -47,10 +56,16 @@ async function assertCurrentManager(db:PoolClient,userID:string,sessionID:string
  if(!row.rowCount)throw new MailError(404,'not_found','Tenant unavailable');
 }
 export async function getMailOnboarding(headers:Headers,customerID:string){
+  return withAuthenticatedDatabase(headers, async () => {
+
  const {tenant}=await tenantIdentity(headers,customerID);const source=(await database.query('SELECT revision FROM webdock_auth.hosting_turbosmtp WHERE customer_id=$1',[customerID])).rows[0];
  return {canManage:tenant.canManage,operator:tenant.operator,byokAllowed:(await byokPolicy(database,customerID)).turbosmtp,providerRevision:source?.revision??0};
+
+  });
 }
 export async function configureManagedMail(headers:Headers,customerID:string):Promise<{id:string}>{
+  return withAuthenticatedDatabase(headers, async () => {
+
  const identity=await tenantIdentity(headers,customerID,true);if(!identity.tenant.operator)throw new MailError(403,'operator_required','Platform operator access is required');
  const connection=await withMailTransaction(async db=>{
   await assertCurrentManager(db,identity.session.user.id,identity.session.session.id,customerID);
@@ -63,4 +78,6 @@ export async function configureManagedMail(headers:Headers,customerID:string):Pr
  });
  const {ensureManagedSendingCredential}=await import('./provider-credentials');
  await ensureManagedSendingCredential({customerID,connectionID:connection.id,principal:{kind:'session',userID:identity.session.user.id,sessionID:identity.session.session.id}});return {id:connection.id};
+
+  });
 }

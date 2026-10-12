@@ -1,3 +1,6 @@
+
+import {withDatabaseScope} from '@webdock/database-runtime';
+import { withAuthenticatedDatabase } from './database-context';
 import type { PoolClient } from 'pg';
 import { database } from './db';
 import { AccessError, websiteURL } from './access-management';
@@ -18,6 +21,8 @@ async function requireActor(actor: PreviewActor, connection: Connection = databa
  if (!result.rowCount) throw new AccessError('Eine aktive Betreiber-Sitzung mit vollständiger Sicherheitskonfiguration ist erforderlich.');
 }
 export async function startTenantPreview(actor: PreviewActor, customerID: string): Promise<TenantPreview> {
+return withDatabaseScope({kind:'session',subject:actor.userID,sessionID:actor.sessionID}, async () => {
+
  if (!/^[1-9][0-9]{0,18}$/.test(customerID)) throw new AccessError('Mandant nicht verfügbar.');
  const connection = await database.connect();
  try {
@@ -34,8 +39,12 @@ export async function startTenantPreview(actor: PreviewActor, customerID: string
   return { customerID, customerName: tenant.name, expiresAt: created.expires_at.toISOString(), status: 'active', readOnly: true, role: 'admin' };
  } catch (error) { await connection.query('ROLLBACK'); throw error; }
  finally { connection.release(); }
+
+});
 }
 export async function exitTenantPreview(actor: PreviewActor): Promise<{ message: string; customerID?: string }> {
+return withDatabaseScope({kind:'session',subject:actor.userID,sessionID:actor.sessionID}, async () => {
+
  const connection = await database.connect();
  try {
   await connection.query('BEGIN');
@@ -46,8 +55,12 @@ export async function exitTenantPreview(actor: PreviewActor): Promise<{ message:
   return { message: 'Kundenansicht beendet.', ...(previous ? { customerID: previous.customer_id } : {}) };
  } catch (error) { await connection.query('ROLLBACK'); throw error; }
  finally { connection.release(); }
+
+});
 }
 export async function currentTenantPreview(actor: PreviewActor): Promise<PreviewContext | null> {
+return withDatabaseScope({kind:'session',subject:actor.userID,sessionID:actor.sessionID}, async () => {
+
  const row = (await database.query(`SELECT p.*,c.name,c.status AS customer_status,t.organization_id AS current_organization,
  p.expires_at>now() AS unexpired FROM webdock_auth.studio_tenant_preview p
  JOIN webdock_admin.customers c ON c.id=p.customer_id
@@ -64,6 +77,8 @@ export async function currentTenantPreview(actor: PreviewActor): Promise<Preview
   ) INSERT INTO webdock_auth.access_event(actor_id,action,target_id,outcome) SELECT $2,'tenant-preview-expired',customer_id,'succeeded' FROM expired`, [actor.sessionID, actor.userID]);
  }
  return { organizationID: row.organization_id, preview: { customerID: row.customer_id, customerName: row.name, expiresAt: row.expires_at.toISOString(), status: active ? 'active' : 'expired', readOnly: true, role: 'admin' } };
+
+});
 }
 async function previewSites(context: PreviewContext) {
  if (!(await getPlatformSettings()).cmsEnabled) return [];
@@ -71,6 +86,8 @@ async function previewSites(context: PreviewContext) {
  return rows.flatMap(row => { const url = websiteURL(row.redirectUris); return url ? [{ id: row.id as string, name: row.label as string, url, role: 'admin' as const, customerID:context.preview.customerID, customerName:context.preview.customerName }] : []; });
 }
 export async function dispatchTenantPreview(context: PreviewContext, operation: string, args: unknown[], headers: Headers) {
+  return withAuthenticatedDatabase(headers, async () => {
+
  if (context.preview.status !== 'active') throw new AccessError('Die Kundenansicht ist abgelaufen oder nicht mehr verfügbar. Bitte die Vorschau verlassen.');
  const { customerID, customerName } = context.preview;
  if (operation === 'listTenants') return [{ id: customerID, name: customerName, status: 'active', role: 'admin' }];
@@ -85,4 +102,6 @@ export async function dispatchTenantPreview(context: PreviewContext, operation: 
  if (operation === 'getTenantMail') return { ...await getTenantMail(headers, customerID), operator: false, canManage: false };
  const view = await getTenant(headers, customerID);
  return { ...view, tenant: { ...view.tenant, member_role: 'admin' }, operator: false, canManage: false, sites: await previewSites(context) };
+
+  });
 }
