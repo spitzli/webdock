@@ -1,6 +1,6 @@
 # Webdock CMS design
 
-Scope: the CMS workspace at `/sites` and `/sites/[bindingID]`. Existing Studio routes, data ownership, authorization and public websites remain in place.
+Scope: Studio customer/project workspaces and the CMS at `/sites` and `/sites/[bindingID]`. Existing data ownership, authorization and public websites remain in place; older entry URLs remain reachable.
 
 ## Direction
 
@@ -14,10 +14,20 @@ Retain Webdock's existing light/dark themes and orange brand accent. Consume inh
 
 ## Workspace structure
 
+- Operator primary navigation: Projects, Customers, Operations. People, Plans, Connections and Settings form a secondary administration group. Infrastructure and the global audit trail are reached from Operations.
+- Customer context: named workspace, explicit switcher, task overview, Applications, Databases, Mail, Team, Plan & usage and Profile according to existing access/preview rules. A sole active workspace skips the chooser unless invitations require attention; `?choose=1` retains the explicit directory.
+- Customer records lead with projects and service actions; profile editing is secondary. Project pages link directly to authorized applications and deployment activity, distinguishing record state from observed application state.
+- Hosting detail context is read through the delegated API using the existing project/customer relationship. Website context uses the existing binding-to-organization mapping. Names or domains never infer ownership.
+- Application overview, logs and settings have separate URLs. Git activity and setup have separate URLs. Secret/argument edits register unsaved changes, including button-driven removals.
+- Mail owns its credentials/tracking navigation; incoming activation stays independent of sending. Usage separates consumption, plans/offers and measurement connections.
+- Mobile area navigation exposes every destination in an expandable labelled list. Desktop area links wrap when necessary. Account/security, appearance and language share the account menu.
+- Operations displays bounded database-backed application and operation lists. The journal read timestamp is not a health-check timestamp; no provider fan-out or fabricated availability indicators.
+
 - Website directory: search, role labels in human language, compact rows with site name, domain and one primary CMS action. Legacy sites retain their existing working destination.
 - Site header: one short site name, domain, role and website link. One area navigation. Child pages use only the current area's name as heading.
 - Overview: direct task links with useful short descriptions; component inventory stays secondary. Do not display implementation names as primary interface copy.
 - Content: variant switch, search and text/image filters, field list with current content, focused editor and real image preview. Preserve unsaved drafts when switching fields; warn before losing them on navigation. Current CMS saves directly; do not label this as a draft publication workflow.
+- Content grouping accepts an optional, validated `section` string from the website bridge. Legacy numeric keys do not encode reliable sections and remain fully searchable without invented grouping.
 - Calendar: compact weekly rows, clear opening/closed states, date exceptions, scannable bookings and deliberate add-entry form.
 - Shop: scan products before editing, search within loaded page, reveal fields on demand. Keep media selection, featured products and customer profile controls. No duplicate module nav.
 - Requests: readable status and compact scan/detail flow.

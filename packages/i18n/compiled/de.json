@@ -353,6 +353,9 @@
   "Account": [
     "Konto"
   ],
+  "Account & preferences": [
+    "Konto & Darstellung"
+  ],
   "Account & security": [
     "Konto & Sicherheit"
   ],
@@ -429,7 +432,7 @@
     "Eine aktive Sitzung als Plattformadministrator ist erforderlich."
   ],
   "Active tenant administrator access is required.": [
-    "Die Berechtigung eines aktiven Mandanten-Admins ist erforderlich."
+    "Die Berechtigung eines aktiven Arbeitsbereich-Admins ist erforderlich."
   ],
   "Active tenant and platform operator access are required.": [
     "Ein aktiver Mandant und Betreiberrechte sind erforderlich."
@@ -475,6 +478,9 @@
   ],
   "Add cluster": [
     "Cluster hinzufügen"
+  ],
+  "Add database": [
+    "Datenbank hinzufügen"
   ],
   "Add domain": [
     "Domain hinzufügen"
@@ -590,6 +596,9 @@
   "All changes saved": [
     "Alle Änderungen gespeichert"
   ],
+  "All content": [
+    "Alle Inhalte"
+  ],
   "All custom domains are disabled.": [
     "Alle eigenen Domains sind deaktiviert."
   ],
@@ -702,7 +711,7 @@
     "Für diese Anwendung läuft bereits ein Auftrag."
   ],
   "An operator creates a customer profile containing the customer’s display name and, where provided, person or company names, contact person, email, telephone and postal address. These details support administration of the customer relationship and its projects. Authorised members can view their own tenant profile; tenant administrators can update it and invite people. Internal operator notes are not available in the customer portal.": [
-    "Ein Betreiber erstellt ein Kundenprofil mit dem Anzeigenamen des Kunden und, soweit angegeben, Personen- oder Firmennamen, Ansprechpartner, E-Mail-Adresse, Telefonnummer und Postanschrift. Diese Angaben dienen der Verwaltung der Kundenbeziehung und ihrer Projekte. Berechtigte Mitglieder können ihr eigenes Mandantenprofil ansehen; Mandanten-Admins können es bearbeiten und Personen einladen. Interne Betreibernotizen sind im Kundenportal nicht verfügbar."
+    "Ein Betreiber erstellt ein Kundenprofil mit dem Anzeigenamen des Kunden und, soweit angegeben, Personen- oder Firmennamen, Ansprechpartner, E-Mail-Adresse, Telefonnummer und Postanschrift. Diese Angaben dienen der Verwaltung der Kundenbeziehung und ihrer Projekte. Berechtigte Mitglieder können ihr eigenes Mandantenprofil ansehen; Arbeitsbereich-Admins können es bearbeiten und Personen einladen. Interne Betreibernotizen sind im Kundenportal nicht verfügbar."
   ],
   "An operator is required.": [
     "Betreiberzugriff erforderlich."
@@ -776,8 +785,14 @@
   "Applications and hosting": [
     "Anwendungen und Hosting"
   ],
+  "Applications and recent hosting operations across customers.": [
+    "Anwendungen und letzte Hosting-Vorgänge aller Kunden."
+  ],
   "Applications run without root or API tokens, with a read-only filesystem and temporary /tmp storage. Cached images only; no unverified registry pulls.": [
     "Anwendungen laufen ohne Root-Rechte oder API-Tokens, mit schreibgeschütztem Dateisystem und temporärem /tmp-Speicher. Nur vorhandene Images; kein Abruf von ungeprüften Registries."
+  ],
+  "Applied revision": [
+    "Angewendete Revision"
   ],
   "Applies immediately. Existing extras are preserved.": [
     "Gilt sofort. Vorhandene Zusatzkontingente bleiben erhalten."
@@ -829,6 +844,9 @@
   ],
   "Are project previews public?": [
     "Sind Projektvorschauen öffentlich?"
+  ],
+  "Area": [
+    "Bereich"
   ],
   "Areas": [
     "Bereiche"
@@ -919,6 +937,9 @@
   ],
   "Automatically renew access during your working session": [
     "Zugriff während deiner Arbeitssitzung automatisch erneuern"
+  ],
+  "Availability": [
+    "Verfügbarkeit"
   ],
   "Available": [
     "Verfügbar"
@@ -1051,6 +1072,9 @@
   ],
   "Browse repositories": [
     "Repositorys durchsuchen"
+  ],
+  "Browse tables and query your project data.": [
+    "Tabellen durchsuchen und Projektdaten abfragen."
   ],
   "Build environment exceeds the allowed size.": [
     "Die Build-Umgebung überschreitet die zulässige Größe."
@@ -1220,6 +1244,9 @@
   "Change": [
     "Änderung"
   ],
+  "Change in progress": [
+    "Änderung läuft"
+  ],
   "Change password": [
     "Passwort ändern"
   ],
@@ -1286,6 +1313,9 @@
   "Choose a customer": [
     "Kunden auswählen"
   ],
+  "Choose a customer for their infrastructure, Mail, Git deployment connections and measurement sources.": [
+    "Wähle einen Kunden, um dessen Infrastruktur, Mail, Git-Deployment-Verbindungen und Messquellen zu verwalten."
+  ],
   "Choose a default mail limit from 0 to 1,000,000,000.": [
     "Wähle ein Standard-Mail-Limit zwischen 0 und 1.000.000.000."
   ],
@@ -1339,6 +1369,9 @@
   ],
   "Choose an active project.": [
     "Wähle ein aktives Projekt aus."
+  ],
+  "Choose an area": [
+    "Bereich wählen"
   ],
   "Choose an authorized project": [
     "Freigegebenes Projekt auswählen"
@@ -1517,6 +1550,9 @@
   "Concurrent deployments": [
     "Gleichzeitige Bereitstellungen"
   ],
+  "Configuration": [
+    "Konfiguration"
+  ],
   "Configure Frankfurt Functions and disable cross-region failover before publication.": [
     "Konfiguriere Functions in Frankfurt und deaktiviere den regionsübergreifenden Failover vor der Veröffentlichung."
   ],
@@ -1534,6 +1570,9 @@
   ],
   "Configure build variables in GitHub Actions before using external builds.": [
     "Konfiguriere Build-Variablen in GitHub Actions, bevor du externe Builds verwendest."
+  ],
+  "Configure deployments": [
+    "Deployments einrichten"
   ],
   "Configure sending": [
     "Versand einrichten"
@@ -1555,6 +1594,9 @@
   ],
   "Configure verified artifact and registry storage.": [
     "Konfiguriere überprüften Speicher für Artefakte und die Registry."
+  ],
+  "Configured resources": [
+    "Konfigurierte Ressourcen"
   ],
   "Confirm an existing account matching the reserved email and provider ID.": [
     "Bestätige ein vorhandenes Konto, dessen E-Mail-Adresse und Anbieter-ID zur Reservierung passen."
@@ -1733,6 +1775,9 @@
   "Connection details": [
     "Verbindungsdaten"
   ],
+  "Connection directory": [
+    "Verbindungsübersicht"
+  ],
   "Connection help": [
     "Hilfe zur Verbindung"
   ],
@@ -1745,6 +1790,9 @@
   "Connection successful. {count} subaccount available.": [
     "Verbindung erfolgreich. {count} Unterkonto verfügbar.",
     "Verbindung erfolgreich. {count} Unterkonten verfügbar."
+  ],
+  "Connections": [
+    "Verbindungen"
   ],
   "Consumer key": [
     "Consumer-Key"
@@ -2085,6 +2133,9 @@
   "Credentials configured{value1}": [
     "Zugangsdaten konfiguriert{value1}"
   ],
+  "Current design": [
+    "Aktuelles Design"
+  ],
   "Current operator authorization is required.": [
     "Aktuelle Betreiberberechtigung erforderlich."
   ],
@@ -2141,6 +2192,9 @@
   ],
   "Customer assignment changed. Refresh and try again.": [
     "Die Kundenzuordnung hat sich geändert. Aktualisiere die Ansicht und versuche es erneut."
+  ],
+  "Customer connections": [
+    "Kundenverbindungen"
   ],
   "Customer details": [
     "Kundendaten"
@@ -2333,6 +2387,9 @@
   ],
   "Delete this content": [
     "Diesen Inhalt löschen"
+  ],
+  "Deleted": [
+    "Gelöscht"
   ],
   "Deletion preview changed. Review the current application.": [
     "Die Löschvorschau wurde geändert. Die aktuelle Anwendung erneut prüfen."
@@ -2616,6 +2673,12 @@
   "Edit contact details for the demo checkout.": [
     "Kontaktdaten für den Demo-Checkout bearbeiten."
   ],
+  "Edit content": [
+    "Inhalte bearbeiten"
+  ],
+  "Edit customer details": [
+    "Kundendaten bearbeiten"
+  ],
   "Edit customer names and saved addresses.": [
     "Kundennamen und gespeicherte Adressen bearbeiten."
   ],
@@ -2627,6 +2690,12 @@
   ],
   "Edit products, variants, extras and prices.": [
     "Produkte, Varianten, Extras und Preise bearbeiten."
+  ],
+  "Edit project details": [
+    "Projektdaten bearbeiten"
+  ],
+  "Edit text and images. Saved changes appear immediately on the website.": [
+    "Texte und Bilder bearbeiten. Gespeicherte Änderungen sind sofort auf der Website sichtbar."
   ],
   "Edit the homepage and business information.": [
     "Startseite und Betriebsangaben bearbeiten."
@@ -3252,6 +3321,9 @@
   "Hosting extras use whole nonnegative units.": [
     "Hosting-Zusatzkontingente werden in ganzen, nicht negativen Einheiten angegeben."
   ],
+  "Hosting has not been assigned to this project.": [
+    "Diesem Projekt ist noch kein Hosting zugewiesen."
+  ],
   "Hosting is already assigned to this project.": [
     "Diesem Projekt ist bereits Hosting zugeordnet."
   ],
@@ -3287,6 +3359,9 @@
   ],
   "Hosting settings saved.": [
     "Hosting-Einstellungen gespeichert."
+  ],
+  "Hosting status is currently unavailable.": [
+    "Der Hosting-Zustand ist derzeit nicht abrufbar."
   ],
   "Hosting target is unavailable.": [
     "Das Hosting-Ziel ist nicht verfügbar."
@@ -3843,6 +3918,9 @@
   "Leave this page with unsaved draft changes?": [
     "Diese Seite mit ungespeicherten Änderungen am Entwurf verlassen?"
   ],
+  "Leave without saving these changes?": [
+    "Diese Änderungen ohne Speichern verlassen?"
+  ],
   "Left": [
     "Links"
   ],
@@ -3945,6 +4023,9 @@
   "Loading deployment information…": [
     "Deployment-Informationen werden geladen …"
   ],
+  "Loading hosting status…": [
+    "Hosting-Zustand wird geladen…"
+  ],
   "Loading messages…": [
     "Nachrichten werden geladen…"
   ],
@@ -3990,6 +4071,9 @@
   "Location evidence": [
     "Standortnachweis"
   ],
+  "Logs": [
+    "Logs"
+  ],
   "MB and GB use decimal units.": [
     "MB und GB verwenden Dezimaleinheiten."
   ],
@@ -4013,6 +4097,9 @@
   ],
   "Mail addresses and explicit access for your team.": [
     "E-Mail-Adressen und gezielte Zugriffsfreigaben für dein Team."
+  ],
+  "Mail areas": [
+    "Mail-Bereiche"
   ],
   "Mail change outcome could not be recorded. Do not repeat it.": [
     "Das Ergebnis konnte nicht gespeichert werden. Wiederhole die Änderung nicht."
@@ -4173,8 +4260,14 @@
   "Manage Vercel projects": [
     "Vercel-Projekte verwalten"
   ],
+  "Manage access": [
+    "Zugriff verwalten"
+  ],
   "Manage account": [
     "Konto verwalten"
+  ],
+  "Manage appointments": [
+    "Termine verwalten"
   ],
   "Manage connection": [
     "Verbindung verwalten"
@@ -4229,6 +4322,9 @@
   ],
   "Manage selfservice permissions": [
     "Selfservice-Freigaben verwalten"
+  ],
+  "Manage sending": [
+    "Versand verwalten"
   ],
   "Manage sending keys and account billing in turboSMTP. This management key is never displayed again by Webdock.": [
     "Versandschlüssel und Kontoabrechnung verwaltest du bei turboSMTP. Webdock zeigt diesen Verwaltungszugang nicht erneut an."
@@ -4313,6 +4409,12 @@
   ],
   "Measured usage": [
     "Gemessene Nutzung"
+  ],
+  "Measured usage is not available yet. These values describe limits and allocations.": [
+    "Gemessener Verbrauch liegt noch nicht vor. Diese Werte beschreiben Obergrenzen und Zuweisungen."
+  ],
+  "Measurement sources": [
+    "Messquellen"
   ],
   "Media": [
     "Medien"
@@ -4641,6 +4743,9 @@
   "No image preview": [
     "Keine Bildvorschau"
   ],
+  "No integrated preview": [
+    "Keine integrierte Vorschau"
+  ],
   "No invitations yet.": [
     "Noch keine Einladungen."
   ],
@@ -4649,6 +4754,9 @@
   ],
   "No logs available.": [
     "Keine Logs verfügbar."
+  ],
+  "No logs have been requested yet.": [
+    "Es wurden noch keine Logs angefordert."
   ],
   "No mailbox access assigned": [
     "Kein Postfachzugriff zugewiesen"
@@ -4667,6 +4775,9 @@
   ],
   "No matching accounts.": [
     "Keine passenden Konten."
+  ],
+  "No matching applications.": [
+    "Keine passenden Anwendungen."
   ],
   "No matching changes": [
     "Keine passenden Änderungen"
@@ -4706,6 +4817,9 @@
   ],
   "No offers yet.": [
     "Noch keine Angebote."
+  ],
+  "No operations recorded.": [
+    "Keine Vorgänge erfasst."
   ],
   "No orders yet": [
     "Noch keine Bestellungen"
@@ -4857,6 +4971,9 @@
   "Objects": [
     "Objekte"
   ],
+  "Observed state": [
+    "Gemeldeter Zustand"
+  ],
   "Occupied": [
     "Belegt"
   ],
@@ -4927,7 +5044,7 @@
     "Es können nur offene Demo-Anfragen erstellt werden."
   ],
   "Only platform operators can change these settings. Tenant administrators manage their own tenant. Account registration remains invitation-only.": [
-    "Nur Plattformbetreiber können diese Einstellungen ändern. Mandanten-Admins verwalten ihren eigenen Mandanten. Konten werden weiterhin nur auf Einladung erstellt."
+    "Nur Plattformbetreiber können diese Einstellungen ändern. Arbeitsbereich-Admins verwalten ihren eigenen Mandanten. Konten werden weiterhin nur auf Einladung erstellt."
   ],
   "Only select repositories": [
     "Nur ausgewählte Repositories"
@@ -4977,6 +5094,9 @@
   "Open deployment ↗": [
     "Deployment öffnen ↗"
   ],
+  "Open hosting": [
+    "Hosting öffnen"
+  ],
   "Open mailbox": [
     "Postfach öffnen"
   ],
@@ -5004,6 +5124,9 @@
   "Open website ": [
     "Website öffnen "
   ],
+  "Open website workspace": [
+    "Website bearbeiten"
+  ],
   "Opening hours": [
     "Öffnungszeiten"
   ],
@@ -5016,11 +5139,20 @@
   "Opening your content…": [
     "Inhalte werden geöffnet …"
   ],
+  "Operation": [
+    "Vorgang"
+  ],
   "Operation expired before execution. Refresh inventory and try again.": [
     "Der Auftrag ist vor der Ausführung abgelaufen. Aktualisiere die Ressourcenübersicht und versuche es erneut."
   ],
   "Operation progress": [
     "Fortschritt"
+  ],
+  "Operations": [
+    "Betrieb"
+  ],
+  "Operations areas": [
+    "Betriebsbereiche"
   ],
   "Operator": [
     "Betreiber"
@@ -5039,6 +5171,9 @@
   ],
   "Operator access with completed security setup is required.": [
     "Betreiberzugriff mit abgeschlossener Sicherheitseinrichtung ist erforderlich."
+  ],
+  "Operator account · Repository selection": [
+    "Betreiberkonto · Repository-Auswahl"
   ],
   "Operator connections": [
     "Betreiber-Verbindungen"
@@ -5150,6 +5285,9 @@
   ],
   "Page not found.": [
     "Seite nicht gefunden."
+  ],
+  "Page or section": [
+    "Seite oder Abschnitt"
   ],
   "Page published.": [
     "Seite veröffentlicht."
@@ -5280,6 +5418,9 @@
   "Plan": [
     "Tarif"
   ],
+  "Plan & offers": [
+    "Tarif & Angebote"
+  ],
   "Plan & usage": [
     "Tarif & Nutzung"
   ],
@@ -5301,11 +5442,17 @@
   "Plans and allowances": [
     "Tarife und Kontingente"
   ],
+  "Platform Mail settings": [
+    "Plattform-Mail konfigurieren"
+  ],
   "Platform Vercel connection": [
     "Vercel-Verbindung der Plattform"
   ],
   "Platform administrator": [
     "Plattformadministrator"
+  ],
+  "Platform connections serve Webdock. Customer-owned connections stay in their customer workspace.": [
+    "Plattformverbindungen werden von Webdock verwendet. Kundeneigene Verbindungen bleiben im jeweiligen Arbeitsbereich."
   ],
   "Platform identity and Mail configuration for all tenants.": [
     "Plattformdarstellung und Mail-Konfiguration für alle Mandanten."
@@ -5327,6 +5474,12 @@
   ],
   "Platform settings": [
     "Plattformeinstellungen"
+  ],
+  "Platform · Managed sending": [
+    "Plattform · Verwalteter Versand"
+  ],
+  "Platform · Project hosting": [
+    "Plattform · Projekt-Hosting"
   ],
   "Please check the page properties.": [
     "Bitte die Seiteneigenschaften prüfen."
@@ -5472,6 +5625,9 @@
   "Products": [
     "Produkte"
   ],
+  "Profile": [
+    "Profil"
+  ],
   "Profile picture": [
     "Profilbild"
   ],
@@ -5480,6 +5636,9 @@
   ],
   "Project ID": [
     "Projekt-ID"
+  ],
+  "Project areas": [
+    "Projektbereiche"
   ],
   "Project deleted.": [
     "Projekt gelöscht."
@@ -5498,6 +5657,9 @@
   ],
   "Project or provider hosting allowance exceeded.": [
     "Das Hosting-Kontingent des Projekts oder Anbieters ist überschritten."
+  ],
+  "Project overview": [
+    "Projektübersicht"
   ],
   "Project ownership cannot be reassigned here.": [
     "Die Eigentümerschaft des Projekts kann hier nicht neu zugeordnet werden."
@@ -5640,6 +5802,9 @@
   "Read customers, projects, CMS connections and activity": [
     "Kunden, Projekte, CMS-Verbindungen und Aktivitäten lesen"
   ],
+  "Read from the operations journal at": [
+    "Aus dem Betriebsprotokoll abgerufen am"
+  ],
   "Read logs": [
     "Logs lesen"
   ],
@@ -5688,6 +5853,9 @@
   "Recent deployments": [
     "Letzte Deployments"
   ],
+  "Recent operations": [
+    "Letzte Vorgänge"
+  ],
   "Recently updated": [
     "Zuletzt aktualisiert"
   ],
@@ -5729,6 +5897,9 @@
   ],
   "Reconnect to mailbox": [
     "Erneut mit dem Postfach verbinden"
+  ],
+  "Record": [
+    "Verwaltung"
   ],
   "Record not found": [
     "Datensatz nicht gefunden"
@@ -6114,6 +6285,9 @@
   "Review or revoke access on GitHub": [
     "Zugriff auf GitHub prüfen oder widerrufen"
   ],
+  "Review requests": [
+    "Anfragen bearbeiten"
+  ],
   "Review required": [
     "Prüfung erforderlich"
   ],
@@ -6122,6 +6296,9 @@
   ],
   "Review the pending domain registration before replacing this connection.": [
     "Prüfe die ausstehende Domain-Registrierung, bevor du diese Verbindung ersetzt."
+  ],
+  "Review this person's website permissions": [
+    "Website-Rechte dieser Person prüfen"
   ],
   "Review uncertain registration": [
     "Unklare Registrierung prüfen"
@@ -6195,6 +6372,9 @@
   "Run the configured workflow in GitHub Actions. Webdock imports successful builds automatically.": [
     "Starte den konfigurierten Workflow in GitHub Actions. Webdock importiert erfolgreiche Builds automatisch."
   ],
+  "Running": [
+    "Läuft"
+  ],
   "Runtime configuration changed. Build again before publication.": [
     "Die Laufzeitkonfiguration wurde geändert. Erstelle vor der Veröffentlichung einen neuen Build."
   ],
@@ -6251,6 +6431,9 @@
   ],
   "Save access and send invitation": [
     "Zugriff speichern und Einladung senden"
+  ],
+  "Save and publish": [
+    "Speichern und veröffentlichen"
   ],
   "Save change": [
     "Änderung speichern"
@@ -6377,6 +6560,9 @@
   ],
   "Search customers on this page": [
     "Kunden auf dieser Seite suchen"
+  ],
+  "Search customers, projects or applications": [
+    "Kunden, Projekte oder Anwendungen suchen"
   ],
   "Search domains": [
     "Domains suchen"
@@ -6534,6 +6720,9 @@
   "Sender-domain status updated.": [
     "Status der Versanddomains aktualisiert."
   ],
+  "Sending": [
+    "Versand"
+  ],
   "Sending API": [
     "Versand-API"
   ],
@@ -6576,6 +6765,9 @@
   "Sending verification checked: ": [
     "Versandbestätigung geprüft: "
   ],
+  "Sending-only does not require incoming Mail activation.": [
+    "Für reinen Versand muss eingehende Mail nicht aktiviert werden."
+  ],
   "Sending:": [
     "Versand:"
   ],
@@ -6602,6 +6794,12 @@
   ],
   "Service": [
     "Leistung"
+  ],
+  "Services": [
+    "Dienste"
+  ],
+  "Services & team": [
+    "Dienste & Team"
   ],
   "Serving requests entails processing technical data such as IP address, requested URL, timestamp and browser information for delivery, fault diagnosis and abuse prevention. Hosting providers may retain technical logs under their service settings and policies. See": [
     "Bei der Bearbeitung von Anfragen werden technische Daten wie IP-Adresse, angeforderte URL, Zeitstempel und Browserinformationen für die Auslieferung, Fehlerdiagnose und Missbrauchsabwehr verarbeitet. Hostinganbieter können technische Protokolle entsprechend ihren Diensteinstellungen und Richtlinien aufbewahren. Beachte"
@@ -6633,6 +6831,9 @@
   "Set up connection": [
     "Verbindung einrichten"
   ],
+  "Set up hosting": [
+    "Hosting einrichten"
+  ],
   "Setting up": [
     "Wird eingerichtet"
   ],
@@ -6662,6 +6863,9 @@
   ],
   "Shared platform cluster": [
     "Gemeinsam genutztes Plattform-Cluster"
+  ],
+  "Shop customers": [
+    "Shop-Kunden"
   ],
   "Shop management is currently unavailable. Please try again later.": [
     "Die Shop-Verwaltung ist gerade nicht erreichbar. Bitte später erneut versuchen."
@@ -7002,6 +7206,9 @@
   "Suspended — data retained": [
     "Deaktiviert — Daten bleiben erhalten"
   ],
+  "Switch workspace": [
+    "Arbeitsbereich wechseln"
+  ],
   "System": [
     "System"
   ],
@@ -7026,6 +7233,12 @@
   "Tabularis connection ID": [
     "Tabularis-Verbindungs-ID"
   ],
+  "Team": [
+    "Team"
+  ],
+  "Team & invitations": [
+    "Team & Einladungen"
+  ],
   "Template": [
     "Vorlage"
   ],
@@ -7045,13 +7258,13 @@
     "Mandanten-Mail"
   ],
   "Tenant admin": [
-    "Mandanten-Admin"
+    "Arbeitsbereich-Admin"
   ],
   "Tenant admin · View only": [
     "Tenant-Admin · Nur ansehen"
   ],
   "Tenant administrator access is required.": [
-    "Mandanten-Admin-Berechtigung erforderlich."
+    "Arbeitsbereich-Admin-Berechtigung erforderlich."
   ],
   "Tenant details": [
     "Mandantendetails"
@@ -7548,6 +7761,9 @@
   "This invitation link is incomplete. Open the original link or contact your Webdock administrator.": [
     "Dieser Einladungslink ist unvollständig. Öffne den ursprünglichen Link oder wende dich an deinen Webdock-Admin."
   ],
+  "This is the last reported state, not a live availability check.": [
+    "Angezeigt wird der zuletzt gemeldete Zustand. Die Erreichbarkeit wurde nicht live geprüft."
+  ],
   "This is the recorded connection to the project’s independent content admin. Its live availability has not been checked.": [
     "Dies ist die gespeicherte Verbindung zur eigenständigen Inhaltsverwaltung des Projekts. Ihre aktuelle Erreichbarkeit wurde nicht geprüft."
   ],
@@ -7809,6 +8025,9 @@
   "Unit": [
     "Einheit"
   ],
+  "Unknown": [
+    "Unbekannt"
+  ],
   "Unknown action.": [
     "Unbekannte Aktion."
   ],
@@ -7890,6 +8109,9 @@
   "Up to 200 matching permissions. Customer membership and an active account are also required.": [
     "Bis zu 200 passende Berechtigungen. Eine Kundenmitgliedschaft und ein aktives Konto sind ebenfalls erforderlich."
   ],
+  "Up to 30 operations, with pending work and required reviews first. Search above filters applications.": [
+    "Bis zu 30 Vorgänge; laufende Arbeit und notwendige Prüfungen zuerst. Die Suche oben filtert Anwendungen."
+  ],
   "Up to five addresses are allowed.": [
     "Höchstens fünf Adressen sind möglich."
   ],
@@ -7937,6 +8159,9 @@
   ],
   "Upload image": [
     "Bild hochladen"
+  ],
+  "Usage": [
+    "Nutzung"
   ],
   "Usage data is not available through this connection. No spending cap is enforced by Webdock.": [
     "Über diese Verbindung sind keine Verbrauchsdaten verfügbar. Webdock erzwingt keine Ausgabensperre."
@@ -8238,6 +8463,9 @@
   "View build logs in GitHub Actions": [
     "Build-Logs in GitHub Actions öffnen"
   ],
+  "View content": [
+    "Inhalte ansehen"
+  ],
   "View customer history": [
     "Kundenverlauf ansehen"
   ],
@@ -8258,6 +8486,9 @@
   ],
   "View incoming demo requests and edit their status and internal notes.": [
     "Eingegangene Demo-Anfragen ansehen, ihren Status und interne Notizen bearbeiten."
+  ],
+  "View latest operation": [
+    "Letzten Vorgang ansehen"
   ],
   "View live ↗": [
     "Veröffentlichte Seite ansehen ↗"
@@ -8439,6 +8670,9 @@
   "Website administration — Webdock": [
     "Website-Verwaltung — Webdock"
   ],
+  "Website administrator rights come from this workspace role. Explicitly revoked website access still blocks access.": [
+    "Website-Administratorrechte ergeben sich aus dieser Arbeitsbereichsrolle. Ausdrücklich entzogener Website-Zugriff bleibt gesperrt."
+  ],
   "Website content": [
     "Website-Inhalte"
   ],
@@ -8447,6 +8681,9 @@
   ],
   "Website permissions": [
     "Website-Berechtigungen"
+  ],
+  "Website permissions are assigned individually. Workspace membership alone does not grant editing rights.": [
+    "Website-Rechte werden einzeln vergeben. Die Mitgliedschaft im Arbeitsbereich allein erlaubt noch keine Bearbeitung."
   ],
   "Website permissions are assigned separately by your Webdock operator.": [
     "Website-Berechtigungen werden separat von deinem Webdock-Betreiber zugewiesen."
@@ -8496,6 +8733,9 @@
   "What the integration does": [
     "Was die Integration macht"
   ],
+  "What would you like to do?": [
+    "Was möchtest du erledigen?"
+  ],
   "When an authorised operator connects Vercel, Vercel supplies an access token, team identifier and installation identifier. We store these together with the connecting operator’s identifier and connection time. The token is encrypted before database storage and is used on the server to authenticate API requests.": [
     "Wenn ein berechtigter Betreiber Vercel verbindet, stellt Vercel einen Zugriffstoken, eine Teamkennung und eine Installationskennung bereit. Wir speichern diese zusammen mit der Kennung des verbindenden Betreibers und dem Zeitpunkt der Verbindung. Der Token wird vor der Speicherung in der Datenbank verschlüsselt und serverseitig zur Authentifizierung von API-Anfragen verwendet."
   ],
@@ -8503,7 +8743,7 @@
     "Wenn ein Betreiber das Mailkonto eines Mandanten aktiviert, übermittelt Webdock die eingegebene Konto-E-Mail-Adresse, Vor- und Nachnamen, die zugewiesene Versand-IP sowie generierte Zugangsdaten an turboSMTP, um das Unterkonto einzurichten. Webdock speichert die Zuordnung zwischen Mandant und Anbieter, verschlüsselte Zugangsdaten, Kontostatus sowie vom Anbieter zurückgegebene Limits und Nutzungsdaten. Hauptschlüssel des Anbieters werden verschlüsselt gespeichert und Kunden nicht angezeigt. Einrichtung und Kontoänderungen werden protokolliert."
   ],
   "When requested by an authorised tenant administrator, sender and tracking domain names are registered with turboSMTP and their verification status is retrieved. Administrators explicitly control open and click tracking; enabling those features lets the provider record recipient opens and link clicks for that tenant’s sending activity. Webdock stores the selected tracking settings and domain verification state.": [
-    "Auf Anforderung eines berechtigten Mandanten-Admins werden Absender- und Tracking-Domainnamen bei turboSMTP registriert und ihr Prüfstatus abgerufen. Administratoren steuern das Tracking von Öffnungen und Klicks ausdrücklich. Werden diese Funktionen aktiviert, kann der Anbieter Empfängeröffnungen und Linkklicks für die Versandaktivitäten dieses Mandanten erfassen. Webdock speichert die gewählten Tracking-Einstellungen und den Prüfstatus der Domains."
+    "Auf Anforderung eines berechtigten Arbeitsbereich-Admins werden Absender- und Tracking-Domainnamen bei turboSMTP registriert und ihr Prüfstatus abgerufen. Administratoren steuern das Tracking von Öffnungen und Klicks ausdrücklich. Werden diese Funktionen aktiviert, kann der Anbieter Empfängeröffnungen und Linkklicks für die Versandaktivitäten dieses Mandanten erfassen. Webdock speichert die gewählten Tracking-Einstellungen und den Prüfstatus der Domains."
   ],
   "When you’re ready for your own domain, we’ll work out the connection. The setup grows with your project.": [
     "Wenn du für eine eigene Domain bereit bist, kümmern wir uns um die Anbindung. Die Einrichtung wächst mit deinem Projekt."
@@ -8529,8 +8769,23 @@
   "Workload readiness": [
     "Freigabe für Anwendungen"
   ],
+  "Workspace details": [
+    "Arbeitsbereich"
+  ],
+  "Workspace navigation": [
+    "Arbeitsbereich-Navigation"
+  ],
+  "Workspace role": [
+    "Rolle im Arbeitsbereich"
+  ],
+  "Workspace role: ": [
+    "Rolle im Arbeitsbereich: "
+  ],
   "Workspace shortcuts": [
     "Arbeitsbereich-Verknüpfungen"
+  ],
+  "Workspaces": [
+    "Arbeitsbereiche"
   ],
   "Write scope": [
     "Schreibberechtigung"
@@ -8705,6 +8960,9 @@
   ],
   "Your workspace is temporarily unavailable. Try again, or return to your tenants to continue.": [
     "Dein Arbeitsbereich ist vorübergehend nicht verfügbar. Versuche es erneut oder kehre zur Mandantenübersicht zurück."
+  ],
+  "Your workspaces": [
+    "Deine Arbeitsbereiche"
   ],
   "Your {name} sign-in and account security.": [
     "Deine Anmeldung und Kontosicherheit bei {name}."

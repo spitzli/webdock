@@ -35,6 +35,8 @@ export const hostingTools: Record<HostingCommand["action"], string> = {
   "limits.get": "get_hosting_limits",
   "limits.set": "set_hosting_limits",
   "usage.get": "get_hosting_usage",
+  "projects.get": "get_hosting_project",
+  "operations.overview": "get_hosting_overview",
   "projects.list": "list_hosting_projects",
   "projects.create": "create_hosting_project",
   "projects.update": "update_hosting_project",

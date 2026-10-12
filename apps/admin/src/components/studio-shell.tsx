@@ -37,7 +37,7 @@ export async function StudioShell({
         </div>
         <div className="desktop-navigation">
           <Navigation operator={operator} />
-          {!preview && <nav className="account-navigation" aria-label={i18n.t("Account and security")}><a href={accountURL}>{i18n.t("Account & security ↗")}</a></nav>}
+
           <div className="sidebar-bottom">
             <p className="operator">
               {user?.name || i18n.t("Webdock Studio")}
@@ -45,8 +45,11 @@ export async function StudioShell({
                 {operator ? i18n.t("Platform operator") : i18n.t("Your customer workspace")}
               </small>
             </p>
-            <Appearance /><LanguagePicker className="studio-language-picker" />
-            {user && <Logout ssoEnabled={ssoEnabled} />}
+            <details className="account-menu"><summary>{i18n.t("Account & preferences")}</summary>
+              {!preview && <a href={accountURL}>{i18n.t("Account & security ↗")}</a>}
+              <Appearance /><LanguagePicker className="studio-language-picker" />
+              {user && <Logout ssoEnabled={ssoEnabled} />}
+            </details>
           </div>
         </div>
         <MobileMenu
@@ -59,16 +62,8 @@ export async function StudioShell({
       </aside>
       <div className="main-wrap">
         {preview && <TenantPreviewBanner preview={preview}/>}
-        <header className="topbar">
-          <span>{i18n.t("Webdock Studio")}</span>
-          <div className="mobile-appearance">
-            <Appearance /><LanguagePicker className="studio-language-picker" />
-          </div>
-          <a href="https://webdock.dev" target="_blank" rel="noreferrer">{i18n.t("Visit Webdock ↗")}</a>
-        </header>
         <main id="main">{children}</main>
-        <footer className="workspace-footer">{i18n.t("Webdock Studio")}<span>{i18n.t("One workspace. Independent websites.")}</span>
-        </footer>
+
       </div>
     </div>
   );

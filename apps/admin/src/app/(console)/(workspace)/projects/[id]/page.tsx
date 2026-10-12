@@ -1,3 +1,4 @@
+import { ProjectApplications } from "@/components/hosting/project-applications";
 import {auditSummary} from "@/lib/ui-labels";
 import {uiLabel} from "@/lib/ui-labels";
 
@@ -91,7 +92,7 @@ export default async function Project({
                 ? project.customer.name
                 : i18n.t("Customer")}
             </Link>{" "}
-            <span className="badge">{i18n.t(uiLabel(project.status))}</span>
+            <span className="badge">{i18n.t("Record")}: {i18n.t(uiLabel(project.status))}</span>
           </p>
         </div>
         {project.url && (
@@ -104,10 +105,13 @@ export default async function Project({
         )}
       </div>
       <nav className="record-actions" aria-label={i18n.t("Customer services")}>
-        <Link href={`/tenants/${relatedID(project.customer)}`}>{i18n.t("Tenant & people")}</Link>
+        <Link href={`/hosting/projects/${id}`}>{i18n.t("Applications")}</Link>
+        <Link href={`/hosting/projects/${id}/git`}>{i18n.t("Deployments")}</Link>
+        <Link href={`/tenants/${relatedID(project.customer)}/team`}>{i18n.t("Team")}</Link>
         <Link href={`/tenants/${relatedID(project.customer)}/usage`}>{i18n.t("Plan & usage")}</Link>
         <Link href={`/tenants/${relatedID(project.customer)}/mail`}>{i18n.t("Mail & domains")}</Link>
       </nav>
+      <Suspense fallback={<p role="status">{i18n.t("Loading hosting status…")}</p>}><ProjectApplications projectID={id} customerID={relatedID(project.customer)}/></Suspense>
       <div className="project-overview">
         <div>
           <span>{i18n.t("Website")}</span>
@@ -135,6 +139,7 @@ export default async function Project({
       {project.status === "archived" && (
         <p className="status-notice">{i18n.t("This project is archived. Restore it to manage its CMS connection.")}</p>
       )}
+      <details className="workspace-disclosure"><summary>{i18n.t("Vercel")}</summary>
       <Suspense
         fallback={
           <section className="panel">
@@ -145,10 +150,11 @@ export default async function Project({
       >
         <VercelProjectPanel projectID={id} />
       </Suspense>
+      </details>
       <div className="detail-grid">
         <div>
-          <section className="panel">
-            <h2>{i18n.t("Project details")}</h2>
+          <details className="workspace-disclosure">
+            <summary>{i18n.t("Edit project details")}</summary>
             <Editor
               action={saveProject.bind(null, id)}
               fields={[
@@ -192,7 +198,7 @@ export default async function Project({
                 },
               ]}
             />
-          </section>
+          </details>
           <section className="panel">
             <div className="section-heading">
               <h2>{i18n.t("Recent changes")}</h2>
@@ -214,6 +220,7 @@ export default async function Project({
         </div>
         <aside>
           <section className="panel cms-panel">
+            {instance && <>
             <span
               className={
                 "badge " + (instance?.status === "active" ? "connected" : "")
@@ -227,6 +234,7 @@ export default async function Project({
                 ? i18n.t("This is the recorded connection to the project’s independent content admin. Its live availability has not been checked.")
                 : i18n.t("This project can run without a CMS. You can link a CMS that has already been deployed.")}
             </p>
+            </>}
             {instance && instance.status !== "retired" && (
               <a
                 className="button"

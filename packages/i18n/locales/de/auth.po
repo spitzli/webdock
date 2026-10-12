@@ -23,7 +23,7 @@ msgstr "Inhaber"
 
 #: apps/auth/src/lib/i18n-labels.ts:3
 msgid "Tenant admin"
-msgstr "Mandanten-Admin"
+msgstr "Arbeitsbereich-Admin"
 
 #: apps/auth/src/lib/i18n-labels.ts:3
 msgid "Member"
@@ -195,7 +195,7 @@ msgstr "Zugriff gespeichert und Einladung per E-Mail versendet."
 
 #: apps/auth/src/lib/i18n-messages.ts:12
 msgid "Active tenant administrator access is required."
-msgstr "Die Berechtigung eines aktiven Mandanten-Admins ist erforderlich."
+msgstr "Die Berechtigung eines aktiven Arbeitsbereich-Admins ist erforderlich."
 
 #: apps/auth/src/lib/i18n-messages.ts:13
 msgid "Active tenant and platform operator access are required."
@@ -933,7 +933,7 @@ msgstr "Die Studio-Anfrage ist zu groß."
 
 #: apps/auth/src/lib/i18n-messages.ts:197
 msgid "Tenant administrator access is required."
-msgstr "Mandanten-Admin-Berechtigung erforderlich."
+msgstr "Arbeitsbereich-Admin-Berechtigung erforderlich."
 
 #: apps/auth/src/lib/i18n-messages.ts:198
 msgid "Tenant not found or access unavailable."
@@ -2371,7 +2371,7 @@ msgstr "Tarife und Kontingente"
 
 #: apps/auth/src/app/admin/page.tsx:27
 msgid "Only platform operators can change these settings. Tenant administrators manage their own tenant. Account registration remains invitation-only."
-msgstr "Nur Plattformbetreiber können diese Einstellungen ändern. Mandanten-Admins verwalten ihren eigenen Mandanten. Konten werden weiterhin nur auf Einladung erstellt."
+msgstr "Nur Plattformbetreiber können diese Einstellungen ändern. Arbeitsbereich-Admins verwalten ihren eigenen Mandanten. Konten werden weiterhin nur auf Einladung erstellt."
 
 #: apps/auth/src/app/admin/form.tsx:26
 msgid "Platform settings"

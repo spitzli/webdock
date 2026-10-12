@@ -24,6 +24,25 @@ export async function executeHosting(actor: HostingActor, raw: unknown, runtime?
   if (cmd.action.startsWith("apps.")) return executeAppCommand(actor, cmd);
   return transaction(async (db) => {
     const write = !readActions.has(cmd.action);
+    if (cmd.action === "projects.get") {
+      const access = await authorizeHosting(actor, { projectID: cmd.projectID }, db);
+      const context = (await db.query(`SELECT p.id AS "projectID",p.name,c.id AS "customerID",c.name AS "customerName"
+        FROM webdock_admin.projects p JOIN webdock_admin.customers c ON c.id=p.customer_id WHERE p.id=$1`, [cmd.projectID])).rows[0];
+      return { ...context, operator: access.operator, configured: Boolean(access.project?.provider), provider: access.project?.provider ?? null };
+    }
+    if (cmd.action === "operations.overview") {
+      await authorizeHosting(actor, { operator: true }, db);
+      const search = `%${cmd.search.replace(/[\\%_]/g, "\\$&")}%`;
+      const from = `FROM webdock_auth.hosting_app a JOIN webdock_admin.projects p ON p.id=a.project_id JOIN webdock_admin.customers c ON c.id=p.customer_id
+        WHERE a.status<>'deleted' AND (a.name ILIKE $1 OR p.name ILIKE $1 OR c.name ILIKE $1)`;
+      const totalDocs = (await db.query(`SELECT count(*)::int AS n ${from}`, [search])).rows[0].n;
+      const docs = (await db.query(`SELECT a.id,a.name,a.status,a.revision,a.observed_revision AS "observedRevision",p.id AS "projectID",p.name AS "projectName",c.id AS "customerID",c.name AS "customerName"
+        ${from} ORDER BY a.name ${cmd.sort === '-name' ? 'DESC' : 'ASC'},a.id LIMIT $2 OFFSET $3`, [search, cmd.limit, (cmd.page - 1) * cmd.limit])).rows;
+      const operations = (await db.query(`SELECT o.id,o.action,o.status,o.created_at AS "createdAt",p.id AS "projectID",p.name AS "projectName",c.name AS "customerName"
+        FROM webdock_auth.hosting_operation o LEFT JOIN webdock_admin.projects p ON p.id=o.project_id LEFT JOIN webdock_admin.customers c ON c.id=o.customer_id
+        ORDER BY CASE WHEN o.status IN ('queued','running','needs-reconciliation') THEN 0 ELSE 1 END,o.created_at DESC,o.id DESC LIMIT 30`)).rows;
+      return { docs, operations, page: cmd.page, limit: cmd.limit, totalDocs, totalPages: Math.ceil(totalDocs / cmd.limit), readAt: new Date().toISOString() };
+    }
     if (cmd.action === "clusters.activate") {
       await authorizeHosting(actor, { operator: true, write: true }, db);
       await clusterLock(db, cmd.clusterID);

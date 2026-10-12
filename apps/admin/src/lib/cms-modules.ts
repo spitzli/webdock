@@ -18,14 +18,14 @@ type ModuleDefinition = {
   components: CmsComponentID[]; managementOnly?: boolean; readOnly?: boolean;
 };
 const modules: ModuleDefinition[] = [
-  { id: "content", label: msgid("Content"), description: msgid("Manage text and images in the new design and original view."), path: "/content", kind: "demo", components: ["content-editor"] },
+  { id: "content", label: msgid("Content"), description: msgid("Edit text and images. Saved changes appear immediately on the website."), path: "/content", kind: "demo", components: ["content-editor"] },
   { id: "requests", label: msgid("Requests"), description: msgid("View incoming demo requests and edit their status and internal notes."), path: "/requests", kind: "demo", components: [] },
   { id: "calendar", label: msgid("Appointments"), description: msgid("Manage opening hours, availability and appointments."), path: "/calendar", kind: "demo", components: ["calendar-editor"] },
   { id: "products", label: msgid("Products"), description: msgid("Manage existing products, variants, extras, prices and availability."), path: "/shop?kind=products", kind: "shop", components: ["product-variants-editor", "media-picker"] },
   { id: "settings", label: msgid("Website & content"), description: msgid("Edit the homepage and business information."), path: "/shop?kind=settings", kind: "shop", components: ["content-editor", "promotion-editor", "media-picker", "featured-products-editor"] },
   { id: "media", label: msgid("Media"), description: msgid("Browse existing images for image selection."), path: "/shop?kind=media", kind: "shop", components: ["media-picker"], readOnly: true },
   { id: "orders", label: msgid("Orders"), description: msgid("View simulated orders and their items. This area is read-only."), path: "/shop?kind=orders", kind: "shop", components: [], managementOnly: true, readOnly: true },
-  { id: "customers", label: msgid("Customers"), description: msgid("Manage customer names and addresses. Sign-in and permissions remain protected."), path: "/shop?kind=customers", kind: "shop", components: ["customer-profile-editor"], managementOnly: true },
+  { id: "customers", label: msgid("Shop customers"), description: msgid("Manage customer names and addresses. Sign-in and permissions remain protected."), path: "/shop?kind=customers", kind: "shop", components: ["customer-profile-editor"], managementOnly: true },
 ];
 export function cmsRoleLabel(role: string): string {
   return ({ operator: msgid("Superadmin"), admin: msgid("Tenant admin"), editor: msgid("Editor"), reader: msgid("Read-only") } as Record<string, string>)[role] || msgid("No access");

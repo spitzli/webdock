@@ -1,0 +1,271 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Webdock Studio\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-05 00:00+0000\n"
+"PO-Revision-Date: 2026-10-05 00:00+0000\n"
+"Last-Translator: Webdock\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "No logs have been requested yet."
+msgstr "Es wurden noch keine Logs angefordert."
+
+msgid "Observed state"
+msgstr "Gemeldeter Zustand"
+
+msgid "Applied revision"
+msgstr "Angewendete Revision"
+
+msgid "View latest operation"
+msgstr "Letzten Vorgang ansehen"
+
+msgid "Logs"
+msgstr "Logs"
+
+msgid "Configuration"
+msgstr "Konfiguration"
+
+msgid "Availability"
+msgstr "Verfügbarkeit"
+
+msgid "Current design"
+msgstr "Aktuelles Design"
+
+msgid "Page or section"
+msgstr "Seite oder Abschnitt"
+
+msgid "All content"
+msgstr "Alle Inhalte"
+
+msgid "Save and publish"
+msgstr "Speichern und veröffentlichen"
+
+msgid "What would you like to do?"
+msgstr "Was möchtest du erledigen?"
+
+msgid "Browse tables and query your project data."
+msgstr "Tabellen durchsuchen und Projektdaten abfragen."
+
+msgid "Manage access"
+msgstr "Zugriff verwalten"
+
+msgid "Add database"
+msgstr "Datenbank hinzufügen"
+
+msgid "Workspaces"
+msgstr "Arbeitsbereiche"
+
+msgid "Switch workspace"
+msgstr "Arbeitsbereich wechseln"
+
+msgid "Mail areas"
+msgstr "Mail-Bereiche"
+
+msgid "Sending"
+msgstr "Versand"
+
+msgid "Sending-only does not require incoming Mail activation."
+msgstr "Für reinen Versand muss eingehende Mail nicht aktiviert werden."
+
+msgid "Manage sending"
+msgstr "Versand verwalten"
+
+msgid "Usage"
+msgstr "Nutzung"
+
+msgid "Plan & offers"
+msgstr "Tarif & Angebote"
+
+msgid "Measurement sources"
+msgstr "Messquellen"
+
+msgid "Team"
+msgstr "Team"
+
+msgid "Open website workspace"
+msgstr "Website bearbeiten"
+
+msgid "No integrated preview"
+msgstr "Keine integrierte Vorschau"
+
+msgid "Services"
+msgstr "Dienste"
+
+msgid "Your workspaces"
+msgstr "Deine Arbeitsbereiche"
+
+msgid "Workspace role: "
+msgstr "Rolle im Arbeitsbereich: "
+
+msgid "Services & team"
+msgstr "Dienste & Team"
+
+msgid "Team & invitations"
+msgstr "Team & Einladungen"
+
+msgid "Edit customer details"
+msgstr "Kundendaten bearbeiten"
+
+msgid "Connections"
+msgstr "Verbindungen"
+
+msgid "Connection directory"
+msgstr "Verbindungsübersicht"
+
+msgid "Platform connections serve Webdock. Customer-owned connections stay in their customer workspace."
+msgstr "Plattformverbindungen werden von Webdock verwendet. Kundeneigene Verbindungen bleiben im jeweiligen Arbeitsbereich."
+
+msgid "Platform · Project hosting"
+msgstr "Plattform · Projekt-Hosting"
+
+msgid "Operator account · Repository selection"
+msgstr "Betreiberkonto · Repository-Auswahl"
+
+msgid "Platform Mail settings"
+msgstr "Plattform-Mail konfigurieren"
+
+msgid "Platform · Managed sending"
+msgstr "Plattform · Verwalteter Versand"
+
+msgid "Customer connections"
+msgstr "Kundenverbindungen"
+
+msgid "Choose a customer for their infrastructure, Mail, Git deployment connections and measurement sources."
+msgstr "Wähle einen Kunden, um dessen Infrastruktur, Mail, Git-Deployment-Verbindungen und Messquellen zu verwalten."
+
+msgid "Operations"
+msgstr "Betrieb"
+
+msgid "Applications and recent hosting operations across customers."
+msgstr "Anwendungen und letzte Hosting-Vorgänge aller Kunden."
+
+msgid "Operations areas"
+msgstr "Betriebsbereiche"
+
+msgid "Hosting status is currently unavailable."
+msgstr "Der Hosting-Zustand ist derzeit nicht abrufbar."
+
+msgid "Read from the operations journal at"
+msgstr "Aus dem Betriebsprotokoll abgerufen am"
+
+msgid "This is the last reported state, not a live availability check."
+msgstr "Angezeigt wird der zuletzt gemeldete Zustand. Die Erreichbarkeit wurde nicht live geprüft."
+
+msgid "Search customers, projects or applications"
+msgstr "Kunden, Projekte oder Anwendungen suchen"
+
+msgid "No matching applications."
+msgstr "Keine passenden Anwendungen."
+
+msgid "Recent operations"
+msgstr "Letzte Vorgänge"
+
+msgid "Up to 30 operations, with pending work and required reviews first. Search above filters applications."
+msgstr "Bis zu 30 Vorgänge; laufende Arbeit und notwendige Prüfungen zuerst. Die Suche oben filtert Anwendungen."
+
+msgid "No operations recorded."
+msgstr "Keine Vorgänge erfasst."
+
+msgid "Operation"
+msgstr "Vorgang"
+
+msgid "Record"
+msgstr "Verwaltung"
+
+msgid "Loading hosting status…"
+msgstr "Hosting-Zustand wird geladen…"
+
+msgid "Edit project details"
+msgstr "Projektdaten bearbeiten"
+
+msgid "Area"
+msgstr "Bereich"
+
+msgid "Choose an area"
+msgstr "Bereich wählen"
+
+msgid "Measured usage is not available yet. These values describe limits and allocations."
+msgstr "Gemessener Verbrauch liegt noch nicht vor. Diese Werte beschreiben Obergrenzen und Zuweisungen."
+
+msgid "Leave without saving these changes?"
+msgstr "Diese Änderungen ohne Speichern verlassen?"
+
+msgid "Open hosting"
+msgstr "Hosting öffnen"
+
+msgid "Hosting has not been assigned to this project."
+msgstr "Diesem Projekt ist noch kein Hosting zugewiesen."
+
+msgid "Set up hosting"
+msgstr "Hosting einrichten"
+
+msgid "Project areas"
+msgstr "Projektbereiche"
+
+msgid "Project overview"
+msgstr "Projektübersicht"
+
+msgid "Workspace navigation"
+msgstr "Arbeitsbereich-Navigation"
+
+msgid "Profile"
+msgstr "Profil"
+
+msgid "Account & preferences"
+msgstr "Konto & Darstellung"
+
+msgid "Shop customers"
+msgstr "Shop-Kunden"
+
+msgid "Running"
+msgstr "Läuft"
+
+msgid "Change in progress"
+msgstr "Änderung läuft"
+
+msgid "Deleted"
+msgstr "Gelöscht"
+
+msgid "Unknown"
+msgstr "Unbekannt"
+
+msgid "View content"
+msgstr "Inhalte ansehen"
+
+msgid "Review requests"
+msgstr "Anfragen bearbeiten"
+
+msgid "Manage appointments"
+msgstr "Termine verwalten"
+
+msgid "Edit content"
+msgstr "Inhalte bearbeiten"
+
+msgid "Edit text and images. Saved changes appear immediately on the website."
+msgstr "Texte und Bilder bearbeiten. Gespeicherte Änderungen sind sofort auf der Website sichtbar."
+
+msgid "Workspace details"
+msgstr "Arbeitsbereich"
+
+msgid "Configured resources"
+msgstr "Konfigurierte Ressourcen"
+
+msgid "Workspace role"
+msgstr "Rolle im Arbeitsbereich"
+
+msgid "Website administrator rights come from this workspace role. Explicitly revoked website access still blocks access."
+msgstr "Website-Administratorrechte ergeben sich aus dieser Arbeitsbereichsrolle. Ausdrücklich entzogener Website-Zugriff bleibt gesperrt."
+
+msgid "Website permissions are assigned individually. Workspace membership alone does not grant editing rights."
+msgstr "Website-Rechte werden einzeln vergeben. Die Mitgliedschaft im Arbeitsbereich allein erlaubt noch keine Bearbeitung."
+
+msgid "Review this person's website permissions"
+msgstr "Website-Rechte dieser Person prüfen"
+
+msgid "Configure deployments"
+msgstr "Deployments einrichten"

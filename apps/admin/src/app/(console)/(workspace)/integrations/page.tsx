@@ -101,7 +101,7 @@ export default async function Integrations({
     <>
       <div className="page-heading">
         <div>
-          <h1>{i18n.t("Integrations")}</h1>
+          <h1>{i18n.t("Connections")}</h1>
           <p>{i18n.t("Connect your repositories and the tools you work with.")}</p>
         </div>
       </div>
@@ -113,6 +113,16 @@ export default async function Integrations({
           {i18n.t(notice)}
         </p>
       )}
+      <section className="panel"><h2>{i18n.t("Connection directory")}</h2>
+        <p>{i18n.t("Platform connections serve Webdock. Customer-owned connections stay in their customer workspace.")}</p>
+        <ul className="workspace-list">
+          <li><Link href="#platform-vercel">Vercel</Link><p className="muted">{i18n.t("Platform · Project hosting")}</p></li>
+          <li><Link href="#github-heading">GitHub</Link><p className="muted">{i18n.t("Operator account · Repository selection")}</p></li>
+          <li><Link href="/admin">{i18n.t("Platform Mail settings")}</Link><p className="muted">{i18n.t("Platform · Managed sending")}</p></li>
+          <li><Link href="/customers">{i18n.t("Customer connections")}</Link><p className="muted">{i18n.t("Choose a customer for their infrastructure, Mail, Git deployment connections and measurement sources.")}</p></li>
+        </ul>
+      </section>
+      <div id="platform-vercel"/>
       <Suspense
         fallback={
           <section className="panel">

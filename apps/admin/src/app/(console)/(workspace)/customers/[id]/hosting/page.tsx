@@ -1,20 +1,6 @@
-import { CustomerHosting } from "@/components/hosting/customer";
-export default async function Hosting({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ page?: string; q?: string; sort?: string }>;
-}) {
-  const { id } = await params;
-  const q = await searchParams;
-  return (
-    <CustomerHosting
-      customerID={id}
-      path={`/customers/${id}/hosting`}
-      page={/^[1-9][0-9]{0,3}$/.test(q.page ?? "") ? Number(q.page) : 1}
-      sort={q.sort === "-name" ? "-name" : "name"}
-      search={(q.q ?? "").slice(0, 160)}
-    />
-  );
+import { redirect } from "next/navigation";
+export default async function Hosting({params,searchParams}: {params:Promise<{id:string}>;searchParams:Promise<Record<string,string|string[]|undefined>>}) {
+  const {id}=await params, values=await searchParams, query=new URLSearchParams();
+  for(const key of ["q","page","sort"]) { const value=values[key]; if(typeof value==='string') query.set(key,value); }
+  redirect(`/tenants/${encodeURIComponent(id)}/hosting${query.size?'?'+query:''}`);
 }

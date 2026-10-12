@@ -1,3 +1,4 @@
+import { WorkspaceContext } from "@/components/workspace-context";
 
 import { msgid } from '@webdock/i18n';
 
@@ -22,6 +23,7 @@ export default async function CmsLayout({ children, params }: { children: React.
   const modules = cmsModules(access.bridge.kind || "demo", access.site.role, access.bridge.canvas === true, access.bridge.promotions !== false, access.bridge.shop === true);
   const links = [{ label: msgid("Overview"), href: hub }, ...modules.map(module => ({ label: module.label, href: hub + module.path }))];
   return <div className="cms-workspace">
+    {access.site.customerID && access.site.customerName && <WorkspaceContext items={[{label:access.site.customerName,href:access.site.role==='operator'?`/customers/${access.site.customerID}`:`/tenants/${access.site.customerID}`},{label:cmsSiteName(access.site.name)}]}/>}
     <header className="cms-workspace-header">
       <div className="cms-workspace-heading">
         <div className="cms-site-identity">

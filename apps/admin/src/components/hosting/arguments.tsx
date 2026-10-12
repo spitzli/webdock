@@ -1,9 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useI18n } from "@webdock/i18n/react";
+import { HostingDirtyContext } from "./form-state";
 export function ContainerArguments({ values }: { values: string[] }) {
   const { t } = useI18n(),
     [args, setArgs] = useState(values);
+  const markDirty = useContext(HostingDirtyContext);
   return (
     <fieldset>
       <legend>{t("Container arguments")}</legend>
@@ -23,7 +25,7 @@ export function ContainerArguments({ values }: { values: string[] }) {
           <button
             type="button"
             className="button secondary"
-            onClick={() => setArgs(args.filter((_, j) => i !== j))}
+            onClick={() => { markDirty(); setArgs(args.filter((_, j) => i !== j)); }}
           >
             {t("Remove argument")}
           </button>
@@ -33,7 +35,7 @@ export function ContainerArguments({ values }: { values: string[] }) {
         <button
           className="button secondary"
           type="button"
-          onClick={() => setArgs([...args, ""])}
+          onClick={() => { markDirty(); setArgs([...args, ""]); }}
         >
           {t("Add argument")}
         </button>
