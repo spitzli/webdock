@@ -52,7 +52,7 @@ export function authorizeRpc(command: string, input: unknown, access: RuntimeAcc
   if (command === "test_connection") {
     const request = record(args?.request);
     connection(request.connection_id);
-    // Gateway fills params from the stored upstream connection, never from the caller.
+    // Gateway probes the saved upstream connection; caller parameters are never forwarded.
     return { request: { connection_id: access.connectionID } };
   }
   return args;

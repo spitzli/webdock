@@ -142,23 +142,20 @@ export function createGateway(options: GatewayOptions) {
       const started = Date.now();
       res.once("finish", () => options.audit?.({ scopeID: access.scopeID, subject: access.subject, command: command.slice(0, 120), status: res.statusCode, durationMs: Date.now()-started }));
       let input = authorizeRpc(command, await readRequest(req), access);
-      if (["execute_query", "execute_query_batch", "count_query", "explain_query_plan"].includes(command)) {
+      if (["test_connection", "execute_query", "execute_query_batch", "count_query", "explain_query_plan"].includes(command)) {
         if (session.queries >= 4) throw new GatewayError(429, "Too many concurrent queries.");
         session.queries++; query = true;
       }
-      if (command === "test_connection") {
-        const existing = await fetch(access.runtimeOrigin+"/api/v1/rpc/get_connections", { method: "POST", headers: upstreamHeaders(session, access), body: "null", redirect: "error", signal: AbortSignal.timeout(10_000) });
-        const result = record(await boundedJSON(existing));
-        const connection = Array.isArray(result.data) && result.data.find(row => record(row).id === access.connectionID);
-        if (!existing.ok || !connection || !["postgres", "postgresql", "sqlite"].includes(String(record(record(connection).params).driver))) throw new GatewayError(502, "Registered database connection is unavailable.");
-        input = { request: { connection_id: access.connectionID, params: record(connection).params } };
-      }
+      // Remote test_connection rejects inline host certificate paths. Probe the saved
+      // connection instead so the runtime retains its verified TLS and credentials.
+      const upstreamPath = command === "test_connection" ? "/api/v1/rpc/execute_query" : path;
+      if (command === "test_connection") input = { connectionId: access.connectionID, query: "SELECT 1", limit: 1 };
       const headers: Record<string, string> = upstreamHeaders(session, access);
       headers["x-request-id"] = randomUUID();
       for (const name of ["x-request-id", "x-tabularis-cancellation-id"]) {
         const value = req.headers[name]; if (typeof value === "string" && /^[a-zA-Z0-9_-]{1,128}$/.test(value)) headers[name] = value;
       }
-      const abort = new AbortController(); const timeout = setTimeout(() => abort.abort(), 35_000);
+      const abort = new AbortController();
       let revoked = false, checking = false;
       const cancel = () => {
         abort.abort();
@@ -167,17 +164,18 @@ export function createGateway(options: GatewayOptions) {
           body: JSON.stringify({ connectionId: access.connectionID, queryRequestId: headers["x-request-id"] }),
         }).catch(() => {});
       };
+      const timeout = setTimeout(cancel, 35_000);
       const revalidate = setInterval(async () => {
         if (checking || revoked) return; checking = true;
         try { await inspect(session); } catch { revoked = true; cancel(); } finally { checking = false; }
       }, 3000);
-      const disconnected = () => { if (!res.writableEnded) abort.abort(); };
+      const disconnected = () => { if (!res.writableEnded) cancel(); };
       res.on("close", disconnected);
       try {
-        const response = await fetch(access.runtimeOrigin+path, { method: "POST", headers, body: JSON.stringify(input), redirect: "error", signal: abort.signal });
+        const response = await fetch(access.runtimeOrigin+upstreamPath, { method: "POST", headers, body: JSON.stringify(input), redirect: "error", signal: abort.signal });
         const result = record(await boundedJSON(response));
         await inspect(session);
-        if (result.ok === true) result.data = publicResult(command, result.data, access);
+        if (result.ok === true) result.data = command === "test_connection" ? "Connection successful!" : publicResult(command, result.data, access);
         return json(res, response.status, result);
       } catch (error) {
         if (revoked) throw new GatewayError(401, "Database access expired or was revoked.");

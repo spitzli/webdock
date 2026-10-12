@@ -27,8 +27,14 @@ Source inventory (read-only): PostgreSQL18.6, about47MB, seven schemas/407 table
 - [x] Verify retired shared CMS and keep archive runtime access closed; preserve active website/Studio paths.
 - [x] Integrate managed service role HBA/lifecycle and isolated Tabularis connection/CA/network handling.
 - [x] Rehearse the real source archive restore with row/content/sequence/structural equality; exercise browser sign-in, tenant list and Payload Studio/website reads under non-owner roles. Verify Tabularis patch identity and TLS transport; final native browser acceptance follows its coordinated target switch.
-- [ ] Prepare reviewed production roles, policies, deployment environment deltas and write-freeze/rollback procedure.
-- [ ] Fence source platform writers, take final consistent export, restore/verify, then switch deployments and affected Tabularis runtime together.
-- [ ] Verify actual deployed DB identity, authenticated end-to-end flows, RLS negatives and unaffected customers. Keep old source fenced/retained; do not delete source resources.
+- [x] Prepare reviewed production roles, policies, deployment environment deltas and write-freeze/rollback procedure.
+- [x] Fence source platform writers, take final consistent export, restore/verify, then switch deployments and affected Tabularis runtime together.
+- [x] Verify actual deployed DB identity, authenticated end-to-end flows, RLS negatives and unaffected customers. Keep old source fenced/retained; do not delete source resources.
 
 Do not switch production while a gate fails. Rollback after target writes requires data reconciliation; pointing writers back at an old source is not a safe rollback.
+
+## Production result
+
+Platform cutover is live. The final snapshot matched data, sequences and SQL structure before additive migrations; 294 product tables now FORCE RLS. Native Studio/Tabularis SQL and disposable CRUD passed against the exact managed target with verify-full TLS. Independent customer databases remain on their existing connections; source platform tables remain fenced.
+
+Temporary migration password is revoked, direct and pooled authentication reject it, and no temporary-role sessions remain. Root-only removal of LOGIN/CREATEROLE/memberships and the obsolete HBA entry is still pending because the 1Password SSH signer is unavailable. No cleanup completion is claimed for those attributes.

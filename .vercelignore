@@ -1,4 +1,5 @@
 **/.env*
+**/.superpowers/**
 **/.backups/**
 **/.agents/**
 **/.git/**

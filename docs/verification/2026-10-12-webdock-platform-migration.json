@@ -1,5 +1,5 @@
 {
-  "status": "preparing-cutover",
+  "status": "live-root-cleanup-pending",
   "scope": "Webdock platform only; independent customer databases excluded",
   "sourceSchemas": [
     "public",
@@ -21,7 +21,10 @@
     "offlineRoleBypassRls": false,
     "platformTablesAtPreflight": 0,
     "poolerServicePoolSize": 1,
-    "poolerDatabaseConnectionBudget": 10
+    "poolerDatabaseConnectionBudget": 10,
+    "platformTables": 294,
+    "forceRlsTables": 294,
+    "privatePolicyKeyTableUsesOwnerOnlyAcl": true
   },
   "agent": {
     "node": "wd-eu-02",
@@ -29,9 +32,9 @@
     "persistentServiceRoleAllowlist": true,
     "selfMaintenanceProtected": true
   },
-  "sourceFenced": false,
-  "applicationConnectionsSwitched": false,
-  "tabularisSwitched": false,
+  "sourceFenced": true,
+  "applicationConnectionsSwitched": true,
+  "tabularisSwitched": true,
   "automatedBackupsEnabled": false,
   "verification": {
     "isolatedRestore": true,
@@ -41,7 +44,7 @@
     "payloadAdminAndWebsiteRead": true,
     "unrelatedIncomingForeignKeys": 0,
     "authRegressionPassed": 238,
-    "authRlsOptInTestsPassedSeparately": 3,
+    "authRlsOptInTestsPassedSeparately": 4,
     "studioTestsPassed": 115,
     "applicationBuilds": [
       "auth",
@@ -52,12 +55,67 @@
     "manifestVersion": 2,
     "realArchiveDataAndStructureEqual": true,
     "mailNoLateCommit": true,
-    "sourceForeignKeyIsolation": true
+    "sourceForeignKeyIsolation": true,
+    "nativeTabularisTlsAndTargetIdentity": true,
+    "nativeTabularisPlatformAndArchiveDenied": true,
+    "nativeStudioTabularisSqlEditor": true,
+    "nativeGatewayCreateInsertUpdateDelete": true,
+    "temporaryProbeTablesRemoved": true,
+    "webdockHttpStatus": 200,
+    "retiredCmsApiHttpStatus": 410,
+    "spitzliHttpStatus": 200,
+    "stallHttpStatus": 200,
+    "excludedSchemaDefaultAndTriggerDependencies": 0
   },
   "pending": [
-    "Final code/build verification and compatible deployment",
-    "Source freeze and final v2 structural/content-verified import",
-    "RLS installation on target, environment switch and Tabularis rollout",
-    "Deployed end-to-end checks and offline-role cleanup"
-  ]
+    "Root-only cleanup: set temporary role NOLOGIN/NOCREATEROLE, revoke memberships and remove its HBA entry once 1Password SSH signing is available. Its password is already NULL, both entrypoints reject the old credential and no role sessions remain."
+  ],
+  "sourceFence": {
+    "sourceFenced": true,
+    "tables": 266,
+    "at": "2026-10-12T21:40:07.753Z"
+  },
+  "mergeCommit": "e60d506d85b97b2697cadd4f3faaa9952bea19c9",
+  "pullRequest": "https://github.com/spitzli/webdock/pull/14",
+  "cutoverCompletedAt": "2026-10-12T22:23:40.594165+00:00",
+  "sourceRetained": true,
+  "deployments": {
+    "auth": {
+      "id": "dpl_3nS7aEM1C9bxrsZikNZQ1EpLewX3",
+      "url": "https://webdock-auth-eanfw3qm7-spitzli.vercel.app"
+    },
+    "admin": {
+      "id": "dpl_89gMtN4dFZVSaUa1f1rQJpnUQXMv",
+      "url": "https://webdock-admin-4rjgyqf9e-spitzli.vercel.app"
+    },
+    "web": {
+      "id": "dpl_42bD8CZ4h4htNWRrExstupuu6kvY",
+      "url": "https://webdock-7pht370gi-spitzli.vercel.app"
+    },
+    "cms": {
+      "id": "dpl_6Z2qP7gzvVGWQNBrZgfm6xGe98xu",
+      "url": "https://webdock-ivn61cpuy-spitzli.vercel.app"
+    }
+  },
+  "finalArchiveSha256": "a425b16b345bb926b704c4bb83aeb93300df4181fb8b461ed889ed3a89acf628",
+  "sourceTableCount": 266,
+  "tabularis": {
+    "bindingID": "102393528113434624",
+    "connectionID": "8032eaca-fddf-4c95-8d12-1b29e2b2dc8e",
+    "browserRole": "webdock_browser_website",
+    "websiteSchema": "webdock",
+    "visibleTables": 14,
+    "tlsMode": "verify-full",
+    "runtimeCommit": "fdd6c0a6f979ede0acb38415fa12b25c04aa9c4e",
+    "gatewayImage": "webdock-database-gateway:platform-20261012-saved-probe",
+    "gatewayImageConfigDigest": "sha256:d7ebd4e23c93be6f9c29a9ff1cd13e9266a55732a744cbf741b75a832b26726f",
+    "grantRevision": 3
+  },
+  "offlineCleanup": {
+    "passwordRevoked": true,
+    "sessions": 0,
+    "directAndPoolerReject": true,
+    "rootAttributeAndHbaCleanupPending": true,
+    "at": "2026-10-12T22:17:37.631Z"
+  }
 }

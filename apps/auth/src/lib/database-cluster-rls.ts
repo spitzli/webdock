@@ -3,7 +3,7 @@ export const databaseClusterRlsSQL = String.raw`
 CREATE OR REPLACE FUNCTION webdock_admin.lock_hosting_project(p_project_id varchar) RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
 BEGIN
- IF NOT webdock_rls.project_allowed(p_project_id) AND NOT webdock_rls.worker(ARRAY['git-worker']) AND NOT webdock_rls.agent_project(p_project_id) THEN
+ IF NOT webdock_rls.project_allowed(p_project_id) AND NOT webdock_rls.worker(ARRAY['git-worker','database-gateway']) AND NOT webdock_rls.agent_project(p_project_id) THEN
   RAISE EXCEPTION 'Project authorization required' USING ERRCODE='42501';
  END IF;
  PERFORM id FROM webdock_admin.projects WHERE id=p_project_id FOR SHARE;
