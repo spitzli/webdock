@@ -1,3 +1,4 @@
+import { soleWorkspace } from "@/lib/workspace-navigation";
 import {uiLabel} from "@/lib/ui-labels";
 
 import { getRequestI18n } from '@webdock/i18n/next';
@@ -7,12 +8,13 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { listTenants, listTenantInvitations } from "@/lib/tenants";
 import { AccessError } from "@/lib/access-management";
-export async function generateMetadata(){ const i18n = await getRequestI18n(); return { title: i18n.t("Your tenants") }; }
-export default async function Tenants() {
+export async function generateMetadata(){ const i18n = await getRequestI18n(); return { title: i18n.t("Your workspaces") }; }
+export default async function Tenants({searchParams}: {searchParams: Promise<{choose?: string}>}) {
   const i18n = await getRequestI18n();
 
   const requestHeaders = await headers();
-  if (!(await auth.api.getSession({ headers: requestHeaders })))
+  const session = await auth.api.getSession({ headers: requestHeaders });
+  if (!session)
     redirect("/api/sso/login?returnTo=%2Ftenants");
   let tenants, invitations;
   try {
@@ -24,17 +26,19 @@ export default async function Tenants() {
     if (error instanceof AccessError)
       return (
         <section className="auth-panel">
-          <h1>{i18n.t("Tenants")}</h1>
+          <h1>{i18n.t("Workspaces")}</h1>
           <p>{i18n.t("You do not currently have tenant access. Accept your emailed invitation or contact your Webdock operator.")}</p>
         </section>
       );
     throw error;
   }
+  const landing = soleWorkspace(tenants, invitations.length, session.user.role === "operator");
+  if (landing && (await searchParams).choose !== "1") redirect(landing);
   return (
     <div className="access-page">
       <header className="account-heading">
         <div>
-          <h1>{i18n.t("Your tenants")}</h1>
+          <h1>{i18n.t("Your workspaces")}</h1>
           <p className="muted">{i18n.t("Customer details, people and assigned websites.")}</p>
         </div>
         <Link
@@ -51,7 +55,7 @@ export default async function Tenants() {
       {invitations.map((invite) => (
         <article className="access-record" key={invite.id}>
           <h2>{i18n.t("Invitation to ")}{invite.name}</h2>
-          <p className="muted">{i18n.t("Tenant role: ")}{i18n.t(uiLabel(invite.role))}</p>
+          <p className="muted">{i18n.t("Workspace role: ")}{i18n.t(uiLabel(invite.role))}</p>
           <Link
             className="button"
             href={
@@ -72,7 +76,7 @@ export default async function Tenants() {
             </h2>
             <p className="muted">
               {tenant.status === "active"
-                ? tenant.role || i18n.t("Platform operator")
+                ? (tenant.role ? i18n.t(uiLabel(tenant.role)) : i18n.t("Platform operator"))
                 : i18n.t("Archived")}
             </p>
           </article>

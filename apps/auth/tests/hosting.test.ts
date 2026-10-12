@@ -118,6 +118,20 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
     secondClusterID: string = "",
     secondProjectID: string = "";
   try {
+    await t.test("workspace context is authorized, names real owners and distinguishes missing hosting", async () => {
+      const context = await call(a.actor, { action: "projects.get", projectID: project }) as { name: string; customerID: string; customerName: string; configured: boolean };
+      assert.equal(context.name, "Hosting fixture");
+      assert.equal(context.customerID, customers[0]);
+      assert.equal(context.customerName, "Hosting test A");
+      assert.equal(context.configured, false);
+      await assert.rejects(call(b.actor, { action: "projects.get", projectID: project }), error => error instanceof Error && 'status' in error && error.status === 404);
+      await assert.rejects(call(a.actor, { action: "operations.overview" }), error => error instanceof Error && 'status' in error && error.status === 403);
+      const overview = await call(root.actor, { action: "operations.overview", page: 1, limit: 10, search: "", sort: "name" }) as { docs: unknown[]; operations: unknown[]; readAt: string };
+      assert.ok(Array.isArray(overview.docs));
+      assert.ok(Array.isArray(overview.operations));
+      assert.ok(!Number.isNaN(Date.parse(overview.readAt)));
+      assert.ok(overview.docs.length <= 10);
+    });
     await t.test(
       "authorization rejects foreign tenants, customer writes and read-only tokens",
       async () => {
@@ -660,6 +674,12 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
         });
         assert.equal(app.status, "ready");
         assert.deepEqual(app.environmentNames,['EMPTY','TOKEN']);
+        const overview = await call(root.actor, {action:'operations.overview',page:1,limit:10,search:'Managed fixture',sort:'name'}) as import('@webdock/hosting-contracts').HostingOverview;
+        assert.equal(overview.docs.find(item=>item.id===made.appID)?.customerName,'Hosting test A');
+        assert.ok(!JSON.stringify(overview).includes('private-env-fixture'));
+        assert.ok(!('spec' in overview.docs[0]));
+        assert.ok(!('logs' in overview.docs[0]));
+
         assert.ok(!JSON.stringify(app).includes('private-env-fixture'));
         const logResult=(await database.query("SELECT result FROM webdock_auth.hosting_operation WHERE id=$1",[diagnostic.id])).rows[0].result;
         assert.ok(!JSON.stringify(logResult).includes('private-env-fixture'));
@@ -677,6 +697,8 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
           "INSERT INTO webdock_auth.studio_tenant_preview(session_id,actor_id,customer_id,organization_id) VALUES($1,$2,$3,$4)",
           [root.actor.sessionID, root.actor.subject, customers[0], testOrg],
         );
+        await assert.rejects(call(root.actor, {action:'operations.overview'}), /read-only/);
+        assert.equal((await call(root.actor, {action:'projects.get', projectID:project})).operator, false);
         assert.equal(
           (await call(root.actor, { action: "apps.get", appID: made.appID }))
             .canRequestLogs,

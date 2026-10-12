@@ -2,52 +2,27 @@
 import { msgid } from '@webdock/i18n';
 
 import { useI18n } from '@webdock/i18n/react';
+import { LanguagePicker } from "@webdock/i18n/picker";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { mainArea } from "@/lib/workspace-navigation";
+import { AreaNavigation } from "./area-navigation";
 import { useState, useSyncExternalStore } from "react";
 export function Navigation({ operator = true }: { operator?: boolean }) {
   const i18n = useI18n();
 
   const path = usePathname();
-  const links = operator
-    ? [
-        ["/", msgid("Projects")],
-        ["/customers", msgid("Customers")],
-        ["/people", msgid("People & access")],
-        ["/admin/plans", msgid("Plans")],
-        ["/integrations", msgid("Integrations")],
-        ["/infrastructure", msgid("Infrastructure")],
-        ["/activity", msgid("Activity")],
-        ["/admin", msgid("Settings")],
-      ]
-    : [
-        ["/tenants", msgid("Tenants")],
-        ["/sites", msgid("My websites")],
-      ];
-  return (
-    <nav aria-label={i18n.t("Main navigation")}>
-      {links.map(([href, label]) => {
-        const active =
-          href === "/"
-            ? path === "/" || path.startsWith("/projects")
-            : href === "/admin"
-              ? path === "/admin"
-              : href === "/customers"
-                ? path.startsWith("/customers") || path.startsWith("/tenants")
-                : path.startsWith(href);
-        return (
-          <Link
-            key={href}
-            href={href}
-            aria-current={active ? "page" : undefined}
-          >
-            {i18n.t(label)}
-          </Link>
-        );
-      })}
-    </nav>
-  );
+  const active = mainArea(path, operator);
+  const primary = operator
+    ? [["projects", "/", msgid("Projects")], ["customers", "/customers", msgid("Customers")], ["operations", "/operations", msgid("Operations")]]
+    : [["workspace", "/tenants", msgid("Workspaces")], ["sites", "/sites", msgid("My websites")]];
+  const management = [["people", "/people", msgid("People & access")], ["plans", "/admin/plans", msgid("Plans")], ["connections", "/integrations", msgid("Connections")], ["settings", "/admin", msgid("Settings")]];
+  const renderLinks = (links: string[][]) => links.map(([id, href, label]) => <Link key={id} href={href} aria-current={active === id ? "page" : undefined}>{i18n.t(label)}</Link>);
+  return <div className="navigation-groups">
+    <nav aria-label={i18n.t("Main navigation")}>{renderLinks(primary)}</nav>
+    {operator && <div className="navigation-management"><p className="navigation-label">{i18n.t("Administration")}</p><nav aria-label={i18n.t("Administration")}>{renderLinks(management)}</nav></div>}
+  </div>;
 }
 export function MobileMenu({
   operator,
@@ -80,6 +55,7 @@ export function MobileMenu({
         <div className="mobile-menu-content">
           <Navigation operator={operator} />
           {accountURL && <nav className="account-navigation" aria-label={i18n.t("Account and security")}><a href={accountURL}>{i18n.t("Account & security ↗")}</a></nav>}
+          <Appearance /><LanguagePicker className="studio-language-picker" />
           <div className="mobile-menu-account">
             <span>{userName || i18n.t("Webdock Studio")}</span>
             {signedIn && <Logout ssoEnabled={ssoEnabled} />}
@@ -89,31 +65,20 @@ export function MobileMenu({
     </div>
   );
 }
-export function TenantNavigation({ customerID, preview = false }: { customerID: string; canManage?: boolean; preview?: boolean }) {
+export function TenantNavigation({ customerID, canManage = false, preview = false, overviewHref }: { customerID: string; canManage?: boolean; preview?: boolean; overviewHref?: string }) {
   const i18n = useI18n();
 
-  const path = usePathname();
   const base = `/tenants/${encodeURIComponent(customerID)}`;
-  return (
-    <nav className="tenant-navigation" aria-label={i18n.t("Tenant navigation")}>
-      {[
-        [base, msgid("Overview")],
-        [base + "/usage", msgid("Plan & usage")],
-        [base + "/hosting", msgid("Hosting")],
-        ...(!preview ? [[base + "/databases", msgid("Databases")]] : []),
-        ...(!preview ? [[base + "/mail", msgid("Mail")]] : []),
-      ].map(([href, label]) => (
-        <Link
-          key={href}
-          href={href}
-          aria-current={path === href || ([base + "/databases",base + "/mail"].includes(href) && path.startsWith(href + "/")) ? "page" : undefined}
-        >
-          {i18n.t(label)}
-        </Link>
-      ))}
-    </nav>
-  );
+  return <AreaNavigation label={i18n.t("Workspace navigation")} links={[
+    {href:overviewHref || base,label:msgid("Overview"),exact:true},
+    {href:base+"/hosting",label:msgid("Applications")},
+    ...(!preview ? [{href:base+"/databases",label:msgid("Databases")},{href:base+"/mail",label:msgid("Mail")}] : []),
+    ...(canManage ? [{href:base+"/team",label:msgid("Team")}] : []),
+    {href:base+"/usage",label:msgid("Plan & usage")},
+    {href:base+"/profile",label:msgid("Profile")},
+  ]}/>;
 }
+
 const subscribeTheme = (notify: () => void) => {
   window.addEventListener("webdock-theme", notify);
   window.addEventListener("storage", notify);

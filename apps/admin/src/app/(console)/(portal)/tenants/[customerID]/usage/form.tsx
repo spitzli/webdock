@@ -17,9 +17,9 @@ export function UsageForms({
   customerID,
   plans,
   data,
-  storage,
+  storage, mode = "plan",
 }: {
-  customerID: string;
+  customerID: string; mode?: "plan" | "storage";
   plans: Awaited<ReturnType<typeof getPlans>>;
   data: Awaited<ReturnType<typeof getTenantPlan>>;
   storage: Awaited<ReturnType<typeof getTenantStorage>>;
@@ -91,6 +91,7 @@ export function UsageForms({
           </div>
         )}
       </section>
+      {mode === "plan" && <>
       <div className="access-grid">
         <details className="auth-panel">
           <summary>{i18n.t("Assign a plan")}</summary>
@@ -202,7 +203,8 @@ export function UsageForms({
           <p>{i18n.t("No offers yet.")}</p>
         )}
       </section>
-      <details className="account-section">
+      </>}
+      {mode === "storage" && <details className="account-section">
         <summary>{i18n.t("Manage storage connections")}</summary>
         <p>{i18n.t("Connect each Blob store or a tenant’s exclusive path prefix. Credentials are saved privately and are never displayed. Production and preview storage are measured separately.")}</p>
         {form(
@@ -253,7 +255,7 @@ export function UsageForms({
             )}
           </article>
         ))}
-      </details>
+      </details>}
     </>
   );
 }

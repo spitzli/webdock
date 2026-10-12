@@ -1,7 +1,7 @@
 "use client";
 import { useContext, useRef, useState } from "react";
 import { useI18n } from "@webdock/i18n/react";
-import { HostingSaveContext, HostingPendingContext } from "./form";
+import { HostingSaveContext, HostingPendingContext, HostingDirtyContext } from "./form-state";
 type Row = {
   id: number;
   name: string;
@@ -15,6 +15,7 @@ export function ApplicationEnvironment({ names = [], build = false }: { names?: 
   const { t } = useI18n(),
     result = useContext(HostingSaveContext),
     pending = useContext(HostingPendingContext),
+    markDirty = useContext(HostingDirtyContext),
     serial = useRef(names.length);
   const makeRows = () =>
     names.map((name, id) => ({
@@ -34,10 +35,12 @@ export function ApplicationEnvironment({ names = [], build = false }: { names?: 
       setRows(current => result.environmentReset ? [] : current.filter(row => !row.removed).map(row => ({ ...row, value: "", saved: true, editing: false, visible: false })));
     }
   }
-  const edit = (id: number, patch: Partial<Row>) =>
+  const edit = (id: number, patch: Partial<Row>) => {
+    if (Object.keys(patch).some(key => key !== "visible")) markDirty();
     setRows((current) =>
       current.map((row) => (row.id === id ? { ...row, ...patch } : row)),
     );
+  };
   const patch = rows
     .filter((r) => r.removed || r.editing || !r.saved)
     .map((r) => ({ name: r.name, value: r.removed ? null : r.value }));
@@ -156,6 +159,7 @@ export function ApplicationEnvironment({ names = [], build = false }: { names?: 
           type="button"
           className="button secondary"
           onClick={() => {
+            markDirty();
             const id = serial.current++;
             setRows((current) => [
               ...current,

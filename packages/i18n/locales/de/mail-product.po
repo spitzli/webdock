@@ -359,9 +359,6 @@ msgstr "Testnachricht senden"
 msgid "Sender"
 msgstr "Absender"
 
-msgid "Sending"
-msgstr "Wird gesendet"
-
 msgid "Sending only"
 msgstr "Nur Versand"
 

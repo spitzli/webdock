@@ -50,7 +50,7 @@ export function TenantRole({ value = "member", allowOwner = false, memberOnly = 
   const i18n = useI18n();
 
   return (
-    <label className="field">{i18n.t("Tenant role")}<select name="role" defaultValue={value}>
+    <label className="field">{i18n.t("Workspace role")}<select name="role" defaultValue={value === "owner" && !allowOwner ? "admin" : value}>
         <option value="member">{i18n.t("Member — view customer profile")}</option>
         {!memberOnly&&<option value="admin">{i18n.t("Administrator — edit profile and invite people")}</option>}
         {allowOwner&&<option value="owner">{i18n.t("Owner — manage administrators and owners")}</option>}

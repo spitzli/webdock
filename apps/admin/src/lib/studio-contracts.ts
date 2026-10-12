@@ -2,7 +2,7 @@
 // Dates crossing this boundary are ISO strings; native sessions and credentials are excluded.
 export type ChangeResult = { message: string };
 export type NativeMailView = { service: import("@webdock/mail-core").MailService; mailboxesAvailable?: boolean; sendingAvailable?: boolean; canActivate: boolean; canSuspend: boolean; canReconcile: boolean } | null;
-export type Site = { id: string; name: string; url: string; role: string };
+export type Site = { id: string; name: string; url: string; role: string; customerID?: string; customerName?: string };
 export type AccountSummary = { id: string; name: string; email: string; role: string; banned: boolean | null; emailVerified: boolean; mustChangePassword: boolean };
 export type TenantSummary = { id: string; name: string; status: string; role: string | null };
 export type TenantInvitation = { id: string; role: string; name: string };

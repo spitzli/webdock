@@ -1,3 +1,2 @@
-import {MailResourcePage} from "@/components/mail/resource-page";
-import type {MailPageProps} from "@/components/mail/product-page";
-export default function Page(props:MailPageProps){return <MailResourcePage props={props} kind="domains"/>;}
+import Mail from "../mail-workspace";
+export default function Page(props: {params:Promise<{customerID:string}>;searchParams:Promise<{mailPage?:string;mailSearch?:string}>}) {return <Mail {...props} view="domains"/>;}

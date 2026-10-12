@@ -1,3 +1,4 @@
+import { TenantNavigation } from "@/components/navigation";
 import {uiLabel} from "@/lib/ui-labels";
 
 import { getRequestI18n } from '@webdock/i18n/next';
@@ -50,26 +51,9 @@ export default async function Customer({
           <Link href={"/projects/new?customer=" + id} className="button">{i18n.t("Add project +")}</Link>
         )}
       </div>
-      <div className="detail-grid">
-        <section className="panel">
-          <h2>{i18n.t("Customer details")}</h2>
-          <Editor
-            action={saveCustomer.bind(null, id)}
-            fields={customerFields(customer)}
-          />
-        </section>
-        <aside>
-          <section className="panel customer-tenant-card">
-            <h2>{i18n.t("Customer tenant")}</h2>
-            {customer.status === "active" && <TenantPreviewStart customerID={id}/>}
-            <p>{i18n.t("Manage this customer’s members and invite-only access. Contact details alone do not grant access.")}</p>
-            <div className="customer-tenant-actions">
-            <Link className="button" href={`/tenants/${id}`}>{i18n.t("Tenant & invitations")}</Link>
-            <Link className="button secondary" href={`/customers/${id}/hosting`}>{i18n.t("Hosting")}</Link>
-            <Link className="button secondary" href={`/tenants/${id}/usage`}>{i18n.t("Plan & usage")}</Link>
-            <Link className="button secondary" href={`/tenants/${id}/mail`}>{i18n.t("Mail & domains")}</Link>
-            </div>
-          </section>
+      <TenantNavigation customerID={id} canManage overviewHref={`/customers/${id}`} />
+      <div className="customer-overview">
+        <div>
           <section className="panel">
             <div className="section-heading">
               <h2>{i18n.t("Projects (")}{projects.totalDocs})</h2>
@@ -93,6 +77,24 @@ export default async function Customer({
             ))}
             {!projects.totalDocs && <p className="muted">{i18n.t("No projects yet.")}</p>}
           </section>
+          <section className="account-section">
+            <h2>{i18n.t("Services & team")}</h2>
+            {customer.status === "active" && <TenantPreviewStart customerID={id}/>}
+
+            <div className="customer-tenant-actions">
+            <Link className="button" href={`/tenants/${id}/team`}>{i18n.t("Team & invitations")}</Link>
+            <Link className="button secondary" href={`/tenants/${id}/hosting`}>{i18n.t("Hosting")}</Link>
+            <Link className="button secondary" href={`/tenants/${id}/usage`}>{i18n.t("Plan & usage")}</Link>
+            <Link className="button secondary" href={`/tenants/${id}/mail`}>{i18n.t("Mail & domains")}</Link>
+            </div>
+          </section>
+        <details className="workspace-disclosure">
+          <summary>{i18n.t("Edit customer details")}</summary>
+          <Editor
+            action={saveCustomer.bind(null, id)}
+            fields={customerFields(customer)}
+          />
+        </details>
           <section className="record-meta">
             <p>{i18n.t("Customer ID ")}<code>{id}</code>
               <small>{i18n.t("Created ")}{date(customer.createdAt,i18n.locale)}{i18n.t(" · Updated")}{" "}
@@ -110,7 +112,7 @@ export default async function Customer({
               archived={customer.status === "archived"}
             />
           </section>
-        </aside>
+        </div>
       </div>
     </>
   );
