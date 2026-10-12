@@ -12,7 +12,9 @@
     "start": "next start",
     "check": "tsc --noEmit",
     "lint": "eslint",
-    "test": "node --env-file=.env.test.local --import tsx --test --test-concurrency=1 tests/*.test.ts"
+    "test": "node --env-file=.env.test.local --import tsx --test --test-concurrency=1 tests/*.test.ts",
+    "test:mail": "node --env-file=.env.test.local --import tsx --test --test-concurrency=1 tests/mail-product-*.test.ts tests/tenant-mail.test.ts tests/mail-dns.test.ts tests/mail-domains.test.ts tests/mail-keys.test.ts tests/mail-tracking.test.ts tests/turbo*.test.ts",
+    "test:mail:setup": "node --env-file=.env.test.local --import tsx scripts/setup-mail-test.ts"
   },
   "dependencies": {
     "@webdock/mail-core": "*",
