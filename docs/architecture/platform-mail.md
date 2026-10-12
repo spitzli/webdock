@@ -35,3 +35,18 @@ Run `scripts/migrate-platform.ts` and `scripts/migrate-mail.ts` from apps/auth w
 Tests cover root revocation, purpose-bound encryption, exact provider requests, safe failure/reconciliation, two-tenant account/domain isolation, public DNS tokens, quota enforcement, and product switches. Local mobile browser checks verified settings persistence, live branding changes, customer root denial, local domain creation and cross-tenant 404. Integration tests exercise tenant boundaries and failure cases with mocks; live provider resource checks supplement these tests without modifying existing keys or settings.
 
 Sources: https://serversmtp.com/turbo-api/ and https://serversmtp.com/turbo-api/turbo-smtp.yaml (checked 2026-10-04).
+
+## Additive Mail API product
+
+The Relaykit-parity gateway uses tenant-scoped `mail_connection` rows, local hashed
+`wdm_` API keys, versioned encrypted sending credentials and durable PostgreSQL
+messages/events/inbox/outbox. The private managed `SEND_API` key is never returned
+to a customer; rotation stores its replacement before revocation. BYOK binds the
+real `/user/info` account identity and verifies sending permission with a payload
+that cannot create a message. Legacy source credential changes fail closed until
+that binding is reverified. One provider account cannot cross customer boundaries.
+
+The new gateway/dispatch/webhook switches default off. See
+[operations](mail-operations.md) and [migration](mail-migration.md) for release,
+retention, controlled import and rollback. Existing Stalwart instances, native
+Webmail/authentication and direct SMTP are not replaced by a gateway migration.

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mainArea, areaSelected, soleWorkspace, applicationState } from '../src/lib/workspace-navigation';
+import { mainArea, areaSelected, soleWorkspace, applicationState, mailSendingPaths } from '../src/lib/workspace-navigation';
 
 test('all deep links retain exactly one main area without prefix collisions', () => {
   for (const path of ['/projects/12', '/hosting/projects/12/git/builds/34', '/hosting/apps/56/settings', '/sites/78/shop']) assert.equal(mainArea(path, true), 'projects');
@@ -32,4 +32,12 @@ test('application state does not confuse running work with running applications'
   assert.equal(applicationState('pending'), 'Change in progress');
   assert.equal(applicationState('unexpected'), 'Unknown');
   assert.equal(applicationState('deleted'), 'Deleted');
+});
+
+test('Mail API deep links belong to Sending while inbox, domains and settings stay separate', () => {
+ const base='/tenants/12/mail', paths=mailSendingPaths.map(path=>base+path);
+ for(const suffix of ['/sending','/emails/42','/analytics','/quickstart','/api-keys','/webhooks/7','/suppressions','/logs/9'])
+  assert.equal(areaSelected(base+'/sending',base+suffix,'connection=34',false,paths),true,suffix);
+ for(const suffix of ['/inbox','/mailboxes','/domains','/settings','/tracking','/emails-extra'])
+  assert.equal(areaSelected(base+'/sending',base+suffix,'',false,paths),false,suffix);
 });

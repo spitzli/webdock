@@ -1,0 +1,77 @@
+import {getTenantTracking,manageTenantTracking} from '../mail-tracking';
+import {rotateManagedSendingCredential} from './provider-credentials';
+import {getMailHealth} from './health';
+import {reconcileMail} from './reconcile';
+import type {EmailRequest,EventType,MailActor,Permission} from '@webdock/mail-contracts';import {parseID} from '@webdock/mail-contracts/validation';
+import {mailDatabase as database} from './store';import {getTenant} from '../tenants';
+import {authorizeMailSession,assertMailAccess,MailError} from './access';import {listTenantMailConnections,getMailOnboarding,connectByokMail,configureManagedMail} from './onboarding';
+import {listMailMessages,getMailMessage} from './messages';import {getMailAnalytics} from './analytics';import {submitMail} from './sending';import {cancelScheduledMail,rescheduleMail} from './schedules';
+import {getMailDomain,claimMailDomain,verifyMailDomain,removeMailDomain} from './domains';import {createMailKey,revokeMailKey} from './api-keys';import {listMailResource,getMailLog} from './resource-lists';
+import {createMailWebhook,getMailWebhook,updateMailWebhook,deleteMailWebhook,rotateMailWebhook,replayMailWebhook,listMailWebhookDeliveries} from './webhooks';import {setMailSuppression,removeMailSuppression} from './suppressions';
+const text=(value:unknown):value is string=>typeof value==='string'&&value.length<=32768;
+const object=(value:unknown):value is Record<string,unknown>=>!!value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).length<=30;
+const number=(value:unknown)=>Number.isSafeInteger(value)&&Number(value)>0;
+export const mailStudioShapes:Record<string,((value:unknown)=>boolean)[]>={
+ mailConnections:[text],mailOnboarding:[text],mailConnectByok:[text,object],mailConfigureManaged:[text],mailRotateManaged:[text,text],mailOverview:[text,text],mailHealth:[text,text],mailTracking:[text,text],mailTrackingUpdate:[text,text,object],
+ mailMessages:[text,text,object],mailMessage:[text,text,text],mailContent:[text,text,text],mailTestSend:[text,text,object],mailReschedule:[text,text,text,text,number],mailCancel:[text,text,text,number],
+ mailDomains:[text,text,object],mailDomain:[text,text,text],mailDomainCreate:[text,text,text],mailDomainVerify:[text,text,text],mailDomainRemove:[text,text,text],
+ mailKeys:[text,text,object],mailKeyCreate:[text,text,object],mailKeyRevoke:[text,text,text],mailAnalytics:[text,text,object],
+ mailWebhooks:[text,text,object],mailWebhook:[text,text,text],mailWebhookCreate:[text,text,object],mailWebhookUpdate:[text,text,text,object],mailWebhookDelete:[text,text,text],mailWebhookRotate:[text,text,text],mailWebhookReplay:[text,text,text],mailWebhookDeliveries:[text,text,text,object],
+ mailSuppressions:[text,text,object],mailSuppressionSet:[text,text,object],mailSuppressionRemove:[text,text,text],mailLogs:[text,text,object],mailLog:[text,text,text],mailConnectionUpdate:[text,text,object],mailReconcile:[text,text,text],
+};
+export async function dispatchMailStudio(operation:string,args:unknown[],headers:Headers):Promise<unknown>{
+ const shape=mailStudioShapes[operation];if(!shape||shape.length!==args.length||shape.some((check,index)=>!check(args[index])))throw new MailError(422,'validation_error','Invalid Mail operation arguments');
+ const customerID=parseID(args[0]);
+ if(operation==='mailConnections')return listTenantMailConnections(headers,customerID);
+ if(operation==='mailOnboarding')return getMailOnboarding(headers,customerID);
+ if(operation==='mailConnectByok')return connectByokMail(headers,customerID,args[1] as Parameters<typeof connectByokMail>[2]);
+ if(operation==='mailConfigureManaged')return configureManagedMail(headers,customerID);
+ const actor=await authorizeMailSession(headers,customerID,parseID(args[1]),'read');
+ const input=(args[2]??{}) as Record<string,unknown>,id=args[2] as string;
+ const reads=['mailTracking','mailHealth','mailOverview','mailMessages','mailMessage','mailContent','mailAnalytics','mailDomains','mailDomain'];
+ if(!reads.includes(operation)&&!['mailTestSend','mailReschedule','mailCancel'].includes(operation))await assertMailAccess(actor,'manage',database,false);
+ switch(operation){
+  case 'mailRotateManaged':await rotateManagedSendingCredential(actor);return {id:actor.connectionID};
+  case 'mailTracking':return getTenantTracking(headers,customerID,actor.connectionID);
+  case 'mailTrackingUpdate':{if(Object.values(input).some(value=>typeof value!=='string'))throw new MailError(422,'validation_error','Invalid tracking input');return manageTenantTracking(headers,customerID,input as Record<string,string>,{},actor.connectionID);}
+  case 'mailHealth':return getMailHealth(actor);
+  case 'mailOverview':{const tenant=await getTenant(headers,customerID);return {canManage:tenant.canManage,operator:tenant.operator,analytics:await getMailAnalytics(actor,{days:7}),messages:await listMailMessages(actor,{limit:5}),domains:await listMailResource(actor,'domains',{limit:100})};}
+  case 'mailMessages':return listMailMessages(actor,input);
+  case 'mailMessage':return getMailMessage(actor,id);
+  case 'mailContent':return (await getMailMessage(actor,id)).content;
+  case 'mailTestSend':{if('attachments' in input)throw new MailError(422,'validation_error','Use the Mail API for attachments');return submitMail(actor,input as EmailRequest,{key:input.idempotencyKey as string});}
+  case 'mailReschedule':await rescheduleMail(actor,id,args[3] as string,args[4] as number);return {id};
+  case 'mailCancel':await cancelScheduledMail(actor,id,args[3] as number);return {id};
+  case 'mailDomains':return listMailResource(actor,'domains',input);
+  case 'mailDomain':return getMailDomain(actor,id);
+  case 'mailDomainCreate':return claimMailDomain(actor,id);
+  case 'mailDomainVerify':return verifyMailDomain(actor,id);
+  case 'mailDomainRemove':await removeMailDomain(actor,id);return {id};
+  case 'mailKeys':return listMailResource(actor,'keys',input);
+  case 'mailKeyCreate':return createMailKey(actor,{name:input.name as string,permission:input.permission as Permission,domainID:input.domainID as string|undefined});
+  case 'mailKeyRevoke':await revokeMailKey(actor,id);return {id};
+  case 'mailAnalytics':return getMailAnalytics(actor,input as Parameters<typeof getMailAnalytics>[1]);
+  case 'mailWebhooks':return listMailResource(actor,'webhooks',input);
+  case 'mailWebhook':return getMailWebhook(actor,id);
+  case 'mailWebhookCreate':return createMailWebhook(actor,input as {url:string;events:EventType[]});
+  case 'mailWebhookUpdate':await updateMailWebhook(actor,id,args[3] as Parameters<typeof updateMailWebhook>[2]);return {id};
+  case 'mailWebhookDelete':await deleteMailWebhook(actor,id);return {id};
+  case 'mailWebhookRotate':return rotateMailWebhook(actor,id);
+  case 'mailWebhookReplay':await replayMailWebhook(actor,id);return {id};
+  case 'mailWebhookDeliveries':return listMailWebhookDeliveries(actor,id,args[3] as {limit?:number;after?:string});
+  case 'mailSuppressions':return listMailResource(actor,'suppressions',input);
+  case 'mailSuppressionSet':await setMailSuppression(actor,input as {email:string;reason:string});return {saved:true};
+  case 'mailSuppressionRemove':await removeMailSuppression(actor,id);return {removed:true};
+  case 'mailLogs':return listMailResource(actor,'logs',input);
+  case 'mailLog':return getMailLog(actor,id);
+  case 'mailReconcile':await reconcileMail(actor,id);return {id};
+  case 'mailConnectionUpdate':return updateConnection(actor,input);
+ }
+ throw new MailError(422,'validation_error','Unknown Mail operation');
+}
+async function updateConnection(actor:MailActor,input:Record<string,unknown>){
+ if(!['pause','resume'].includes(String(input.action))||!Number.isSafeInteger(input.revision))throw new MailError(422,'validation_error','Invalid connection update');
+ await assertMailAccess(actor,'manage');
+ const result=await database.query("UPDATE webdock_auth.mail_connection SET state=$4,revision=revision+1,updated_at=now() WHERE id=$1 AND customer_id=$2 AND revision=$3 AND deleted_at IS NULL AND state IN ('ready','paused') RETURNING id,revision",[actor.connectionID,actor.customerID,input.revision,input.action==='pause'?'paused':'ready']);
+ if(!result.rowCount)throw new MailError(409,'connection_changed','Connection changed; refresh first');return result.rows[0];
+}

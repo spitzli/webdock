@@ -14,3 +14,13 @@ Run commands from the monorepo root with `npm run <command> -w @webdock/admin`, 
 - `scripts/seed.ts` requires an explicitly approved central subject for production, or a password for a disposable local test account. It creates the initial customer/project inventory without deploying any customer infrastructure.
 
 Initial credentials and MFA enrollment belong to the central auth service. Payload password hashes are never copied into Better Auth. External identity subjects are linked to platform Snowflake projections explicitly.
+
+### Mail product
+
+Tenant Mail adds connection-scoped messages, domain verification, API keys,
+webhooks, suppressions, request logs, analytics, settings, team and quickstart pages.
+All actions use the existing authenticated Studio bridge and current tenant rights.
+HTML previews reuse the isolated native sanitizer, loaded only in the browser.
+Mail product pages are unavailable in tenant preview sessions. Provider/API secrets
+are never part of server page data; newly issued public keys/webhook secrets appear
+only in their one-time action result. See [operations](../../docs/architecture/mail-operations.md).

@@ -11,6 +11,7 @@ type Dependencies = {
  childProvider?: (token: string) => Pick<TurboSMTPClient, "listConsumerKeys" | "createConsumerKey" | "deleteConsumerKey">;
 };
 export type MailKeyInput = { action: string; label?: string; permissions?: string[]; ips?: string[]; consumerKey?: string; confirm?: string };
+const isInternalMailKey = (label: string) => label.startsWith("Webdock internal mail ") || label.startsWith("Webdock private relay ");
 function fail(message: string): never { throw new MailKeysError(message); }
 async function accessToKeys(headers: Headers, customerID: string) {
  const access = await getTenant(headers, customerID);
@@ -34,7 +35,7 @@ export async function getTenantMailKeys(headers: Headers, customerID: string, de
   const child = await childAccount(customerID, dependencies);
   const listed = await child.client.listConsumerKeys();
   await accessToKeys(headers, customerID);
-  return { tenant: { id: String(access.tenant.id), name: String(access.tenant.name) }, operator: access.operator, enabled: settings.mailEnabled, active: child.active, smtpHost: settings.mailRegion === "eu" ? "pro.eu.turbo-smtp.com" : "pro.turbo-smtp.com", sendAPI: settings.mailRegion === "eu" ? "https://api.eu.turbo-smtp.com/api/v2/mail/send" : "https://api.turbo-smtp.com/api/v2/mail/send", keys: listed.results.map(({ consumerKey, label, creation_time, ips, is_legacy, permissions }) => ({ consumerKey, label, creation_time, ips, is_legacy, permissions })) };
+  return { tenant: { id: String(access.tenant.id), name: String(access.tenant.name) }, operator: access.operator, enabled: settings.mailEnabled, active: child.active, smtpHost: settings.mailRegion === "eu" ? "pro.eu.turbo-smtp.com" : "pro.turbo-smtp.com", sendAPI: settings.mailRegion === "eu" ? "https://api.eu.turbo-smtp.com/api/v2/mail/send" : "https://api.turbo-smtp.com/api/v2/mail/send", keys: listed.results.filter(key => !isInternalMailKey(key.label)).map(({ consumerKey, label, creation_time, ips, is_legacy, permissions }) => ({ consumerKey, label, creation_time, ips, is_legacy, permissions })) };
  } catch (error) { if (error instanceof MailKeysError) throw error; fail("Could not load credentials. Contact your operator if this persists."); }
 }
 export async function manageTenantMailKeys(headers: Headers, customerID: string, input: MailKeyInput, dependencies: Dependencies = {}): Promise<{ message: string; created?: { consumerKey: string; consumerSecret: string } }> {
@@ -44,7 +45,7 @@ export async function manageTenantMailKeys(headers: Headers, customerID: string,
  const permissions = input.permissions || [], ips = input.ips || [];
  if (input.action === "create") {
   if(process.env.WEBDOCK_NATIVE_MAIL_SENDING_ENABLED === "true") fail("Use Webdock Mail sending to manage native API keys.");
-  if (!label || label.length > 100 || /[\x00-\x1f\x7f]/.test(label)) fail("Enter a readable label of up to 100 characters.");
+  if (isInternalMailKey(label) || !label || label.length > 100 || /[\x00-\x1f\x7f]/.test(label)) fail("Enter a readable label of up to 100 characters.");
   if (!permissions.length || permissions.length > 3 || permissions.some(p => !["SEND_SMTP", "SEND_API", ...(access.operator ? ["APIS"] : [])].includes(p))) fail("Choose the permitted sending access for this credential.");
   if (ips.length > 100 || ips.some(ip => !isIP(ip))) fail("Use individual IPv4 or IPv6 addresses, without CIDR ranges.");
   if (!(await getPlatformSettings()).mailEnabled) fail("Mail is disabled. Existing credentials can still be listed and revoked.");
@@ -56,7 +57,7 @@ export async function manageTenantMailKeys(headers: Headers, customerID: string,
   const child = await childAccount(customerID, dependencies);
   if (input.action === "revoke") {
    const listed = await child.client.listConsumerKeys();
-   if (!listed.results.some(key => key.consumerKey === input.consumerKey)) fail("Credential not found in this tenant account.");
+   if (!listed.results.some(key => key.consumerKey === input.consumerKey && !isInternalMailKey(key.label))) fail("Credential not found in this tenant account.");
   } else if (!child.active) fail("Sending is paused. Existing credentials can still be listed and revoked.");
   const current = await accessToKeys(headers, customerID);
   if (input.action === "create" && permissions.includes("APIS") && !current.operator) fail("Platform operator access is required.");

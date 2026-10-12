@@ -82,6 +82,11 @@ export function AdminForms({
               defaultChecked={settings.mailEnabled}
             />{" "}{i18n.t("Enable Mail for tenants")}</label>
           <p className="muted">{i18n.t("Controls tenant Mail operations. Turning this off does not disable account verification, password reset or invitation emails.")}</p>
+          <h3>{i18n.t("Mail gateway controls")}</h3>
+          <label className="check"><input type="checkbox" name="mailGatewayEnabled" value="yes" defaultChecked={settings.mailGatewayEnabled}/>{i18n.t("Enable Mail API for managed and own accounts")}</label>
+          <label className="check"><input type="checkbox" name="mailDispatchEnabled" value="yes" defaultChecked={settings.mailDispatchEnabled}/>{i18n.t("Enable Mail dispatch")}</label>
+          <label className="check"><input type="checkbox" name="mailWebhooksEnabled" value="yes" defaultChecked={settings.mailWebhooksEnabled}/>{i18n.t("Enable customer webhook delivery")}</label>
+          <p className="muted">{i18n.t("These controls do not stop authentication emails or direct SMTP. Accepted work and history are retained while dispatch is paused.")}</p>
           <label className="field">{i18n.t("Assigned sending IPv4 address")}<input
               name="mailSendingIP"
               defaultValue={settings.mailSendingIP}

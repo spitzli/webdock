@@ -2110,3 +2110,22 @@ main h2 { font-size: 16px; letter-spacing: 0; }
 .application-resources dd { margin: 4px 0 0; }
 .cms-workspace .cms-workspace-header { border-bottom: 0; padding-bottom: 0; }
 .cms-workspace .area-navigation { margin-bottom: 0; }
+
+/* Mail reuses the Studio form controls and keeps long addresses inside their cells. */
+.studio-portal .mail-filter-form {display:flex;flex-wrap:wrap;align-items:end;gap:14px;}
+.studio-portal .mail-filter-form > .field {flex:1 1 180px;min-width:0;}
+.studio-portal .mail-filter-form > .check {flex:0 1 auto;}
+.studio-portal .mail-product-form > fieldset {grid-template-columns:repeat(2,minmax(0,1fr));}
+.studio-portal .mail-product-form > fieldset > .field:has(textarea),
+.studio-portal .mail-product-form > fieldset > .check,
+.studio-portal .mail-product-form > fieldset > fieldset,
+.studio-portal .mail-product-form > fieldset > button {grid-column:1/-1;}
+.studio-portal .mail-product-form > fieldset > button {justify-self:start;}
+@media(max-width:700px){.studio-portal .mail-product-form > fieldset {grid-template-columns:minmax(0,1fr);}.studio-portal .mail-filter-form > .field{flex-basis:100%;}}
+.studio-portal .webmail-html {display:block;box-sizing:border-box;width:100%;min-height:260px;border:1px solid var(--line);border-radius:6px;background:#fff;}
+
+.mail-metric > p { font-size: 2rem; font-weight: 650; line-height: 1.15; margin-block: .65rem 0; }
+
+.mail-getting-started ol { padding-inline-start: 1.5rem; max-width: 75ch; }
+.mail-getting-started li { padding-inline-start: .4rem; margin-block: 1rem; }
+.mail-getting-started li p { margin-block: .35rem 0; color: var(--muted); }

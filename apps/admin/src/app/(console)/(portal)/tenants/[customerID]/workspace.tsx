@@ -32,6 +32,7 @@ export async function TenantWorkspace({
     throw error;
   }
   const { tenant, canManage, operator, sites, members, invitations } = data;
+  const owner = operator || tenant.member_role === "owner";
   const bridges = demoBridges();
   return (
     <div className="access-page">
@@ -152,7 +153,7 @@ export async function TenantWorkspace({
 
           <section className="account-section">
             <h2>{i18n.t("People")}</h2>
-            <p className="muted">{i18n.t("Administrators can edit this profile and invite people. Existing role changes and removals are managed by your Webdock operator.")}</p>
+            <p className="muted">{i18n.t("Admins manage members. Owners manage admins and owners. Removing membership immediately removes workspace access.")}</p>
             <div className="access-grid">
               {members.map((member) => (
                 <article className="access-record" key={member.id}>
@@ -169,7 +170,7 @@ export async function TenantWorkspace({
                   </p>
                   <p className="muted">{["admin","owner"].includes(member.role) ? i18n.t("Website administrator rights come from this workspace role. Explicitly revoked website access still blocks access.") : i18n.t("Website permissions are assigned individually. Workspace membership alone does not grant editing rights.")}</p>
                   {operator && <p><Link href={"/people?"+new URLSearchParams({view:"permissions",q:member.email})}>{i18n.t("Review this person's website permissions")}</Link></p>}
-                  {operator && (
+                  {(owner || member.role === "member") && (
                     <details>
                       <summary>{i18n.t("Manage membership")}</summary>
                       <TenantForm
@@ -178,7 +179,7 @@ export async function TenantWorkspace({
                         label={i18n.t("Update tenant role")}
                       >
                         <input type="hidden" name="member" value={member.id} />
-                        <TenantRole value={member.role} />
+                        <TenantRole value={member.role} allowOwner={owner} memberOnly={!owner} />
                       </TenantForm>
                       <TenantForm
                         customer={customerID}

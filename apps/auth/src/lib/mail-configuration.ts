@@ -58,7 +58,7 @@ export async function claimMailConfiguration(agent: Agent) {
     const credentials = openSecret<{ username?: string; password?: string; bootstrapPassword?: string }>(current.encrypted_credentials, `instance:${customerID}`, settings.key);
     if (!credentials.username || !credentials.password || credentials.bootstrapPassword) unavailable();
     const hostname = `mail-${customerID}.${settings.suffix}`;
-    const domains: Domain[] = (await db.query(`SELECT d.id,d.name,d.provider_id AS "providerId",s.status='ownership_verified' AS "ownershipVerified" FROM webdock_mail.domain d JOIN webdock_auth.mail_sender_domain s ON s.id=d.sender_domain_id AND s.customer_id=d.customer_id WHERE d.customer_id=$1 ORDER BY d.id`, [customerID])).rows;
+    const domains: Domain[] = (await db.query(`SELECT d.id,d.name,d.provider_id AS "providerId",(s.status='ownership_verified' AND s.deleted_at IS NULL) AS "ownershipVerified" FROM webdock_mail.domain d JOIN webdock_auth.mail_sender_domain s ON s.id=d.sender_domain_id AND s.customer_id=d.customer_id WHERE d.customer_id=$1 ORDER BY d.id`, [customerID])).rows;
     const mailboxes: Mailbox[] = (await db.query(`SELECT id,domain_id AS "domainId",local_part AS "localPart",quota_bytes::float8 AS "quotaBytes",provider_id AS "providerId" FROM webdock_mail.mailbox WHERE customer_id=$1 AND enabled ORDER BY id`, [customerID])).rows;
     const rows = (await db.query(`SELECT i.*,NOT coalesce(u.banned,false) AND u."emailVerified" AND NOT u."mustChangePassword" AND
       ((u.role='operator' AND u."twoFactorEnabled") OR (u.role='user' AND EXISTS(SELECT 1 FROM webdock_auth.member m JOIN webdock_auth.tenant_customer t ON t.organization_id=m."organizationId" WHERE m."userId"=u.id AND t.customer_id=i.customer_id))) AS allowed

@@ -36,7 +36,7 @@ export async function executeMailboxes(db: Connection, actor: MailActor, custome
       LEFT JOIN webdock_mail.identity i ON i.customer_id=b.customer_id AND i.subject=$2
       WHERE b.customer_id=$1 AND ($3 OR g.enabled) ORDER BY b.name,b.id LIMIT 64`, [customerID, actor.subject, access.canManage, access.memberID, access.operator, Boolean(access.service?.ready)])).rows;
     const domains = (await db.query("SELECT id,name,state,dkim_keys AS \"dkimKeys\" FROM webdock_mail.domain WHERE customer_id=$1 ORDER BY name LIMIT 32", [customerID])).rows;
-    const verifiedDomains = access.canManage ? (await db.query("SELECT id,domain FROM webdock_auth.mail_sender_domain WHERE customer_id=$1 AND status='ownership_verified' ORDER BY domain LIMIT 32", [customerID])).rows : [];
+    const verifiedDomains = access.canManage ? (await db.query("SELECT id,domain FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND customer_id=$1 AND status='ownership_verified' ORDER BY domain LIMIT 32", [customerID])).rows : [];
     const people = access.canManage ? (await db.query(`SELECT u.id,u.name,u.email FROM webdock_auth."user" u WHERE NOT coalesce(u.banned,false) AND u."emailVerified" AND NOT u."mustChangePassword" AND
       (($2 AND u.role='operator' AND u."twoFactorEnabled") OR EXISTS(SELECT 1 FROM webdock_auth.member m JOIN webdock_auth.tenant_customer t ON t.organization_id=m."organizationId" WHERE m."userId"=u.id AND t.customer_id=$1)) ORDER BY u.name LIMIT 128`, [customerID, access.operator])).rows : [];
     const grants = access.canManage ? (await db.query(`SELECT mailbox_id AS "mailboxID",subject,enabled,revision FROM webdock_mail.mailbox_grant WHERE customer_id=$1 ORDER BY mailbox_id,subject LIMIT 256`, [customerID])).rows : [];
@@ -56,7 +56,7 @@ export async function executeMailboxes(db: Connection, actor: MailActor, custome
     return { ok: true };
   }
   if (command.action === "domain.attach") {
-    const source = (await db.query("SELECT domain,status FROM webdock_auth.mail_sender_domain WHERE id=$1 AND customer_id=$2 FOR SHARE", [command.senderDomainID, customerID])).rows[0];
+    const source = (await db.query("SELECT domain,status FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND id=$1 AND customer_id=$2 FOR SHARE", [command.senderDomainID, customerID])).rows[0];
     if (!source || source.status !== "ownership_verified") fail("Verify domain ownership before enabling mailboxes.");
     const name = normalizeMailDomain(source.domain);
     const existing = (await db.query("SELECT id FROM webdock_mail.domain WHERE sender_domain_id=$1 AND customer_id=$2", [command.senderDomainID, customerID])).rows[0];
@@ -68,7 +68,7 @@ export async function executeMailboxes(db: Connection, actor: MailActor, custome
   }
   if (command.action === "mailbox.create") {
     const domain = (await db.query(`SELECT d.id FROM webdock_mail.domain d JOIN webdock_auth.mail_sender_domain s ON s.id=d.sender_domain_id AND s.customer_id=d.customer_id
-      WHERE d.customer_id=$1 AND d.id=$2 AND s.status='ownership_verified' FOR SHARE OF d,s`, [customerID, command.domainID])).rows[0];
+      WHERE d.customer_id=$1 AND d.id=$2 AND s.deleted_at IS NULL AND s.status='ownership_verified' FOR SHARE OF d,s`, [customerID, command.domainID])).rows[0];
     if (!domain) mailUnavailable();
     const used = (await db.query("SELECT count(*)::int AS count,coalesce(sum(quota_bytes),0)::text AS bytes FROM webdock_mail.mailbox WHERE customer_id=$1", [customerID])).rows[0];
     // Keep 2 GiB of the fixed 10 GiB instance volume for identities and database overhead.

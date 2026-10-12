@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-12T16:18:06.126Z",
+  "environment": "isolated local PostgreSQL 17",
+  "backupBytes": 460297,
+  "counts": {
+    "mail_connection": 10,
+    "mail_message": 3,
+    "mail_event": 4,
+    "mail_api_key": 1,
+    "mail_sender_domain": 10,
+    "mail_webhook_delivery": 1,
+    "mail_idempotency": 3
+  },
+  "encryptedSentinelRestored": true,
+  "webhookSecretRestored": true,
+  "unknownOutcomePreserved": true,
+  "productionRestore": false
+}

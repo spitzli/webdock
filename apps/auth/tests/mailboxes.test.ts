@@ -38,6 +38,10 @@ test("management does not grant mailbox access; explicit grants and current memb
     await assert.rejects(run(actors[1],{action:'domain.attach',senderDomainID:sender}), /ownership/);
     await database.query("UPDATE webdock_auth.mail_sender_domain SET status='ownership_verified' WHERE id=$1",[sender]);
     const domain = await run(actors[1],{action:'domain.attach',senderDomainID:sender}) as {id:string};
+    await database.query("UPDATE webdock_auth.mail_sender_domain SET deleted_at=now() WHERE id=$1",[sender]);
+    await assert.rejects(run(actors[1],{action:'domain.attach',senderDomainID:sender}));
+    await assert.rejects(run(actors[1],{action:'mailbox.create',domainID:domain.id,localPart:'deleted',name:'Deleted',quotaBytes:1048576}));
+    await database.query("UPDATE webdock_auth.mail_sender_domain SET deleted_at=NULL WHERE id=$1",[sender]);
     const mailbox = await run(actors[1],{action:'mailbox.create',domainID:domain.id,localPart:'support',name:'Support',quotaBytes:1048576}) as {id:string};
     for(const actor of actors.slice(0,2)) await assert.rejects(transaction(db=>authorizeMailbox(db,actor,customerID,mailbox.id)));
     await assert.rejects(run(actors[1],{action:'grant',mailboxID:mailbox.id,subject:actors[2].subject}));

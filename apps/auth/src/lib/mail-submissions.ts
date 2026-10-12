@@ -15,7 +15,7 @@ export const sendEnvelope=z.object({from:address,to:z.array(address).min(1).max(
 export const admissionSchema=z.object({token:nativeKeyToken,idempotencyKey:z.string().regex(/^[\x21-\x7e]{1,200}$/),requestHash:z.string().regex(/^[a-f0-9]{64}$/),payloadRef:z.string().uuid(),payloadBytes:z.number().int().positive().max(26214400),envelope:sendEnvelope,notBefore:z.string().datetime().optional()}).strict();
 async function transport(db:Connection,customerID:string,from:string){
  const domain=from.split('@')[1];
- const owned=(await db.query("SELECT * FROM webdock_auth.mail_sender_domain WHERE customer_id=$1 AND domain=$2 AND status='ownership_verified' AND provider_operation IS NULL FOR SHARE",[customerID,domain])).rows[0];
+ const owned=(await db.query("SELECT * FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND customer_id=$1 AND domain=$2 AND status='ownership_verified' AND provider_operation IS NULL FOR SHARE",[customerID,domain])).rows[0];
  if(!owned)mailUnavailable();
  const connection=await nativeRelay(db,customerID);
  const snapshot=connection.mode==='byok'?connection.domains.find((entry)=>typeof entry==='object' && entry!==null && (entry as {domain?:string}).domain===domain) as Record<string,unknown>|undefined:owned.provider_snapshot;

@@ -60,3 +60,11 @@ docker build --network none -f infra/mail/Dockerfile -t webdock.local/mail-stalw
 
 Production configuration uses the resulting immutable repository digest, never
 this mutable build tag. See the [Mail agent setup](../../apps/hosting-agent/README.md#native-mail-agent-profile).
+
+## Mail product ticks
+
+`cronjobs.yaml` is a suspended template for the existing control namespace, not
+for the isolated customer mailbox namespaces. It calls the four production Auth
+job handlers and contains no worker implementation or embedded secret. Confirm
+one scheduler and provision `webdock-mail-cron` through the existing secret manager
+before enabling anything. See [Mail operations](../../docs/architecture/mail-operations.md).

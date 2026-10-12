@@ -9,6 +9,16 @@ import {
 
 const input = { name: "Webdock QA", supportEmail: "support@example.invalid", cmsEnabled: "yes", mailEnabled: "yes", mailSendingIP: "203.0.113.5", mailDefaultLimit: "1000", mailRegion: "eu" };
 test.after(() => database.end());
+test("mail gateway controls default off and can be set independently", () => {
+  const defaults=validatePlatformSettings(input);
+  assert.equal(defaults.mailGatewayEnabled,false);
+  assert.equal(defaults.mailDispatchEnabled,false);
+  assert.equal(defaults.mailWebhooksEnabled,false);
+  const enabled=validatePlatformSettings({...input,mailGatewayEnabled:"yes",mailDispatchEnabled:"",mailWebhooksEnabled:"yes"});
+  assert.equal(enabled.mailGatewayEnabled,true);
+  assert.equal(enabled.mailDispatchEnabled,false);
+  assert.equal(enabled.mailWebhooksEnabled,true);
+});
 test("platform configuration validates actual settings and encrypted secrets bind their purpose", () => {
   assert.equal(validatePlatformSettings(input).mailEnabled, true);
   for (const override of [{ name: "" }, { supportEmail: "bad\naddress" }, { mailSendingIP: "localhost" }, { mailDefaultLimit: "-1" }, { mailDefaultLimit: "1e3" }, { mailRegion: "unknown" }])

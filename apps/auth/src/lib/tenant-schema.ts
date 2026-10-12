@@ -1,5 +1,6 @@
+import {tenantOwnerSchemaSQL} from "./tenant-owner-schema";
 /** Run with the offline database owner; never grant Studio direct auth-table access. */
-export const tenantSchemaSQL = `
+const tenantBaseSchemaSQL = `
 CREATE TABLE IF NOT EXISTS webdock_auth.tenant_customer (
  customer_id varchar PRIMARY KEY REFERENCES webdock_admin.customers(id) ON DELETE RESTRICT,
  organization_id text NOT NULL UNIQUE REFERENCES webdock_auth.organization(id) ON DELETE RESTRICT
@@ -39,3 +40,5 @@ export function tenantProfileGrants(role: string) {
 GRANT SELECT(id,status,created_at,${write}), UPDATE(${write}) ON webdock_admin.customers TO "${role}";
 GRANT SELECT, REFERENCES(customer_id) ON webdock_auth.tenant_customer TO "${role}";`;
 }
+
+export const tenantSchemaSQL = tenantBaseSchemaSQL + tenantOwnerSchemaSQL;

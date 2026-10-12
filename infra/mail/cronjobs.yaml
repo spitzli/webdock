@@ -1,0 +1,213 @@
+# Reviewed template for the existing control namespace; suspended until release.
+# Install exactly one scheduler. Secret is supplied separately, never committed.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: webdock-mail-dispatch
+  labels:
+    app.kubernetes.io/part-of: webdock-mail
+spec:
+  schedule: "* * * * *"
+  timeZone: Etc/UTC
+  suspend: true
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 30
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 55
+      backoffLimit: 0
+      template:
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 100
+            runAsGroup: 101
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: tick
+              image: curlimages/curl:8.22.0@sha256:58adaa4e8dca9c988bae2aba4ab3434a0bb2da16bbe3f92dec39ec7785166777
+              command: [sh, -ec]
+              args:
+                - 'printf "header = \"Authorization: Bearer %s\"\n" "$CRON_SECRET" | curl --config - --silent --show-error --fail --max-time 50 --connect-timeout 5 "https://auth.webdock.dev/api/cron/mail/dispatch"'
+              env:
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: webdock-mail-cron
+                      key: CRON_SECRET
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 16Mi
+                limits:
+                  cpu: 100m
+                  memory: 32Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: webdock-mail-events
+  labels:
+    app.kubernetes.io/part-of: webdock-mail
+spec:
+  schedule: "* * * * *"
+  timeZone: Etc/UTC
+  suspend: true
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 30
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 55
+      backoffLimit: 0
+      template:
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 100
+            runAsGroup: 101
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: tick
+              image: curlimages/curl:8.22.0@sha256:58adaa4e8dca9c988bae2aba4ab3434a0bb2da16bbe3f92dec39ec7785166777
+              command: [sh, -ec]
+              args:
+                - 'printf "header = \"Authorization: Bearer %s\"\n" "$CRON_SECRET" | curl --config - --silent --show-error --fail --max-time 50 --connect-timeout 5 "https://auth.webdock.dev/api/cron/mail/events"'
+              env:
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: webdock-mail-cron
+                      key: CRON_SECRET
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 16Mi
+                limits:
+                  cpu: 100m
+                  memory: 32Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: webdock-mail-webhooks
+  labels:
+    app.kubernetes.io/part-of: webdock-mail
+spec:
+  schedule: "* * * * *"
+  timeZone: Etc/UTC
+  suspend: true
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 30
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 55
+      backoffLimit: 0
+      template:
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 100
+            runAsGroup: 101
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: tick
+              image: curlimages/curl:8.22.0@sha256:58adaa4e8dca9c988bae2aba4ab3434a0bb2da16bbe3f92dec39ec7785166777
+              command: [sh, -ec]
+              args:
+                - 'printf "header = \"Authorization: Bearer %s\"\n" "$CRON_SECRET" | curl --config - --silent --show-error --fail --max-time 50 --connect-timeout 5 "https://auth.webdock.dev/api/cron/mail/webhooks"'
+              env:
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: webdock-mail-cron
+                      key: CRON_SECRET
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 16Mi
+                limits:
+                  cpu: 100m
+                  memory: 32Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: webdock-mail-maintenance
+  labels:
+    app.kubernetes.io/part-of: webdock-mail
+spec:
+  schedule: "17 * * * *"
+  timeZone: Etc/UTC
+  suspend: true
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 30
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 55
+      backoffLimit: 0
+      template:
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 100
+            runAsGroup: 101
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: tick
+              image: curlimages/curl:8.22.0@sha256:58adaa4e8dca9c988bae2aba4ab3434a0bb2da16bbe3f92dec39ec7785166777
+              command: [sh, -ec]
+              args:
+                - 'printf "header = \"Authorization: Bearer %s\"\n" "$CRON_SECRET" | curl --config - --silent --show-error --fail --max-time 50 --connect-timeout 5 "https://auth.webdock.dev/api/cron/mail/maintenance"'
+              env:
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: webdock-mail-cron
+                      key: CRON_SECRET
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 16Mi
+                limits:
+                  cpu: 100m
+                  memory: 32Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]

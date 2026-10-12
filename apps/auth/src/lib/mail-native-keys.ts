@@ -9,7 +9,7 @@ const tokenHash=(value:string)=>createHash('sha256').update(value).digest('hex')
 export async function authorizeMailKey(db:Connection,value:string,sender?:string){
  requireNativeSending();nativeKeyToken.parse(value);
  const key=(await db.query(`SELECT k.*,d.domain,d.status AS domain_status FROM webdock_mail.api_key k
- LEFT JOIN webdock_auth.mail_sender_domain d ON d.id=k.domain_id AND d.customer_id=k.customer_id
+ LEFT JOIN webdock_auth.mail_sender_domain d ON d.deleted_at IS NULL AND d.id=k.domain_id AND d.customer_id=k.customer_id
  WHERE k.token_hash=$1 AND k.revoked_at IS NULL FOR SHARE OF k`,[tokenHash(value)])).rows[0];
  if(!key)mailUnavailable();
  return authorizeKeyRow(db,key,sender);
@@ -18,7 +18,7 @@ export async function authorizeMailKey(db:Connection,value:string,sender?:string
 export async function authorizeMailKeyID(db:Connection,customerID:string,keyID:string,sender?:string){
  requireNativeSending();
  const key=(await db.query(`SELECT k.*,d.domain,d.status AS domain_status FROM webdock_mail.api_key k
- LEFT JOIN webdock_auth.mail_sender_domain d ON d.id=k.domain_id AND d.customer_id=k.customer_id
+ LEFT JOIN webdock_auth.mail_sender_domain d ON d.deleted_at IS NULL AND d.id=k.domain_id AND d.customer_id=k.customer_id
  WHERE k.id=$1 AND k.customer_id=$2 AND k.revoked_at IS NULL FOR SHARE OF k`,[keyID,customerID])).rows[0];
  if(!key)mailUnavailable();return authorizeKeyRow(db,key,sender);
 }
@@ -45,7 +45,7 @@ export async function manageNativeMailKey(db:Connection,actor:MailActor,customer
   return {id:command.keyID};
  }
  if((await db.query('SELECT count(*)::int AS count FROM webdock_mail.api_key WHERE customer_id=$1 AND revoked_at IS NULL',[customerID])).rows[0].count>=100)mailUnavailable();
- if(command.domainID && !(await db.query("SELECT id FROM webdock_auth.mail_sender_domain WHERE id=$1 AND customer_id=$2 AND status='ownership_verified' FOR SHARE",[command.domainID,customerID])).rowCount)mailUnavailable();
+ if(command.domainID && !(await db.query("SELECT id FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND id=$1 AND customer_id=$2 AND status='ownership_verified' FOR SHARE",[command.domainID,customerID])).rowCount)mailUnavailable();
  if(!(await db.query("SELECT id FROM webdock_auth.platform_settings WHERE id=true AND settings->>'mailEnabled'='true' FOR SHARE")).rowCount)mailUnavailable();
  const token='wd_mail_'+randomBytes(32).toString('base64url');
  const row=(await db.query(`INSERT INTO webdock_mail.api_key(customer_id,label,token_hash,key_suffix,domain_restricted,domain_id,created_by)

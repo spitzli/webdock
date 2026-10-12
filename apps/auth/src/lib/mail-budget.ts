@@ -59,7 +59,8 @@ export async function reserveMailBudget(db:Connection,customerID:string,referenc
   await db.query("INSERT INTO webdock_mail.month_usage(customer_id,period_start) VALUES($1,$2) ON CONFLICT DO NOTHING",[customerID,period]);
   const usage=(await db.query("SELECT reserved,accepted FROM webdock_mail.month_usage WHERE customer_id=$1 AND period_start=$2 FOR UPDATE",[customerID,period])).rows[0];
   const additional=existing?.period===period?0:units;
-  if(limit!==null && BigInt(usage.reserved)+BigInt(usage.accepted)+BigInt(additional)>limit)fail("Monthly Mail allowance exhausted.");
+  const gateway=(await db.query("SELECT to_regclass('webdock_auth.mail_usage_period') AS present")).rows[0].present?BigInt((await db.query("SELECT coalesce(sum(reserved+consumed),0)::text AS used FROM webdock_auth.mail_usage_period WHERE customer_id=$1 AND period=$2",[customerID,period])).rows[0].used):0n;
+  if(limit!==null && BigInt(usage.reserved)+BigInt(usage.accepted)+gateway+BigInt(additional)>limit)fail("Monthly Mail allowance exhausted.");
   if(existing){
     // Scheduled/backlogged mail is charged to the month of dispatch, without double reserving.
     if(existing.period!==period){

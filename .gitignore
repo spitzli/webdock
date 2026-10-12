@@ -13,3 +13,5 @@ test-results/
 playwright-report/
 .DS_Store
 *.pem
+# Generated from the pinned dependency by Auth prebuild/predev.
+apps/auth/public/vendor/scalar/

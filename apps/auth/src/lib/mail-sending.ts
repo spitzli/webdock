@@ -18,7 +18,7 @@ export async function getNativeSending(headers:Headers,customerID:string){
   const state=connection?.state==='ready' && access.service?.desired_enabled?(submission?.submission_state??'pending'):connection?.state;
   const transport=connection?{mode:connection.mode,state,canConfigure:!['pending','needs_review'].includes(connection.state) && state!=='pending'}:null;
   const keys=(await db.query('SELECT id,label,key_suffix AS suffix,revoked_at AS "revokedAt" FROM webdock_mail.api_key WHERE customer_id=$1 ORDER BY created_at DESC LIMIT 100',[customerID])).rows;
-  const domains=(await db.query("SELECT id,domain FROM webdock_auth.mail_sender_domain WHERE customer_id=$1 AND status='ownership_verified' ORDER BY domain",[customerID])).rows;
+  const domains=(await db.query("SELECT id,domain FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND customer_id=$1 AND status='ownership_verified' ORDER BY domain",[customerID])).rows;
   return {customerID,transport,keys,domains,byokAllowed:(await byokPolicy(db,customerID)).turbosmtp,apiOrigin};
  });
 }

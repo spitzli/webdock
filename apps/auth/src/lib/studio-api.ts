@@ -1,3 +1,6 @@
+import {mailStudioShapes,dispatchMailStudio} from './mail-product/studio';
+import {MailError} from './mail-product/access';
+import {MailValidationError} from '@webdock/mail-contracts/validation';
 import {getNativeSending,manageNativeSending} from './mail-sending';
 import { getTenantMailboxes, manageTenantMailboxes } from "./mailboxes";
 import { launchTenantWebmail } from "./mail-sessions";
@@ -30,6 +33,7 @@ const isString = (value: unknown): value is string => typeof value === "string" 
 const isInput = (value: unknown): value is Record<string, string> => isObject(value) && Object.keys(value).length <= 100 && Object.values(value).every(isString);
 const isMailKeyInput = (value: unknown): value is MailKeyInput => isObject(value) && isString(value.action) && Object.entries(value).every(([key, field]) => ["permissions", "ips"].includes(key) ? Array.isArray(field) && field.length <= 100 && field.every(isString) : ["action", "label", "consumerKey", "confirm"].includes(key) && isString(field));
 const shapes: Record<string, ((value: unknown) => boolean)[]> = {
+  ...mailStudioShapes,
   startTenantPreview: [isString], exitTenantPreview: [],
   session: [], requireAccessOperator: [], listAccess: [isString], manageAccess: [isInput], accountSites: [],
   listTenants: [], listTenantInvitations: [], getTenant: [isString], manageTenant: [isString, isInput],
@@ -109,6 +113,7 @@ async function delegatedSession(request: Request, accessToken: string, dependenc
 async function dispatch(operation: string, args: unknown[], headers: Headers, safe: Awaited<ReturnType<typeof delegatedSession>>["safe"]) {
   // Shape checks happen before dispatch; every original service still checks live permissions.
   const text = args[0] as string, input = args[0] as Record<string, string>, tenantInput = args[1] as Record<string, string>;
+  if(Object.hasOwn(mailStudioShapes,operation))return dispatchMailStudio(operation,args,headers);
   switch (operation) {
     case "session": return safe;
     case "requireAccessOperator": await requireAccessOperator(headers); return safe;
@@ -181,6 +186,7 @@ export async function handleStudioRequest(request: Request, dependencies: Depend
     else data = await dispatch(operation, args, headers, safe);
     return Response.json({ data: data ?? null }, { headers: responseHeaders });
   } catch (error) {
+    if(error instanceof MailError||error instanceof MailValidationError)return Response.json({error:{kind:'MailProductError',message:error.message}},{status:error instanceof MailError?error.status:422,headers:responseHeaders});
     const known = ([["AccessError", AccessError], ["PlanError", PlanError], ["TenantMailError", TenantMailError], ["MailServiceError", MailServiceError], ["MailDomainsError", MailDomainsError], ["MailKeysError", MailKeysError], ["TrackingError", TrackingError], ["StorageUsageError", StorageUsageError], ["PlatformError", PlatformError]] as const).find(([, type]) => error instanceof type);
     const status = error instanceof RequestError ? error.status : error instanceof AccessError || error instanceof APIError ? 403 : known ? 400 : 500;
     const kind = known?.[0] || (status < 500 ? "AccessError" : "Error");

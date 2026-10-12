@@ -4,13 +4,13 @@ import { useI18n } from '@webdock/i18n/react';
 import { useActionState, type ReactNode } from "react";
 import { trackingAction } from "./actions";
 export function TrackingForm({
-  customer,
+  customer,connection,
   action,
   label,
   children,
   confirm,
 }: {
-  customer: string;
+  customer: string;connection?:string;
   action: string;
   label: string;
   children?: ReactNode;
@@ -21,7 +21,7 @@ export function TrackingForm({
   const [state, submit, pending] = useActionState(trackingAction, {});
   return (
     <form action={submit} className="access-form" aria-busy={pending}>
-      <input type="hidden" name="customer" value={customer} />
+      <input type="hidden" name="customer" value={customer} />{connection&&<input type="hidden" name="connection" value={connection}/>}
       <input type="hidden" name="action" value={action} />
       <fieldset
         disabled={pending}
