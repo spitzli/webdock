@@ -350,6 +350,9 @@
   "Accepted messages": [
     "Angenommene Nachrichten"
   ],
+  "Accepted orders start billing only after confirmed provisioning. Invoice handling remains manual.": [
+    "Die Abrechnung bestätigter Bestellungen beginnt erst nach nachgewiesener Bereitstellung. Die Rechnungsstellung erfolgt weiterhin manuell."
+  ],
   "Accepted recipients": [
     "Angenommene Empfänger"
   ],
@@ -653,6 +656,9 @@
   "All domains": [
     "Alle Domains"
   ],
+  "All project databases": [
+    "Alle Projektdatenbanken"
+  ],
   "All records": [
     "Alle Einträge"
   ],
@@ -842,6 +848,12 @@
   "Application name": [
     "Anwendungsname"
   ],
+  "Application role": [
+    "Anwendungsrolle"
+  ],
+  "Application schema": [
+    "Anwendungsschema"
+  ],
   "Applications": [
     "Anwendungen"
   ],
@@ -1025,6 +1037,9 @@
   "Available in the shop": [
     "Im Shop verfügbar"
   ],
+  "Awaiting provisioning": [
+    "Wartet auf Bereitstellung"
+  ],
   "Back": [
     "Zurück"
   ],
@@ -1073,8 +1088,20 @@
   "Background": [
     "Hintergrund"
   ],
+  "Backup TODO": [
+    "Backups: noch offen"
+  ],
   "Backup codes aren't enabled": [
     "Wiederherstellungscodes sind nicht aktiviert."
+  ],
+  "Backups": [
+    "Datensicherungen"
+  ],
+  "Backups are not configured. No recovery window is included.": [
+    "Backups sind nicht eingerichtet. Ein Wiederherstellungszeitraum ist nicht enthalten."
+  ],
+  "Backups are not configured. Permanent deletion cannot be undone.": [
+    "Backups sind nicht eingerichtet. Eine endgültige Löschung kann nicht rückgängig gemacht werden."
   ],
   "Base plan": [
     "Basistarif"
@@ -1093,6 +1120,9 @@
   ],
   "Before sending": [
     "Vor dem Versand"
+  ],
+  "Billing starts after confirmed provisioning. Pausing does not reduce the monthly price.": [
+    "Die Abrechnung beginnt nach bestätigter Bereitstellung. Pausieren verringert den Monatspreis nicht."
   ],
   "Bind Vercel target": [
     "Vercel-Ziel zuordnen"
@@ -1139,6 +1169,9 @@
   "Bounced": [
     "Unzustellbar"
   ],
+  "Bounded database filesystem": [
+    "Begrenztes Datenbank-Dateisystem"
+  ],
   "Box": [
     "Fläche"
   ],
@@ -1153,6 +1186,9 @@
   ],
   "Broaden your filters to see more workspace activity.": [
     "Erweitere deine Filter, um mehr Aktivitäten im Arbeitsbereich anzuzeigen."
+  ],
+  "Browse data": [
+    "Daten durchsuchen"
   ],
   "Browse existing images for image selection.": [
     "Vorhandene Bilder ansehen und für die Bildauswahl finden."
@@ -1313,6 +1349,9 @@
   "Canceled": [
     "Abgebrochen"
   ],
+  "Cancellation requested. Retained data is deleted separately by an operator.": [
+    "Kündigung angefordert. Aufbewahrte Daten werden separat durch einen Betreiber gelöscht."
+  ],
   "Cancelled": [
     "Abgebrochen"
   ],
@@ -1426,6 +1465,9 @@
   ],
   "Choose a project": [
     "Projekt auswählen"
+  ],
+  "Choose a project to order and manage PostgreSQL.": [
+    "Wähle ein Projekt, um PostgreSQL zu bestellen und zu verwalten."
   ],
   "Choose a repository": [
     "Repository auswählen"
@@ -1901,6 +1943,9 @@
   "Connection": [
     "Verbindung"
   ],
+  "Connection credentials": [
+    "Verbindungsdaten"
+  ],
   "Connection details": [
     "Verbindungsdaten"
   ],
@@ -2037,6 +2082,9 @@
   "Continue to your workspace": [
     "Weiter zu deinem Arbeitsbereich"
   ],
+  "Contract terms": [
+    "Vertragsbedingungen"
+  ],
   "Control plane": [
     "Steuerungsknoten"
   ],
@@ -2072,6 +2120,9 @@
   ],
   "Copy link": [
     "Link kopieren"
+  ],
+  "Copy password": [
+    "Passwort kopieren"
   ],
   "Copy this URL from your MCP client. Wildcards are not supported.": [
     "Kopiere diese URL aus deinem MCP-Client. Platzhalter werden nicht unterstützt."
@@ -2208,6 +2259,9 @@
   "Create customer group": [
     "Kundengruppe erstellen"
   ],
+  "Create disabled plan": [
+    "Deaktivierten Tarif anlegen"
+  ],
   "Create draft": [
     "Entwurf anlegen"
   ],
@@ -2237,6 +2291,9 @@
   ],
   "Create sending account": [
     "Versandkonto erstellen"
+  ],
+  "Create shared pool": [
+    "Shared-Pool anlegen"
   ],
   "Create tracking domain": [
     "Tracking-Domain erstellen"
@@ -2397,6 +2454,9 @@
   "Customer records keep contact details and related projects together.": [
     "Kundeneinträge bündeln Kontaktdaten und zugehörige Projekte."
   ],
+  "Customer self-service": [
+    "Kundenselbstbedienung"
+  ],
   "Customer services": [
     "Kundendienste"
   ],
@@ -2466,11 +2526,23 @@
   "Data is stored at /data and remains after application deletion.": [
     "Daten werden unter /data gespeichert und bleiben nach dem Löschen der Anwendung erhalten."
   ],
+  "Database": [
+    "Datenbank"
+  ],
   "Database access is unavailable.": [
     "Der Datenbankzugriff ist nicht verfügbar."
   ],
+  "Database actions": [
+    "Datenbankaktionen"
+  ],
+  "Database areas": [
+    "Datenbankbereiche"
+  ],
   "Database authentication is unavailable.": [
     "Die Datenbankanmeldung ist nicht verfügbar."
+  ],
+  "Database catalog": [
+    "Datenbankkatalog"
   ],
   "Database configuration could not be saved.": [
     "Die Datenbankkonfiguration konnte nicht gespeichert werden."
@@ -2481,14 +2553,29 @@
   "Database engine": [
     "Datenbanktyp"
   ],
+  "Database filesystem usage": [
+    "Belegung des Datenbank-Dateisystems"
+  ],
   "Database gateway is not configured.": [
     "Das Datenbank-Gateway ist noch nicht eingerichtet."
+  ],
+  "Database installations": [
+    "Datenbankinstallationen"
+  ],
+  "Database kind": [
+    "Datenbankart"
   ],
   "Database ownership does not match this website.": [
     "Der Datenbankeigentümer stimmt nicht mit dieser Website überein."
   ],
   "Database permission": [
     "Datenbankberechtigung"
+  ],
+  "Database plan": [
+    "Datenbanktarif"
+  ],
+  "Database plan saved as disabled.": [
+    "Datenbanktarif wurde deaktiviert gespeichert."
   ],
   "Database schema": [
     "Datenbankschema"
@@ -2517,6 +2604,9 @@
   "Declined": [
     "Abgelehnt"
   ],
+  "Dedicated PostgreSQL process and bounded database filesystem.": [
+    "Eigener PostgreSQL-Prozess und begrenztes Datenbank-Dateisystem."
+  ],
   "Dedicated customer": [
     "Zugeordneter Kunde"
   ],
@@ -2525,6 +2615,9 @@
   ],
   "Dedicated domain": [
     "Dedizierte Domain"
+  ],
+  "Dedicated instance": [
+    "Eigene Instanz"
   ],
   "Dedicated to this sender domain": [
     "Dieser Absenderdomain zugeordnet"
@@ -2543,6 +2636,12 @@
   ],
   "Delete project": [
     "Projekt löschen"
+  ],
+  "Delete retained migration source": [
+    "Aufbewahrte Migrationsquelle löschen"
+  ],
+  "Delete retained source": [
+    "Aufbewahrte Quelle löschen"
   ],
   "Delete the application before removing retained storage.": [
     "Lösche zuerst die Anwendung, bevor du aufbewahrte Daten entfernst."
@@ -2645,6 +2744,9 @@
   ],
   "Development": [
     "Entwicklung"
+  ],
+  "Direct / pooled port": [
+    "Direkter Port / Pooler-Port"
   ],
   "Disable access": [
     "Zugriff deaktivieren"
@@ -2792,6 +2894,9 @@
   ],
   "Dominik Spitzli, trading as Spitzli Development, is responsible for this processing. For privacy questions, access or deletion requests, email": [
     "Für diese Verarbeitung ist Dominik Spitzli, tätig unter Spitzli Development, verantwortlich. Bei Datenschutzfragen sowie Auskunfts- oder Löschanfragen schreibe an"
+  ],
+  "Download CA certificate": [
+    "CA-Zertifikat herunterladen"
   ],
   "Download agent": [
     "Agent herunterladen"
@@ -2994,6 +3099,12 @@
   "Enabled": [
     "Aktiviert"
   ],
+  "End service and retain data": [
+    "Dienst beenden und Daten aufbewahren"
+  ],
+  "Ended": [
+    "Beendet"
+  ],
   "Endpoint URL": [
     "Endpunkt-URL"
   ],
@@ -3191,6 +3302,9 @@
   ],
   "Explore project data with Tabularis.": [
     "Projektdaten mit Tabularis erkunden."
+  ],
+  "External backups, WAL archiving, PITR and restore verification are deferred. No backup service is active.": [
+    "Externe Backups, WAL-Archivierung, zeitpunktbezogene Wiederherstellung und Wiederherstellungstests sind zurückgestellt. Es ist kein Backupdienst aktiv."
   ],
   "External build variables are unsupported.": [
     "Externe Build-Variablen werden nicht unterstützt."
@@ -3513,6 +3627,9 @@
   "Hidden": [
     "Ausgeblendet"
   ],
+  "Hide credentials": [
+    "Zugangsdaten ausblenden"
+  ],
   "Hide in this view": [
     "In dieser Ansicht ausblenden"
   ],
@@ -3530,6 +3647,9 @@
   ],
   "Homepage image": [
     "Startseitenbild"
+  ],
+  "Host": [
+    "Host"
   ],
   "Hosting": [
     "Hosting"
@@ -3618,8 +3738,14 @@
   "How do I get a Webdock subdomain?": [
     "Wie bekomme ich eine Webdock-Subdomain?"
   ],
+  "I accept this monthly price and the displayed terms.": [
+    "Ich akzeptiere diesen Monatspreis und die angezeigten Bedingungen."
+  ],
   "I accept this offer and its stated terms, and want to assign this plan to my tenant.": [
     "Ich nehme dieses Angebot und die genannten Bedingungen an und möchte meinem Mandanten diesen Tarif zuweisen."
+  ],
+  "I agree to interrupt database connections for this upgrade now.": [
+    "Ich stimme zu, Datenbankverbindungen für dieses Upgrade jetzt zu unterbrechen."
   ],
   "I am authorized to create this provider subaccount and accept its": [
     "Ich bin berechtigt, dieses Anbieter-Unterkonto zu erstellen, und akzeptiere dessen"
@@ -3638,6 +3764,9 @@
   ],
   "I have saved my recovery codes.": [
     "Ich habe meine Wiederherstellungscodes sicher gespeichert."
+  ],
+  "ID": [
+    "ID"
   ],
   "IDs cannot be changed.": [
     "IDs können nicht geändert werden."
@@ -4314,6 +4443,9 @@
   "Loading your workspace…": [
     "Arbeitsbereich wird geladen …"
   ],
+  "Loading…": [
+    "Wird geladen…"
+  ],
   "Local HTTP SSO is restricted to non-production localhost and 127.0.0.1 origins": [
     "Lokales HTTP-SSO ist nur außerhalb der Produktion über localhost und 127.0.0.1 erlaubt."
   ],
@@ -4340,6 +4472,9 @@
   ],
   "Location evidence": [
     "Standortnachweis"
+  ],
+  "Logical data size": [
+    "Logische Datenmenge"
   ],
   "Logs": [
     "Logs"
@@ -4683,6 +4818,12 @@
   "Managed Mail uses an account provided by Webdock. BYOK connects your own turboSMTP account using its Consumer key and secret.": [
     "Managed Mail nutzt ein von Webdock bereitgestelltes Konto. BYOK verbindet dein eigenes turboSMTP-Konto über dessen Consumer-Key und Secret."
   ],
+  "Managed PostgreSQL": [
+    "Verwaltetes PostgreSQL"
+  ],
+  "Managed PostgreSQL billing": [
+    "Abrechnung für Managed PostgreSQL"
+  ],
   "Managed applications": [
     "Verwaltete Anwendungen"
   ],
@@ -4727,6 +4868,9 @@
   ],
   "Maximum turboSMTP sender domains": [
     "Maximale turboSMTP-Versanddomains"
+  ],
+  "Measured logical allowance": [
+    "Gemessenes logisches Kontingent"
   ],
   "Measured storage": [
     "Gemessener Speicherverbrauch"
@@ -4806,6 +4950,9 @@
   "Method not allowed.": [
     "Methode nicht erlaubt."
   ],
+  "Migration role": [
+    "Migrationsrolle"
+  ],
   "Missing": [
     "Fehlt"
   ],
@@ -4823,6 +4970,9 @@
   ],
   "Monthly": [
     "Monatlich"
+  ],
+  "Monthly net price (EUR)": [
+    "Monatspreis netto (EUR)"
   ],
   "More Vercel projects": [
     "Weitere Vercel-Projekte"
@@ -4983,6 +5133,9 @@
   "No Mail account has been set up for this tenant.": [
     "Für diesen Mandanten wurde noch kein Mail-Konto eingerichtet."
   ],
+  "No PostgreSQL installations.": [
+    "Keine PostgreSQL-Installationen vorhanden."
+  ],
   "No Webdock API keys yet.": [
     "Noch keine Webdock-API-Schlüssel vorhanden."
   ],
@@ -4994,6 +5147,9 @@
   ],
   "No accessible installations found. Install the app on a GitHub account and choose the repositories to make available.": [
     "Keine zugänglichen Installationen gefunden. Installiere die App in einem GitHub-Konto und wähle die freizugebenden Repositories aus."
+  ],
+  "No active projects.": [
+    "Keine aktiven Projekte."
   ],
   "No active tenant memberships yet. Accept your emailed invitation to get started.": [
     "Noch keine aktiven Mandantenmitgliedschaften. Nimm die Einladung aus deiner E-Mail an, um loszulegen."
@@ -5055,8 +5211,14 @@
   "No customers yet": [
     "Noch keine Kunden"
   ],
+  "No database plans are available yet.": [
+    "Derzeit sind keine Datenbanktarife verfügbar."
+  ],
   "No databases are available for your account.": [
     "Für dein Konto sind keine Datenbanken freigegeben."
+  ],
+  "No databases ordered.": [
+    "Keine Datenbanken bestellt."
   ],
   "No default tracking domain is selected.": [
     "Keine Standard-Tracking-Domain ausgewählt."
@@ -5217,6 +5379,9 @@
   "No projects yet.": [
     "Noch keine Projekte."
   ],
+  "No qualified PostgreSQL storage agent is available.": [
+    "Es ist kein geprüfter PostgreSQL-Speicheragent verfügbar."
+  ],
   "No recent deployments.": [
     "Keine aktuellen Deployments."
   ],
@@ -5279,6 +5444,9 @@
   ],
   "No. Your project can live on a subdomain such as your-project.webdock.dev. If you would like to use your own domain, we will work out the right setup for your project.": [
     "Nein. Dein Projekt kann auf einer Subdomain wie your-project.webdock.dev laufen. Wenn du eine eigene Domain verwenden möchtest, finden wir die passende Einrichtung für dein Projekt."
+  ],
+  "Node": [
+    "Knoten"
   ],
   "Nodes": [
     "Nodes"
@@ -5562,6 +5730,9 @@
   "Operator or suspended accounts cannot receive customer invitations.": [
     "Betreiberkonten und gesperrte Konten können keine Kundeneinladungen erhalten."
   ],
+  "Operator pilot": [
+    "Betreiberpilot"
+  ],
   "Operator recovery": [
     "Wiederherstellung durch Administrator"
   ],
@@ -5586,8 +5757,14 @@
   "Order": [
     "Reihenfolge"
   ],
+  "Order database with payment obligation": [
+    "Datenbank kostenpflichtig bestellen"
+  ],
   "Order overview": [
     "Bestellübersicht"
+  ],
+  "Ordering…": [
+    "Wird bestellt…"
   ],
   "Orders": [
     "Bestellungen"
@@ -5739,6 +5916,12 @@
   "Path prefix (optional)": [
     "Pfadpräfix (optional)"
   ],
+  "Pause database access": [
+    "Datenbankzugang pausieren"
+  ],
+  "Pause instance": [
+    "Instanz pausieren"
+  ],
   "Pause sending": [
     "Versand pausieren"
   ],
@@ -5747,6 +5930,9 @@
   ],
   "Paused": [
     "Pausiert"
+  ],
+  "Pausing interrupts connections and keeps the fixed monthly price. Shared pause affects only your own roles.": [
+    "Pausieren unterbricht Verbindungen; der feste Monatspreis bleibt bestehen. Bei Shared werden nur die eigenen Rollen gesperrt."
   ],
   "Pausing stops new sends. History and accepted work remain attached to this connection.": [
     "Pausieren stoppt neue Sendungen. Verlauf und bereits angenommene Aufträge bleiben dieser Verbindung zugeordnet."
@@ -5778,11 +5964,17 @@
   "Permanently delete application": [
     "Anwendung endgültig löschen"
   ],
+  "Permanently delete database": [
+    "Datenbank endgültig löschen"
+  ],
   "Permanently delete project": [
     "Projekt endgültig löschen"
   ],
   "Permanently delete retained data": [
     "Aufbewahrte Daten endgültig löschen"
+  ],
+  "Permanently delete retained database": [
+    "Aufbewahrte Datenbank endgültig löschen"
   ],
   "Permanently delete this record?": [
     "Diesen Datensatz endgültig löschen?"
@@ -5810,6 +6002,9 @@
   ],
   "Phone is invalid or too long.": [
     "Telefon ist ungültig oder zu lang."
+  ],
+  "Physical resources are reserved once per installation. Paused and retained resources keep their reservation.": [
+    "Physische Ressourcen werden einmal je Installation reserviert. Pausierte und aufbewahrte Ressourcen behalten ihre Reservierung."
   ],
   "Pickup": [
     "Abholung"
@@ -5846,6 +6041,9 @@
   ],
   "Plan not found.": [
     "Tarif nicht gefunden."
+  ],
+  "Plan terms and prices are immutable. Create a new revision to change them; existing orders keep their accepted terms.": [
+    "Tarifbedingungen und Preise sind unveränderlich. Änderungen erfordern eine neue Fassung; bestehende Bestellungen behalten ihre angenommenen Bedingungen."
   ],
   "Plans": [
     "Tarife"
@@ -5921,6 +6119,9 @@
   ],
   "Postal code is invalid or too long.": [
     "Postleitzahl ist ungültig oder zu lang."
+  ],
+  "PostgreSQL operator management": [
+    "PostgreSQL-Betreiberverwaltung"
   ],
   "Preorder": [
     "Vorbestellung"
@@ -6150,6 +6351,9 @@
   "Provider verification pending": [
     "Anbieterbestätigung ausstehend"
   ],
+  "Provision shared pool": [
+    "Shared-Pool bereitstellen"
+  ],
   "Provisioning": [
     "Wird eingerichtet"
   ],
@@ -6173,6 +6377,9 @@
   ],
   "Public HTTPS endpoint": [
     "Öffentlicher HTTPS-Endpunkt"
+  ],
+  "Public ordering requires a separate product release decision.": [
+    "Öffentliche Bestellungen erfordern eine gesonderte Produktfreigabe."
   ],
   "Publication": [
     "Veröffentlichung"
@@ -6317,6 +6524,9 @@
   ],
   "Recipients": [
     "Empfänger"
+  ],
+  "Reconcile observed state": [
+    "Beobachteten Zustand abgleichen"
   ],
   "Reconcile operation": [
     "Auftrag erneut abgleichen"
@@ -6615,6 +6825,9 @@
   "Request a new link": [
     "Neuen Link anfordern"
   ],
+  "Request cancellation": [
+    "Kündigung anfordern"
+  ],
   "Request is too large.": [
     "Die Anfrage ist zu groß."
   ],
@@ -6663,6 +6876,9 @@
   "Reservation": [
     "Reservierung"
   ],
+  "Reserve observed database pool": [
+    "Geprüften Datenbankpool reservieren"
+  ],
   "Reserve platform capacity and record the verified security baseline. Persistent storage remains disabled until hard storage quotas are available.": [
     "Kapazität für die Plattform reservieren und den geprüften Sicherheitsstand dokumentieren. Persistenter Speicher bleibt gesperrt, bis harte Speicherquotas verfügbar sind."
   ],
@@ -6708,6 +6924,9 @@
   "Restart": [
     "Neu starten"
   ],
+  "Restart instance": [
+    "Instanz neu starten"
+  ],
   "Restore": [
     "Wiederherstellen"
   ],
@@ -6741,14 +6960,29 @@
   "Resume": [
     "Fortsetzen"
   ],
+  "Resume database": [
+    "Datenbank fortsetzen"
+  ],
   "Resume sending": [
     "Versand fortsetzen"
+  ],
+  "Retain database and end service": [
+    "Datenbank aufbewahren und Dienst beenden"
   ],
   "Retained data has been permanently removed. The storage allowance is available again.": [
     "Die aufbewahrten Daten wurden endgültig entfernt. Das Speicherkontingent steht wieder zur Verfügung."
   ],
+  "Retained migration sources": [
+    "Aufbewahrte Migrationsquellen"
+  ],
+  "Retained until": [
+    "Aufbewahrt bis"
+  ],
   "Retention and disconnection": [
     "Speicherdauer und Trennung der Verbindung"
+  ],
+  "Retention has not expired.": [
+    "Die Aufbewahrungsfrist ist noch nicht abgelaufen."
   ],
   "Retired": [
     "Abgelöst"
@@ -6771,6 +7005,12 @@
   "Reusable allocations for your customers. Assign a plan or prepare an individual offer from a tenant’s usage page.": [
     "Wiederverwendbare Kontingente für deine Kunden. Weise über die Verbrauchsseite eines Mandanten einen Tarif zu oder erstelle ein individuelles Angebot."
   ],
+  "Reveal credentials": [
+    "Zugangsdaten anzeigen"
+  ],
+  "Review database deletion": [
+    "Datenbanklöschung prüfen"
+  ],
   "Review incoming requests, update their status and add internal notes.": [
     "Eingänge prüfen, den Status aktualisieren und interne Notizen festhalten."
   ],
@@ -6780,11 +7020,17 @@
   "Review or revoke access on GitHub": [
     "Zugriff auf GitHub prüfen oder widerrufen"
   ],
+  "Review paid order": [
+    "Kostenpflichtige Bestellung prüfen"
+  ],
   "Review requests": [
     "Anfragen bearbeiten"
   ],
   "Review required": [
     "Prüfung erforderlich"
+  ],
+  "Review source cleanup": [
+    "Löschung der Quelle prüfen"
   ],
   "Review the pending domain registration before disconnecting this account.": [
     "Prüfe die ausstehende Domain-Registrierung, bevor du dieses Konto trennst."
@@ -6863,6 +7109,9 @@
   ],
   "Root directory": [
     "Stammverzeichnis"
+  ],
+  "Rotate credentials": [
+    "Zugangsdaten erneuern"
   ],
   "Rotate private sending credential": [
     "Privaten Versandzugang rotieren"
@@ -7380,6 +7629,9 @@
   "Set limit": [
     "Limit festlegen"
   ],
+  "Set plan availability": [
+    "Tarifverfügbarkeit festlegen"
+  ],
   "Set resources in cores, MB or GB. Existing applications keep their allocation.": [
     "Gib Ressourcen in Kernen, MB oder GB an. Bestehende Anwendungen behalten ihre Zuteilung."
   ],
@@ -7419,8 +7671,20 @@
   "Shareable offer link": [
     "Teilbarer Angebotslink"
   ],
+  "Shared": [
+    "Gemeinsam genutzt"
+  ],
+  "Shared CPU and memory; measured logical storage allowance.": [
+    "Gemeinsam genutzte CPU und RAM; gemessenes logisches Speicherkontingent."
+  ],
   "Shared platform cluster": [
     "Gemeinsam genutztes Plattform-Cluster"
+  ],
+  "Shared pool": [
+    "Shared-Pool"
+  ],
+  "Shared resources": [
+    "Gemeinsam genutzte Ressourcen"
   ],
   "Shop customers": [
     "Shop-Kunden"
@@ -7575,6 +7839,9 @@
   "Source": [
     "Quelle"
   ],
+  "Source installation": [
+    "Quellinstallation"
+  ],
   "Spicy": [
     "Scharf"
   ],
@@ -7637,6 +7904,9 @@
   ],
   "Storage (MB)": [
     "Speicher (MB)"
+  ],
+  "Storage allowance": [
+    "Speicherkontingent"
   ],
   "Storage connections": [
     "Speicherverbindungen"
@@ -7995,6 +8265,9 @@
   "The customer cluster limit has been reached.": [
     "Die maximale Clusteranzahl dieses Kunden ist erreicht."
   ],
+  "The database filesystem is nearly full. Review capacity before importing more data.": [
+    "Das Datenbank-Dateisystem ist nahezu voll. Prüfe die Kapazität vor weiteren Datenimporten."
+  ],
   "The database role enforces the selected permission and denies other tenants.": [
     "Die Datenbankrolle erzwingt die gewählte Berechtigung und sperrt andere Mandanten."
   ],
@@ -8172,6 +8445,9 @@
   "The shared CMS has been retired. Sign in to your website to manage its content.": [
     "Das gemeinsame CMS wurde abgelöst. Melde dich bei deiner Website an, um ihre Inhalte zu verwalten."
   ],
+  "The shared profile reserves PostgreSQL, pooler and job resources. Customer orders use separate logical slots.": [
+    "Das Shared-Profil reserviert Ressourcen für PostgreSQL, Pooler und Aufträge. Kundenbestellungen nutzen separate logische Plätze."
+  ],
   "The site builder is currently unavailable. Reload and check the saved version.": [
     "Der Builder ist gerade nicht erreichbar. Bitte neu laden und den gespeicherten Stand prüfen."
   ],
@@ -8265,6 +8541,12 @@
   "This account or domain is already registered or verified elsewhere.": [
     "Dieses Konto oder diese Domain ist bereits an anderer Stelle registriert oder bestätigt."
   ],
+  "This action affects only this logical database and its roles. The shared pool and other customers remain intact.": [
+    "Diese Aktion betrifft nur diese logische Datenbank und ihre Rollen. Der Shared-Pool und andere Kunden bleiben unverändert."
+  ],
+  "This action affects this dedicated PostgreSQL installation.": [
+    "Diese Aktion betrifft diese eigene PostgreSQL-Installation."
+  ],
   "This action is controlled by another controller or is unsupported.": [
     "Diese Aktion wird von einem anderen Controller gesteuert oder nicht unterstützt."
   ],
@@ -8315,6 +8597,9 @@
   ],
   "This database is not registered for managed deletion.": [
     "Diese Datenbank ist nicht für die verwaltete Löschung registriert."
+  ],
+  "This deletes only the retained source copy. The current database remains active.": [
+    "Dies löscht nur die aufbewahrte Quellkopie. Die aktuelle Datenbank bleibt aktiv."
   ],
   "This demo feature is unavailable.": [
     "Diese Demo-Funktion ist nicht verfügbar."
@@ -8607,6 +8892,9 @@
   "Type the exact application name": [
     "Den genauen Anwendungsnamen eingeben"
   ],
+  "Type the exact database name to confirm": [
+    "Zur Bestätigung den exakten Datenbanknamen eingeben"
+  ],
   "Type the exact project name": [
     "Genauen Projektnamen eingeben"
   ],
@@ -8672,6 +8960,9 @@
   ],
   "Unknown mail action.": [
     "Unbekannte Mail-Aktion."
+  ],
+  "Unknown or stale": [
+    "Unbekannt oder veraltet"
   ],
   "Unknown plan action.": [
     "Unbekannte Tarifaktion."
@@ -8781,6 +9072,9 @@
   "Updating password…": [
     "Passwort wird aktualisiert…"
   ],
+  "Upgrade database plan": [
+    "Datenbanktarif erweitern"
+  ],
   "Upload image": [
     "Bild hochladen"
   ],
@@ -8880,6 +9174,9 @@
   "Use the account ID and email from the turboSMTP dashboard. The account will be checked before it is linked to this tenant. Its sending limit will be set to the platform default of ": [
     "Verwende Konto-ID und E-Mail-Adresse aus dem turboSMTP-Dashboard. Das Konto wird vor der Verknüpfung mit diesem Mandanten geprüft. Das Versandlimit wird auf den Plattformstandard gesetzt: "
   ],
+  "Use the direct port for migrations and the pooled port for application connections. Always verify TLS.": [
+    "Den direkten Port für Migrationen und den Pooler-Port für Anwendungsverbindungen verwenden. TLS immer vollständig prüfen."
+  ],
   "Use the full record names above. If your DNS host appends the zone automatically, enter only the part before that zone. Update an existing SPF record instead of adding a second one.": [
     "Verwende die vollständigen Eintragsnamen oben. Hängt dein DNS-Anbieter die Zone automatisch an, gib nur den Teil davor ein. Aktualisiere einen vorhandenen SPF-Eintrag, statt einen zweiten anzulegen."
   ],
@@ -8906,6 +9203,9 @@
   ],
   "User": [
     "Benutzer"
+  ],
+  "Username": [
+    "Benutzername"
   ],
   "Uses the explicitly assigned managed account and a private sending credential.": [
     "Verwendet das ausdrücklich zugeordnete verwaltete Konto und einen internen Versandschlüssel."
@@ -9582,6 +9882,9 @@
   "Your mailboxes": [
     "Deine Postfächer"
   ],
+  "Your measured storage allowance is nearly reached.": [
+    "Dein gemessenes Speicherkontingent ist nahezu erreicht."
+  ],
   "Your messages are retained. Refresh the page to load the current state.": [
     "Deine Nachrichten bleiben erhalten. Lade die Seite neu, um den aktuellen Stand abzurufen."
   ],
@@ -9678,14 +9981,23 @@
   "connected": [
     "Verbunden"
   ],
+  "copying": [
+    "Wird kopiert"
+  ],
   "cores": [
     "Kerne"
   ],
   "customer": [
     "Kunde"
   ],
+  "degraded": [
+    "Beeinträchtigt"
+  ],
   "deleted": [
     "Gelöscht"
+  ],
+  "deleting": [
+    "Wird stillgelegt"
   ],
   "deploying": [
     "Wird bereitgestellt"
@@ -9717,6 +10029,9 @@
   "needs-reconciliation": [
     "Statusabgleich erforderlich"
   ],
+  "net / month": [
+    "netto / Monat"
+  ],
   "not specified": [
     "nicht angegeben"
   ],
@@ -9726,8 +10041,17 @@
   "passkey": [
     "Passkey"
   ],
+  "paused": [
+    "Pausiert"
+  ],
+  "pausing": [
+    "Wird pausiert"
+  ],
   "pending": [
     "In Bearbeitung"
+  ],
+  "preparing": [
+    "Wird vorbereitet"
   ],
   "privacy notice": [
     "Datenschutzhinweis"
@@ -9735,11 +10059,26 @@
   "project": [
     "Projekt"
   ],
+  "provisioning": [
+    "Wird bereitgestellt"
+  ],
+  "purged": [
+    "Endgültig gelöscht"
+  ],
   "queued": [
     "In der Warteschlange"
   ],
   "ready": [
     "Bereit"
+  ],
+  "restoring": [
+    "Wird wiederhergestellt"
+  ],
+  "resuming": [
+    "Wird fortgesetzt"
+  ],
+  "retained": [
+    "Aufbewahrt"
   ],
   "revalidation-required": [
     "Erneute Überprüfung erforderlich"
@@ -9776,6 +10115,9 @@
   ],
   "unconnected": [
     "Nicht verbunden"
+  ],
+  "updating": [
+    "Wird aktualisiert"
   ],
   "webdock": [
     "webdock"

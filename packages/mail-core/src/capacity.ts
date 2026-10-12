@@ -15,10 +15,26 @@ function total(rows: { demand: Record<string, number>; status: string }[]): Mail
   return result;
 }
 
-/** Hosting must count native Mail reservations even while the Mail feature switch is off. */
+/** A physical PostgreSQL installation counts once, including while paused or retained. */
+async function databaseReservations(db: Connection, clusterID: string) {
+  if (!(await db.query("SELECT to_regclass('webdock_auth.hosting_database_backend') AS relation")).rows[0].relation) return [];
+  const rows=(await db.query("SELECT pool_id,demand,CASE WHEN state IN ('provisioning','updating') THEN 'reserved' ELSE 'active' END AS status FROM webdock_auth.hosting_database_backend WHERE cluster_id=$1 AND state<>'purged'", [clusterID])).rows;
+  const pools=(await db.query('SELECT pool_id,capacity_bytes FROM webdock_auth.hosting_database_pool WHERE cluster_id=$1',[clusterID])).rows;
+  const configured=new Set(pools.map(p=>p.pool_id));
+  let volume=pools.reduce((sum,p)=>sum+Number(p.capacity_bytes),0)+rows.filter(r=>!configured.has(r.pool_id)).reduce((sum,r)=>sum+(r.demand.volumeBytes??0),0);
+  const cluster=(await db.query('SELECT c.capacity,a.observation FROM webdock_auth.hosting_cluster c LEFT JOIN webdock_auth.hosting_agent a ON a.cluster_id=c.id WHERE c.id=$1',[clusterID])).rows[0];
+  const appCapacity=cluster?.observation?.capacity?.volumeBytes,approved=cluster?.capacity?.volumeBytes;
+  // A private DB pool cannot be sold again as App storage. Also retain any gap
+  // between the approved ceiling and currently verified App-pool capacity.
+  if((pools.length||rows.length||cluster?.observation?.capabilities?.databaseVersion===1)&&Number.isSafeInteger(appCapacity)&&Number.isSafeInteger(approved))volume=Math.max(volume,approved-appCapacity);
+  return [...rows.map(r=>({status:r.status,demand:{...r.demand,volumeBytes:0}})),{status:'active',demand:{...total([]),volumeBytes:volume}}];
+}
+/** App and Mail admission must count native reservations even when product switches are off. */
 export async function nativeClusterDemand(db: Connection, clusterID: string): Promise<MailDemand> {
-  if (!(await db.query("SELECT to_regclass('webdock_mail.cluster_reservation') AS relation")).rows[0].relation) return total([]);
-  return total((await db.query("SELECT demand,status FROM webdock_mail.cluster_reservation WHERE cluster_id=$1", [clusterID])).rows);
+  const databases = await databaseReservations(db, clusterID);
+  const hasMail = (await db.query("SELECT to_regclass('webdock_mail.cluster_reservation') AS relation")).rows[0].relation;
+  const mail = hasMail ? (await db.query("SELECT demand,status FROM webdock_mail.cluster_reservation WHERE cluster_id=$1", [clusterID])).rows : [];
+  return total([...mail, ...databases]);
 }
 
 export async function reserveMailCapacity(db: Connection, customerID: string, clusterID: string) {
@@ -31,7 +47,7 @@ export async function reserveMailCapacity(db: Connection, customerID: string, cl
     throw new MailCapacityError("A fresh managed cluster with verified Mail and storage support is required.");
   const hosting = (await db.query("SELECT demand,status FROM webdock_auth.hosting_reservation WHERE cluster_id=$1 AND status<>'released'", [clusterID])).rows;
   const mail = (await db.query("SELECT demand,status FROM webdock_mail.cluster_reservation WHERE cluster_id=$1 AND customer_id<>$2", [clusterID, customerID])).rows;
-  const used = total([...hosting, ...mail]);
+  const used = total([...hosting, ...mail, ...await databaseReservations(db, clusterID)]);
   for (const key of Object.keys(mailInstanceDemand) as (keyof MailDemand)[]) {
     const limit = cluster.capacity?.[key];
     const wanted = key === "replicasPerApp" ? Math.max(used[key], mailInstanceDemand[key]) : used[key] + mailInstanceDemand[key];

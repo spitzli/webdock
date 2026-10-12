@@ -65,13 +65,14 @@ def run_once(path):
     path=Path(path)
     state=load_state(path)
     observation=heartbeat(path,state)
+    database = run_database_once(state, observation)
     operation=agent_request(state['endpoint'],state,'claim',{})
     if not operation:
         mail = run_mail_once(path, state, observation)
         if mail is not None: return mail
         configuration = run_mail_configuration(path, state, observation)
         if configuration is not None: return configuration
-        return {'event':'heartbeat','clusterID':state['clusterID'],'nodes':len(observation['nodes'])}
+        return database or {'event':'heartbeat','clusterID':state['clusterID'],'nodes':len(observation['nodes'])}
     packet=operation.get('desired')
     valid=packet and packet.get('clusterID')==state['clusterID'] and packet.get('operationID')==operation.get('id') and packet.get('generation')==operation.get('generation')
     outcome={'outcome':'failed','error':'execution_failed'}
@@ -82,6 +83,30 @@ def run_once(path):
     heartbeat(path,state)
     agent_request(state['endpoint'],state,'complete',{'id':operation['id'],'generation':operation['generation'],**outcome})
     return {'event':'operation','id':operation['id'],'outcome':outcome['outcome']}
+
+
+def run_database_once(state, observation):
+    if observation.get('capabilities',{}).get('databaseVersion')!=1:return None
+    from databases import execute_database,validate_packet
+    packet=agent_request(state['endpoint'],state,'database-claim',{})
+    if packet is None:
+        from databases import observe_databases
+        configured=agent_request(state['endpoint'],state,'database-config',{})
+        if configured.get('installations'):agent_request(state['endpoint'],state,'database-observation',observe_databases(configured))
+        return None
+    validate_packet(packet)
+    if packet['clusterID']!=state['clusterID'] or packet['generation']!=state['generation']:raise ValueError('Database operation belongs to another agent')
+    identity={k:packet[k] for k in ['operationID','generation','leaseToken']}
+    def checkpoint(**value):
+        return agent_request(state['endpoint'],state,'database-checkpoint' if value else 'database-guard',{**identity,**value})
+    try:
+        proof=execute_database(packet,checkpoint)
+        if proof is None:return {'event':'database-pending','id':packet['operationID']}
+        result={'outcome':'succeeded','proof':proof}
+    except Exception:result={'outcome':'needs-reconciliation'}
+    completed=agent_request(state['endpoint'],state,'database-complete',{**identity,**result})
+    if completed.get('pending'):return {'event':'database-pending','id':packet['operationID']}
+    return {'event':'database-operation','id':packet['operationID'],'outcome':result['outcome']}
 
 
 def run_mail_once(path, state, observation):

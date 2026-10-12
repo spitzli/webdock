@@ -1,0 +1,16 @@
+# Qualification profiles, not independently provisionable customer YAML.
+postgresMajor: 18
+postgresUID: 26
+postgresGID: 26
+backups: not-configured
+shared:
+  postgres: {cpuMillicores: 1000, memoryBytes: 2147483648, volumeBytes: 32212254720}
+  additionalReservation: {cpuMillicores: 200, memoryBytes: 536870912, ephemeralBytes: 536870912}
+  maximumDatabases: 8
+  logicalCapacityBytes: 8589934592
+  customer: {logicalStorageAllowanceBytes: 1073741824, connectionLimitPerRole: 10}
+dedicatedStarter:
+  postgres: {cpuMillicores: 500, memoryBytes: 1073741824, volumeBytes: 10737418240}
+  additionalReservation: {cpuMillicores: 200, memoryBytes: 536870912, ephemeralBytes: 536870912}
+  maximumDatabases: 1
+nodePortRange: {first: 32000, last: 32199}

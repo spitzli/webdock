@@ -1,3 +1,4 @@
+import {executeDatabaseCommand} from "./databases";
 import {executeGitDeployment} from "./git-deployments";
 import { msgid } from "@webdock/i18n";
 import {searchPage} from "@webdock/search";
@@ -11,6 +12,7 @@ import {
   HostingError,
   readActions,
   type HostingActor,
+  type ClusterObservation,
 } from "@webdock/hosting-contracts";
 import { transaction, audit, planLock, clusterLock } from "./db";
 import { authorizeHosting } from "./authorization";
@@ -19,6 +21,7 @@ import { clusterView } from "./clusters";
 import { replay, recordResult } from "./operations";
 export async function executeHosting(actor: HostingActor, raw: unknown, runtime?:VercelRuntime) {
   const cmd = commandSchema.parse(raw);
+  if (cmd.action.startsWith("databases.")) return executeDatabaseCommand(actor,cmd);
   if (cmd.action.startsWith("git.")) return executeGitDeployment(actor,cmd);
   if (cmd.action.startsWith("byok.")) return executeByok(actor,cmd,runtime);
   if (cmd.action.startsWith("apps.")) return executeAppCommand(actor, cmd);
@@ -59,9 +62,13 @@ export async function executeHosting(actor: HostingActor, raw: unknown, runtime?
           "A fresh connected cluster and current revision are required.",
         );
       const capacity = normalizeHostingAllowances(cmd.capacity);
+      const databasePools: NonNullable<ClusterObservation["capabilities"]["databasePools"]> = c.observation.capabilities.databaseVersion === 1 ? c.observation.capabilities.databasePools ?? [] : [];
+      const databaseStorage = databasePools.filter(p => p.ready && c.observation.nodes.some((n: {id:string}) => n.id === p.node)).reduce((sum,p) => sum+p.capacityBytes,0);
+      const appStorage = c.observation.capabilities.storage && c.observation.capabilities.storageVersion === 1 ? c.observation.capacity.volumeBytes ?? 0 : 0;
+      const verifiedStorage = appStorage + databaseStorage;
       if (
         hostingDimensions.some((k) => capacity[k] === null) ||
-        (capacity.volumeBytes! > 0 && (!c.observation.capabilities.storage || c.observation.capabilities.storageVersion !== 1 || c.observation.nodes.length !== 1 || capacity.volumeBytes! > (c.observation.capacity.volumeBytes ?? 0)))
+        !Number.isSafeInteger(verifiedStorage) || capacity.volumeBytes! > verifiedStorage
       )
         throw new HostingError(
           400,

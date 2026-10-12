@@ -1,0 +1,64 @@
+{
+  "cnpg": {
+    "verified": true,
+    "issuer": "https://token.actions.githubusercontent.com",
+    "claims": [
+      {
+        "critical": {
+          "identity": {
+            "docker-reference": "ghcr.io/cloudnative-pg/cloudnative-pg@sha256:923c267ec29636db3bee20f993d0ec4973fa22998e1adad37da79e4d32b5bc07"
+          },
+          "image": {
+            "docker-manifest-digest": "sha256:923c267ec29636db3bee20f993d0ec4973fa22998e1adad37da79e4d32b5bc07"
+          },
+          "type": "https://sigstore.dev/cosign/sign/v1"
+        },
+        "optional": {}
+      }
+    ],
+    "requiredCertificateIdentityRegexp": "^https://github.com/cloudnative-pg/cloudnative-pg/.github/workflows/release-publish.yml@refs/tags/v1.30.1$"
+  },
+  "postgres": {
+    "verified": true,
+    "issuer": "https://token.actions.githubusercontent.com",
+    "claims": [
+      {
+        "critical": {
+          "identity": {
+            "docker-reference": "ghcr.io/cloudnative-pg/postgresql@sha256:c7747d8d1049fff9cf30d9cd83d14d609c957afb5ffbcd114145f393ea1850e1"
+          },
+          "image": {
+            "docker-manifest-digest": "sha256:c7747d8d1049fff9cf30d9cd83d14d609c957afb5ffbcd114145f393ea1850e1"
+          },
+          "type": "https://sigstore.dev/cosign/sign/v1"
+        },
+        "optional": {}
+      }
+    ],
+    "requiredCertificateIdentityRegexp": "^https://github.com/cloudnative-pg/postgres-containers/"
+  },
+  "pgbouncer": {
+    "verified": true,
+    "issuer": "https://token.actions.githubusercontent.com",
+    "claims": [
+      {
+        "critical": {
+          "identity": {
+            "docker-reference": "ghcr.io/cloudnative-pg/pgbouncer@sha256:ce54f1133c509f1db8a8092c3f1c761d8c9292065ed6b6698786bb966da4dab9"
+          },
+          "image": {
+            "docker-manifest-digest": "sha256:ce54f1133c509f1db8a8092c3f1c761d8c9292065ed6b6698786bb966da4dab9"
+          },
+          "type": "https://sigstore.dev/cosign/sign/v1"
+        },
+        "optional": {}
+      }
+    ],
+    "requiredCertificateIdentityRegexp": "^https://github.com/cloudnative-pg/pgbouncer-containers/"
+  },
+  "barman": {
+    "verified": false,
+    "error": "no signatures found",
+    "exitCode": 10
+  }
+}

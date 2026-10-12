@@ -1,0 +1,15 @@
+{
+  "environment": "disposable-local",
+  "profile": "synthetic 1 GiB qualification volume, not a product performance promise",
+  "durationSeconds": 30,
+  "clients": 2,
+  "threads": 1,
+  "scale": 1,
+  "transactions": 5118,
+  "failedTransactions": 0,
+  "latencyAverageMs": 11.726,
+  "latencyStddevMs": 4.212,
+  "tps": 170.535964,
+  "sqlMarkerAfterENOSPCAndRemount": "persistent-volume-125",
+  "backups": "not-configured"
+}

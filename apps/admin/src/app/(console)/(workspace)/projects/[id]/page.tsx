@@ -107,6 +107,7 @@ export default async function Project({
       <nav className="record-actions" aria-label={i18n.t("Customer services")}>
         <Link href={`/hosting/projects/${id}`}>{i18n.t("Applications")}</Link>
         <Link href={`/hosting/projects/${id}/git`}>{i18n.t("Deployments")}</Link>
+        <Link href={`/hosting/projects/${id}/databases`}>{i18n.t("Databases")}</Link>
         <Link href={`/tenants/${relatedID(project.customer)}/team`}>{i18n.t("Team")}</Link>
         <Link href={`/tenants/${relatedID(project.customer)}/usage`}>{i18n.t("Plan & usage")}</Link>
         <Link href={`/tenants/${relatedID(project.customer)}/mail`}>{i18n.t("Mail & domains")}</Link>

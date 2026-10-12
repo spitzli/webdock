@@ -32,7 +32,9 @@ test('offline migration is checksummed, repeatable and grants DML without DDL',a
  const {execFileSync}=await import('node:child_process');
  const role='mail_fixture_runtime';
  await database.query(`DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='${role}') THEN CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE; END IF; END $$; GRANT USAGE ON SCHEMA webdock_auth TO ${role}`);
- const run=()=>JSON.parse(execFileSync(process.execPath,['--env-file=.env.test.local','--import','tsx','scripts/migrate-mail-product.ts','127.0.0.1:5438/webdock_admin_test',role],{cwd:process.cwd(),encoding:'utf8'}));
+ const url=new URL(process.env.DATABASE_URL!);
+ const target=`${url.hostname}:${url.port||'5432'}${url.pathname}`;
+ const run=()=>JSON.parse(execFileSync(process.execPath,['--env-file=.env.test.local','--import','tsx','scripts/migrate-mail-product.ts',target,role],{cwd:process.cwd(),encoding:'utf8',env:{...process.env,DATABASE_URL_UNPOOLED:url.href}}));
  const first=run(),second=run();
  assert.equal(first.checksum,second.checksum);assert.equal(second.applied,false);
  const db=await database.connect();

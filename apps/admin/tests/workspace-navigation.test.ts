@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mainArea, areaSelected, soleWorkspace, applicationState, mailSendingPaths } from '../src/lib/workspace-navigation';
 
 test('all deep links retain exactly one main area without prefix collisions', () => {
-  for (const path of ['/projects/12', '/hosting/projects/12/git/builds/34', '/hosting/apps/56/settings', '/sites/78/shop']) assert.equal(mainArea(path, true), 'projects');
+  for (const path of ['/projects/12', '/hosting/projects/12/git/builds/34', '/hosting/apps/56/settings', '/hosting/databases/56/settings', '/hosting/databases/56/connection', '/sites/78/shop']) assert.equal(mainArea(path, true), 'projects');
   for (const path of ['/customers/12/hosting', '/tenants/12/mail/keys', '/tenants/12/databases/34']) assert.equal(mainArea(path, true), 'customers');
   for (const path of ['/operations', '/infrastructure/12', '/hosting/operations/12', '/activity']) assert.equal(mainArea(path, true), 'operations');
   assert.equal(mainArea('/people-extra', true), null);
@@ -40,4 +40,9 @@ test('Mail API deep links belong to Sending while inbox, domains and settings st
   assert.equal(areaSelected(base+'/sending',base+suffix,'connection=34',false,paths),true,suffix);
  for(const suffix of ['/inbox','/mailboxes','/domains','/settings','/tracking','/emails-extra'])
   assert.equal(areaSelected(base+'/sending',base+suffix,'',false,paths),false,suffix);
+});
+
+test('managed databases remain within the single tenant Databases area', () => {
+  assert.equal(areaSelected('/tenants/12/databases','/tenants/12/managed-databases','',false,['/tenants/12/managed-databases']),true);
+  assert.equal(areaSelected('/tenants/12/databases','/tenants/123/managed-databases','',false,['/tenants/12/managed-databases']),false);
 });

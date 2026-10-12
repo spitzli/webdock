@@ -65,6 +65,11 @@ def collect_observation():
         if mail is not None:
             observed['capabilities']['nativeMail'] = mail
 
+    try:
+        from databases import database_capability
+        databases=database_capability([node['id'] for node in observed['nodes']])
+        if databases:observed['capabilities'].update(databases)
+    except ImportError:pass
     import registry
     if registry.capability(command):observed['capabilities']['registryVersion']=1
     return observed

@@ -14,6 +14,9 @@ import storage
 def dispatch(message):
     if set(message)!={'action','value'}:raise ValueError('Invalid request')
     action,value=message['action'],message['value']
+    if action in ['database.capability','database.ensure','database.retained','database.purge','database.state']:
+        from database_storage import dispatch as database_dispatch
+        return database_dispatch(action,value)
     if action=='capability':
         if not isinstance(value,list) or len(value)>200 or any(not isinstance(v,str) or len(v)>253 for v in value):raise ValueError('Invalid nodes')
         capacity=storage.capability(value)

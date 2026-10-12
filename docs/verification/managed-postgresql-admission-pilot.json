@@ -1,0 +1,8 @@
+{
+  "validDatabasePod": true,
+  "ordinaryAppTokenDenied": true,
+  "foreignPVCDenied": true,
+  "unapprovedImageDenied": true,
+  "invalidNodePortDenied": true,
+  "typeCheckingWarnings": 0
+}
