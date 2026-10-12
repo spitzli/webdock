@@ -1,8 +1,14 @@
 'use client';
-import {useEffect,useRef,useState} from 'react';import Link from 'next/link';import {usePathname,useSearchParams} from 'next/navigation';import {filterRows} from '@webdock/search';import {useI18n} from '@webdock/i18n/react';
-export function MailNavigation({customerID,canManage}:{customerID:string;canManage:boolean}){
- const i18n=useI18n(),pathname=usePathname(),query=useSearchParams(),connection=query.get('connection');const [search,setSearch]=useState(''),field=useRef<HTMLInputElement>(null);
- useEffect(()=>{const handler=(e:KeyboardEvent)=>{if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();field.current?.focus();}if(e.key==='Escape')setSearch('');};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);},[]);
- const pages=[{path:'',label:i18n.t('Mail overview')},{path:'/emails',label:i18n.t('Messages')},{path:'/domains',label:i18n.t('Domains')},{path:'/analytics',label:i18n.t('Analytics')},{path:'/quickstart',label:i18n.t('Quickstart')},...(canManage?[{path:'/team',label:i18n.t('Team')},{path:'/api-keys',label:i18n.t('API keys')},{path:'/webhooks',label:i18n.t('Webhooks')},{path:'/suppressions',label:i18n.t('Suppressions')},{path:'/logs',label:i18n.t('Request logs')},{path:'/settings',label:i18n.t('Settings')},{path:'/keys',label:i18n.t('SMTP credentials')},{path:'/tracking',label:i18n.t('Tracking')}]:[])];
- return <section><label className="field">{i18n.t('Find a Mail page')}<input ref={field} type="search" value={search} onChange={e=>setSearch(e.target.value)} aria-keyshortcuts="Control+k Meta+k"/></label><nav className="tenant-navigation" aria-label={i18n.t('Mail navigation')}>{filterRows(pages,search,p=>p.label).map(page=>{const href=`/tenants/${customerID}/mail${page.path}`;return <Link key={page.path} href={href+(connection?'?connection='+encodeURIComponent(connection):'')} aria-current={(pathname===href||(page.path!==''&&pathname.startsWith(href+'/')))?'page':undefined}>{page.label}</Link>;})}</nav></section>;
+import {usePathname,useSearchParams} from 'next/navigation';
+import {useI18n} from '@webdock/i18n/react';
+import {AreaNavigation} from '@/components/area-navigation';
+import {areaSelected,mailSendingPaths} from '@/lib/workspace-navigation';
+export function MailNavigation({customerID,canManage}:{customerID:string;canManage:boolean}) {
+ const i18n=useI18n(),pathname=usePathname(),query=useSearchParams(),base=`/tenants/${customerID}/mail`;
+ const sending=mailSendingPaths.some(path=>areaSelected(base+path,pathname,''));
+ const connection=query.get('connection');
+ const pages=[{path:'/sending',label:i18n.t('Overview'),exact:true},{path:'/emails',label:i18n.t('Messages')},{path:'/analytics',label:i18n.t('Analytics')},{path:'/quickstart',label:i18n.t('Quickstart')},...(canManage?[{path:'/api-keys',label:i18n.t('API keys')},{path:'/webhooks',label:i18n.t('Webhooks')},{path:'/suppressions',label:i18n.t('Suppressions')},{path:'/logs',label:i18n.t('Request logs')}]:[])];
+ const href=(path:string)=>base+path+(connection?'?connection='+encodeURIComponent(connection):'');
+ const primary=[{path:'',label:i18n.t('Overview'),exact:true},{path:'/sending',label:i18n.t('Sending'),activePaths:mailSendingPaths.map(path=>base+path)},{path:'/mailboxes',label:i18n.t('Mailboxes'),activePaths:[base+'/inbox']},{path:'/domains',label:i18n.t('Sender domains')},...(canManage?[{path:'/keys',label:i18n.t('Mail credentials')},{path:'/tracking',label:i18n.t('Tracking')},{path:'/settings',label:i18n.t('Settings')}]:[])];
+ return <><AreaNavigation label={i18n.t('Mail areas')} links={primary.map(page=>({href:href(page.path),label:page.label,exact:page.exact,activePaths:page.exact?undefined:[base+page.path,...(page.activePaths??[])]}))}/>{sending&&<AreaNavigation label={i18n.t('Sending tools')} links={pages.map(page=>({href:href(page.path),label:page.label,exact:page.exact,activePaths:page.exact?undefined:[base+page.path]}))}/>}</>;
 }

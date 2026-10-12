@@ -34,3 +34,5 @@ export function soleWorkspace(tenants: {id: string; status: string}[], invitatio
 export function applicationState(status: string) {
   return ({ running: msgid('Running'), ready: msgid('Ready'), stopped: msgid('Stopped'), pending: msgid('Change in progress'), failed: msgid('Failed'), error: msgid('Error'), deleted: msgid('Deleted'), 'needs-reconciliation': msgid('Review required') } as Record<string, string>)[status] ?? msgid('Unknown');
 }
+
+export const mailSendingPaths = ['/sending', '/emails', '/analytics', '/quickstart', '/api-keys', '/webhooks', '/suppressions', '/logs'];

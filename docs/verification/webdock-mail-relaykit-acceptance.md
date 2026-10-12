@@ -87,3 +87,23 @@ Admin suite106/106, TypeScript and production build passed. T3 browser verified
 real SSO, German copy, connection-preserving setup navigation and empty API-key
 guidance, with no document overflow at390/1440px. This is an implementation and
 browser check, not a usability study with an unprepared external user.
+
+## Main workspace integration follow-up
+
+The Mail API now uses main's AreaNavigation, including its mobile disclosure.
+Sending owns messages, analytics, Quickstart, API keys, webhooks, suppressions and
+request logs; the selected connection is retained across Mail navigation. Native
+incoming Mail and Webmail remain in the mailbox area. API connection management
+is restored in Settings, with provider-account setup in a disclosure. Configured
+API connections use the scoped domain surface; unconfigured accounts retain the
+native domain setup. Old Mail-team links redirect to the workspace team page,
+where owner/admin membership rules are preserved. Only scoped Mail form, preview
+and metric styles are restored; main's shell and navigation styles stay in place.
+
+T3 browser verified real SSO, Sending navigation, scoped domain list, restored
+settings and team redirect. Mobile390px has no document overflow and uses
+Mail → Sending → Messages area selection. No provider settings or sends changed.
+
+Final integration checks: Admin114/114, TypeScript, ESLint and production build
+passed; German catalog9/3279 validated. Backend/provider release gates above
+remain unchanged.

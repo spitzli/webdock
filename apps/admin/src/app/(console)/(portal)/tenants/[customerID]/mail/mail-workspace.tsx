@@ -21,9 +21,9 @@ export async function generateMetadata() {
 
 export default async function TenantMail({
   params,
-  searchParams, view = "overview",
+  searchParams, view = "overview", embedded = false,
 }: {
-  params: Promise<{ customerID: string }>; view?: "overview" | "domains" | "settings";
+  params: Promise<{ customerID: string }>; embedded?: boolean; view?: "overview" | "domains" | "settings";
   searchParams: Promise<{ mailPage?: string; mailSearch?: string }>;
 }) {
   const i18n = await getRequestI18n();
@@ -43,7 +43,7 @@ export default async function TenantMail({
     if (error instanceof TenantMailError || error instanceof PlatformError || error instanceof MailServiceError)
       return (
         <section className="auth-panel">
-          <h1>{i18n.t("Mail")}</h1>
+          <h1>{i18n.t(view === "domains" ? "Sender domains" : view === "settings" ? "Mail settings" : "Mail")}</h1>
           <p className="notice error" role="alert">
             {i18n.error(error.message)}
           </p>
@@ -62,9 +62,9 @@ export default async function TenantMail({
     account?.state === "provisioning" || account?.state === "needs_review";
   return (
     <div className="access-page">
-      <header className="account-heading">
+      {!embedded&&<header className="account-heading">
         <div>
-          <h1>{i18n.t("Mail")}</h1>
+          <h1>{i18n.t(view === "domains" ? "Sender domains" : view === "settings" ? "Mail settings" : "Mail")}</h1>
           <p className="muted">
             {tenant.name} ·{" "}
             {tenant.status === "active"
@@ -72,7 +72,7 @@ export default async function TenantMail({
               : i18n.t("Archived tenant — changes disabled")}
           </p>
         </div>
-      </header>
+      </header>}
       {view === "overview" && <>
         <section className="account-section"><h2>{i18n.t("Sending")}</h2><p>{account ? i18n.t(uiLabel(account.state)) : i18n.t("Not configured")}</p><p>{i18n.t("Sending-only does not require incoming Mail activation.")}</p>
           <Link className="button secondary" href={`/tenants/${customerID}/mail/${nativeService?.sendingAvailable ? "sending" : "settings"}`}>{i18n.t("Manage sending")}</Link>

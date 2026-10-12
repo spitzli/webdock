@@ -602,6 +602,9 @@
   "Administrators manage members. Owners manage administrators and owners. Website permissions are assigned separately.": [
     "Administratoren verwalten Mitglieder. Owner verwalten Administratoren und Owner. Website-Rechte werden separat vergeben."
   ],
+  "Admins manage members. Owners manage admins and owners. Removing membership immediately removes workspace access.": [
+    "Admins verwalten Mitglieder. Owner verwalten Admins und andere Owner. Das Entfernen einer Mitgliedschaft entzieht sofort den Workspace-Zugriff."
+  ],
   "Advanced settings": [
     "Erweiterte Einstellungen"
   ],
@@ -4362,6 +4365,9 @@
   "Mail API": [
     "Mail-API"
   ],
+  "Mail API domains": [
+    "Domains für die Mail-API"
+  ],
   "Mail API message text and HTML are retained for 30 days after final acceptance, failure or cancellation. Attachments are removed after a definitive result. Uncertain-send content is removed after seven days, while the unresolved outcome and duplicate-prevention record remain. Active schedules retain content needed for execution. Message metadata and events are retained for 90 days, redacted request logs and finished webhook attempts for 30 days, and processed or quarantined provider callbacks for seven days. Cleanup preserves records still needed by active work. Suppressions remain until explicitly removed. These periods cover Webdock’s operational database; provider records and backups have separate lifecycles.": [
     "Text und HTML von Mail-API-Nachrichten bleiben 30 Tage nach endgültiger Annahme, Fehlschlag oder Abbruch gespeichert. Anhänge werden nach einem eindeutigen Ergebnis entfernt. Inhalte unklarer Sendungen werden nach sieben Tagen entfernt; der ungeklärte Ausgang und der Schutz vor doppeltem Versand bleiben erhalten. Aktive geplante Sendungen behalten die für ihre Ausführung benötigten Inhalte. Nachrichtenmetadaten und Ereignisse bleiben 90 Tage, redigierte Anfrageprotokolle und abgeschlossene Webhook-Versuche 30 Tage sowie verarbeitete oder in Quarantäne gehaltene Provider-Callbacks sieben Tage gespeichert. Noch für laufende Aufträge benötigte Datensätze bleiben von der Bereinigung ausgenommen. Sperrlisten bleiben bis zur ausdrücklichen Entfernung bestehen. Diese Fristen gelten für die operative Webdock-Datenbank; Provider-Daten und Backups haben eigene Aufbewahrungszyklen."
   ],
@@ -7304,6 +7310,9 @@
   ],
   "Sending status not checked": [
     "Versandstatus nicht geprüft"
+  ],
+  "Sending tools": [
+    "Versandwerkzeuge"
   ],
   "Sending uses EU endpoints. The separate provider management API is an approved exception without an EU-only guarantee. The Webdock domain allowance is not an email sending or spending limit.": [
     "Für den Versand sind EU-Endpunkte vorgesehen. Die separate Verwaltungs-API des Anbieters ist als Ausnahme ohne EU-only-Garantie zugelassen. Das Webdock-Domainkontingent ist kein Versand- oder Ausgabenlimit."

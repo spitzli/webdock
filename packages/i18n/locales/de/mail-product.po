@@ -673,3 +673,12 @@ msgstr "Wähle eine Nachricht zum Lesen oder schreibe über den Button oben eine
 
 msgid "Webhook signature verification"
 msgstr "Webhook-Signatur prüfen"
+
+msgid "Sending tools"
+msgstr "Versandwerkzeuge"
+
+msgid "Mail API domains"
+msgstr "Domains für die Mail-API"
+
+msgid "Admins manage members. Owners manage admins and owners. Removing membership immediately removes workspace access."
+msgstr "Admins verwalten Mitglieder. Owner verwalten Admins und andere Owner. Das Entfernen einer Mitgliedschaft entzieht sofort den Workspace-Zugriff."

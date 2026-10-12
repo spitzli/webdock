@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-12 20:17+0200\n"
+"POT-Creation-Date: 2026-10-12 20:30+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -163,7 +163,6 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:18
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/layout.tsx:24
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/layout.tsx:9
 #: apps/admin/src/components/navigation.tsx:73
 #: packages/cms-ui/src/client.tsx:698
 msgid "Overview"
@@ -174,7 +173,6 @@ msgid "Logs"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:18
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/layout.tsx:13
 #: apps/admin/src/components/navigation.tsx:20
 msgid "Settings"
 msgstr ""
@@ -1258,7 +1256,6 @@ msgid "This scheduled message was canceled before sending."
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/inbox/page.tsx:14
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/layout.tsx:11
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/page.tsx:8
 msgid "Mailboxes"
 msgstr ""
@@ -1271,33 +1268,6 @@ msgstr ""
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/keys/form.tsx:134
 #: apps/auth/src/lib/i18n-messages.ts:63
 msgid "Copy failed. Select and copy the values above."
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/layout.tsx:8
-msgid "Mail areas"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/layout.tsx:10
-#: apps/admin/src/components/mail/product-page.tsx:17
-msgid "Sending"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/layout.tsx:12
-#: apps/admin/src/components/hosting/own-mail.tsx:86
-#: apps/admin/src/components/hosting/own-mail.tsx:152
-#: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:75
-msgid "Sender domains"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/layout.tsx:13
-#: apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx:10
-#: apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx:17
-#: apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx:18
-msgid "Mail credentials"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/layout.tsx:13
-msgid "Tracking"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/forms.tsx:11
@@ -2354,6 +2324,12 @@ msgstr ""
 msgid "Key ending"
 msgstr ""
 
+#: apps/admin/src/components/hosting/own-mail.tsx:86
+#: apps/admin/src/components/hosting/own-mail.tsx:152
+#: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:75
+msgid "Sender domains"
+msgstr ""
+
 #: apps/admin/src/components/hosting/own-mail.tsx:92
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:46
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
@@ -2550,6 +2526,10 @@ msgstr ""
 
 #: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Scheduled"
+msgstr ""
+
+#: apps/admin/src/components/mail/product-page.tsx:17
+msgid "Sending"
 msgstr ""
 
 #: apps/admin/src/components/mail/product-page.tsx:17
@@ -4590,6 +4570,12 @@ msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/mail/keys/form.tsx:22
 msgid "Dismiss secret"
+msgstr ""
+
+#: apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx:10
+#: apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx:17
+#: apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx:18
+msgid "Mail credentials"
 msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx:17
