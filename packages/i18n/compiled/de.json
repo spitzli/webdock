@@ -527,6 +527,9 @@
   "Add suppression": [
     "Sperre hinzufügen"
   ],
+  "Add the domain after @ in your sender address. Publish the displayed DNS records, then verify ownership and sending readiness.": [
+    "Füge die Domain hinter dem @ deiner Absenderadresse hinzu. Trage die angezeigten DNS-Einträge ein und prüfe danach Eigentum und Versandbereitschaft."
+  ],
   "Add variable": [
     "Variable hinzufügen"
   ],
@@ -598,6 +601,9 @@
   ],
   "Advanced tools": [
     "Erweiterte Werkzeuge"
+  ],
+  "After connecting, verify a sender domain and create a Webdock API key for your application. Provider credentials belong only in this setup form.": [
+    "Verifiziere nach dem Verbinden eine Absenderdomain und erstelle einen Webdock-API-Key für deine Anwendung. Provider-Zugangsdaten gehören nur in dieses Einrichtungsformular."
   ],
   "After installation, Studio reads the selected Vercel projects, deployments, domains and installation configuration. It displays project settings such as framework and runtime, deployment status and URLs, production releases, Git branch and commit metadata, and domain verification status. It does not deploy projects, modify domains, or request access to environment-variable values.": [
     "Nach der Installation liest Studio die ausgewählten Vercel-Projekte, Deployments, Domains und die Installationskonfiguration. Angezeigt werden Projekteinstellungen wie Framework und Laufzeit, Deployment-Status und URLs, Produktionsversionen, Git-Branch- und Commit-Metadaten sowie der Status der Domainprüfung. Die Integration veröffentlicht keine Projekte, ändert keine Domains und fordert keinen Zugriff auf Werte von Umgebungsvariablen an."
@@ -761,6 +767,9 @@
   "An operator must reconcile this account before reading or changing provider settings.": [
     "Ein Betreiber muss dieses Konto abgleichen, bevor Anbietereinstellungen gelesen oder geändert werden können."
   ],
+  "An owner or admin sets up the connection, domain and API key. You can view messages and delivery results.": [
+    "Ein Owner oder Admin richtet Verbindung, Domain und API-Key ein. Du kannst Nachrichten und Zustellergebnisse ansehen."
+  ],
   "An unused reservation can be cancelled after 15 minutes, once a fresh provider check confirms that no domain was created.": [
     "Eine ungenutzte Reservierung kann nach 15 Minuten aufgehoben werden, sobald eine erneute Anbieterprüfung bestätigt, dass keine Domain erstellt wurde."
   ],
@@ -898,6 +907,9 @@
   ],
   "Artifact name prefix": [
     "Präfix des Artefaktnamens"
+  ],
+  "Ask an owner or admin to set up sending for this tenant.": [
+    "Bitte einen Owner oder Admin, den Versand für diesen Mandanten einzurichten."
   ],
   "Ask your operator to prepare a sending connection.": [
     "Bitte den Betreiber, eine Versandverbindung einzurichten."
@@ -1358,6 +1370,9 @@
   "Choose EU or global sending infrastructure.": [
     "Wähle die europäische oder globale Versandinfrastruktur."
   ],
+  "Choose Sending only for your application. Save the key as WEBDOCK_MAIL_API_KEY on your server; it is shown once. Never put it in browser code.": [
+    "Wähle „Nur Versand“ für deine Anwendung. Speichere den einmalig angezeigten Key als WEBDOCK_MAIL_API_KEY auf deinem Server. Er gehört niemals in Browser-Code."
+  ],
   "Choose a cluster for Kubernetes": [
     "Cluster für Kubernetes auswählen"
   ],
@@ -1429,6 +1444,9 @@
   ],
   "Choose enabled or disabled.": [
     "Wähle aktiviert oder deaktiviert."
+  ],
+  "Choose how you send": [
+    "Versandart wählen"
   ],
   "Choose owner, administrator or member.": [
     "Wähle Owner, Administrator oder Mitglied."
@@ -1729,6 +1747,9 @@
   ],
   "Connect a repository to configure Git deployments.": [
     "Verbinde ein Repository, um Git-Deployments zu konfigurieren."
+  ],
+  "Connect a sending account": [
+    "Versandkonto verbinden"
   ],
   "Connect a sending account and verify domain ownership and DNS.": [
     "Verbinde ein Versandkonto und bestätige Domaininhaberschaft und DNS-Einträge."
@@ -2117,6 +2138,9 @@
   ],
   "Create a reusable plan in the plan library first.": [
     "Erstelle zuerst einen wiederverwendbaren Tarif in der Tarifbibliothek."
+  ],
+  "Create a sending API key": [
+    "API-Key für den Versand erstellen"
   ],
   "Create an individual offer": [
     "Individuelles Angebot erstellen"
@@ -3150,6 +3174,9 @@
   "Find a person": [
     "Person suchen"
   ],
+  "Find an API request by route or request ID to diagnose failures. HTTP 2xx means the request succeeded; check the message for delivery status.": [
+    "Finde einen API-Aufruf über Route oder Request-ID, um Fehler zu untersuchen. HTTP 2xx bedeutet einen erfolgreichen Aufruf; den Zustellstatus findest du bei der Nachricht."
+  ],
   "Find an image": [
     "Bild suchen"
   ],
@@ -3369,6 +3396,9 @@
   "Group website access by customer. Public sign-up remains closed.": [
     "Bündele den Website-Zugriff nach Kunden. Die öffentliche Registrierung bleibt geschlossen."
   ],
+  "HTTP 200 returns a message id. Check Messages for its status: it may be accepted, scheduled, simulated or suppressed. Accepted is not delivered; use recipient status or an email.delivered webhook to confirm delivery.": [
+    "HTTP 200 liefert eine Nachrichten-ID. Unter „Nachrichten“ siehst du, ob sie angenommen, geplant, simuliert oder gesperrt wurde. Angenommen bedeutet noch nicht zugestellt: Prüfe den Empfängerstatus oder einen email.delivered-Webhook."
+  ],
   "HTTP API": [
     "HTTP-API"
   ],
@@ -3543,6 +3573,9 @@
   "If an account exists for that email address, you’ll receive a password reset link. Check your inbox and spam folder.": [
     "Wenn für diese E-Mail-Adresse ein Konto besteht, erhältst du einen Link zum Zurücksetzen des Passworts. Prüfe deinen Posteingang und Spam-Ordner."
   ],
+  "If the Mail API, dispatch or sending credential is not enabled, contact your Webdock operator before sending. A missing provider callback means delivery updates may be unavailable.": [
+    "Wenn Mail-API, Versand oder Versandzugang nicht aktiviert sind, kontaktiere vor dem Senden deinen Webdock-Operator. Ohne Provider-Callback können Zustellmeldungen fehlen."
+  ],
   "If this is your first visit, use the password setup link in your invitation email. Ask your administrator to resend it if the link has expired.": [
     "Nutze bei deinem ersten Besuch den Link zur Passwort-Einrichtung in der Einladungs-E-Mail. Bitte deinen Admin um einen neuen Link, falls er abgelaufen ist."
   ],
@@ -3611,6 +3644,9 @@
   ],
   "Initializing": [
     "Wird initialisiert"
+  ],
+  "Inspect messages and delivery results": [
+    "Nachrichten und Zustellergebnisse prüfen"
   ],
   "Install and connect": [
     "Installieren und verbinden"
@@ -4542,6 +4578,9 @@
   "Managed Mail gateway": [
     "Verwalteter Mailversand"
   ],
+  "Managed Mail uses an account provided by Webdock. BYOK connects your own turboSMTP account using its Consumer key and secret.": [
+    "Managed Mail nutzt ein von Webdock bereitgestelltes Konto. BYOK verbindet dein eigenes turboSMTP-Konto über dessen Consumer-Key und Secret."
+  ],
   "Managed applications": [
     "Verwaltete Anwendungen"
   ],
@@ -4815,6 +4854,12 @@
   "No": [
     "Nein"
   ],
+  "No API keys yet. Create a Sending only key below for your application.": [
+    "Noch keine API-Keys. Erstelle unten einen Key mit „Nur Versand“ für deine Anwendung."
+  ],
+  "No API requests yet. Run the Quickstart example, then return here to inspect the request.": [
+    "Noch keine API-Aufrufe. Führe das Quickstart-Beispiel aus und prüfe anschließend hier den Aufruf."
+  ],
   "No CMS linked": [
     "Kein CMS verknüpft"
   ],
@@ -4862,6 +4907,9 @@
   ],
   "No archived projects": [
     "Keine archivierten Projekte"
+  ],
+  "No blocked recipients. Bounces and complaints can add recipients here automatically.": [
+    "Keine gesperrten Empfänger. Unzustellbare Mails und Beschwerden können hier automatisch Empfänger hinzufügen."
   ],
   "No build output yet.": [
     "Noch keine Build-Ausgabe vorhanden."
@@ -4995,6 +5043,9 @@
   "No matching requests on this page.": [
     "Keine passenden Anfragen auf dieser Seite."
   ],
+  "No matching results. Clear the filters to see all entries.": [
+    "Keine passenden Ergebnisse. Entferne die Filter, um alle Einträge zu sehen."
+  ],
   "No media yet": [
     "Noch keine Medien"
   ],
@@ -5070,6 +5121,9 @@
   "No sender domains found in this account.": [
     "Keine Versanddomains in diesem Konto gefunden."
   ],
+  "No sender domains yet. Add your domain below to get the DNS records.": [
+    "Noch keine Absenderdomains. Füge unten deine Domain hinzu, um die DNS-Einträge zu erhalten."
+  ],
   "No storage connections yet. Usage is unavailable until a store is connected and measured.": [
     "Noch keine Speicherverbindungen. Der Verbrauch ist erst verfügbar, wenn ein Speicher verbunden und gemessen wurde."
   ],
@@ -5081,6 +5135,9 @@
   ],
   "No unsaved changes": [
     "Keine ungespeicherten Änderungen"
+  ],
+  "No webhooks yet. Add an endpoint below when your application needs delivery notifications.": [
+    "Noch keine Webhooks. Füge unten einen Endpunkt hinzu, wenn deine Anwendung Zustellbenachrichtigungen benötigt."
   ],
   "No website access yet. Accept a pending invitation above or contact your administrator.": [
     "Noch kein Website-Zugriff. Nimm oben eine offene Einladung an oder wende dich an deinen Admin."
@@ -6330,6 +6387,9 @@
   "Replace image": [
     "Bild ersetzen"
   ],
+  "Replace mail@example.com with an address on your verified domain and set WEBDOCK_MAIL_API_KEY in your server environment. Keep the simulator recipient for this first request.": [
+    "Ersetze mail@example.com durch eine Adresse deiner verifizierten Domain und setze WEBDOCK_MAIL_API_KEY in deiner Serverumgebung. Behalte für den ersten Aufruf den Simulator-Empfänger bei."
+  ],
   "Replace management key": [
     "Verwaltungszugang ersetzen"
   ],
@@ -6639,6 +6699,9 @@
   "Run the configured workflow in GitHub Actions. Webdock imports successful builds automatically.": [
     "Starte den konfigurierten Workflow in GitHub Actions. Webdock importiert erfolgreiche Builds automatisch."
   ],
+  "Run the simulator example": [
+    "Simulator-Beispiel ausführen"
+  ],
   "Runtime configuration changed. Build again before publication.": [
     "Die Laufzeitkonfiguration wurde geändert. Erstelle vor der Veröffentlichung einen neuen Build."
   ],
@@ -6897,6 +6960,9 @@
   "Select a date and time.": [
     "Bitte Datum und Uhrzeit auswählen."
   ],
+  "Select a message to read it, or write a new email using the button above.": [
+    "Wähle eine Nachricht zum Lesen oder schreibe über den Button oben eine neue E-Mail."
+  ],
   "Select a message to read it.": [
     "Wähle eine Nachricht zum Lesen aus."
   ],
@@ -6978,6 +7044,9 @@
   "Send reset link": [
     "Link zum Zurücksetzen senden"
   ],
+  "Send transactional email from your application. Follow these steps once per sending connection.": [
+    "Versende transaktionale E-Mails aus deiner Anwendung. Richte jede Versandverbindung mit diesen Schritten ein."
+  ],
   "Sender": [
     "Absender"
   ],
@@ -6992,6 +7061,9 @@
   ],
   "Sender domains": [
     "Absenderdomains"
+  ],
+  "Sender domains prove you may send from an address. Adding a domain does not create a mailbox or change incoming email.": [
+    "Absenderdomains weisen deine Versandberechtigung nach. Das Hinzufügen erstellt kein Postfach und verändert den E-Mail-Empfang nicht."
   ],
   "Sender-domain operation could not be confirmed using the tenant account. The provider may have applied it; refresh before retrying.": [
     "Die Aktion für die Absenderdomain konnte über das Mandantenkonto nicht bestätigt werden. Der Anbieter könnte sie bereits ausgeführt haben; aktualisiere die Ansicht, bevor du es erneut versuchst."
@@ -7025,6 +7097,9 @@
   ],
   "Sending credential": [
     "Versandzugang"
+  ],
+  "Sending is in progress. Refresh this page to check the result; do not submit the same message again.": [
+    "Der Versand läuft. Lade die Seite neu, um das Ergebnis zu prüfen. Übermittle dieselbe Nachricht nicht erneut."
   ],
   "Sending is paused.": [
     "Der Versand ist pausiert."
@@ -7476,6 +7551,9 @@
   "Suppressions": [
     "Sperrliste"
   ],
+  "Suppressions block sending to specific recipients, for example after a bounce or complaint. Remove a block only after resolving its cause.": [
+    "Sperrlisten verhindern den Versand an bestimmte Empfänger, etwa nach einer unzustellbaren Mail oder Beschwerde. Entferne eine Sperre erst, wenn die Ursache behoben ist."
+  ],
   "Suspend": [
     "Pausieren"
   ],
@@ -7809,6 +7887,9 @@
   "The project or deletion preview changed. Review it again.": [
     "Das Projekt oder die Löschvorschau wurde geändert. Prüfe die Vorschau erneut."
   ],
+  "The provider accepted this message. This does not confirm delivery; check the recipient status and timeline below.": [
+    "Der Provider hat die Nachricht angenommen. Das bestätigt noch keine Zustellung. Prüfe unten den Empfängerstatus und den Verlauf."
+  ],
   "The provider did not confirm the requested domain setting. The displayed state reflects its response.": [
     "Der Anbieter hat die angeforderte Domain-Einstellung nicht bestätigt. Der angezeigte Stand entspricht seiner Antwort."
   ],
@@ -8073,6 +8154,12 @@
   "This message is truncated.": [
     "Diese Nachricht wird gekürzt angezeigt."
   ],
+  "This message is waiting to be sent. You can change or cancel its scheduled time below.": [
+    "Diese Nachricht wartet auf den Versand. Du kannst unten ihren geplanten Zeitpunkt ändern oder den Versand abbrechen."
+  ],
+  "This message was not sent because its recipients were blocked. Review the suppression list before trying again.": [
+    "Diese Nachricht wurde wegen gesperrter Empfänger nicht versendet. Prüfe die Sperrliste vor einem neuen Versuch."
+  ],
   "This notice covers Webdock account and tenant management, the private Webdock Studio Vercel integration and these public information pages. It does not replace privacy information for independently operated customer websites or Vercel’s own service.": [
     "Dieser Hinweis gilt für die Konto- und Mandantenverwaltung von Webdock, die private Vercel-Integration von Webdock Studio und diese öffentlichen Informationsseiten. Er ersetzt weder die Datenschutzhinweise unabhängig betriebener Kundenwebsites noch diejenigen für Vercels eigenen Dienst."
   ],
@@ -8154,8 +8241,14 @@
   "This runtime is already assigned to another database user.": [
     "Diese Instanz ist bereits einem anderen Datenbankbenutzer zugewiesen."
   ],
+  "This scheduled message was canceled before sending.": [
+    "Diese geplante Nachricht wurde vor dem Versand abgebrochen."
+  ],
   "This secret is shown only now. Store it securely before leaving or dismissing this panel.": [
     "Dieses Secret wird nur jetzt angezeigt. Speichere es sicher, bevor du diese Ansicht verlässt oder ausblendest."
+  ],
+  "This send failed. Inspect the timeline and request logs, fix the cause, then decide whether a new send is needed.": [
+    "Der Versand ist fehlgeschlagen. Prüfe Verlauf und Request-Logs, behebe die Ursache und entscheide dann, ob ein neuer Versand nötig ist."
   ],
   "This sign-in request has expired or is no longer valid. Start a new sign-in from Studio.": [
     "Diese Anmeldeanfrage ist abgelaufen oder nicht mehr gültig. Starte eine neue Anmeldung über Studio."
@@ -8312,6 +8405,9 @@
   ],
   "Unavailable account": [
     "Nicht verfügbares Konto"
+  ],
+  "Understand the response": [
+    "Die Antwort verstehen"
   ],
   "Undo": [
     "Rückgängig"
@@ -8541,6 +8637,9 @@
   "Use individual IPv4 or IPv6 addresses, without CIDR ranges.": [
     "Verwende einzelne IPv4- oder IPv6-Adressen ohne CIDR-Bereiche."
   ],
+  "Use one Idempotency-Key per intended email. Reuse that key when retrying the same request; use a new key only for a different email. A send_outcome_unknown response must be investigated, not resent.": [
+    "Verwende pro beabsichtigter E-Mail einen Idempotency-Key. Nutze bei einer Wiederholung desselben Aufrufs denselben Key; einen neuen nur für eine andere E-Mail. Prüfe send_outcome_unknown, statt die Nachricht erneut zu senden."
+  ],
   "Use the IPv4 sending address assigned by the mail provider.": [
     "Verwende die vom Mail-Anbieter zugewiesene IPv4-Versandadresse."
   ],
@@ -8570,6 +8669,9 @@
   ],
   "Use your tenant portal to manage customer access.": [
     "Verwalte Kundenzugriffe über dein Mandantenportal."
+  ],
+  "Use your verified sender with delivered@test.mail.webdock.dev. No real email leaves Webdock. Inspect the message before switching to your own recipient.": [
+    "Nutze deinen verifizierten Absender mit delivered@test.mail.webdock.dev. Es wird keine echte E-Mail versendet. Prüfe die Nachricht, bevor du deine eigene Empfängeradresse einsetzt."
   ],
   "Used for account branding and authentication emails.": [
     "Wird für die Kontodarstellung und Authentifizierungs-E-Mails verwendet."
@@ -8751,6 +8853,9 @@
   "Verify your email first": [
     "Zuerst E-Mail-Adresse bestätigen"
   ],
+  "Verify your sender domain": [
+    "Absenderdomain verifizieren"
+  ],
   "Verify your sign-in": [
     "Deine Anmeldung bestätigen"
   ],
@@ -8904,6 +9009,9 @@
   "Webdock API keys": [
     "Webdock-API-Schlüssel"
   ],
+  "Webdock API keys authenticate your application. Sending only is sufficient to send emails; Full access also manages Mail resources. These are different from provider credentials.": [
+    "Webdock-API-Keys authentifizieren deine Anwendung. „Nur Versand“ reicht zum Senden; Vollzugriff erlaubt auch die Verwaltung von Mail-Ressourcen. Diese Keys unterscheiden sich von den Provider-Zugangsdaten."
+  ],
   "Webdock Account": [
     "Webdock-Konto"
   ],
@@ -8973,8 +9081,14 @@
   "Webhook": [
     "Webhook"
   ],
+  "Webhook signature verification": [
+    "Webhook-Signatur prüfen"
+  ],
   "Webhooks": [
     "Webhooks"
+  ],
+  "Webhooks notify your application when delivery changes. Add your HTTPS endpoint, select events and verify each request with the signing secret.": [
+    "Webhooks informieren deine Anwendung über Zustellereignisse. Trage deinen HTTPS-Endpunkt ein, wähle Ereignisse und prüfe jede Anfrage mit dem Signatur-Secret."
   ],
   "Webhooks sign the exact raw body. Verify the timestamp within five minutes and deduplicate webhook-id atomically.": [
     "Webhooks signieren den unveränderten Nachrichtenkörper. Prüfe einen Zeitstempel innerhalb von fünf Minuten und verhindere doppelte Verarbeitung anhand von webhook-id atomar."
@@ -9194,6 +9308,9 @@
   ],
   "Your existing email address and password still work.": [
     "Deine bisherige E-Mail-Adresse und dein Passwort funktionieren weiterhin."
+  ],
+  "Your first API email": [
+    "Deine erste E-Mail per API"
   ],
   "Your first customer starts here": [
     "Hier legst du deinen ersten Kunden an."

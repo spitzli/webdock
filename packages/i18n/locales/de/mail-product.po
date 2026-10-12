@@ -559,3 +559,120 @@ msgstr "Klickrate"
 
 msgid "For CID images, use the content ID followed by @your-sender-domain in the HTML image URL. The current provider sends HTML without a separate text alternative when both are supplied."
 msgstr "Verwende für CID-Bilder die Content-ID mit @deiner-absenderdomain in der HTML-Bildadresse. Wenn Text und HTML angegeben sind, versendet der aktuelle Provider HTML ohne separate Textalternative."
+
+msgid "Your first API email"
+msgstr "Deine erste E-Mail per API"
+
+msgid "Send transactional email from your application. Follow these steps once per sending connection."
+msgstr "Versende transaktionale E-Mails aus deiner Anwendung. Richte jede Versandverbindung mit diesen Schritten ein."
+
+msgid "An owner or admin sets up the connection, domain and API key. You can view messages and delivery results."
+msgstr "Ein Owner oder Admin richtet Verbindung, Domain und API-Key ein. Du kannst Nachrichten und Zustellergebnisse ansehen."
+
+msgid "Connect a sending account"
+msgstr "Versandkonto verbinden"
+
+msgid "Managed Mail uses an account provided by Webdock. BYOK connects your own turboSMTP account using its Consumer key and secret."
+msgstr "Managed Mail nutzt ein von Webdock bereitgestelltes Konto. BYOK verbindet dein eigenes turboSMTP-Konto über dessen Consumer-Key und Secret."
+
+msgid "Verify your sender domain"
+msgstr "Absenderdomain verifizieren"
+
+msgid "Add the domain after @ in your sender address. Publish the displayed DNS records, then verify ownership and sending readiness."
+msgstr "Füge die Domain hinter dem @ deiner Absenderadresse hinzu. Trage die angezeigten DNS-Einträge ein und prüfe danach Eigentum und Versandbereitschaft."
+
+msgid "Create a sending API key"
+msgstr "API-Key für den Versand erstellen"
+
+msgid "Choose Sending only for your application. Save the key as WEBDOCK_MAIL_API_KEY on your server; it is shown once. Never put it in browser code."
+msgstr "Wähle „Nur Versand“ für deine Anwendung. Speichere den einmalig angezeigten Key als WEBDOCK_MAIL_API_KEY auf deinem Server. Er gehört niemals in Browser-Code."
+
+msgid "Run the simulator example"
+msgstr "Simulator-Beispiel ausführen"
+
+msgid "Use your verified sender with delivered@test.mail.webdock.dev. No real email leaves Webdock. Inspect the message before switching to your own recipient."
+msgstr "Nutze deinen verifizierten Absender mit delivered@test.mail.webdock.dev. Es wird keine echte E-Mail versendet. Prüfe die Nachricht, bevor du deine eigene Empfängeradresse einsetzt."
+
+msgid "Inspect messages and delivery results"
+msgstr "Nachrichten und Zustellergebnisse prüfen"
+
+msgid "Ask an owner or admin to set up sending for this tenant."
+msgstr "Bitte einen Owner oder Admin, den Versand für diesen Mandanten einzurichten."
+
+msgid "Replace mail@example.com with an address on your verified domain and set WEBDOCK_MAIL_API_KEY in your server environment. Keep the simulator recipient for this first request."
+msgstr "Ersetze mail@example.com durch eine Adresse deiner verifizierten Domain und setze WEBDOCK_MAIL_API_KEY in deiner Serverumgebung. Behalte für den ersten Aufruf den Simulator-Empfänger bei."
+
+msgid "Understand the response"
+msgstr "Die Antwort verstehen"
+
+msgid "HTTP 200 returns a message id. Check Messages for its status: it may be accepted, scheduled, simulated or suppressed. Accepted is not delivered; use recipient status or an email.delivered webhook to confirm delivery."
+msgstr "HTTP 200 liefert eine Nachrichten-ID. Unter „Nachrichten“ siehst du, ob sie angenommen, geplant, simuliert oder gesperrt wurde. Angenommen bedeutet noch nicht zugestellt: Prüfe den Empfängerstatus oder einen email.delivered-Webhook."
+
+msgid "Use one Idempotency-Key per intended email. Reuse that key when retrying the same request; use a new key only for a different email. A send_outcome_unknown response must be investigated, not resent."
+msgstr "Verwende pro beabsichtigter E-Mail einen Idempotency-Key. Nutze bei einer Wiederholung desselben Aufrufs denselben Key; einen neuen nur für eine andere E-Mail. Prüfe send_outcome_unknown, statt die Nachricht erneut zu senden."
+
+msgid "Sender domains prove you may send from an address. Adding a domain does not create a mailbox or change incoming email."
+msgstr "Absenderdomains weisen deine Versandberechtigung nach. Das Hinzufügen erstellt kein Postfach und verändert den E-Mail-Empfang nicht."
+
+msgid "Webdock API keys authenticate your application. Sending only is sufficient to send emails; Full access also manages Mail resources. These are different from provider credentials."
+msgstr "Webdock-API-Keys authentifizieren deine Anwendung. „Nur Versand“ reicht zum Senden; Vollzugriff erlaubt auch die Verwaltung von Mail-Ressourcen. Diese Keys unterscheiden sich von den Provider-Zugangsdaten."
+
+msgid "Webhooks notify your application when delivery changes. Add your HTTPS endpoint, select events and verify each request with the signing secret."
+msgstr "Webhooks informieren deine Anwendung über Zustellereignisse. Trage deinen HTTPS-Endpunkt ein, wähle Ereignisse und prüfe jede Anfrage mit dem Signatur-Secret."
+
+msgid "Suppressions block sending to specific recipients, for example after a bounce or complaint. Remove a block only after resolving its cause."
+msgstr "Sperrlisten verhindern den Versand an bestimmte Empfänger, etwa nach einer unzustellbaren Mail oder Beschwerde. Entferne eine Sperre erst, wenn die Ursache behoben ist."
+
+msgid "Find an API request by route or request ID to diagnose failures. HTTP 2xx means the request succeeded; check the message for delivery status."
+msgstr "Finde einen API-Aufruf über Route oder Request-ID, um Fehler zu untersuchen. HTTP 2xx bedeutet einen erfolgreichen Aufruf; den Zustellstatus findest du bei der Nachricht."
+
+msgid "No matching results. Clear the filters to see all entries."
+msgstr "Keine passenden Ergebnisse. Entferne die Filter, um alle Einträge zu sehen."
+
+msgid "No sender domains yet. Add your domain below to get the DNS records."
+msgstr "Noch keine Absenderdomains. Füge unten deine Domain hinzu, um die DNS-Einträge zu erhalten."
+
+msgid "No API keys yet. Create a Sending only key below for your application."
+msgstr "Noch keine API-Keys. Erstelle unten einen Key mit „Nur Versand“ für deine Anwendung."
+
+msgid "No webhooks yet. Add an endpoint below when your application needs delivery notifications."
+msgstr "Noch keine Webhooks. Füge unten einen Endpunkt hinzu, wenn deine Anwendung Zustellbenachrichtigungen benötigt."
+
+msgid "No blocked recipients. Bounces and complaints can add recipients here automatically."
+msgstr "Keine gesperrten Empfänger. Unzustellbare Mails und Beschwerden können hier automatisch Empfänger hinzufügen."
+
+msgid "No API requests yet. Run the Quickstart example, then return here to inspect the request."
+msgstr "Noch keine API-Aufrufe. Führe das Quickstart-Beispiel aus und prüfe anschließend hier den Aufruf."
+
+msgid "Choose how you send"
+msgstr "Versandart wählen"
+
+msgid "After connecting, verify a sender domain and create a Webdock API key for your application. Provider credentials belong only in this setup form."
+msgstr "Verifiziere nach dem Verbinden eine Absenderdomain und erstelle einen Webdock-API-Key für deine Anwendung. Provider-Zugangsdaten gehören nur in dieses Einrichtungsformular."
+
+msgid "If the Mail API, dispatch or sending credential is not enabled, contact your Webdock operator before sending. A missing provider callback means delivery updates may be unavailable."
+msgstr "Wenn Mail-API, Versand oder Versandzugang nicht aktiviert sind, kontaktiere vor dem Senden deinen Webdock-Operator. Ohne Provider-Callback können Zustellmeldungen fehlen."
+
+msgid "The provider accepted this message. This does not confirm delivery; check the recipient status and timeline below."
+msgstr "Der Provider hat die Nachricht angenommen. Das bestätigt noch keine Zustellung. Prüfe unten den Empfängerstatus und den Verlauf."
+
+msgid "This send failed. Inspect the timeline and request logs, fix the cause, then decide whether a new send is needed."
+msgstr "Der Versand ist fehlgeschlagen. Prüfe Verlauf und Request-Logs, behebe die Ursache und entscheide dann, ob ein neuer Versand nötig ist."
+
+msgid "This message is waiting to be sent. You can change or cancel its scheduled time below."
+msgstr "Diese Nachricht wartet auf den Versand. Du kannst unten ihren geplanten Zeitpunkt ändern oder den Versand abbrechen."
+
+msgid "This message was not sent because its recipients were blocked. Review the suppression list before trying again."
+msgstr "Diese Nachricht wurde wegen gesperrter Empfänger nicht versendet. Prüfe die Sperrliste vor einem neuen Versuch."
+
+msgid "Sending is in progress. Refresh this page to check the result; do not submit the same message again."
+msgstr "Der Versand läuft. Lade die Seite neu, um das Ergebnis zu prüfen. Übermittle dieselbe Nachricht nicht erneut."
+
+msgid "This scheduled message was canceled before sending."
+msgstr "Diese geplante Nachricht wurde vor dem Versand abgebrochen."
+
+msgid "Select a message to read it, or write a new email using the button above."
+msgstr "Wähle eine Nachricht zum Lesen oder schreibe über den Button oben eine neue E-Mail."
+
+msgid "Webhook signature verification"
+msgstr "Webhook-Signatur prüfen"

@@ -2069,3 +2069,7 @@ td small {
 .studio-portal .webmail-html {display:block;box-sizing:border-box;width:100%;min-height:260px;border:1px solid var(--border,#dce3ec);border-radius:6px;background:#fff;}
 
 .mail-metric > p { font-size: 2rem; font-weight: 650; line-height: 1.15; margin-block: .65rem 0; }
+
+.mail-getting-started ol { padding-inline-start: 1.5rem; max-width: 75ch; }
+.mail-getting-started li { padding-inline-start: .4rem; margin-block: 1rem; }
+.mail-getting-started li p { margin-block: .35rem 0; color: var(--muted); }

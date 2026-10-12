@@ -191,6 +191,6 @@ export function Webmail({ customerID, mailboxID, address }: { customerID: string
       <h2>{message.subject || i18n.t("No subject")}</h2><p>{addresses(message.from)}<br /><span className="muted">{addresses(message.to)}</span></p>{message.htmlBody?.some(part=>part.type==="text/html")?<MessageHTML html={message.htmlBody.filter(part=>part.type==="text/html").map(part=>message.bodyValues?.[part.partId]?.value??"").join("<br>")} />:<pre className="webmail-body">{bodyText(message) || i18n.t("This message has no plain-text body.")}</pre>}
       {Object.values(message.bodyValues??{}).some(part=>part.isTruncated) && <p role="status">{i18n.t("This message is truncated.")}</p>}
       {!!message.attachments?.length && <section aria-label={i18n.t("Attachments")}><h3>{i18n.t("Attachments")}</h3>{message.attachments.map((item,index)=><p key={item.blobId+index}><button onClick={()=>void download(item)}>{item.name || i18n.t("Attachment")}</button> <span className="muted">{Math.ceil(item.size/1024)} KiB</span></p>)}</section>}
-    </>:<p className="webmail-empty muted">{i18n.t("Select a message to read it.")}</p>}</article>
+    </>:<p className="webmail-empty muted">{i18n.t("Select a message to read it, or write a new email using the button above.")}</p>}</article>
   </section>;
 }

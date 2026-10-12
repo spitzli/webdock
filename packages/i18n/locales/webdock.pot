@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-12 19:19+0200\n"
+"POT-Creation-Date: 2026-10-12 20:08+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -895,7 +895,7 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:11
 #: apps/admin/src/components/hosting/own-mail.tsx:139
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 #: apps/admin/src/lib/ui-labels.ts:6 apps/auth/src/lib/i18n-labels.ts:4
 msgid "Pending"
 msgstr ""
@@ -1149,6 +1149,30 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:19
 msgid "Open database"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/emails/[id]/page.tsx:3
+msgid "The provider accepted this message. This does not confirm delivery; check the recipient status and timeline below."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/emails/[id]/page.tsx:3
+msgid "This send failed. Inspect the timeline and request logs, fix the cause, then decide whether a new send is needed."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/emails/[id]/page.tsx:3
+msgid "This message is waiting to be sent. You can change or cancel its scheduled time below."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/emails/[id]/page.tsx:3
+msgid "This message was not sent because its recipients were blocked. Review the suppression list before trying again."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/emails/[id]/page.tsx:3
+msgid "Sending is in progress. Refresh this page to check the result; do not submit the same message again."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/emails/[id]/page.tsx:3
+msgid "This scheduled message was canceled before sending."
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/inbox/page.tsx:14
@@ -2316,95 +2340,95 @@ msgstr ""
 msgid "Mail is temporarily unavailable. Retry with the same request."
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:80
 msgid "Ownership verified"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Sending only"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Full Mail API access"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Manual"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Complaint"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Unsubscribed"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Scheduled"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Sending"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 #: apps/admin/src/lib/ui-labels.ts:6 apps/auth/src/lib/i18n-labels.ts:4
 msgid "Accepted"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 #: apps/admin/src/lib/ui-labels.ts:9 apps/auth/src/lib/i18n-labels.ts:6
 msgid "Failed"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Outcome unknown"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Canceled"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Suppressed"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Delivered"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Bounced"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 #: apps/admin/src/lib/ui-labels.ts:7 apps/auth/src/lib/i18n-labels.ts:5
 msgid "Ready"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Paused"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Needs review"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Disconnected"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Clicked"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Opened"
 msgstr ""
 
-#: apps/admin/src/components/mail/product-page.tsx:16
+#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Delivery delayed"
 msgstr ""
 

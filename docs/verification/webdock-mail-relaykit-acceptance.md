@@ -74,3 +74,16 @@ DNS configuration was changed. Gateway/dispatch/webhook switches default off.
 Existing incoming Mail instances and retained data remain intact. Customers
 with any native incoming service remain explicitly rejected by the new direct
 dispatcher until the Stalwart submission integration is implemented.
+
+## Developer onboarding UX follow-up
+
+On 2026-10-12, added a linked four-step first-email guide, explicit server-side
+key handling, provider/Webdock credential explanations, resource-specific empty
+states and actionable message-status descriptions. Quickstart explains HTTP
+success versus delivery, safe idempotent retries and simulator setup; advanced
+webhook verification is collapsed by default. Webmail retains everyday language.
+
+Admin suite106/106, TypeScript and production build passed. T3 browser verified
+real SSO, German copy, connection-preserving setup navigation and empty API-key
+guidance, with no document overflow at390/1440px. This is an implementation and
+browser check, not a usability study with an unprepared external user.
