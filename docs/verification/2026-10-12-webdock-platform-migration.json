@@ -1,5 +1,5 @@
 {
-  "status": "live-root-cleanup-pending",
+  "status": "complete",
   "scope": "Webdock platform only; independent customer databases excluded",
   "sourceSchemas": [
     "public",
@@ -67,9 +67,7 @@
     "stallHttpStatus": 200,
     "excludedSchemaDefaultAndTriggerDependencies": 0
   },
-  "pending": [
-    "Root-only cleanup: set temporary role NOLOGIN/NOCREATEROLE, revoke memberships and remove its HBA entry once 1Password SSH signing is available. Its password is already NULL, both entrypoints reject the old credential and no role sessions remain."
-  ],
+  "pending": [],
   "sourceFence": {
     "sourceFenced": true,
     "tables": 266,
@@ -115,7 +113,14 @@
     "passwordRevoked": true,
     "sessions": 0,
     "directAndPoolerReject": true,
-    "rootAttributeAndHbaCleanupPending": true,
-    "at": "2026-10-12T22:17:37.631Z"
+    "rootAttributeAndHbaCleanupPending": false,
+    "at": "2026-10-12T22:17:37.631Z",
+    "login": false,
+    "createRole": false,
+    "memberships": 0,
+    "hbaEntries": 0,
+    "persistentAllowlistEntryRemoved": true,
+    "browserWebsiteOwnerPreserved": true,
+    "rootCleanupCompletedAt": "2026-10-13T04:44:39.660946+00:00"
   }
 }
