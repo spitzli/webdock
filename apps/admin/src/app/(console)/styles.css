@@ -2129,3 +2129,9 @@ main h2 { font-size: 16px; letter-spacing: 0; }
 .mail-getting-started ol { padding-inline-start: 1.5rem; max-width: 75ch; }
 .mail-getting-started li { padding-inline-start: .4rem; margin-block: 1rem; }
 .mail-getting-started li p { margin-block: .35rem 0; color: var(--muted); }
+
+/* Link-local feedback while authenticated dynamic routes are loading. */
+.navigation-pending { display: inline-flex; width: 1em; height: 1em; margin-inline-start: .35em; vertical-align: middle; }
+.navigation-spinner { width: .85em; height: .85em; border: 2px solid currentColor; border-inline-end-color: transparent; border-radius: 50%; animation: navigation-spin .8s linear infinite; }
+@keyframes navigation-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .navigation-spinner { animation: none; } }

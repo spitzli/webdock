@@ -4,6 +4,7 @@ import { msgid } from '@webdock/i18n';
 import { useI18n } from '@webdock/i18n/react';
 import { LanguagePicker } from "@webdock/i18n/picker";
 
+import { NavigationPending } from "./navigation-pending";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { mainArea } from "@/lib/workspace-navigation";
@@ -18,7 +19,7 @@ export function Navigation({ operator = true }: { operator?: boolean }) {
     ? [["projects", "/", msgid("Projects")], ["customers", "/customers", msgid("Customers")], ["operations", "/operations", msgid("Operations")]]
     : [["workspace", "/tenants", msgid("Workspaces")], ["sites", "/sites", msgid("My websites")]];
   const management = [["people", "/people", msgid("People & access")], ["plans", "/admin/plans", msgid("Plans")], ["connections", "/integrations", msgid("Connections")], ["settings", "/admin", msgid("Settings")]];
-  const renderLinks = (links: string[][]) => links.map(([id, href, label]) => <Link key={id} href={href} aria-current={active === id ? "page" : undefined}>{i18n.t(label)}</Link>);
+  const renderLinks = (links: string[][]) => links.map(([id, href, label]) => <Link key={id} href={href} aria-current={active === id ? "page" : undefined}>{i18n.t(label)}<NavigationPending /></Link>);
   return <div className="navigation-groups">
     <nav aria-label={i18n.t("Main navigation")}>{renderLinks(primary)}</nav>
     {operator && <div className="navigation-management"><p className="navigation-label">{i18n.t("Administration")}</p><nav aria-label={i18n.t("Administration")}>{renderLinks(management)}</nav></div>}

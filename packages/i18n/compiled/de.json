@@ -869,6 +869,9 @@
   "Applied revision": [
     "Angewendete Revision"
   ],
+  "Applies immediately to this customer only and replaces their current plan. It is not added to the reusable plan library. Existing extras are preserved.": [
+    "Gilt sofort nur für diesen Kunden und ersetzt seinen bisherigen Plan. Er wird nicht in den Katalog wiederverwendbarer Pläne aufgenommen. Bestehende Extras bleiben erhalten."
+  ],
   "Applies immediately. Existing extras are preserved.": [
     "Gilt sofort. Vorhandene Zusatzkontingente bleiben erhalten."
   ],
@@ -964,6 +967,9 @@
   ],
   "Assign customer": [
     "Kunde zuweisen"
+  ],
+  "Assign individual plan": [
+    "Individuellen Plan zuweisen"
   ],
   "Assign plan": [
     "Tarif zuweisen"
@@ -3839,6 +3845,9 @@
   ],
   "Individual IPv4 or IPv6 addresses, separated by commas or spaces. Blank allows any IP address.": [
     "Einzelne IPv4- oder IPv6-Adressen, getrennt durch Kommas oder Leerzeichen. Ein leeres Feld erlaubt jede IP-Adresse."
+  ],
+  "Individual plan for this customer": [
+    "Individueller Plan für diesen Kunden"
   ],
   "Information reflects the latest successful request and can become outdated. Check Vercel directly before relying on a deployment or domain status for operational decisions. Availability depends on Vercel and the hosting services used by Webdock; no separate uptime commitment is made by these terms.": [
     "Die Informationen entsprechen der letzten erfolgreichen Abfrage und können veralten. Prüfe Vercel direkt, bevor du dich bei betrieblichen Entscheidungen auf einen Deployment- oder Domainstatus verlässt. Die Verfügbarkeit hängt von Vercel und den von Webdock verwendeten Hostingdiensten ab; diese Bedingungen enthalten keine gesonderte Verfügbarkeitszusage."

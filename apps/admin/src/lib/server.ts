@@ -15,10 +15,7 @@ export const requireOperator = cache(async () => {
     if (denied.status === 401) redirect("/api/sso/login");
     throw new StudioError("Der Sitzungsstatus konnte nicht geprüft werden.", 503);
   }
-  if (sso) {
-    const portal = await sso.getDelegatedSession(requestHeaders);
-    if (portal && portal.role !== "operator") redirect("/tenants");
-  }
+  // The preview guard already verifies the current central operator session.
   const payload = await getCMS();
   const { user } = await payload.auth({ headers: requestHeaders });
   if (!user || user.collection !== "users" || user.role !== "operator")

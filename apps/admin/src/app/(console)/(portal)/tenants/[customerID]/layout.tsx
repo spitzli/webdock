@@ -18,10 +18,13 @@ export default async function TenantLayout({
   const { t } = await getRequestI18n();
   const session = await getStudioSession();
   if (!session) redirect('/api/sso/login?returnTo='+encodeURIComponent(`/tenants/${customerID}`));
-  let data;
-  try { data = await getTenant(await headers(), customerID); }
+  const requestHeaders = await headers();
+  let data, tenants;
+  try { [data, tenants] = await Promise.all([
+    getTenant(requestHeaders, customerID),
+    session.preview ? Promise.resolve([]) : listTenants(requestHeaders),
+  ]); }
   catch (error) { if (error instanceof AccessError) notFound(); throw error; }
-  const tenants = session.preview ? [] : await listTenants(await headers());
   return (
     <>
       <WorkspaceContext items={[{label:data.operator?t('Customers'):t('Workspaces'),href:data.operator?'/customers':'/tenants?choose=1'},{label:data.tenant.name,href:data.operator?`/customers/${customerID}`:undefined}]}/>
