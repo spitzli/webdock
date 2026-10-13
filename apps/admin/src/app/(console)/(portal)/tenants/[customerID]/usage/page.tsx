@@ -29,18 +29,20 @@ export default async function Usage({
 
   const { customerID } = await params,
     requestHeaders = await headers();
-  if (!(await auth.api.getSession({ headers: requestHeaders })))
+  const session = await auth.api.getSession({ headers: requestHeaders });
+  if (!session)
     redirect(
       `/api/sso/login?returnTo=${encodeURIComponent(`/tenants/${customerID}/usage`)}`,
     );
-  let tenantData, data, storage, plans, mail;
+  let tenantData, data, storage, plans, mail, databases;
   try {
-    tenantData = await getTenant(requestHeaders, customerID);
-    [data, storage, plans, mail] = await Promise.all([
+    [tenantData, data, storage, plans, mail, databases] = await Promise.all([
+      getTenant(requestHeaders, customerID),
       getTenantPlan(requestHeaders, customerID),
       getTenantStorage(requestHeaders, customerID),
-      tenantData.operator ? getPlans(requestHeaders) : Promise.resolve([]),
+      session.operator && !session.preview ? getPlans(requestHeaders) : Promise.resolve([]),
       getTenantMail(requestHeaders, customerID),
+      hostingPageCall<DatabaseBillingView>({action:'databases.orders.list',customerID},`/tenants/${customerID}/usage`),
     ]);
   } catch (error) {
     if (
@@ -57,7 +59,6 @@ export default async function Usage({
   const query = await searchParams;
   const view = tenantData.operator && (query.view === "plan" || query.view === "sources") ? query.view : "overview";
   const base = `/tenants/${customerID}/usage`;
-  const databases=await hostingPageCall<DatabaseBillingView>({action:'databases.orders.list',customerID},`/tenants/${customerID}/usage`);
   const storageLimit = data.subscription?.effective.storageBytes;
   return (
     <div className="access-page">

@@ -1,4 +1,5 @@
 "use client";
+import { msgid } from "@webdock/i18n";
 import { authLabel } from "@/lib/i18n-labels";
 import { useI18n } from "@webdock/i18n/react";
 import { useActionState, useState, type ReactNode } from "react";
@@ -31,6 +32,9 @@ export function UsageForms({ customerID, plans, data, storage }: {
     <div className="access-grid"><section className="auth-panel"><h2>{t("Assign a plan")}</h2><p>{t("Applies immediately. Existing extras are preserved.")}</p>
       {plans.length ? form("assign", "Assign plan", <label className="field">{t("Plan")}<select name="planID" required defaultValue=""><option value="" disabled>{t("Choose a plan")}</option>{plans.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>) : <p>{t("Create a reusable plan in the plan library first.")}</p>}
     </section><section className="auth-panel"><h2>{t("Additional allowances")}</h2><p>{t("Save the total extras for this tenant. This replaces the previous extras.")}</p>{data.subscription ? form("extras", "Save extras", <PlanFields key={data.revision} values={data.subscription.extras} extras />) : <p>{t("Assign a plan before adding extras.")}</p>}</section></div>
+    <section className="account-section"><h2>{t("Individual plan for this customer")}</h2><p>{t("Applies immediately to this customer only and replaces their current plan. It is not added to the reusable plan library. Existing extras are preserved.")}</p>
+      {form("assign-custom", msgid("Assign individual plan"), <div key={data.revision}><PlanIdentity name={data.subscription?.name} description={data.subscription?.description} /><PlanFields values={data.subscription?.base} /></div>)}
+    </section>
     <section className="account-section"><h2>{t("Create an individual offer")}</h2><p>{t("Prepare adjusted plan allowances and optional commercial terms for the customer to accept. Acceptance assigns these allowances and preserves the extras shown below. This does not collect payment.")}</p>
       {form("create-offer", "Create offer link", <>
         <label className="field">{t("Start from a plan")}<select name="planID" value={selected} onChange={event => setSelected(event.target.value)}><option value="">{t("Custom offer")}</option>{plans.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>

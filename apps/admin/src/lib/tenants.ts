@@ -4,7 +4,8 @@ import "server-only";
 import { cache } from "react";
 import { studioCall } from "./studio-client";
 import type { ChangeResult, TenantSummary, TenantInvitation, TenantView } from "./studio-contracts";
-export function listTenants(...args: [headers: Headers]): Promise<TenantSummary[]> { return studioCall("listTenants", args.slice(1)); }
+const tenantList = cache((): Promise<TenantSummary[]> => studioCall("listTenants"));
+export function listTenants(...args: [headers: Headers]): Promise<TenantSummary[]> { void args; return tenantList(); }
 export function listTenantInvitations(...args: [headers: Headers]): Promise<TenantInvitation[]> { return studioCall("listTenantInvitations", args.slice(1)); }
 const tenantView = cache((customerID: string): Promise<TenantView> => studioCall("getTenant", [customerID]));
 export function getTenant(...args: [headers: Headers, customerID: string]): Promise<TenantView> { return tenantView(args[1]); }

@@ -133,6 +133,18 @@ export function UsageForms({
         </details>
       </div>
       <details className="account-section">
+        <summary>{i18n.t("Individual plan for this customer")}</summary>
+        <p>{i18n.t("Applies immediately to this customer only and replaces their current plan. It is not added to the reusable plan library. Existing extras are preserved.")}</p>
+        {form(
+          "assign-custom",
+          msgid("Assign individual plan"),
+          <div key={data.revision}>
+            <PlanIdentity name={data.subscription?.name} description={data.subscription?.description} />
+            <PlanFields values={data.subscription?.base} />
+          </div>,
+        )}
+      </details>
+      <details className="account-section">
         <summary>{i18n.t("Create an individual offer")}</summary>
         <p>{i18n.t("Prepare adjusted plan allowances and optional commercial terms for the customer to accept. Acceptance assigns these allowances and preserves the extras shown below. This does not collect payment.")}</p>
         {form(

@@ -142,7 +142,7 @@ export async function managePlans(headers: Headers, input: Record<string, string
   return withAuthenticatedDatabase(headers, async () => {
 
   const initialUser = await actor(headers); requireOperator(initialUser);
-  if (!["create-plan", "assign", "extras", "create-offer", "revoke-offer"].includes(input.action)) throw new PlanError("Unknown plan action.");
+  if (!["create-plan", "assign", "assign-custom", "extras", "create-offer", "revoke-offer"].includes(input.action)) throw new PlanError("Unknown plan action.");
   const connection = await database.connect();
   try {
     await connection.query("BEGIN");
@@ -160,7 +160,13 @@ export async function managePlans(headers: Headers, input: Record<string, string
         if (!changed.rowCount) throw new PlanError("Pending offer not found.");
       } else {
         checkRevision(input.revision, revision);
-        if (input.action === "extras") {
+        if (input.action === "assign-custom") {
+          await saveSubscription(connection, customerID, {
+            name: textField(input.name, 160, true),
+            description: textField(input.description, 4000),
+            base: parseAllowances(input, false, current?.base?.hosting),
+          }, current?.extras || zero, revision, user.id);
+        } else if (input.action === "extras") {
           if (!current) throw new PlanError("Assign a plan before adding extra allowances.");
           await saveSubscription(connection, customerID, { ...current, id: current.plan_id }, parseAllowances(input, true, current.extras?.hosting), revision, user.id);
         } else {

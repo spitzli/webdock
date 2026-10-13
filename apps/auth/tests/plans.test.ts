@@ -96,6 +96,48 @@ test("Plans preserve snapshots and extras, serialize revisions, and require curr
   assert.equal(history[4].extras.storageBytes, 2_000_000_000);
   assert.equal(history[4].actor_id, admin.id);
   assert.equal(history[5].actor_id, root.id);
+  // Customer-specific plans have no reusable template, even when replacing one.
+  const catalog = await getPlans(root.headers);
+  const custom = { action: "assign-custom", customerID: two, revision: "0", ...input, name: "Customer-only plan", "hosting.apps": "2", "hosting.cpuMillicores": "0.5 cores" };
+  await assert.rejects(managePlans(other.headers, custom), /operator/);
+  await assert.rejects(managePlans(member.headers, custom), /operator/);
+  await assert.rejects(managePlans(new Headers(), custom));
+  await assert.rejects(manage({ ...custom, name: " " }), /valid offer or plan/);
+  await assert.rejects(manage({ ...custom, storageMB: "-1" }), /Allowances/);
+  await assert.rejects(manage({ ...custom, "hosting.apps": "-1" }), /hosting allowances/);
+  await manage(custom);
+  const standalone = (await getTenantPlan(other.headers, two)).subscription!;
+  assert.equal(standalone.name, custom.name);
+  assert.equal(standalone.base.storageBytes, 500_000_000);
+  assert.equal(standalone.base.hosting?.apps, 2);
+  assert.equal(standalone.base.hosting?.cpuMillicores, 500);
+  assert.equal(standalone.extras.storageBytes, 0);
+  assert.equal((await database.query("SELECT plan_id FROM webdock_auth.tenant_subscription WHERE customer_id=$1", [two])).rows[0].plan_id, null);
+  await assert.rejects(manage({ action: "assign", customerID: one, planID: two, revision: "6" }), /Plan not found/);
+  await assert.rejects(getTenantPlan(admin.headers, two));
+  await manage({ action: "extras", customerID: two, revision: "1", storageMB: "250", "hosting.apps": "1" });
+  const replacements = await Promise.allSettled([
+    manage({ ...custom, revision: "2", storageMB: "600" }),
+    manage({ ...custom, revision: "2", storageMB: "700" }),
+  ]);
+  assert.equal(replacements.filter(result => result.status === "fulfilled").length, 1);
+  const replaced = (await getTenantPlan(other.headers, two)).subscription!;
+  assert.equal(replaced.revision, 3);
+  assert.equal(replaced.effective.storageBytes, replaced.base.storageBytes! + 250_000_000);
+  assert.equal(replaced.effective.hosting?.apps, 3);
+  await manage({ ...custom, customerID: one, revision: "6" });
+  assert.equal((await getTenantPlan(admin.headers, one)).subscription!.extras.storageBytes, 3_000_000_000);
+  const customHistory = (await database.query("SELECT * FROM webdock_auth.subscription_history WHERE customer_id=$1 AND revision=7", [one])).rows[0];
+  assert.equal(customHistory.plan_id, null);
+  assert.equal(customHistory.actor_id, root.id);
+  assert.equal(customHistory.name, custom.name);
+  assert.equal((await database.query("SELECT count(*)::int AS count FROM webdock_auth.access_event WHERE target_id=$1 AND action='plans-assign-custom'", [one])).rows[0].count, 1);
+  const customOffer = await manage({ action: "create-offer", ...input, name: "Private agreed package", revision: "7" });
+  const customToken = customOffer.offerURL!.split("/").at(-1)!;
+  await manage({ ...custom, customerID: one, revision: "7", "hosting.apps": "3" });
+  await assert.rejects(acceptOffer(admin.headers, customToken), /stale/);
+  assert.deepEqual(await getPlans(root.headers), catalog);
+  assert.equal((await database.query("SELECT base FROM webdock_auth.subscription_history WHERE customer_id=$1 AND revision=7", [one])).rows[0].base.hosting.apps, 2);
   await database.query('UPDATE webdock_auth.member SET role=\'member\' WHERE "userId"=$1', [admin.id]);
   await assert.rejects(acceptOffer(admin.headers, current), /administrator/);
   await assert.rejects(acceptOffer(admin.headers, token), /administrator/);
@@ -106,11 +148,13 @@ test("Plans preserve snapshots and extras, serialize revisions, and require curr
   await database.query("UPDATE webdock_admin.customers SET status='archived' WHERE id=$1", [one]);
   await assert.rejects(acceptOffer(admin.headers, current));
   await assert.rejects(getTenantPlan(admin.headers, one));
-  assert.equal((await getTenantPlan(root.headers, one)).subscription!.revision, 6);
+  assert.equal((await getTenantPlan(root.headers, one)).subscription!.revision, 8);
+  await assert.rejects(manage({ ...custom, customerID: one, revision: "8" }), /Active tenant/);
   await assert.rejects(getOffer(root.headers, current));
   await assert.rejects(manage({ action: "assign", planID: plan.id, revision: "5" }));
   await database.query('UPDATE webdock_auth."user" SET "twoFactorEnabled"=false WHERE id=$1', [root.id]);
   await assert.rejects(managePlans(root.headers, { action: "create-plan", ...input }));
+  await assert.rejects(managePlans(root.headers, { ...custom, revision: "3" }), /security setup/);
   } finally {
     // Fixture identities and IDs are unique to this test; never clean by a shared display name.
     await database.query("DELETE FROM webdock_auth.plan_offer WHERE customer_id=ANY($1)", [customerIDs]);
