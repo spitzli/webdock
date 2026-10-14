@@ -44,13 +44,14 @@ export function ConsoleControls({ scope, workspaces, navigation, account, operat
   const [pending,setPending] = useState(false);
   const [projects,setProjects] = useState<{id:string;name:string}[]>([]), [projectsLoading,setProjectsLoading] = useState(false), [projectsError,setProjectsError] = useState(false), [projectsMore,setProjectsMore] = useState(false);
   const visibleWorkspaces=useOramaRows(workspaces,pickerQuery,item=>`${item.name} ${item.id}`);
-  const openSearch=()=>{setQuery('');setResponse({results:[]});searchDialog.current?.showModal();setSearchOpen(true);searchInput.current?.focus();};
-  const openPicker=()=>{setPickerQuery('');pickerDialog.current?.showModal();setPickerOpen(true);pickerInput.current?.focus();};
+  const openSearch=()=>{setPending(true);setQuery('');setResponse({results:[]});searchDialog.current?.showModal();setSearchOpen(true);searchInput.current?.focus();};
+  const openPicker=()=>{setProjectsError(false);setProjectsLoading(pickerTab==='projects');setPickerQuery('');pickerDialog.current?.showModal();setPickerOpen(true);pickerInput.current?.focus();};
   useEffect(()=>{
     const shortcut=(event:globalThis.KeyboardEvent)=>{
       if(event.key.toLowerCase()==='k'&&(event.metaKey||event.ctrlKey)&&!event.isComposing){
         event.preventDefault();pickerDialog.current?.close();menuDialog.current?.close();
-        searchDialog.current?.showModal();setSearchOpen(true);searchInput.current?.focus();
+        if (!searchDialog.current?.open) { searchDialog.current?.showModal();setSearchOpen(true);setPending(true); }
+        searchInput.current?.focus();
       }
     };
     document.addEventListener('keydown',shortcut);return()=>document.removeEventListener('keydown',shortcut);
@@ -89,8 +90,8 @@ export function ConsoleControls({ scope, workspaces, navigation, account, operat
     </header>
     <dialog ref={searchDialog} className="console-dialog console-search-dialog" aria-labelledby="console-search-title" onClose={()=>{setSearchOpen(false);setResponse({results:[]});setPending(false);}} onKeyDown={navigateResults}>
       <div className="console-dialog-heading"><h2 id="console-search-title">{t('Search resources and services')}</h2><button className="console-icon-button" type="button" aria-label={t('Close search')} onClick={()=>searchDialog.current?.close()}><ConsoleIcon name="close" /></button></div>
-      <div className="console-search-field"><ConsoleIcon name="search" /><input ref={searchInput} type="search" aria-label={t('Search resources and services')} placeholder={t('Name or domain')} value={query} maxLength={160} onChange={event=>{setQuery(event.target.value);setResponse({results:[]});}} autoComplete="off" /></div>
-      <div className="console-search-scope"><label>{t('Search in')}<select value={searchScope} onChange={event=>{setSearchScope(event.target.value);setResponse({results:[]});}}>
+      <div className="console-search-field"><ConsoleIcon name="search" /><input ref={searchInput} type="search" aria-label={t('Search resources and services')} placeholder={t('Name or domain')} value={query} maxLength={160} onChange={event=>{setPending(true);setQuery(event.target.value);setResponse({results:[]});}} autoComplete="off" /></div>
+      <div className="console-search-scope"><label>{t('Search in')}<select value={searchScope} onChange={event=>{setPending(true);setSearchScope(event.target.value);setResponse({results:[]});}}>
         {scope.projectID&&<option value="project">{t('Current project')}</option>}{scope.customerID&&<option value="workspace">{scope.customerName||t('Current workspace')}</option>}<option value="all">{preview?t('Available resources'):t('All workspaces')}</option>
       </select></label><span>{searchScope==='project'?t('Applications, databases and navigation'):searchScope==='workspace'?t('Projects, websites and navigation'):t('Workspaces, websites and navigation')}</span></div>
       <div className="console-results" aria-busy={pending}>
@@ -106,10 +107,10 @@ export function ConsoleControls({ scope, workspaces, navigation, account, operat
       </div>
       <footer className="console-dialog-footer"><span>{t('Type at least two characters to find resources.')}</span><span><kbd>↑</kbd><kbd>↓</kbd> {t('Navigate')} <kbd>Esc</kbd> {t('Close')}</span></footer>
     </dialog>
-    <dialog ref={pickerDialog} className="console-dialog console-picker-dialog" aria-labelledby="console-picker-title" onClose={()=>setPickerOpen(false)} onKeyDown={navigateResults}>
+    <dialog ref={pickerDialog} className="console-dialog console-picker-dialog" aria-labelledby="console-picker-title" onClose={()=>{setPickerOpen(false);setProjectsLoading(false);}} onKeyDown={navigateResults}>
       <div className="console-dialog-heading"><h2 id="console-picker-title">{t('Switch workspace or project')}</h2><button type="button" className="console-icon-button" aria-label={t('Close workspace selector')} onClick={()=>pickerDialog.current?.close()}><ConsoleIcon name="close" /></button></div>
-      <div className="console-picker-tabs"><button type="button" aria-pressed={pickerTab==='workspaces'} onClick={()=>{setPickerTab('workspaces');setPickerQuery('');}}>{t('Workspaces')}</button>{scope.customerID&&<button type="button" aria-pressed={pickerTab==='projects'} onClick={()=>{setPickerTab('projects');setPickerQuery('');setProjects([]);}}>{t('Projects')}</button>}</div>
-      <div className="console-search-field"><ConsoleIcon name="search" /><input ref={pickerInput} type="search" maxLength={160} value={pickerQuery} onChange={event=>setPickerQuery(event.target.value)} placeholder={t('Filter by name')} aria-label={t('Filter workspaces and projects')} /></div>
+      <div className="console-picker-tabs"><button type="button" aria-pressed={pickerTab==='workspaces'} onClick={()=>{setPickerTab('workspaces');setPickerQuery('');setProjectsLoading(false);}}>{t('Workspaces')}</button>{scope.customerID&&<button type="button" aria-pressed={pickerTab==='projects'} onClick={()=>{if(pickerTab!=='projects'||pickerQuery){setPickerTab('projects');setPickerQuery('');setProjects([]);setProjectsLoading(true);}}}>{t('Projects')}</button>}</div>
+      <div className="console-search-field"><ConsoleIcon name="search" /><input ref={pickerInput} type="search" maxLength={160} value={pickerQuery} onChange={event=>{setPickerQuery(event.target.value);if(pickerTab==='projects'){setProjects([]);setProjectsLoading(true);}}} placeholder={t('Filter by name')} aria-label={t('Filter workspaces and projects')} /></div>
       <div className="console-results" aria-busy={projectsLoading&&pickerTab==='projects'}>
         {pickerTab==='workspaces'?<ul>{visibleWorkspaces.map(item=><li key={item.id}><Link href={`/tenants/${item.id}`} data-console-result prefetch={false} aria-current={item.id===scope.customerID?'true':undefined} onClick={event=>closeOnNavigation(event,pickerDialog.current)}><ConsoleIcon name="overview" /><span><strong>{item.name}</strong><small>{item.id}</small></span>{item.id===scope.customerID&&<span>{t('Selected')}</span>}</Link></li>)}</ul>
           :<><p className="console-search-status">{scope.customerName}</p>{projectsLoading&&<p role="status" className="console-search-status">{t('Loading projects…')}</p>}{projectsError&&<p role="alert" className="console-search-status">{t('Projects could not be loaded. Please try again.')}</p>}<ul>{projects.map(item=><li key={item.id}><Link href={`/hosting/projects/${item.id}`} data-console-result prefetch={false} aria-current={item.id===scope.projectID?'true':undefined} onClick={event=>closeOnNavigation(event,pickerDialog.current)}><ConsoleIcon name="apps" /><span><strong>{item.name}</strong><small>{item.id}</small></span>{item.id===scope.projectID&&<span>{t('Selected')}</span>}</Link></li>)}</ul>{!projectsLoading&&!projectsError&&!projects.length&&<p className="console-search-status">{t('No matching projects in this workspace.')}</p>}{projectsMore&&<p className="console-search-status">{t('More results are available. Narrow your search.')}</p>}</>}
