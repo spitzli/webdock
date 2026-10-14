@@ -17,10 +17,18 @@ A subsequent rehearsal using a dedicated **non-superuser** offline role found th
 
 Production preparation created a new restricted registry login without rotating an existing password. The CloudNativePG controller briefly rejected the HBA change while restarting, then recovered without operator configuration changes. HBA now permits the registry login. Policy installation attempts rolled back fully (initial privilege failure, then concurrent-access deadlocks); production API migrations were not applied. The temporary offline login is disabled, its password cleared, CREATEROLE and all memberships revoked, and its HBA entry removed. Existing production routes and workloads remain active.
 
+## Completed production database step
+
+On resumption, all 20 migrations and the final RLS policy installation completed on the existing production database. The new API readiness check passes against production through verified TLS and PgBouncer, covering all enabled domains and the restricted registry role. The migration journal was transferred to the NOLOGIN platform owner. The offline login has no password, login, CREATEROLE or memberships; its HBA entry is removed. Existing website-browser membership is retained through its original PostgreSQL grant, not through the temporary migrator.
+
+Repeated CloudNativePG webhook timeouts stopped HBA updates while its controller was close to its 100m CPU limit. Raising only the controller CPU limit to 500m completed a healthy rollout; the following HBA updates succeeded. PostgreSQL pods were not restarted. The reproducible strategic patch is `infra/postgres/operator-resources.patch.yaml`.
+
+The existing Database Gateway credential was recovered from its Kubernetes Secret. The existing GitHub App private key was found locally and validated with GitHub's authenticated `/app` endpoint; its OAuth client matches the preserved Studio configuration. Neither credential was rotated.
+
 ## Remaining cutover prerequisites
 
-Unmasked production integration settings are still required. Current and historical Vercel exports contain `[SENSITIVE]` for the GitHub App/OAuth/webhook credentials, Git Vercel credentials, Vercel integration credentials and database-gateway credential, plus several associated selectors. No masked value was installed as a runtime secret. Better Auth encryption and signed-RLS keys have been verified against production; the existing SSO credentials and a local production Mail-key source were found. No existing key was rotated.
+Unmasked production integration settings are still required: `WEBDOCK_GITHUB_WEBHOOK_SECRET`, `WEBDOCK_GIT_VERCEL_TOKEN`, and `WEBDOCK_VERCEL_CLIENT_SECRET`, plus associated Vercel selectors. Current and historical Vercel exports contain `[SENSITIVE]` for these values. No masked value was installed as a runtime secret. Better Auth encryption and signed-RLS keys have been verified against production; the existing SSO credentials and a local production Mail-key source were found. No existing key was rotated.
 
-After obtaining the existing integration settings: prepare separate Kubernetes runtime secrets, drain the old writers for the offline migration, apply migrations/policies, revoke the dedicated migrator, deploy and verify API/worker/TLS/ingress, then merge and verify the Vercel production frontends. Transfer scheduler ownership explicitly. Live Polar onboarding/product publication remains a later step after the owner configures the production key and product terms.
+The database step is complete. After obtaining the remaining existing integration settings: prepare separate Kubernetes runtime secrets, deploy and verify API/worker/TLS/ingress, then merge and verify the Vercel production frontends. Transfer scheduler ownership explicitly. Live Polar onboarding/product publication remains a later step after the owner configures the production key and product terms.
 
 Sensitive backups, credentials and operational logs remain in ignored private files, not this report or the PR.

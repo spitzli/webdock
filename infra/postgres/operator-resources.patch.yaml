@@ -1,0 +1,11 @@
+# Strategic merge patch for the existing CNPG controller (not PostgreSQL pods).
+# Raise the saturated 100m CPU limit after repeated webhook timeouts.
+# kubectl -n cnpg-system patch deployment cnpg-controller-manager --type=strategic --patch-file=this-file
+spec:
+  template:
+    spec:
+      containers:
+        - name: manager
+          resources:
+            limits:
+              cpu: 500m
