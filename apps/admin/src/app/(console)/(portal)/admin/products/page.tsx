@@ -73,7 +73,7 @@ export default async function Products({
               currency: product.currency,
             }).format(Number(product.amount) / 100)}{" "}
             / {i18n.t(product.interval === "once" ? "One-time" : product.interval === "year" ? "Yearly" : "Monthly")} ·{" "}
-            {i18n.t(billingLabel(product.status || "draft"))}
+            {i18n.t(product.taxBehavior === "inclusive" ? "Tax included" : "Tax excluded")} · {i18n.t(billingLabel(product.status || "draft"))}
           </p>
           <p>{product.description}</p>
           <AvailabilityForm

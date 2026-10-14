@@ -32,7 +32,7 @@ Enter the test discount on Polar's checkout page; the plain checkout link does n
 - [x] Organization access token read from `.env`; product-list request returned 200.
 - [x] Organization ID matches the owner-supplied production organization.
 - [x] Existing Webdock connection probe passes locally and in the production API container.
-- [x] API typecheck/build and all 51 API unit tests pass.
+- [x] API typecheck/build and all 55 API unit tests pass.
 - [x] Signed order/customer event tests pass; tampered payloads return 403.
 - [x] Product and webhook IDs were returned by Polar; webhook signing secret was saved directly to `.env`.
 - [x] Deploy the new API artifact with the three private environment keys.
@@ -60,3 +60,5 @@ These drafts are not published to Polar and are not enabled for sale or operatio
 The complete source inventory is `apps/api/src/modules/billing/initial-catalog.ts`. Non-website prices follow the source's **net EUR** basis. Price ranges, starting prices and unspecified amounts are quote-only, never zero-price products. Service descriptions preserve the original capacity/backup/SLA limits. Additional websites reuse a website package; customer-specific sponsorships and individual plans are not sold as reusable free catalog products.
 
 Migration `0021_full_catalog.sql` adds services, one-time intervals and nullable prices for quotes. Manual fulfillment is explicit; the existing SQL purchase function remains website-only. Quote-only entries cannot be published to Polar. No additional customer resources, service grants, sales enablement or operational approvals are created by seeding the catalog.
+
+Production readback confirms all 35 catalog SKUs, 13 null-priced quote entries, and no published or operationally approved entries. Existing website rows were preserved; the other 32 were created through the authenticated operator endpoint. The API and worker use image `sha256:67a0baff645f3ee01e63b20892f1b5be9a38e00d385540ce2a36f8a4c51ae480`. Restricted-role MCP catalog persistence, existing checkout and private-offer regressions passed.
