@@ -11,7 +11,9 @@ description: "Keep browser sessions, OAuth tokens and Mail API keys separate."
 | OAuth issuer | `https://auth.webdock.dev/api/auth` |
 | Registry and MCP resource | `https://studio.webdock.dev/api/mcp` |
 | Registry REST base | `https://studio.webdock.dev/api/registry` |
-| Mail REST base | `https://auth.webdock.dev/api/mail/v1` |
+| Mail REST base | `https://api.webdock.dev/api/mail/v1` |
+
+The Mail API uses `api.webdock.dev`; `https://auth.webdock.dev/api/mail/v1` remains a compatible alias for existing clients. Both hosts use the same keys, quotas and idempotency state, without redirecting requests.
 
 The browser moved to Console. Registered OAuth callbacks, the MCP resource audience and legacy bearer API addresses remain protocol identities. Do not substitute the Console hostname in token requests.
 

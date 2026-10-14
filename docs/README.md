@@ -49,7 +49,7 @@ bun docs/scripts/export-mail-openapi.ts --check
 ```
 
 The exporter calls `mailOpenAPI()` from `apps/api`, adds readable operation titles
-and groups, and resolves its server URL to `https://auth.webdock.dev/api/mail/v1`.
+and groups, and resolves the relative server URL to `https://api.webdock.dev/api/mail/v1`.
 Paths, authentication, parameters and schemas remain unchanged. Review the JSON change with the source
 contract change. The documentation playground is disabled; no live send is part
 of documentation validation.

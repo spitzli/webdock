@@ -40,6 +40,15 @@
             ]
           },
           {
+            "group": "Your infrastructure (BYOK)",
+            "pages": [
+              "guides/byok",
+              "guides/byok-kubernetes",
+              "guides/byok-vercel",
+              "guides/byok-mail"
+            ]
+          },
+          {
             "group": "Help",
             "pages": [
               "guides/troubleshooting"
@@ -56,6 +65,7 @@
               "developers/overview",
               "developers/authentication",
               "developers/mcp",
+              "developers/byok",
               "developers/registry",
               "developers/website-integration"
             ]

@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://auth.webdock.dev/api/mail/v1"
+      "url": "https://api.webdock.dev/api/mail/v1"
     }
   ],
   "paths": {

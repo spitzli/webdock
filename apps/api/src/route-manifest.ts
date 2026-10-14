@@ -12,14 +12,20 @@ export type RouteCategory =
 export type Mount = {
   app: AnyElysia;
   host: string;
+  aliases?: string[];
   category: RouteCategory;
   guard?: (request: Request) => Response | void | Promise<Response | void>;
 };
-/** Validate before .use() discards duplicate routes. One path has one canonical host. */
+/** Validate before .use() discards duplicate routes. One path has one canonical host and optional explicit aliases. */
 export function validateMounts(mounts: Mount[], origins: string[]): void {
   const seen = new Set<string>();
   for (const mount of mounts) {
-    if (!origins.includes(mount.host)) throw Error("Unknown mount host");
+    if (
+      [mount.host, ...(mount.aliases ?? [])].some(
+        (host) => !origins.includes(host),
+      )
+    )
+      throw Error("Unknown mount host");
     if (
       ![
         "public",

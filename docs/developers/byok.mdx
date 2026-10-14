@@ -1,0 +1,34 @@
+---
+title: "BYOK automation"
+description: "Use Hosting MCP with current permissions, resource versions and operation IDs."
+---
+
+BYOK uses the existing [Hosting MCP connection](/developers/mcp). Request `hosting:read` and, for authorized mutations, `hosting:write`. Do not combine these with registry `webdock:*` scopes. Each call still checks current workspace, role, policy and resource ownership.
+
+## Discover the available tools
+
+BYOK command names map to MCP tool names by replacing dots with underscores. For example, `byok.inventory` is exposed as `byok_inventory`. Use the connected client's tool schemas for current fields and enum values.
+
+| Area | Commands |
+| --- | --- |
+| Policy and connections | `byok.policy.get`, `byok.policy.set`, `byok.list` |
+| Cluster lifecycle | `byok.register`, `byok.cluster`, `byok.enrollment`, `byok.revoke` |
+| Inventory and workload operations | `byok.inventory`, `byok.scan`, `byok.workload`, `byok.reconcile` |
+| Vercel | `byok.vercel.projects`, `byok.vercel.select`, `byok.vercel.resources`, `byok.vercel.region`, `byok.vercel.cancel`, `byok.vercel.disconnect` |
+| Own Mail | `byok.mail.get`, `byok.mail.refresh`, `byok.mail.domain`, `byok.mail.review`, `byok.mail.disconnect` |
+
+Policy updates and uncertain-operation review require platform operator authority. An enrollment call returns a protected setup reference, not an agent credential. Vercel's interactive authorization must be completed in Console. `byok.mail.connect` is deliberately not exposed as an MCP tool: enter provider secrets in the protected Console form.
+
+## Concurrency and retries
+
+Keep customer, cluster and operation IDs as decimal strings. Use the current `revision` for policy, connection and revoke operations. Refresh a conflicting revision instead of overwriting another administrator's change.
+
+For a workload action, send the exact current `uid` and `resourceVersion` from an authorized inventory read. Preserve the same `idempotencyKey` for the same intent. A different action needs its own key. Inventory freshness and namespace policy are rechecked when an operation is claimed.
+
+Poll `get_hosting_operation` with the returned operation ID. A queued response is not proof that the workload changed. If the operation needs reconciliation, refresh inventory and let an authorized operator review the uncertain state before another write.
+
+## Scope of access
+
+Provider connection does not expose credentials or grant arbitrary cloud API access. Namespaced inventory and workload actions remain namespace-limited, Vercel requests remain team/project-limited, and Mail remains customer/connection-limited. A read-only customer preview cannot be used to perform writes.
+
+Source contract: [BYOK commands](https://github.com/spitzli/webdock/blob/main/packages/hosting-contracts/src/byok.ts).

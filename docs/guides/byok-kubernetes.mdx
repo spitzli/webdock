@@ -1,0 +1,32 @@
+---
+title: "Your Kubernetes or k3s cluster"
+description: "Register an existing cluster, enroll its agent and manage permitted workloads."
+---
+
+You need control of an existing Kubernetes or k3s cluster, an enabled Kubernetes BYOK permission, a free cluster slot and an approved namespace list. Cluster registration does not install Kubernetes or migrate workloads.
+
+<Steps>
+  <Step title="Enable the permitted scope">Ask a platform operator to enable own clusters, set the maximum cluster count and list the allowed namespaces. Managing existing applications is a separate switch.</Step>
+  <Step title="Register the cluster">In **Your infrastructure**, choose **Connect own cluster**. Supply its name, Kubernetes or k3s type, EU location and provider location evidence. A location declaration alone is not verification.</Step>
+  <Step title="Enroll the agent">Open the cluster's protected enrollment flow in Console and follow its generated setup instructions on the intended cluster. Enrollment is short-lived; create a fresh enrollment if it expires. Do not share setup credentials in chat or source control.</Step>
+  <Step title="Inspect inventory">Wait for the agent to connect and report inventory. Check observation time, completeness and unavailable resource types before relying on the result.</Step>
+</Steps>
+
+## Supported workload actions
+
+| Resource | Supported actions when authorized |
+| --- | --- |
+| Deployment, StatefulSet | Scale, stop, start, restart and logs |
+| DaemonSet | Restart and logs |
+| Pod, Job | Logs |
+| CronJob | Suspend and resume |
+
+Start restores a previously recorded replica count after a Webdock stop. Writes to controller-managed resources can be blocked; unsupported resource/action combinations are rejected. This interface does not provide arbitrary manifest editing, a shell or blanket cluster-administrator access.
+
+System namespaces stay protected. Workload operations are fenced by resource UID and version, allowed namespace, current policy and a fresh inventory observation. Inventory older than three minutes cannot authorize a workload change. Refresh and review the new state before resubmitting a stale request.
+
+## Operations and recovery
+
+Use the returned operation ID to follow execution. Preserve the same idempotency key when retrying the same intent. A busy or uncertain operation blocks a second write to the same workload. A platform operator must reconcile uncertain writes against fresh inventory before new actions proceed.
+
+Revoking the agent invalidates its enrollment and access through Webdock. It does not delete the cluster or stop its independently running workloads. Keep application backups and recovery procedures with the infrastructure owner.

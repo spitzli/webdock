@@ -4,8 +4,8 @@ import { mailOpenAPI } from '../../apps/api/src/modules/mail/product/openapi';
 
 const target = new URL('../openapi/mail.json', import.meta.url);
 const spec = mailOpenAPI();
-// The application serves a relative URL; the docs live on a different origin.
-spec.servers = [{ url: 'https://auth.webdock.dev/api/mail/v1' }];
+// Hosted docs use the canonical API host; runtime specs stay relative for local testing.
+spec.servers = [{ url: 'https://api.webdock.dev/api/mail/v1' }];
 const titles: Record<string, string> = {
   emails_list: 'List emails', emails_send: 'Send an email',
   emails_batch: 'Send a batch', emails_get: 'Retrieve an email',

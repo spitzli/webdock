@@ -12,7 +12,7 @@ You need an enabled Mail connection, a verified sender domain and a Webdock Mail
 </Steps>
 
 ```bash
-curl --fail-with-body 'https://auth.webdock.dev/api/mail/v1/emails' \
+curl --fail-with-body 'https://api.webdock.dev/api/mail/v1/emails' \
   -H "Authorization: Bearer $WEBDOCK_MAIL_API_KEY" \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: order-42-receipt' \
@@ -33,3 +33,7 @@ Save the returned message ID and inspect its state in Console. Reading message d
 An accepted response is not proof of delivery. Use message events and recipient state. Before sending to a real recipient, confirm that your connection's live dispatcher and event processing are enabled.
 
 Continue with [Mail API behavior](/developers/mail-api) and [webhooks](/developers/mail-webhooks).
+
+## Existing Auth-host clients
+
+The previous `https://auth.webdock.dev/api/mail/v1` base remains an alias. Use the API host for new integrations. Both addresses share keys, quotas and idempotency records; changing host is not a reason to resend an uncertain message with a new key.

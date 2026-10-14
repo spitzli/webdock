@@ -1,0 +1,40 @@
+---
+title: "Your turboSMTP account"
+description: "Connect provider credentials securely and issue separate Webdock Mail API keys."
+---
+
+With Mail BYOK, turboSMTP bills your own account directly. Webdock manages the enabled connection, domains and Mail API access for the workspace.
+
+## Three different credentials
+
+| Credential | Where it belongs |
+| --- | --- |
+| turboSMTP Consumer Key and Consumer Secret | The protected connection setup form |
+| Webdock Mail API key | Your server-side application calling the Mail API |
+| Webhook signing secret | Your event receiver, for signature verification |
+
+Provider credentials are not bearer keys for the Webdock Mail API. Webdock stores provider secrets encrypted and displays only identifying metadata or a key suffix afterward.
+
+<Steps>
+  <Step title="Enable own sending">A platform operator enables own turboSMTP and configures the sender-domain allowance for the customer.</Step>
+  <Step title="Prepare a dedicated account">Create a Consumer key with both `SEND_API` and `APIS` permissions. Use a dedicated customer account: its sender-domain inventory is visible to this connection. Do not reuse the platform master credential.</Step>
+  <Step title="Connect in Mail settings">In the workspace's **Mail settings → Mail API**, use **Connect your turboSMTP account** and choose **Verify and save account**. This verifies the provider account identity and creates the Mail API connection. Enter credentials only in this protected form.</Step>
+  <Step title="Verify a sender domain">Register or select the intended domain, configure its exact DNS records and refresh verification. Provider account limits and Webdock's allowance are separate.</Step>
+  <Step title="Create an application key">Select the ready Mail connection and create a Webdock sending key, restricted to the needed domain. Follow the [Mail quickstart](/developers/mail-quickstart) using `https://api.webdock.dev/api/mail/v1`.</Step>
+</Steps>
+
+<Note>The older **Own sending connection** form manages the provider account and sender-domain inventory. That form alone does not create a selectable Mail API connection; use **Connect your turboSMTP account** for API sending.</Note>
+
+## State and lifecycle
+
+Pausing a sending connection blocks new sends while retaining history and accepted work. Credential replacement must preserve the verified account identity; a changed or uncertain connection can require review before sending resumes.
+
+If domain registration times out, refresh and reconcile the existing registration. Do not retry blindly or replace credentials to bypass an unknown result. Pending registration can block disconnect until reviewed by an operator.
+
+Disconnecting in the own-account setup removes its stored credential, but does not erase separately retained Mail connection credentials or history. It does not delete your turboSMTP account or domains. Revoke the provider key at turboSMTP when all access using that key must end.
+
+## Sending and incoming Mail
+
+A verified provider connection does not itself enable every sending worker or callback. Check **Mail API**, dispatch, sending credentials and provider callback readiness in Console. Incoming Mail remains a separate service. Workspaces with native incoming Mail require the supported native sending path; the expanded Mail API must not be assumed to submit through Stalwart.
+
+The configured sending endpoints use the provider's EU service. That does not establish that every provider management or control-plane service is EU-only.
