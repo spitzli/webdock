@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getRequestI18n } from "@webdock/i18n/next";
 import { getManagedDatabasePage } from "@/lib/managed-database-page";
 import { HostingProjectHeader } from "@/components/hosting/project-context";
-import { AreaNavigation } from "@/components/area-navigation";
 import { HostingRefresh } from "@/components/hosting/refresh";
 
 export default async function DatabaseLayout({
@@ -16,7 +15,6 @@ export default async function DatabaseLayout({
     { t } = await getRequestI18n();
   const {
     database: d,
-    access,
     path,
   } = await getManagedDatabasePage(databaseID);
   return (
@@ -38,25 +36,6 @@ export default async function DatabaseLayout({
         </Link>
       </div>
       <HostingRefresh active={d.state !== "purged"} interval={75000} />
-      <AreaNavigation
-        label={t("Database areas")}
-        links={[
-          { href: path, label: t("Overview"), exact: true },
-          ...(access.canWrite
-            ? [
-                {
-                  href: path + "/connection",
-                  label: t("Connection credentials"),
-                },
-                {
-                  href: path + "/settings",
-                  label: t("Settings"),
-                  activePaths: [path + "/deletion", path + "/sources"],
-                },
-              ]
-            : []),
-        ]}
-      />
       {children}
     </>
   );

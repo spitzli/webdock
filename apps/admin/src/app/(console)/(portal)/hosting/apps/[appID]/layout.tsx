@@ -1,7 +1,6 @@
 import { getRequestI18n } from '@webdock/i18n/next';
 import { getHostingApplication } from '@/lib/hosting-application';
 import { HostingProjectHeader } from '@/components/hosting/project-context';
-import { AreaNavigation } from '@/components/area-navigation';
 import { applicationState } from '@/lib/workspace-navigation';
 import { HostingRefresh } from '@/components/hosting/refresh';
 import Link from 'next/link';
@@ -15,7 +14,6 @@ export default async function ApplicationLayout({children,params}: {children:Rea
     <HostingRefresh active={app.status==='pending'}/>
     {app.lastError && <p role="alert" className="notice error">{t(app.lastError)}</p>}
     {app.operationID && <p><Link href={`/hosting/operations/${app.operationID}`}>{t('View latest operation')}</Link></p>}
-    <AreaNavigation links={[{href:base,label:t('Overview'),exact:true},...(app.status!=='deleted'?[{href:base+'/logs',label:t('Logs')}]:[]),...(app.canManage||app.operator?[{href:base+'/settings',label:t('Settings')}]:[])]}/>
     {children}
   </>;
 }

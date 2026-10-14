@@ -1,6 +1,5 @@
 import { WorkspaceContext } from "@/components/workspace-context";
 
-import { msgid } from '@webdock/i18n';
 
 import { getRequestI18n } from '@webdock/i18n/next';
 import { headers } from "next/headers";
@@ -8,8 +7,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { demoAccess } from "@/lib/demo-bridges";
-import { cmsHubURL, cmsModules, cmsRoleLabel, cmsSiteName } from "@/lib/cms-modules";
-import { CmsWorkspaceNav } from "@/components/cms-workspace-nav";
+import { cmsHubURL, cmsRoleLabel, cmsSiteName } from "@/lib/cms-modules";
 import "@/components/cms-workspace.css";
 
 export default async function CmsLayout({ children, params }: { children: React.ReactNode; params: Promise<{ bindingID: string }> }) {
@@ -20,8 +18,6 @@ export default async function CmsLayout({ children, params }: { children: React.
   if (!(await auth.api.getSession({ headers: await headers() }))) redirect(`/api/sso/login?returnTo=${encodeURIComponent(hub)}`);
   const access = await demoAccess(bindingID).catch(() => null);
   if (!access) notFound();
-  const modules = cmsModules(access.bridge.kind || "demo", access.site.role, access.bridge.canvas === true, access.bridge.promotions !== false, access.bridge.shop === true);
-  const links = [{ label: msgid("Overview"), href: hub }, ...modules.map(module => ({ label: module.label, href: hub + module.path }))];
   return <div className="cms-workspace">
     {access.site.customerID && access.site.customerName && <WorkspaceContext items={[{label:access.site.customerName,href:access.site.role==='operator'?`/customers/${access.site.customerID}`:`/tenants/${access.site.customerID}`},{label:cmsSiteName(access.site.name)}]}/>}
     <header className="cms-workspace-header">
@@ -32,7 +28,6 @@ export default async function CmsLayout({ children, params }: { children: React.
         </div>
         <div className="cms-workspace-actions"><span className="cms-role">{i18n.t(cmsRoleLabel(access.site.role))}</span><a className="button secondary" href={access.bridge.origin} target="_blank" rel="noopener noreferrer">{i18n.t("Open website ")}<span aria-hidden="true">↗</span></a></div>
       </div>
-      <CmsWorkspaceNav links={links} />
     </header>
     <div className="cms-workspace-body">{children}</div>
   </div>;

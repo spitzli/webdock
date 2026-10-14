@@ -443,6 +443,9 @@
   "Accepted": [
     "Angenommen"
   ],
+  "Accepted and queued. The change has not finished yet.": [
+    "Angenommen und eingereiht. Die Änderung ist noch nicht abgeschlossen."
+  ],
   "Accepted messages": [
     "Angenommene Nachrichten"
   ],
@@ -637,6 +640,9 @@
   ],
   "Add the domain after @ in your sender address. Publish the displayed DNS records, then verify ownership and sending readiness.": [
     "Füge die Domain hinter dem @ deiner Absenderadresse hinzu. Trage die angezeigten DNS-Einträge ein und prüfe danach Eigentum und Versandbereitschaft."
+  ],
+  "Add this server URL to an MCP client that supports HTTP and OAuth.": [
+    "Trage diese Server-URL in einen MCP-Client ein, der HTTP und OAuth unterstützt."
   ],
   "Add variable": [
     "Variable hinzufügen"
@@ -1610,6 +1616,9 @@
   "Change your search to open a field.": [
     "Ändere die Suche, um ein Feld zu öffnen."
   ],
+  "Changes require hosting:write. Application mutations also use an idempotency key; reuse it when retrying the same request after a network failure.": [
+    "Änderungen benötigen hosting:write. Änderungen an Anwendungen verwenden außerdem einen Idempotenzschlüssel. Verwende denselben Schlüssel, wenn du denselben Aufruf nach einem Netzwerkfehler wiederholst."
+  ],
   "Changes saved.": [
     "Änderungen gespeichert."
   ],
@@ -1639,6 +1648,9 @@
   ],
   "Check the image URL and whether the file is available.": [
     "Prüfe die Bildadresse oder die Erreichbarkeit der Datei."
+  ],
+  "Check the token, its scopes and your workspace permissions.": [
+    "Prüfe das Token, seine Scopes und deine Berechtigungen im Arbeitsbereich."
   ],
   "Check your email and password, or try again later.": [
     "Prüfe deine E-Mail-Adresse und dein Passwort oder versuche es später erneut."
@@ -2087,6 +2099,9 @@
   "Connect a sending account to view Mail activity.": [
     "Verbinde ein Versandkonto, um die Mail-Aktivität anzuzeigen."
   ],
+  "Connect an MCP client": [
+    "MCP-Client verbinden"
+  ],
   "Connect an existing customer domain, including DNS verification. Domain purchase, transfer and renewal fees are excluded.": [
     "Anschluss einer vorhandenen Kundendomain einschließlich DNS-Prüfung. Kein Domainkauf, Transfer oder Verlängerungspreis enthalten."
   ],
@@ -2155,6 +2170,9 @@
   ],
   "Connect your tools": [
     "Deine Werkzeuge verbinden"
+  ],
+  "Connect your tools, inspect applications and follow deployment progress.": [
+    "Verbinde deine Werkzeuge, prüfe Anwendungen und verfolge Bereitstellungen."
   ],
   "Connect your turboSMTP account": [
     "Eigenes turboSMTP-Konto verbinden"
@@ -2363,6 +2381,9 @@
   ],
   "Copy credentials": [
     "Zugangsdaten kopieren"
+  ],
+  "Copy failed. Select and copy the example.": [
+    "Kopieren fehlgeschlagen. Markiere das Beispiel und kopiere es manuell."
   ],
   "Copy failed. Select and copy the values above.": [
     "Kopieren fehlgeschlagen. Markiere und kopiere die Werte oben."
@@ -3017,6 +3038,9 @@
   ],
   "Dessert": [
     "Dessert"
+  ],
+  "Developer tools": [
+    "Entwicklerwerkzeuge"
   ],
   "Development": [
     "Entwicklung"
@@ -3705,6 +3729,9 @@
   "Find products, adjust prices and manage availability.": [
     "Produkte finden, Preise anpassen und Verfügbarkeit verwalten."
   ],
+  "Find the current operation ID in the application response. Follow it until the requested change is confirmed.": [
+    "Die Antwort zur Anwendung enthält die aktuelle Vorgangs-ID. Verfolge den Vorgang, bis die angeforderte Änderung bestätigt ist."
+  ],
   "Find {type}": [
     "{type} suchen"
   ],
@@ -4020,6 +4047,9 @@
   "Hosting (customer permissions apply)": [
     "Hosting (Kundenberechtigungen gelten)"
   ],
+  "Hosting API": [
+    "Hosting-API"
+  ],
   "Hosting allowances": [
     "Hosting-Kontingente"
   ],
@@ -4244,6 +4274,12 @@
   ],
   "Initializing": [
     "Wird initialisiert"
+  ],
+  "Inspect an application": [
+    "Anwendung prüfen"
+  ],
+  "Inspect an operation": [
+    "Vorgang prüfen"
   ],
   "Inspect messages and delivery results": [
     "Nachrichten und Zustellergebnisse prüfen"
@@ -4893,6 +4929,9 @@
   "MCP client": [
     "MCP-Client"
   ],
+  "MCP server URL": [
+    "MCP-Server-URL"
+  ],
   "Mail": [
     "Mail"
   ],
@@ -5036,6 +5075,9 @@
   ],
   "Mail response could not be read. Check sending status before retrying.": [
     "Die Antwort konnte nicht gelesen werden. Prüfe den Versandstatus vor einem erneuten Versuch."
+  ],
+  "Mail sending credentials are separate from Webdock OAuth access tokens.": [
+    "Mail-Versandzugangsdaten sind unabhängig von Webdock-OAuth-Zugriffstoken."
   ],
   "Mail sending is not available yet.": [
     "Der E-Mail-Versand ist noch nicht verfügbar."
@@ -5327,6 +5369,9 @@
   ],
   "Media preview": [
     "Medienvorschau"
+  ],
+  "Media storage": [
+    "Medienspeicher"
   ],
   "Media storage (MB)": [
     "Medienspeicher (MB)"
@@ -8442,6 +8487,9 @@
   "Sign in with the email address the invitation was sent to. Contact your Webdock administrator if you need help.": [
     "Melde dich mit der E-Mail-Adresse an, an die die Einladung gesendet wurde. Wende dich an deinen Webdock-Admin, wenn du Hilfe benötigst."
   ],
+  "Sign in with your Webdock account. For hosting, request hosting:read; add hosting:write only when the client needs to make changes.": [
+    "Melde dich mit deinem Webdock-Konto an. Fordere für Hosting hosting:read an; ergänze hosting:write nur, wenn der Client Änderungen vornehmen soll."
+  ],
   "Sign in with your existing Webdock account, then review this invitation.": [
     "Melde dich mit deinem vorhandenen Webdock-Konto an und prüfe anschließend diese Einladung."
   ],
@@ -9146,6 +9194,9 @@
   ],
   "The request is too large.": [
     "Anfrage ist zu groß."
+  ],
+  "The resource changed or an operation is still running. Read its current state before retrying.": [
+    "Die Ressource wurde geändert oder ein Vorgang läuft noch. Lies vor einem erneuten Versuch den aktuellen Zustand."
   ],
   "The response is too large.": [
     "Antwort zu groß."
@@ -9870,6 +9921,9 @@
   "Use a Linux host with Python 3, kubectl and access to your Kubernetes cluster.": [
     "Verwende einen Linux-Rechner mit Python 3, kubectl und Zugriff auf dein Kubernetes-Cluster."
   ],
+  "Use a Webdock OAuth access token with hosting:read and the MCP resource as its audience. Replace APP_ID with the application ID shown on its overview.": [
+    "Verwende ein Webdock-OAuth-Zugriffstoken mit hosting:read und der MCP-Ressource als Audience. Ersetze APP_ID durch die Anwendungs-ID aus der Übersicht."
+  ],
   "Use a dedicated customer credential, not the platform master credential.": [
     "Verwende einen eigenen Kundenzugang. Der Plattform-Hauptzugang ist dafür gesperrt."
   ],
@@ -10572,11 +10626,17 @@
   "Workload readiness": [
     "Freigabe für Anwendungen"
   ],
+  "Workspace areas": [
+    "Bereiche des Arbeitsbereichs"
+  ],
   "Workspace details": [
     "Arbeitsbereich"
   ],
   "Workspace navigation": [
     "Arbeitsbereich-Navigation"
+  ],
+  "Workspace overview": [
+    "Übersicht des Arbeitsbereichs"
   ],
   "Workspace role": [
     "Rolle im Arbeitsbereich"
@@ -10694,6 +10754,9 @@
   ],
   "Your credential’s Consumer key": [
     "Der Consumer-Key deiner Zugangsdaten"
+  ],
+  "Your current workspace permissions also apply to every tool call.": [
+    "Deine aktuellen Berechtigungen im Arbeitsbereich gelten auch für jeden Werkzeugaufruf."
   ],
   "Your customer workspace": [
     "Dein Kundenarbeitsbereich"

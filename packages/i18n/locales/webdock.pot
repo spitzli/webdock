@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-14 13:49+0200\n"
+"POT-Creation-Date: 2026-10-14 15:25+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -138,48 +138,32 @@ msgstr ""
 msgid "Type the exact application name"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:14
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:13
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:28
 msgid "Observed state"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:14
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:13
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:29
 msgid "Applied revision"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:14
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:13
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:84
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:125
 #: apps/admin/src/app/(console)/(portal)/hosting/operations/[operationID]/page.tsx:28
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:22
 #: apps/admin/src/components/hosting/project-applications.tsx:14
 #: apps/admin/src/components/hosting/project-applications.tsx:16
-#: apps/admin/src/components/hosting/project-context.tsx:21
-#: apps/admin/src/components/navigation.tsx:75
+#: apps/admin/src/components/hosting/project-context.tsx:20
+#: apps/admin/src/components/navigation.tsx:78
+#: apps/admin/src/components/workspace-sidebar.tsx:57
+#: apps/admin/src/components/workspace-sidebar.tsx:58
 msgid "Applications"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:17
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:16
 msgid "View latest operation"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:18
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:44
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/layout.tsx:24
-#: apps/admin/src/components/navigation.tsx:74
-#: packages/cms-ui/src/client.tsx:698
-msgid "Overview"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:18
-msgid "Logs"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:18
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:53
-#: apps/admin/src/components/navigation.tsx:21
-msgid "Settings"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/storage-delete/page.tsx:21
@@ -476,14 +460,14 @@ msgid "Database kind"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:115
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:33
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:31
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:64
 #: apps/admin/src/components/hosting/databases.tsx:175
 msgid "Shared"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:115
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:33
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:31
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:64
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:104
 #: apps/admin/src/components/hosting/databases.tsx:176
@@ -627,18 +611,8 @@ msgstr ""
 msgid "Type the exact database name to confirm"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:37
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:35
 msgid "All project databases"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:42
-#: apps/admin/src/components/hosting/tenant-database-navigation.tsx:15
-msgid "Database areas"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:49
-#: apps/admin/src/components/hosting/database-details.tsx:19
-msgid "Connection credentials"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/sources/[migrationID]/page.tsx:26
@@ -655,6 +629,74 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/sources/[migrationID]/page.tsx:43
 msgid "Delete retained source"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:11
+msgid "Developer tools"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:11
+msgid "Connect your tools, inspect applications and follow deployment progress."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:13
+msgid "Connect an MCP client"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:15
+msgid "Add this server URL to an MCP client that supports HTTP and OAuth."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:16
+msgid "Sign in with your Webdock account. For hosting, request hosting:read; add hosting:write only when the client needs to make changes."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:17
+msgid "Your current workspace permissions also apply to every tool call."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:19
+msgid "MCP server URL"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:20
+msgid "Mail sending credentials are separate from Webdock OAuth access tokens."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:23
+msgid "Hosting API"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:24
+msgid "Use a Webdock OAuth access token with hosting:read and the MCP resource as its audience. Replace APP_ID with the application ID shown on its overview."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:25
+msgid "Inspect an application"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:26
+msgid "Find the current operation ID in the application response. Follow it until the requested change is confirmed."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:27
+msgid "Inspect an operation"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:29
+msgid "Accepted and queued. The change has not finished yet."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:30
+msgid "Check the token, its scopes and your workspace permissions."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:31
+msgid "The resource changed or an operation is still running. Read its current state before retrying."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:33
+msgid "Changes require hosting:write. Application mutations also use an idempotency key; reuse it when retrying the same request after a network failure."
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:32
@@ -774,7 +816,7 @@ msgid "Name"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:73
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:22
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:21
 msgid "Add database"
 msgstr ""
 
@@ -1052,7 +1094,8 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:104
 #: apps/admin/src/components/hosting/project-applications.tsx:20
-#: apps/admin/src/components/hosting/project-context.tsx:22
+#: apps/admin/src/components/hosting/project-context.tsx:21
+#: apps/admin/src/components/workspace-sidebar.tsx:58
 msgid "Deployments"
 msgstr ""
 
@@ -1270,8 +1313,8 @@ msgid "Demo orders"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:30
-#: apps/admin/src/components/hosting/project-context.tsx:14
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:25
+#: apps/admin/src/components/hosting/project-context.tsx:13
 #: apps/admin/src/components/navigation.tsx:19
 msgid "Customers"
 msgstr ""
@@ -1441,44 +1484,41 @@ msgstr ""
 msgid "Postal code"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:14
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:21
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:38
-#: apps/admin/src/components/hosting/project-context.tsx:23
-#: apps/admin/src/components/navigation.tsx:76
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:13
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:20
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:37
+#: apps/admin/src/components/hosting/project-context.tsx:22
+#: apps/admin/src/components/navigation.tsx:79
+#: apps/admin/src/components/workspace-sidebar.tsx:58
 #: apps/admin/src/lib/billing-families.ts:9
 msgid "Databases"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:14
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:13
 msgid "Browse tables and query your project data."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:16
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:15
 msgid "No databases are available for your account."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:19
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:18
 msgid "No access assigned"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:20
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:19
 #: apps/admin/src/components/hosting/databases.tsx:47
 msgid "Open database"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:21
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:20
 msgid "Manage access"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:30
-#: apps/admin/src/components/hosting/project-context.tsx:14
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:25
+#: apps/admin/src/components/hosting/project-context.tsx:13
 #: apps/admin/src/components/navigation.tsx:20
 msgid "Workspaces"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:31
-msgid "Switch workspace"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/emails/[id]/page.tsx:3
@@ -1550,15 +1590,15 @@ msgstr ""
 msgid "Dedicated to this sender domain"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:23
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:22
 msgid "Choose a project to order and manage PostgreSQL."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:28
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:27
 msgid "No active projects."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:31
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:30
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:27
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:36
 #: apps/admin/src/components/databases/forms.tsx:22
@@ -2114,6 +2154,19 @@ msgstr ""
 msgid "Local changes discarded."
 msgstr ""
 
+#: apps/admin/src/components/code-example.tsx:10
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:30
+msgid "Copied"
+msgstr ""
+
+#: apps/admin/src/components/code-example.tsx:11
+msgid "Copy failed. Select and copy the example."
+msgstr ""
+
+#: apps/admin/src/components/code-example.tsx:12
+msgid "Copy"
+msgstr ""
+
 #: apps/admin/src/components/databases/forms.tsx:20
 msgid "Register database"
 msgstr ""
@@ -2322,7 +2375,7 @@ msgid "Allocated resources, reservations and measured usage are tracked separate
 msgstr ""
 
 #: apps/admin/src/components/hosting/customer.tsx:107
-#: apps/admin/src/components/navigation.tsx:79
+#: apps/admin/src/components/navigation.tsx:82
 msgid "Plan & usage"
 msgstr ""
 
@@ -2417,6 +2470,11 @@ msgstr ""
 
 #: apps/admin/src/components/hosting/customer.tsx:319
 msgid "Also allow this project's images on a shared cluster (applications share the host kernel)"
+msgstr ""
+
+#: apps/admin/src/components/hosting/database-details.tsx:19
+#: apps/admin/src/components/workspace-sidebar.tsx:49
+msgid "Connection credentials"
 msgstr ""
 
 #: apps/admin/src/components/hosting/database-details.tsx:22
@@ -2904,12 +2962,16 @@ msgstr ""
 msgid "Set up hosting"
 msgstr ""
 
-#: apps/admin/src/components/hosting/project-context.tsx:19
+#: apps/admin/src/components/hosting/project-context.tsx:18
 msgid "Project areas"
 msgstr ""
 
-#: apps/admin/src/components/hosting/project-context.tsx:20
+#: apps/admin/src/components/hosting/project-context.tsx:19
 msgid "Project overview"
+msgstr ""
+
+#: apps/admin/src/components/hosting/tenant-database-navigation.tsx:15
+msgid "Database areas"
 msgstr ""
 
 #: apps/admin/src/components/hosting/tenant-database-navigation.tsx:18
@@ -3050,6 +3112,7 @@ msgid "Loading your workspace…"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:20
+#: apps/admin/src/components/workspace-sidebar.tsx:33
 #: apps/auth/src/app/tenants/page.tsx:22
 #: apps/auth/src/components/auth-forms.tsx:319
 #: packages/cms-ui/src/client.tsx:779
@@ -3073,7 +3136,22 @@ msgstr ""
 msgid "Connections"
 msgstr ""
 
+#: apps/admin/src/components/navigation.tsx:21
+#: apps/admin/src/components/workspace-sidebar.tsx:44
+#: apps/admin/src/components/workspace-sidebar.tsx:50
+msgid "Settings"
+msgstr ""
+
 #: apps/admin/src/components/navigation.tsx:77
+#: apps/admin/src/components/workspace-sidebar.tsx:34
+#: apps/admin/src/components/workspace-sidebar.tsx:42
+#: apps/admin/src/components/workspace-sidebar.tsx:48
+#: packages/cms-ui/src/client.tsx:698
+msgid "Overview"
+msgstr ""
+
+#: apps/admin/src/components/navigation.tsx:80
+#: apps/admin/src/components/workspace-sidebar.tsx:80
 #: apps/admin/src/lib/billing-families.ts:6
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:13
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:24
@@ -3082,15 +3160,15 @@ msgstr ""
 msgid "Mail"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:78
+#: apps/admin/src/components/navigation.tsx:81
 msgid "Team"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:78
+#: apps/admin/src/components/navigation.tsx:81
 msgid "Billing"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:80
+#: apps/admin/src/components/navigation.tsx:83
 msgid "Profile"
 msgstr ""
 
@@ -3159,6 +3237,22 @@ msgstr ""
 
 #: apps/admin/src/components/vercel-panel.tsx:58
 msgid "The linked Vercel project could not be found."
+msgstr ""
+
+#: apps/admin/src/components/workspace-sidebar.tsx:43
+msgid "Logs"
+msgstr ""
+
+#: apps/admin/src/components/workspace-sidebar.tsx:75
+msgid "Switch workspace"
+msgstr ""
+
+#: apps/admin/src/components/workspace-sidebar.tsx:78
+msgid "Workspace overview"
+msgstr ""
+
+#: apps/admin/src/components/workspace-sidebar.tsx:86
+msgid "Workspace areas"
 msgstr ""
 
 #: apps/admin/src/lib/billing-families.ts:4
@@ -5756,10 +5850,6 @@ msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:30
 msgid "Shareable offer link"
-msgstr ""
-
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:30
-msgid "Copied"
 msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:30

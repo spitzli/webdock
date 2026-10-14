@@ -8381,3 +8381,66 @@ msgstr "Betrieblich freigegeben"
 
 msgid "Manual fulfillment; no automatic resource grants."
 msgstr "Manuelle Leistung; keine automatische Ressourcenfreigabe."
+
+msgid "Workspace overview"
+msgstr "Übersicht des Arbeitsbereichs"
+
+msgid "Workspace areas"
+msgstr "Bereiche des Arbeitsbereichs"
+
+msgid "Developer tools"
+msgstr "Entwicklerwerkzeuge"
+
+msgid "Copy failed. Select and copy the example."
+msgstr "Kopieren fehlgeschlagen. Markiere das Beispiel und kopiere es manuell."
+
+msgid "Connect your tools, inspect applications and follow deployment progress."
+msgstr "Verbinde deine Werkzeuge, prüfe Anwendungen und verfolge Bereitstellungen."
+
+msgid "Connect an MCP client"
+msgstr "MCP-Client verbinden"
+
+msgid "Add this server URL to an MCP client that supports HTTP and OAuth."
+msgstr "Trage diese Server-URL in einen MCP-Client ein, der HTTP und OAuth unterstützt."
+
+msgid "Sign in with your Webdock account. For hosting, request hosting:read; add hosting:write only when the client needs to make changes."
+msgstr "Melde dich mit deinem Webdock-Konto an. Fordere für Hosting hosting:read an; ergänze hosting:write nur, wenn der Client Änderungen vornehmen soll."
+
+msgid "Your current workspace permissions also apply to every tool call."
+msgstr "Deine aktuellen Berechtigungen im Arbeitsbereich gelten auch für jeden Werkzeugaufruf."
+
+msgid "MCP server URL"
+msgstr "MCP-Server-URL"
+
+msgid "Mail sending credentials are separate from Webdock OAuth access tokens."
+msgstr "Mail-Versandzugangsdaten sind unabhängig von Webdock-OAuth-Zugriffstoken."
+
+msgid "Hosting API"
+msgstr "Hosting-API"
+
+msgid "Use a Webdock OAuth access token with hosting:read and the MCP resource as its audience. Replace APP_ID with the application ID shown on its overview."
+msgstr "Verwende ein Webdock-OAuth-Zugriffstoken mit hosting:read und der MCP-Ressource als Audience. Ersetze APP_ID durch die Anwendungs-ID aus der Übersicht."
+
+msgid "Inspect an application"
+msgstr "Anwendung prüfen"
+
+msgid "Find the current operation ID in the application response. Follow it until the requested change is confirmed."
+msgstr "Die Antwort zur Anwendung enthält die aktuelle Vorgangs-ID. Verfolge den Vorgang, bis die angeforderte Änderung bestätigt ist."
+
+msgid "Inspect an operation"
+msgstr "Vorgang prüfen"
+
+msgid "Accepted and queued. The change has not finished yet."
+msgstr "Angenommen und eingereiht. Die Änderung ist noch nicht abgeschlossen."
+
+msgid "Check the token, its scopes and your workspace permissions."
+msgstr "Prüfe das Token, seine Scopes und deine Berechtigungen im Arbeitsbereich."
+
+msgid "The resource changed or an operation is still running. Read its current state before retrying."
+msgstr "Die Ressource wurde geändert oder ein Vorgang läuft noch. Lies vor einem erneuten Versuch den aktuellen Zustand."
+
+msgid "Changes require hosting:write. Application mutations also use an idempotency key; reuse it when retrying the same request after a network failure."
+msgstr "Änderungen benötigen hosting:write. Änderungen an Anwendungen verwenden außerdem einen Idempotenzschlüssel. Verwende denselben Schlüssel, wenn du denselben Aufruf nach einem Netzwerkfehler wiederholst."
+
+msgid "Media storage"
+msgstr "Medienspeicher"

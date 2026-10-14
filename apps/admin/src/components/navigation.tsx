@@ -14,14 +14,14 @@ export function Navigation({ operator = true }: { operator?: boolean }) {
   const i18n = useI18n();
 
   const path = usePathname();
-  const active = mainArea(path, operator);
+  const active = path === "/hosting/developer" ? "developer" : mainArea(path, operator);
   const primary = operator
     ? [["projects", "/", msgid("Projects")], ["customers", "/customers", msgid("Customers")], ["operations", "/operations", msgid("Operations")]]
     : [["workspace", "/tenants", msgid("Workspaces")], ["sites", "/sites", msgid("My websites")]];
   const management = [["people", "/people", msgid("People & access")], ["plans", "/admin/plans", msgid("Plans")], ["connections", "/integrations", msgid("Connections")], ["settings", "/admin", msgid("Settings")]];
   const renderLinks = (links: string[][]) => links.map(([id, href, label]) => <Link key={id} href={href} aria-current={active === id ? "page" : undefined}>{i18n.t(label)}<NavigationPending /></Link>);
   return <div className="navigation-groups">
-    <nav aria-label={i18n.t("Main navigation")}>{renderLinks(primary)}</nav>
+    <nav aria-label={i18n.t("Main navigation")}>{renderLinks(primary)}<Link href="/hosting/developer" aria-current={path === "/hosting/developer" ? "page" : undefined}>{i18n.t("Developer tools")}<NavigationPending /></Link></nav>
     {operator && <div className="navigation-management"><p className="navigation-label">{i18n.t("Administration")}</p><nav aria-label={i18n.t("Administration")}>{renderLinks(management)}</nav></div>}
   </div>;
 }
@@ -31,12 +31,14 @@ export function MobileMenu({
   userName,
   signedIn,
   ssoEnabled,
+  navigation,
 }: {
   operator: boolean;
   accountURL?: string;
   userName?: string | null;
   signedIn: boolean;
   ssoEnabled: boolean;
+  navigation?: React.ReactNode;
 }) {
   const i18n = useI18n();
 
@@ -55,6 +57,7 @@ export function MobileMenu({
         </summary>
         <div className="mobile-menu-content">
           <Navigation operator={operator} />
+          {navigation}
           {accountURL && <nav className="account-navigation" aria-label={i18n.t("Account and security")}><a href={accountURL}>{i18n.t("Account & security ↗")}</a></nav>}
           <Appearance /><LanguagePicker className="studio-language-picker" />
           <div className="mobile-menu-account">
