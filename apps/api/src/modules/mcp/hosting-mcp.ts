@@ -39,6 +39,8 @@ export const hostingTools: Record<HostingCommand["action"], string> = {
   "clusters.activate": "activate_hosting_cluster",
   "apps.list": "list_hosting_apps",
   "apps.get": "get_hosting_app",
+  "apps.prepare": "prepare_hosting_app",
+  "apps.deploy": "deploy_prepared_hosting_app",
   "apps.create": "create_hosting_app",
   "apps.update": "update_hosting_app",
   "apps.scale": "scale_hosting_app",

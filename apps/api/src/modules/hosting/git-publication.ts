@@ -215,7 +215,7 @@ export async function publishGitContainer(
     const result = (await executeAppCommand(
       actor,
       {
-        action: "apps.update",
+        action: app.lifecycle === "draft" ? "apps.deploy" : "apps.update",
         appID: app.id,
         revision: app.revision,
         spec: { ...app.spec, template: "custom", image: input.image },

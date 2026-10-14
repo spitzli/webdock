@@ -145,6 +145,14 @@ export const appSpecSchema = z
     "Persistent storage supports one instance.",
   );
 export type AppSpec = z.infer<typeof appSpecSchema>;
+export const preparedAppSpecSchema = z.object({
+  args: appSpecSchema.shape.args, port: appSpecSchema.shape.port,
+  healthPath: appSpecSchema.shape.healthPath, cpuMillicores: appSpecSchema.shape.cpuMillicores,
+  memoryBytes: appSpecSchema.shape.memoryBytes, ephemeralBytes: appSpecSchema.shape.ephemeralBytes,
+  replicas: appSpecSchema.shape.replicas, volumeBytes: appSpecSchema.shape.volumeBytes,
+}).strict().refine(s => !s.volumeBytes || s.replicas <= 1, 'Persistent storage supports one instance.');
+export type PreparedAppSpec = z.infer<typeof preparedAppSpecSchema>;
+
 export function resolveAppSpec(value: unknown): AppSpec {
   const spec = appSpecSchema.parse(value);
   return spec.template === "healthcheck"
@@ -172,7 +180,7 @@ export function appDemand(spec: AppSpec, deleted = false): HostingDemand {
     concurrentDeployments: 1,
   };
 }
-export const appViewSchema = z.object({
+const appViewFields = {
   environmentNames: z.array(z.string()).optional(),
   id: resourceID,
   name: z.string(),
@@ -180,11 +188,14 @@ export const appViewSchema = z.object({
   revision: z.number(),
   observedRevision: z.number(),
   status: z.string(),
-  spec: appSpecSchema,
   operationID: resourceID.nullable(),
   lastError: z.string().nullable(),
   logs: z.string().nullable(),
-});
+};
+export const appViewSchema = z.discriminatedUnion('lifecycle', [
+  z.object({...appViewFields, lifecycle:z.literal('draft'), spec:preparedAppSpecSchema}),
+  z.object({...appViewFields, lifecycle:z.literal('deployed').default('deployed'), spec:appSpecSchema}),
+]);
 export type HostingAppView = z.infer<typeof appViewSchema>;
 export const commandSchema = z.discriminatedUnion("action", [
   z
@@ -235,6 +246,8 @@ export const commandSchema = z.discriminatedUnion("action", [
     })
     .strict(),
   z.object({ action: z.literal("apps.get"), appID: resourceID }).strict(),
+  z.object({action:z.literal('apps.prepare'),projectID:resourceID,name,spec:preparedAppSpecSchema,environment:environmentPatchSchema.optional(),subscriptionRevision:revision,idempotencyKey:key}).strict(),
+  z.object({action:z.literal('apps.deploy'),appID:resourceID,spec:appSpecSchema,environment:environmentPatchSchema.optional(),revision,subscriptionRevision:revision,idempotencyKey:key}).strict(),
   z
     .object({
       action: z.literal("apps.create"),

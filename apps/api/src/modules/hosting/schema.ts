@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS webdock_auth.hosting_app (
  status text NOT NULL DEFAULT 'pending', operation_id varchar, last_error text, logs text,
  observed_uid text, created_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE webdock_auth.hosting_app ADD COLUMN IF NOT EXISTS lifecycle text NOT NULL DEFAULT 'deployed' CHECK(lifecycle IN ('draft','deployed'));
 ALTER TABLE webdock_auth.hosting_app ADD COLUMN IF NOT EXISTS observed_spec jsonb;
 ${hostingEnvironmentSchemaSQL}
 UPDATE webdock_auth.hosting_app SET observed_spec=spec WHERE observed_spec IS NULL AND observed_revision=revision AND status IN ('ready','stopped');

@@ -636,11 +636,24 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
           "UPDATE webdock_auth.hosting_agent SET observation=jsonb_set(observation,'{capabilities,environment}','true') WHERE cluster_id=$1",
           [clusterID],
         );
+        const {image: _image, template: _template, ...preparedSpec} = spec;
+        const prepare = {action:'apps.prepare',projectID:project,name:'Managed fixture',spec:preparedSpec,subscriptionRevision:3,idempotencyKey:key()};
+        const draft = await call(root.actor, prepare);
+        const unusedDraft = await call(root.actor, {...prepare,name:'Discardable draft',idempotencyKey:key(),spec:{...preparedSpec,volumeBytes:67108864}});
+        assert.equal((await call(root.actor, prepare)).appID, draft.appID);
+        const draftView = await call(root.actor, {action:'apps.get',appID:draft.appID});
+        assert.equal(draftView.lifecycle, 'draft');
+        assert.equal(draftView.spec.image, undefined);
+        assert.equal((await database.query("SELECT count(*)::int AS n FROM webdock_auth.hosting_operation WHERE app_id=$1 AND status='queued'", [draft.appID])).rows[0].n, 0);
+        for (const action of ['apps.start','apps.restart','apps.scale','apps.update']) await assert.rejects(call(root.actor, {
+          action, appID:draft.appID,revision:draft.revision,subscriptionRevision:3,idempotencyKey:key(),
+          ...(action === 'apps.scale' ? {replicas:1} : action === 'apps.update' ? {spec} : {}),
+        }), /first deployment/);
         const made = await call(root.actor, {
           environment,
-          action: "apps.create",
-          projectID: project,
-          name: "Managed fixture",
+          action: "apps.deploy",
+          appID: draft.appID,
+          revision: draft.revision,
           spec,
           subscriptionRevision: 3,
           idempotencyKey: key(),
@@ -686,6 +699,12 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
           return job;
         }
         const firstAttempt = await claimOperation(managedAgent);
+        const deletion = await call(root.actor, {action:'apps.deletion',appID:unusedDraft.appID});
+        assert.deepEqual(deletion.plan.resources, []);
+        await call(root.actor, {action:'apps.delete',appID:unusedDraft.appID,confirmName:'Discardable draft',planHash:deletion.planHash,idempotencyKey:key()});
+        assert.equal((await call(root.actor, {action:'apps.get',appID:unusedDraft.appID})).status, 'deleted');
+        assert.equal((await database.query("SELECT count(*)::int AS n FROM webdock_auth.hosting_operation WHERE app_id=$1", [unusedDraft.appID])).rows[0].n, 0);
+
         assert.equal(firstAttempt.id, made.id);
         assert.equal(
           firstAttempt.desired.leaseUntil,
@@ -767,9 +786,9 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
         ).rows[0].idempotency_key;
         const repeated = await call(root.actor, {
           environment,
-          action: "apps.create",
-          projectID: project,
-          name: "Managed fixture",
+          action: "apps.deploy",
+          appID: draft.appID,
+          revision: draft.revision,
           spec,
           subscriptionRevision: 3,
           idempotencyKey: originalKey,

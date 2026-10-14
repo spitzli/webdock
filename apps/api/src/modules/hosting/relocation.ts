@@ -82,7 +82,7 @@ export async function relocateProject(actor: HostingActor, cmd: Relocation) {
       );
     const apps = (
       await db.query(
-        "SELECT * FROM webdock_auth.hosting_app WHERE project_id=$1 AND (status<>'deleted' OR COALESCE((spec->>'volumeBytes')::bigint,0)>0) ORDER BY id FOR UPDATE",
+        "SELECT * FROM webdock_auth.hosting_app WHERE project_id=$1 AND lifecycle='deployed' AND (status<>'deleted' OR COALESCE((spec->>'volumeBytes')::bigint,0)>0) ORDER BY id FOR UPDATE",
         [cmd.projectID],
       )
     ).rows;

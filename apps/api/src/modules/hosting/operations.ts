@@ -152,7 +152,7 @@ export async function claimOperation(agent: Agent) {
       ).rows;
       const apps = (
         await db.query(
-          "SELECT id,spec,status FROM webdock_auth.hosting_app WHERE project_id=$1 AND (status<>'deleted' OR COALESCE((spec->>'volumeBytes')::bigint,0)>0)",
+          "SELECT id,spec,status FROM webdock_auth.hosting_app WHERE project_id=$1 AND lifecycle='deployed' AND (status<>'deleted' OR COALESCE((spec->>'volumeBytes')::bigint,0)>0)",
           [row.project_id],
         )
       ).rows;

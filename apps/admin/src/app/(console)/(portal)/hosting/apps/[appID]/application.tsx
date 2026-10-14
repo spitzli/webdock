@@ -15,6 +15,12 @@ export default async function Application({
   const { t, locale } = await getRequestI18n();
   const app = await getHostingApplication(appID);
   if (view === "settings" && !app.canManage && !app.operator) notFound();
+  if (app.lifecycle === 'draft') return <section className="panel">
+    <h2>{t('Awaiting first deployment')}</h2>
+    <p>{t('This application has not been deployed yet.')}</p>
+    <Link className="button" href={`/hosting/projects/${app.projectID}/git/setup?target=${appID}`}>{t('Configure deployments')}</Link>
+    {app.operator && <Link href={`/hosting/apps/${appID}/delete`}>{t('Delete application')}</Link>}
+  </section>;
   return (
     <>
       {view === "overview" && <section className="panel"><h2>{t("Configured resources")}</h2><dl className="application-resources"><div><dt>{t("Replicas")}</dt><dd>{app.spec.replicas}</dd></div><div><dt>{t("CPU cores")}</dt><dd>{formatResource("cpuMillicores",app.spec.cpuMillicores,locale)}</dd></div><div><dt>{t("Memory")}</dt><dd>{formatResource("memoryBytes",app.spec.memoryBytes,locale)}</dd></div></dl></section>}
