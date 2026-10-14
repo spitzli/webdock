@@ -1,6 +1,6 @@
 # Native API production rollout — 2026-10-14
 
-The native API, protected UI proxy, private cache and billing worker run in the existing k3s cluster at `178.104.141.95`, namespace `webdock-platform`. Auth and Studio DNS now point to that ingress. Repository integration and the final Vercel promotion are recorded below when complete.
+The native API, protected UI proxy, private cache and billing worker run in the existing k3s cluster at `178.104.141.95`, namespace `webdock-platform`. Auth and Studio DNS now point to that ingress. PR #18 is merged as `e83348e3f4f4635eb92fb1a99ac26ade7969a2a0`; its production Vercel deployments are ready and serve through the controlled ingress.
 
 ## Verified production behavior
 
@@ -30,3 +30,16 @@ Auth/Studio certificates were issued with DNS validation before changing their A
 The billing worker handles explicitly selected live and sandbox environments; an empty catalog performs no provider call. Live Polar credentials, products, prices and payments were not created. Storage scheduling must transfer only after the old Vercel cron definitions are removed. Previously disabled native Mail workers remain disabled.
 
 Existing Vercel artifacts remain available for compatibility rollback. Do not restore an older database over new records. Runtime secret cleanup from the old Vercel projects follows verified final promotion; the new UI code uses only the HTTP API. The exact pre-cutover state and private operational evidence remain in the ignored deployment directory.
+
+## Final promotion and scheduler handover
+
+- Auth production: `dpl_BGX2hZ9FnQxLzq2H3rTh5aVPJ9sY`; Studio production: `dpl_2wZQ2ZjL6CGuoXM1AnhDvw16Sn9e`. Both identify the merge commit above. The proxy was rolled to these immutable origins.
+- Auth's Vercel cron definitions are empty on that deployment. The native worker owns `billing,storage`; its first `storage.refresh` job succeeded on attempt 1. Native Mail jobs remain disabled.
+- API-only credential entries were removed from future Auth/Studio Vercel environments (14 Auth entries, 8 Studio entries). Final frontend builds succeeded afterward. Integration credentials and the active replacement webhook secret are saved in 1Password.
+- Authenticated private-cache PING succeeds; an unauthenticated PING is rejected.
+
+## Pooler incident corrected during final verification
+
+The database Pooler was evicted for exceeding its existing 64 MiB ephemeral-storage limit. Its copied `/controller` binary already occupied approximately 63 MiB; pod history showed repeated evictions predating this rollout. The database remained available, while the API and worker restarted when pooled connections were refused.
+
+The hosting-agent renderer now requests 128 MiB and limits 256 MiB for both Pooler bootstrap and runtime containers. The existing production Pooler was updated and rolled successfully without changing database data, connection budgets, TLS or passwords. The deployed renderer matched the repository baseline before replacement; it was backed up, updated and the hosting agent restarted successfully. A regression test failed against 64 MiB and passes with the corrected budget; all eight database-agent tests pass. API readiness is again 200, all application pods are ready, and storage work completes successfully. This records recovery verification, not a claim of a long-duration soak test.

@@ -1,6 +1,6 @@
 # API release preflight — 2026-10-14
 
-PR: https://github.com/spitzli/webdock/pull/18. Project relocation and its MCP fix are included with owner approval. Production cutover is **not complete**, and the PR must remain unmerged until the API is ready: merging automatically publishes the Vercel frontends.
+PR: https://github.com/spitzli/webdock/pull/18. Project relocation and its MCP fix are included with owner approval. This records the earlier preflight; the rollout and merge subsequently completed. See [final production evidence](2026-10-14-api-production.md).
 
 ## Verified changes
 
@@ -25,7 +25,7 @@ Repeated CloudNativePG webhook timeouts stopped HBA updates while its controller
 
 The existing Database Gateway credential was recovered from its Kubernetes Secret. The existing GitHub App private key was found locally and validated with GitHub's authenticated `/app` endpoint; its OAuth client matches the preserved Studio configuration. Neither credential was rotated.
 
-## Remaining cutover prerequisites
+## Earlier cutover prerequisites (subsequently resolved)
 
 Unmasked production integration settings are still required: `WEBDOCK_GITHUB_WEBHOOK_SECRET`, `WEBDOCK_GIT_VERCEL_TOKEN`, and `WEBDOCK_VERCEL_CLIENT_SECRET`, plus associated Vercel selectors. Current and historical Vercel exports contain `[SENSITIVE]` for these values. No masked value was installed as a runtime secret. Better Auth encryption and signed-RLS keys have been verified against production; the existing SSO credentials and a local production Mail-key source were found. No existing key was rotated.
 

@@ -41,6 +41,10 @@ class DatabaseTests(TestCase):
         self.assertNotIn('Secret',[o['kind'] for o in objects])
         pooler=next(o for o in objects if o['kind']=='Pooler')
         self.assertEqual(pooler['spec']['template']['spec']['initContainers'][0]['resources']['limits']['memory'],'268435456')
+        # The copied controller occupies ~63 MiB before config files and logs.
+        for container in pooler['spec']['template']['spec']['containers'] + pooler['spec']['template']['spec']['initContainers']:
+            self.assertGreaterEqual(int(container['resources']['limits']['ephemeral-storage']),128 * 1024 * 1024)
+
 
     def test_sql_uses_non_login_owner_and_only_target_roles(self):
         self.assertEqual(role_names('300'),('wd_owner_300','wd_migrate_300','wd_app_300'))
