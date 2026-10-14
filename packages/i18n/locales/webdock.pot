@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-12 20:30+0200\n"
+"POT-Creation-Date: 2026-10-14 09:09+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -7324,6 +7324,7 @@ msgid "Webdock Studio · Updated {date}"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:15
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:18
 msgid "Privacy notice"
 msgstr ""
 
@@ -8795,4 +8796,345 @@ msgstr ""
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx
 #: apps/auth/src/app/tenants/[customerID]/usage/form.tsx
 msgid "Applies immediately to this customer only and replaces their current plan. It is not added to the reusable plan library. Existing extras are preserved."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/page.tsx:52
+#: apps/web/src/app/(frontend)/(legal)/layout.tsx:15
+msgid "Terms"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/page.tsx:52
+#: apps/web/src/app/(frontend)/(legal)/layout.tsx:15
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:22
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:18
+msgid "Legal notice"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:7
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:10
+msgid "Privacy — Webdock"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:8
+msgid "How Webdock processes personal data, uses service providers and protects your rights."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:17
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:17
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:17
+msgid "Webdock · Updated {date}"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:19
+msgid "This notice explains how we process personal data on Webdock’s website and in its account, Studio, hosting, database and Mail services. Customer-operated websites and applications have their own controllers and privacy notices."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:20
+msgid "1. Controller and contact"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:21
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:21
+msgid "Dominik Spitzli, trading as Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:22
+msgid "For privacy questions and requests concerning your data, contact:"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:23
+msgid "We are the controller for our website, customer relationships, accounts and service administration. When we host or handle personal data for a customer, we act on their instructions under a data-processing agreement (Article 28 GDPR). This notice does not replace that agreement."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:24
+msgid "2. Data, purposes and legal bases"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:25
+msgid "When you visit Webdock, we and our hosting providers process technical request data, including IP address, requested URL, time, browser and operating-system information, to deliver the site, diagnose errors and prevent misuse. This is based on our legitimate interest in secure, reliable operation (Article 6(1)(f) GDPR). Fonts are served locally."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:26
+msgid "For enquiries, contracts and billing, we process the contact, company, address, correspondence and contract details you provide. The bases are steps before or performance of a contract (Article 6(1)(b)), legal obligations such as accounting requirements (Article 6(1)(c)), and our legitimate interest in communicating with business contacts (Article 6(1)(f))."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:27
+msgid "For accounts and team access, we process names, email addresses, invitations, customer memberships, roles, password hashes, passkey public keys, configured second-factor data and sessions. Security-relevant actions are logged with the acting account, action and time. Data comes from you or the operator or administrator inviting you. The bases are contract performance for contracting users and our legitimate interests in managing authorised access and preventing misuse for team members."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:28
+msgid "The data required for account access and contracted services must be provided for us to supply them; optional profile information is voluntary. Where we ask for consent, processing is based on Article 6(1)(a) GDPR and you may withdraw it at any time with future effect. We do not sell personal data or make solely automated decisions with legal or similarly significant effects."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:29
+msgid "3. Projects, hosting and connected services"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:30
+msgid "Depending on the services enabled, we process project content, files, database contents, domains, configuration, access credentials, deployment and usage data, and operational logs. Authorised team members see data according to their roles. Operators access it where needed to provide support, maintain the service or investigate security incidents. Customer content is processed on the customer’s instructions; service administration relies on contract performance and our legitimate security interests."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:31
+msgid "Optional Vercel and GitHub connections provide authorisation data and information about selected projects or repositories, deployments, domains, branches and commits. Enabled build and deployment workflows also process the source code, build artefacts and configuration needed for those workflows. Access is limited by the connected account’s permissions and the selected function. Disconnecting in Webdock and revoking access at the provider are separate actions."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:32
+msgid "4. Mail"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:33
+msgid "Account invitations and security emails are sent through turboSMTP. When Mail is enabled for a customer, we process account and domain details, sender and recipient addresses, message contents and attachments, delivery events, usage and suppression records. Enabled incoming mail uses a separate Stalwart instance for that customer; outgoing-only service does not require one. Mailbox contents and forwarding are processed only for the enabled service."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:34
+msgid "For managed sending, the relay provider receives the account details needed for provisioning and the data needed to deliver messages. Customer-supplied relay accounts use the selected provider. Domain verification sends the domain name to Cloudflare’s DNS resolver. Configured customer webhooks receive delivery event data. Optional email open and click tracking is controlled by the customer administrator, who is responsible for the required recipient information and legal basis. It is separate from website analytics."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:35
+msgid "5. Cookies, preferences and planned analytics"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:36
+msgid "Login and connection cookies maintain sessions and protect authentication flows. Authentication sessions normally expire after eight hours; the Vercel connection cookie lasts up to ten minutes. A language preference explicitly selected by you is stored in a cookie for up to one year; a selected colour theme remains in local storage until removed. These functions use Article 6(1)(b) or (f) GDPR and, where strictly necessary to provide a service you request, Section 25(2)(2) TDDDG. You can remove them through your browser settings; this may sign you out or reset preferences."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:37
+msgid "Plausible Analytics is planned for the public website but is not currently integrated. The intended setup measures website use without analytics cookies, advertising profiles or cross-site tracking. Before activation, we will update this notice with the actual hosting setup, recipients, data collected, retention and applicable legal basis, and obtain consent where required."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:38
+msgid "How Plausible processes visitor data"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:39
+msgid "6. Providers and international transfers"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:40
+msgid "We use Vercel for web application hosting, Contabo for managed server, database and incoming-mail infrastructure, turboSMTP for email delivery, and Cloudflare for DNS services. GitHub and other customer-selected providers are involved when their integrations are enabled. Neon was the previous platform database provider; retained migration copies remain subject to the retention rules below until deleted. Providers receive only the data needed for their role. We also disclose data where legally required, for example to tax advisers or competent authorities."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:41
+msgid "Some providers process data outside the EU/EEA, including in the United States. An EU hosting region does not exclude international support or network processing. Where required, transfers rely on an applicable adequacy decision, such as the EU–US Data Privacy Framework for certified recipients, or EU standard contractual clauses and any necessary additional safeguards. You can request details and copies of the safeguards relevant to your service using the contact above."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:42
+msgid "7. Retention and deletion"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:43
+msgid "We keep contact, account and contract data for as long as needed for the relationship, then delete it unless legal retention duties or unresolved claims require continued storage. Depending on the document, statutory retention periods are generally six, eight or ten years. Security and operational logs are retained for their diagnostic and security purpose; incident-related records may be retained until the matter is resolved. Backups and retained migration copies are removed as their recovery purpose and applicable retention duties end."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:44
+msgid "For the Mail API, cleanup is configured for message text and HTML after 30 days from a final outcome, metadata and events after 90 days, request logs and completed webhook attempts after 30 days, and processed or quarantined callbacks after seven days. Attachments are removed after a definitive sending outcome; content with an uncertain outcome after seven days. Active schedules and unresolved sending or duplicate-prevention records are retained while needed. Suppressions remain until removed. These periods do not govern mailbox storage, provider-side records or backups."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:45
+msgid "Suspending a service, archiving a customer or disconnecting an integration does not automatically delete stored data. Incoming-mail storage is retained on deactivation; deletion is a separate operation. Contact us to arrange deletion or export. Disconnecting Vercel removes its stored credential from the active database, but provider-side authorisations must also be revoked at Vercel."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:46
+msgid "8. Your rights"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:47
+msgid "Subject to the statutory conditions, you have rights of access, rectification, erasure, restriction and data portability. You may object to processing based on legitimate interests for reasons relating to your situation; you can object to direct marketing at any time. You may withdraw consent without affecting the lawfulness of earlier processing. We may verify your identity to protect your data."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:48
+msgid "You can complain to a supervisory authority, including the authority where you live or work, or to the State Commissioner for Data Protection of Lower Saxony:"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:7
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:10
+msgid "Terms and conditions — Webdock"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:8
+msgid "Terms for Webdock services, including consumer cancellation and withdrawal rights."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:18
+msgid "Terms and conditions"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:19
+msgid "These terms apply to Webdock services for consumers and businesses, including agreed website development, project management, hosting, databases and Mail. A consumer acts mainly outside their trade or profession. Individually agreed terms take precedence; mandatory consumer rights remain unaffected."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:20
+msgid "1. Provider and contract"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:22
+msgid "Full provider details"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:23
+msgid "The service description and accepted offer determine what is supplied, the price, payment dates, term and any service-level agreement. A contract is formed when you accept our binding offer or we confirm your order. Website descriptions alone are not binding offers. Creating an account or connecting an integration does not itself create a paid subscription. We provide the agreed terms and required consumer information in a durable form, for example by email."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:24
+msgid "2. Services and availability"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:25
+msgid "Only the functions and resources included in the accepted offer are owed. Preview or beta features are identified as such and do not expand the agreed service. We maintain and secure the services; maintenance, incidents and external providers can affect availability. A specific uptime, response time, backup schedule or recovery period applies only if agreed. This does not limit statutory rights concerning defects, security updates or non-performance."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:26
+msgid "Optional services must be enabled separately. Incoming Mail is provisioned only when explicitly activated; outgoing-only Mail does not include a mailbox. Successful handoff to a mail relay does not guarantee delivery to the recipient’s inbox. When you connect your own provider account, its contract and charges continue to apply. We remain responsible for the obligations we have agreed to perform."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:27
+msgid "3. Prices and payment"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:28
+msgid "The accepted offer states the price, currency, billing period and any usage charges. Prices offered to consumers include applicable VAT and other mandatory price components. Additional paid work or resources require your agreement. Invoices are due on the agreed date; statutory default rules apply. Changes to agreed prices require a contractual basis and cannot be imposed merely by changing this page."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:29
+msgid "4. Your responsibilities and content"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:30
+msgid "Provide accurate account and billing details, protect access credentials and grant only authorised people access. Connect only systems you are entitled to manage. Report suspected misuse promptly. Do not distribute unlawful content, malware or unsolicited advertising, infringe third-party rights, bypass access controls or deliberately disrupt services. For email, you are responsible for lawful recipient lists and any consent needed for sending or open and click tracking."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:31
+msgid "You retain your rights to your content. You grant us only the rights needed to host, process and deliver it for the agreed service. Rights to individually developed work are governed by the project agreement; third-party and open-source licences remain applicable. Keep independent copies of important data and arrange any required backups with us. Your own precautions do not release us from agreed backup obligations or statutory liability."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:32
+msgid "5. Privacy and data processing"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:33
+msgid "Our handling of personal data is described in the privacy notice. Where we process personal data on your behalf, a separate data-processing agreement is required before that processing begins. You remain responsible for the lawfulness of your content, instructions and information to affected individuals."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:33
+msgid "Read the privacy notice"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:34
+msgid "6. Term, cancellation and suspension"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:35
+msgid "The offer specifies the term and notice period. If no term is agreed for an ongoing service, it runs indefinitely and can be cancelled at any time with one month’s notice. For consumers, any tacit renewal after an initial term is indefinite and cancellable with no more than one month’s notice. Statutory rights to cancel earlier or for good cause remain unaffected. You can give notice by email to the contact above; any legally required online cancellation facility remains an additional option."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:36
+msgid "We may restrict access where proportionate and necessary because of unlawful use, a concrete security risk or a substantial contractual breach. Where feasible, we first explain the reason and allow a reasonable opportunity to remedy it; urgent protective measures may be immediate. We restore access when the reason ends. Payment-related suspension requires the statutory prerequisites."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:37
+msgid "Arrange an export of needed data before the service ends. We coordinate return or deletion under the service and data-processing agreements and applicable law. Deactivation or suspension is not deletion; retained data remains protected. Removing a Webdock connection does not automatically cancel or revoke your account with a third-party provider."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:38
+msgid "7. Defects and liability"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:39
+msgid "Statutory rights concerning defects and statutory liability apply. Please report faults with enough information for us to investigate; this does not restrict your rights. Nothing in these terms excludes liability for intent, gross negligence, injury to life, body or health, or other mandatory liability. No general exclusion of liability or blanket transfer of third-party claims to you is agreed."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:40
+msgid "8. Consumer right of withdrawal"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:41
+msgid "For service contracts concluded at a distance or away from business premises, consumers have the following right of withdrawal. Business customers do not have this statutory consumer right."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:42
+msgid "You may withdraw from the contract without giving a reason within 14 days from the day it is concluded. To withdraw, send a clear statement of your decision, for example by email or post, to Dominik Spitzli, Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany, dominik@spitzli.dev. You may use the model form below, but do not have to. Sending your statement before the deadline is sufficient."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:43
+msgid "If you withdraw, we refund all payments received from you for the contract without undue delay and no later than 14 days after receiving your withdrawal. We use the original payment method unless expressly agreed otherwise; we charge no refund fees. If you expressly requested that services begin during the withdrawal period and were properly informed, you owe a proportionate amount for the services provided up to your withdrawal compared with the full agreed service."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:44
+msgid "For a paid service, the right expires early only after full performance and only if you expressly agreed to an early start and acknowledged beforehand that full performance would end your right of withdrawal. Starting an ongoing hosting service alone does not end that right."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:45
+msgid "Model withdrawal form"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:46
+msgid "Complete and send this form only if you wish to withdraw from the contract."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:47
+msgid "To: Dominik Spitzli, Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany; dominik@spitzli.dev."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:48
+msgid ""
+"I/We (*) hereby withdraw from the contract concluded by me/us (*) for the provision of the following service: ____________________\n"
+"Ordered on: ____________________\n"
+"Name of consumer(s): ____________________\n"
+"Address of consumer(s): ____________________\n"
+"Signature of consumer(s), only if sent on paper: ____________________\n"
+"Date: ____________________\n"
+"(*) Delete as appropriate."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:49
+msgid "9. Applicable law and changes"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:50
+msgid "German law applies. For consumers, this choice does not remove mandatory protections of the country in which they habitually reside. Statutory jurisdiction rules apply. Changes to these terms do not automatically amend an existing contract; amendments require a valid agreement or legal basis. We inform you about relevant changes in advance."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:7
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:10
+msgid "Legal notice — Webdock"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:8
+msgid "Webdock provider and contact details for Spitzli Development."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:19
+msgid "Provider of Webdock pursuant to Section 5 DDG:"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:20
+msgid "Owner: Dominik Spitzli · Sole trader"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:20
+msgid "Germany"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:21
+msgid "Contact"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:23
+msgid "VAT identification number"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:24
+msgid "VAT identification number pursuant to Section 27a of the German VAT Act: DE463646700."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:25
+msgid "Webdock and Spitzli Development"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:26
+msgid "Webdock is a service of Spitzli Development. These provider details apply to Webdock’s own website and services. Independently operated customer websites are the responsibility of their respective providers."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:27
+msgid "Spitzli Development legal notice"
 msgstr ""

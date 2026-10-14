@@ -12,6 +12,6 @@ export default async function LegalLayout({ children }: { children: React.ReactN
       <div className="preference-pickers"><ThemePicker /><LanguagePicker className="language-picker"/></div>
     </header>
     <main id="content" className="wrap legal-copy">{children}</main>
-    <footer className="wrap site-footer"><Link href="/">{"Webdock"}</Link><nav aria-label={t("Legal")}><a href="/terms">{t("Terms of use")}</a><a href="/privacy">{t("Privacy")}</a></nav><a href="mailto:dominik@spitzli.dev">{"dominik@spitzli.dev"}</a></footer>
+    <footer className="wrap site-footer"><Link href="/">{"Webdock"}</Link><nav aria-label={t("Legal")}><a href="/terms">{t("Terms")}</a><a href="/privacy">{t("Privacy")}</a><a href="/imprint">{t("Legal notice")}</a></nav><a href="mailto:dominik@spitzli.dev">{"dominik@spitzli.dev"}</a></footer>
   </>;
 }
