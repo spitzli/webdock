@@ -6,16 +6,14 @@ import { StudioShell } from "@/components/studio-shell";
 export const dynamic = "force-dynamic";
 export default async function PortalLayout({
   children,
-  navigation,
 }: {
   children: React.ReactNode;
-  navigation: React.ReactNode;
 }) {
   const i18n = await getRequestI18n();
 
   const session = await auth.api.getSession({ headers: await headers() });
   return (
-    <StudioShell user={session?.user} preview={session?.preview} navigation={navigation}>
+    <StudioShell preview={session?.preview}>
       <div className="studio-portal">{session?.preview?.status === "expired" ? <section className="auth-panel"><h1>{i18n.t("Preview ended")}</h1><p>{i18n.t("Return to your own view using the banner to continue.")}</p></section> : children}</div>
     </StudioShell>
   );

@@ -68,20 +68,10 @@ export default async function Tenants({searchParams}: {searchParams: Promise<{ch
           >{i18n.t("Review invitation")}</Link>
         </article>
       ))}
-      <div className="access-grid">
-        {tenants.map((tenant) => (
-          <article className="access-record" key={tenant.id}>
-            <h2>
-              <Link href={`/tenants/${tenant.id}`}>{tenant.name}</Link>
-            </h2>
-            <p className="muted">
-              {tenant.status === "active"
-                ? (tenant.role ? i18n.t(uiLabel(tenant.role)) : i18n.t("Platform operator"))
-                : i18n.t("Archived")}
-            </p>
-          </article>
-        ))}
-      </div>
+      {tenants.length > 0 && <div className="console-directory"><table>
+        <thead><tr><th scope="col">{i18n.t("Workspace")}</th><th scope="col">{i18n.t("Access")}</th><th scope="col" className="console-directory-id">{i18n.t("Workspace ID")}</th><th scope="col">{i18n.t("Actions")}</th></tr></thead>
+        <tbody>{tenants.map(tenant=><tr key={tenant.id}><td><Link href={`/tenants/${tenant.id}`}>{tenant.name}</Link></td><td>{tenant.status === "active" ? tenant.role ? i18n.t(uiLabel(tenant.role)) : i18n.t("Platform operator") : i18n.t("Archived")}</td><td className="console-directory-id"><code>{tenant.id}</code></td><td><Link className="button secondary" href={`/tenants/${tenant.id}`}>{i18n.t("Open workspace")}</Link></td></tr>)}</tbody>
+      </table></div>}
       {!tenants.length && (
         <p>{i18n.t("No active tenant memberships yet. Accept your emailed invitation to get started.")}</p>
       )}

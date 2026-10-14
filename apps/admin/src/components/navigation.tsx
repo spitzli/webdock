@@ -2,15 +2,15 @@
 import { msgid } from '@webdock/i18n';
 
 import { useI18n } from '@webdock/i18n/react';
-import { LanguagePicker } from "@webdock/i18n/picker";
 
+import { ConsoleIcon, type ConsoleIconName } from "./console-icon";
 import { NavigationPending } from "./navigation-pending";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { mainArea } from "@/lib/workspace-navigation";
 import { AreaNavigation } from "./area-navigation";
 import { useState, useSyncExternalStore } from "react";
-export function Navigation({ operator = true }: { operator?: boolean }) {
+export function Navigation({ operator = true, preview = false }: { operator?: boolean; preview?: boolean }) {
   const i18n = useI18n();
 
   const path = usePathname();
@@ -19,69 +19,31 @@ export function Navigation({ operator = true }: { operator?: boolean }) {
     ? [["projects", "/", msgid("Projects")], ["customers", "/customers", msgid("Customers")], ["operations", "/operations", msgid("Operations")]]
     : [["workspace", "/tenants", msgid("Workspaces")], ["sites", "/sites", msgid("My websites")]];
   const management = [["people", "/people", msgid("People & access")], ["plans", "/admin/plans", msgid("Plans")], ["connections", "/integrations", msgid("Connections")], ["settings", "/admin", msgid("Settings")]];
-  const renderLinks = (links: string[][]) => links.map(([id, href, label]) => <Link key={id} href={href} aria-current={active === id ? "page" : undefined}>{i18n.t(label)}<NavigationPending /></Link>);
+  const icons: Record<string,ConsoleIconName> = {projects:"apps",customers:"team",operations:"overview",workspace:"overview",sites:"website",people:"team",plans:"billing",connections:"apps",settings:"settings"};
+  const renderLinks = (links: string[][]) => links.map(([id, href, label]) => <Link key={id} href={href} aria-current={active === id && (!(["workspace", "sites"].includes(id)) || path === href) ? "page" : undefined}><ConsoleIcon name={icons[id] || "overview"}/><span>{i18n.t(label)}</span><NavigationPending /></Link>);
   return <div className="navigation-groups">
-    <nav aria-label={i18n.t("Main navigation")}>{renderLinks(primary)}<Link href="/hosting/developer" aria-current={path === "/hosting/developer" ? "page" : undefined}>{i18n.t("Developer tools")}<NavigationPending /></Link></nav>
+    <nav aria-label={i18n.t("Main navigation")}>{renderLinks(primary)}{!preview && <Link href="/hosting/developer" aria-current={path === "/hosting/developer" ? "page" : undefined}><ConsoleIcon name="code"/><span>{i18n.t("Developer tools")}</span><NavigationPending /></Link>}</nav>
     {operator && <div className="navigation-management"><p className="navigation-label">{i18n.t("Administration")}</p><nav aria-label={i18n.t("Administration")}>{renderLinks(management)}</nav></div>}
   </div>;
 }
-export function MobileMenu({
-  operator,
-  accountURL,
-  userName,
-  signedIn,
-  ssoEnabled,
-  navigation,
-}: {
-  operator: boolean;
-  accountURL?: string;
-  userName?: string | null;
-  signedIn: boolean;
-  ssoEnabled: boolean;
-  navigation?: React.ReactNode;
-}) {
-  const i18n = useI18n();
-
-  return (
-    <div className="mobile-menu-wrap">
-      <Link className="brand mobile-brand" href={operator ? "/" : "/tenants"}>{i18n.t("webdock")}<span>.</span>
-      </Link>
-      <details
-        className="mobile-menu"
-        onClick={(event) => {
-          if ((event.target as HTMLElement).closest("a"))
-            event.currentTarget.removeAttribute("open");
-        }}
-      >
-        <summary>{i18n.t("Menu ")}<span aria-hidden="true">☰</span>
-        </summary>
-        <div className="mobile-menu-content">
-          <Navigation operator={operator} />
-          {navigation}
-          {accountURL && <nav className="account-navigation" aria-label={i18n.t("Account and security")}><a href={accountURL}>{i18n.t("Account & security ↗")}</a></nav>}
-          <Appearance /><LanguagePicker className="studio-language-picker" />
-          <div className="mobile-menu-account">
-            <span>{userName || i18n.t("Webdock Studio")}</span>
-            {signedIn && <Logout ssoEnabled={ssoEnabled} />}
-          </div>
-        </div>
-      </details>
-    </div>
-  );
-}
-export function TenantNavigation({ customerID, canManage = false, preview = false, overviewHref }: { customerID: string; canManage?: boolean; preview?: boolean; overviewHref?: string }) {
+export function TenantNavigation({ customerID, canManage = false, preview = false, overviewHref, children }: { customerID: string; canManage?: boolean; preview?: boolean; overviewHref?: string; children?: React.ReactNode }) {
   const i18n = useI18n();
 
   const base = `/tenants/${encodeURIComponent(customerID)}`;
-  return <AreaNavigation label={i18n.t("Workspace navigation")} links={[
-    {href:overviewHref || base,label:msgid("Overview"),exact:true},
-    {href:base+"/hosting",label:msgid("Applications")},
-    {href:base+(preview?"/managed-databases":"/databases"),label:msgid("Databases"),activePaths:[base+"/managed-databases",base+"/databases"]},
-    ...(!preview ? [{href:base+"/mail",label:msgid("Mail")}] : []),
-    ...(canManage ? [{href:base+"/team",label:msgid("Team")},...(!preview?[{href:base+"/billing",label:msgid("Billing")}]:[])] : []),
-    {href:base+"/usage",label:msgid("Plan & usage")},
-    {href:base+"/profile",label:msgid("Profile")},
-  ]}/>;
+  return <>
+    <AreaNavigation label={i18n.t("Workspace navigation")} links={[
+      {href:overviewHref || base,label:msgid("Overview"),icon:"overview",exact:true},
+      {href:base+"/hosting",label:msgid("Applications"),icon:"apps"},
+      {href:base+(preview?"/managed-databases":"/databases"),label:msgid("Databases"),icon:"database",activePaths:[base+"/managed-databases",base+"/databases"]},
+      ...(!preview ? [{href:base+"/mail",label:msgid("Mail"),icon:"mail" as const}] : []),
+    ]}/>
+    {children}
+    <div className="navigation-management"><p className="navigation-label">{i18n.t("Workspace settings")}</p><AreaNavigation label={i18n.t("Workspace settings")} links={[
+      ...(canManage ? [{href:base+"/team",label:msgid("Team"),icon:"team" as const},...(!preview?[{href:base+"/billing",label:msgid("Billing"),icon:"billing" as const}]:[])] : []),
+      {href:base+"/usage",label:msgid("Plan & usage"),icon:"billing"},
+      {href:base+"/profile",label:msgid("Profile"),icon:"settings"},
+    ]}/></div>
+  </>;
 }
 
 const subscribeTheme = (notify: () => void) => {

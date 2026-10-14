@@ -410,6 +410,9 @@
   "A tenant owner must be active, verified and have completed account setup.": [
     "Ein Kunden-Owner muss aktiv und verifiziert sein und die Kontoeinrichtung abgeschlossen haben."
   ],
+  "API & MCP": [
+    "API & MCP"
+  ],
   "API keys": [
     "API-Schlüssel"
   ],
@@ -794,6 +797,9 @@
   "All verified sender domains": [
     "Alle bestätigten Absenderdomains"
   ],
+  "All workspaces": [
+    "Alle Arbeitsbereiche"
+  ],
   "Allocatable": [
     "Verfügbare Kapazität"
   ],
@@ -1004,6 +1010,9 @@
   "Applications run without root or API tokens, with a read-only filesystem and temporary /tmp storage. Cached images only; no unverified registry pulls.": [
     "Anwendungen laufen ohne Root-Rechte oder API-Tokens, mit schreibgeschütztem Dateisystem und temporärem /tmp-Speicher. Nur vorhandene Images; kein Abruf von ungeprüften Registries."
   ],
+  "Applications, databases and navigation": [
+    "Anwendungen, Datenbanken und Navigation"
+  ],
   "Applied": [
     "Angewendet"
   ],
@@ -1205,6 +1214,9 @@
   "Available in the shop": [
     "Im Shop verfügbar"
   ],
+  "Available resources": [
+    "Verfügbare Ressourcen"
+  ],
   "Awaiting payment confirmation": [
     "Zahlungsbestätigung ausstehend"
   ],
@@ -1396,6 +1408,9 @@
   ],
   "Browse existing images for image selection.": [
     "Vorhandene Bilder ansehen und für die Bildauswahl finden."
+  ],
+  "Browse project data and manage database connections.": [
+    "Projektdaten durchsuchen und Datenbankverbindungen verwalten."
   ],
   "Browse repositories": [
     "Repositorys durchsuchen"
@@ -1655,6 +1670,9 @@
   "Check your email and password, or try again later.": [
     "Prüfe deine E-Mail-Adresse und dein Passwort oder versuche es später erneut."
   ],
+  "Check your plan, resource limits and measured usage.": [
+    "Tarif, Ressourcenlimits und gemessene Nutzung prüfen."
+  ],
   "Checked ": [
     "Geprüft "
   ],
@@ -1832,11 +1850,23 @@
   "Clients are registered through the operator provisioning tool.": [
     "Clients werden über das Bereitstellungswerkzeug des Betreibers registriert."
   ],
+  "Close": [
+    "Schließen"
+  ],
   "Close draft": [
     "Entwurf schließen"
   ],
   "Close editor": [
     "Bearbeitung schließen"
+  ],
+  "Close navigation": [
+    "Navigation schließen"
+  ],
+  "Close search": [
+    "Suche schließen"
+  ],
+  "Close workspace selector": [
+    "Arbeitsbereichsauswahl schließen"
   ],
   "Closed": [
     "Geschlossen"
@@ -2231,6 +2261,9 @@
   ],
   "Connections": [
     "Verbindungen"
+  ],
+  "Console": [
+    "Konsole"
   ],
   "Consumer key": [
     "Consumer-Key"
@@ -2631,6 +2664,9 @@
   "Current production": [
     "Aktuelle Produktion"
   ],
+  "Current project": [
+    "Aktuelles Projekt"
+  ],
   "Current resource state reviewed. A new action can be requested.": [
     "Der aktuelle Ressourcenzustand wurde geprüft. Du kannst einen neuen Auftrag starten."
   ],
@@ -2639,6 +2675,9 @@
   ],
   "Current values": [
     "Aktuelle Werte"
+  ],
+  "Current workspace": [
+    "Aktueller Arbeitsbereich"
   ],
   "Currently published records": [
     "Derzeit veröffentlichte Einträge"
@@ -2999,6 +3038,9 @@
   ],
   "Deploy application": [
     "Anwendung bereitstellen"
+  ],
+  "Deploy applications and inspect their status and logs.": [
+    "Anwendungen bereitstellen sowie Status und Logs prüfen."
   ],
   "Deployment settings": [
     "Bereitstellungseinstellungen"
@@ -3708,8 +3750,17 @@
   "Filter": [
     "Filtern"
   ],
+  "Filter by name": [
+    "Nach Name filtern"
+  ],
+  "Filter by name or ID": [
+    "Nach Name oder ID filtern"
+  ],
   "Filter or sort is not available for this collection.": [
     "Filter oder Sortierung sind für diese Sammlung nicht verfügbar."
+  ],
+  "Filter workspaces and projects": [
+    "Arbeitsbereiche und Projekte filtern"
   ],
   "Find a Mail page": [
     "Mail-Seite suchen"
@@ -3944,6 +3995,9 @@
   ],
   "Global": [
     "Global"
+  ],
+  "Go to": [
+    "Direkt öffnen"
   ],
   "Go to tenants": [
     "Zur Mandantenübersicht"
@@ -4578,6 +4632,9 @@
   "Invalid revision.": [
     "Ungültiger Versionsstand."
   ],
+  "Invalid search.": [
+    "Ungültige Suchanfrage."
+  ],
   "Invalid shop area.": [
     "Ungültiger Shop-Bereich."
   ],
@@ -4865,6 +4922,9 @@
   ],
   "Loading passkeys…": [
     "Passkeys werden geladen…"
+  ],
+  "Loading projects…": [
+    "Projekte werden geladen …"
   ],
   "Loading workspace…": [
     "Arbeitsbereich wird geladen …"
@@ -5241,6 +5301,9 @@
   "Manage sending keys and account billing in turboSMTP. This management key is never displayed again by Webdock.": [
     "Versandschlüssel und Kontoabrechnung verwaltest du bei turboSMTP. Webdock zeigt diesen Verwaltungszugang nicht erneut an."
   ],
+  "Manage sending, domains and mailboxes.": [
+    "Versand, Domains und Postfächer verwalten."
+  ],
   "Manage shop": [
     "Shop verwalten"
   ],
@@ -5472,6 +5535,9 @@
   "More examples": [
     "Weitere Beispiele"
   ],
+  "More results are available. Narrow your search.": [
+    "Es gibt weitere Ergebnisse. Grenze deine Suche ein."
+  ],
   "Most projects currently run on Vercel, but Webdock is not tied to a single hosting provider. The technical environment is chosen to suit each project.": [
     "Die meisten Projekte laufen derzeit auf Vercel. Webdock ist aber nicht an einen einzelnen Hostinganbieter gebunden. Die technische Umgebung wird passend zum jeweiligen Projekt gewählt."
   ],
@@ -5514,11 +5580,17 @@
   "Name Z–A": [
     "Name Z–A"
   ],
+  "Name or domain": [
+    "Name oder Domain"
+  ],
   "Name or email": [
     "Name oder E-Mail"
   ],
   "Name, contact or email": [
     "Name, Kontaktperson oder E-Mail"
+  ],
+  "Name, domain or resource ID": [
+    "Name, Domain oder Ressourcen-ID"
   ],
   "Namespace": [
     "Namespace"
@@ -5531,6 +5603,12 @@
   ],
   "Native Mail sending is not available yet.": [
     "Der native Mailversand ist noch nicht verfügbar."
+  ],
+  "Navigate": [
+    "Navigieren"
+  ],
+  "Navigation": [
+    "Navigation"
   ],
   "Needs review": [
     "Prüfung erforderlich"
@@ -5811,11 +5889,17 @@
   "No matching projects": [
     "Keine passenden Projekte"
   ],
+  "No matching projects in this workspace.": [
+    "Keine passenden Projekte in diesem Arbeitsbereich."
+  ],
   "No matching requests on this page.": [
     "Keine passenden Anfragen auf dieser Seite."
   ],
   "No matching results. Clear the filters to see all entries.": [
     "Keine passenden Ergebnisse. Entferne die Filter, um alle Einträge zu sehen."
+  ],
+  "No matching workspaces.": [
+    "Keine passenden Arbeitsbereiche."
   ],
   "No media yet": [
     "Noch keine Medien"
@@ -5891,6 +5975,9 @@
   ],
   "No resources match this view.": [
     "Keine Ressourcen passen zu dieser Ansicht."
+  ],
+  "No results. Try a different name or change the search scope.": [
+    "Keine Ergebnisse. Versuche einen anderen Namen oder ändere den Suchbereich."
   ],
   "No sender domains added yet.": [
     "Noch keine Absenderdomains hinzugefügt."
@@ -6150,6 +6237,9 @@
   "Open deployment ↗": [
     "Deployment öffnen ↗"
   ],
+  "Open full overview": [
+    "Vollständige Übersicht öffnen"
+  ],
   "Open hosting": [
     "Hosting öffnen"
   ],
@@ -6158,6 +6248,9 @@
   ],
   "Open mailbox": [
     "Postfach öffnen"
+  ],
+  "Open navigation": [
+    "Navigation öffnen"
   ],
   "Open page ↗": [
     "Seite öffnen ↗"
@@ -6188,6 +6281,9 @@
   ],
   "Open website workspace": [
     "Website bearbeiten"
+  ],
+  "Open workspace": [
+    "Arbeitsbereich öffnen"
   ],
   "Opened": [
     "Geöffnet"
@@ -6933,8 +7029,14 @@
   "Projects (": [
     "Projekte ("
   ],
+  "Projects could not be loaded. Please try again.": [
+    "Projekte konnten nicht geladen werden. Bitte versuche es erneut."
+  ],
   "Projects matching the selected filters": [
     "Projekte passend zu den ausgewählten Filtern"
+  ],
+  "Projects, websites and navigation": [
+    "Projekte, Websites und Navigation"
   ],
   "Promotion title": [
     "Aktionstitel"
@@ -8052,6 +8154,12 @@
   "Search domains": [
     "Domains suchen"
   ],
+  "Search in": [
+    "Suchen in"
+  ],
+  "Search is temporarily unavailable. Please try again.": [
+    "Die Suche ist vorübergehend nicht verfügbar. Bitte versuche es erneut."
+  ],
   "Search messages": [
     "Nachrichten suchen"
   ],
@@ -8066,6 +8174,9 @@
   ],
   "Search requests on this page": [
     "Anfragen auf dieser Seite suchen"
+  ],
+  "Search resources and services": [
+    "Ressourcen und Dienste suchen"
   ],
   "Search text or label": [
     "Text oder Bezeichnung suchen"
@@ -8160,8 +8271,14 @@
   "Select up to four products in the desired order. Select each product only once.": [
     "Bis zu vier Produkte in der gewünschten Reihenfolge. Jedes Produkt nur einmal auswählen."
   ],
+  "Select workspace": [
+    "Arbeitsbereich wählen"
+  ],
   "Select, edit and publish text and images directly.": [
     "Texte und Bilder auswählen, bearbeiten und direkt veröffentlichen."
+  ],
+  "Selected": [
+    "Ausgewählt"
   ],
   "Selected content": [
     "Ausgewählter Inhalt"
@@ -8469,6 +8586,9 @@
   "Sign in to open the CMS.": [
     "Melde dich an, um das CMS zu öffnen."
   ],
+  "Sign in to search your workspace.": [
+    "Melde dich an, um deinen Arbeitsbereich zu durchsuchen."
+  ],
   "Sign in to view your invitation": [
     "Anmelden, um deine Einladung anzusehen"
   ],
@@ -8543,6 +8663,9 @@
   ],
   "Some providers process data outside the EU/EEA, including in the United States. An EU hosting region does not exclude international support or network processing. Where required, transfers rely on an applicable adequacy decision, such as the EU–US Data Privacy Framework for certified recipients, or EU standard contractual clauses and any necessary additional safeguards. You can request details and copies of the safeguards relevant to your service using the contact above.": [
     "Einige Anbieter verarbeiten Daten außerhalb der EU beziehungsweise des EWR, insbesondere in den USA. Eine EU-Hostingregion schließt internationale Support- oder Netzwerkverarbeitung nicht aus. Soweit erforderlich, stützen sich Übermittlungen auf einen einschlägigen Angemessenheitsbeschluss, etwa das EU–US Data Privacy Framework bei zertifizierten Empfängern, oder EU-Standardvertragsklauseln und gegebenenfalls zusätzliche Schutzmaßnahmen. Einzelheiten und Kopien der für deinen Dienst geltenden Garantien erhältst du über den oben genannten Kontakt."
+  ],
+  "Some resources could not be loaded. Try the search again.": [
+    "Einige Ressourcen konnten nicht geladen werden. Bitte wiederhole die Suche."
   ],
   "Some resources could not be scanned. Check the agent permissions.": [
     "Einige Ressourcen konnten nicht erfasst werden. Prüfe die Berechtigungen des Agenten."
@@ -8798,6 +8921,9 @@
   ],
   "Switch workspace": [
     "Arbeitsbereich wechseln"
+  ],
+  "Switch workspace or project": [
+    "Arbeitsbereich oder Projekt wechseln"
   ],
   "System": [
     "System"
@@ -9510,6 +9636,9 @@
   "This project is archived. Restore it to manage its CMS connection.": [
     "Dieses Projekt ist archiviert. Stelle es wieder her, um seine CMS-Verbindung zu verwalten."
   ],
+  "This project is not in the selected workspace.": [
+    "Dieses Projekt gehört nicht zum ausgewählten Arbeitsbereich."
+  ],
   "This project is not included in the Vercel integration’s selected access.": [
     "Dieses Projekt ist nicht im ausgewählten Zugriff der Vercel-Integration enthalten."
   ],
@@ -9587,6 +9716,9 @@
   ],
   "This website shares resources with another project. Deletion is blocked.": [
     "Diese Website teilt Ressourcen mit einem anderen Projekt. Die Löschung ist gesperrt."
+  ],
+  "This workspace is unavailable. Choose another workspace.": [
+    "Dieser Arbeitsbereich ist nicht verfügbar. Wähle einen anderen Arbeitsbereich."
   ],
   "Thursday": [
     "Donnerstag"
@@ -9692,6 +9824,9 @@
   ],
   "Type": [
     "Typ"
+  ],
+  "Type at least two characters to find resources.": [
+    "Gib mindestens zwei Zeichen ein, um Ressourcen zu finden."
   ],
   "Type the customer name to confirm": [
     "Zur Bestätigung den Kundennamen eingeben"
@@ -10626,6 +10761,12 @@
   "Workload readiness": [
     "Freigabe für Anwendungen"
   ],
+  "Workspace": [
+    "Arbeitsbereich"
+  ],
+  "Workspace ID": [
+    "Arbeitsbereichs-ID"
+  ],
   "Workspace areas": [
     "Bereiche des Arbeitsbereichs"
   ],
@@ -10644,11 +10785,17 @@
   "Workspace role: ": [
     "Rolle im Arbeitsbereich: "
   ],
+  "Workspace settings": [
+    "Arbeitsbereich verwalten"
+  ],
   "Workspace shortcuts": [
     "Arbeitsbereich-Verknüpfungen"
   ],
   "Workspaces": [
     "Arbeitsbereiche"
+  ],
+  "Workspaces, websites and navigation": [
+    "Arbeitsbereiche, Websites und Navigation"
   ],
   "Write scope": [
     "Schreibberechtigung"

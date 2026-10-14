@@ -6,12 +6,9 @@ export default async function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = await requireRegistryOperator();
+  await requireRegistryOperator();
   return (
-    <StudioShell
-      user={{ name: user.name, role: "operator" }}
-      ssoEnabled
-    >
+    <StudioShell>
       {children}
     </StudioShell>
   );
