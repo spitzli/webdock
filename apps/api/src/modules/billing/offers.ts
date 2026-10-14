@@ -84,6 +84,7 @@ export async function createOffer(actor: BillingActor, raw: unknown) {
           and(
             eq(versions.id, input.versionID),
             eq(products.visibility, "private"),
+            eq(products.family, "website"),
             eq(products.operationallyReady, true),
             eq(products.archived, false),
             eq(mappings.status, "ready"),

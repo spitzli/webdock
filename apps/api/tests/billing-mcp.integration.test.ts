@@ -92,6 +92,36 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
             ).rows[0].n,
           ),
         ).toBe(0);
+        for (const [family, interval, amount] of [
+          ["database", "month", 590],
+          ["service", "once", 2900],
+          ["mail", "month", null],
+        ] as const) {
+          const result = await write.client.callTool({
+            name: "create_billing_product_version",
+            arguments: {
+              sku: "mcp-" + family + "-" + f.customer,
+              name: "Manual " + family,
+              family,
+              visibility: "internal",
+              operationallyReady: false,
+              amount,
+              currency: "EUR",
+              taxBehavior: "exclusive",
+              interval,
+              description: "Manually qualified service",
+              terms: "Written offer required",
+              entitlements: { kind: "manual" },
+            },
+          });
+          expect(result.isError).toBeUndefined();
+          const row = JSON.parse(
+            (result.content as { text: string }[])[0].text,
+          );
+          f.extraProducts.push(row.productId);
+          expect(row.amount).toBe(amount === null ? null : String(amount));
+          expect(row.entitlements).toEqual({ kind: "manual" });
+        }
         await f.owner.query(
           `UPDATE webdock_auth."user" SET "twoFactorEnabled"=false WHERE id=$1`,
           [f.actor.subject],

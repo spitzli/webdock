@@ -15,8 +15,6 @@ import {
 } from "./context";
 import {
   BillingError,
-  amountSchema,
-  entitlementsSchema,
   environmentSchema,
   type BillingEnvironment,
 } from "./types";
@@ -30,27 +28,15 @@ const serialize = (value: unknown) =>
       typeof item === "bigint" ? item.toString() : item,
     ),
   );
-export const productVersionInput = z
-  .object({
-    sku: z.string().regex(/^[a-z][a-z0-9-]{2,79}$/),
-    name: z.string().trim().min(1).max(160),
-    visibility: z.enum(["public", "private", "internal"]),
-    operationallyReady: z.boolean(),
-    amount: amountSchema,
-    currency: z.enum(["EUR", "CHF"]),
-    taxBehavior: z.enum(["inclusive", "exclusive"]),
-    interval: z.enum(["month", "year"]),
-    description: z.string().trim().min(1).max(4000),
-    terms: z.string().trim().min(1).max(8000),
-    entitlements: entitlementsSchema,
-  })
-  .strict();
+import { productVersionInput } from "./catalog-input";
+export { productVersionInput } from "./catalog-input";
 export async function createProductVersion(actor: BillingActor, raw: unknown) {
   const input = productVersionInput.parse(raw),
     hash = createHash("sha256")
       .update(
         JSON.stringify({
           sku: input.sku,
+          family: input.family,
           name: input.name,
           amount: input.amount,
           currency: input.currency,
@@ -81,6 +67,7 @@ export async function createProductVersion(actor: BillingActor, raw: unknown) {
         );
       if (
         product.name !== input.name ||
+        product.family !== input.family ||
         product.visibility !== input.visibility ||
         product.operationallyReady !== input.operationallyReady
       )
@@ -95,7 +82,7 @@ export async function createProductVersion(actor: BillingActor, raw: unknown) {
           .values({
             sku: input.sku,
             name: input.name,
-            family: "website",
+            family: input.family,
             visibility: input.visibility,
             operationallyReady: input.operationallyReady,
           })
@@ -116,7 +103,7 @@ export async function createProductVersion(actor: BillingActor, raw: unknown) {
         .values({
           productId: product.id,
           version: number + 1,
-          amount: BigInt(input.amount),
+          amount: input.amount === null ? null : BigInt(input.amount),
           currency: input.currency,
           taxBehavior: input.taxBehavior,
           interval: input.interval,
@@ -144,6 +131,7 @@ export async function listProducts(
           productID: products.id,
           sku: products.sku,
           name: products.name,
+          family: products.family,
           visibility: products.visibility,
           operationallyReady: products.operationallyReady,
           version: versions.version,
@@ -203,10 +191,17 @@ function provider(environment: BillingEnvironment, token: string): Provider {
         description: terms.description,
         // OAT writes must omit organization_id; readback still verifies ownership.
         visibility: terms.visibility as "public" | "private",
-        recurring_interval: terms.interval as "month" | "year",
-        recurring_interval_count: 1,
-        trial_interval: null,
-        trial_interval_count: null,
+        ...(terms.interval === "once"
+          ? {
+              recurring_interval: null,
+              recurring_interval_count: null,
+            }
+          : {
+              recurring_interval: terms.interval as "month" | "year",
+              recurring_interval_count: 1,
+              trial_interval: null,
+              trial_interval_count: null,
+            }),
         prices: [
           {
             amount_type: "fixed",
@@ -262,6 +257,7 @@ export async function publishProduct(
     if (
       !row ||
       !row.version.termsText ||
+      row.version.amount === null ||
       row.product.archived ||
       !row.product.operationallyReady ||
       row.product.visibility === "internal"

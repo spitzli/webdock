@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-14 11:58+0200\n"
+"POT-Creation-Date: 2026-10-14 13:03+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1446,6 +1446,7 @@ msgstr ""
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:38
 #: apps/admin/src/components/hosting/project-context.tsx:23
 #: apps/admin/src/components/navigation.tsx:76
+#: apps/admin/src/lib/billing-families.ts:9
 msgid "Databases"
 msgstr ""
 
@@ -3073,6 +3074,7 @@ msgid "Connections"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:77
+#: apps/admin/src/lib/billing-families.ts:6
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:13
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:24
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:33
@@ -3108,11 +3110,13 @@ msgid "Transfer (GB)"
 msgstr ""
 
 #: apps/admin/src/components/plan-fields.tsx:13
+#: apps/admin/src/lib/billing-families.ts:3
 #: apps/auth/src/lib/i18n-messages.ts:276
 msgid "Websites"
 msgstr ""
 
 #: apps/admin/src/components/plan-fields.tsx:14
+#: apps/admin/src/lib/billing-families.ts:8
 #: apps/auth/src/lib/i18n-messages.ts:98
 msgid "Editors"
 msgstr ""
@@ -3155,6 +3159,22 @@ msgstr ""
 
 #: apps/admin/src/components/vercel-panel.tsx:58
 msgid "The linked Vercel project could not be found."
+msgstr ""
+
+#: apps/admin/src/lib/billing-families.ts:4
+msgid "Apps and bots"
+msgstr ""
+
+#: apps/admin/src/lib/billing-families.ts:5
+msgid "Connect / BYOK"
+msgstr ""
+
+#: apps/admin/src/lib/billing-families.ts:7
+msgid "Media storage"
+msgstr ""
+
+#: apps/admin/src/lib/billing-families.ts:10
+msgid "Services"
 msgstr ""
 
 #: apps/admin/src/lib/billing-labels.ts:4

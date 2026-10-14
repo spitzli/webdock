@@ -47,7 +47,7 @@ Use `npm run dev -w @webdock/api` with the existing local database configuration
 
 ## Webdock catalog
 
-The existing operator-authorized catalog contains these unpublished yearly drafts, using the previously agreed product plan and EUR prices reconfirmed by the owner:
+The existing operator-authorized catalog contains 35 unpublished entries from the owner-provided product plan: websites, apps/bots, Connect/BYOK, mail, media/editor add-ons, databases and services. There are 22 fixed-price entries and 13 quote-only entries. The three website prices are yearly and include tax:
 
 | SKU | Annual price incl. tax | Websites | Editors | Media | Emails/month |
 |---|---:|---:|---:|---:|---:|
@@ -56,3 +56,7 @@ The existing operator-authorized catalog contains these unpublished yearly draft
 | website-plus-year-v1 | EUR 238.80 | 1 | 5 | 5,000 MB | 3,000 |
 
 These drafts are not published to Polar and are not enabled for sale or operational fulfillment. The separate one-time Test Product above is available in Polar for onboarding. The live organization connection has also been saved successfully through the authenticated Webdock operator API.
+
+The complete source inventory is `apps/api/src/modules/billing/initial-catalog.ts`. Non-website prices follow the source's **net EUR** basis. Price ranges, starting prices and unspecified amounts are quote-only, never zero-price products. Service descriptions preserve the original capacity/backup/SLA limits. Additional websites reuse a website package; customer-specific sponsorships and individual plans are not sold as reusable free catalog products.
+
+Migration `0021_full_catalog.sql` adds services, one-time intervals and nullable prices for quotes. Manual fulfillment is explicit; the existing SQL purchase function remains website-only. Quote-only entries cannot be published to Polar. No additional customer resources, service grants, sales enablement or operational approvals are created by seeding the catalog.

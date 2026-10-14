@@ -11,16 +11,17 @@ export async function createVersionAction(
     await studioCall("billing.createVersion", [
       {
         sku: form.get("sku"),
+        family: form.get("family") || "website",
         name: form.get("name"),
         visibility: form.get("visibility"),
         operationallyReady: form.get("ready") === "on",
-        amount: Number(form.get("amount")),
+        amount: form.get("quote") === "on" ? null : Number(form.get("amount")),
         currency: form.get("currency"),
         taxBehavior: form.get("taxBehavior"),
         interval: form.get("interval"),
         description: form.get("description"),
         terms: form.get("terms"),
-        entitlements: {
+        entitlements: form.get("family") && form.get("family") !== "website" ? { kind: "manual" } : {
           websites: 1,
           editors: Number(form.get("editors")),
           mediaBytes: String(Number(form.get("mediaMB")) * 1_000_000),
