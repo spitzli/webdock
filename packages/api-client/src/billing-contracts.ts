@@ -28,16 +28,17 @@ export type BillingProductVersion = {
   productID: string;
   sku: string;
   name: string;
+  family: "website" | "apps" | "connect" | "mail" | "media" | "editors" | "database" | "service";
   visibility: "public" | "private" | "internal";
   operationallyReady: boolean;
   version: number;
-  amount: string;
+  amount: string | null;
   currency: "EUR" | "CHF";
   taxBehavior: "inclusive" | "exclusive";
-  interval: "month" | "year";
+  interval: "month" | "year" | "once";
   description: string;
   terms: string;
-  entitlements: {
+  entitlements: { kind: "manual" } | {
     websites: 1;
     editors: number;
     mediaBytes: string;

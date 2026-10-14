@@ -980,6 +980,9 @@
   "Approve release": [
     "Release freigeben"
   ],
+  "Apps and bots": [
+    "Apps und Bots"
+  ],
   "Architecture": [
     "Architektur"
   ],
@@ -1963,6 +1966,9 @@
   ],
   "Conflict": [
     "Konflikt"
+  ],
+  "Connect / BYOK": [
+    "Connect / BYOK"
   ],
   "Connect GitHub": [
     "GitHub verbinden"
@@ -5127,6 +5133,9 @@
   "Manual": [
     "Manuell"
   ],
+  "Manual fulfillment; no automatic resource grants.": [
+    "Manuelle Leistung; keine automatische Ressourcenfreigabe."
+  ],
   "Manual management released.": [
     "Manuelle Verwaltung freigegeben."
   ],
@@ -5850,6 +5859,9 @@
   "One workspace. Independent websites.": [
     "Ein Arbeitsbereich. Eigenständige Websites."
   ],
+  "One-time": [
+    "Einmalig"
+  ],
   "Only a platform administrator may delete projects.": [
     "Nur Plattformadministratoren dürfen Projekte löschen."
   ],
@@ -5993,6 +6005,9 @@
   ],
   "Operation progress": [
     "Fortschritt"
+  ],
+  "Operationally approved": [
+    "Betrieblich freigegeben"
   ],
   "Operationally approved for one website": [
     "Für den Betrieb einer Website freigegeben"
@@ -6552,6 +6567,9 @@
   "Price in €": [
     "Preis in €"
   ],
+  "Price on request": [
+    "Preis auf Anfrage"
+  ],
   "Privacy": [
     "Datenschutz"
   ],
@@ -6596,6 +6614,9 @@
   ],
   "Product extras": [
     "Extras"
+  ],
+  "Product family": [
+    "Produktart"
   ],
   "Product identity requires review.": [
     "Die Produktzuordnung muss geprüft werden."

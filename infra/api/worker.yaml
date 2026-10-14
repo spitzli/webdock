@@ -25,7 +25,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: worker
-        image: docker.io/library/webdock-api@sha256:5d4670670d1c6ceda9b79198372b7be22c45b7dac1dc7049821716313acf8429
+        image: docker.io/library/webdock-api@sha256:67a0baff645f3ee01e63b20892f1b5be9a38e00d385540ce2a36f8a4c51ae480
         imagePullPolicy: Never
         envFrom:
         - secretRef:

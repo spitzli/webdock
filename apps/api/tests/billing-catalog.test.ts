@@ -63,3 +63,22 @@ test("publication readback binds organization, immutable terms, exact fixed pric
       verifyPublishedProduct({ ...product, ...patch }, expected),
     ).toThrow();
 });
+
+test("one-time publication rejects recurring or free-price substitutions", () => {
+  const terms = { ...expected, interval: "once" };
+  const once = {
+    ...product,
+    is_recurring: false,
+    recurring_interval: null,
+    recurring_interval_count: null,
+  };
+  expect(verifyPublishedProduct(once, terms).productID).toBe(product.id);
+  expect(() => verifyPublishedProduct(product, terms)).toThrow();
+  expect(() => verifyPublishedProduct(once, expected)).toThrow();
+  expect(() =>
+    verifyPublishedProduct(
+      { ...once, prices: [{ ...product.prices[0], price_amount: 0 }] },
+      terms,
+    ),
+  ).toThrow();
+});

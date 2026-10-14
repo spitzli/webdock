@@ -1,5 +1,6 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { billingFamilies } from "@/lib/billing-families";
 import { useI18n } from "@webdock/i18n/react";
 import {
   archiveVersionAction,
@@ -9,12 +10,15 @@ import {
   privateOfferAction,
 } from "./actions";
 export function ProductDraft() {
+  const [family, setFamily] = useState("website"), [quote, setQuote] = useState(false);
   const i18n = useI18n(),
     [state, action, pending] = useActionState(createVersionAction, {});
   return (
     <form className="panel billing-form" action={action}>
       <h2>{i18n.t("New product version")}</h2>
       <div className="form-grid">
+        <label>{i18n.t("Product family")}<select name="family" value={family} onChange={(event) => { setFamily(event.target.value); setQuote(false); }}>{billingFamilies.map(([value, label]) => <option key={value} value={value}>{i18n.t(label)}</option>)}</select></label>
+        {family !== "website" && <label><input type="checkbox" name="quote" checked={quote} onChange={(event) => setQuote(event.target.checked)} />{i18n.t("Price on request")}</label>}
         <label>
           SKU
           <input name="sku" required pattern="[a-z][a-z0-9-]{2,79}" />
@@ -41,7 +45,7 @@ export function ProductDraft() {
         </label>
         <label>
           {i18n.t("Price in cents")}
-          <input name="amount" type="number" required min={1} step={1} />
+          <input name="amount" type="number" required={!quote} disabled={quote} min={1} step={1} />
         </label>
         <label>
           {i18n.t("Currency")}
@@ -62,8 +66,10 @@ export function ProductDraft() {
           <select name="interval" defaultValue="year">
             <option value="year">{i18n.t("Yearly")}</option>
             <option value="month">{i18n.t("Monthly")}</option>
+            {family !== "website" && <option value="once">{i18n.t("One-time")}</option>}
           </select>
         </label>
+        {family === "website" && <>
         <label>
           {i18n.t("Editors")}
           <input
@@ -83,9 +89,10 @@ export function ProductDraft() {
           {i18n.t("Mail messages per month")}
           <input name="mailMonthly" type="number" required min={0} step={1} />
         </label>
+        </>}
         <label>
           <input name="ready" type="checkbox" />
-          {i18n.t("Operationally approved for one website")}
+          {i18n.t("Operationally approved")}
         </label>
       </div>
       {state.error && <p role="alert">{i18n.t(state.error)}</p>}

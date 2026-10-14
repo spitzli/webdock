@@ -193,7 +193,7 @@ export const billingProductVersion = webdockAuth.table(
       .primaryKey(),
     productId: text("product_id").notNull(),
     version: integer().notNull(),
-    amount: bigint({ mode: "bigint" }).notNull(),
+    amount: bigint({ mode: "bigint" }),
     currency: text().notNull(),
     taxBehavior: text("tax_behavior").notNull(),
     interval: text().notNull(),

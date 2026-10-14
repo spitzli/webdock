@@ -30,9 +30,9 @@ const product = z.object({
   name: z.string(),
   description: z.string(),
   is_archived: z.literal(false),
-  is_recurring: z.literal(true),
-  recurring_interval: z.enum(["month", "year"]),
-  recurring_interval_count: z.literal(1),
+  is_recurring: z.boolean(),
+  recurring_interval: z.enum(["month", "year"]).nullable(),
+  recurring_interval_count: z.literal(1).nullable(),
   trial_interval: z.null(),
   trial_interval_count: z.null(),
   visibility: z.enum(["public", "private"]),
@@ -50,7 +50,11 @@ export function verifyPublishedProduct(raw: unknown, expected: PublishedTerms) {
     row.organization_id !== expected.organizationID ||
     row.name !== expected.name ||
     row.description !== expected.description ||
-    row.recurring_interval !== expected.interval ||
+    row.is_recurring !== (expected.interval !== "once") ||
+    row.recurring_interval !==
+      (expected.interval === "once" ? null : expected.interval) ||
+    row.recurring_interval_count !==
+      (expected.interval === "once" ? null : 1) ||
     row.visibility !== expected.visibility ||
     p.product_id !== row.id ||
     p.price_amount !== expected.amount ||

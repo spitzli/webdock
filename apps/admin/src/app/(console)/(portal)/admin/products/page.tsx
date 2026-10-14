@@ -1,5 +1,6 @@
 import { requireRegistryOperator } from "@/lib/registry-page";
 import Link from "next/link";
+import { billingFamilies } from "@/lib/billing-families";
 import { billingLabel } from "@/lib/billing-labels";
 import { getRequestI18n } from "@webdock/i18n/next";
 import { studioCall } from "@/lib/studio-client";
@@ -66,13 +67,13 @@ export default async function Products({
             {product.name} · v{product.version}
           </h2>
           <p>
-            {product.sku} ·{" "}
-            {new Intl.NumberFormat(i18n.locale, {
+            {i18n.t(billingFamilies.find(([family]) => family === product.family)?.[1] || "Websites")} · {product.sku} ·{" "}
+            {product.amount === null ? i18n.t("Price on request") : new Intl.NumberFormat(i18n.locale, {
               style: "currency",
               currency: product.currency,
             }).format(Number(product.amount) / 100)}{" "}
-            / {i18n.t(product.interval === "year" ? "Yearly" : "Monthly")} ·{" "}
-            {i18n.t(billingLabel(product.status || "draft"))}
+            / {i18n.t(product.interval === "once" ? "One-time" : product.interval === "year" ? "Yearly" : "Monthly")} ·{" "}
+            {i18n.t(product.taxBehavior === "inclusive" ? "Tax included" : "Tax excluded")} · {i18n.t(billingLabel(product.status || "draft"))}
           </p>
           <p>{product.description}</p>
           <AvailabilityForm
@@ -80,14 +81,15 @@ export default async function Products({
             visibility={product.visibility}
             ready={product.operationallyReady}
           />
-          <p>
+          {"kind" in product.entitlements ? <p>{i18n.t("Manual fulfillment; no automatic resource grants.")}</p> : <p>
             {product.entitlements.websites} {i18n.t("Websites")} ·{" "}
             {product.entitlements.editors} {i18n.t("Editors")} ·{" "}
             {Number(product.entitlements.mediaBytes) / 1_000_000} MB ·{" "}
             {product.entitlements.mailMonthly}{" "}
             {i18n.t("Mail messages per month")}
-          </p>
+          </p>}
           {!["ready", "archived"].includes(product.status || "") &&
+            product.amount !== null &&
             product.operationallyReady &&
             product.visibility !== "internal" && (
               <PublishVersion
@@ -103,7 +105,7 @@ export default async function Products({
                 retry={product.status === "archived"}
               />
             )}
-          {product.status === "ready" && product.visibility === "private" && (
+          {product.family === "website" && product.status === "ready" && product.visibility === "private" && (
             <PrivateOfferForm
               environment={environment}
               versionID={product.id}

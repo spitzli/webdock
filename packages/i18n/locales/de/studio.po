@@ -8360,3 +8360,24 @@ msgstr "Die Produktarchivierung ist noch nicht bestätigt."
 
 msgid "Archived product versions cannot be republished."
 msgstr "Archivierte Produktversionen können nicht erneut veröffentlicht werden."
+
+msgid "Apps and bots"
+msgstr "Apps und Bots"
+
+msgid "Connect / BYOK"
+msgstr "Connect / BYOK"
+
+msgid "Product family"
+msgstr "Produktart"
+
+msgid "Price on request"
+msgstr "Preis auf Anfrage"
+
+msgid "One-time"
+msgstr "Einmalig"
+
+msgid "Operationally approved"
+msgstr "Betrieblich freigegeben"
+
+msgid "Manual fulfillment; no automatic resource grants."
+msgstr "Manuelle Leistung; keine automatische Ressourcenfreigabe."
