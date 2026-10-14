@@ -147,3 +147,61 @@ body:has(.console-dialog[open], .console-drawer[open]) { overflow: hidden; }
 #main { scroll-margin-top: calc(var(--console-header) + 16px); }
 
 .console-toolbar :focus-visible, .console-dialog :focus-visible, .console-drawer :focus-visible { outline-color: var(--console-focus); }
+
+/* Project setup uses the Console's existing type and colour tokens. */
+.setup-workspace { max-width: 1040px; }
+.setup-steps { display: flex; list-style: none; gap: 0; padding: 0; margin: 0 0 22px; border-bottom: 1px solid var(--line); }
+.setup-steps li { flex: 1; display: flex; align-items: center; gap: 9px; padding: 12px 10px; color: var(--muted); font-size: 13px; border-bottom: 2px solid transparent; }
+.setup-steps li[aria-current=step] { color: var(--ink); font-weight: 600; border-color: var(--accent); }
+.setup-steps li > span { display: grid; place-items: center; height: 23px; width: 23px; border: 1px solid var(--line); border-radius: 50%; font-size: 11px; }
+.setup-steps li[aria-current=step] > span { border-color: var(--accent); color: var(--accent); }
+.setup-fields-root { border: 0; padding: 0; margin: 0; min-width: 0; }
+.setup-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; margin: 18px 0; }
+.setup-fields .field, .setup-form > .field { margin: 0; }
+.setup-fields small, .setup-source-choice small, .setup-summary small { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.6; }
+.setup-source-choices { border: 0; padding: 0; margin: 22px 0; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.setup-source-choice { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 5px; padding: 17px 14px; cursor: pointer; }
+.setup-source-choice input { margin-top: 3px; flex-shrink: 0; }
+.setup-source-choice.selected { border-color: var(--accent); background: var(--console-selection); }
+.setup-source-choice:focus-within { outline: 2px solid var(--console-focus); outline-offset: 2px; }
+.setup-source-choice strong { font-size: 14px; }
+.setup-footer { display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 20px; margin-top: 26px; }
+.setup-footer > button:last-child { margin-left: auto; }
+.setup-service { border: 0; border-top: 1px solid var(--line); padding: 20px 0 10px; margin: 22px 0 0; min-width: 0; }
+.setup-service legend { padding: 0 12px 0 0; font-size: 15px; font-weight: 600; }
+.setup-summary { display: grid; grid-template-columns: 160px minmax(0,1fr); margin: 20px 0; }
+.setup-summary dt, .setup-summary dd { padding: 13px 0; margin: 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.setup-summary dt { color: var(--muted); font-size: 13px; }
+.setup-summary code { font-size: 12px; overflow-wrap: anywhere; }
+.setup-order { border-top: 1px solid var(--line); padding: 18px 0; margin-top: 16px; }
+.setup-price { font-size: 23px; font-weight: 600; margin: 10px 0; }
+.setup-price small { font-size: 12px; font-weight: 400; color: var(--muted); }
+.setup-progress { list-style: none; margin: 0; padding: 0; }
+.setup-progress li { display: flex; align-items: flex-start; gap: 14px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.setup-progress li:last-child { border: 0; }
+.setup-progress li > div { flex: 1; min-width: 0; }
+.setup-progress li p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+.setup-progress-marker { display: grid; place-items: center; width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; background: var(--soft); color: var(--muted); }
+.setup-progress li[data-state=succeeded] .setup-progress-marker { color: var(--accent); background: var(--console-selection); }
+.setup-progress li[data-state=blocked] .setup-progress-marker { color: #b43a32; }
+.setup-mail-panel > section { border-top: 1px solid var(--line); padding: 16px 0; }
+.setup-domain { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 12px 0; }
+.setup-domain .mail-product-form { margin: 0; }
+.setup-form .workspace-actions { margin: 16px 0; }
+@media (max-width: 700px) {
+  .setup-source-choices, .setup-fields { grid-template-columns: 1fr; }
+  .setup-steps li { padding: 10px 4px; font-size: 11px; flex-direction: column; gap: 5px; }
+  .setup-summary { grid-template-columns: 110px minmax(0,1fr); }
+  .setup-progress li { gap: 8px; }
+  .setup-progress .badge { max-width: 92px; white-space: normal; }
+}
+
+.setup-workspace [hidden] { display: none !important; }
+
+.setup-footer > .button { white-space: normal; max-width: 100%; }
+
+.console-layout details.navigation-management > summary, .console-layout .workspace-services > summary { cursor: pointer; min-height: 30px; padding: 6px 0; }
+.console-layout .workspace-services { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 8px; }
+.console-layout .workspace-sidebar > .sidebar-resource { margin-top: 0; border-top: 0; }
+.setup-source-choice input[type=radio] { width: 16px; height: 16px; min-width: 16px; min-height: 16px; padding: 0; flex: 0 0 16px; }
+.setup-source-choice > span { min-width: 0; flex: 1; }

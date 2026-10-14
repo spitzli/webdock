@@ -1,11 +1,20 @@
 "use server";
 import { RegistryError as APIError } from "@webdock/api-client/errors";
 import { ZodError } from "zod";
-import { writeCustomer, writeProject, writeInstance, setArchived } from "./registry-remote";
+import {
+  writeCustomer,
+  writeProject,
+  writeInstance,
+  setArchived,
+} from "./registry-remote";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireRegistryOperator as requireOperator } from "./registry-page";
-export type FormState = { error?: string; success?: string; values?: Record<string, string> };
+export type FormState = {
+  error?: string;
+  success?: string;
+  values?: Record<string, string>;
+};
 const values = (form: FormData) =>
   Object.fromEntries(
     [...form.entries()]
@@ -14,9 +23,13 @@ const values = (form: FormData) =>
   );
 const fail = (error: unknown, data: Record<string, string>): FormState => ({
   error:
-    error instanceof ZodError ? error.issues.map(issue => `${issue.path.join(".")}: ${issue.message}`).join("; ") : error instanceof APIError && error.isPublic
-      ? error.message
-      : "The change could not be saved. Please try again.",
+    error instanceof ZodError
+      ? error.issues
+          .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+          .join("; ")
+      : error instanceof APIError && error.isPublic
+        ? error.message
+        : "The change could not be saved. Please try again.",
   values: data,
 });
 const validID = (id: string) =>
@@ -54,7 +67,10 @@ export async function saveCustomer(
     return fail(e, raw);
   }
   revalidatePath("/customers");
-  if (id) { revalidatePath("/customers/" + savedID); return { success: "Customer saved." }; }
+  if (id) {
+    revalidatePath("/customers/" + savedID);
+    return { success: "Customer saved." };
+  }
   redirect("/customers/" + savedID);
 }
 export async function saveProject(
@@ -80,8 +96,11 @@ export async function saveProject(
     return fail(e, raw);
   }
   revalidatePath("/");
-  if (id) { revalidatePath("/projects/" + savedID); return { success: "Project saved." }; }
-  redirect("/projects/" + savedID);
+  if (id) {
+    revalidatePath("/projects/" + savedID);
+    return { success: "Project saved." };
+  }
+  redirect("/hosting/projects/" + savedID + "/setup");
 }
 export async function archiveRecord(
   collection: "customers" | "projects",
@@ -92,7 +111,12 @@ export async function archiveRecord(
   const { payload, user } = await requireOperator();
   try {
     if (!validID(id)) throw new APIError("Invalid record.", 400);
-    await setArchived({ payload, user }, collection, id, form.get("restore") !== "true");
+    await setArchived(
+      { payload, user },
+      collection,
+      id,
+      form.get("restore") !== "true",
+    );
   } catch (e) {
     return fail(e, {});
   }
@@ -121,15 +145,17 @@ export async function saveInstance(
       providerProjectID: raw.providerProjectID,
       provider: "vercel" as const,
       template: raw.template as
-        | "webdock-landing"
-        | "spitzli-portfolio"
-        | "stall-business"
-        | "custom",
+        "webdock-landing" | "spitzli-portfolio" | "stall-business" | "custom",
       payloadVersion: raw.payloadVersion || null,
       status: raw.status as "active" | "suspended" | "retired",
       notes: raw.notes || null,
     };
-    await writeInstance({ payload, user }, instanceID, data, raw.confirmExisting === "yes");
+    await writeInstance(
+      { payload, user },
+      instanceID,
+      data,
+      raw.confirmExisting === "yes",
+    );
   } catch (e) {
     return fail(e, raw);
   }

@@ -174,7 +174,7 @@ export default async function Projects({
                 <td data-label={i18n.t("Project")}>
                   <Link
                     className="project-name"
-                    href={"/projects/" + project.id}
+                    href={"/hosting/projects/" + project.id + "/overview"}
                   >
                     {project.name}
                   </Link>
@@ -210,7 +210,7 @@ export default async function Projects({
                 <td data-label={i18n.t("Manage")}>
                   <Link
                     className="row-link"
-                    href={"/projects/" + project.id}
+                    href={"/hosting/projects/" + project.id + "/overview"}
                     aria-label={i18n.t("Manage ") + project.name}
                   >
                     ↗

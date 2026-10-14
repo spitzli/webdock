@@ -1,5 +1,6 @@
 import { currentDatabaseScope } from "@webdock/database-runtime";
 import { isIP } from "node:net";
+import ipaddr from "ipaddr.js";
 import {
   HostingError,
   type HostingActor,
@@ -39,7 +40,9 @@ export function applicationMailRoute() {
           (isIP(ip) === 4 && bits === "32") ||
           (isIP(ip) === 6 && bits === "128")
         ) ||
-        ["0.0.0.0", "::", "127.0.0.1", "::1"].includes(ip)
+        ["loopback", "unspecified", "multicast"].includes(
+          ipaddr.process(ip).range(),
+        )
       )
         throw Error();
     }

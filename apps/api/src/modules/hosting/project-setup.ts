@@ -122,6 +122,7 @@ export async function executeProjectSetup(actor: HostingActor, raw: unknown) {
       revision: saved.revision,
       configuration: saved.configuration,
       databaseID: saved.resources.databaseID,
+      appID: saved.resources.appID,
     });
     return transaction(async (db) => {
       await authorizeHosting(

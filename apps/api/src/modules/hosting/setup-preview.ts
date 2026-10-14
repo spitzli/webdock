@@ -1,3 +1,7 @@
+import {
+  applicationCapabilities,
+  setupBuildCapabilities,
+} from "./setup-capabilities";
 import { randomUUID } from "node:crypto";
 import {
   HostingError,
@@ -25,6 +29,7 @@ export async function previewProjectSetup(
     revision: number;
     configuration: SetupConfiguration;
     databaseID?: string;
+    appID?: string;
   },
 ): Promise<SetupPreview> {
   const config = input.configuration;
@@ -44,6 +49,15 @@ export async function previewProjectSetup(
       { projectID: input.projectID, write: true },
       db,
     );
+    if (
+      (
+        await db.query(
+          "SELECT id FROM webdock_auth.hosting_app WHERE project_id=$1 AND name=$2 AND status<>'deleted' AND ($3::text IS NULL OR id<>$3) LIMIT 1",
+          [input.projectID, config.name, input.appID ?? null],
+        )
+      ).rowCount
+    )
+      result.blockers.push("An application already uses this name.");
     const cap = await limits(db, access.customerID!, input.projectID, "k3s");
     result.subscriptionRevision = cap.subscriptionRevision;
     if (!access.project?.cluster_id || access.project.provider !== "k3s") {
@@ -74,12 +88,12 @@ export async function previewProjectSetup(
           : "Hosting capacity could not be verified.",
       );
     }
-    const agent = (
-      await db.query(
-        "SELECT observation FROM webdock_auth.hosting_agent WHERE cluster_id=$1 AND NOT revoked",
-        [access.project.cluster_id],
-      )
-    ).rows[0]?.observation;
+    const agent = {
+      capabilities: await applicationCapabilities(
+        db,
+        access.project.cluster_id,
+      ),
+    };
     if (
       (config.database.mode !== "none" || config.mail) &&
       agent?.capabilities?.serviceBindingsVersion !== 1
@@ -140,17 +154,11 @@ export async function previewProjectSetup(
             "GitHub source could not be verified. Reconnect or try again.",
           );
         }
+      const builds = await setupBuildCapabilities(db, input.projectID);
       if (
-        !(
-          await db.query(
-            "SELECT 1 FROM webdock_auth.git_worker WHERE enabled AND isolation=$1 LIMIT 1",
-            [
-              config.source.buildProvider === "isolated"
-                ? "microvm"
-                : "artifact-only",
-            ],
-          )
-        ).rowCount
+        config.source.buildProvider === "isolated"
+          ? !builds.isolated
+          : !builds.githubActions
       )
         result.blockers.push(
           "Configure verified build capacity before deploying from Git.",

@@ -29,3 +29,36 @@ test("database binding escapes credentials and requires a verified mounted CA", 
     }),
   );
 });
+
+test("native Mail routes reject destinations the hosting agent cannot apply", async () => {
+  const { applicationMailRoute } =
+    await import("../../src/modules/hosting/mail-binding");
+  const origin = process.env.MAIL_API_ORIGIN,
+    cidrs = process.env.WEBDOCK_APPLICATION_MAIL_EGRESS_CIDRS;
+  try {
+    process.env.MAIL_API_ORIGIN = "https://mail.example.test";
+    for (const value of [
+      "127.2.3.4/32",
+      "224.0.0.1/32",
+      "ff02::1/128",
+      "0:0:0:0:0:0:0:1/128",
+      "0:0:0:0:0:0:0:0/128",
+    ]) {
+      process.env.WEBDOCK_APPLICATION_MAIL_EGRESS_CIDRS = value;
+      assert.throws(
+        () => applicationMailRoute(),
+        /verified native Mail API egress/,
+        value,
+      );
+    }
+    process.env.WEBDOCK_APPLICATION_MAIL_EGRESS_CIDRS =
+      "10.96.0.12/32,2001:db8::1/128";
+    assert.equal(applicationMailRoute().egressCIDRs.length, 2);
+  } finally {
+    if (origin === undefined) delete process.env.MAIL_API_ORIGIN;
+    else process.env.MAIL_API_ORIGIN = origin;
+    if (cidrs === undefined)
+      delete process.env.WEBDOCK_APPLICATION_MAIL_EGRESS_CIDRS;
+    else process.env.WEBDOCK_APPLICATION_MAIL_EGRESS_CIDRS = cidrs;
+  }
+});

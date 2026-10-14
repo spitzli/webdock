@@ -197,3 +197,67 @@ export type SetupView = {
   preview: SetupPreview | null;
   reason: string | null;
 };
+
+export type SetupOptions = {
+  enabled: boolean;
+  project: {
+    projectID: string;
+    customerID: string;
+    name: string;
+    customerName: string;
+    configured: boolean;
+    provider: "k3s" | "vercel" | null;
+    canManage: boolean;
+    canAssignHosting: boolean;
+  };
+  applications: {
+    id: string;
+    name: string;
+    lifecycle: "draft" | "deployed";
+    status: string;
+  }[];
+  clusters: {
+    id: string;
+    name: string;
+    country: string | null;
+    region: string | null;
+  }[];
+  builds: { isolated: boolean; githubActions: boolean };
+  connections: {
+    id: string;
+    accountLogin: string;
+    state: string;
+    repositories: {
+      repositoryID: string;
+      fullName: string;
+      defaultBranch: string;
+    }[];
+  }[];
+  databases: import("./databases").DatabaseView[];
+  plans: {
+    id: string;
+    plan: import("./databases").DatabasePlan;
+    availability: "disabled" | "pilot" | "public";
+    revision: number;
+  }[];
+  mail: {
+    id: string;
+    kind: "platform" | "byok";
+    state: string;
+    domainID: string | null;
+    domain: string | null;
+    status: string | null;
+  }[];
+  allowances: {
+    effective: import("./index").HostingAllowances;
+    subscriptionRevision: number;
+  };
+};
+export type SetupInspection = {
+  sourceSHA: string;
+  rootDirectory: string;
+  dockerfile: string | null;
+  port: number | null;
+  suggestedServices: string[];
+  warnings: string[];
+};

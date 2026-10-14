@@ -191,6 +191,19 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
           )
         ).rows[0].n,
       ).toBe(1);
+      const currentApp = await executeHosting(f.actor, {
+        action: "apps.get",
+        appID: first.resources.appID!,
+      });
+      await executeHosting(f.actor, {
+        action: "apps.update",
+        appID: first.resources.appID!,
+        revision: currentApp.revision,
+        spec: currentApp.spec,
+        environment: [{ name: "TOKEN", value: "new-fixture-value" }],
+        subscriptionRevision: currentApp.subscriptionRevision,
+        idempotencyKey: randomUUID(),
+      });
       worker.kill("SIGTERM");
       expect(await worker.exited).toBe(0);
       expect(await errors).not.toContain("job_failed");

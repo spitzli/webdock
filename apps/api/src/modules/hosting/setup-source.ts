@@ -1,3 +1,4 @@
+import { setupBuildCapabilities } from "./setup-capabilities";
 import { readSetup } from "./project-setup";
 import { createGitHubProvider } from "./git-github";
 import { inspectRepositoryFiles } from "./setup-inspection";
@@ -86,7 +87,16 @@ export async function executeSetupSource(actor: HostingActor, raw: unknown) {
         [access.customerID],
       )
     ).rows;
+    const applications = (
+      await db.query(
+        "SELECT id,name,lifecycle,status FROM webdock_auth.hosting_app WHERE project_id=$1 AND status<>'deleted' ORDER BY name,id LIMIT 200",
+        [cmd.projectID],
+      )
+    ).rows;
     return {
+      applications,
+      builds: await setupBuildCapabilities(db, cmd.projectID),
+      enabled: process.env.WEBDOCK_SETUP_ENABLED === "true",
       project: {
         ...project,
         projectID: cmd.projectID,

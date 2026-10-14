@@ -1,3 +1,4 @@
+import { applicationCapabilities } from "./setup-capabilities";
 import {
   mailBindingMaterial,
   revokeBindingMail,
@@ -150,12 +151,12 @@ export async function executeServiceBinding(actor: HostingActor, raw: unknown) {
         )
       ).rows[0];
     } else {
-      const capable = (
-        await db.query(
-          "SELECT observation->'capabilities'->>'serviceBindingsVersion' AS version FROM webdock_auth.hosting_agent WHERE cluster_id=$1 AND NOT revoked",
-          [access.project.cluster_id],
-        )
-      ).rows[0];
+      const capable = {
+        version: String(
+          (await applicationCapabilities(db, access.project.cluster_id))
+            ?.serviceBindingsVersion,
+        ),
+      };
       if (capable?.version !== "1")
         throw new HostingError(
           409,

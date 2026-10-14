@@ -1,0 +1,576 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Webdock\n"
+"PO-Revision-Date: 2026-10-14 20:00+0000\n"
+"Last-Translator: Webdock\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "A connected service needs attention before deployment."
+msgstr "Ein verbundener Dienst muss vor dem Deployment geprüft werden."
+
+msgid "A database in the same project and cluster is required."
+msgstr "Die Datenbank muss zum selben Projekt und Cluster gehören."
+
+msgid "A service connection needs attention before setup can finish."
+msgstr "Eine Dienstverbindung muss geprüft werden, bevor die Einrichtung abgeschlossen werden kann."
+
+msgid "Accept order and deploy"
+msgstr "Bestellung bestätigen und bereitstellen"
+
+msgid "Action required"
+msgstr "Aktion erforderlich"
+
+msgid "Add a Dockerfile in this directory before deploying from Git."
+msgstr "Füge vor dem Git-Deployment eine Dockerfile in diesem Verzeichnis hinzu."
+
+msgid "Add application"
+msgstr "Anwendung hinzufügen"
+
+msgid "Allow repository builds and custom container images"
+msgstr "Repository-Builds und eigene Container-Images erlauben"
+
+msgid "An application already uses this name."
+msgstr "Eine Anwendung verwendet diesen Namen bereits."
+
+msgid "An environment variable already uses this name."
+msgstr "Eine Umgebungsvariable verwendet diesen Namen bereits."
+
+msgid "Application connections"
+msgstr "Anwendungsverbindungen"
+
+msgid "Application deployment needs attention. Review its operation and logs."
+msgstr "Das Deployment muss geprüft werden. Öffne den Vorgang und die Logs der Anwendung."
+
+msgid "Application is deleted."
+msgstr "Die Anwendung wurde gelöscht."
+
+msgid "Application is unavailable."
+msgstr "Die Anwendung ist nicht verfügbar."
+
+msgid "Application project is unavailable."
+msgstr "Das Projekt der Anwendung ist nicht verfügbar."
+
+msgid "Application setup"
+msgstr "Anwendungseinrichtung"
+
+msgid "Application setup requires project management access."
+msgstr "Für die Einrichtung benötigst du Verwaltungsrechte für das Projekt."
+
+msgid "Application source"
+msgstr "Quelle der Anwendung"
+
+msgid "Applications, connected services and deployment activity in one place."
+msgstr "Anwendungen, verbundene Dienste und Deployments an einem Ort."
+
+msgid "Approve this exact release in Deployments to continue."
+msgstr "Gib dieses Release unter Deployments frei, um fortzufahren."
+
+msgid "Ask your operator to assign a managed sending account."
+msgstr "Bitte deinen Betreiber, ein verwaltetes Versandkonto zuzuweisen."
+
+msgid "Ask your operator to assign hosting before deploying applications."
+msgstr "Bitte deinen Betreiber, dem Projekt vor dem Deployment Hosting zuzuweisen."
+
+msgid "Assign hosting"
+msgstr "Hosting zuweisen"
+
+msgid "Assign managed container hosting before setting up this application."
+msgstr "Weise dem Projekt vor der Einrichtung verwaltetes Container-Hosting zu."
+
+msgid "Automatically publish successful builds"
+msgstr "Erfolgreiche Builds automatisch veröffentlichen"
+
+msgid "Awaiting first deployment"
+msgstr "Wartet auf das erste Deployment"
+
+msgid "Build and deploy from your repository."
+msgstr "Aus deinem Repository bauen und bereitstellen."
+
+msgid "Build application"
+msgstr "Anwendung bauen"
+
+msgid "Build failed. Review the build logs before retrying."
+msgstr "Der Build ist fehlgeschlagen. Prüfe vor dem nächsten Versuch die Build-Logs."
+
+msgid "Build settings"
+msgstr "Build-Einstellungen"
+
+msgid "Choose a database"
+msgstr "Datenbank auswählen"
+
+msgid "Choose a ready database in the same project and cluster."
+msgstr "Wähle eine betriebsbereite Datenbank im selben Projekt und Cluster."
+
+msgid "Choose a sender domain"
+msgstr "Absenderdomain auswählen"
+
+msgid "Choose a separate variable name for the Mail key."
+msgstr "Wähle für den Mail-Schlüssel einen eigenen Variablennamen."
+
+msgid "Choose an account"
+msgstr "Konto auswählen"
+
+msgid "Choose an application and a ready service before connecting."
+msgstr "Wähle eine Anwendung und einen betriebsbereiten Dienst aus."
+
+msgid "Choose hosting for this project"
+msgstr "Hosting für dieses Projekt auswählen"
+
+msgid "Choose services now. Webdock will connect them to the application securely."
+msgstr "Wähle die benötigten Dienste. Webdock verbindet sie sicher mit der Anwendung."
+
+msgid "Choose your source"
+msgstr "Quelle auswählen"
+
+msgid "Complete"
+msgstr "Abgeschlossen"
+
+msgid "Complete the first deployment before using application controls."
+msgstr "Schließe zuerst das erste Deployment ab, bevor du die Anwendung steuerst."
+
+msgid "Complete these steps first"
+msgstr "Schließe zuerst diese Schritte ab"
+
+msgid "Configure a sending connection and verify its domain below, then refresh the available services."
+msgstr "Richte unten eine Versandverbindung ein und verifiziere ihre Domain. Aktualisiere danach die verfügbaren Dienste."
+
+msgid "Configure deployment source"
+msgstr "Deployment-Quelle einrichten"
+
+msgid "Configure source"
+msgstr "Quelle einrichten"
+
+msgid "Configure verified build capacity before deploying from Git."
+msgstr "Vor Git-Deployments muss geprüfte Build-Kapazität eingerichtet werden."
+
+msgid "Configure verified native Mail API egress before connecting applications."
+msgstr "Vor dem Verbinden muss der geprüfte Netzwerkzugriff auf die native Mail-API eingerichtet werden."
+
+msgid "Configure your application"
+msgstr "Anwendung konfigurieren"
+
+msgid "Confirm the monthly price and terms."
+msgstr "Bestätige den monatlichen Preis und die Bedingungen."
+
+msgid "Confirm this setup again before continuing."
+msgstr "Bestätige diese Einrichtung erneut, bevor du fortfährst."
+
+msgid "Connect a source, choose services and review everything before deployment."
+msgstr "Verbinde eine Quelle, wähle Dienste und prüfe alles vor dem Deployment."
+
+msgid "Connect an authorized GitHub repository first."
+msgstr "Verbinde zuerst ein freigegebenes GitHub-Repository."
+
+msgid "Connect an existing database"
+msgstr "Vorhandene Datenbank verbinden"
+
+msgid "Connect an existing service"
+msgstr "Vorhandenen Dienst verbinden"
+
+msgid "Connect native Mail sending"
+msgstr "Nativen Mailversand verbinden"
+
+msgid "Connect service"
+msgstr "Dienst verbinden"
+
+msgid "Connect services"
+msgstr "Dienste verbinden"
+
+msgid "Connect services to applications. Disconnecting a service keeps its data."
+msgstr "Verbinde Dienste mit Anwendungen. Beim Trennen bleiben die Daten des Dienstes erhalten."
+
+msgid "Connected services"
+msgstr "Verbundene Dienste"
+
+msgid "Connecting…"
+msgstr "Verbindung wird hergestellt…"
+
+msgid "Connection variable"
+msgstr "Verbindungsvariable"
+
+msgid "Container image"
+msgstr "Container-Image"
+
+msgid "Continue an existing setup"
+msgstr "Vorhandene Einrichtung fortsetzen"
+
+msgid "Continue setup"
+msgstr "Einrichtung fortsetzen"
+
+msgid "Continue with this project’s existing Vercel deployment configuration."
+msgstr "Fahre mit der vorhandenen Vercel-Deployment-Konfiguration dieses Projekts fort."
+
+msgid "Create a database"
+msgstr "Datenbank erstellen"
+
+msgid "Create an application first."
+msgstr "Erstelle zuerst eine Anwendung."
+
+msgid "Custom images are not enabled for this project."
+msgstr "Eigene Images sind für dieses Projekt nicht freigeschaltet."
+
+msgid "Database name"
+msgstr "Datenbankname"
+
+msgid "Database offer is unavailable."
+msgstr "Das Datenbankangebot ist nicht verfügbar."
+
+msgid "Database provisioning needs attention before setup can continue."
+msgstr "Die Datenbankbereitstellung muss geprüft werden, bevor die Einrichtung fortgesetzt werden kann."
+
+msgid "Deploy release"
+msgstr "Release bereitstellen"
+
+msgid "Disconnect from application"
+msgstr "Von Anwendung trennen"
+
+msgid "Disconnecting"
+msgstr "Wird getrennt"
+
+msgid "Edit setup"
+msgstr "Einrichtung bearbeiten"
+
+msgid "Enable the project setup worker before deploying."
+msgstr "Aktiviere vor dem Deployment den Worker für die Projekteinrichtung."
+
+msgid "Environment variable"
+msgstr "Umgebungsvariable"
+
+msgid "Existing database"
+msgstr "Vorhandene Datenbank"
+
+msgid "Finish or delete an application draft before creating another."
+msgstr "Schließe einen Anwendungsentwurf ab oder lösche ihn, bevor du einen weiteren erstellst."
+
+msgid "Follow the deployment of your application and its services."
+msgstr "Verfolge die Bereitstellung deiner Anwendung und ihrer Dienste."
+
+msgid "For monorepos, choose the directory containing this application’s Dockerfile."
+msgstr "Wähle bei Monorepos das Verzeichnis mit der Dockerfile dieser Anwendung."
+
+msgid "Git repository"
+msgstr "Git-Repository"
+
+msgid "GitHub connection was not completed. Your draft has been kept."
+msgstr "Die GitHub-Verbindung wurde nicht abgeschlossen. Dein Entwurf bleibt erhalten."
+
+msgid "GitHub is connected. Review your repository and continue."
+msgstr "GitHub ist verbunden. Prüfe dein Repository und fahre fort."
+
+msgid "GitHub source could not be verified. Reconnect or try again."
+msgstr "Die GitHub-Quelle konnte nicht geprüft werden. Verbinde sie erneut oder versuche es noch einmal."
+
+msgid "Hosting allowance changed. Review the application."
+msgstr "Das Hosting-Kontingent hat sich geändert. Prüfe die Anwendung."
+
+msgid "Hosting capacity could not be verified."
+msgstr "Die Hosting-Kapazität konnte nicht geprüft werden."
+
+msgid "Idempotency key is required."
+msgstr "Der Wiederholungsschlüssel fehlt."
+
+msgid "Image digest"
+msgstr "Image-Digest"
+
+msgid "Inspect repository"
+msgstr "Repository prüfen"
+
+msgid "Mail key variable"
+msgstr "Variable für den Mail-Schlüssel"
+
+msgid "Mail sending"
+msgstr "Mailversand"
+
+msgid "Mail setup is currently unavailable. You can continue without Mail and connect it later."
+msgstr "Die Mail-Einrichtung ist derzeit nicht verfügbar. Du kannst ohne Mail fortfahren und es später verbinden."
+
+msgid "Mailboxes and forwarding"
+msgstr "Postfächer und Weiterleitungen"
+
+msgid "Manage databases"
+msgstr "Datenbanken verwalten"
+
+msgid "Manage services"
+msgstr "Dienste verwalten"
+
+msgid "Managed application execution requires k3s."
+msgstr "Verwaltete Anwendungen benötigen k3s."
+
+msgid "Managed databases must use the same cluster as this application."
+msgstr "Verwaltete Datenbanken müssen denselben Cluster wie diese Anwendung verwenden."
+
+msgid "Managed service variables cannot be edited manually."
+msgstr "Verwaltete Dienstvariablen können nicht manuell geändert werden."
+
+msgid "Memory (MiB)"
+msgstr "Arbeitsspeicher (MiB)"
+
+msgid "Native Mail connection needs attention before deployment."
+msgstr "Die native Mail-Verbindung muss vor dem Deployment geprüft werden."
+
+msgid "Native Mail connection requires authorized management."
+msgstr "Für die native Mail-Verbindung sind Verwaltungsrechte erforderlich."
+
+msgid "No database"
+msgstr "Keine Datenbank"
+
+msgid "No expired operation is available for reconciliation."
+msgstr "Es gibt keinen abgelaufenen Vorgang zum Abgleichen."
+
+msgid "No services connected to applications yet."
+msgstr "Es sind noch keine Dienste mit Anwendungen verbunden."
+
+msgid "No verified hosting cluster is available yet."
+msgstr "Es ist noch kein geprüfter Hosting-Cluster verfügbar."
+
+msgid "One argument per line."
+msgstr "Ein Argument pro Zeile."
+
+msgid "Only an interrupted confirmed setup can be resumed."
+msgstr "Nur eine unterbrochene, bestätigte Einrichtung kann fortgesetzt werden."
+
+msgid "Open deployments"
+msgstr "Deployments öffnen"
+
+msgid "Package metadata could not be read. Configure the application manually."
+msgstr "Die Paketmetadaten konnten nicht gelesen werden. Konfiguriere die Anwendung manuell."
+
+msgid "Persistent storage (MiB)"
+msgstr "Persistenter Speicher (MiB)"
+
+msgid "Prepare application"
+msgstr "Anwendung vorbereiten"
+
+msgid "Prepare database"
+msgstr "Datenbank vorbereiten"
+
+msgid "Project resources"
+msgstr "Projektressourcen"
+
+msgid "Project setup is unavailable."
+msgstr "Die Projekteinrichtung ist nicht verfügbar."
+
+msgid "Refresh available services"
+msgstr "Verfügbare Dienste aktualisieren"
+
+msgid "Refresh connection"
+msgstr "Verbindung aktualisieren"
+
+msgid "Refresh the database connection before deployment."
+msgstr "Aktualisiere die Datenbankverbindung vor dem Deployment."
+
+msgid "Release publication needs attention. Review Deployments."
+msgstr "Die Veröffentlichung muss geprüft werden. Öffne die Deployments."
+
+msgid "Repository inspection exceeded its size limit."
+msgstr "Die Repository-Prüfung hat die Größenbegrenzung überschritten."
+
+msgid "Repository suggestions"
+msgstr "Vorschläge aus dem Repository"
+
+msgid "Resolve the indicated issue, then continue. Already created services and their data are reused."
+msgstr "Behebe das angezeigte Problem und fahre fort. Bereits erstellte Dienste und ihre Daten werden weiterverwendet."
+
+msgid "Retry setup"
+msgstr "Einrichtung erneut versuchen"
+
+msgid "Review"
+msgstr "Prüfung"
+
+msgid "Review and deploy"
+msgstr "Prüfen und bereitstellen"
+
+msgid "Review release"
+msgstr "Release prüfen"
+
+msgid "Review setup"
+msgstr "Einrichtung prüfen"
+
+msgid "Review the setup before deploying."
+msgstr "Prüfe die Einrichtung vor dem Deployment."
+
+msgid "Rotate Mail key"
+msgstr "Mail-Schlüssel erneuern"
+
+msgid "Rotate database credentials from the database settings."
+msgstr "Erneuere die Datenbankzugänge in den Datenbankeinstellungen."
+
+msgid "Run the configured GitHub Actions workflow for the reviewed commit."
+msgstr "Starte den konfigurierten GitHub-Actions-Workflow für den geprüften Commit."
+
+msgid "Select an application"
+msgstr "Anwendung auswählen"
+
+msgid "Selected sender domain"
+msgstr "Ausgewählte Absenderdomain"
+
+msgid "Sending uses a domain-restricted API key. Mailboxes and forwarding are activated separately."
+msgstr "Der Versand verwendet einen auf die Domain beschränkten API-Schlüssel. Postfächer und Weiterleitungen werden separat aktiviert."
+
+msgid "Service certificates exceed the application configuration limit."
+msgstr "Die Dienstzertifikate überschreiten die Größenbegrenzung der Anwendungskonfiguration."
+
+msgid "Service connection changed. Refresh before editing."
+msgstr "Die Dienstverbindung hat sich geändert. Aktualisiere sie vor dem Bearbeiten."
+
+msgid "Service connection is unavailable."
+msgstr "Die Dienstverbindung ist nicht verfügbar."
+
+msgid "Set up Mail sending"
+msgstr "Mailversand einrichten"
+
+msgid "Set up a Mail connection or sender domain"
+msgstr "Mail-Verbindung oder Absenderdomain einrichten"
+
+msgid "Set up application"
+msgstr "Anwendung einrichten"
+
+msgid "Setup changed. Review the current configuration."
+msgstr "Die Einrichtung hat sich geändert. Prüfe die aktuelle Konfiguration."
+
+msgid "Setup could not continue. Review its services and retry."
+msgstr "Die Einrichtung konnte nicht fortgesetzt werden. Prüfe die Dienste und versuche es erneut."
+
+msgid "Setup preview expired. Review it again."
+msgstr "Die Vorschau ist abgelaufen. Prüfe die Einrichtung erneut."
+
+msgid "Setups in progress"
+msgstr "Laufende Einrichtungen"
+
+msgid "Start with the HTTP healthcheck application."
+msgstr "Mit der HTTP-Healthcheck-Anwendung starten."
+
+msgid "Suggested services"
+msgstr "Vorgeschlagene Dienste"
+
+msgid "Temporary storage (MiB)"
+msgstr "Temporärer Speicher (MiB)"
+
+msgid "The first deployment already exists. Update the application instead."
+msgstr "Das erste Deployment existiert bereits. Aktualisiere die Anwendung."
+
+msgid "The healthcheck template uses port 8080 and /ping. It helps verify the deployment before you add your own application."
+msgstr "Die Healthcheck-Vorlage verwendet Port 8080 und /ping. Damit kannst du das Deployment prüfen, bevor du deine eigene Anwendung hinzufügst."
+
+msgid "The saved setup operation has different configuration. Review it before retrying."
+msgstr "Der gespeicherte Einrichtungsvorgang hat eine andere Konfiguration. Prüfe ihn vor einem erneuten Versuch."
+
+msgid "The workflow must already produce the Webdock artifact for the exact commit."
+msgstr "Der Workflow muss das Webdock-Artefakt für genau diesen Commit bereits erzeugen können."
+
+msgid "This application already has sixteen service connections."
+msgstr "Diese Anwendung hat bereits sechzehn Dienstverbindungen."
+
+msgid "This application has not been deployed yet."
+msgstr "Diese Anwendung wurde noch nicht bereitgestellt."
+
+msgid "This build worker requires Dockerfile in the selected root directory."
+msgstr "Dieser Build-Worker benötigt eine Dockerfile im ausgewählten Stammverzeichnis."
+
+msgid "This configures outgoing Mail only. Receiving mail and mailboxes remain separate."
+msgstr "Hier wird nur ausgehende Mail eingerichtet. Empfang und Postfächer bleiben separat."
+
+msgid "This project is being deleted. Setup cannot continue."
+msgstr "Dieses Projekt wird gelöscht. Die Einrichtung kann nicht fortgesetzt werden."
+
+msgid "This project uses Vercel."
+msgstr "Dieses Projekt verwendet Vercel."
+
+msgid "Unknown application action."
+msgstr "Unbekannte Anwendungsaktion."
+
+msgid "Unknown setup source operation."
+msgstr "Unbekannte Aktion für die Einrichtungsquelle."
+
+msgid "Update the cluster agent before connecting services."
+msgstr "Aktualisiere den Cluster-Agenten, bevor du Dienste verbindest."
+
+msgid "Use 0 for no volume, or at least 64 MiB at /data. Persistent data is retained when the application stops."
+msgstr "Verwende 0 für kein Volume oder mindestens 64 MiB unter /data. Persistente Daten bleiben beim Stoppen der Anwendung erhalten."
+
+msgid "Use an existing immutable image."
+msgstr "Ein vorhandenes unveränderliches Image verwenden."
+
+msgid "Use an image already available on the cluster or in its authorized project registry."
+msgstr "Verwende ein Image, das bereits im Cluster oder in seiner freigegebenen Projekt-Registry verfügbar ist."
+
+msgid "Use an immutable image digest supported by this cluster."
+msgstr "Verwende einen unveränderlichen Image-Digest, den dieser Cluster unterstützt."
+
+msgid "Use application settings for changes after provisioning has started."
+msgstr "Verwende nach Beginn der Bereitstellung die Anwendungseinstellungen für Änderungen."
+
+msgid "Use detected port"
+msgstr "Erkannten Port übernehmen"
+
+msgid "Vercel application"
+msgstr "Vercel-Anwendung"
+
+msgid "Verified database connection details are not available yet."
+msgstr "Geprüfte Datenbankzugänge sind noch nicht verfügbar."
+
+msgid "Verify a native Mail connection and sender domain first."
+msgstr "Prüfe zuerst eine native Mail-Verbindung und ihre Absenderdomain."
+
+msgid "Verify domain"
+msgstr "Domain prüfen"
+
+msgid "Verify readiness"
+msgstr "Betriebsbereitschaft prüfen"
+
+msgid "Verify the sender domain before connecting native Mail."
+msgstr "Verifiziere die Absenderdomain, bevor du native Mail verbindest."
+
+msgid "View DNS records"
+msgstr "DNS-Einträge anzeigen"
+
+msgid "Wait for confirmed database readiness before connecting the application."
+msgstr "Warte auf die bestätigte Betriebsbereitschaft der Datenbank, bevor du die Anwendung verbindest."
+
+msgid "Wait for the current Mail key rollout before changing this connection."
+msgstr "Warte, bis der aktuelle Mail-Schlüssel ausgerollt wurde, bevor du diese Verbindung änderst."
+
+msgid "Waiting for database readiness."
+msgstr "Wartet auf die Betriebsbereitschaft der Datenbank."
+
+msgid "Waiting for observed application and service readiness."
+msgstr "Wartet auf die bestätigte Betriebsbereitschaft der Anwendung und ihrer Dienste."
+
+msgid "Waiting for the build artifact."
+msgstr "Wartet auf das Build-Artefakt."
+
+msgid "Webdock supplies the application credentials and verified TLS connection."
+msgstr "Webdock stellt die Anwendungszugänge und eine geprüfte TLS-Verbindung bereit."
+
+msgid "Webdock will prepare the selected services, connect their credentials and deploy the application. A failed deployment keeps already provisioned data."
+msgstr "Webdock bereitet die ausgewählten Dienste vor, verbindet ihre Zugänge und stellt die Anwendung bereit. Bei einem fehlgeschlagenen Deployment bleiben bereits bereitgestellte Daten erhalten."
+
+msgid "What does your application need?"
+msgstr "Was benötigt deine Anwendung?"
+
+msgid "You will review and explicitly accept the price before anything is ordered."
+msgstr "Du prüfst und bestätigst den Preis ausdrücklich, bevor etwas bestellt wird."
+
+msgid "Your application and service connections are ready."
+msgstr "Deine Anwendung und ihre Dienstverbindungen sind bereit."
+
+msgid "Your current hosting allowance applies. Existing services keep their current pricing and limits."
+msgstr "Es gilt dein aktuelles Hosting-Kontingent. Vorhandene Dienste behalten ihre Preise und Limits."
+
+msgid "Your draft is saved in this project. You can continue it later."
+msgstr "Dein Entwurf ist im Projekt gespeichert. Du kannst ihn später fortsetzen."
+
+
+msgid "Select an application for this Git operation."
+msgstr "Wähle eine Anwendung für diesen Git-Vorgang aus."
+
+msgid "Workspace services"
+msgstr "Dienste des Arbeitsbereichs"
+
+msgid "Refresh"
+msgstr "Aktualisieren"

@@ -1,3 +1,4 @@
+import { applicationCapabilities } from "./setup-capabilities";
 import { revokeBindingMail } from "./mail-binding";
 import { bindingRuntime } from "./binding-runtime";
 import { searchPage } from "@webdock/search";
@@ -480,12 +481,9 @@ export async function executeAppCommand(
       );
     const storageRequired = Boolean(spec.volumeBytes);
     if (storageRequired) {
-      const capable = (
-        await db.query(
-          "SELECT observation FROM webdock_auth.hosting_agent WHERE cluster_id=$1",
-          [clusterID],
-        )
-      ).rows[0]?.observation;
+      const capable = {
+        capabilities: await applicationCapabilities(db, clusterID),
+      };
       if (
         capable?.capabilities?.storageVersion !== 1 ||
         (!capable.capabilities.storage &&
@@ -502,12 +500,12 @@ export async function executeAppCommand(
       row?.observed_environment_encrypted,
     );
     if (environmentRequired) {
-      const capable = (
-        await db.query(
-          "SELECT observation->'capabilities'->>'environment' AS enabled FROM webdock_auth.hosting_agent WHERE cluster_id=$1",
-          [clusterID],
-        )
-      ).rows[0];
+      const capable = {
+        enabled:
+          (await applicationCapabilities(db, clusterID))?.environment === true
+            ? "true"
+            : "false",
+      };
       if (capable?.enabled !== "true")
         throw new HostingError(
           409,
@@ -537,12 +535,12 @@ export async function executeAppCommand(
         ).rowCount
       : 0;
     if (serviceBindings.length || hadBindings) {
-      const capability = (
-        await db.query(
-          "SELECT observation->'capabilities'->>'serviceBindingsVersion' AS version FROM webdock_auth.hosting_agent WHERE cluster_id=$1 AND NOT revoked",
-          [clusterID],
-        )
-      ).rows[0];
+      const capability = {
+        version: String(
+          (await applicationCapabilities(db, clusterID))
+            ?.serviceBindingsVersion,
+        ),
+      };
       if (capability?.version !== "1")
         throw new HostingError(
           409,
