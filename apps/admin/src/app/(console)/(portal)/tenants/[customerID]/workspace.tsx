@@ -1,3 +1,4 @@
+import { ConsoleIcon } from "@/components/console-icon";
 import {uiLabel} from "@/lib/ui-labels";
 
 import { getRequestI18n } from '@webdock/i18n/next';
@@ -45,7 +46,6 @@ export async function TenantWorkspace({
               : i18n.t("Archived tenant — changes disabled")}
           </p>
         </div>
-        <Link className="button secondary" href="/tenants?choose=1">{i18n.t("Switch workspace")}</Link>
       </header>
       {view === "profile" && <div className="access-grid">
         <section className="auth-panel">
@@ -135,17 +135,17 @@ export async function TenantWorkspace({
       </div>}
       {view === "overview" && <>
         <section aria-labelledby="workspace-websites"><h2 id="workspace-websites">{i18n.t("Your websites")}</h2>
-          <ul className="workspace-list">{sites.map(site => <li key={site.id}>
-            <strong>{site.name}</strong><p className="muted">{i18n.t(uiLabel(site.role))}</p>
-            {bridges[site.id] ? <div className="workspace-actions"><Link className="button" href={"/sites/"+site.id}>{i18n.t("Open website workspace")}</Link>
-              <Link className="button secondary" href={"/sites/"+site.id+(bridges[site.id].kind === "shop" ? "/shop?kind=products" : "/content")}>{i18n.t(bridges[site.id].kind === "shop" ? "Products" : "Edit content")}</Link></div>
-              : session.preview ? <p>{i18n.t("No integrated preview")}</p> : <a className="button secondary" href={site.url}>{i18n.t("Open CMS ↗")}</a>}
-          </li>)}</ul>
+          {sites.length>0&&<div className="console-directory"><table>
+            <thead><tr><th scope="col">{i18n.t("Website")}</th><th scope="col">{i18n.t("Access")}</th><th scope="col">{i18n.t("Actions")}</th></tr></thead>
+            <tbody>{sites.map(site=><tr key={site.id}><td>{bridges[site.id]?<Link href={`/sites/${site.id}`}>{site.name}</Link>:<strong>{site.name}</strong>}<small className="console-resource-domain">{new URL(site.url).hostname}</small></td><td>{i18n.t(uiLabel(site.role))}</td><td>{bridges[site.id]?<Link className="button secondary" href={`/sites/${site.id}`}>{i18n.t("Open website workspace")}</Link>:session.preview?<span>{i18n.t("No integrated preview")}</span>:<a className="button secondary" href={site.url}>{i18n.t("Open CMS ↗")}</a>}</td></tr>)}</tbody>
+          </table></div>}
           {!sites.length && <p className="muted">{i18n.t("No websites are currently authorized for your account in this tenant.")}</p>}
         </section>
-        <section className="account-section"><h2>{i18n.t("Services")}</h2><div className="workspace-actions">
-          <Link className="button secondary" href={`/tenants/${customerID}/hosting`}>{i18n.t("Applications")}</Link>
-          {!session.preview && <><Link className="button secondary" href={`/tenants/${customerID}/mail`}>{i18n.t("Mail")}</Link><Link className="button secondary" href={`/tenants/${customerID}/databases`}>{i18n.t("Databases")}</Link></>}
+        <section className="account-section"><h2>{i18n.t("Services")}</h2><div className="console-services">
+          <Link href={`/tenants/${customerID}/hosting`}><ConsoleIcon name="apps"/><strong>{i18n.t("Applications")}</strong><small>{i18n.t("Deploy applications and inspect their status and logs.")}</small><span aria-hidden="true">›</span></Link>
+          <Link href={`/tenants/${customerID}/${session.preview?'managed-databases':'databases'}`}><ConsoleIcon name="database"/><strong>{i18n.t("Databases")}</strong><small>{i18n.t("Browse project data and manage database connections.")}</small><span aria-hidden="true">›</span></Link>
+          {!session.preview&&<Link href={`/tenants/${customerID}/mail`}><ConsoleIcon name="mail"/><strong>{i18n.t("Mail")}</strong><small>{i18n.t("Manage sending, domains and mailboxes.")}</small><span aria-hidden="true">›</span></Link>}
+          <Link href={`/tenants/${customerID}/usage`}><ConsoleIcon name="billing"/><strong>{i18n.t("Plan & usage")}</strong><small>{i18n.t("Check your plan, resource limits and measured usage.")}</small><span aria-hidden="true">›</span></Link>
         </div></section>
       </>}
       {view === "team" && canManage && (

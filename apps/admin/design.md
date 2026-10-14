@@ -4,7 +4,7 @@ Scope: Studio customer/project workspaces and the CMS at `/sites` and `/sites/[b
 
 ## Direction
 
-User-approved: compact, calm workbench inspired by modern admin tools. Function and content lead. Use a directory for choosing websites, a compact site header with one module navigation, and list/detail editors. Avoid dashboard card walls, repeated navigation, oversized headings, repeated role explanations and developer terminology.
+User-approved: a compact cloud console, using Google Cloud Console as the reference for context selection, search and service navigation. Function and content lead. Use a directory for choosing websites, a compact site header with one module navigation, and list/detail editors. Avoid dashboard card walls, repeated navigation, oversized headings, repeated role explanations and developer terminology.
 
 ## Existing visual system
 
@@ -47,3 +47,13 @@ Superadmins can enter a visibly marked, read-only tenant-admin view for one cust
 ## Interface language
 
 English source messages and German GNU gettext catalogs cover Studio, Auth, Webdock marketing and the reusable CMS UI. System follows the browser language; English and German can be selected explicitly. Language changes preserve editor identity, unsaved values, revisions and signed login URLs. Customer content and the content locale are separate from interface language.
+
+## Cloud console interaction model
+
+The shared header owns workspace/project selection, search (Ctrl/Cmd K) and account preferences. The sidebar is persistent on desktop; on mobile the same destinations open in a focus-contained drawer. Services and workspace administration are separate groups, with the active resource tools beside the work rather than stacked above it. The existing orange identity and both color themes remain.
+
+Search has explicit project, workspace and all-workspace scopes. It reads authorized resources through the existing native API; project search contains applications and databases, workspace search contains projects and websites. Global customer search finds accessible workspaces and websites; operators also get registry projects. Requests are debounced, canceled when superseded, and never cached. Scope authorization precedes resource reads; secrets and resource payloads never enter search results. Existing unsaved-change guards still intercept result and selector links.
+
+Workspace directories and service overviews use compact rows with one primary action. Resource detail routes, revisions, status semantics and server permissions stay intact.
+
+References: https://cloud.google.com/blog/products/management-tools/improved-google-cloud-console-search-experience and https://docs.cloud.google.com/storage/docs/projects.

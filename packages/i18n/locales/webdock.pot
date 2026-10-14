@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-14 15:25+0200\n"
+"POT-Creation-Date: 2026-10-14 16:08+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -153,12 +153,15 @@ msgstr ""
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:125
 #: apps/admin/src/app/(console)/(portal)/hosting/operations/[operationID]/page.tsx:28
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:22
+#: apps/admin/src/components/console-controls.tsx:79
 #: apps/admin/src/components/hosting/project-applications.tsx:14
 #: apps/admin/src/components/hosting/project-applications.tsx:16
 #: apps/admin/src/components/hosting/project-context.tsx:20
-#: apps/admin/src/components/navigation.tsx:78
-#: apps/admin/src/components/workspace-sidebar.tsx:57
-#: apps/admin/src/components/workspace-sidebar.tsx:58
+#: apps/admin/src/components/navigation.tsx:36
+#: apps/admin/src/lib/console-context.ts:50
+#: apps/admin/src/lib/console-context.ts:73
+#: apps/admin/src/lib/console-context.ts:74
+#: apps/admin/src/lib/console-search-server.ts:36
 msgid "Applications"
 msgstr ""
 
@@ -632,6 +635,7 @@ msgid "Delete retained source"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:11
+#: apps/admin/src/lib/console-search-server.ts:31
 msgid "Developer tools"
 msgstr ""
 
@@ -887,7 +891,7 @@ msgid "Verify and bind target"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:190
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:303
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:295
 #: apps/admin/src/lib/git-deployment-messages.ts:87
 msgid "Vercel project ID"
 msgstr ""
@@ -1072,7 +1076,11 @@ msgid "Choose which projects Webdock can manage. Vercel continues to bill your o
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:44
+#: apps/admin/src/components/console-controls.tsx:79
+#: apps/admin/src/components/console-controls.tsx:111
 #: apps/admin/src/components/navigation.tsx:19
+#: apps/admin/src/lib/console-context.ts:48
+#: apps/admin/src/lib/console-search-server.ts:43
 msgid "Projects"
 msgstr ""
 
@@ -1095,7 +1103,9 @@ msgstr ""
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:104
 #: apps/admin/src/components/hosting/project-applications.tsx:20
 #: apps/admin/src/components/hosting/project-context.tsx:21
-#: apps/admin/src/components/workspace-sidebar.tsx:58
+#: apps/admin/src/lib/console-context.ts:50
+#: apps/admin/src/lib/console-context.ts:74
+#: apps/admin/src/lib/console-search-server.ts:42
 msgid "Deployments"
 msgstr ""
 
@@ -1487,10 +1497,13 @@ msgstr ""
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:13
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:20
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:37
+#: apps/admin/src/components/console-controls.tsx:79
 #: apps/admin/src/components/hosting/project-context.tsx:22
-#: apps/admin/src/components/navigation.tsx:79
-#: apps/admin/src/components/workspace-sidebar.tsx:58
+#: apps/admin/src/components/navigation.tsx:37
 #: apps/admin/src/lib/billing-families.ts:9
+#: apps/admin/src/lib/console-context.ts:50
+#: apps/admin/src/lib/console-context.ts:74
+#: apps/admin/src/lib/console-search-server.ts:36
 msgid "Databases"
 msgstr ""
 
@@ -1516,8 +1529,11 @@ msgid "Manage access"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:25
+#: apps/admin/src/components/console-controls.tsx:79
+#: apps/admin/src/components/console-controls.tsx:111
 #: apps/admin/src/components/hosting/project-context.tsx:13
 #: apps/admin/src/components/navigation.tsx:20
+#: apps/admin/src/lib/console-search-server.ts:29
 msgid "Workspaces"
 msgstr ""
 
@@ -1547,6 +1563,7 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/inbox/page.tsx:14
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/page.tsx:8
+#: apps/admin/src/lib/console-search-server.ts:38
 msgid "Mailboxes"
 msgstr ""
 
@@ -1952,7 +1969,7 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:26
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:35
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:170
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:162
 #: apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx:44
 #: apps/admin/src/components/hosting/customer.tsx:249
 #: apps/admin/src/lib/ui-labels.ts:10 apps/admin/src/lib/ui-labels.ts:15
@@ -1991,76 +2008,82 @@ msgstr ""
 msgid "I confirm permanent deletion of this project and its website data."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:164
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:156
 #: apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx:41
 msgid "Project name"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:184
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:176
 #: apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx:56
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "Website URL"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:190
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:182
 #: apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx:57
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "Repository URL"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:196
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:339
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:188
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:331
 #: apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx:58
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "Notes"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:283
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:275
 msgid "CMS name"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:289
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:281
 msgid "Admin URL"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:296
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:288
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "Database schema"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:299
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:291
 msgid "The isolated schema used by this deployed CMS."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:306
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:298
 msgid "The existing Vercel project ID, starting with prj_."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:310
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:302
 #: apps/admin/src/components/hosting/app-spec.tsx:24
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "Template"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:323
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:315
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "CMS engine version"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:328
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:320
 msgid "Recorded status"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:329
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:321
 msgid "Inventory only. Changing this does not change the running CMS."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:347
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:339
 msgid "This CMS is already deployed"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx:49
 msgid "Choose a customer"
+msgstr ""
+
+#: apps/admin/src/app/(console)/layout.tsx:28 apps/auth/src/app/layout.tsx:31
+#: apps/web/src/app/(frontend)/(legal)/layout.tsx:9
+#: apps/web/src/app/(frontend)/page.tsx:27 packages/cms-ui/src/client.tsx:725
+msgid "Skip to content"
 msgstr ""
 
 #: apps/admin/src/app/global-not-found.tsx:3
@@ -2165,6 +2188,176 @@ msgstr ""
 
 #: apps/admin/src/components/code-example.tsx:12
 msgid "Copy"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:65
+#: apps/admin/src/lib/console-search-server.ts:48
+msgid "Search is temporarily unavailable. Please try again."
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:79
+msgid "Go to"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:79
+#: apps/admin/src/components/plan-fields.tsx:13
+#: apps/admin/src/lib/billing-families.ts:3
+#: apps/auth/src/lib/i18n-messages.ts:276
+msgid "Websites"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:82
+msgid "Open navigation"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:83
+msgid "Console"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:84
+#: apps/admin/src/components/console-controls.tsx:110
+msgid "Switch workspace or project"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:85
+msgid "Select workspace"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:87
+#: apps/admin/src/components/console-controls.tsx:91
+#: apps/admin/src/components/console-controls.tsx:92
+msgid "Search resources and services"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:91
+msgid "Close search"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:92
+msgid "Name or domain"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:93
+msgid "Search in"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:94
+msgid "Current project"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:94
+msgid "Current workspace"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:94
+msgid "Available resources"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:94
+msgid "All workspaces"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:95
+msgid "Applications, databases and navigation"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:95
+msgid "Projects, websites and navigation"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:95
+msgid "Workspaces, websites and navigation"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:97
+#: packages/search/src/live-form.tsx:150
+msgid "Searching…"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:99
+msgid "No results. Try a different name or change the search scope."
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:104
+msgid "Some resources could not be loaded. Try the search again."
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:105
+#: apps/admin/src/components/console-controls.tsx:115
+msgid "More results are available. Narrow your search."
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:107
+msgid "Type at least two characters to find resources."
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:107
+msgid "Navigate"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:107
+msgid "Close"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:110
+msgid "Close workspace selector"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:112
+msgid "Filter by name"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:112
+msgid "Filter workspaces and projects"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:114
+#: apps/admin/src/components/console-controls.tsx:115
+msgid "Selected"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:115
+msgid "Loading projects…"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:115
+msgid "Projects could not be loaded. Please try again."
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:115
+msgid "No matching projects in this workspace."
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:116
+msgid "No matching workspaces."
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:118
+msgid "Open full overview"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:121
+msgid "Navigation"
+msgstr ""
+
+#: apps/admin/src/components/console-controls.tsx:121
+msgid "Close navigation"
+msgstr ""
+
+#: apps/admin/src/components/console-toolbar.tsx:21
+msgid "Account & preferences"
+msgstr ""
+
+#: apps/admin/src/components/console-toolbar.tsx:22
+msgid "Operator studio"
+msgstr ""
+
+#: apps/admin/src/components/console-toolbar.tsx:22
+msgid "Customer studio"
+msgstr ""
+
+#: apps/admin/src/components/console-toolbar.tsx:23
+msgid "Account & security ↗"
 msgstr ""
 
 #: apps/admin/src/components/databases/forms.tsx:20
@@ -2375,7 +2568,8 @@ msgid "Allocated resources, reservations and measured usage are tracked separate
 msgstr ""
 
 #: apps/admin/src/components/hosting/customer.tsx:107
-#: apps/admin/src/components/navigation.tsx:82
+#: apps/admin/src/components/navigation.tsx:43
+#: apps/admin/src/lib/console-search-server.ts:37
 msgid "Plan & usage"
 msgstr ""
 
@@ -2473,7 +2667,7 @@ msgid "Also allow this project's images on a shared cluster (applications share 
 msgstr ""
 
 #: apps/admin/src/components/hosting/database-details.tsx:19
-#: apps/admin/src/components/workspace-sidebar.tsx:49
+#: apps/admin/src/lib/console-context.ts:63
 msgid "Connection credentials"
 msgstr ""
 
@@ -2967,6 +3161,7 @@ msgid "Project areas"
 msgstr ""
 
 #: apps/admin/src/components/hosting/project-context.tsx:19
+#: apps/admin/src/lib/console-context.ts:50
 msgid "Project overview"
 msgstr ""
 
@@ -3112,7 +3307,8 @@ msgid "Loading your workspace…"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:20
-#: apps/admin/src/components/workspace-sidebar.tsx:33
+#: apps/admin/src/lib/console-context.ts:38
+#: apps/admin/src/lib/console-search-server.ts:30
 #: apps/auth/src/app/tenants/page.tsx:22
 #: apps/auth/src/components/auth-forms.tsx:319
 #: packages/cms-ui/src/client.tsx:779
@@ -3120,6 +3316,7 @@ msgid "My websites"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:21
+#: apps/admin/src/lib/console-search-server.ts:43
 #: apps/auth/src/app/people/page.tsx:11 apps/auth/src/app/people/page.tsx:29
 #: apps/auth/src/components/auth-forms.tsx:319
 #: packages/cms-ui/src/client.tsx:773
@@ -3127,32 +3324,37 @@ msgid "People & access"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:21
+#: apps/admin/src/lib/console-search-server.ts:43
 #: apps/auth/src/app/admin/plans/page.tsx:10
 #: apps/auth/src/app/admin/plans/page.tsx:17
 msgid "Plans"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:21
+#: apps/admin/src/lib/console-search-server.ts:43
 msgid "Connections"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:21
-#: apps/admin/src/components/workspace-sidebar.tsx:44
-#: apps/admin/src/components/workspace-sidebar.tsx:50
+#: apps/admin/src/lib/console-context.ts:58
+#: apps/admin/src/lib/console-context.ts:64
+#: apps/admin/src/lib/console-search-server.ts:43
 msgid "Settings"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:77
-#: apps/admin/src/components/workspace-sidebar.tsx:34
-#: apps/admin/src/components/workspace-sidebar.tsx:42
-#: apps/admin/src/components/workspace-sidebar.tsx:48
+#: apps/admin/src/components/navigation.tsx:35
+#: apps/admin/src/lib/console-context.ts:39
+#: apps/admin/src/lib/console-context.ts:56
+#: apps/admin/src/lib/console-context.ts:62
+#: apps/admin/src/lib/console-search-server.ts:36
 #: packages/cms-ui/src/client.tsx:698
 msgid "Overview"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:80
-#: apps/admin/src/components/workspace-sidebar.tsx:80
+#: apps/admin/src/components/navigation.tsx:38
+#: apps/admin/src/components/workspace-sidebar.tsx:15
 #: apps/admin/src/lib/billing-families.ts:6
+#: apps/admin/src/lib/console-search-server.ts:38
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:13
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:24
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:33
@@ -3160,15 +3362,18 @@ msgstr ""
 msgid "Mail"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:81
+#: apps/admin/src/components/navigation.tsx:42
+#: apps/admin/src/lib/console-search-server.ts:39
 msgid "Team"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:81
+#: apps/admin/src/components/navigation.tsx:42
+#: apps/admin/src/lib/console-search-server.ts:39
 msgid "Billing"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:83
+#: apps/admin/src/components/navigation.tsx:44
+#: apps/admin/src/lib/console-search-server.ts:37
 msgid "Profile"
 msgstr ""
 
@@ -3185,12 +3390,6 @@ msgstr ""
 #: apps/admin/src/components/plan-fields.tsx:12
 #: apps/auth/src/lib/i18n-messages.ts:246
 msgid "Transfer (GB)"
-msgstr ""
-
-#: apps/admin/src/components/plan-fields.tsx:13
-#: apps/admin/src/lib/billing-families.ts:3
-#: apps/auth/src/lib/i18n-messages.ts:276
-msgid "Websites"
 msgstr ""
 
 #: apps/admin/src/components/plan-fields.tsx:14
@@ -3239,20 +3438,13 @@ msgstr ""
 msgid "The linked Vercel project could not be found."
 msgstr ""
 
-#: apps/admin/src/components/workspace-sidebar.tsx:43
-msgid "Logs"
-msgstr ""
-
-#: apps/admin/src/components/workspace-sidebar.tsx:75
-msgid "Switch workspace"
-msgstr ""
-
-#: apps/admin/src/components/workspace-sidebar.tsx:78
-msgid "Workspace overview"
-msgstr ""
-
-#: apps/admin/src/components/workspace-sidebar.tsx:86
+#: apps/admin/src/components/workspace-sidebar.tsx:20
 msgid "Workspace areas"
+msgstr ""
+
+#: apps/admin/src/components/workspace-sidebar.tsx:25
+#: apps/admin/src/lib/billing-families.ts:10
+msgid "Services"
 msgstr ""
 
 #: apps/admin/src/lib/billing-families.ts:4
@@ -3265,10 +3457,6 @@ msgstr ""
 
 #: apps/admin/src/lib/billing-families.ts:7
 msgid "Media storage"
-msgstr ""
-
-#: apps/admin/src/lib/billing-families.ts:10
-msgid "Services"
 msgstr ""
 
 #: apps/admin/src/lib/billing-labels.ts:4
@@ -3537,6 +3725,34 @@ msgstr ""
 
 #: apps/admin/src/lib/cms-modules.ts:38
 msgid "Edit contact details for the demo checkout."
+msgstr ""
+
+#: apps/admin/src/lib/console-context.ts:57
+msgid "Logs"
+msgstr ""
+
+#: apps/admin/src/lib/console-search-server.ts:31
+msgid "API & MCP"
+msgstr ""
+
+#: apps/admin/src/lib/console-search-server.ts:38
+msgid "Quickstart"
+msgstr ""
+
+#: apps/admin/src/lib/console-search.ts:24
+msgid "Invalid search."
+msgstr ""
+
+#: apps/admin/src/lib/console-search.ts:26
+msgid "Sign in to search your workspace."
+msgstr ""
+
+#: apps/admin/src/lib/console-search.ts:33
+msgid "This project is not in the selected workspace."
+msgstr ""
+
+#: apps/admin/src/lib/console-search.ts:37
+msgid "This workspace is unavailable. Choose another workspace."
 msgstr ""
 
 #: apps/admin/src/lib/customer-fields.ts:8
@@ -4840,12 +5056,6 @@ msgstr ""
 
 #: apps/auth/src/app/layout.tsx:19
 msgid "Webdock Account"
-msgstr ""
-
-#: apps/auth/src/app/layout.tsx:31
-#: apps/web/src/app/(frontend)/(legal)/layout.tsx:9
-#: apps/web/src/app/(frontend)/page.tsx:27 packages/cms-ui/src/client.tsx:725
-msgid "Skip to content"
 msgstr ""
 
 #: apps/auth/src/app/layout.tsx:36 packages/cms-ui/src/client.tsx:741
@@ -9789,8 +9999,4 @@ msgstr ""
 
 #: packages/i18n/src/picker.tsx:23
 msgid "Changing language…"
-msgstr ""
-
-#: packages/search/src/live-form.tsx:150
-msgid "Searching…"
 msgstr ""

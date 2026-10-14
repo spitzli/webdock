@@ -8444,3 +8444,150 @@ msgstr "Änderungen benötigen hosting:write. Änderungen an Anwendungen verwend
 
 msgid "Media storage"
 msgstr "Medienspeicher"
+
+msgid "API & MCP"
+msgstr "API & MCP"
+
+msgid "All workspaces"
+msgstr "Alle Arbeitsbereiche"
+
+msgid "Applications, databases and navigation"
+msgstr "Anwendungen, Datenbanken und Navigation"
+
+msgid "Available resources"
+msgstr "Verfügbare Ressourcen"
+
+msgid "Browse project data and manage database connections."
+msgstr "Projektdaten durchsuchen und Datenbankverbindungen verwalten."
+
+msgid "Check your plan, resource limits and measured usage."
+msgstr "Tarif, Ressourcenlimits und gemessene Nutzung prüfen."
+
+msgid "Close"
+msgstr "Schließen"
+
+msgid "Close navigation"
+msgstr "Navigation schließen"
+
+msgid "Close search"
+msgstr "Suche schließen"
+
+msgid "Close workspace selector"
+msgstr "Arbeitsbereichsauswahl schließen"
+
+msgid "Console"
+msgstr "Konsole"
+
+msgid "Current project"
+msgstr "Aktuelles Projekt"
+
+msgid "Current workspace"
+msgstr "Aktueller Arbeitsbereich"
+
+msgid "Deploy applications and inspect their status and logs."
+msgstr "Anwendungen bereitstellen sowie Status und Logs prüfen."
+
+msgid "Filter by name or ID"
+msgstr "Nach Name oder ID filtern"
+
+msgid "Filter workspaces and projects"
+msgstr "Arbeitsbereiche und Projekte filtern"
+
+msgid "Go to"
+msgstr "Direkt öffnen"
+
+msgid "Invalid search."
+msgstr "Ungültige Suchanfrage."
+
+msgid "Loading projects…"
+msgstr "Projekte werden geladen …"
+
+msgid "Manage sending, domains and mailboxes."
+msgstr "Versand, Domains und Postfächer verwalten."
+
+msgid "More results are available. Narrow your search."
+msgstr "Es gibt weitere Ergebnisse. Grenze deine Suche ein."
+
+msgid "Name, domain or resource ID"
+msgstr "Name, Domain oder Ressourcen-ID"
+
+msgid "Navigate"
+msgstr "Navigieren"
+
+msgid "Navigation"
+msgstr "Navigation"
+
+msgid "No matching projects in this workspace."
+msgstr "Keine passenden Projekte in diesem Arbeitsbereich."
+
+msgid "No matching workspaces."
+msgstr "Keine passenden Arbeitsbereiche."
+
+msgid "No results. Try a different name or change the search scope."
+msgstr "Keine Ergebnisse. Versuche einen anderen Namen oder ändere den Suchbereich."
+
+msgid "Open full overview"
+msgstr "Vollständige Übersicht öffnen"
+
+msgid "Open navigation"
+msgstr "Navigation öffnen"
+
+msgid "Open workspace"
+msgstr "Arbeitsbereich öffnen"
+
+msgid "Projects could not be loaded. Please try again."
+msgstr "Projekte konnten nicht geladen werden. Bitte versuche es erneut."
+
+msgid "Projects, websites and navigation"
+msgstr "Projekte, Websites und Navigation"
+
+msgid "Search in"
+msgstr "Suchen in"
+
+msgid "Search is temporarily unavailable. Please try again."
+msgstr "Die Suche ist vorübergehend nicht verfügbar. Bitte versuche es erneut."
+
+msgid "Search resources and services"
+msgstr "Ressourcen und Dienste suchen"
+
+msgid "Select workspace"
+msgstr "Arbeitsbereich wählen"
+
+msgid "Selected"
+msgstr "Ausgewählt"
+
+msgid "Sign in to search your workspace."
+msgstr "Melde dich an, um deinen Arbeitsbereich zu durchsuchen."
+
+msgid "Some resources could not be loaded. Try the search again."
+msgstr "Einige Ressourcen konnten nicht geladen werden. Bitte wiederhole die Suche."
+
+msgid "Switch workspace or project"
+msgstr "Arbeitsbereich oder Projekt wechseln"
+
+msgid "This project is not in the selected workspace."
+msgstr "Dieses Projekt gehört nicht zum ausgewählten Arbeitsbereich."
+
+msgid "This workspace is unavailable. Choose another workspace."
+msgstr "Dieser Arbeitsbereich ist nicht verfügbar. Wähle einen anderen Arbeitsbereich."
+
+msgid "Type at least two characters to find resources."
+msgstr "Gib mindestens zwei Zeichen ein, um Ressourcen zu finden."
+
+msgid "Workspace"
+msgstr "Arbeitsbereich"
+
+msgid "Workspace ID"
+msgstr "Arbeitsbereichs-ID"
+
+msgid "Workspace settings"
+msgstr "Arbeitsbereich verwalten"
+
+msgid "Workspaces, websites and navigation"
+msgstr "Arbeitsbereiche, Websites und Navigation"
+
+msgid "Name or domain"
+msgstr "Name oder Domain"
+
+msgid "Filter by name"
+msgstr "Nach Name filtern"

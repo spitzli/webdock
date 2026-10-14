@@ -1,4 +1,3 @@
-import { TenantNavigation } from "@/components/navigation";
 import {uiLabel} from "@/lib/ui-labels";
 
 import { getRequestI18n } from '@webdock/i18n/next';
@@ -51,7 +50,6 @@ export default async function Customer({
           <Link href={"/projects/new?customer=" + id} className="button">{i18n.t("Add project +")}</Link>
         )}
       </div>
-      <TenantNavigation customerID={id} canManage overviewHref={`/customers/${id}`} />
       <div className="customer-overview">
         <div>
           <section className="panel">
