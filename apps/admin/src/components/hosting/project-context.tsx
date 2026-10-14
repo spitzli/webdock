@@ -1,13 +1,12 @@
 import { getRequestI18n } from '@webdock/i18n/next';
-import type { HostingProjectContext } from '@webdock/hosting-contracts';
-import { hostingPageCall } from '@/lib/hosting-client';
+import { getHostingProject } from '@/lib/hosting-project';
 import { WorkspaceContext } from '../workspace-context';
 import { AreaNavigation } from '../area-navigation';
 
 export async function HostingProjectHeader({ projectID, leaf, showNavigation = true }: { projectID: string; leaf?: {label:string;href?:string}; showNavigation?:boolean }) {
   const { t } = await getRequestI18n();
   const base = `/hosting/projects/${encodeURIComponent(projectID)}`;
-  const data = await hostingPageCall<HostingProjectContext>({ action: 'projects.get', projectID }, base);
+  const data = await getHostingProject(projectID);
   const customerPath = data.operator ? `/customers/${data.customerID}` : `/tenants/${data.customerID}`;
   return <header className="context-header">
     <WorkspaceContext items={[

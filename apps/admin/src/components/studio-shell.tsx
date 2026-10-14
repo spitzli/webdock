@@ -11,11 +11,13 @@ export async function StudioShell({
   user,
   ssoEnabled = true,
   preview,
+  navigation,
 }: {
   children: React.ReactNode;
   user?: { name?: string | null; role?: string | null } | null;
   ssoEnabled?: boolean;
   preview?: TenantPreview;
+  navigation?: React.ReactNode;
 }) {
   const i18n = await getRequestI18n();
 
@@ -37,6 +39,7 @@ export async function StudioShell({
         </div>
         <div className="desktop-navigation">
           <Navigation operator={operator} />
+          {navigation}
 
           <div className="sidebar-bottom">
             <p className="operator">
@@ -54,6 +57,7 @@ export async function StudioShell({
         </div>
         <MobileMenu
           operator={operator}
+          navigation={navigation}
           accountURL={preview ? undefined : accountURL}
           userName={user?.name}
           signedIn={Boolean(user)}

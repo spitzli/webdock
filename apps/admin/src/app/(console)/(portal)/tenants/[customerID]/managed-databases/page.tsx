@@ -1,4 +1,3 @@
-import { TenantDatabaseNavigation } from "@/components/hosting/tenant-database-navigation";
 import Link from "next/link";
 import { getRequestI18n } from "@webdock/i18n/next";
 import { hostingPageCall } from "@/lib/hosting-client";
@@ -19,7 +18,7 @@ export default async function ManagedDatabases({
   return (
     <>
       <h1>{t("Databases")}</h1>
-      <TenantDatabaseNavigation customerID={customerID}/>
+
       <p>{t("Choose a project to order and manage PostgreSQL.")}</p>
       <section className="panel">
         <HostingTable

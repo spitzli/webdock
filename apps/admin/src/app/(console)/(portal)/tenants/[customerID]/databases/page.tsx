@@ -1,4 +1,3 @@
-import { TenantDatabaseNavigation } from "@/components/hosting/tenant-database-navigation";
 import Link from "next/link";
 import { getRequestI18n } from "@webdock/i18n/next";
 import type { DatabaseDirectory } from "@webdock/database-contracts";
@@ -11,7 +10,7 @@ export default async function Databases({ params }: { params: Promise<{ customer
   const { customerID } = await params, { t } = await getRequestI18n();
   const base = `/tenants/${customerID}/databases`;
   const data = await withHostingPageAccess(base, () => databaseCall<DatabaseDirectory>({ action: "list", customerID }));
-  return <><h1>{t("Databases")}</h1><TenantDatabaseNavigation customerID={customerID}/><p className="muted">{t("Browse tables and query your project data.")}</p>
+  return <><h1>{t("Databases")}</h1><p className="muted">{t("Browse tables and query your project data.")}</p>
     <section className="panel database-directory">
       {!data.bindings.length && <p>{t("No databases are available for your account.")}</p>}
       {data.bindings.map(binding => <article key={binding.id} className="database-row"><div className="database-row-heading">

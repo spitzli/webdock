@@ -2141,3 +2141,27 @@ main h2 { font-size: 16px; letter-spacing: 0; }
 .billing-form label:has(input[type="checkbox"]), .billing-form .billing-check, .billing-check { display: flex; align-items: flex-start; gap: .65rem; margin-block: 1rem; }
 .billing-form input[type="checkbox"], .billing-check input[type="checkbox"] { width: 1.15rem; min-height: 1.15rem; height: 1.15rem; margin: .15rem 0 0; flex: 0 0 auto; }
 .billing-form .button { margin-block-start: .5rem; }
+
+/* Resource navigation shares one sidebar on desktop and inside the mobile menu. */
+.desktop-navigation { overflow-y: auto; scrollbar-width: thin; }
+.workspace-sidebar { margin-top: 20px; padding-top: 16px; border-top: 1px solid #405269; }
+.sidebar-context-name { margin: 12px 12px 8px; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.sidebar-back { display: block; padding: 10px 12px; font-size: 13px; color: #b8c5d6; }
+.sidebar-workspace-switcher summary { padding: 12px; border: 1px solid #405269; border-radius: 7px; min-height: 44px; font-size: 13px; overflow-wrap: anywhere; }
+.sidebar .area-navigation { display: block; margin: 0; padding: 0; border: 0; }
+.sidebar .area-navigation-desktop { display: flex; flex-direction: column; gap: 2px; overflow: visible; border: 0; margin: 0; }
+.sidebar .area-navigation-mobile { display: none; }
+.sidebar .area-navigation a { display: flex; align-items: center; min-height: 44px; padding: 9px 12px; white-space: normal; border: 0; color: #b8c5d6; }
+.sidebar .area-navigation a[aria-current=page] { color: #fff; background: #314158; box-shadow: inset 3px 0 var(--accent); }
+.sidebar .area-navigation a.area-link-nested { margin-left: 16px; padding-left: 12px; font-size: 13px; border-left: 1px solid #405269; border-radius: 0 7px 7px 0; }
+.code-example { min-width: 0; margin: 16px 0; }
+.code-example > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.code-example pre { max-width: 100%; overflow: auto; padding: 16px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); font-size: 13px; line-height: 1.65; }
+.code-example [role=status] { font-size: 13px; }
+.developer-steps { padding-left: 24px; }
+.developer-steps li { padding: 6px 0 6px 4px; }
+@media (max-width:700px) {
+ .sidebar .mobile-menu .workspace-sidebar nav.area-navigation-desktop { display: flex; flex-direction: column; margin: 0; }
+ .sidebar .mobile-menu .workspace-sidebar .area-navigation-mobile { display: none; }
+ .sidebar .mobile-menu .sidebar-workspace-switcher nav { display: flex; flex-direction: column; }
+}
