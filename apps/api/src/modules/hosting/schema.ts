@@ -1,3 +1,4 @@
+import { serviceBindingSchemaSQL } from "./service-binding-schema";
 export const hostingEnvironmentSchemaSQL = `ALTER TABLE webdock_auth.hosting_app ADD COLUMN IF NOT EXISTS environment_encrypted text;
 ALTER TABLE webdock_auth.hosting_app ADD COLUMN IF NOT EXISTS previous_environment_encrypted text;
 ALTER TABLE webdock_auth.hosting_app ADD COLUMN IF NOT EXISTS observed_environment_encrypted text;`;
@@ -76,6 +77,7 @@ CREATE TABLE IF NOT EXISTS webdock_auth.hosting_app (
 ALTER TABLE webdock_auth.hosting_app ADD COLUMN IF NOT EXISTS lifecycle text NOT NULL DEFAULT 'deployed' CHECK(lifecycle IN ('draft','deployed'));
 ALTER TABLE webdock_auth.hosting_app ADD COLUMN IF NOT EXISTS observed_spec jsonb;
 ${hostingEnvironmentSchemaSQL}
+${serviceBindingSchemaSQL}
 UPDATE webdock_auth.hosting_app SET observed_spec=spec WHERE observed_spec IS NULL AND observed_revision=revision AND status IN ('ready','stopped');
 CREATE UNIQUE INDEX IF NOT EXISTS hosting_app_name ON webdock_auth.hosting_app(project_id,name) WHERE status<>'deleted';
 ALTER TABLE webdock_auth.hosting_operation ADD COLUMN IF NOT EXISTS app_id varchar REFERENCES webdock_auth.hosting_app(id) ON DELETE RESTRICT;

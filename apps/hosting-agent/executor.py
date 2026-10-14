@@ -12,6 +12,7 @@ import sys
 import time
 import storage_client as storage
 import registry
+import service_bindings
 
 class ExecutionError(Exception):
     pass
@@ -53,6 +54,7 @@ def validate_packet(p):
                 if not isinstance(value,str) or '\0' in value or len(value.encode('utf-8'))>4096:raise ValueError()
                 total+=len(key.encode('utf-8'))+len(value.encode('utf-8'))
             if total>12000 or len(json.dumps(env,ensure_ascii=False,separators=(',',':')).encode('utf-8'))>16000:raise ValueError()
+        service_bindings.validate(p)
         lease(p)
     except (KeyError,ValueError,TypeError):
         raise ExecutionError('execution_failed') from None
@@ -85,6 +87,7 @@ def manifests(p):
     if s.get('volumeBytes'):
         pod['volumes'].append({'name':'data','persistentVolumeClaim':{'claimName':name+'-data'}})
         container['volumeMounts'].append({'name':'data','mountPath':'/data'})
+    service_bindings.mount(p,pod)
     meta={'name':name,'namespace':p['namespace'],'labels':owner,'annotations':annotation}
     deployment={'apiVersion':'apps/v1','kind':'Deployment','metadata':meta,'spec':{'replicas':s['replicas'],'strategy':{'type':'Recreate'},'revisionHistoryLimit':2,'selector':{'matchLabels':{'webdock.dev/app-id':p['appID']}},'template':{'metadata':{'labels':{**owner,'security.webdock.dev/ingress':'true'},'annotations':annotation},'spec':pod}}}
     service={'apiVersion':'v1','kind':'Service','metadata':meta,'spec':{'type':'ClusterIP','selector':{'webdock.dev/app-id':p['appID']},'ports':[{'name':'http','port':s['port'],'targetPort':s['port']}]}}
@@ -106,8 +109,18 @@ def cleanup_environment(p,keep=()):
     for secret in result['items']:
         name=secret['metadata']['name']
         if name in keep:continue
+        if re.fullmatch('app-'+p['appID']+r'-services-[1-9][0-9]*',name):continue
         if not re.fullmatch('app-'+p['appID']+r'-env-[1-9][0-9]*',name):raise ExecutionError('ownership_conflict')
         guarded_delete('secrets',secret,p)
+
+
+def cleanup_service_secrets(p,keep=()):
+    if p.get('serviceBindingsVersion')!=1:return
+    result=json.loads(kubectl('-n',p['namespace'],'get','secrets','-l','webdock.dev/app-id='+p['appID'],'-o','json'))
+    for secret in result['items']:
+        name=secret['metadata']['name']
+        if re.fullmatch('app-'+p['appID']+r'-services-[1-9][0-9]*',name) and name not in keep:
+            guarded_delete('secrets',secret,p)
 
 
 def referenced_environment(objects):
@@ -169,7 +182,7 @@ def prepare_namespace(p,namespace):
       'requests.memory':str(quota['memoryBytes']),'limits.memory':str(quota['memoryBytes']),
       'requests.ephemeral-storage':str(quota['ephemeralBytes']),'limits.ephemeral-storage':str(quota['ephemeralBytes']),
       'pods':str(max(10,quota['apps']*20)),'services':str(max(1,quota['apps'])),
-      'services.nodeports':'0','services.loadbalancers':'0','persistentvolumeclaims':str(quota.get('volumeBytes',0)//67108864),'requests.storage':str(quota.get('volumeBytes',0)),'count/jobs.batch':'0','count/secrets':str(max(20,quota['apps']*2+2)),'count/configmaps':'20'}}),p)
+      'services.nodeports':'0','services.loadbalancers':'0','persistentvolumeclaims':str(quota.get('volumeBytes',0)//67108864),'requests.storage':str(quota.get('volumeBytes',0)),'count/jobs.batch':'0','count/secrets':str(max(20,quota['apps']*4+2)),'count/configmaps':'20'}}),p)
     apply(resource('LimitRange','webdock-defaults',{'limits':[{'type':'Container','defaultRequest':{'cpu':'100m','memory':'128Mi','ephemeral-storage':'128Mi'},'default':{'cpu':'100m','memory':'128Mi','ephemeral-storage':'128Mi'}}]}),p)
     apply({'apiVersion':'v1','kind':'ServiceAccount','metadata':{'name':'default','namespace':namespace,'labels':owner},'automountServiceAccountToken':False},p,default_account=True)
     api='networking.k8s.io/v1'
@@ -189,6 +202,7 @@ def pods(p):
 def proof(p,obj=None,deleted=False,logs=None):
     result={'appID':p['appID'],'revision':p['revision'],'namespace':p['namespace'],'uid':None if obj is None else obj['metadata']['uid'],'ready':True,'deleted':deleted,'replicas':0 if deleted else p['spec']['replicas']}
     if p.get('storageVersion')==1:result['storage']={'volumeBytes':0 if p['action']=='purge-storage' else p['spec']['volumeBytes'],'retained':deleted and p['action']!='purge-storage'}
+    if p.get('serviceBindingsVersion')==1:result['serviceBindings']=[{'id':r['id'],'revision':r['revision']} for r in p['serviceBindings']]
     if logs is not None:result['logs']=logs
     return result
 
@@ -283,6 +297,8 @@ def execute(p):
             lease(p)
             if not get('deployment',name,p['namespace']) and not get('service',name,p['namespace']) and not pods(p):
                 cleanup_environment(p)
+                cleanup_service_secrets(p)
+                service_bindings.apply_and_verify(p,apply,get,check_owner)
                 prepare_namespace({**p,'quota':p['finalQuota']},p['namespace'])
                 return proof(p,deleted=True)
             time.sleep(1)
@@ -304,6 +320,10 @@ def execute(p):
     keep=referenced_environment(([current] if current else [])+active_pods)
     if secret:keep.add(environment_secret_name(p))
     cleanup_environment(p,keep)
+    service_keep=service_bindings.references(([current] if current else [])+active_pods)
+    if p.get('serviceBindings'):service_keep.add(service_bindings.secret_name(p))
+    cleanup_service_secrets(p,service_keep)
+    service_bindings.apply_and_verify(p,apply,get,check_owner)
     if secret:
         kubectl('apply','--server-side','--dry-run=server','--field-manager=webdock','-f','-',obj=secret)
         apply(secret,p)
@@ -319,6 +339,7 @@ def execute(p):
         ready=(status.get('observedGeneration',0)>=observed['metadata']['generation'] and status.get('updatedReplicas',0)==p['spec']['replicas'] and status.get('availableReplicas',0)==p['spec']['replicas'] and len(items)==p['spec']['replicas'] and all(not pod['metadata'].get('deletionTimestamp') and any(c['type']=='Ready' and c['status']=='True' for c in pod.get('status',{}).get('conditions',[])) for pod in items))
         if ready:
             cleanup_environment(p,{environment_secret_name(p)} if secret else set())
+            cleanup_service_secrets(p,{service_bindings.secret_name(p)} if p.get("serviceBindings") else set())
             prepare_namespace({**p,'quota':p['finalQuota']},p['namespace'])
             return proof(p,observed)
         time.sleep(1)

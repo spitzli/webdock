@@ -1,3 +1,4 @@
+import { bindingRuntime } from "./binding-runtime";
 import { searchPage } from "@webdock/search";
 import { createHash } from "node:crypto";
 import {
@@ -77,9 +78,12 @@ function deletionPlan(row: AppRow, storage = false) {
     namespace: row.namespace,
     revision: row.revision,
     observedUID: row.observed_uid,
-    resources: row.lifecycle === "draft" ? [] : storage
-      ? ["PersistentVolume", "PersistentVolumeClaim", "Filesystem"]
-      : ["Deployment", "Service", "Secret"],
+    resources:
+      row.lifecycle === "draft"
+        ? []
+        : storage
+          ? ["PersistentVolume", "PersistentVolumeClaim", "Filesystem"]
+          : ["Deployment", "Service", "Secret"],
     persistentData: row.lifecycle !== "draft" && Boolean(row.spec.volumeBytes),
     volumeBytes: row.spec.volumeBytes ?? 0,
     storagePurged: storage,
@@ -160,7 +164,7 @@ export async function executeAppCommand(
     if (!cmd.action.startsWith("apps."))
       throw new HostingError(400, "Unknown application action.");
     const action = cmd.action;
-    let row = "appID" in cmd ? await getApp(db, cmd.appID) : null;
+    let row = "appID" in cmd && cmd.appID ? await getApp(db, cmd.appID) : null;
     const projectID =
       row?.project_id ?? ("projectID" in cmd ? cmd.projectID : undefined);
     if (!projectID)
@@ -236,7 +240,11 @@ export async function executeAppCommand(
     if (row) row = await getApp(db, row.id);
     const request = await replay(db, actor, cmd.idempotencyKey, cmd);
     if (request.existing) {
-      if (["apps.reconcile","apps.prepare"].includes(action) || (action === "apps.delete" && !request.existing.app_id)) return request.existing.result;
+      if (
+        ["apps.reconcile", "apps.prepare"].includes(action) ||
+        (action === "apps.delete" && !request.existing.app_id)
+      )
+        return request.existing.result;
       return {
         id: request.existing.id,
         appID: request.existing.app_id,
@@ -244,16 +252,61 @@ export async function executeAppCommand(
         revision: request.existing.target_revision,
       };
     }
-    if (action === 'apps.prepare') {
-      if ((await limits(db, customerID)).subscriptionRevision !== cmd.subscriptionRevision)
-        throw new HostingError(409, 'Hosting allowance changed. Review the application.');
-      if ((await db.query("SELECT count(*)::int AS n FROM webdock_auth.hosting_app WHERE project_id=$1 AND lifecycle='draft' AND status<>'deleted'", [projectID])).rows[0].n >= 20)
-        throw new HostingError(409, 'Finish or delete an application draft before creating another.');
-      const prepared = (await db.query("INSERT INTO webdock_auth.hosting_app(project_id,name,spec,lifecycle,status) VALUES($1,$2,$3,'draft','draft') RETURNING id,revision", [projectID,cmd.name,JSON.stringify(preparedAppSpecSchema.parse(cmd.spec))])).rows[0];
-      if (cmd.environment) await db.query('UPDATE webdock_auth.hosting_app SET environment_encrypted=$2 WHERE id=$1', [prepared.id,sealEnvironment(prepared.id,patchEnvironment({},cmd.environment))]);
-      const result = {appID:prepared.id,revision:prepared.revision,lifecycle:'draft',status:'draft'};
-      await recordResult(db,actor,cmd.idempotencyKey,request.hash,action,result,{customerID,projectID,clusterID});
-      await audit(db,actor,action,prepared.id);
+    if (action === "apps.prepare") {
+      if (
+        (await limits(db, customerID)).subscriptionRevision !==
+        cmd.subscriptionRevision
+      )
+        throw new HostingError(
+          409,
+          "Hosting allowance changed. Review the application.",
+        );
+      if (
+        (
+          await db.query(
+            "SELECT count(*)::int AS n FROM webdock_auth.hosting_app WHERE project_id=$1 AND lifecycle='draft' AND status<>'deleted'",
+            [projectID],
+          )
+        ).rows[0].n >= 20
+      )
+        throw new HostingError(
+          409,
+          "Finish or delete an application draft before creating another.",
+        );
+      const prepared = (
+        await db.query(
+          "INSERT INTO webdock_auth.hosting_app(project_id,name,spec,lifecycle,status) VALUES($1,$2,$3,'draft','draft') RETURNING id,revision",
+          [
+            projectID,
+            cmd.name,
+            JSON.stringify(preparedAppSpecSchema.parse(cmd.spec)),
+          ],
+        )
+      ).rows[0];
+      if (cmd.environment)
+        await db.query(
+          "UPDATE webdock_auth.hosting_app SET environment_encrypted=$2 WHERE id=$1",
+          [
+            prepared.id,
+            sealEnvironment(prepared.id, patchEnvironment({}, cmd.environment)),
+          ],
+        );
+      const result = {
+        appID: prepared.id,
+        revision: prepared.revision,
+        lifecycle: "draft",
+        status: "draft",
+      };
+      await recordResult(
+        db,
+        actor,
+        cmd.idempotencyKey,
+        request.hash,
+        action,
+        result,
+        { customerID, projectID, clusterID },
+      );
+      await audit(db, actor, action, prepared.id);
       return result;
     }
     if (
@@ -261,19 +314,49 @@ export async function executeAppCommand(
       !["apps.purgeStorage", "apps.reconcile"].includes(action)
     )
       throw new HostingError(409, "Application is deleted.");
-    if (row?.lifecycle === 'draft') {
-      if (action === 'apps.delete') {
+    if (row?.lifecycle === "draft") {
+      if (action === "apps.delete") {
         const preview = deletionPlan(row);
         if (cmd.confirmName !== row.name || cmd.planHash !== preview.planHash)
-          throw new HostingError(409, 'Deletion preview changed. Review the current application.');
-        await db.query("UPDATE webdock_auth.hosting_app SET status='deleted',spec=jsonb_set(spec,'{volumeBytes}','0'),environment_encrypted=NULL,revision=revision+1 WHERE id=$1",[row.id]);
-        const result = {appID:row.id,status:'deleted',revision:row.revision+1};
-        await recordResult(db,actor,cmd.idempotencyKey,request.hash,action,result,{customerID,projectID,clusterID});
-        await audit(db,actor,action,row.id);
+          throw new HostingError(
+            409,
+            "Deletion preview changed. Review the current application.",
+          );
+        await db.query(
+          "UPDATE webdock_auth.hosting_app SET status='deleted',spec=jsonb_set(spec,'{volumeBytes}','0'),environment_encrypted=NULL,revision=revision+1 WHERE id=$1",
+          [row.id],
+        );
+        await db.query(
+          "UPDATE webdock_auth.hosting_service_binding SET state='disconnected',secret_encrypted=NULL,revision=revision+1,observed_revision=revision+1 WHERE app_id=$1 AND state<>'disconnected'",
+          [row.id],
+        );
+        const result = {
+          appID: row.id,
+          status: "deleted",
+          revision: row.revision + 1,
+        };
+        await recordResult(
+          db,
+          actor,
+          cmd.idempotencyKey,
+          request.hash,
+          action,
+          result,
+          { customerID, projectID, clusterID },
+        );
+        await audit(db, actor, action, row.id);
         return result;
       }
-      if (action !== 'apps.deploy') throw new HostingError(409, 'Complete the first deployment before using application controls.');
-    } else if (action === 'apps.deploy') throw new HostingError(409, 'The first deployment already exists. Update the application instead.');
+      if (action !== "apps.deploy")
+        throw new HostingError(
+          409,
+          "Complete the first deployment before using application controls.",
+        );
+    } else if (action === "apps.deploy")
+      throw new HostingError(
+        409,
+        "The first deployment already exists. Update the application instead.",
+      );
     if (action === "apps.reconcile") {
       const op = (
         await db.query(
@@ -342,7 +425,11 @@ export async function executeAppCommand(
         "Application changed. Refresh before editing.",
       );
     let spec: AppSpec = row?.spec;
-    if (action === "apps.create" || action === "apps.update" || action === "apps.deploy")
+    if (
+      action === "apps.create" ||
+      action === "apps.update" ||
+      action === "apps.deploy"
+    )
       spec = resolveAppSpec(cmd.spec);
     if (action === "apps.rollback") {
       if (!row?.previous_spec)
@@ -365,12 +452,18 @@ export async function executeAppCommand(
         )
       : {};
     if (
-      (action === "apps.create" || action === "apps.update" || action === "apps.deploy") &&
+      (action === "apps.create" ||
+        action === "apps.update" ||
+        action === "apps.deploy") &&
       cmd.environment
     )
       environment = patchEnvironment(environment, cmd.environment);
     spec = resolveAppSpec(spec);
-    if (row && row.lifecycle !== "draft" && (spec.volumeBytes ?? 0) !== (row.spec.volumeBytes ?? 0))
+    if (
+      row &&
+      row.lifecycle !== "draft" &&
+      (spec.volumeBytes ?? 0) !== (row.spec.volumeBytes ?? 0)
+    )
       throw new HostingError(
         409,
         "Persistent storage size is fixed at application creation.",
@@ -420,6 +513,32 @@ export async function executeAppCommand(
         403,
         "Custom images are not enabled for this project.",
       );
+    const serviceBindings = ["apps.delete", "apps.purgeStorage"].includes(
+      action,
+    )
+      ? []
+      : await bindingRuntime(db, row?.id ?? "0", environment);
+    const hadBindings = row
+      ? (
+          await db.query(
+            "SELECT 1 FROM webdock_auth.hosting_service_binding WHERE app_id=$1 AND state<>'disconnected' LIMIT 1",
+            [row.id],
+          )
+        ).rowCount
+      : 0;
+    if (serviceBindings.length || hadBindings) {
+      const capability = (
+        await db.query(
+          "SELECT observation->'capabilities'->>'serviceBindingsVersion' AS version FROM webdock_auth.hosting_agent WHERE cluster_id=$1 AND NOT revoked",
+          [clusterID],
+        )
+      ).rows[0];
+      if (capability?.version !== "1")
+        throw new HostingError(
+          409,
+          "Update the cluster agent before connecting services.",
+        );
+    }
     const purging = action === "apps.purgeStorage";
     if (purging && (row?.status !== "deleted" || !storageRequired))
       throw new HostingError(
@@ -502,6 +621,9 @@ export async function executeAppCommand(
         spec,
         revision: row.revision,
         action: purging ? "purge-storage" : deleting ? "delete" : "apply",
+        ...(serviceBindings.length || hadBindings
+          ? { serviceBindingsVersion: 1, serviceBindings }
+          : {}),
         ...(storageRequired ? { storageVersion: 1 } : {}),
         expectedUID: row.observed_uid ?? null,
         ...(environmentRequired
@@ -540,6 +662,11 @@ export async function executeAppCommand(
         "UPDATE webdock_auth.hosting_app SET operation_id=$2 WHERE id=$1",
         [row.id, op.id],
       );
+      if (hadBindings)
+        await db.query(
+          "UPDATE webdock_auth.hosting_service_binding SET operation_id=$2,state=CASE WHEN $3 THEN 'disconnecting' WHEN state='disconnecting' THEN state ELSE 'pending' END WHERE app_id=$1 AND state<>'disconnected'",
+          [row.id, op.id, deleting],
+        );
       await audit(db, actor, action, row.id, "queued");
       return {
         id: op.id,

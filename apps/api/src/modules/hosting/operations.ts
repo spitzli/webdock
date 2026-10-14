@@ -116,6 +116,7 @@ export async function claimOperation(agent: Agent) {
       await db.query(
         `SELECT o.* FROM webdock_auth.hosting_operation o WHERE o.cluster_id=$1 AND o.status='queued' AND o.action<>'byok.workload' AND o.action NOT LIKE 'databases.%'
  AND (o.desired->>'storageVersion' IS DISTINCT FROM '1' OR EXISTS(SELECT 1 FROM webdock_auth.hosting_agent a WHERE a.cluster_id=o.cluster_id AND a.observation->'capabilities'->>'storageVersion'='1' AND (a.observation->'capabilities'->>'storage'='true' OR o.action IN ('apps.delete','apps.purgeStorage','apps.logs'))))
+ AND (o.desired->>'serviceBindingsVersion' IS DISTINCT FROM '1' OR EXISTS(SELECT 1 FROM webdock_auth.hosting_agent a WHERE a.cluster_id=o.cluster_id AND a.observation->'capabilities'->>'serviceBindingsVersion'='1'))
  AND (o.desired->>'environmentVersion' IS DISTINCT FROM '1' OR EXISTS(SELECT 1 FROM webdock_auth.hosting_agent a WHERE a.cluster_id=o.cluster_id AND a.observation->'capabilities'->>'environment'='true'))
  AND NOT EXISTS(SELECT 1 FROM webdock_auth.hosting_operation busy WHERE busy.project_id=o.project_id AND (busy.status='running' OR (busy.status='needs-reconciliation' AND o.action<>'apps.logs')))
  ORDER BY o.created_at,o.id FOR UPDATE SKIP LOCKED LIMIT 1`,
@@ -208,6 +209,17 @@ const proofSchema = z
       .regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/)
       .optional(),
     logsTruncated: z.boolean().optional(),
+    serviceBindings: z
+      .array(
+        z
+          .object({
+            id: z.string().regex(/^[1-9][0-9]*$/),
+            revision: z.number().int().positive(),
+          })
+          .strict(),
+      )
+      .max(32)
+      .optional(),
     storage: z
       .object({
         volumeBytes: z.number().int().nonnegative(),
@@ -359,6 +371,20 @@ export async function completeOperation(
           409,
           "Persistent storage proof does not match the operation.",
         );
+      if (row.desired.serviceBindingsVersion === 1) {
+        const expected = (
+          row.desired.serviceBindings as { id: string; revision: number }[]
+        ).map(({ id, revision }) => ({ id, revision }));
+        if (JSON.stringify(proof.serviceBindings) !== JSON.stringify(expected))
+          throw new HostingError(
+            409,
+            "Service connection proof does not match the operation.",
+          );
+        await db.query(
+          "UPDATE webdock_auth.hosting_service_binding SET observed_revision=revision,state=CASE WHEN state='disconnecting' THEN 'disconnected' ELSE 'connected' END,secret_encrypted=CASE WHEN state='disconnecting' THEN NULL ELSE secret_encrypted END WHERE app_id=$1 AND operation_id=$2 AND ($3 OR state='disconnecting')",
+          [row.app_id, row.id, proof.replicas > 0],
+        );
+      }
       const completedSpec = purging
         ? { ...row.desired.spec, volumeBytes: 0 }
         : row.desired.spec;

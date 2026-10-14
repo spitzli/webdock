@@ -1,3 +1,4 @@
+import { executeServiceBinding } from "./service-bindings";
 import { relocateProject } from "./relocation";
 import { withHostingDatabase } from "../../db/database-context";
 import { executeDatabaseCommand } from "./databases";
@@ -28,6 +29,8 @@ export async function executeHosting(
 ) {
   return withHostingDatabase(actor, async () => {
     const cmd = commandSchema.parse(raw);
+    if (cmd.action.startsWith("services."))
+      return executeServiceBinding(actor, cmd);
     if (cmd.action === "projects.relocate") return relocateProject(actor, cmd);
     if (cmd.action.startsWith("databases."))
       return executeDatabaseCommand(actor, cmd);

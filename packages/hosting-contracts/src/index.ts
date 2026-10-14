@@ -1,3 +1,5 @@
+import { serviceCommands } from "./service-bindings";
+export * from "./service-bindings";
 import {
   resourceID,
   idempotencyKey as key,
@@ -145,12 +147,22 @@ export const appSpecSchema = z
     "Persistent storage supports one instance.",
   );
 export type AppSpec = z.infer<typeof appSpecSchema>;
-export const preparedAppSpecSchema = z.object({
-  args: appSpecSchema.shape.args, port: appSpecSchema.shape.port,
-  healthPath: appSpecSchema.shape.healthPath, cpuMillicores: appSpecSchema.shape.cpuMillicores,
-  memoryBytes: appSpecSchema.shape.memoryBytes, ephemeralBytes: appSpecSchema.shape.ephemeralBytes,
-  replicas: appSpecSchema.shape.replicas, volumeBytes: appSpecSchema.shape.volumeBytes,
-}).strict().refine(s => !s.volumeBytes || s.replicas <= 1, 'Persistent storage supports one instance.');
+export const preparedAppSpecSchema = z
+  .object({
+    args: appSpecSchema.shape.args,
+    port: appSpecSchema.shape.port,
+    healthPath: appSpecSchema.shape.healthPath,
+    cpuMillicores: appSpecSchema.shape.cpuMillicores,
+    memoryBytes: appSpecSchema.shape.memoryBytes,
+    ephemeralBytes: appSpecSchema.shape.ephemeralBytes,
+    replicas: appSpecSchema.shape.replicas,
+    volumeBytes: appSpecSchema.shape.volumeBytes,
+  })
+  .strict()
+  .refine(
+    (s) => !s.volumeBytes || s.replicas <= 1,
+    "Persistent storage supports one instance.",
+  );
 export type PreparedAppSpec = z.infer<typeof preparedAppSpecSchema>;
 
 export function resolveAppSpec(value: unknown): AppSpec {
@@ -192,12 +204,21 @@ const appViewFields = {
   lastError: z.string().nullable(),
   logs: z.string().nullable(),
 };
-export const appViewSchema = z.discriminatedUnion('lifecycle', [
-  z.object({...appViewFields, lifecycle:z.literal('draft'), spec:preparedAppSpecSchema}),
-  z.object({...appViewFields, lifecycle:z.literal('deployed').default('deployed'), spec:appSpecSchema}),
+export const appViewSchema = z.discriminatedUnion("lifecycle", [
+  z.object({
+    ...appViewFields,
+    lifecycle: z.literal("draft"),
+    spec: preparedAppSpecSchema,
+  }),
+  z.object({
+    ...appViewFields,
+    lifecycle: z.literal("deployed").default("deployed"),
+    spec: appSpecSchema,
+  }),
 ]);
 export type HostingAppView = z.infer<typeof appViewSchema>;
 export const commandSchema = z.discriminatedUnion("action", [
+  ...serviceCommands,
   z
     .object({
       action: z.literal("projects.relocate"),
@@ -246,8 +267,28 @@ export const commandSchema = z.discriminatedUnion("action", [
     })
     .strict(),
   z.object({ action: z.literal("apps.get"), appID: resourceID }).strict(),
-  z.object({action:z.literal('apps.prepare'),projectID:resourceID,name,spec:preparedAppSpecSchema,environment:environmentPatchSchema.optional(),subscriptionRevision:revision,idempotencyKey:key}).strict(),
-  z.object({action:z.literal('apps.deploy'),appID:resourceID,spec:appSpecSchema,environment:environmentPatchSchema.optional(),revision,subscriptionRevision:revision,idempotencyKey:key}).strict(),
+  z
+    .object({
+      action: z.literal("apps.prepare"),
+      projectID: resourceID,
+      name,
+      spec: preparedAppSpecSchema,
+      environment: environmentPatchSchema.optional(),
+      subscriptionRevision: revision,
+      idempotencyKey: key,
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal("apps.deploy"),
+      appID: resourceID,
+      spec: appSpecSchema,
+      environment: environmentPatchSchema.optional(),
+      revision,
+      subscriptionRevision: revision,
+      idempotencyKey: key,
+    })
+    .strict(),
   z
     .object({
       action: z.literal("apps.create"),
@@ -439,6 +480,7 @@ export const commandSchema = z.discriminatedUnion("action", [
 ]);
 export type HostingCommand = z.infer<typeof commandSchema>;
 export const readActions = new Set<HostingCommand["action"]>([
+  "services.list",
   ...databaseReadActions,
   ...gitReadActions,
   "byok.mail.get",
@@ -508,6 +550,7 @@ export const observationSchema = z
         storage: z.boolean(),
         ingress: z.boolean(),
         environment: z.boolean().optional(),
+        serviceBindingsVersion: z.literal(1).optional(),
         storageVersion: z.literal(1).optional(),
         databaseVersion: z.literal(1).optional(),
         databasePools: z

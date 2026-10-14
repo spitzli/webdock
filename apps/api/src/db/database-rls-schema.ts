@@ -29,7 +29,7 @@ const identity = new Set(
   ),
 );
 const authCustomer = new Set(
-  "tenant_customer hosting_project hosting_limit hosting_operation hosting_reservation hosting_byok_policy hosting_vercel hosting_vercel_flow hosting_turbosmtp hosting_database hosting_database_offer hosting_database_order git_connection git_repository git_flow git_source git_build git_artifact git_release git_vercel_target plan_offer tenant_subscription subscription_history tenant_storage mail_sender_domain mail_tenant_account mail_tracking_domain mail_tracking_operation mail_tracking_settings mail_connection mail_connection_tracking_settings mail_connection_secret mail_provider_operation mail_connection_domain mail_api_key mail_message mail_message_content mail_recipient mail_event mail_suppression mail_webhook mail_webhook_delivery mail_webhook_attempt mail_batch mail_batch_item mail_idempotency mail_usage_period mail_usage_reservation mail_rate_window mail_request_log mail_import_map".split(
+  "hosting_service_binding tenant_customer hosting_project hosting_limit hosting_operation hosting_reservation hosting_byok_policy hosting_vercel hosting_vercel_flow hosting_turbosmtp hosting_database hosting_database_offer hosting_database_order git_connection git_repository git_flow git_source git_build git_artifact git_release git_vercel_target plan_offer tenant_subscription subscription_history tenant_storage mail_sender_domain mail_tenant_account mail_tracking_domain mail_tracking_operation mail_tracking_settings mail_connection mail_connection_tracking_settings mail_connection_secret mail_provider_operation mail_connection_domain mail_api_key mail_message mail_message_content mail_recipient mail_event mail_suppression mail_webhook mail_webhook_delivery mail_webhook_attempt mail_batch mail_batch_item mail_idempotency mail_usage_period mail_usage_reservation mail_rate_window mail_request_log mail_import_map".split(
     " ",
   ),
 );
@@ -576,6 +576,7 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         if (
           [
             "hosting_project",
+            "hosting_service_binding",
             "hosting_app",
             "hosting_operation",
             "hosting_reservation",
