@@ -35,8 +35,8 @@ Enter the test discount on Polar's checkout page; the plain checkout link does n
 - [x] API typecheck/build and all 51 API unit tests pass.
 - [x] Signed order/customer event tests pass; tampered payloads return 403.
 - [x] Product and webhook IDs were returned by Polar; webhook signing secret was saved directly to `.env`.
-- [ ] Deploy the new API artifact with the three private environment keys.
-- [ ] Verify production checkout redirects and unsigned webhooks are rejected.
+- [x] Deploy the new API artifact with the three private environment keys.
+- [x] Production checkout redirects with 302 to Polar; unsigned webhooks return 403.
 - [ ] Complete a hosted checkout using the 100% code and verify the resulting webhook deliveries.
 
 A Python urllib probe was rejected by an edge browser-signature rule (403). The Node.js request and the installed SDK, including the production-container connection probe, succeeded. Do not diagnose that specific 403 as insufficient token scope.
@@ -44,3 +44,15 @@ A Python urllib probe was rejected by an edge browser-signature rule (403). The 
 ## Local development
 
 Use `npm run dev -w @webdock/api` with the existing local database configuration and `WEBDOCK_API_DOMAINS` including `auth,portal,registry,billing`. The full Webdock API also requires its usual DB/auth configuration; the three Polar keys do not replace it. No long-running dev server was started by this setup.
+
+## Webdock catalog
+
+The existing operator-authorized catalog contains these unpublished yearly drafts, using the previously agreed product plan and EUR prices reconfirmed by the owner:
+
+| SKU | Annual price incl. tax | Websites | Editors | Media | Emails/month |
+|---|---:|---:|---:|---:|---:|
+| website-mini-year-v1 | EUR 58.80 | 1 | 1 | 500 MB | 100 |
+| website-basic-year-v1 | EUR 118.80 | 1 | 3 | 2,000 MB | 1,000 |
+| website-plus-year-v1 | EUR 238.80 | 1 | 5 | 5,000 MB | 3,000 |
+
+These drafts are not published to Polar and are not enabled for sale or operational fulfillment. The separate one-time Test Product above is available in Polar for onboarding. The live organization connection has also been saved successfully through the authenticated Webdock operator API.
