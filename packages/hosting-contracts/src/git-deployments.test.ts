@@ -84,3 +84,16 @@ test("source health paths are bounded same-origin paths with a historical root d
   for (const healthPath of ["", "https://evil.test/", "//evil", "/../health", "/health?token=x", "/health#fragment", "/a\\b", "/%2f%2fevil", "/" + "a".repeat(160)])
     assert.equal(gitCommandSchema.safeParse({ ...source, healthPath }).success, false, healthPath);
 });
+
+test('Git selectors preserve application identity and validate source filters', () => {
+  for (const action of ['git.source.get', 'git.builds.request']) {
+    const command = {action, projectID:'123', targetID:'321', ...(action === 'git.builds.request' ? {idempotencyKey:'application-build-123'} : {})};
+    assert.equal(gitCommandSchema.safeParse(command).success, true);
+    assert.equal(gitCommandSchema.safeParse({...command, targetID:'https://untrusted'}).success, false);
+  }
+  for (const action of ['git.builds.list','git.releases.list']) {
+    assert.equal(gitCommandSchema.safeParse({action,projectID:'123',sourceID:'456'}).success,true);
+    assert.equal(gitCommandSchema.safeParse({action,projectID:'123',sourceID:'0'}).success,false);
+  }
+  assert.equal(gitCommandSchema.safeParse({action:'git.sources.list',projectID:'123'}).success,true);
+});

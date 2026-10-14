@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS webdock_auth.git_flow (
 );
 CREATE TABLE IF NOT EXISTS webdock_auth.git_source (
  id varchar PRIMARY KEY DEFAULT webdock_auth.next_snowflake(),customer_id varchar NOT NULL REFERENCES webdock_admin.customers(id),
- project_id varchar NOT NULL UNIQUE REFERENCES webdock_auth.hosting_project(project_id),connection_id varchar NOT NULL,repository_id text NOT NULL,
+ project_id varchar NOT NULL REFERENCES webdock_auth.hosting_project(project_id),connection_id varchar NOT NULL,repository_id text NOT NULL,
  branch text NOT NULL,root_directory text NOT NULL,recipe text NOT NULL CHECK(recipe IN ('dockerfile','vercel')),target_id varchar NOT NULL,
  revision integer NOT NULL DEFAULT 1,enabled boolean NOT NULL DEFAULT true,environment_revision integer NOT NULL DEFAULT 1,
  latest_build_id varchar,desired_release_id varchar,created_at timestamptz NOT NULL DEFAULT now(),
@@ -74,7 +74,19 @@ CREATE TABLE IF NOT EXISTS webdock_auth.git_release (
 );
 ALTER TABLE webdock_auth.git_release ADD COLUMN IF NOT EXISTS worker_id varchar REFERENCES webdock_auth.git_worker(id);
 ALTER TABLE webdock_auth.git_release ADD COLUMN IF NOT EXISTS worker_generation integer;
-CREATE UNIQUE INDEX IF NOT EXISTS git_release_publication ON webdock_auth.git_release(project_id) WHERE status IN ('deploying','needs-reconciliation');
+ALTER TABLE webdock_auth.git_source DROP CONSTRAINT IF EXISTS git_source_project_id_key;
+CREATE UNIQUE INDEX IF NOT EXISTS git_source_project_target_key ON webdock_auth.git_source(project_id,target_id);
+ALTER TABLE webdock_auth.git_release ADD COLUMN IF NOT EXISTS source_id varchar;
+UPDATE webdock_auth.git_release r SET source_id=b.source_id FROM webdock_auth.git_artifact a JOIN webdock_auth.git_build b ON b.id=a.build_id WHERE r.artifact_id=a.id AND r.source_id IS NULL;
+ALTER TABLE webdock_auth.git_release ALTER COLUMN source_id SET NOT NULL;
+DO $$ BEGIN
+ IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname='git_release_source_owner_fk' AND conrelid='webdock_auth.git_release'::regclass) THEN
+ ALTER TABLE webdock_auth.git_release ADD CONSTRAINT git_release_source_owner_fk FOREIGN KEY(source_id,customer_id,project_id) REFERENCES webdock_auth.git_source(id,customer_id,project_id);
+ END IF;
+END $$;
+DROP INDEX IF EXISTS webdock_auth.git_release_publication;
+CREATE UNIQUE INDEX IF NOT EXISTS git_release_source_publication ON webdock_auth.git_release(source_id) WHERE status IN ('deploying','needs-reconciliation');
+
 CREATE TABLE IF NOT EXISTS webdock_auth.git_receipt (
  delivery_id text PRIMARY KEY,event text NOT NULL,installation_id text NOT NULL,processed_at timestamptz,event_data jsonb,created_at timestamptz NOT NULL DEFAULT now()
 );
@@ -83,7 +95,7 @@ ALTER TABLE webdock_auth.git_release ADD COLUMN IF NOT EXISTS publication_target
 -- Only matching source revisions can establish a legacy release's original target.
 UPDATE webdock_auth.git_release r SET publication_target=jsonb_build_object('recipe',s.recipe,'targetID',s.target_id,'teamID',t.team_id,'healthPath','/')
 FROM webdock_auth.git_source s LEFT JOIN webdock_auth.git_vercel_target t ON t.project_id=s.project_id AND t.customer_id=s.customer_id AND t.target_id=s.target_id
-WHERE r.project_id=s.project_id AND r.customer_id=s.customer_id AND r.source_revision=s.revision AND r.publication_target IS NULL
+WHERE r.source_id=s.id AND r.customer_id=s.customer_id AND r.source_revision=s.revision AND r.publication_target IS NULL
 AND (s.recipe='dockerfile' OR t.team_id IS NOT NULL);
 ALTER TABLE webdock_auth.git_release ADD COLUMN IF NOT EXISTS approved_session_id text;
 ALTER TABLE webdock_auth.git_release ADD COLUMN IF NOT EXISTS approved_source text;

@@ -38,6 +38,8 @@ export type HostingActor = {
   subject: string;
   sessionID: string;
   source: "studio" | "oauth" | "git-policy";
+  gitSourceID?: string;
+  gitSourceRevision?: number;
   scopes: readonly string[];
 };
 const quantity = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);

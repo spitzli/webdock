@@ -9,6 +9,7 @@ import { ApplicationEnvironment } from "@/components/hosting/environment";
 import { HostingRefresh } from "@/components/hosting/refresh";
 
 type Source = {
+  id: string;
   connectionID: string;
   repositoryID: string;
   branch: string;
@@ -55,6 +56,7 @@ export default async function GitDeployments({
 }: {
   params: Promise<{ projectID: string }>; view?: "overview" | "setup";
   searchParams: Promise<{
+    target?: string;
     connection?: string;
     page?: string;
     releasePage?: string;
@@ -64,6 +66,20 @@ export default async function GitDeployments({
     query = await searchParams;
   const { t } = await getRequestI18n();
   const path = `/hosting/projects/${projectID}/git`;
+  const sources = await hostingPageCall<{docs: (Source & {repositoryName: string})[]}>({action:'git.sources.list',projectID},path);
+  if (!query.target && sources.docs.length > 1) return <>
+    <h1>{t('Git deployments')}</h1><section className="panel">
+      <h2>{t('Select an application')}</h2>
+      <ul className="workspace-list">{sources.docs.map(source => <li key={source.id}>
+        <Link href={`${path}${view === 'setup' ? '/setup' : ''}?target=${encodeURIComponent(source.targetID)}`}>
+          {source.repositoryName} · {source.rootDirectory} · {source.targetID}
+        </Link>
+      </li>)}</ul>
+    </section>
+  </>;
+  const targetID = query.target ?? sources.docs[0]?.targetID;
+  const selectedSource = sources.docs.find(source => source.targetID === targetID);
+  const targetQuery = targetID ? `?target=${encodeURIComponent(targetID)}` : '';
   const data = await hostingPageCall<{
     source: Source | null;
     customerID: string;
@@ -72,7 +88,7 @@ export default async function GitDeployments({
     candidateTargets: { id: string; name: string; mode: "byok" }[];
     canBindPlatform: boolean;
     blockers: string[];
-  }>({ action: "git.source.get", projectID }, path);
+  }>({ action: "git.source.get", projectID, targetID }, path + targetQuery);
   const setup = view === "setup";
   const [connections, builds, releases] = await Promise.all([
     setup ? hostingPageCall<{ docs: Connection[] }>(
@@ -83,6 +99,7 @@ export default async function GitDeployments({
       {
         action: "git.builds.list",
         projectID,
+        sourceID: selectedSource?.id,
         page: /^[1-9][0-9]{0,3}$/.test(query.page ?? "")
           ? Number(query.page)
           : 1,
@@ -94,6 +111,7 @@ export default async function GitDeployments({
       {
         action: "git.releases.list",
         projectID,
+        sourceID: selectedSource?.id,
         page: /^[1-9][0-9]{0,3}$/.test(query.releasePage ?? "")
           ? Number(query.releasePage)
           : 1,
@@ -111,8 +129,8 @@ export default async function GitDeployments({
   return (
     <>
       <h1>{t("Git deployments")}</h1>
-      <AreaNavigation links={[{href:path,label:t("Activity"),exact:true},{href:path+"/setup",label:t("Configuration"),exact:true}]}/>
-      {!setup && (!data.source || data.blockers.length > 0) && <p><Link className="button secondary" href={path+"/setup"}>{t("Configure deployments")}</Link></p>}
+      <AreaNavigation links={[{href:path+targetQuery,label:t("Activity"),exact:true},{href:path+"/setup"+targetQuery,label:t("Configuration"),exact:true}]}/>
+      {!setup && (!data.source || data.blockers.length > 0) && <p><Link className="button secondary" href={path+"/setup"+targetQuery}>{t("Configure deployments")}</Link></p>}
       <HostingRefresh
         active={
           builds.docs.some((b) => ["queued", "running"].includes(b.status)) ||
@@ -224,6 +242,7 @@ export default async function GitDeployments({
           <>
             {active.length > 1 && (
               <form method="get">
+                {targetID && <input type="hidden" name="target" value={targetID}/>}
                 <label className="field">
                   {t("GitHub account")}
                   <select name="connection" defaultValue={connection.id}>
@@ -428,6 +447,7 @@ export default async function GitDeployments({
               command={{
                 action: "git.builds.request",
                 projectID,
+                targetID: source.targetID,
                 idempotencyKey: randomUUID(),
               }}
               label={t("Build latest commit")}
@@ -477,7 +497,7 @@ export default async function GitDeployments({
               (_, i) => (
                 <Link
                   key={i}
-                  href={`${path}?page=${i + 1}`}
+                  href={`${path}?${new URLSearchParams({page: String(i + 1), ...(targetID ? {target: targetID} : {})})}`}
                   style={{ marginRight: "0.75rem" }}
                 >
                   {i + 1}
@@ -555,7 +575,7 @@ export default async function GitDeployments({
               (_, i) => (
                 <Link
                   key={i}
-                  href={`${path}?releasePage=${i + 1}`}
+                  href={`${path}?${new URLSearchParams({releasePage: String(i + 1), ...(targetID ? {target: targetID} : {})})}`}
                   style={{ marginRight: "0.75rem" }}
                 >
                   {i + 1}
