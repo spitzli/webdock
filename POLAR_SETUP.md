@@ -47,7 +47,7 @@ Use `npm run dev -w @webdock/api` with the existing local database configuration
 
 ## Webdock catalog
 
-The existing operator-authorized catalog contains 35 unpublished entries from the owner-provided product plan: websites, apps/bots, Connect/BYOK, mail, media/editor add-ons, databases and services. There are 22 fixed-price entries and 13 quote-only entries. The three website prices are yearly and include tax:
+The original operator-authorized catalog contained 35 draft entries from the owner-provided product plan: websites, apps/bots, Connect/BYOK, mail, media/editor add-ons, databases and services. The owner subsequently removed the separate product-catalog module subscription: the product catalog belongs to the website package. The current source inventory has 21 fixed-price entries and 13 quote-only entries; the removed subscription remains archived for audit history. The three website prices are yearly and include tax:
 
 | SKU | Annual price incl. tax | Websites | Editors | Media | Emails/month |
 |---|---:|---:|---:|---:|---:|
@@ -55,10 +55,18 @@ The existing operator-authorized catalog contains 35 unpublished entries from th
 | website-basic-year-v1 | EUR 118.80 | 1 | 3 | 2,000 MB | 1,000 |
 | website-plus-year-v1 | EUR 238.80 | 1 | 5 | 5,000 MB | 3,000 |
 
-These drafts are not published to Polar and are not enabled for sale or operational fulfillment. The separate one-time Test Product above is available in Polar for onboarding. The live organization connection has also been saved successfully through the authenticated Webdock operator API.
+All 21 fixed-price entries are mapped as ready in both Polar environments through the operator workflow. Webdock sales and enforcement remain disabled. The earlier one-time Test Product is now archived. The live organization connection has also been saved successfully through the authenticated Webdock operator API.
 
-The complete source inventory is `apps/api/src/modules/billing/initial-catalog.ts`. Non-website prices follow the source's **net EUR** basis. Price ranges, starting prices and unspecified amounts are quote-only, never zero-price products. Service descriptions preserve the original capacity/backup/SLA limits. Additional websites reuse a website package; customer-specific sponsorships and individual plans are not sold as reusable free catalog products.
+The current source inventory is `apps/api/src/modules/billing/initial-catalog.ts`. Non-website prices follow the source's **net EUR** basis. Price ranges, starting prices and unspecified amounts are quote-only, never zero-price products. Service descriptions preserve the original capacity/backup/SLA limits. Additional websites reuse a website package; customer-specific sponsorships and individual plans are not sold as reusable free catalog products.
 
 Migration `0021_full_catalog.sql` adds services, one-time intervals and nullable prices for quotes. Manual fulfillment is explicit; the existing SQL purchase function remains website-only. Quote-only entries cannot be published to Polar. No additional customer resources, service grants, sales enablement or operational approvals are created by seeding the catalog.
 
-Production readback confirms all 35 catalog SKUs, 13 null-priced quote entries, and no published or operationally approved entries. Existing website rows were preserved; the other 32 were created through the authenticated operator endpoint. The API and worker use image `sha256:67a0baff645f3ee01e63b20892f1b5be9a38e00d385540ce2a36f8a4c51ae480`. Restricted-role MCP catalog persistence, existing checkout and private-offer regressions passed.
+The initial production seed contained 35 catalog SKUs and 13 null-priced quote entries. After publication and the owner’s correction, each environment has 21 ready mappings, one archived module subscription and 13 quote-only entries. Existing website rows were preserved; the other 32 were created through the authenticated operator endpoint. The API and worker use image `sha256:2a2d6c40ba5c4f6d046bfe5714c4c8c55c2740b7ed0305106559b53a217fd7cb`. Restricted-role MCP catalog persistence, existing checkout and private-offer regressions passed.
+
+## Publication read-after-write fix
+
+Polar returned complete product-create responses while immediate GET/list requests still omitted the products. The same IDs became readable later. Publication now strictly validates the full create response (organization, metadata, price, currency, recurrence and tax behavior), rather than requiring an immediate GET. Uncertain/lost create responses still use inventory recovery and never automatically create a second product.
+
+A diagnostic retry created one sandbox duplicate; it was archived and marked as replaced by the original. The removed `catalog-module-month-v1` subscription is archived in both environments; it is not an extra website charge. No payments or customer resources were created.
+
+Regression coverage reproduces a successful create with a GET returning 404 and retains the lost-response/idempotency checks.

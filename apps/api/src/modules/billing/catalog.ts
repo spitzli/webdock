@@ -164,7 +164,7 @@ export async function listProducts(
 }
 type Provider = {
   find: (terms: PublishedTerms) => Promise<unknown[]>;
-  create: (terms: PublishedTerms) => Promise<{ id: string }>;
+  create: (terms: PublishedTerms) => Promise<unknown>;
   get: (id: string) => Promise<unknown>;
 };
 function provider(environment: BillingEnvironment, token: string): Provider {
@@ -385,8 +385,9 @@ export async function publishProduct(
           "The previous publication is unresolved. Review Polar before creating another product.",
           409,
         );
-      const created = await client.create(prepared.terms);
-      product = await client.get(z.uuid().parse(created.id));
+      // Polar reads can lag writes. Validate the complete create response instead
+      // of immediately querying a replica that may still return 404.
+      product = await client.create(prepared.terms);
     } else
       product = await client.get(z.object({ id: z.uuid() }).parse(product).id);
     verified = verifyPublishedProduct(product, prepared.terms);

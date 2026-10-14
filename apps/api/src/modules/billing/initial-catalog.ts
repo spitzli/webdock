@@ -50,28 +50,26 @@ export const initialCatalog: Draft[] = [
       mediaBytes: "5000000000",
       mailMonthly: 3000,
     },
-  ].map(
-    (p): Draft => ({
-      sku: `website-${p.tier}-year-v1`,
-      name: `Website ${p.name}`,
-      family: "website",
-      amount: p.amount,
-      interval: "year",
-      currency: "EUR",
-      taxBehavior: "inclusive",
-      visibility: "public",
-      operationallyReady: false,
-      description: `1 Website, ${p.editors} Redakteure, ${Number(p.mediaBytes) / 1000000} MB Medienspeicher (dezimal), ${p.mailMonthly} ausgehende E-Mails pro Monat.`,
-      terms:
-        "Jahresabo gemäß freigegebenem Produktplan. Endkundenpreis inklusive Steuern. Entwurf, noch nicht betrieblich oder zum Verkauf freigegeben.",
-      entitlements: {
-        websites: 1,
-        editors: p.editors,
-        mediaBytes: p.mediaBytes,
-        mailMonthly: p.mailMonthly,
-      },
-    }),
-  ),
+  ].map((p): Draft => ({
+    sku: `website-${p.tier}-year-v1`,
+    name: `Website ${p.name}`,
+    family: "website",
+    amount: p.amount,
+    interval: "year",
+    currency: "EUR",
+    taxBehavior: "inclusive",
+    visibility: "public",
+    operationallyReady: false,
+    description: `1 Website, ${p.editors} Redakteure, ${Number(p.mediaBytes) / 1000000} MB Medienspeicher (dezimal), ${p.mailMonthly} ausgehende E-Mails pro Monat.`,
+    terms:
+      "Jahresabo gemäß freigegebenem Produktplan. Endkundenpreis inklusive Steuern. Entwurf, noch nicht betrieblich oder zum Verkauf freigegeben.",
+    entitlements: {
+      websites: 1,
+      editors: p.editors,
+      mediaBytes: p.mediaBytes,
+      mailMonthly: p.mailMonthly,
+    },
+  })),
   manual(
     "app-mini-month-v1",
     "App Mini",
@@ -262,7 +260,7 @@ export const initialCatalog: Draft[] = [
     "service",
     null,
     "once",
-    "Angebotsrahmen 990–2.490 EUR netto: Produkte, Varianten/Extras, Inhalte und Administration. Website Plus und Modulbetrieb separat; echte Bestellungen und Payment sind ein Folgeprojekt.",
+    "Angebotsrahmen 990–2.490 EUR netto: Produkte, Varianten/Extras, Inhalte und Administration. Der Produktkatalog gehört zum Website-Paket, ohne separaten laufenden Modulpreis; echte Bestellungen und Payment sind ein Folgeprojekt.",
   ),
   manual(
     "bot-setup-once-v1",
@@ -311,14 +309,6 @@ export const initialCatalog: Draft[] = [
     990,
     "month",
     "Laufender Modulbetrieb zusätzlich zu Website Plus, nach projektspezifischer Einrichtung. Keine externe Kalenderintegration oder Zahlungsverarbeitung enthalten.",
-  ),
-  manual(
-    "catalog-module-month-v1",
-    "Modulbetrieb Produktkatalog / Gastro",
-    "service",
-    990,
-    "month",
-    "Laufender Modulbetrieb zusätzlich zu Website Plus, nach projektspezifischer Einrichtung. Kein vollständiger Shop mit Bestell-, Zahlungs- oder Versandabwicklung.",
   ),
   manual(
     "domain-registration-year-v1",

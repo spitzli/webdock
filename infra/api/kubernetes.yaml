@@ -30,7 +30,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: api
-          image: docker.io/library/webdock-api@sha256:67a0baff645f3ee01e63b20892f1b5be9a38e00d385540ce2a36f8a4c51ae480
+          image: docker.io/library/webdock-api@sha256:2a2d6c40ba5c4f6d046bfe5714c4c8c55c2740b7ed0305106559b53a217fd7cb
           imagePullPolicy: Never
           envFrom:
             - secretRef: {name: api-runtime}
