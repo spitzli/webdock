@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-14",
+  "implementationCommit": "ade1907",
+  "reviewedCommit": "c1eb5bc",
+  "checks": {
+    "console": {
+      "passed": 55
+    },
+    "hostingContracts": {
+      "passed": 23
+    },
+    "i18n": {
+      "passed": 11
+    },
+    "api": {
+      "unitPassed": 62,
+      "nativeIntegrationPassed": 10,
+      "portedPassed": 312,
+      "portedSkippedRlsOnly": 4
+    },
+    "rls": {
+      "distinctPassed": 25
+    },
+    "hostingAgent": {
+      "total": 79,
+      "skipped": 1
+    },
+    "buildWorker": {
+      "passed": 52
+    },
+    "build": "passed",
+    "lint": {
+      "errors": 0,
+      "existingWarnings": 1
+    },
+    "typecheck": "passed",
+    "migrationsRepeat": "passed"
+  },
+  "localContainer": {
+    "backend": "disposable Docker fixture (not Kubernetes)",
+    "appID": "103959112827539456",
+    "container": "webdock-console-qa-103959112827539456",
+    "uid": "62892bd619bf5edf51796407d9f6386c03cb8d8f3fd5e152da262ff4483e4555",
+    "httpStatus": 200,
+    "readOnly": true,
+    "user": "65532:65532",
+    "capabilitiesDropped": true,
+    "operationID": "103959113490239488"
+  },
+  "browser": {
+    "errors": [],
+    "completedAt": "2026-10-14T21:10:27.385Z"
+  },
+  "productionTouched": false
+}
