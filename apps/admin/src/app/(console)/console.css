@@ -1,5 +1,5 @@
 /* A compact console: one context bar, persistent services, content-led pages. */
-:root { --console-header: 64px; --console-sidebar: 248px; --console-selection: color-mix(in srgb, var(--accent) 13%, var(--panel)); }
+:root { --console-header: 64px; --console-sidebar: 248px; --console-focus: color-mix(in srgb, var(--accent) 65%, var(--ink)); --console-selection: color-mix(in srgb, var(--accent) 13%, var(--panel)); }
 .console-icon { width: 19px; height: 19px; flex: 0 0 19px; }
 .console-toolbar { position: fixed; inset: 0 0 auto; z-index: 60; height: var(--console-header); display: flex; align-items: center; gap: 20px; padding: 0 24px; background: var(--panel); color: var(--ink); border-bottom: 1px solid var(--line); }
 .console-brand { flex: 0 0 204px; display: flex; align-items: baseline; font-size: 25px; letter-spacing: -1px; color: var(--ink); }
@@ -73,7 +73,7 @@ body:has(.console-toolbar) .workspace { padding-top: var(--console-header); disp
 .console-dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px 8px; }
 .console-dialog-heading h2 { font-size: 16px; font-weight: 600; margin: 0; letter-spacing: -.2px; }
 .console-search-field { display: flex; align-items: center; gap: 12px; margin: 8px 20px 12px; padding: 0 12px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); flex-shrink: 0; }
-.console-search-field:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+.console-search-field:focus-within { outline: 2px solid var(--console-focus); outline-offset: 1px; }
 .console-search-field input { width: 100%; min-width: 0; min-height: 48px; border: 0; outline: none; background: transparent; color: var(--ink); font-size: 14px; padding: 8px 0; box-shadow: none; }
 .console-search-field input:focus-visible { outline: none; }
 .console-search-scope { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding: 0 20px 14px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; }
@@ -143,5 +143,7 @@ body:has(.console-toolbar) .workspace { padding-top: var(--console-header); disp
 }
 .console-resource-domain { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
 body:has(.console-dialog[open], .console-drawer[open]) { overflow: hidden; }
-.console-layout .workspace-sidebar:has(.sidebar-resource) > .area-navigation:first-of-type a[aria-current=page] { background: transparent; box-shadow: none; color: var(--accent); }
+.console-layout .workspace-sidebar:has(.sidebar-resource) > .area-navigation:first-of-type a[aria-current=page] { background: transparent; box-shadow: none; color: var(--ink); }
 #main { scroll-margin-top: calc(var(--console-header) + 16px); }
+
+.console-toolbar :focus-visible, .console-dialog :focus-visible, .console-drawer :focus-visible { outline-color: var(--console-focus); }
