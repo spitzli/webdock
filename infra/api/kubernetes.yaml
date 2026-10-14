@@ -32,6 +32,8 @@ spec:
         - name: api
           image: docker.io/library/webdock-api@sha256:cf89c824dc50b445384b9890e4c14db4366d03fca88a4dbe436f17a69d3f44fa
           imagePullPolicy: Never
+          env:
+            - {name: WEBDOCK_CONSOLE_ORIGIN, value: "https://console.webdock.dev"}
           envFrom:
             - secretRef: {name: api-runtime}
           ports:
