@@ -4,8 +4,8 @@ import { uiLabel } from "@/lib/ui-labels";
 import { getRequestI18n } from "@webdock/i18n/next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import type { Where } from "payload";
-import { requireOperator } from "../../../../lib/server";
+import type { RegistryWhere as Where } from "@webdock/api-client/registry";
+import { requireRegistryOperator } from "../../../../lib/registry-page";
 import { date } from "../../../../lib/presentation";
 import {
   listQuery,
@@ -20,7 +20,7 @@ export default async function Customers({
 }) {
   const i18n = await getRequestI18n();
 
-  const { payload, user } = await requireOperator();
+  const { payload, user } = await requireRegistryOperator();
   const query = listQuery(await searchParams, "name");
   const where: Where = {
     and: [

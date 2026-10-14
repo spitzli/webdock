@@ -8000,3 +8000,363 @@ msgstr "Individuellen Plan zuweisen"
 
 msgid "Applies immediately to this customer only and replaces their current plan. It is not added to the reusable plan library. Existing extras are preserved."
 msgstr "Gilt sofort nur für diesen Kunden und ersetzt seinen bisherigen Plan. Er wird nicht in den Katalog wiederverwendbarer Pläne aufgenommen. Bestehende Extras bleiben erhalten."
+
+msgid "Studio accounts"
+msgstr "Studio-Konten"
+
+msgid "Customer invitations and website access are managed in People & access."
+msgstr "Kundeneinladungen und Website-Zugriffe werden unter Personen & Zugriff verwaltet."
+
+msgid "Pagination"
+msgstr "Seitennavigation"
+
+msgid "Billing"
+msgstr "Abrechnung"
+
+msgid "Polar connection"
+msgstr "Polar-Verbindung"
+
+msgid "Stored token"
+msgstr "Gespeichertes Token"
+
+msgid "Organization access token"
+msgstr "Zugriffstoken der Organisation"
+
+msgid "The connection check verifies read access. Publishing and payments require separate sandbox verification."
+msgstr "Die Verbindungsprüfung prüft den Lesezugriff. Veröffentlichung und Zahlungen benötigen eine separate Sandbox-Prüfung."
+
+msgid "Checking…"
+msgstr "Wird geprüft …"
+
+msgid "Check and save"
+msgstr "Prüfen und speichern"
+
+msgid "Billing operation"
+msgstr "Abrechnungsbetrieb"
+
+msgid "Allow new purchases"
+msgstr "Neue Käufe erlauben"
+
+msgid "Allow catalog publication"
+msgstr "Katalogveröffentlichung erlauben"
+
+msgid "Enforce paid service status"
+msgstr "Status bezahlter Leistungen durchsetzen"
+
+msgid "Disabling sales keeps webhook receipt, reconciliation and existing cancellations running."
+msgstr "Bei deaktiviertem Verkauf laufen Webhook-Empfang, Abgleich und bestehende Kündigungen weiter."
+
+msgid "Sandbox and live billing use separate organizations, credentials and payment records."
+msgstr "Sandbox- und Live-Abrechnung verwenden getrennte Organisationen, Zugangsdaten und Zahlungsbelege."
+
+msgid "Billing environment"
+msgstr "Abrechnungsumgebung"
+
+msgid "Webhook status"
+msgstr "Webhook-Status"
+
+msgid "No verified webhook received."
+msgstr "Noch kein verifizierter Webhook empfangen."
+
+msgid "Billing connection saved."
+msgstr "Abrechnungsverbindung gespeichert."
+
+msgid "Billing settings saved."
+msgstr "Abrechnungseinstellungen gespeichert."
+
+msgid "Billing connection could not be saved. Refresh and review its current status."
+msgstr "Die Abrechnungsverbindung konnte nicht gespeichert werden. Aktualisiere die Seite und prüfe den aktuellen Status."
+
+msgid "Billing settings could not be saved. Refresh and review their current status."
+msgstr "Die Abrechnungseinstellungen konnten nicht gespeichert werden. Aktualisiere die Seite und prüfe den aktuellen Status."
+
+msgid "Webhook configuration"
+msgstr "Webhook-Konfiguration"
+
+msgid "Existing endpoint ID"
+msgstr "Vorhandene Endpoint-ID"
+
+msgid "Existing webhook secret"
+msgstr "Vorhandener Webhook-Schlüssel"
+
+msgid "Use the existing endpoint and secret, or create a webhook with the required URL, version and events."
+msgstr "Nutze den vorhandenen Endpoint mit seinem Schlüssel oder erstelle einen Webhook mit der erforderlichen URL, Version und Ereignisauswahl."
+
+msgid "Previous webhook key accepted until"
+msgstr "Vorheriger Webhook-Schlüssel gültig bis"
+
+msgid "Use existing webhook"
+msgstr "Vorhandenen Webhook verwenden"
+
+msgid "Configure webhook in Polar"
+msgstr "Webhook in Polar einrichten"
+
+msgid "Sandbox customer"
+msgstr "Sandbox-Kunde"
+
+msgid "Enable an explicit test customer. Sandbox payments cannot change live services."
+msgstr "Aktiviere ausdrücklich einen Testkunden. Sandbox-Zahlungen verändern keine produktiven Leistungen."
+
+msgid "Billing catalog"
+msgstr "Abrechnungskatalog"
+
+msgid "New product version"
+msgstr "Neue Produktversion"
+
+msgid "Terms"
+msgstr "Vertragsbedingungen"
+
+msgid "Visibility"
+msgstr "Sichtbarkeit"
+
+msgid "Price in cents"
+msgstr "Preis in Cent/Rappen"
+
+msgid "Currency"
+msgstr "Währung"
+
+msgid "Tax display"
+msgstr "Steuerdarstellung"
+
+msgid "Tax included"
+msgstr "Inklusive Steuern"
+
+msgid "Tax excluded"
+msgstr "Zuzüglich Steuern"
+
+msgid "Billing interval"
+msgstr "Abrechnungsintervall"
+
+msgid "Media storage (MB)"
+msgstr "Medienspeicher (MB)"
+
+msgid "Mail messages per month"
+msgstr "E-Mails pro Monat"
+
+msgid "Operationally approved for one website"
+msgstr "Für den Betrieb einer Website freigegeben"
+
+msgid "Offer valid for days"
+msgstr "Angebot gültig für Tage"
+
+msgid "Published prices and included services remain fixed for their version."
+msgstr "Veröffentlichte Preise und enthaltene Leistungen bleiben für ihre Version unverändert."
+
+msgid "I accept the displayed price, included services, website and agreement terms."
+msgstr "Ich akzeptiere den angezeigten Preis, die enthaltenen Leistungen, die zugeordnete Website und die Vertragsbedingungen."
+
+msgid "Sandbox payments simulate service changes and do not alter live allowances."
+msgstr "Sandbox-Zahlungen simulieren Leistungsänderungen und verändern keine produktiven Kontingente."
+
+msgid "Agreed terms"
+msgstr "Vereinbarte Bedingungen"
+
+msgid "Your operator must prepare a website before a plan can be purchased."
+msgstr "Dein Betreiber muss zuerst eine Website vorbereiten, bevor du einen Tarif buchen kannst."
+
+msgid "Choose a website"
+msgstr "Website auswählen"
+
+msgid "Review agreement"
+msgstr "Vereinbarung prüfen"
+
+msgid "This agreement is not currently available for purchase."
+msgstr "Diese Vereinbarung kann derzeit nicht gebucht werden."
+
+msgid "Recent payments"
+msgstr "Letzte Zahlungen"
+
+msgid "Refunded"
+msgstr "Erstattet"
+
+msgid "Payment needs attention"
+msgstr "Zahlung prüfen"
+
+msgid "Service access suspended"
+msgstr "Leistungszugriff gesperrt"
+
+msgid "Withdrawn"
+msgstr "Zurückgezogen"
+
+msgid "Payment received — fulfillment requires review"
+msgstr "Zahlung erhalten – Leistung muss geprüft werden"
+
+msgid "Payment is being prepared"
+msgstr "Zahlung wird vorbereitet"
+
+msgid "Payment open"
+msgstr "Zahlung offen"
+
+msgid "Paid"
+msgstr "Bezahlt"
+
+msgid "Payment overdue"
+msgstr "Zahlung überfällig"
+
+msgid "Payment incomplete"
+msgstr "Zahlung unvollständig"
+
+msgid "Payment expired"
+msgstr "Zahlungsversuch abgelaufen"
+
+msgid "Partially refunded"
+msgstr "Teilweise erstattet"
+
+msgid "Publication in progress"
+msgstr "Veröffentlichung läuft"
+
+msgid "Agreement changed"
+msgstr "Vereinbarung geändert"
+
+msgid "Void"
+msgstr "Storniert"
+
+msgid "Enable sandbox customer"
+msgstr "Sandbox-Kunden aktivieren"
+
+msgid "Create private offer"
+msgstr "Privates Angebot erstellen"
+
+msgid "Publish and verify"
+msgstr "Veröffentlichen und prüfen"
+
+msgid "Accept and continue to payment"
+msgstr "Akzeptieren und zur Zahlung"
+
+msgid "Continue existing payment"
+msgstr "Bestehende Zahlung fortsetzen"
+
+msgid "Payment methods, invoices and cancellation"
+msgstr "Zahlungsmethoden, Rechnungen und Kündigung"
+
+msgid "Choose a website plan"
+msgstr "Website-Tarif auswählen"
+
+msgid "Ends on"
+msgstr "Endet am"
+
+msgid "Current period ends"
+msgstr "Aktueller Zeitraum endet"
+
+msgid "Private offer created."
+msgstr "Privates Angebot erstellt."
+
+msgid "The private offer could not be created."
+msgstr "Das private Angebot konnte nicht erstellt werden."
+
+msgid "Customer enabled for sandbox billing."
+msgstr "Kunde für die Sandbox-Abrechnung aktiviert."
+
+msgid "Sandbox customer could not be enabled."
+msgstr "Der Sandbox-Kunde konnte nicht aktiviert werden."
+
+msgid "Webhook configuration saved."
+msgstr "Webhook-Konfiguration gespeichert."
+
+msgid "Webhook setup could not be confirmed. Review Polar before trying another creation."
+msgstr "Die Webhook-Einrichtung konnte nicht bestätigt werden. Prüfe Polar, bevor du einen weiteren Endpoint erstellst."
+
+msgid "Product version saved as a draft."
+msgstr "Produktversion als Entwurf gespeichert."
+
+msgid "The product version could not be saved."
+msgstr "Die Produktversion konnte nicht gespeichert werden."
+
+msgid "Product publication verified."
+msgstr "Produktveröffentlichung geprüft."
+
+msgid "Publication could not be confirmed. Review the existing operation before retrying."
+msgstr "Die Veröffentlichung konnte nicht bestätigt werden. Prüfe den bestehenden Vorgang vor einem erneuten Versuch."
+
+msgid "Payment could not be started. Review the existing attempt before trying again."
+msgstr "Die Zahlung konnte nicht gestartet werden. Prüfe den bestehenden Versuch, bevor du es erneut versuchst."
+
+msgid "The payment attempt is being checked. Refresh its status shortly."
+msgstr "Der Zahlungsversuch wird geprüft. Aktualisiere den Status in Kürze."
+
+msgid "Payment services are temporarily unavailable."
+msgstr "Die Zahlungsdienste sind vorübergehend nicht erreichbar."
+
+msgid "Processing status"
+msgstr "Verarbeitungsstatus"
+
+msgid "Open jobs"
+msgstr "Offene Aufträge"
+
+msgid "Jobs requiring review"
+msgstr "Aufträge zur Prüfung"
+
+msgid "Oldest waiting job"
+msgstr "Ältester wartender Auftrag"
+
+msgid "Oldest completed customer reconciliation"
+msgstr "Ältester abgeschlossener Kundenabgleich"
+
+msgid "Review customer billing"
+msgstr "Kundenabrechnung prüfen"
+
+msgid "Availability controls new purchases. Existing agreements continue."
+msgstr "Die Verfügbarkeit steuert neue Käufe. Bestehende Vereinbarungen laufen weiter."
+
+msgid "I accept the displayed subscription change and its billing terms."
+msgstr "Ich akzeptiere die angezeigte Abonnementänderung und ihre Abrechnungsbedingungen."
+
+msgid "Change subscription"
+msgstr "Abonnement ändern"
+
+msgid "Review subscription change"
+msgstr "Abonnementänderung prüfen"
+
+msgid "Existing extras remain unchanged."
+msgstr "Bestehende Extras bleiben unverändert."
+
+msgid "A manual release requires a fully closed provider agreement and no outstanding invoices. It does not restore the previous plan."
+msgstr "Eine manuelle Freigabe erfordert eine vollständig beendete Vereinbarung beim Anbieter ohne offene Rechnungen. Der vorherige Tarif wird dadurch nicht wiederhergestellt."
+
+msgid "Type the customer name to confirm"
+msgstr "Zur Bestätigung den Kundennamen eingeben"
+
+msgid "Operator review of agreements and explicit manual releases."
+msgstr "Vereinbarungen prüfen und manuelle Freigaben ausdrücklich erteilen."
+
+msgid "Manual management released."
+msgstr "Manuelle Verwaltung freigegeben."
+
+msgid "Change recorded"
+msgstr "Änderung erfasst"
+
+msgid "Change is being processed"
+msgstr "Änderung wird verarbeitet"
+
+msgid "Awaiting payment confirmation"
+msgstr "Zahlungsbestätigung ausstehend"
+
+msgid "Applied"
+msgstr "Angewendet"
+
+msgid "Product version archived. Existing subscriptions continue."
+msgstr "Produktversion archiviert. Bestehende Abonnements laufen weiter."
+
+msgid "Product archival could not be confirmed. Check the existing product before retrying."
+msgstr "Die Archivierung konnte nicht bestätigt werden. Prüfe vor einem erneuten Versuch das bestehende Produkt."
+
+msgid "Confirm archival"
+msgstr "Archivierung bestätigen"
+
+msgid "Archive product version"
+msgstr "Produktversion archivieren"
+
+msgid "Published product required for archival."
+msgstr "Für die Archivierung ist ein veröffentlichtes Produkt erforderlich."
+
+msgid "Product identity requires review."
+msgstr "Die Produktzuordnung muss geprüft werden."
+
+msgid "Product mapping changed. Refresh before retrying."
+msgstr "Die Produktzuordnung hat sich geändert. Lade die Seite vor einem erneuten Versuch neu."
+
+msgid "Product archival is not confirmed."
+msgstr "Die Produktarchivierung ist noch nicht bestätigt."
+
+msgid "Archived product versions cannot be republished."
+msgstr "Archivierte Produktversionen können nicht erneut veröffentlicht werden."

@@ -15,7 +15,7 @@ import {
   saveInstance,
   archiveRecord,
 } from "../../../../../lib/actions";
-import { requireOperator } from "../../../../../lib/server";
+import { requireRegistryOperator } from "../../../../../lib/registry-page";
 import {
   relatedID,
   date,
@@ -31,7 +31,7 @@ export default async function Project({
 
   const { id } = await params;
   if (!validRecordID(id)) notFound();
-  const { payload, user } = await requireOperator();
+  const { payload, user } = await requireRegistryOperator();
   const project = await payload.findByID({
     collection: "projects",
     id,

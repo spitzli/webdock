@@ -1,0 +1,11 @@
+{
+  "exit": 0,
+  "image": "sha256:2df9685805fee5944d04d30ae55f39e34bb95a2aafb65ba7f9a88d637fe50a3e",
+  "readOnly": true,
+  "user": "bun",
+  "canonicalReadinessHTTP": 200,
+  "scopedReadiness": true,
+  "bun": "1.4.3",
+  "dockerSocket": false,
+  "profile": "local non-production transport with real restricted database roles"
+}

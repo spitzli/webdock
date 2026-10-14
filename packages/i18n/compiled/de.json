@@ -275,6 +275,9 @@
   "A linked CMS is still active. Retire its inventory record before archiving this project.": [
     "Ein verknüpftes CMS ist noch aktiv. Setze seinen Verwaltungseintrag auf Stillgelegt, bevor du dieses Projekt archivierst."
   ],
+  "A manual release requires a fully closed provider agreement and no outstanding invoices. It does not restore the previous plan.": [
+    "Eine manuelle Freigabe erfordert eine vollständig beendete Vereinbarung beim Anbieter ohne offene Rechnungen. Der vorherige Tarif wird dadurch nicht wiederhergestellt."
+  ],
   "A mapped tracking domain belonging to this tenant is required.": [
     "Eine zugeordnete Tracking-Domain dieses Mandanten ist erforderlich."
   ],
@@ -325,6 +328,9 @@
   ],
   "About": [
     "Über uns"
+  ],
+  "Accept and continue to payment": [
+    "Akzeptieren und zur Zahlung"
   ],
   "Accept invitation": [
     "Einladung annehmen"
@@ -629,6 +635,12 @@
   "Agreed price, service scope, or other terms": [
     "Vereinbarter Preis, Leistungsumfang oder weitere Bedingungen"
   ],
+  "Agreed terms": [
+    "Vereinbarte Bedingungen"
+  ],
+  "Agreement changed": [
+    "Vereinbarung geändert"
+  ],
   "Alignment": [
     "Ausrichtung"
   ],
@@ -692,8 +704,14 @@
   "Allow access": [
     "Zugriff erlauben"
   ],
+  "Allow catalog publication": [
+    "Katalogveröffentlichung erlauben"
+  ],
   "Allow changes in the selected area": [
     "Änderungen im ausgewählten Bereich erlauben"
+  ],
+  "Allow new purchases": [
+    "Neue Käufe erlauben"
   ],
   "Allow own Kubernetes clusters": [
     "Eigene Kubernetes-Cluster erlauben"
@@ -866,6 +884,9 @@
   "Applications run without root or API tokens, with a read-only filesystem and temporary /tmp storage. Cached images only; no unverified registry pulls.": [
     "Anwendungen laufen ohne Root-Rechte oder API-Tokens, mit schreibgeschütztem Dateisystem und temporärem /tmp-Speicher. Nur vorhandene Images; kein Abruf von ungeprüften Registries."
   ],
+  "Applied": [
+    "Angewendet"
+  ],
   "Applied revision": [
     "Angewendete Revision"
   ],
@@ -911,6 +932,9 @@
   "Archive": [
     "Archiv"
   ],
+  "Archive product version": [
+    "Produktversion archivieren"
+  ],
   "Archive record": [
     "Eintrag archivieren"
   ],
@@ -919,6 +943,9 @@
   ],
   "Archived": [
     "Archiviert"
+  ],
+  "Archived product versions cannot be republished.": [
+    "Archivierte Produktversionen können nicht erneut veröffentlicht werden."
   ],
   "Archived tenant — changes disabled": [
     "Archivierter Mandant — Änderungen deaktiviert"
@@ -1034,6 +1061,9 @@
   "Availability": [
     "Verfügbarkeit"
   ],
+  "Availability controls new purchases. Existing agreements continue.": [
+    "Die Verfügbarkeit steuert neue Käufe. Bestehende Vereinbarungen laufen weiter."
+  ],
   "Available": [
     "Verfügbar"
   ],
@@ -1042,6 +1072,9 @@
   ],
   "Available in the shop": [
     "Im Shop verfügbar"
+  ],
+  "Awaiting payment confirmation": [
+    "Zahlungsbestätigung ausstehend"
   ],
   "Awaiting provisioning": [
     "Wartet auf Bereitstellung"
@@ -1126,6 +1159,33 @@
   ],
   "Before sending": [
     "Vor dem Versand"
+  ],
+  "Billing": [
+    "Abrechnung"
+  ],
+  "Billing catalog": [
+    "Abrechnungskatalog"
+  ],
+  "Billing connection could not be saved. Refresh and review its current status.": [
+    "Die Abrechnungsverbindung konnte nicht gespeichert werden. Aktualisiere die Seite und prüfe den aktuellen Status."
+  ],
+  "Billing connection saved.": [
+    "Abrechnungsverbindung gespeichert."
+  ],
+  "Billing environment": [
+    "Abrechnungsumgebung"
+  ],
+  "Billing interval": [
+    "Abrechnungsintervall"
+  ],
+  "Billing operation": [
+    "Abrechnungsbetrieb"
+  ],
+  "Billing settings could not be saved. Refresh and review their current status.": [
+    "Die Abrechnungseinstellungen konnten nicht gespeichert werden. Aktualisiere die Seite und prüfe den aktuellen Status."
+  ],
+  "Billing settings saved.": [
+    "Abrechnungseinstellungen gespeichert."
   ],
   "Billing starts after confirmed provisioning. Pausing does not reduce the monthly price.": [
     "Die Abrechnung beginnt nach bestätigter Bereitstellung. Pausieren verringert den Monatspreis nicht."
@@ -1385,17 +1445,26 @@
   "Change in progress": [
     "Änderung läuft"
   ],
+  "Change is being processed": [
+    "Änderung wird verarbeitet"
+  ],
   "Change password": [
     "Passwort ändern"
   ],
   "Change queued": [
     "Änderung vorgemerkt"
   ],
+  "Change recorded": [
+    "Änderung erfasst"
+  ],
   "Change result": [
     "Ergebnis der Änderung"
   ],
   "Change saved.": [
     "Änderung gespeichert."
+  ],
+  "Change subscription": [
+    "Abonnement ändern"
   ],
   "Change summary or field": [
     "Änderungsbeschreibung oder Feld"
@@ -1418,6 +1487,9 @@
   "Check DNS ownership": [
     "DNS-Inhaberschaft prüfen"
   ],
+  "Check and save": [
+    "Prüfen und speichern"
+  ],
   "Check connection": [
     "Verbindung prüfen"
   ],
@@ -1438,6 +1510,9 @@
   ],
   "Checked ": [
     "Geprüft "
+  ],
+  "Checking…": [
+    "Wird geprüft …"
   ],
   "Choose Connect Vercel. Start here so Studio can securely associate the installation with your session.": [
     "Wähle „Vercel verbinden“. Beginne hier, damit Studio die Installation sicher deiner Sitzung zuordnen kann."
@@ -1495,6 +1570,12 @@
   ],
   "Choose a verified, registered sender domain belonging to this tenant.": [
     "Wähle eine bestätigte, registrierte Absenderdomain dieses Mandanten."
+  ],
+  "Choose a website": [
+    "Website auswählen"
+  ],
+  "Choose a website plan": [
+    "Website-Tarif auswählen"
   ],
   "Choose a website to manage its content and features.": [
     "Wähle eine Website, um Inhalte und Funktionen zu verwalten."
@@ -1754,11 +1835,17 @@
   "Configure verified artifact and registry storage.": [
     "Konfiguriere überprüften Speicher für Artefakte und die Registry."
   ],
+  "Configure webhook in Polar": [
+    "Webhook in Polar einrichten"
+  ],
   "Configured resources": [
     "Konfigurierte Ressourcen"
   ],
   "Confirm an existing account matching the reserved email and provider ID.": [
     "Bestätige ein vorhandenes Konto, dessen E-Mail-Adresse und Anbieter-ID zur Reservierung passen."
+  ],
+  "Confirm archival": [
+    "Archivierung bestätigen"
   ],
   "Confirm archive": [
     "Archivierung bestätigen"
@@ -2085,6 +2172,9 @@
   "Continue": [
     "Weiter"
   ],
+  "Continue existing payment": [
+    "Bestehende Zahlung fortsetzen"
+  ],
   "Continue to your workspace": [
     "Weiter zu deinem Arbeitsbereich"
   ],
@@ -2292,6 +2382,9 @@
   "Create plan": [
     "Tarif erstellen"
   ],
+  "Create private offer": [
+    "Privates Angebot erstellen"
+  ],
   "Create project": [
     "Projekt erstellen"
   ],
@@ -2343,6 +2436,9 @@
   "Credentials configured{value1}": [
     "Zugangsdaten konfiguriert{value1}"
   ],
+  "Currency": [
+    "Währung"
+  ],
   "Current design": [
     "Aktuelles Design"
   ],
@@ -2351,6 +2447,9 @@
   ],
   "Current password": [
     "Aktuelles Passwort"
+  ],
+  "Current period ends": [
+    "Aktueller Zeitraum endet"
   ],
   "Current product #": [
     "Aktuelles Produkt #"
@@ -2418,11 +2517,17 @@
   "Customer display name": [
     "Anzeigename des Kunden"
   ],
+  "Customer enabled for sandbox billing.": [
+    "Kunde für die Sandbox-Abrechnung aktiviert."
+  ],
   "Customer group name": [
     "Name der Kundengruppe"
   ],
   "Customer hosting allowance exceeded.": [
     "Das Hosting-Kontingent des Kunden ist überschritten."
+  ],
+  "Customer invitations and website access are managed in People & access.": [
+    "Kundeneinladungen und Website-Zugriffe werden unter Personen & Zugriff verwaltet."
   ],
   "Customer list": [
     "Kundenliste"
@@ -2760,6 +2865,9 @@
   "Disabled": [
     "Deaktiviert"
   ],
+  "Disabling sales keeps webhook receipt, reconciliation and existing cancellations running.": [
+    "Bei deaktiviertem Verkauf laufen Webhook-Empfang, Abgleich und bestehende Kündigungen weiter."
+  ],
   "Discard changes": [
     "Änderungen verwerfen"
   ],
@@ -3087,6 +3195,9 @@
   "Enable a mailbox domain": [
     "Domain für Postfächer aktivieren"
   ],
+  "Enable an explicit test customer. Sandbox payments cannot change live services.": [
+    "Aktiviere ausdrücklich einen Testkunden. Sandbox-Zahlungen verändern keine produktiven Leistungen."
+  ],
   "Enable automatic token renewal when registering a client for remote work. Interactive sign-in and consent still require your browser. Only operators can access the registry. Changes made through integrations appear in Activity.": [
     "Aktiviere beim Registrieren eines Clients für den Fernzugriff die automatische Token-Erneuerung. Für die interaktive Anmeldung und Zustimmung wird weiterhin dein Browser benötigt. Nur Betreiber können auf die Projektverwaltung zugreifen. Änderungen über Integrationen erscheinen unter Aktivität."
   ],
@@ -3098,6 +3209,9 @@
   ],
   "Enable managed execution": [
     "Verwaltete Ausführung aktivieren"
+  ],
+  "Enable sandbox customer": [
+    "Sandbox-Kunden aktivieren"
   ],
   "Enable webhook": [
     "Webhook aktivieren"
@@ -3113,6 +3227,12 @@
   ],
   "Endpoint URL": [
     "Endpunkt-URL"
+  ],
+  "Ends on": [
+    "Endet am"
+  ],
+  "Enforce paid service status": [
+    "Status bezahlter Leistungen durchsetzen"
   ],
   "English": [
     "Englisch"
@@ -3270,8 +3390,14 @@
   "Existing credentials": [
     "Vorhandene Zugangsdaten"
   ],
+  "Existing endpoint ID": [
+    "Vorhandene Endpoint-ID"
+  ],
   "Existing entries appear automatically in this overview.": [
     "Vorhandene Einträge erscheinen automatisch in dieser Übersicht."
+  ],
+  "Existing extras remain unchanged.": [
+    "Bestehende Extras bleiben unverändert."
   ],
   "Existing images appear here. Uploading is not available in this view.": [
     "Bereits hinterlegte Bilder erscheinen hier. Diese Ansicht bietet keinen Upload."
@@ -3284,6 +3410,9 @@
   ],
   "Existing project ID": [
     "ID des bestehenden Projekts"
+  ],
+  "Existing webhook secret": [
+    "Vorhandener Webhook-Schlüssel"
   ],
   "Exit focus mode": [
     "Fokusmodus verlassen"
@@ -3743,6 +3872,12 @@
   ],
   "How do I get a Webdock subdomain?": [
     "Wie bekomme ich eine Webdock-Subdomain?"
+  ],
+  "I accept the displayed price, included services, website and agreement terms.": [
+    "Ich akzeptiere den angezeigten Preis, die enthaltenen Leistungen, die zugeordnete Website und die Vertragsbedingungen."
+  ],
+  "I accept the displayed subscription change and its billing terms.": [
+    "Ich akzeptiere die angezeigte Abonnementänderung und ihre Abrechnungsbedingungen."
   ],
   "I accept this monthly price and the displayed terms.": [
     "Ich akzeptiere diesen Monatspreis und die angezeigten Bedingungen."
@@ -4239,6 +4374,9 @@
   "JSON is required.": [
     "JSON erwartet."
   ],
+  "Jobs requiring review": [
+    "Aufträge zur Prüfung"
+  ],
   "Junk": [
     "Spam"
   ],
@@ -4593,6 +4731,9 @@
   "Mail messages": [
     "Mail-Nachrichten"
   ],
+  "Mail messages per month": [
+    "E-Mails pro Monat"
+  ],
   "Mail navigation": [
     "Mail-Navigation"
   ],
@@ -4869,6 +5010,9 @@
   "Manual": [
     "Manuell"
   ],
+  "Manual management released.": [
+    "Manuelle Verwaltung freigegeben."
+  ],
   "Match sender domain": [
     "Absenderdomain abgleichen"
   ],
@@ -4904,6 +5048,9 @@
   ],
   "Media preview": [
     "Medienvorschau"
+  ],
+  "Media storage (MB)": [
+    "Medienspeicher (MB)"
   ],
   "Medium": [
     "Medium"
@@ -5081,6 +5228,9 @@
   ],
   "New people receive a secure link to choose their password. Tenant access starts after they accept the invitation.": [
     "Neue Personen erhalten einen sicheren Link, um ihr Passwort festzulegen. Der Mandantenzugriff beginnt, nachdem sie die Einladung angenommen haben."
+  ],
+  "New product version": [
+    "Neue Produktversion"
   ],
   "New project": [
     "Neues Projekt"
@@ -5430,6 +5580,9 @@
   "No unsaved changes": [
     "Keine ungespeicherten Änderungen"
   ],
+  "No verified webhook received.": [
+    "Noch kein verifizierter Webhook empfangen."
+  ],
   "No webhooks yet. Add an endpoint below when your application needs delivery notifications.": [
     "Noch keine Webhooks. Füge unten einen Endpunkt hinzu, wenn deine Anwendung Zustellbenachrichtigungen benötigt."
   ],
@@ -5550,14 +5703,23 @@
   "Offer not found.": [
     "Angebot nicht gefunden."
   ],
+  "Offer valid for days": [
+    "Angebot gültig für Tage"
+  ],
   "Offered plan": [
     "Angebotener Tarif"
   ],
   "Offers": [
     "Angebote"
   ],
+  "Oldest completed customer reconciliation": [
+    "Ältester abgeschlossener Kundenabgleich"
+  ],
   "Oldest first": [
     "Älteste zuerst"
+  ],
+  "Oldest waiting job": [
+    "Ältester wartender Auftrag"
   ],
   "Once your account is ready, continue the sign-in you started or return to Webdock.": [
     "Sobald dein Konto bereit ist, kannst du die begonnene Anmeldung fortsetzen oder zu Webdock zurückkehren."
@@ -5649,6 +5811,9 @@
   "Open hosting": [
     "Hosting öffnen"
   ],
+  "Open jobs": [
+    "Offene Aufträge"
+  ],
   "Open mailbox": [
     "Postfach öffnen"
   ],
@@ -5706,6 +5871,9 @@
   "Operation progress": [
     "Fortschritt"
   ],
+  "Operationally approved for one website": [
+    "Für den Betrieb einer Website freigegeben"
+  ],
   "Operations": [
     "Betrieb"
   ],
@@ -5748,6 +5916,9 @@
   "Operator registry": [
     "Plattformverwaltung"
   ],
+  "Operator review of agreements and explicit manual releases.": [
+    "Vereinbarungen prüfen und manuelle Freigaben ausdrücklich erteilen."
+  ],
   "Operator review required": [
     "Betreiberprüfung erforderlich"
   ],
@@ -5780,6 +5951,9 @@
   ],
   "Orders and payments on this website are simulated.": [
     "Bestellungen und Zahlungen werden in dieser Website simuliert."
+  ],
+  "Organization access token": [
+    "Zugriffstoken der Organisation"
   ],
   "Organization invitation": [
     "Einladung zur Organisation"
@@ -5880,6 +6054,15 @@
   "Page unpublished.": [
     "Veröffentlichung zurückgenommen."
   ],
+  "Pagination": [
+    "Seitennavigation"
+  ],
+  "Paid": [
+    "Bezahlt"
+  ],
+  "Partially refunded": [
+    "Teilweise erstattet"
+  ],
   "Passkey": [
     "Passkey"
   ],
@@ -5945,6 +6128,36 @@
   ],
   "Pausing stops new sends. History and accepted work remain attached to this connection.": [
     "Pausieren stoppt neue Sendungen. Verlauf und bereits angenommene Aufträge bleiben dieser Verbindung zugeordnet."
+  ],
+  "Payment could not be started. Review the existing attempt before trying again.": [
+    "Die Zahlung konnte nicht gestartet werden. Prüfe den bestehenden Versuch, bevor du es erneut versuchst."
+  ],
+  "Payment expired": [
+    "Zahlungsversuch abgelaufen"
+  ],
+  "Payment incomplete": [
+    "Zahlung unvollständig"
+  ],
+  "Payment is being prepared": [
+    "Zahlung wird vorbereitet"
+  ],
+  "Payment methods, invoices and cancellation": [
+    "Zahlungsmethoden, Rechnungen und Kündigung"
+  ],
+  "Payment needs attention": [
+    "Zahlung prüfen"
+  ],
+  "Payment open": [
+    "Zahlung offen"
+  ],
+  "Payment overdue": [
+    "Zahlung überfällig"
+  ],
+  "Payment received — fulfillment requires review": [
+    "Zahlung erhalten – Leistung muss geprüft werden"
+  ],
+  "Payment services are temporarily unavailable.": [
+    "Die Zahlungsdienste sind vorübergehend nicht erreichbar."
   ],
   "Pending": [
     "Ausstehend"
@@ -6111,6 +6324,9 @@
   "Please wait…": [
     "Bitte warten…"
   ],
+  "Polar connection": [
+    "Polar-Verbindung"
+  ],
   "Port and encryption": [
     "Port und Verschlüsselung"
   ],
@@ -6186,8 +6402,14 @@
   "Previous repositories": [
     "Vorherige Repositorys"
   ],
+  "Previous webhook key accepted until": [
+    "Vorheriger Webhook-Schlüssel gültig bis"
+  ],
   "Price from": [
     "Preis ab"
+  ],
+  "Price in cents": [
+    "Preis in Cent/Rappen"
   ],
   "Price in €": [
     "Preis in €"
@@ -6204,11 +6426,17 @@
   "Private": [
     "Privat"
   ],
+  "Private offer created.": [
+    "Privates Angebot erstellt."
+  ],
   "Private operator notes": [
     "Interne Betreibernotizen"
   ],
   "Private sending credential": [
     "Privater Versandzugang"
+  ],
+  "Processing status": [
+    "Verarbeitungsstatus"
   ],
   "Product": [
     "Produkt"
@@ -6216,11 +6444,20 @@
   "Product and variant editor": [
     "Produkt- und Varianteneditor"
   ],
+  "Product archival could not be confirmed. Check the existing product before retrying.": [
+    "Die Archivierung konnte nicht bestätigt werden. Prüfe vor einem erneuten Versuch das bestehende Produkt."
+  ],
+  "Product archival is not confirmed.": [
+    "Die Produktarchivierung ist noch nicht bestätigt."
+  ],
   "Product details": [
     "Produktdetails"
   ],
   "Product extras": [
     "Extras"
+  ],
+  "Product identity requires review.": [
+    "Die Produktzuordnung muss geprüft werden."
   ],
   "Product image": [
     "Produktbild"
@@ -6228,11 +6465,23 @@
   "Product list": [
     "Produktliste"
   ],
+  "Product mapping changed. Refresh before retrying.": [
+    "Die Produktzuordnung hat sich geändert. Lade die Seite vor einem erneuten Versuch neu."
+  ],
   "Product name": [
     "Produktname"
   ],
   "Product photo from media": [
     "Produktfoto aus Medien"
+  ],
+  "Product publication verified.": [
+    "Produktveröffentlichung geprüft."
+  ],
+  "Product version archived. Existing subscriptions continue.": [
+    "Produktversion archiviert. Bestehende Abonnements laufen weiter."
+  ],
+  "Product version saved as a draft.": [
+    "Produktversion als Entwurf gespeichert."
   ],
   "Production": [
     "Produktion"
@@ -6393,14 +6642,23 @@
   "Publication": [
     "Veröffentlichung"
   ],
+  "Publication could not be confirmed. Review the existing operation before retrying.": [
+    "Die Veröffentlichung konnte nicht bestätigt werden. Prüfe den bestehenden Vorgang vor einem erneuten Versuch."
+  ],
   "Publication identity cannot be replaced.": [
     "Die Veröffentlichungskennung kann nicht ersetzt werden."
+  ],
+  "Publication in progress": [
+    "Veröffentlichung läuft"
   ],
   "Publication requires observed health and verified target location.": [
     "Die Veröffentlichung erfordert eine bestätigte Funktionsprüfung und einen überprüften Zielstandort."
   ],
   "Publish": [
     "Veröffentlichen"
+  ],
+  "Publish and verify": [
+    "Veröffentlichen und prüfen"
   ],
   "Publish production automatically after checks pass": [
     "Nach erfolgreichen Prüfungen automatisch in Produktion veröffentlichen"
@@ -6425,6 +6683,12 @@
   ],
   "Published address: /p/": [
     "Veröffentlichte Adresse: /p/"
+  ],
+  "Published prices and included services remain fixed for their version.": [
+    "Veröffentlichte Preise und enthaltene Leistungen bleiben für ihre Version unverändert."
+  ],
+  "Published product required for archival.": [
+    "Für die Archivierung ist ein veröffentlichtes Produkt erforderlich."
   ],
   "Published.": [
     "Veröffentlicht."
@@ -6521,6 +6785,9 @@
   ],
   "Recent operations": [
     "Letzte Vorgänge"
+  ],
+  "Recent payments": [
+    "Letzte Zahlungen"
   ],
   "Recently updated": [
     "Zuletzt aktualisiert"
@@ -6629,6 +6896,9 @@
   ],
   "Refresh tracking status": [
     "Tracking-Status aktualisieren"
+  ],
+  "Refunded": [
+    "Erstattet"
   ],
   "Region": [
     "Region"
@@ -7017,6 +7287,12 @@
   "Reveal credentials": [
     "Zugangsdaten anzeigen"
   ],
+  "Review agreement": [
+    "Vereinbarung prüfen"
+  ],
+  "Review customer billing": [
+    "Kundenabrechnung prüfen"
+  ],
   "Review database deletion": [
     "Datenbanklöschung prüfen"
   ],
@@ -7040,6 +7316,9 @@
   ],
   "Review source cleanup": [
     "Löschung der Quelle prüfen"
+  ],
+  "Review subscription change": [
+    "Abonnementänderung prüfen"
   ],
   "Review the pending domain registration before disconnecting this account.": [
     "Prüfe die ausstehende Domain-Registrierung, bevor du dieses Konto trennst."
@@ -7190,6 +7469,18 @@
   ],
   "SSO session exceeds cookie size limit": [
     "Die SSO-Sitzung überschreitet die zulässige Cookie-Größe"
+  ],
+  "Sandbox and live billing use separate organizations, credentials and payment records.": [
+    "Sandbox- und Live-Abrechnung verwenden getrennte Organisationen, Zugangsdaten und Zahlungsbelege."
+  ],
+  "Sandbox customer": [
+    "Sandbox-Kunde"
+  ],
+  "Sandbox customer could not be enabled.": [
+    "Der Sandbox-Kunde konnte nicht aktiviert werden."
+  ],
+  "Sandbox payments simulate service changes and do not alter live allowances.": [
+    "Sandbox-Zahlungen simulieren Leistungsänderungen und verändern keine produktiven Kontingente."
   ],
   "Sans Serif": [
     "Serifenlos"
@@ -7611,6 +7902,9 @@
   "Service": [
     "Leistung"
   ],
+  "Service access suspended": [
+    "Leistungszugriff gesperrt"
+  ],
   "Services": [
     "Dienste"
   ],
@@ -7956,11 +8250,17 @@
   "Stored mail credentials could not be opened. Reconnect the provider.": [
     "Die gespeicherten Mail-Zugangsdaten konnten nicht geöffnet werden. Verbinde den Anbieter erneut."
   ],
+  "Stored token": [
+    "Gespeichertes Token"
+  ],
   "Street": [
     "Straße"
   ],
   "Street and number": [
     "Straße und Hausnummer"
+  ],
+  "Studio accounts": [
+    "Studio-Konten"
   ],
   "Studio authentication is not configured.": [
     "Die Studio-Authentifizierung ist nicht eingerichtet."
@@ -8091,6 +8391,15 @@
   "Tabularis connection ID": [
     "Tabularis-Verbindungs-ID"
   ],
+  "Tax display": [
+    "Steuerdarstellung"
+  ],
+  "Tax excluded": [
+    "Zuzüglich Steuern"
+  ],
+  "Tax included": [
+    "Inklusive Steuern"
+  ],
   "Team": [
     "Team"
   ],
@@ -8159,6 +8468,9 @@
   ],
   "Tenants": [
     "Mandanten"
+  ],
+  "Terms": [
+    "Vertragsbedingungen"
   ],
   "Terms for the private Webdock Studio Vercel integration.": [
     "Nutzungsbedingungen für die private Vercel-Integration von Webdock Studio."
@@ -8261,6 +8573,9 @@
   ],
   "The code could not be verified. Try again.": [
     "Der Code konnte nicht bestätigt werden. Bitte versuche es erneut."
+  ],
+  "The connection check verifies read access. Publishing and payments require separate sandbox verification.": [
+    "Die Verbindungsprüfung prüft den Lesezugriff. Veröffentlichung und Zahlungen benötigen eine separate Sandbox-Prüfung."
   ],
   "The connection could not be completed. Start a new connection from your hosting page. If it fails again, ask your administrator to check the Vercel integration configuration and permissions.": [
     "Die Verbindung konnte nicht abgeschlossen werden. Starte sie erneut auf deiner Hosting-Seite. Falls sie wieder fehlschlägt, lasse deinen Administrator die Vercel-Integration und ihre Berechtigungen prüfen."
@@ -8367,11 +8682,20 @@
   "The passkey could not be removed.": [
     "Der Passkey konnte nicht entfernt werden."
   ],
+  "The payment attempt is being checked. Refresh its status shortly.": [
+    "Der Zahlungsversuch wird geprüft. Aktualisiere den Status in Kürze."
+  ],
   "The preview needs a page title, valid address and complete colour values. Add these in the editor.": [
     "Die Vorschau benötigt einen Seitentitel, eine gültige Adresse und vollständige Farbwerte. Ergänze diese im Editor."
   ],
   "The previous change needs to be checked before setup can continue.": [
     "Die vorherige Änderung muss geprüft werden, bevor die Einrichtung fortgesetzt werden kann."
+  ],
+  "The private offer could not be created.": [
+    "Das private Angebot konnte nicht erstellt werden."
+  ],
+  "The product version could not be saved.": [
+    "Die Produktversion konnte nicht gespeichert werden."
   ],
   "The project changed before deletion. Nothing further was removed.": [
     "Das Projekt wurde vor der Löschung geändert. Es wurde nichts Weiteres entfernt."
@@ -8558,6 +8882,9 @@
   ],
   "This action is controlled by another controller or is unsupported.": [
     "Diese Aktion wird von einem anderen Controller gesteuert oder nicht unterstützt."
+  ],
+  "This agreement is not currently available for purchase.": [
+    "Diese Vereinbarung kann derzeit nicht gebucht werden."
   ],
   "This appointment is no longer available.": [
     "Dieser Termin ist nicht mehr verfügbar."
@@ -8901,6 +9228,9 @@
   "Type": [
     "Typ"
   ],
+  "Type the customer name to confirm": [
+    "Zur Bestätigung den Kundennamen eingeben"
+  ],
   "Type the exact application name": [
     "Den genauen Anwendungsnamen eingeben"
   ],
@@ -9168,6 +9498,9 @@
   "Use delivered@test.mail.webdock.dev for a simulator message. Real recipients receive a real email.": [
     "Verwende delivered@test.mail.webdock.dev für eine Simulatornachricht. Echte Empfänger erhalten eine echte E-Mail."
   ],
+  "Use existing webhook": [
+    "Vorhandenen Webhook verwenden"
+  ],
   "Use individual IPv4 or IPv6 addresses, without CIDR ranges.": [
     "Verwende einzelne IPv4- oder IPv6-Adressen ohne CIDR-Bereiche."
   ],
@@ -9188,6 +9521,9 @@
   ],
   "Use the direct port for migrations and the pooled port for application connections. Always verify TLS.": [
     "Den direkten Port für Migrationen und den Pooler-Port für Anwendungsverbindungen verwenden. TLS immer vollständig prüfen."
+  ],
+  "Use the existing endpoint and secret, or create a webhook with the required URL, version and events.": [
+    "Nutze den vorhandenen Endpoint mit seinem Schlüssel oder erstelle einen Webhook mit der erforderlichen URL, Version und Ereignisauswahl."
   ],
   "Use the full record names above. If your DNS host appends the zone automatically, enter only the part before that zone. Update an existing SPF record instead of adding a second one.": [
     "Verwende die vollständigen Eintragsnamen oben. Hängt dein DNS-Anbieter die Zone automatisch an, gib nur den Teil davor ein. Aktualisiere einen vorhandenen SPF-Eintrag, statt einen zweiten anzulegen."
@@ -9483,11 +9819,17 @@
   "View your assigned plan": [
     "Zugewiesenen Tarif ansehen"
   ],
+  "Visibility": [
+    "Sichtbarkeit"
+  ],
   "Visit Webdock ↗": [
     "Webdock besuchen ↗"
   ],
   "Visit website ↗": [
     "Website besuchen ↗"
+  ],
+  "Void": [
+    "Storniert"
   ],
   "Volumes (bytes)": [
     "Volumes (Bytes)"
@@ -9627,8 +9969,20 @@
   "Webhook": [
     "Webhook"
   ],
+  "Webhook configuration": [
+    "Webhook-Konfiguration"
+  ],
+  "Webhook configuration saved.": [
+    "Webhook-Konfiguration gespeichert."
+  ],
+  "Webhook setup could not be confirmed. Review Polar before trying another creation.": [
+    "Die Webhook-Einrichtung konnte nicht bestätigt werden. Prüfe Polar, bevor du einen weiteren Endpoint erstellst."
+  ],
   "Webhook signature verification": [
     "Webhook-Signatur prüfen"
+  ],
+  "Webhook status": [
+    "Webhook-Status"
   ],
   "Webhooks": [
     "Webhooks"
@@ -9746,6 +10100,9 @@
   ],
   "Will be removed when saved": [
     "Wird beim Speichern entfernt"
+  ],
+  "Withdrawn": [
+    "Zurückgezogen"
   ],
   "Worker": [
     "Arbeitsknoten"
@@ -9908,6 +10265,9 @@
   ],
   "Your operator must check the sending connection before you can create keys.": [
     "Dein Betreiber muss die Versandverbindung prüfen, bevor du Schlüssel erstellen kannst."
+  ],
+  "Your operator must prepare a website before a plan can be purchased.": [
+    "Dein Betreiber muss zuerst eine Website vorbereiten, bevor du einen Tarif buchen kannst."
   ],
   "Your own turboSMTP account": [
     "Dein eigenes turboSMTP-Konto"

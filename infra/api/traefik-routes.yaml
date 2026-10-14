@@ -1,0 +1,80 @@
+# File-provider template for an EXISTING controlled Traefik ingress.
+# Replace both immutable *.invalid UI origins before rehearsal. Public hosts MUST NOT be upstreams.
+# Static entrypoint websecure: forwardedHeaders.insecure=false, trustedIPs=[] for direct TLS.
+# Chained proxies require separately tested single-client-IP normalization. Never trust browser XFF.
+http:
+  routers:
+    api:
+      rule: Host(`api.webdock.dev`)
+      entryPoints: [websecure]
+      tls: {}
+      middlewares: [api-identity]
+      service: bun-api
+    auth-protocol:
+      rule: Host(`auth.webdock.dev`) && ((PathPrefix(`/api/`) && !Path(`/api/locale`)) || PathPrefix(`/.well-known/`))
+      priority: 100
+      entryPoints: [websecure]
+      tls: {}
+      middlewares: [auth-identity]
+      service: bun-api
+    studio-protocol:
+      rule: Host(`studio.webdock.dev`) && ((PathPrefix(`/api/`) && !Path(`/api/locale`)) || PathPrefix(`/.well-known/`))
+      priority: 100
+      entryPoints: [websecure]
+      tls: {}
+      middlewares: [studio-identity]
+      service: bun-api
+    auth-ui:
+      rule: Host(`auth.webdock.dev`)
+      priority: 1
+      entryPoints: [websecure]
+      tls: {}
+      service: auth-ui
+    studio-ui:
+      rule: Host(`studio.webdock.dev`)
+      priority: 1
+      entryPoints: [websecure]
+      tls: {}
+      service: studio-ui
+  middlewares:
+    api-identity:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Host: api.webdock.dev
+          X-Forwarded-Proto: https
+          X-Webdock-Ingress-Token: '{{ env "WEBDOCK_INGRESS_SECRET" }}'
+          X-Webdock-Client-IP: ''
+          X-Vercel-Forwarded-For: ''
+          Forwarded: ''
+    auth-identity:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Host: auth.webdock.dev
+          X-Forwarded-Proto: https
+          X-Webdock-Ingress-Token: '{{ env "WEBDOCK_INGRESS_SECRET" }}'
+          X-Webdock-Client-IP: ''
+          X-Vercel-Forwarded-For: ''
+          Forwarded: ''
+    studio-identity:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Host: studio.webdock.dev
+          X-Forwarded-Proto: https
+          X-Webdock-Ingress-Token: '{{ env "WEBDOCK_INGRESS_SECRET" }}'
+          X-Webdock-Client-IP: ''
+          X-Vercel-Forwarded-For: ''
+          Forwarded: ''
+  services:
+    bun-api:
+      loadBalancer:
+        passHostHeader: true
+        responseForwarding: {flushInterval: -1ms}
+        servers: [{url: 'http://api:3130'}]
+    auth-ui:
+      loadBalancer:
+        passHostHeader: false
+        servers: [{url: 'https://REPLACE-IMMUTABLE-AUTH-ORIGIN.invalid'}]
+    studio-ui:
+      loadBalancer:
+        passHostHeader: false
+        servers: [{url: 'https://REPLACE-IMMUTABLE-STUDIO-ORIGIN.invalid'}]

@@ -354,3 +354,25 @@ test('callback accepts a proxy-normalized URL only with the registered raw Host 
   assert.equal((await sso.callback(new Request(internalURL, { headers: { host: 'evil.test', 'x-forwarded-host': '127.0.0.1:3120', cookie } }))).status, 401)
   assert.equal((await sso.callback(new Request(internalURL.replace('/api/sso/callback', '/other'), { headers: { host: '127.0.0.1:3120', cookie } }))).status, 401)
 })
+
+test('portal mapping can use the verified central session without a Payload runtime', async t => {
+  const { sealData } = await import('iron-session')
+  const exp = Math.floor(Date.now() / 1000) + 300
+  const cookie = `__Host-webdock-sso=${await sealData({ kind: 'session', accessToken: 'opaque', sub: 'subject-123', exp }, { password: options.cookieSecret, ttl: 28800 })}`
+  let active = true
+  t.mock.method(globalThis, 'fetch', async (input: Request | URL | string) => {
+    if (String(input).includes('.well-known/openid-configuration')) return Response.json({issuer: options.issuer,
+      authorization_endpoint: options.issuer+'/oauth2/authorize', token_endpoint: options.issuer+'/oauth2/token', introspection_endpoint: options.issuer+'/oauth2/introspect', jwks_uri: options.issuer+'/jwks',
+      response_types_supported:['code'],subject_types_supported:['public'],id_token_signing_alg_values_supported:['RS256']})
+    return Response.json({...claims, active, sid:'central-session', exp})
+  })
+  const sso = configurePayloadSSO({ ...options, getPayload: undefined,
+    lookupUser: async identity => {
+      assert.equal(identity.sessionID, 'central-session')
+      return { id:'local',authSubject:identity.sub,role:'operator',name:'Operator',email:'operator@example.invalid',createdAt:'2026-01-01T00:00:00Z',updatedAt:'2026-01-01T00:00:00Z' }
+    },
+  })
+  assert.equal((await sso.getDelegatedSession(new Headers({cookie})))?.sessionID,'central-session')
+  active = false
+  assert.equal(await sso.getDelegatedSession(new Headers({cookie})),null)
+})

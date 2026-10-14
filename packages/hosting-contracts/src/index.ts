@@ -1,16 +1,25 @@
-import {resourceID, idempotencyKey as key, resourceRevision as revision} from "./validation";
-export {resourceID} from "./validation";
-import {databaseCommands,databaseReadActions} from "./databases";
+import {
+  resourceID,
+  idempotencyKey as key,
+  resourceRevision as revision,
+} from "./validation";
+export { resourceID } from "./validation";
+import { databaseCommands, databaseReadActions } from "./databases";
 export * from "./databases";
-import {gitCommands,gitReadActions} from "./git-deployments";
+import { gitCommands, gitReadActions } from "./git-deployments";
 export * from "./git-deployments";
-import {byokCommands} from "./byok";
+import { byokCommands } from "./byok";
 export * from "./byok";
 import { parseResourceInput } from "./units";
-export {parseResourceInput,resourceInput,formatResource} from "./units";
+export { parseResourceInput, resourceInput, formatResource } from "./units";
 import { z } from "zod";
-import {environmentPatchSchema} from './environment';
-export {environmentPatchSchema,environmentNameSchema,environmentValueSchema,type EnvironmentPatch} from './environment';
+import { environmentPatchSchema } from "./environment";
+export {
+  environmentPatchSchema,
+  environmentNameSchema,
+  environmentValueSchema,
+  type EnvironmentPatch,
+} from "./environment";
 export const hostingDimensions = [
   "apps",
   "cpuMillicores",
@@ -120,9 +129,19 @@ export const appSpecSchema = z
     memoryBytes: z.number().int().min(16777216).max(1099511627776),
     ephemeralBytes: z.number().int().min(1048576).max(1099511627776),
     replicas: z.number().int().min(0).max(20),
-    volumeBytes: z.number().int().min(0).max(1099511627776).refine(v => v === 0 || v >= 67108864).optional(),
+    volumeBytes: z
+      .number()
+      .int()
+      .min(0)
+      .max(1099511627776)
+      .refine((v) => v === 0 || v >= 67108864)
+      .optional(),
   })
-  .strict().refine(s => !s.volumeBytes || s.replicas <= 1, "Persistent storage supports one instance.");
+  .strict()
+  .refine(
+    (s) => !s.volumeBytes || s.replicas <= 1,
+    "Persistent storage supports one instance.",
+  );
 export type AppSpec = z.infer<typeof appSpecSchema>;
 export function resolveAppSpec(value: unknown): AppSpec {
   const spec = appSpecSchema.parse(value);
@@ -166,6 +185,34 @@ export const appViewSchema = z.object({
 });
 export type HostingAppView = z.infer<typeof appViewSchema>;
 export const commandSchema = z.discriminatedUnion("action", [
+  z
+    .object({
+      action: z.literal("projects.relocate"),
+      projectID: resourceID,
+      sourceClusterID: resourceID,
+      targetClusterID: resourceID,
+      revision,
+      idempotencyKey: key,
+      confirmSharedImages: z.literal(true),
+      checkedAt: z.string().datetime(),
+      evidence: z
+        .array(
+          z
+            .object({
+              appID: resourceID,
+              revision,
+              sourceUID: z.string().min(1).max(128),
+              sourcePodsZero: z.literal(true),
+              targetPodsZero: z.literal(true),
+              backupSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+              restoredSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+            })
+            .strict(),
+        )
+        .min(1)
+        .max(50),
+    })
+    .strict(),
   ...databaseCommands,
   ...byokCommands,
   ...gitCommands,
@@ -239,8 +286,18 @@ export const commandSchema = z.discriminatedUnion("action", [
     })
     .strict(),
   z.object({ action: z.literal("apps.deletion"), appID: resourceID }).strict(),
-  z.object({ action: z.literal("apps.storageDeletion"), appID: resourceID }).strict(),
-  z.object({ action: z.literal("apps.purgeStorage"), appID: resourceID, confirmName: name, planHash: z.string().regex(/^[a-f0-9]{64}$/), idempotencyKey: key }).strict(),
+  z
+    .object({ action: z.literal("apps.storageDeletion"), appID: resourceID })
+    .strict(),
+  z
+    .object({
+      action: z.literal("apps.purgeStorage"),
+      appID: resourceID,
+      confirmName: name,
+      planHash: z.string().regex(/^[a-f0-9]{64}$/),
+      idempotencyKey: key,
+    })
+    .strict(),
   z
     .object({
       action: z.literal("apps.delete"),
@@ -328,7 +385,9 @@ export const commandSchema = z.discriminatedUnion("action", [
     })
     .strict(),
   z.object({ action: z.literal("usage.get"), customerID: resourceID }).strict(),
-  z.object({ action: z.literal("projects.get"), projectID: resourceID }).strict(),
+  z
+    .object({ action: z.literal("projects.get"), projectID: resourceID })
+    .strict(),
   z.object({ action: z.literal("operations.overview"), ...paging }).strict(),
   z
     .object({
@@ -368,7 +427,12 @@ export const readActions = new Set<HostingCommand["action"]>([
   ...databaseReadActions,
   ...gitReadActions,
   "byok.mail.get",
-  "byok.policy.get", "byok.list", "byok.cluster", "byok.inventory", "byok.vercel.projects", "byok.vercel.resources",
+  "byok.policy.get",
+  "byok.list",
+  "byok.cluster",
+  "byok.inventory",
+  "byok.vercel.projects",
+  "byok.vercel.resources",
   "apps.list",
   "apps.get",
   "apps.deletion",
@@ -431,9 +495,62 @@ export const observationSchema = z
         environment: z.boolean().optional(),
         storageVersion: z.literal(1).optional(),
         databaseVersion: z.literal(1).optional(),
-        databasePools: z.array(z.object({node:name,poolID:z.uuid(),capacityBytes:quantity,availableBytes:quantity,ready:z.boolean(),requestedCpuMillicores:quantity,requestedMemoryBytes:quantity,observedDatabases:z.array(z.object({installationID:resourceID,cpuMillicores:quantity,memoryBytes:quantity}).strict()).max(1000).optional(),allocatedBytes:quantity.optional(),allocations:z.array(z.object({installationID:resourceID,volumeBytes:quantity}).strict()).max(1000).optional()}).strict()).max(200).optional(),
-        databaseNodePorts: z.array(z.number().int().min(30000).max(32767)).max(2768).optional(),
-        nativeMail: z.object({ version: z.literal(1), configurationVersion: z.union([z.literal(1),z.literal(2),z.literal(3)]).optional(), image: z.string().regex(/^[A-Za-z0-9.:-]+\/[A-Za-z0-9_./-]+@sha256:[a-f0-9]{64}$/) }).strict().optional(),
+        databasePools: z
+          .array(
+            z
+              .object({
+                node: name,
+                poolID: z.uuid(),
+                capacityBytes: quantity,
+                availableBytes: quantity,
+                ready: z.boolean(),
+                requestedCpuMillicores: quantity,
+                requestedMemoryBytes: quantity,
+                observedDatabases: z
+                  .array(
+                    z
+                      .object({
+                        installationID: resourceID,
+                        cpuMillicores: quantity,
+                        memoryBytes: quantity,
+                      })
+                      .strict(),
+                  )
+                  .max(1000)
+                  .optional(),
+                allocatedBytes: quantity.optional(),
+                allocations: z
+                  .array(
+                    z
+                      .object({
+                        installationID: resourceID,
+                        volumeBytes: quantity,
+                      })
+                      .strict(),
+                  )
+                  .max(1000)
+                  .optional(),
+              })
+              .strict(),
+          )
+          .max(200)
+          .optional(),
+        databaseNodePorts: z
+          .array(z.number().int().min(30000).max(32767))
+          .max(2768)
+          .optional(),
+        nativeMail: z
+          .object({
+            version: z.literal(1),
+            configurationVersion: z
+              .union([z.literal(1), z.literal(2), z.literal(3)])
+              .optional(),
+            image: z
+              .string()
+              .regex(/^[A-Za-z0-9.:-]+\/[A-Za-z0-9_./-]+@sha256:[a-f0-9]{64}$/),
+          })
+          .strict()
+          .optional(),
 
         registryVersion: z.literal(1).optional(),
       })
@@ -442,7 +559,7 @@ export const observationSchema = z
   .strict();
 export type ClusterObservation = z.infer<typeof observationSchema>;
 export type HostingClusterView = {
-  ownership?: "platform"|"tenant";
+  ownership?: "platform" | "tenant";
   id: string;
   name: string;
   provider: string;
@@ -481,11 +598,26 @@ export type HostingProjectContext = {
   provider: "k3s" | "vercel" | null;
 };
 export type HostingOverview = HostingPage<{
-  id: string; name: string; status: string; projectID: string; projectName: string;
-  customerID: string; customerName: string; revision: number; observedRevision: number;
+  id: string;
+  name: string;
+  status: string;
+  projectID: string;
+  projectName: string;
+  customerID: string;
+  customerName: string;
+  revision: number;
+  observedRevision: number;
 }> & {
   readAt: string;
-  operations: { id: string; action: string; status: HostingOperationStatus; createdAt: string; projectID: string | null; projectName: string | null; customerName: string | null }[];
+  operations: {
+    id: string;
+    action: string;
+    status: HostingOperationStatus;
+    createdAt: string;
+    projectID: string | null;
+    projectName: string | null;
+    customerName: string | null;
+  }[];
 };
 export type HostingLimitView = {
   effective: HostingAllowances;

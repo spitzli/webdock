@@ -1,5 +1,4 @@
-import { sso } from "@payload-config";
-import { requireOperator } from "../../../lib/server";
+import { requireRegistryOperator } from "../../../lib/registry-page";
 import { StudioShell } from "../../../components/studio-shell";
 export const dynamic = "force-dynamic";
 export default async function Layout({
@@ -7,11 +6,11 @@ export default async function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = await requireOperator();
+  const { user } = await requireRegistryOperator();
   return (
     <StudioShell
       user={{ name: user.name, role: "operator" }}
-      ssoEnabled={Boolean(sso)}
+      ssoEnabled
     >
       {children}
     </StudioShell>

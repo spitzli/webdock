@@ -1,3 +1,5 @@
+import {studioCall} from "@/lib/studio-client";
+import type {GitHubView} from "@webdock/api-client/integrations";
 
 import { msgid } from '@webdock/i18n';
 
@@ -5,16 +7,9 @@ import { getRequestI18n } from '@webdock/i18n/next';
 import { Suspense } from "react";
 import { VercelIntegration } from "../../../../components/vercel-integration";
 import Link from "next/link";
-import { headers } from "next/headers";
-import { requireOperator } from "../../../../lib/server";
-import {
-  getGitHub,
-  githubOrigin,
-  type GitHubInstallation,
-  type GitHubRepository,
-} from "../../../../lib/github";
+import { requireRegistryOperator } from "../../../../lib/registry-page";
 import { GitHubRepositories } from "../../../../components/github-repositories";
-import { mcpResource } from "../../../../lib/mcp-auth";
+const mcpResource=()=>new URL("/api/mcp",process.env.NEXT_PUBLIC_SERVER_URL||"https://studio.webdock.dev").href;
 
 const messages: Record<string, string> = {
   connected: msgid("GitHub connected. Choose an installation and a repository below."),
@@ -27,10 +22,6 @@ const messages: Record<string, string> = {
     msgid("The repository could not be linked. Refresh the list and check that the project and GitHub installation are still accessible."),
   setup: msgid("Complete the GitHub App setup before connecting."),
 };
-const positive = (value: unknown, fallback: number) =>
-  typeof value === "string" && /^[1-9][0-9]{0,8}$/.test(value)
-    ? Number(value)
-    : fallback;
 
 export default async function Integrations({
   searchParams,
@@ -39,46 +30,13 @@ export default async function Integrations({
 }) {
   const i18n = await getRequestI18n();
 
-  const { payload, user } = await requireOperator();
+  const { payload, user } = await requireRegistryOperator();
   const query = await searchParams;
-  let github: ReturnType<typeof getGitHub> = null;
-  try {
-    github = getGitHub();
-  } catch {
-    /* Show setup when configuration is incomplete or invalid. */
-  }
-  const session = github
-    ? await github.session(await headers(), user.id)
-    : null;
-  const installationPage = Math.min(10000, positive(query.installationPage, 1));
-  const page = Math.min(10000, positive(query.page, 1));
-  let installations: GitHubInstallation[] = [];
-  let installationPages = 1;
-  let repositories: GitHubRepository[] = [];
-  let repositoryPages = 1;
-  let installation = positive(query.installation, 0);
-  let problem = "";
-  if (github && session) {
-    try {
-      const available = await github.installations(session, installationPage);
-      installations = available.items;
-      installationPages = available.totalPages;
-      if (!installation) installation = installations[0]?.id || 0;
-      if (installation) {
-        const result = await github.repositories(
-          session,
-          installation,
-          installationPage,
-          page,
-        );
-        repositories = result.items;
-        repositoryPages = result.totalPages;
-      }
-    } catch {
-      problem =
-        msgid("GitHub access could not be checked. Reconnect or review the app’s installation and read-only metadata permission.");
-    }
-  }
+  const input=Object.fromEntries(Object.entries(query).filter((entry):entry is [string,string]=>typeof entry[1]==="string"));
+  const view=await studioCall<GitHubView>("integrations.github",[input]);
+  const {session,installationPage,page,installations,installationPages,repositories,repositoryPages,installation}=view;
+  const github=view.configured?{installURL:view.installURL||"",permissionsURL:view.permissionsURL||"",callbackURL:view.callbackURL}:null;
+  const problem=view.problem?msgid("GitHub access could not be checked. Reconnect or review the app’s installation and read-only metadata permission."):"";
   const projects = session
     ? await payload.find({
         collection: "projects",
@@ -96,7 +54,7 @@ export default async function Integrations({
     String(query.github),
   );
   const callback =
-    github?.callbackURL || new URL("/api/github/callback", githubOrigin()).href;
+    github?.callbackURL || view.callbackURL;
   return (
     <>
       <div className="page-heading">

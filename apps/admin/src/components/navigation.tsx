@@ -75,7 +75,7 @@ export function TenantNavigation({ customerID, canManage = false, preview = fals
     {href:base+"/hosting",label:msgid("Applications")},
     {href:base+(preview?"/managed-databases":"/databases"),label:msgid("Databases"),activePaths:[base+"/managed-databases",base+"/databases"]},
     ...(!preview ? [{href:base+"/mail",label:msgid("Mail")}] : []),
-    ...(canManage ? [{href:base+"/team",label:msgid("Team")}] : []),
+    ...(canManage ? [{href:base+"/team",label:msgid("Team")},...(!preview?[{href:base+"/billing",label:msgid("Billing")}]:[])] : []),
     {href:base+"/usage",label:msgid("Plan & usage")},
     {href:base+"/profile",label:msgid("Profile")},
   ]}/>;

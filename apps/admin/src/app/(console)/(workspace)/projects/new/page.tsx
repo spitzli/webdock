@@ -5,7 +5,7 @@ import { getRequestI18n } from '@webdock/i18n/next';
 import Link from "next/link";
 import { Editor } from "../../../../../components/editor";
 import { saveProject } from "../../../../../lib/actions";
-import { requireOperator } from "../../../../../lib/server";
+import { requireRegistryOperator } from "../../../../../lib/registry-page";
 export default async function NewProject({
   searchParams,
 }: {
@@ -13,7 +13,7 @@ export default async function NewProject({
 }) {
   const i18n = await getRequestI18n();
 
-  const { payload, user } = await requireOperator();
+  const { payload, user } = await requireRegistryOperator();
   const q = await searchParams;
   const customers = await payload.find({
     collection: "customers",

@@ -4,8 +4,8 @@ import { auditSummary, auditFieldLabel } from "@/lib/ui-labels";
 import { getRequestI18n } from "@webdock/i18n/next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import type { Where } from "payload";
-import { requireOperator } from "../../../../lib/server";
+import type { RegistryWhere as Where } from "@webdock/api-client/registry";
+import { requireRegistryOperator } from "../../../../lib/registry-page";
 import {
   listQuery,
   listURL,
@@ -20,7 +20,7 @@ export default async function Activity({
 }) {
   const i18n = await getRequestI18n();
 
-  const { payload, user } = await requireOperator();
+  const { payload, user } = await requireRegistryOperator();
   const params = await searchParams;
   const query = listQuery(params, "-createdAt");
   const sort = query.sort === "createdAt" ? "createdAt" : "-createdAt";

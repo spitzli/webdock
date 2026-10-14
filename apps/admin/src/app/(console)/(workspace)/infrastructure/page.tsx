@@ -1,4 +1,4 @@
-import {requireOperator} from "@/lib/server";
+import {requireRegistryOperator} from "@/lib/registry-page";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { getRequestI18n } from "@webdock/i18n/next";
@@ -31,7 +31,7 @@ export default async function Infrastructure({
     },
     "/infrastructure",
   );
-  const {payload,user}=await requireOperator();
+  const {payload,user}=await requireRegistryOperator();
   const customers=await payload.find({collection:"customers",where:{status:{equals:"active"}},limit:100,sort:"name",depth:0,user,overrideAccess:false});
   return (
     <>

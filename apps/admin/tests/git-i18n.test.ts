@@ -4,7 +4,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import ts from "typescript";
 import { translator } from "@webdock/i18n";
 test("Git deployment errors remain actionable in English and German", () => {
-  const directory = "../auth/src/lib/hosting";
+  const directory = "../api/src/modules/hosting";
   const files = readdirSync(directory)
     .filter((p) => /^git.*\.ts$/.test(p))
     .map((p) => directory + "/" + p)

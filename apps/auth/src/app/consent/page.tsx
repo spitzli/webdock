@@ -2,8 +2,7 @@ import { getRequestI18n } from "@webdock/i18n/next";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { verifyOAuthQueryParams } from "@better-auth/oauth-provider";
-import { auth } from "@/lib/auth";
+import { authView } from "@/lib/studio-client";
 import { AuthPanel, ConsentForm } from "@/components/auth-forms";
 
 export async function generateMetadata(): Promise<Metadata> { const { t } = await getRequestI18n(); return { title: t("Authorize access") }; }
@@ -22,41 +21,21 @@ export default async function Consent({
         : [value])
       params.append(key, entry);
   }
-  const { secret } = await auth.$context;
   const invalid = (
     <AuthPanel title={t("Request unavailable")}>
       <p>
         {t("This authorization request is invalid or has expired. Return to the application and start signing in again.")}</p>
     </AuthPanel>
   );
-  if (!(await verifyOAuthQueryParams(params.toString(), secret)))
-    return invalid;
-  const requestHeaders = await headers();
-  const session = await auth.api.getSession({ headers: requestHeaders });
-  if (!session) redirect(`/sign-in?${params}`);
-  const clientId = params.get("client_id");
-  if (!clientId) return invalid;
-  let name: string;
-  let claimNames: string[];
-  try {
-    const client = await auth.api.getOAuthClientPublic({
-      headers: requestHeaders,
-      query: { client_id: clientId },
-    });
-    const requested = params.get("claims");
-    const claims = requested
-      ? (JSON.parse(requested) as { userinfo?: Record<string, unknown> })
-      : undefined;
-    name = client.client_name || t("Application");
-    claimNames = Object.keys(claims?.userinfo || {});
-  } catch {
-    return invalid;
-  }
+  const view = await authView<{valid:boolean;session?:boolean;name?:string|null;scopes?:string[];claims?:string[]}>("/v1/auth/consent",{query:params.toString()},await headers());
+  if (!view.valid) return invalid;
+  if (!view.session) redirect(`/sign-in?${params}`);
+  const name = view.name || t("Application");
   return (
     <ConsentForm
       name={name}
-      scopes={(params.get("scope") || "").split(" ").filter(Boolean)}
-      claims={claimNames}
+      scopes={view.scopes || []}
+      claims={view.claims || []}
     />
   );
 }

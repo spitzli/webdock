@@ -2,10 +2,9 @@ import {msgid} from '@webdock/i18n';
 
 import { getRequestI18n } from '@webdock/i18n/next';
 import Link from "next/link";
-import { requireOperator } from "../lib/server";
-import { vercelSettings } from "../lib/vercel-settings";
-import { loadVercelConnection } from "../lib/vercel-store";
-import { listVercelProjects } from "../lib/vercel-api";
+import {requireRegistryOperator as requireOperator} from "../lib/registry-page";
+import {studioCall} from "../lib/studio-client";
+import type {VercelView} from "@webdock/api-client/integrations";
 import { VercelLinkForm } from "./vercel-link-form";
 export async function VercelIntegration({
   status,
@@ -16,8 +15,7 @@ export async function VercelIntegration({
 }) {
   const i18n = await getRequestI18n();
 
-  const actor = await requireOperator(),
-    settings = vercelSettings();
+  const actor=await requireOperator(),view=await studioCall<VercelView>("integrations.vercel",[cursor||""]),settings=view.configured;
   const message =
     status === "connected"
       ? msgid("Vercel connected. Choose a project below.")
@@ -26,29 +24,7 @@ export async function VercelIntegration({
         : status === "failed"
           ? msgid("The Vercel connection could not be verified. Start from Studio and select the configured team with the required project permissions.")
           : null;
-  let credential = null,
-    problem = "",
-    available: {
-      projects: { id: string; name: string }[];
-      nextCursor: string | null;
-    } = { projects: [], nextCursor: null };
-  if (settings)
-    try {
-      credential = await loadVercelConnection(
-        actor,
-        settings.teamID,
-        settings.cookieSecret,
-      );
-      if (credential)
-        available = await listVercelProjects({
-          token: credential.accessToken,
-          teamID: settings.teamID,
-          cursor,
-        });
-    } catch {
-      problem =
-        msgid("Vercel could not be reached. Reconnect or review its selected project permissions.");
-    }
+  const credential=view.connected,available=view.available,problem=view.problem?msgid("Vercel could not be reached. Reconnect or review its selected project permissions."):"";
   const projects = credential
     ? await actor.payload.find({
         collection: "projects",

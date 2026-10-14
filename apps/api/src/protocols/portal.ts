@@ -1,0 +1,96 @@
+import { tenantPreview } from "../modules/portal/preview";
+import Elysia from "elysia";
+import type { ApiConfig } from "../config";
+import type { Mount } from "../route-manifest";
+import { createPortalSession } from "../modules/portal/session";
+import { portalRequest } from "../modules/portal/transport";
+import { handleStudioRequest } from "../modules/portal/studio-api";
+export function portalProtocols(config: ApiConfig): Mount[] {
+  if (
+    process.env.WEBDOCK_AUTH_ISSUER !== config.authOrigin + "/api/auth" ||
+    process.env.WEBDOCK_SSO_APP_ORIGIN !== config.studioOrigin
+  )
+    throw Error("Portal canonical origins mismatch");
+  const session = createPortalSession();
+  const clientID = process.env.WEBDOCK_SSO_CLIENT_ID,
+    clientSecret = process.env.WEBDOCK_SSO_CLIENT_SECRET;
+  if (
+    !clientID ||
+    !clientSecret ||
+    clientID !== process.env.WEBDOCK_STUDIO_CLIENT_ID
+  )
+    throw Error("Studio client identity mismatch");
+  const call = (request: Request) =>
+    portalRequest(
+      request,
+      { origin: config.studioOrigin, clientID, clientSecret },
+      (headers) => session.getDelegatedSession(headers),
+      (internal) =>
+        handleStudioRequest(internal, { browserHeaders: request.headers }),
+    );
+  const preview = (request: Request, action: string) =>
+    tenantPreview(
+      request,
+      action,
+      config.studioOrigin,
+      async <T>(operation: string, args: unknown[] = []) => {
+        const headers = new Headers(request.headers);
+        headers.set("content-type", "application/json");
+        headers.delete("content-length");
+        const response = await call(
+          new Request(request.url, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ operation, args }),
+          }),
+        );
+        if (!response.ok) throw Error("Preview unavailable");
+        return ((await response.json()) as { data: T }).data;
+      },
+    );
+  return [
+    {
+      host: config.apiOrigin,
+      category: "delegated",
+      app: new Elysia().post("/v1/studio", ({ request }) => call(request), {
+        parse: "none",
+      }),
+    },
+    {
+      host: config.studioOrigin,
+      category: "auth_protocol",
+      app: new Elysia()
+        .get("/api/sso/login", ({ request }) => session.login(request))
+        .get("/api/sso/callback", ({ request }) => session.callback(request))
+        .post("/api/sso/logout", ({ request }) => session.logout(request), {
+          parse: "none",
+        })
+        .post(
+          "/api/users/logout",
+          async ({ request }) => {
+            const response = await session.logout(request);
+            if (response.status !== 303) return response;
+            response.headers.delete("Location");
+            return Response.json(
+              { message: "Signed out." },
+              { headers: response.headers },
+            );
+          },
+          { parse: "none" },
+        )
+        .post(
+          "/api/tenant-preview/:action",
+          ({ request, params }) => preview(request, params.action),
+          { parse: "none" },
+        )
+        .post(
+          "/api/users/refresh-token",
+          ({ request }) => session.refresh(request),
+          { parse: "none" },
+        )
+        .post("/api/portal/studio", ({ request }) => call(request), {
+          parse: "none",
+        }),
+    },
+  ];
+}

@@ -18,7 +18,7 @@ const space = localFont({
 export async function generateMetadata(): Promise<Metadata> { const { t } = await getRequestI18n(); return {
   title: { default: t("Webdock Account"), template: "%s — Webdock" },
   robots: { index: false, follow: false },
-  referrer: "no-referrer",
+  referrer: "same-origin",
 }; }
 
 export default async function Layout({ children }: { children: React.ReactNode }) {

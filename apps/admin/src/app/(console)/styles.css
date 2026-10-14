@@ -2135,3 +2135,9 @@ main h2 { font-size: 16px; letter-spacing: 0; }
 .navigation-spinner { width: .85em; height: .85em; border: 2px solid currentColor; border-inline-end-color: transparent; border-radius: 50%; animation: navigation-spin .8s linear infinite; }
 @keyframes navigation-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .navigation-spinner { animation: none; } }
+
+/* Billing forms share the console fields and keep checkbox hit areas compact. */
+.billing-form label { display: grid; gap: .4rem; margin-block: 1rem; }
+.billing-form label:has(input[type="checkbox"]), .billing-form .billing-check, .billing-check { display: flex; align-items: flex-start; gap: .65rem; margin-block: 1rem; }
+.billing-form input[type="checkbox"], .billing-check input[type="checkbox"] { width: 1.15rem; min-height: 1.15rem; height: 1.15rem; margin: .15rem 0 0; flex: 0 0 auto; }
+.billing-form .button { margin-block-start: .5rem; }

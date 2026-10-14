@@ -1,0 +1,112 @@
+/** Disposable local-container verification. Never reads deployment environment files. */
+import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { randomBytes } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { RedisClient } from "bun";
+import { connectViewCache } from "../src/cache";
+const endpoint =
+  process.env.DOCKER_HOST ||
+  execFileSync(
+    "docker",
+    [
+      "context",
+      "inspect",
+      ...(process.env.DOCKER_CONTEXT ? [process.env.DOCKER_CONTEXT] : []),
+      "--format",
+      "{{.Endpoints.docker.Host}}",
+    ],
+    { encoding: "utf8" },
+  ).trim();
+if (!endpoint.startsWith("unix://"))
+  throw Error("Local Docker engine required");
+const env: NodeJS.ProcessEnv = { ...process.env, DOCKER_HOST: endpoint };
+delete env.DOCKER_CONTEXT;
+const docker = (args: string[]) =>
+  execFileSync("docker", args, {
+    encoding: "utf8",
+    env,
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
+const directory = await mkdtemp(join(tmpdir(), "webdock-cache-")),
+  password = randomBytes(32).toString("hex"),
+  name = "webdock-cache-fixture-" + randomBytes(6).toString("hex");
+const file = join(directory, "cache.env");
+await writeFile(file, "DFLY_requirepass=" + password + "\n", { mode: 0o600 });
+let created = false,
+  client: ReturnType<typeof connectViewCache> | undefined;
+try {
+  docker([
+    "run",
+    "-d",
+    "--name",
+    name,
+    "--read-only",
+    "--user",
+    "65532:65532",
+    "--cap-drop=ALL",
+    "--security-opt=no-new-privileges",
+    "--memory=512m",
+    "--cpus=1",
+    "--tmpfs",
+    "/tmp:rw,noexec,nosuid,size=16m",
+    "--env-file",
+    file,
+    "-p",
+    "127.0.0.1::6379",
+    "docker.dragonflydb.io/dragonflydb/dragonfly:v2.0.2@sha256:061f00b201b58e12f974e4e96c761a881ee1c05e9d8ee967466a604b7299753b",
+    "dragonfly",
+    "--logtostderr",
+    "--proactor_threads=1",
+    "--maxmemory=256MiB",
+    "--cache_mode=true",
+    "--version_check=false",
+    "--snapshot_cron=",
+    "--dir=/tmp",
+  ]);
+  created = true;
+  const port = docker(["port", name, "6379/tcp"]).split(":").at(-1);
+  await Bun.sleep(500);
+  const anonymous = new RedisClient(`redis://127.0.0.1:${port}`, {
+    connectionTimeout: 500,
+    maxRetries: 0,
+    autoReconnect: false,
+  });
+  let denied = false;
+  try {
+    await anonymous.connect();
+    await anonymous.get("webdock:view:fixture");
+  } catch {
+    denied = true;
+  } finally {
+    anonymous.close();
+  }
+  if (!denied) throw Error("Unauthenticated cache access was accepted");
+  client = connectViewCache(`redis://default:${password}@127.0.0.1:${port}`);
+  const key = {
+    kind: "branding" as const,
+    environment: "fixture",
+    customerID: "public",
+    resourceID: "branding",
+    revision: "1",
+  };
+  let reads = 0;
+  const load = async () => ({ value: ++reads });
+  const first = await client.cache.read(key, load),
+    second = await client.cache.read(key, load);
+  if (first.value !== 1 || second.value !== 1 || reads !== 1)
+    throw Error("Cache miss/hit failed");
+  docker(["stop", "-t", "1", name]);
+  const start = Date.now();
+  const third = await client.cache.read(key, load);
+  if (third.value !== 2 || Date.now() - start > 500)
+    throw Error("Outage fallback failed");
+  console.log(
+    "Dragonfly2.0.2: authentication, non-root/read-only runtime, cache hit and bounded outage fallback passed.",
+  );
+} finally {
+  client?.close();
+  if (created) docker(["rm", "-f", name]);
+  await rm(directory, { recursive: true, force: true });
+}

@@ -4,9 +4,9 @@ import { msgid } from '@webdock/i18n';
 
 import { getRequestI18n } from '@webdock/i18n/next';
 import Link from "next/link";
-import { requireOperator } from "../lib/server";
-import { projectVercelStatus } from "../lib/vercel-project";
-import type { VercelDeployment } from "../lib/vercel-api";
+import {requireRegistryOperator as requireOperator} from "../lib/registry-page";
+import { projectVercelStatus } from "../lib/vercel-view";
+import type { VercelDeployment } from "@webdock/hosting-contracts/vercel";
 async function Deployment({ deployment }: { deployment: VercelDeployment }) {
   const i18n = await getRequestI18n();
 

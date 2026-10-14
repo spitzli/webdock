@@ -1,10 +1,10 @@
 "use server";
-import { APIError } from "payload";
+import { RegistryError as APIError } from "@webdock/api-client/errors";
 import { ZodError } from "zod";
-import { writeCustomer, writeProject, writeInstance, setArchived } from "./registry";
+import { writeCustomer, writeProject, writeInstance, setArchived } from "./registry-remote";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireOperator } from "./server";
+import { requireRegistryOperator as requireOperator } from "./registry-page";
 export type FormState = { error?: string; success?: string; values?: Record<string, string> };
 const values = (form: FormData) =>
   Object.fromEntries(

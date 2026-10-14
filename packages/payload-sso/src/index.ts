@@ -1,10 +1,10 @@
 import * as oidc from 'openid-client'
 import { sealData, unsealData } from 'iron-session'
-import type { AuthStrategyFunction, CollectionConfig, Field, Payload } from 'payload'
+import type { CollectionConfig, Field, Payload } from 'payload'
 
 const roles = ['reader', 'editor', 'admin', 'operator'] as const
 type Role = typeof roles[number]
-type Identity = { sub: string; role: Role; exp: number }
+type Identity = { sub: string; role: Role; exp: number; sessionID?: string }
 type Session = { kind: 'session'; accessToken: string; sub: string; exp: number; idToken?: string }
 type Flow = { kind: 'flow'; verifier: string; state: string; nonce: string; exp: number; returnTo?: string }
 const SESSION_AGE = 8 * 60 * 60
@@ -14,24 +14,8 @@ const record = (value: unknown): value is Record<string, unknown> => typeof valu
 const nonempty = (value: unknown): value is string => typeof value === 'string' && value.length > 0
 const role = (value: unknown): value is Role => roles.includes(value as Role)
 
-const nativeAuthRoutes = ['login', 'logout', 'forgot', 'reset', 'create-first-user', 'unauthorized']
-
-/** Return only normalized admin paths; never accept another origin or an auth loop. */
-export function safeAdminReturnTo(value: unknown, extraPrefixes: readonly string[] = []): string | null {
-  const prefixes = ['/admin', '/cms', '/system', ...extraPrefixes]
-  const allowed = (pathname: string) => prefixes.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`))
-  if (typeof value !== 'string' || value.length > 2048 || !value.startsWith('/')
-    || /[\\\u0000-\u0020]/.test(value)) return null
-  try {
-    const url = new URL(value, 'https://admin.invalid')
-    // Reject encoded separators and double encoding before checking the route boundary.
-    if (url.origin !== 'https://admin.invalid' || url.pathname.includes('//') || /%(?:2f|5c|25)/i.test(url.pathname)) return null
-    const pathname = decodeURIComponent(url.pathname)
-    if (/[\\\u0000-\u0020]/.test(pathname) || !allowed(pathname)
-      || nativeAuthRoutes.includes(pathname.split('/')[2]?.toLowerCase() ?? '')) return null
-    return `${url.pathname}${url.search}${url.hash}`
-  } catch { return null }
-}
+import {safeAdminReturnTo} from './return-to';
+export {safeAdminReturnTo} from './return-to';
 
 /** Payload preserves deep links in `redirect` when sending anonymous requests to login. */
 export function adminSSORedirect(enforced: boolean, segments: string[] = [], searchParams: Record<string, unknown> = {}): string | null {
@@ -48,7 +32,7 @@ export function validateIdentity(value: unknown, clientId: string, timestamp = n
   if (!record(value) || value.active !== true || value.client_id !== clientId || !nonempty(value.sub)
     || !Number.isSafeInteger(value.exp) || (value.exp as number) <= timestamp || (value.exp as number) > timestamp + SESSION_AGE
     || !role(value.webdock_role) || (value.disabled !== undefined && value.disabled !== false)) return null
-  return { sub: value.sub, role: value.webdock_role, exp: value.exp as number }
+  return { sub: value.sub, role: value.webdock_role, exp: value.exp as number, ...(nonempty(value.sid) ? { sessionID: value.sid } : {}) }
 }
 
 export function intersectRoles(local: unknown, central: unknown): Role | null {
@@ -62,7 +46,9 @@ export const authSubjectField: Field = {
 }
 
 export type PayloadSSOOptions = {
-  getPayload: () => Promise<Payload>
+  getPayload?: () => Promise<Payload>
+  /** API-owned mapping after live introspection; no email-based account linking. */
+  lookupUser?: (identity: Identity) => Promise<{ id: string; authSubject: string; role: string; disabled?: boolean; name: string; email: string; createdAt: string; updatedAt: string } | null>
   issuer?: string
   clientId?: string
   clientSecret?: string
@@ -82,6 +68,7 @@ export type PayloadSSOOptions = {
 }
 
 export function configurePayloadSSO(options: PayloadSSOOptions) {
+  if (!options.getPayload && !options.lookupUser) throw new Error("A user mapping is required")
   const required = (value: string | undefined, name: string) => {
     if (!value) throw new Error(`Missing SSO configuration: ${name}`)
     return value
@@ -149,8 +136,9 @@ export function configurePayloadSSO(options: PayloadSSOOptions) {
       && (value.idToken === undefined || nonempty(value.idToken)) ? value as Session : null
   }
   const introspect = async (token: string) => validateIdentity(await oidc.tokenIntrospection(await configuration(), token), clientId)
-  const findUser = async (payload: Payload, identity: Identity) => {
-    const result = await payload.find({
+  const findUser = async (payload: Payload | undefined, identity: Identity) => {
+    const mapped = options.lookupUser ? await options.lookupUser(identity) : undefined
+    const result = options.lookupUser ? { docs: mapped ? [mapped] : [] } : await payload!.find({
       collection: 'users', where: { authSubject: { equals: identity.sub } },
       limit: 2, depth: 0, overrideAccess: true,
     })
@@ -161,7 +149,7 @@ export function configurePayloadSSO(options: PayloadSSOOptions) {
     if (user.authSubject !== identity.sub || user.disabled || !effectiveRole) return null
     return { ...user, role: effectiveRole, collection: 'users' as const, _strategy: 'webdock-sso', _ssoExp: identity.exp }
   }
-  const authenticate: AuthStrategyFunction = async ({ headers, payload }) => {
+  const authenticate = async ({ headers, payload }: { headers: Headers; payload?: Payload }) => {
     try {
       const stored = await session(headers)
       if (!stored) return { user: null }
@@ -195,12 +183,12 @@ export function configurePayloadSSO(options: PayloadSSOOptions) {
       const identity = await introspect(stored.accessToken)
       if (!identity || identity.sub !== stored.sub) return null
       if ((!options.allowUnmappedPortalUsers || identity.role === 'operator')
-        && !await findUser(await options.getPayload(), identity)) return null
-      return { subject: identity.sub, role: identity.role, accessToken: stored.accessToken, expiresAt: Math.min(stored.exp, identity.exp) }
+        && !await findUser(await options.getPayload?.(), identity)) return null
+      return { subject: identity.sub, role: identity.role, accessToken: stored.accessToken, expiresAt: Math.min(stored.exp, identity.exp), ...(identity.sessionID ? { sessionID: identity.sessionID } : {}) }
     },
     async refresh(request: Request): Promise<Response> {
       if (request.method !== 'POST') return respond(405)
-      const { user } = await authenticate({ headers: request.headers, payload: await options.getPayload() })
+      const { user } = await authenticate({ headers: request.headers, payload: await options.getPayload?.() })
       if (!user) return respond(401, 'Your session expired. Sign in again.')
       const exp = (user as typeof user & { _ssoExp: number })._ssoExp
       return Response.json({ user, exp }, { headers: { 'Cache-Control': 'no-store' } })
@@ -243,7 +231,7 @@ export function configurePayloadSSO(options: PayloadSSOOptions) {
         stage='introspection'
         const identity = await introspect(tokens.access_token)
         stage='mapping'
-        if (!identity || tokens.claims()?.sub !== identity.sub || ((!options.allowUnmappedPortalUsers || identity.role === 'operator') && !await findUser(await options.getPayload(), identity))) {
+        if (!identity || tokens.claims()?.sub !== identity.sub || ((!options.allowUnmappedPortalUsers || identity.role === 'operator') && !await findUser(await options.getPayload?.(), identity))) {
           throw new Error('No mapped application access')
         }
         const stored: Session = { kind: 'session', accessToken: tokens.access_token, sub: identity.sub, exp: identity.exp }

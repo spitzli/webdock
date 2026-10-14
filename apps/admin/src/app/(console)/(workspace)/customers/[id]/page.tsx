@@ -9,7 +9,7 @@ import { notFound } from "next/navigation";
 import { Editor, ArchiveButton } from "../../../../../components/editor";
 import { saveCustomer, archiveRecord } from "../../../../../lib/actions";
 import { date, validRecordID } from "../../../../../lib/presentation";
-import { requireOperator } from "../../../../../lib/server";
+import { requireRegistryOperator } from "../../../../../lib/registry-page";
 export default async function Customer({
   params,
 }: {
@@ -19,7 +19,7 @@ export default async function Customer({
 
   const { id } = await params;
   if (!validRecordID(id)) notFound();
-  const { payload, user } = await requireOperator();
+  const { payload, user } = await requireRegistryOperator();
   const customer = await payload.findByID({
     collection: "customers",
     id,
@@ -85,6 +85,7 @@ export default async function Customer({
             <Link className="button" href={`/tenants/${id}/team`}>{i18n.t("Team & invitations")}</Link>
             <Link className="button secondary" href={`/tenants/${id}/hosting`}>{i18n.t("Hosting")}</Link>
             <Link className="button secondary" href={`/tenants/${id}/usage`}>{i18n.t("Plan & usage")}</Link>
+            <Link className="button secondary" href={`/customers/${id}/billing`}>{i18n.t("Billing")}</Link>
             <Link className="button secondary" href={`/tenants/${id}/mail`}>{i18n.t("Mail & domains")}</Link>
             </div>
           </section>

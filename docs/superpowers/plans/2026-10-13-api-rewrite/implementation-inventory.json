@@ -1,0 +1,4527 @@
+{
+  "baseline": "95fc3b2ed4317f4d19bdba2c05530ae217924574",
+  "verifiedSourceCount": 523,
+  "method": "Path-by-path disposition of the523 approved source files. Targets checked to exist. Runtime closure is supported separately by both transitive frontend import-boundary tests, builds, and ported protocol/role tests; this file is not a claim of production traffic transfer.",
+  "sources": [
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/admin/actions.ts",
+      "task": "A08",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/admin/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/admin/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/admin/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/admin/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/admin/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/admin/plans/actions.ts",
+      "task": "A07",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/admin/plans/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/admin/plans/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/admin/plans/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/admin/plans/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/admin/plans/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/error.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/error.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/delete/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/delete/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/logs/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/logs/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/settings/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/settings/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/storage-delete/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/storage-delete/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/enroll/[enrollmentID]/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/enroll/[enrollmentID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/connection-error/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/connection-error/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/connection/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/connection/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/deletion/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/deletion/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/settings/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/settings/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/sources/[migrationID]/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/sources/[migrationID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/git/connection-error/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/git/connection-error/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/operations/[operationID]/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/operations/[operationID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/setup/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/setup/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/layout.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/layout.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/layout.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/layout.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/loading.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/loading.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/offers/[token]/actions.ts",
+      "task": "A07",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/offers/[token]/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/offers/[token]/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/offers/[token]/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/offers/[token]/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/offers/[token]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/people/actions.ts",
+      "task": "A05",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/people/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/people/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/people/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/people/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/people/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/builder/actions.ts",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/builder/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/builder/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/builder/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/calendar/actions.ts",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/calendar/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/calendar/calendar-editor.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/calendar/calendar-editor.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/calendar/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/calendar/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/content/actions.ts",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/content/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/content/content-editor.tsx",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/content/content-editor.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/content/content-state.ts",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/content/content-state.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/content/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/content/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/layout.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/layout.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/actions.ts",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-form.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/actions.ts",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/sites/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/sites/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/[bindingID]/page.tsx",
+      "task": "A11",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/[bindingID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx",
+      "task": "A11",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/hosting/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/hosting/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/loading.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/loading.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/actions.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/analytics/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/analytics/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/api-keys/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/api-keys/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/domains/[id]/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/domains/[id]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/domains/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/domains/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/emails/[id]/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/emails/[id]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/emails/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/emails/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/error.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/error.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/inbox/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/inbox/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/keys/actions.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/keys/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/keys/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/keys/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/keys/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/keys/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/layout.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/layout.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/loading.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/loading.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/logs/[id]/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/logs/[id]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/logs/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/logs/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mail-workspace.tsx",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mail-workspace.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/actions.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/forms.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/forms.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/quickstart/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/quickstart/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/sending/actions.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/sending/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/sending/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/sending/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/sending/panel.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/sending/panel.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/service-actions.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/service-actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/service-panel.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/service-panel.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/settings/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/settings/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/suppressions/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/suppressions/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/team/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/team/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/actions.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/webhooks/[id]/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/webhooks/[id]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/webhooks/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/webhooks/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/profile/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/profile/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/team/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/team/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/actions.ts",
+      "task": "A07",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/workspace.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/[customerID]/workspace.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/actions.ts",
+      "task": "A05",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(portal)/tenants/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(portal)/tenants/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/activity/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/activity/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/customers/[id]/hosting/page.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/customers/[id]/hosting/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/customers/[id]/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/customers/[id]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/customers/new/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/customers/new/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/customers/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/customers/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/error.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/error.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx",
+      "task": "A11",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/enroll/[enrollmentID]/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/enroll/[enrollmentID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/integrations/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/integrations/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/layout.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/layout.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/loading.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/loading.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/not-found.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/not-found.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/operations/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/operations/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/projects/[id]/delete/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/projects/[id]/delete/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/error.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/error.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/layout.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/layout.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(console)/login/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/(console)/login/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/(payload)/api/[...slug]/route.ts",
+      "task": "A15",
+      "disposition": "retired-payload-handler",
+      "targets": [
+        "apps/api/src/modules/registry"
+      ],
+      "note": "Native Payload wildcard removed; explicit registry RPC and SSO aliases replace it. Unknown native CRUD paths fail closed."
+    },
+    {
+      "source": "apps/admin/src/app/(payload)/api/sso/callback/route.ts",
+      "task": "A15",
+      "disposition": "retired-payload-handler",
+      "targets": [
+        "apps/api/src/modules/portal"
+      ],
+      "note": "Native Payload wildcard removed; explicit registry RPC and SSO aliases replace it. Unknown native CRUD paths fail closed."
+    },
+    {
+      "source": "apps/admin/src/app/(payload)/api/sso/login/route.ts",
+      "task": "A15",
+      "disposition": "retired-payload-handler",
+      "targets": [
+        "apps/api/src/modules/portal"
+      ],
+      "note": "Native Payload wildcard removed; explicit registry RPC and SSO aliases replace it. Unknown native CRUD paths fail closed."
+    },
+    {
+      "source": "apps/admin/src/app/(payload)/api/sso/logout/route.ts",
+      "task": "A15",
+      "disposition": "retired-payload-handler",
+      "targets": [
+        "apps/api/src/modules/portal"
+      ],
+      "note": "Native Payload wildcard removed; explicit registry RPC and SSO aliases replace it. Unknown native CRUD paths fail closed."
+    },
+    {
+      "source": "apps/admin/src/app/(payload)/api/tenant-preview/[action]/route.ts",
+      "task": "A15",
+      "disposition": "retired-payload-handler",
+      "targets": [
+        "apps/api/src/modules/access/tenant-preview.ts"
+      ],
+      "note": "Native Payload wildcard removed; explicit registry RPC and SSO aliases replace it. Unknown native CRUD paths fail closed."
+    },
+    {
+      "source": "apps/admin/src/app/(payload)/api/users/logout/route.ts",
+      "task": "A15",
+      "disposition": "retired-payload-handler",
+      "targets": [
+        "apps/api/src/modules/portal"
+      ],
+      "note": "Native Payload wildcard removed; explicit registry RPC and SSO aliases replace it. Unknown native CRUD paths fail closed."
+    },
+    {
+      "source": "apps/admin/src/app/(payload)/api/users/refresh-token/route.ts",
+      "task": "A15",
+      "disposition": "retired-payload-handler",
+      "targets": [
+        "apps/api/src/modules/portal"
+      ],
+      "note": "Native Payload wildcard removed; explicit registry RPC and SSO aliases replace it. Unknown native CRUD paths fail closed."
+    },
+    {
+      "source": "apps/admin/src/app/(payload)/layout.tsx",
+      "task": "A15",
+      "disposition": "retired-native-payload",
+      "targets": [
+        "apps/api/src/modules/registry/service.ts",
+        "apps/admin/src/app/(console)/(workspace)/admin/registry-users/page.tsx"
+      ],
+      "note": "Native password/user administration remains disabled under central SSO; safe account mapping is read-only."
+    },
+    {
+      "source": "apps/admin/src/app/(payload)/system/[[...segments]]/page.tsx",
+      "task": "A15",
+      "disposition": "retired-native-payload",
+      "targets": [
+        "apps/api/src/modules/registry/service.ts",
+        "apps/admin/src/app/(console)/(workspace)/admin/registry-users/page.tsx"
+      ],
+      "note": "Native password/user administration remains disabled under central SSO; safe account mapping is read-only."
+    },
+    {
+      "source": "apps/admin/src/app/(payload)/system/importMap.js",
+      "task": "A15",
+      "disposition": "retired-native-payload",
+      "targets": [
+        "apps/api/src/modules/registry/service.ts",
+        "apps/admin/src/app/(console)/(workspace)/admin/registry-users/page.tsx"
+      ],
+      "note": "Native password/user administration remains disabled under central SSO; safe account mapping is read-only."
+    },
+    {
+      "source": "apps/admin/src/app/.well-known/oauth-protected-resource/api/mcp/route.ts",
+      "task": "A15",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/protocols/integrations.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/github/callback/route.ts",
+      "task": "A15",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/modules/integrations"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/github/connect/route.ts",
+      "task": "A15",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/modules/integrations"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/github/disconnect/route.ts",
+      "task": "A15",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/modules/integrations"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/github/select/route.ts",
+      "task": "A15",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/modules/integrations"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/hosting/[[...path]]/route.ts",
+      "task": "A10",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/protocols/mcp.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/hosting/git/callback/route.ts",
+      "task": "A10",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/modules/integrations"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/hosting/git/connect/route.ts",
+      "task": "A10",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/modules/integrations"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/hosting/git/select/route.ts",
+      "task": "A10",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/modules/integrations"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/hosting/vercel/callback/route.ts",
+      "task": "A10",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/modules/integrations"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/hosting/vercel/connect/route.ts",
+      "task": "A10",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/modules/integrations"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/locale/route.ts",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/api/locale/route.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/mcp/route.ts",
+      "task": "A15",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/protocols/mcp.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/registry/[[...path]]/route.ts",
+      "task": "A15",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/modules/mcp/registry-api.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/vercel/callback/route.ts",
+      "task": "A15",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/modules/integrations"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/vercel/connect/route.ts",
+      "task": "A15",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/modules/integrations"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/vercel/disconnect/route.ts",
+      "task": "A15",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/modules/integrations"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/api/vercel/events/route.ts",
+      "task": "A15",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/protocols/integrations.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/app/global-not-found.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/app/global-not-found.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/cms/collections.ts",
+      "task": "A15",
+      "disposition": "retired-native-payload",
+      "targets": [
+        "apps/api/src/modules/registry/service.ts",
+        "apps/admin/src/app/(console)/(workspace)/admin/registry-users/page.tsx"
+      ],
+      "note": "Native password/user administration remains disabled under central SSO; safe account mapping is read-only."
+    },
+    {
+      "source": "apps/admin/src/components/area-navigation.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/area-navigation.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/canvas/editor.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/canvas/editor.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/canvas/history.test.ts",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/canvas/history.test.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/canvas/history.ts",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/canvas/history.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/canvas/inspector.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/canvas/inspector.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/canvas/stage.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/canvas/stage.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/cms-site-list.tsx",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/cms-site-list.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/cms-workspace-nav.tsx",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/cms-workspace-nav.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/databases/forms.tsx",
+      "task": "A11",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/databases/forms.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/databases/workbench.tsx",
+      "task": "A11",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/databases/workbench.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/databases/workspace-frame.tsx",
+      "task": "A11",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/databases/workspace-frame.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/editor.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/editor.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/github-repositories.tsx",
+      "task": "A12",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/github-repositories.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/allowances.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/allowances.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/app-spec.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/app-spec.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/arguments.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/arguments.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/customer.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/customer.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/database-details.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/database-details.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/databases.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/databases.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/environment.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/environment.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/form-state.ts",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/form-state.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/form.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/own-infrastructure.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/own-infrastructure.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/own-mail.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/own-mail.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/project-applications.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/project-applications.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/project-context.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/project-context.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/refresh.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/refresh.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/table.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/table.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/hosting/tenant-database-navigation.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/hosting/tenant-database-navigation.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/list-controls.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/list-controls.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/live-search-form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/live-search-form.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/login-form.tsx",
+      "task": "A15",
+      "disposition": "retired-native-login",
+      "targets": [
+        "apps/api/src/protocols/portal.ts"
+      ],
+      "note": "Studio always enters the canonical PKCE SSO flow."
+    },
+    {
+      "source": "apps/admin/src/components/mail/connection-settings.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/mail/connection-settings.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/mail/gateway-overview.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/mail/gateway-overview.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/mail/getting-started.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/mail/getting-started.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/mail/mail-navigation.tsx",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/mail/mail-navigation.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/mail/message-html.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/mail/message-html.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/mail/message-preview.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/mail/message-preview.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/mail/product-actions.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/mail/product-actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/mail/product-form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/mail/product-form.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/mail/product-page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/mail/product-page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/mail/resource-page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/mail/resource-page.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/mail/webmail.tsx",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/mail/webmail.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/navigation-pending.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/navigation-pending.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/navigation.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/navigation.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/plan-fields.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/plan-fields.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/studio-shell.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/studio-shell.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/tenant-preview.tsx",
+      "task": "A05",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/tenant-preview.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/vercel-integration.tsx",
+      "task": "A12",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/vercel-integration.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/vercel-link-form.tsx",
+      "task": "A12",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/vercel-link-form.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/vercel-panel.tsx",
+      "task": "A12",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/vercel-panel.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/components/workspace-context.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/components/workspace-context.tsx"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/access-management.ts",
+      "task": "A05",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/access-management.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/actions.ts",
+      "task": "A08",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/auth.ts",
+      "task": "A03",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/auth.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/canvas-bridge.ts",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/canvas-bridge.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/cms-modules.ts",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/cms-modules.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/content-fields.ts",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/content-fields.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/customer-fields.ts",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/customer-fields.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/database-actions.ts",
+      "task": "A08",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/database-actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/database-client.ts",
+      "task": "A11",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/database-client.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/demo-bridge-policy.ts",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/demo-bridge-policy.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/demo-bridges.ts",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/demo-bridges.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/demo-content.ts",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/demo-content.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/git-connection-routes.ts",
+      "task": "A10",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/integrations/github/byok-routes.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/git-deployment-messages.ts",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/git-deployment-messages.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/github-project.ts",
+      "task": "A12",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/integrations/github/project.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/github-routes.ts",
+      "task": "A12",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/integrations/github/routes.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/github.ts",
+      "task": "A12",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/integrations/github/client.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/hosting-actions.ts",
+      "task": "A08",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/hosting-actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/hosting-api.ts",
+      "task": "A10",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/mcp/hosting-api.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/hosting-application.ts",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/hosting-application.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/hosting-client.ts",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/hosting-client.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/hosting-mcp.ts",
+      "task": "A10",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/mcp/hosting-mcp.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/hosting-page-access.ts",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/hosting-page-access.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/hosting-views.ts",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/hosting-views.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/instance-users.ts",
+      "task": "A06",
+      "disposition": "retired-native-payload",
+      "targets": [
+        "apps/api/src/modules/registry/service.ts",
+        "apps/admin/src/app/(console)/(workspace)/admin/registry-users/page.tsx"
+      ],
+      "note": "Native password/user administration remains disabled under central SSO; safe account mapping is read-only."
+    },
+    {
+      "source": "apps/admin/src/lib/list-query.ts",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/list-query.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/live-search-query.ts",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/live-search-query.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/mail-domains.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/mail-domains.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/mail-examples.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/mail-examples.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/mail-keys.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/mail-keys.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/mail-product.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/mail-product.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/mail-sending.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/mail-sending.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/mail-service.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/mail-service.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/mail-tracking.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/mail-tracking.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/mailboxes.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/mailboxes.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/managed-database-actions.ts",
+      "task": "A08",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/managed-database-actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/managed-database-page.ts",
+      "task": "A11",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/managed-database-page.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/mcp-auth.ts",
+      "task": "A14",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/mcp/mcp-auth.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/mcp-server.ts",
+      "task": "A14",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/mcp/mcp-server.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/plans.ts",
+      "task": "A07",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/plans.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/platform.ts",
+      "task": "A08",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/platform.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/presentation.ts",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/presentation.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/preview-guard-policy.ts",
+      "task": "A04",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/access/tenant-preview.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/preview-guard.ts",
+      "task": "A04",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/access/tenant-preview.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/project-deletion-actions.ts",
+      "task": "A08",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/project-deletion-actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/project-deletion-database.ts",
+      "task": "A14",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/lifecycle/project-deletion-database.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/project-deletion-messages.ts",
+      "task": "A14",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/project-deletion-messages.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/project-deletion.ts",
+      "task": "A14",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/lifecycle/project-deletion.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/registry-api.ts",
+      "task": "A06",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/mcp/registry-api.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/registry.ts",
+      "task": "A06",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/registry/service.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/server.ts",
+      "task": "A06",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/registry/service.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/snowflake-schema.ts",
+      "task": "A06",
+      "disposition": "offline-history",
+      "targets": [
+        "apps/api/legacy-migrations/admin/snowflake-schema.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/snowflake.ts",
+      "task": "A06",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/registry/snowflake.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/sso-routes.ts",
+      "task": "A04",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/portal/transport.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/sso.ts",
+      "task": "A04",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/portal/session.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/storage-usage.ts",
+      "task": "A08",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/storage-usage.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/studio-client.ts",
+      "task": "A04",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/studio-client.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/studio-contracts.ts",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/studio-contracts.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/studio-errors.ts",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/studio-errors.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/studio-shop.ts",
+      "task": "A13",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/studio-shop.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/tenant-mail.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/tenant-mail.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/tenants.ts",
+      "task": "A05",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/tenants.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/ui-labels.ts",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/ui-labels.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/vercel-actions.ts",
+      "task": "A08",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/vercel-actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/vercel-api.ts",
+      "task": "A12",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/integrations/vercel/vercel-api.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/vercel-oauth.ts",
+      "task": "A12",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/integrations/vercel/vercel-oauth.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/vercel-project.ts",
+      "task": "A12",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/integrations/vercel/vercel-project.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/vercel-region-policy.ts",
+      "task": "A12",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/integrations/vercel/events.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/vercel-routes.ts",
+      "task": "A12",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/integrations/vercel/vercel-routes.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/vercel-settings.ts",
+      "task": "A12",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/integrations/vercel-settings.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/vercel-store.ts",
+      "task": "A12",
+      "disposition": "replaced-by-api",
+      "targets": [
+        "apps/api/src/modules/integrations/vercel/vercel-store.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/webmail-actions.ts",
+      "task": "A08",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/webmail-actions.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/lib/workspace-navigation.ts",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/lib/workspace-navigation.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/migrations/20261003_124635_initial.ts",
+      "task": "A15",
+      "disposition": "offline-history",
+      "targets": [
+        "apps/api/legacy-migrations/admin/20261003_124635_initial.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/migrations/20261003_133004_sso_subject.ts",
+      "task": "A15",
+      "disposition": "offline-history",
+      "targets": [
+        "apps/api/legacy-migrations/admin/20261003_133004_sso_subject.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/migrations/20261004_081809_customer_profile.ts",
+      "task": "A15",
+      "disposition": "offline-history",
+      "targets": [
+        "apps/api/legacy-migrations/admin/20261004_081809_customer_profile.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/migrations/index.ts",
+      "task": "A15",
+      "disposition": "offline-history",
+      "targets": [
+        "apps/api/legacy-migrations/admin/index.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/payload-types.ts",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/admin/src/payload-types.ts"
+      ]
+    },
+    {
+      "source": "apps/admin/src/payload.config.ts",
+      "task": "A15",
+      "disposition": "retired-native-payload",
+      "targets": [
+        "apps/api/src/modules/registry/service.ts",
+        "apps/admin/src/app/(console)/(workspace)/admin/registry-users/page.tsx"
+      ],
+      "note": "Native password/user administration remains disabled under central SSO; safe account mapping is read-only."
+    },
+    {
+      "source": "apps/auth/src/app/.well-known/oauth-authorization-server/api/auth/route.ts",
+      "task": "A15",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/protocols/auth.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/.well-known/openid-configuration/route.ts",
+      "task": "A15",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/protocols/auth.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/account/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/account/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/admin/actions.ts",
+      "task": "A08",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/admin/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/admin/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/admin/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/admin/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/admin/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/admin/plans/actions.ts",
+      "task": "A07",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/admin/plans/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/admin/plans/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/admin/plans/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/admin/plans/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/admin/plans/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/auth/[...all]/route.ts",
+      "task": "A15",
+      "disposition": "api-protocol",
+      "targets": [
+        "apps/api/src/protocols/auth.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/cron/mail/[job]/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/cron/mail/[job]/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/cron/storage-usage/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/cron/storage-usage/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/databases/bridge/route.ts",
+      "task": "A11",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/databases/bridge/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/databases/gateway/route.ts",
+      "task": "A11",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/databases/gateway/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/hosting/agent/[...path]/route.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/hosting/agent/[...path]/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/hosting/bridge/route.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/hosting/bridge/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/hosting/git/webhook/route.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/hosting/git/webhook/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/hosting/git/worker/[...path]/route.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/hosting/git/worker/[...path]/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/lifecycle/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/lifecycle/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/locale/route.ts",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/api/locale/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/gateway/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/gateway/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/provider-events/[sourceID]/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/provider-events/[sourceID]/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/analytics/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/analytics/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/api-keys/[id]/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/api-keys/[id]/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/api-keys/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/api-keys/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/batches/[id]/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/batches/[id]/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/domains/[id]/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/domains/[id]/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/domains/[id]/verify/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/domains/[id]/verify/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/domains/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/domains/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/emails/[id]/cancel/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/emails/[id]/cancel/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/emails/[id]/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/emails/[id]/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/emails/batch/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/emails/batch/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/emails/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/emails/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/logs/[id]/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/logs/[id]/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/logs/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/logs/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/openapi.json/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/openapi.json/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/suppressions/[email]/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/suppressions/[email]/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/suppressions/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/suppressions/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/webhooks/[id]/deliveries/[deliveryID]/replay/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/webhooks/[id]/deliveries/[deliveryID]/replay/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/webhooks/[id]/deliveries/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/webhooks/[id]/deliveries/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/webhooks/[id]/rotate/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/webhooks/[id]/rotate/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/webhooks/[id]/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/webhooks/[id]/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mail/v1/webhooks/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mail/v1/webhooks/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/mcp/introspect/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/mcp/introspect/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/api/studio/route.ts",
+      "task": "A15",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/protocols/legacy-auth/api/studio/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/connections/actions.ts",
+      "task": "A03",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/connections/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/connections/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/connections/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/connections/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/connections/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/consent/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/consent/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/forgot-password/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/forgot-password/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/invitation/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/invitation/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/layout.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/layout.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/mail/docs/route.ts",
+      "task": "A15",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/app/mail/docs/route.ts",
+        "apps/api/src/protocols/legacy-auth/mail/docs/route.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/not-found.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/not-found.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/offers/[token]/actions.ts",
+      "task": "A07",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/offers/[token]/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/offers/[token]/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/offers/[token]/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/offers/[token]/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/offers/[token]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/people/actions.ts",
+      "task": "A05",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/people/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/people/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/people/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/people/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/people/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/reset-password/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/reset-password/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/sign-in/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/sign-in/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/sites/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/sites/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/[customerID]/mail/actions.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/[customerID]/mail/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/[customerID]/mail/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/[customerID]/mail/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/[customerID]/mail/keys/actions.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/[customerID]/mail/keys/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/[customerID]/mail/keys/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/[customerID]/mail/keys/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/[customerID]/mail/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/[customerID]/mail/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/[customerID]/mail/tracking/actions.ts",
+      "task": "A09",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/[customerID]/mail/tracking/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/[customerID]/mail/tracking/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/[customerID]/mail/tracking/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/[customerID]/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/[customerID]/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/[customerID]/usage/actions.ts",
+      "task": "A07",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/[customerID]/usage/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/[customerID]/usage/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/[customerID]/usage/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/[customerID]/usage/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/[customerID]/usage/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/actions.ts",
+      "task": "A05",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/actions.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/form.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/form.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/tenants/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/tenants/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/app/two-factor/page.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/app/two-factor/page.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/components/auth-client.ts",
+      "task": "A03",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/components/auth-client.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/components/auth-forms.tsx",
+      "task": "A03",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/components/auth-forms.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/components/hosting-allowances.tsx",
+      "task": "A10",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/components/hosting-allowances.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/components/invitation.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/components/invitation.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/components/passkeys.tsx",
+      "task": "A03",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/components/passkeys.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/components/plan-fields.tsx",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/components/plan-fields.tsx"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/access-management.ts",
+      "task": "A05",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/access-management.ts",
+        "apps/api/src/modules/access/access-management.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/account-continuation.ts",
+      "task": "A03",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/account-continuation.ts",
+        "apps/api/src/modules/auth/account-continuation.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/auth.ts",
+      "task": "A03",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/auth.ts",
+        "apps/api/src/modules/auth/auth.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/authorization.ts",
+      "task": "A03",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/auth/authorization.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/bootstrap.ts",
+      "task": "A03",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/auth/bootstrap.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/cookie-policy.ts",
+      "task": "A03",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/auth/cookie-policy.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/database-cluster-rls.ts",
+      "task": "A02",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/db/database-cluster-rls.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/database-context.ts",
+      "task": "A02",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/database-context.ts",
+        "apps/api/src/db/database-context.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/database-mail-rls.ts",
+      "task": "A02",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/db/database-mail-rls.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/database-rls-schema.ts",
+      "task": "A02",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/db/database-rls-schema.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/databases/http.ts",
+      "task": "A11",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/databases/http.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/databases/schema.ts",
+      "task": "A11",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/databases/schema.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/databases/service.ts",
+      "task": "A11",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/databases/service.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/db.ts",
+      "task": "A02",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/db/runtime.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/agent-api.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/agent-api.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/allowances.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/allowances.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/apps.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/apps.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/authorization.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/authorization.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/bridge.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/bridge.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/byok-mail.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/byok-mail.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/byok-vercel.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/byok-vercel.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/byok.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/byok.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/clusters.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/clusters.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/database-agent.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/database-agent.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/database-billing.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/database-billing.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/database-credentials.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/database-credentials.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/database-maintenance.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/database-maintenance.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/database-migration-maintenance.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/database-migration-maintenance.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/database-observations.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/database-observations.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/database-orders.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/database-orders.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/database-protection.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/database-protection.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/database-schema.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/database-schema.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/databases.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/databases.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/db.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/db.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/environment.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/environment.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/git-deployment-schema.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/git-deployment-schema.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/git-deployments.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/git-deployments.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/git-github.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/git-github.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/git-oauth.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/git-oauth.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/git-publication.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/git-publication.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/git-reconciliation.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/git-reconciliation.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/git-targets.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/git-targets.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/git-vercel-publication.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/git-vercel-publication.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/git-vercel.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/git-vercel.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/git-worker-api.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/git-worker-api.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/http.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/http.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/operations.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/operations.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/registry-access.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/registry-access.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/reservations.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/reservations.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/schema.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/schema.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/hosting/service.ts",
+      "task": "A10",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/hosting/service.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/i18n-feedback.ts",
+      "task": "A15",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/i18n-feedback.ts",
+        "apps/api/src/modules/shared/i18n-feedback.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/i18n-labels.ts",
+      "task": "A15",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/i18n-labels.ts",
+        "apps/api/src/modules/shared/i18n-labels.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/i18n-messages.ts",
+      "task": "A15",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/i18n-messages.ts",
+        "apps/api/src/modules/shared/i18n-messages.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/lazy-auth.ts",
+      "task": "A03",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/auth/lazy-auth.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/lifecycle.ts",
+      "task": "A14",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/lifecycle/lifecycle.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-access.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-access.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-agent.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-agent.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-budget.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-budget.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-configuration.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-configuration.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-dns.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-dns.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-domains.ts",
+      "task": "A09",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/mail-domains.ts",
+        "apps/api/src/modules/mail/mail-domains.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-gateway.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-gateway.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-keys.ts",
+      "task": "A09",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/mail-keys.ts",
+        "apps/api/src/modules/mail/mail-keys.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-native-keys.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-native-keys.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/access.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/access.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/analytics.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/analytics.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/api-contract.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/api-contract.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/api-keys.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/api-keys.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/api.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/api.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/backfill.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/backfill.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/batches.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/batches.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/callback-inbox.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/callback-inbox.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/connections.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/connections.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/content.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/content.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/cron.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/cron.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/deadline.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/deadline.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/domains.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/domains.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/events.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/events.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/health.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/health.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/http.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/http.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/idempotency.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/idempotency.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/import.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/import.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/jobs.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/jobs.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/messages.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/messages.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/onboarding.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/onboarding.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/openapi.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/openapi.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/projections.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/projections.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/provider-account.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/provider-account.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/provider-credentials.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/provider-credentials.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/quota.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/quota.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/rate-limit.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/rate-limit.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/reconcile.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/reconcile.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/request-logs.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/request-logs.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/resource-lists.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/resource-lists.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/retention.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/retention.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/schedules.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/schedules.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/schema.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/schema.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/sending.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/sending.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/store.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/store.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/studio.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/studio.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/suppressions.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/suppressions.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/tracking-context.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/tracking-context.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/turbo-send.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/turbo-send.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/webhook-signing.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/webhook-signing.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/webhook-transport.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/webhook-transport.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-product/webhooks.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/product/webhooks.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-send-schema.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-send-schema.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-send-transport.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-send-transport.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-sending.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-sending.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-service.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-service.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-sessions.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-sessions.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-submission-configuration.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-submission-configuration.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-submissions.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-submissions.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-tracking.ts",
+      "task": "A09",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/mail-tracking.ts",
+        "apps/api/src/modules/mail/mail-tracking.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail-writes.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mail-writes.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mail.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/auth/mail.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mailbox-schema.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mailbox-schema.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mailboxes.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/mailboxes.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/mcp.ts",
+      "task": "A14",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/mcp.ts",
+        "apps/api/src/modules/auth/mcp.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/offline.ts",
+      "task": "A03",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/auth/offline.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/passkeys.ts",
+      "task": "A03",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/auth/passkeys.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/plans.ts",
+      "task": "A07",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/plans.ts",
+        "apps/api/src/modules/plans/plans.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/platform.ts",
+      "task": "A08",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/platform.ts",
+        "apps/api/src/modules/platform/platform.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/sign-in-recovery.ts",
+      "task": "A03",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/sign-in-recovery.ts",
+        "apps/api/src/modules/auth/sign-in-recovery.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/storage-usage.ts",
+      "task": "A08",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/storage-usage.ts",
+        "apps/api/src/modules/platform/storage-usage.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/studio-api.ts",
+      "task": "A03",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/portal/studio-api.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/studio-links.ts",
+      "task": "A15",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/studio-links.ts",
+        "apps/api/src/modules/shared/studio-links.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/tenant-mail.ts",
+      "task": "A09",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/tenant-mail.ts",
+        "apps/api/src/modules/mail/tenant-mail.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/tenant-owner-schema.ts",
+      "task": "A05",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/access/tenant-owner-schema.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/tenant-policy.ts",
+      "task": "A05",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/auth/tenant-policy.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/tenant-preview-schema.ts",
+      "task": "A05",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/access/tenant-preview-schema.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/tenant-preview.ts",
+      "task": "A05",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/access/tenant-preview.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/tenant-schema.ts",
+      "task": "A05",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/access/tenant-schema.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/tenants.ts",
+      "task": "A05",
+      "disposition": "http-ui-wrapper-and-api",
+      "targets": [
+        "apps/auth/src/lib/tenants.ts",
+        "apps/api/src/modules/access/tenants.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/turbo-domains.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/turbo-domains.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/turbo-tracking.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/turbo-tracking.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/lib/turbosmtp.ts",
+      "task": "A09",
+      "disposition": "ported-to-api",
+      "targets": [
+        "apps/api/src/modules/mail/turbosmtp.ts"
+      ]
+    },
+    {
+      "source": "apps/auth/src/proxy.ts",
+      "task": "A15",
+      "disposition": "retained-ui-or-shared",
+      "targets": [
+        "apps/auth/src/proxy.ts"
+      ]
+    }
+  ],
+  "scripts": [
+    {
+      "source": "apps/auth/scripts/migrate-git-deployments.ts",
+      "target": "apps/api/scripts/legacy/migrate-git-deployments.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/migrate-hosting-databases.ts",
+      "target": "apps/api/scripts/legacy/migrate-hosting-databases.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/migrate-hosting.ts",
+      "target": "apps/api/scripts/legacy/migrate-hosting.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/migrate-mail-native.ts",
+      "target": "apps/api/scripts/legacy/migrate-mail-native.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/migrate-mail-product.ts",
+      "target": "apps/api/scripts/legacy/migrate-mail-product.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/migrate-mail.ts",
+      "target": "apps/api/scripts/legacy/migrate-mail.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/migrate-plans.ts",
+      "target": "apps/api/scripts/legacy/migrate-plans.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/migrate-platform.ts",
+      "target": "apps/api/scripts/legacy/migrate-platform.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/migrate-tenant-preview.ts",
+      "target": "apps/api/scripts/legacy/migrate-tenant-preview.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/migrate-tenants.ts",
+      "target": "apps/api/scripts/legacy/migrate-tenants.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/migrate.ts",
+      "target": "apps/api/scripts/legacy/migrate.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/provision-database-browser.ts",
+      "target": "apps/api/scripts/legacy/provision-database-browser.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/auth/scripts/provision.mjs",
+      "target": "apps/api/scripts/legacy/provision.mjs",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/register-food-showcase-sso.ts",
+      "target": "apps/api/scripts/legacy/register-food-showcase-sso.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/register-lead-demo-sso.ts",
+      "target": "apps/api/scripts/legacy/register-lead-demo-sso.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/register-nordlicht-showcase-sso.ts",
+      "target": "apps/api/scripts/legacy/register-nordlicht-showcase-sso.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/register-pizza2400.ts",
+      "target": "apps/api/scripts/legacy/register-pizza2400.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/register-retail-showcase-sso.ts",
+      "target": "apps/api/scripts/legacy/register-retail-showcase-sso.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/setup-mail-test.ts",
+      "target": "apps/api/scripts/legacy/setup-mail-test.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/auth/scripts/verify-nordlicht-binding.ts",
+      "target": "apps/api/scripts/legacy/verify-nordlicht-binding.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/benchmark-mail-product.ts",
+      "target": "apps/api/scripts/legacy/benchmark-mail-product.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/auth/scripts/bootstrap-production.ts",
+      "target": "apps/api/scripts/legacy/bootstrap-production.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/copy-scalar.mjs",
+      "target": "apps/auth/scripts/copy-scalar.mjs",
+      "disposition": "retained-current-entrypoint"
+    },
+    {
+      "source": "apps/auth/scripts/enable-mcp-renewal.ts",
+      "target": "apps/api/scripts/legacy/enable-mcp-renewal.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/auth/scripts/enroll-git-worker.ts",
+      "target": "apps/api/scripts/legacy/enroll-git-worker.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/auth/scripts/git-deployments-local-fixture.ts",
+      "target": "apps/api/scripts/legacy/git-deployments-local-fixture.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/auth/scripts/hosting-local-fixture.ts",
+      "target": "apps/api/scripts/legacy/hosting-local-fixture.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/auth/scripts/install-platform-rls.ts",
+      "target": "apps/api/scripts/legacy/install-platform-rls.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/local-e2e.ts",
+      "target": "apps/api/scripts/legacy/local-e2e.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/mail-backfill.ts",
+      "target": "apps/api/scripts/legacy/mail-backfill.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/auth/scripts/mail-import-relaykit.ts",
+      "target": "apps/api/scripts/legacy/mail-import-relaykit.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/auth/scripts/mail-operator.ts",
+      "target": "apps/api/scripts/legacy/mail-operator.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/auth/scripts/managed-postgresql-local-fixture.ts",
+      "target": "apps/api/scripts/legacy/managed-postgresql-local-fixture.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/auth/scripts/migrate-access.ts",
+      "target": "apps/api/scripts/legacy/migrate-access.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/auth/scripts/migrate-databases.ts",
+      "target": "apps/api/scripts/legacy/migrate-databases.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/admin/scripts/audit-lead-demo-cms.ts",
+      "target": "apps/api/scripts/admin/audit-lead-demo-cms.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/admin/scripts/connect-lead-demo-cms.ts",
+      "target": "apps/api/scripts/admin/connect-lead-demo-cms.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/admin/scripts/connect-pizza2400-cms.ts",
+      "target": "apps/api/scripts/admin/connect-pizza2400-cms.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/admin/scripts/migrate-project-deletion.ts",
+      "target": "apps/api/scripts/admin/migrate-project-deletion.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/admin/scripts/migrate-vercel.ts",
+      "target": "apps/api/scripts/admin/migrate-vercel.ts",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/admin/scripts/provision-food-showcase.ts",
+      "target": "apps/api/scripts/admin/provision-food-showcase.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/admin/scripts/provision-nordlicht-showcase.ts",
+      "target": "apps/api/scripts/admin/provision-nordlicht-showcase.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/admin/scripts/provision-retail-showcase.ts",
+      "target": "apps/api/scripts/admin/provision-retail-showcase.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/admin/scripts/provision.mjs",
+      "target": "apps/api/scripts/admin/provision.mjs",
+      "disposition": "retired-fail-closed"
+    },
+    {
+      "source": "apps/admin/scripts/register-lead-demos.ts",
+      "target": "apps/api/scripts/admin/register-lead-demos.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/admin/scripts/register-pizza2400.ts",
+      "target": "apps/api/scripts/admin/register-pizza2400.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "apps/admin/scripts/seed.ts",
+      "target": "apps/api/scripts/admin/seed.ts",
+      "disposition": "moved-api-offline-or-fixture-entrypoint"
+    },
+    {
+      "source": "scripts/build-icons.mjs",
+      "target": "scripts/build-icons.mjs",
+      "disposition": "retained-current-entrypoint"
+    },
+    {
+      "source": "scripts/database-browser-fixture.ts",
+      "target": "scripts/database-browser-fixture.ts",
+      "disposition": "retained-current-entrypoint"
+    },
+    {
+      "source": "scripts/prepare-vercel-output.mjs",
+      "target": "scripts/prepare-vercel-output.mjs",
+      "disposition": "retained-current-entrypoint"
+    },
+    {
+      "source": "scripts/prepare-vercel-output.test.mjs",
+      "target": "scripts/prepare-vercel-output.test.mjs",
+      "disposition": "retained-current-entrypoint"
+    },
+    {
+      "source": "scripts/test-mail.mjs",
+      "target": "scripts/test-mail.mjs",
+      "disposition": "retained-current-entrypoint"
+    },
+    {
+      "source": "scripts/platform-database-migration/migrate.mjs",
+      "target": "scripts/platform-database-migration/migrate.mjs",
+      "disposition": "retained-current-entrypoint"
+    },
+    {
+      "source": "scripts/platform-database-migration/migrate.test.mjs",
+      "target": "scripts/platform-database-migration/migrate.test.mjs",
+      "disposition": "retained-current-entrypoint"
+    },
+    {
+      "source": "scripts/platform-database-migration/roles.integration.mjs",
+      "target": "scripts/platform-database-migration/roles.integration.mjs",
+      "disposition": "retained-current-entrypoint"
+    },
+    {
+      "source": "scripts/platform-database-migration/roles.mjs",
+      "target": "scripts/platform-database-migration/roles.mjs",
+      "disposition": "retained-current-entrypoint"
+    },
+    {
+      "source": "scripts/platform-database-migration/roles.test.mjs",
+      "target": "scripts/platform-database-migration/roles.test.mjs",
+      "disposition": "retained-current-entrypoint"
+    },
+    {
+      "source": "scripts/platform-database-migration/tabularis.mjs",
+      "target": "scripts/platform-database-migration/tabularis.mjs",
+      "disposition": "retained-current-entrypoint"
+    },
+    {
+      "source": "scripts/platform-database-migration/tabularis.test.mjs",
+      "target": "scripts/platform-database-migration/tabularis.test.mjs",
+      "disposition": "retained-current-entrypoint"
+    }
+  ]
+}
