@@ -16,7 +16,7 @@ export default async function VercelGuide() {
     <p>{t("View hosting information alongside your Webdock project records: current production release, recent deployments, Git branch and commit, runtime settings, and domain verification.")}</p>
     <h2>{t("Connect your projects")}</h2>
     <ol>
-      <li>{t("Sign in to")} <a href="https://studio.webdock.dev/integrations">{t("Studio → Integrations")}</a> {t("with an authorised platform operator account.")}</li>
+      <li>{t("Sign in to")} <a href="https://console.webdock.dev/integrations">{t("Studio → Integrations")}</a> {t("with an authorised platform operator account.")}</li>
       <li>{t("Choose Connect Vercel. Start here so Studio can securely associate the installation with your session.")}</li>
       <li>{t("In Vercel, select your team and the projects to share. Review the four read permissions: projects, deployments, domains and integration configuration.")}</li>
       <li>{t("Finish the installation and return to Studio. Match an active Studio project to its Vercel project in Integrations.")}</li>

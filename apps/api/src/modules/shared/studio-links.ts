@@ -1,7 +1,7 @@
 type StudioEnvironment = Partial<
   Pick<
     NodeJS.ProcessEnv,
-    "NODE_ENV" | "STUDIO_UI_ENABLED" | "WEBDOCK_STUDIO_ORIGIN"
+    "NODE_ENV" | "STUDIO_UI_ENABLED" | "WEBDOCK_STUDIO_ORIGIN" | "WEBDOCK_CONSOLE_ORIGIN"
   >
 >;
 
@@ -10,7 +10,7 @@ export function studioURL(
   env: StudioEnvironment = process.env,
 ): string {
   const origin = new URL(
-    env.WEBDOCK_STUDIO_ORIGIN || "https://studio.webdock.dev",
+    env.WEBDOCK_CONSOLE_ORIGIN || env.WEBDOCK_STUDIO_ORIGIN || "https://studio.webdock.dev",
   );
   const localHTTP =
     env.NODE_ENV !== "production" &&

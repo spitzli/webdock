@@ -3,6 +3,7 @@ export type ApiConfig = {
   apiOrigin: string;
   authOrigin: string;
   studioOrigin: string;
+  consoleOrigin?: string;
   port: number;
   domains: string[];
 };
@@ -35,6 +36,10 @@ export function readConfig(env: Record<string, string | undefined>): ApiConfig {
     "WEBDOCK_STUDIO_ORIGIN",
     "http://localhost:3120",
   );
+  const consoleOrigin = env.WEBDOCK_CONSOLE_ORIGIN ? origin(env.WEBDOCK_CONSOLE_ORIGIN) : undefined;
+  if (consoleOrigin && ([apiOrigin, authOrigin, studioOrigin].includes(consoleOrigin)
+    || (production && !consoleOrigin.startsWith("https://"))))
+    throw Error("Console origin must be distinct and secure");
   if (
     production &&
     [apiOrigin, authOrigin, studioOrigin].some(
@@ -67,5 +72,5 @@ export function readConfig(env: Record<string, string | undefined>): ApiConfig {
     )
   )
     throw Error("Unknown API domain");
-  return { production, apiOrigin, authOrigin, studioOrigin, port, domains };
+  return { production, apiOrigin, authOrigin, studioOrigin, consoleOrigin, port, domains };
 }
