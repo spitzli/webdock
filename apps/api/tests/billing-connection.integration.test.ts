@@ -25,6 +25,7 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       orgID = randomUUID();
     const actor = { subject: user, sessionID: sid };
     let productID: string | undefined, versionID: string | undefined;
+    const versionIDs: string[] = [];
     const previousOrigin = process.env.WEBDOCK_API_ORIGIN;
     process.env.WEBDOCK_API_ORIGIN = "https://api.webdock.dev";
     const { connectionStatus, saveConnection, updateSwitches } =
@@ -180,7 +181,7 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       );
       const { createProductVersion, publishProduct, setProductAvailability } =
         await import("../src/modules/billing/catalog");
-      const draft = await createProductVersion(actor, {
+      const draftInput = {
         sku: "fixture-" + user,
         name: "Fixture Website",
         visibility: "internal",
@@ -197,7 +198,9 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
           mediaBytes: "500000000",
           mailMonthly: 100,
         },
-      });
+      };
+      const draft = await createProductVersion(actor, draftInput);
+      versionIDs.push(draft.id);
       productID = draft.productId;
       versionID = draft.id;
       await expect(
@@ -221,7 +224,8 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         operationallyReady: true,
       });
       let remoteProduct: Record<string, unknown> | undefined,
-        publishes = 0;
+        publishes = 0,
+        loseResponse = true;
       const catalogRemote = {
         find: async () => (remoteProduct ? [remoteProduct] : []),
         get: async () => remoteProduct,
@@ -261,7 +265,9 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
               },
             ],
           };
-          throw Error("Synthetic product create response lost");
+          if (loseResponse)
+            throw Error("Synthetic product create response lost");
+          return remoteProduct;
         },
       };
       await expect(
@@ -301,6 +307,26 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
           )
         ).rows[0].n,
       ).toBe(beforeAudit);
+      const next = await createProductVersion(actor, {
+        ...draftInput,
+        visibility: "private",
+        operationallyReady: true,
+      });
+      versionIDs.push(next.id);
+      remoteProduct = undefined;
+      loseResponse = false;
+      const immediate = await publishProduct(
+        actor,
+        { environment: "sandbox", versionID: next.id },
+        () => ({
+          ...catalogRemote,
+          get: async () => {
+            throw Object.assign(Error("Read replica lag"), { statusCode: 404 });
+          },
+        }),
+      );
+      expect(immediate.productID).toBe(String(remoteProduct!.id));
+      expect(publishes).toBe(2);
       await db.query(
         "INSERT INTO webdock_admin.customers(id,name,status) VALUES($1,'Preview billing','active')",
         [customer],
@@ -320,7 +346,7 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         "DELETE FROM webdock_auth.billing_job WHERE environment='sandbox' AND dedupe_key=$1",
         ["endpoint:" + orgID],
       );
-      if (versionID) {
+      for (const versionID of versionIDs) {
         await db.query(
           "DELETE FROM webdock_auth.billing_job WHERE environment='sandbox' AND dedupe_key=$1",
           ["publish:" + versionID],
@@ -337,10 +363,7 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
             "DELETE FROM webdock_auth.billing_product_version WHERE id=$1",
             [versionID],
           );
-          await cleanup.query(
-            "DELETE FROM webdock_auth.billing_product WHERE id=$1",
-            [productID],
-          );
+
           await cleanup.query("COMMIT");
         } catch (error) {
           await cleanup.query("ROLLBACK");
@@ -349,6 +372,10 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
           cleanup.release();
         }
       }
+      if (productID)
+        await db.query("DELETE FROM webdock_auth.billing_product WHERE id=$1", [
+          productID,
+        ]);
       await db.query(
         "DELETE FROM webdock_auth.billing_connection WHERE updated_by=$1",
         [user],

@@ -58,7 +58,7 @@ test("website purchases retain their original priced recurring entitlement bound
 });
 import { initialCatalog } from "../src/modules/billing/initial-catalog";
 test("the complete source catalog preserves prices and leaves ranges unpriced and disabled", () => {
-  expect(initialCatalog).toHaveLength(35);
+  expect(initialCatalog).toHaveLength(34);
   expect(new Set(initialCatalog.map((p) => p.sku)).size).toBe(
     initialCatalog.length,
   );
@@ -69,6 +69,9 @@ test("the complete source catalog preserves prices and leaves ranges unpriced an
       product.family === "website" ? "inclusive" : "exclusive",
     );
   }
+  expect(initialCatalog.some((p) => p.sku === "catalog-module-month-v1")).toBe(
+    false,
+  );
   expect(initialCatalog.filter((p) => p.amount === null)).toHaveLength(13);
   expect(
     initialCatalog.filter((p) => p.family === "database").map((p) => p.amount),
