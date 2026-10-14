@@ -30,7 +30,7 @@ const serialize = (value: unknown) =>
       typeof item === "bigint" ? item.toString() : item,
     ),
   );
-const draftSchema = z
+export const productVersionInput = z
   .object({
     sku: z.string().regex(/^[a-z][a-z0-9-]{2,79}$/),
     name: z.string().trim().min(1).max(160),
@@ -46,7 +46,7 @@ const draftSchema = z
   })
   .strict();
 export async function createProductVersion(actor: BillingActor, raw: unknown) {
-  const input = draftSchema.parse(raw),
+  const input = productVersionInput.parse(raw),
     hash = createHash("sha256")
       .update(
         JSON.stringify({

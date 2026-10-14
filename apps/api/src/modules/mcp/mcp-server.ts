@@ -1,4 +1,12 @@
 import {
+  listProducts,
+  createProductVersion,
+  publishProduct,
+  archiveProduct,
+  productVersionInput,
+} from "../billing/catalog";
+import { BillingError, environmentSchema } from "../billing/types";
+import {
   previewProjectDeletion,
   deleteProject,
   deleteProjectInput,
@@ -23,6 +31,9 @@ import {
   type RegistryActor,
 } from "../registry/compat";
 export const mutationTools = new Set([
+  "create_billing_product_version",
+  "publish_billing_product_version",
+  "archive_billing_product_version",
   "save_customer",
   "save_project",
   "save_cms_connection",
@@ -44,7 +55,8 @@ export function createRegistryMCP(actor: RegistryActor, canWrite: boolean) {
           {
             type: "text" as const,
             text:
-              error instanceof APIError && error.isPublic
+              (error instanceof APIError || error instanceof BillingError) &&
+              error.isPublic
                 ? error.message
                 : error instanceof z.ZodError
                   ? error.issues.map((i) => i.message).join("; ")
@@ -54,6 +66,63 @@ export function createRegistryMCP(actor: RegistryActor, canWrite: boolean) {
       };
     }
   };
+  server.registerTool(
+    "list_billing_product_versions",
+    {
+      description:
+        "List catalog versions and publication/archive state for the explicit sandbox or live environment. Current operator authority is required; no credentials are returned.",
+      inputSchema: { environment: environmentSchema },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    (input) => result(() => listProducts(actor.identity, input.environment)),
+  );
+  if (canWrite) {
+    server.registerTool(
+      "create_billing_product_version",
+      {
+        description:
+          "Create an immutable commercial draft for one managed website. Amount is integer currency minor units (490 means EUR4.90); mediaBytes is a decimal string. This does not publish, charge, assign a customer plan, or change existing subscriptions.",
+        inputSchema: productVersionInput.shape,
+        annotations: {
+          readOnlyHint: false,
+          idempotentHint: false,
+          destructiveHint: false,
+          openWorldHint: false,
+        },
+      },
+      (input) => result(() => createProductVersion(actor.identity, input)),
+    );
+    server.registerTool(
+      "publish_billing_product_version",
+      {
+        description:
+          "Explicitly publish an approved catalog version to the selected Polar environment and verify the returned product/price. Requires operator authority and publication enabled in Billing settings. Recover the same version after uncertainty; do not create another draft as a retry.",
+        inputSchema: { environment: environmentSchema, versionID: recordID },
+        annotations: {
+          readOnlyHint: false,
+          idempotentHint: true,
+          destructiveHint: false,
+          openWorldHint: true,
+        },
+      },
+      (input) => result(() => publishProduct(actor.identity, input)),
+    );
+    server.registerTool(
+      "archive_billing_product_version",
+      {
+        description:
+          "Archive the selected published version and block new purchases. Existing subscriptions and financial history remain; no deletion or refund. An uncertain archive is confirmed by readback.",
+        inputSchema: { environment: environmentSchema, versionID: recordID },
+        annotations: {
+          readOnlyHint: false,
+          idempotentHint: true,
+          destructiveHint: true,
+          openWorldHint: true,
+        },
+      },
+      (input) => result(() => archiveProduct(actor.identity, input)),
+    );
+  }
   server.registerTool(
     "list_records",
     {

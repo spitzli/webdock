@@ -7,14 +7,15 @@ export async function reconcileCatalog(environment: BillingEnvironment) {
   return withDatabaseScope(
     { kind: "system", purpose: `polar:${environment}:catalog` },
     async () => {
-      const { polar, organizationID } =
-        await billingWorkerProvider(environment);
       const rows = (
         await databasePools.worker.query(
           "SELECT webdock_rls.billing_catalog_terms($1,NULL) AS value",
           [environment],
         )
       ).rows;
+      if (!rows.length) return;
+      const { polar, organizationID } =
+        await billingWorkerProvider(environment);
       for (const { value } of rows) {
         const terms = value as PublishedTerms & { productID: string };
         if (terms.organizationID !== organizationID)

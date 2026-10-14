@@ -41,6 +41,8 @@ const rls = new Set([
   "billing-portal.integration.test.ts",
   "billing-offers.integration.test.ts",
   "billing-provider.integration.test.ts",
+  "billing-mcp.integration.test.ts",
+  "billing-catalog-unconfigured.integration.test.ts",
 ]);
 const requested = process.argv.slice(3);
 if (mode === "unit" || mode === "all")
