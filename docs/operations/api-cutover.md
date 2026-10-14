@@ -81,3 +81,11 @@ Before new writes, rollback may restore the recorded previous routes/artifacts. 
 Rehearse API stop, worker SIGKILL/restart and expired-lease recovery, DB failure, cache failure and restore independently. Observe route latency/error rate, pool waits, oldest pending job, webhook lag, conflict counts and provider read failures. Configure external alert delivery separately; this change sends no operational notifications.
 
 The new Auth UI artifact intentionally has no Vercel cron. Its deployment belongs after worker ownership transfer; the currently deployed old cron was not changed by editing this repository. Archive its old schedule/deployment in the cutover record before deploying the UI artifact.
+
+## Deployed Kubernetes profile
+
+See [production evidence](../verification/2026-10-14-api-production.md). Apply `infra/api/kubernetes.yaml` (namespace, API, quota and policies) before marking the namespace `security.webdock.dev/ready=true`; the existing admission policy requires Restricted Pod Security, quotas, policies and complete probes/resource bounds. Supply `api-runtime`, `worker-runtime`, `cache-runtime` and `ui-proxy-config` as private Kubernetes Secrets. Then apply `cache.yaml`, `worker.yaml`, and `ui-proxy.yaml` from the same directory. The worker Secret owns its explicit domain list.
+
+`ingress.yaml.template` contains only the `${WEBDOCK_INGRESS_SECRET}` placeholder. `ui-proxy.conf.example` uses `${AUTH_UI_HOST}`, `${STUDIO_UI_HOST}`, `${AUTH_UI_BYPASS_SECRET}` and `${STUDIO_UI_BYPASS_SECRET}`; render only those named variables, preserving NGINX's own `$vercel_origin` variable. UI hosts must be immutable deployment hostnames. Store the resulting `nginx.conf` in `ui-proxy-config`, not Git. A proxy Secret change requires a rolling proxy restart because its configuration uses a subPath mount. Keep the UI bypass credentials out of response headers and reject bypass-cookie query parameters.
+
+The API trusts the actual node pod CIDR plus the shared ingress credential; its NetworkPolicy permits incoming requests only from the Traefik pods. API upgrades use Recreate to bound database connection overlap. The UI-only proxy can roll with one extra pod inside the namespace quota. Do not enable ExternalName Services or relax cluster admission policies for this routing.

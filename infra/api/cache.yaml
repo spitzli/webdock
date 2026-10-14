@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: views, namespace: webdock-platform}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: webdock-views}
+  template:
+    metadata:
+      labels: {app: webdock-views}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: views
+          image: docker.dragonflydb.io/dragonflydb/dragonfly:v2.0.2@sha256:061f00b201b58e12f974e4e96c761a881ee1c05e9d8ee967466a604b7299753b
+          command: [/usr/bin/tini, --, /bin/sh, -ec]
+          args:
+            - ': "${DFLY_requirepass:?Cache authentication is required}"; exec dragonfly --logtostderr --proactor_threads=1 --maxmemory=256MiB --cache_mode=true --version_check=false --snapshot_cron= --dir=/tmp'
+          envFrom:
+            - secretRef: {name: cache-runtime}
+          ports:
+            - {name: redis, containerPort: 6379}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi, ephemeral-storage: 16Mi}
+            limits: {cpu: '1', memory: 512Mi, ephemeral-storage: 64Mi}
+          startupProbe:
+            tcpSocket: {port: redis}
+            failureThreshold: 12
+            periodSeconds: 5
+          readinessProbe:
+            tcpSocket: {port: redis}
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: {port: redis}
+            periodSeconds: 30
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: tmp
+          emptyDir: {medium: Memory, sizeLimit: 16Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: views, namespace: webdock-platform}
+spec:
+  selector: {app: webdock-views}
+  ports:
+    - {name: redis, port: 6379, targetPort: redis}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: views-private, namespace: webdock-platform}
+spec:
+  podSelector:
+    matchLabels: {app: webdock-views}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {app: webdock-api}
+      ports:
+        - {protocol: TCP, port: 6379}
+  egress: []

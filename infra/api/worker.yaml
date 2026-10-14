@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: webdock-platform
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: webdock-worker
+  template:
+    metadata:
+      labels:
+        app: webdock-worker
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: worker
+        image: docker.io/library/webdock-api@sha256:5d4670670d1c6ceda9b79198372b7be22c45b7dac1dc7049821716313acf8429
+        imagePullPolicy: Never
+        envFrom:
+        - secretRef:
+            name: worker-runtime
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+            ephemeral-storage: 16Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+            ephemeral-storage: 64Mi
+        startupProbe:
+          exec:
+            command:
+            - bun
+            - -e
+            - process.env.WEBDOCK_PROCESS_ROLE='worker';const{databasePools,workerDatabase}=await
+              import('./dist/db/runtime.ts');try{await(await import('./dist/db/readiness.ts')).verifyWorkerReadiness(workerDatabase,['billing']);}finally{await
+              databasePools.close();}
+          periodSeconds: 10
+          timeoutSeconds: 15
+          failureThreshold: 12
+        livenessProbe:
+          exec:
+            command:
+            - bun
+            - -e
+            - process.kill(1,0)
+          periodSeconds: 30
+          timeoutSeconds: 3
+        readinessProbe:
+          exec:
+            command:
+            - bun
+            - -e
+            - process.env.WEBDOCK_PROCESS_ROLE='worker';const{databasePools,workerDatabase}=await
+              import('./dist/db/runtime.ts');try{await(await import('./dist/db/readiness.ts')).verifyWorkerReadiness(workerDatabase,['billing']);}finally{await
+              databasePools.close();}
+          periodSeconds: 60
+          timeoutSeconds: 15
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        command:
+        - bun
+        - dist/worker.ts
+      volumes:
+      - name: tmp
+        emptyDir:
+          medium: Memory
+          sizeLimit: 32Mi
