@@ -28,7 +28,7 @@ export function ProductDraft() {
           <textarea name="description" required maxLength={4000} />
         </label>
         <label>
-          {i18n.t("Terms")}
+          {i18n.t("Contract terms")}
           <textarea name="terms" required maxLength={8000} />
         </label>
         <label>

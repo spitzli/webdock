@@ -293,7 +293,7 @@ msgid "privacy notice"
 msgstr "Datenschutzhinweis"
 
 msgid "Privacy notice"
-msgstr "Datenschutzhinweis"
+msgstr "Datenschutzerklärung"
 
 msgid "Read the"
 msgstr "Lies die"
@@ -529,3 +529,243 @@ msgstr "Studio öffnen"
 
 msgid "Available"
 msgstr "Verfügbar"
+
+msgid "Webdock · Updated {date}"
+msgstr "Webdock · Stand: {date}"
+
+msgid "This notice explains how we process personal data on Webdock’s website and in its account, Studio, hosting, database and Mail services. Customer-operated websites and applications have their own controllers and privacy notices."
+msgstr "Diese Erklärung beschreibt, wie wir personenbezogene Daten auf der Webdock-Website und in unseren Konto-, Studio-, Hosting-, Datenbank- und Mail-Diensten verarbeiten. Für eigenständig betriebene Kundenwebsites und Anwendungen gelten deren eigene Verantwortlichkeiten und Datenschutzhinweise."
+
+msgid "1. Controller and contact"
+msgstr "1. Verantwortlicher und Kontakt"
+
+msgid "Dominik Spitzli, trading as Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany."
+msgstr "Dominik Spitzli, handelnd unter Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Deutschland."
+
+msgid "For privacy questions and requests concerning your data, contact:"
+msgstr "Für Datenschutzfragen und Anliegen zu deinen Daten:"
+
+msgid "Legal notice"
+msgstr "Impressum"
+
+msgid "We are the controller for our website, customer relationships, accounts and service administration. When we host or handle personal data for a customer, we act on their instructions under a data-processing agreement (Article 28 GDPR). This notice does not replace that agreement."
+msgstr "Für unsere Website, Kundenbeziehungen, Konten und die Dienstverwaltung sind wir Verantwortlicher. Hosten oder bearbeiten wir personenbezogene Daten im Auftrag eines Kunden, handeln wir nach dessen Weisungen auf Grundlage einer Vereinbarung zur Auftragsverarbeitung (Art. 28 DSGVO). Diese Erklärung ersetzt diese Vereinbarung nicht."
+
+msgid "2. Data, purposes and legal bases"
+msgstr "2. Daten, Zwecke und Rechtsgrundlagen"
+
+msgid "When you visit Webdock, we and our hosting providers process technical request data, including IP address, requested URL, time, browser and operating-system information, to deliver the site, diagnose errors and prevent misuse. This is based on our legitimate interest in secure, reliable operation (Article 6(1)(f) GDPR). Fonts are served locally."
+msgstr "Beim Besuch von Webdock verarbeiten wir und unsere Hostinganbieter technische Anfragedaten wie IP-Adresse, aufgerufene URL, Zeitpunkt sowie Browser- und Betriebssysteminformationen. Das dient der Auslieferung, Fehleranalyse und Missbrauchsabwehr. Grundlage ist unser berechtigtes Interesse an einem sicheren, zuverlässigen Betrieb (Art. 6 Abs. 1 lit. f DSGVO). Schriftarten werden lokal ausgeliefert."
+
+msgid "For enquiries, contracts and billing, we process the contact, company, address, correspondence and contract details you provide. The bases are steps before or performance of a contract (Article 6(1)(b)), legal obligations such as accounting requirements (Article 6(1)(c)), and our legitimate interest in communicating with business contacts (Article 6(1)(f))."
+msgstr "Für Anfragen, Verträge und Abrechnung verarbeiten wir die angegebenen Kontakt-, Unternehmens-, Adress-, Korrespondenz- und Vertragsdaten. Grundlage sind vorvertragliche Maßnahmen oder die Vertragserfüllung (Art. 6 Abs. 1 lit. b), gesetzliche Pflichten etwa zur Buchführung (Art. 6 Abs. 1 lit. c) sowie unser berechtigtes Interesse an der Kommunikation mit geschäftlichen Ansprechpartnern (Art. 6 Abs. 1 lit. f)."
+
+msgid "For accounts and team access, we process names, email addresses, invitations, customer memberships, roles, password hashes, passkey public keys, configured second-factor data and sessions. Security-relevant actions are logged with the acting account, action and time. Data comes from you or the operator or administrator inviting you. The bases are contract performance for contracting users and our legitimate interests in managing authorised access and preventing misuse for team members."
+msgstr "Für Konten und Teamzugänge verarbeiten wir Namen, E-Mail-Adressen, Einladungen, Kundenzugehörigkeiten, Rollen, Passwort-Hashes, öffentliche Passkey-Schlüssel, eingerichtete Zweitfaktoren und Sitzungen. Sicherheitsrelevante Aktionen protokollieren wir mit ausführendem Konto, Aktion und Zeitpunkt. Die Daten stammen von dir oder vom einladenden Betreiber beziehungsweise Administrator. Grundlage sind die Vertragserfüllung bei eigenen Vertragspartnern und unsere berechtigten Interessen an der Verwaltung berechtigter Teamzugänge und der Missbrauchsabwehr."
+
+msgid "The data required for account access and contracted services must be provided for us to supply them; optional profile information is voluntary. Where we ask for consent, processing is based on Article 6(1)(a) GDPR and you may withdraw it at any time with future effect. We do not sell personal data or make solely automated decisions with legal or similarly significant effects."
+msgstr "Die für den Kontozugang und vereinbarte Dienste erforderlichen Daten benötigen wir zur Leistungserbringung; ergänzende Profilangaben sind freiwillig. Soweit wir um eine Einwilligung bitten, erfolgt die Verarbeitung nach Art. 6 Abs. 1 lit. a DSGVO. Du kannst sie jederzeit mit Wirkung für die Zukunft widerrufen. Wir verkaufen keine personenbezogenen Daten und treffen keine ausschließlich automatisierten Entscheidungen mit rechtlicher oder ähnlich erheblicher Wirkung."
+
+msgid "3. Projects, hosting and connected services"
+msgstr "3. Projekte, Hosting und angebundene Dienste"
+
+msgid "Depending on the services enabled, we process project content, files, database contents, domains, configuration, access credentials, deployment and usage data, and operational logs. Authorised team members see data according to their roles. Operators access it where needed to provide support, maintain the service or investigate security incidents. Customer content is processed on the customer’s instructions; service administration relies on contract performance and our legitimate security interests."
+msgstr "Je nach aktivierten Diensten verarbeiten wir Projektinhalte, Dateien, Datenbankinhalte, Domains, Konfigurationen, Zugangsdaten, Deployment- und Nutzungsdaten sowie Betriebsprotokolle. Berechtigte Teammitglieder sehen Daten entsprechend ihrer Rolle. Betreiber greifen darauf zu, soweit dies für Support, Betrieb oder die Untersuchung von Sicherheitsvorfällen erforderlich ist. Kundeninhalte verarbeiten wir nach Kundenweisung; die Dienstverwaltung beruht auf Vertragserfüllung und unseren berechtigten Sicherheitsinteressen."
+
+msgid "Optional Vercel and GitHub connections provide authorisation data and information about selected projects or repositories, deployments, domains, branches and commits. Enabled build and deployment workflows also process the source code, build artefacts and configuration needed for those workflows. Access is limited by the connected account’s permissions and the selected function. Disconnecting in Webdock and revoking access at the provider are separate actions."
+msgstr "Optionale Vercel- und GitHub-Verbindungen liefern Berechtigungsdaten und Informationen über ausgewählte Projekte oder Repositories, Deployments, Domains, Branches und Commits. Aktivierte Build- und Deployment-Abläufe verarbeiten außerdem den dafür benötigten Quellcode, Build-Artefakte und Konfigurationen. Der Zugriff richtet sich nach den Berechtigungen des verbundenen Kontos und der gewählten Funktion. Das Trennen in Webdock und der Widerruf des Zugriffs beim Anbieter sind getrennte Vorgänge."
+
+msgid "4. Mail"
+msgstr "4. Mail"
+
+msgid "Account invitations and security emails are sent through turboSMTP. When Mail is enabled for a customer, we process account and domain details, sender and recipient addresses, message contents and attachments, delivery events, usage and suppression records. Enabled incoming mail uses a separate Stalwart instance for that customer; outgoing-only service does not require one. Mailbox contents and forwarding are processed only for the enabled service."
+msgstr "Kontoeinladungen und Sicherheitsnachrichten versenden wir über turboSMTP. Ist Mail für einen Kunden aktiviert, verarbeiten wir Konto- und Domaindaten, Absender- und Empfängeradressen, Nachrichteninhalte und Anhänge, Zustellereignisse, Nutzung und Sperrlisten. Aktivierter E-Mail-Empfang nutzt eine eigene Stalwart-Instanz für diesen Kunden; reiner Versand benötigt keine solche Instanz. Postfachinhalte und Weiterleitungen werden nur für den aktivierten Dienst verarbeitet."
+
+msgid "For managed sending, the relay provider receives the account details needed for provisioning and the data needed to deliver messages. Customer-supplied relay accounts use the selected provider. Domain verification sends the domain name to Cloudflare’s DNS resolver. Configured customer webhooks receive delivery event data. Optional email open and click tracking is controlled by the customer administrator, who is responsible for the required recipient information and legal basis. It is separate from website analytics."
+msgstr "Beim verwalteten Versand erhält der Relay-Anbieter die zur Einrichtung benötigten Kontodaten und die für die Zustellung erforderlichen Nachrichtendaten. Bei kundeneigenen Relay-Zugängen wird der ausgewählte Anbieter verwendet. Zur Domainprüfung übermitteln wir den Domainnamen an den DNS-Resolver von Cloudflare. Konfigurierte Kunden-Webhooks erhalten Zustellereignisse. Optionales Öffnungs- und Klicktracking für E-Mails steuert der Kundenadministrator und verantwortet die nötigen Empfängerinformationen und Rechtsgrundlagen. Es ist von der Website-Statistik unabhängig."
+
+msgid "5. Cookies, preferences and planned analytics"
+msgstr "5. Cookies, Einstellungen und geplante Statistik"
+
+msgid "Login and connection cookies maintain sessions and protect authentication flows. Authentication sessions normally expire after eight hours; the Vercel connection cookie lasts up to ten minutes. A language preference explicitly selected by you is stored in a cookie for up to one year; a selected colour theme remains in local storage until removed. These functions use Article 6(1)(b) or (f) GDPR and, where strictly necessary to provide a service you request, Section 25(2)(2) TDDDG. You can remove them through your browser settings; this may sign you out or reset preferences."
+msgstr "Anmelde- und Verbindungscookies erhalten Sitzungen und sichern Anmeldeabläufe ab. Anmeldesitzungen laufen normalerweise nach acht Stunden ab, das Vercel-Verbindungscookie nach höchstens zehn Minuten. Eine ausdrücklich gewählte Sprache speichern wir bis zu einem Jahr in einem Cookie, ein gewähltes Farbschema bis zum Entfernen im Local Storage. Grundlage sind Art. 6 Abs. 1 lit. b oder f DSGVO und, soweit für einen von dir gewünschten Dienst unbedingt erforderlich, § 25 Abs. 2 Nr. 2 TDDDG. Du kannst die Daten über deine Browsereinstellungen entfernen; dadurch wirst du gegebenenfalls abgemeldet oder Einstellungen werden zurückgesetzt."
+
+msgid "Plausible Analytics is planned for the public website but is not currently integrated. The intended setup measures website use without analytics cookies, advertising profiles or cross-site tracking. Before activation, we will update this notice with the actual hosting setup, recipients, data collected, retention and applicable legal basis, and obtain consent where required."
+msgstr "Plausible Analytics ist für die öffentliche Website geplant, derzeit aber noch nicht eingebunden. Vorgesehen ist eine Nutzungsstatistik ohne Analyse-Cookies, Werbeprofile oder websiteübergreifendes Tracking. Vor der Aktivierung ergänzen wir diese Erklärung um die tatsächliche Betriebsform, Empfänger, erfasste Daten, Speicherdauer und anwendbare Rechtsgrundlage und holen eine Einwilligung ein, soweit erforderlich."
+
+msgid "How Plausible processes visitor data"
+msgstr "So verarbeitet Plausible Besucherdaten"
+
+msgid "6. Providers and international transfers"
+msgstr "6. Dienstleister und Übermittlungen ins Ausland"
+
+msgid "We use Vercel for web application hosting, Contabo for managed server, database and incoming-mail infrastructure, turboSMTP for email delivery, and Cloudflare for DNS services. GitHub and other customer-selected providers are involved when their integrations are enabled. Neon was the previous platform database provider; retained migration copies remain subject to the retention rules below until deleted. Providers receive only the data needed for their role. We also disclose data where legally required, for example to tax advisers or competent authorities."
+msgstr "Wir nutzen Vercel für das Hosting der Webanwendungen, Contabo für verwaltete Server-, Datenbank- und Empfangsmail-Infrastruktur, turboSMTP für den E-Mail-Versand und Cloudflare für DNS-Dienste. GitHub und weitere vom Kunden ausgewählte Anbieter kommen bei aktivierten Anbindungen hinzu. Neon war der bisherige Anbieter der Plattformdatenbank; verbliebene Migrationskopien unterliegen bis zur Löschung den unten beschriebenen Aufbewahrungsregeln. Dienstleister erhalten die für ihre Aufgabe benötigten Daten. Daneben geben wir Daten weiter, soweit dies rechtlich erforderlich ist, etwa an Steuerberater oder zuständige Behörden."
+
+msgid "Some providers process data outside the EU/EEA, including in the United States. An EU hosting region does not exclude international support or network processing. Where required, transfers rely on an applicable adequacy decision, such as the EU–US Data Privacy Framework for certified recipients, or EU standard contractual clauses and any necessary additional safeguards. You can request details and copies of the safeguards relevant to your service using the contact above."
+msgstr "Einige Anbieter verarbeiten Daten außerhalb der EU beziehungsweise des EWR, insbesondere in den USA. Eine EU-Hostingregion schließt internationale Support- oder Netzwerkverarbeitung nicht aus. Soweit erforderlich, stützen sich Übermittlungen auf einen einschlägigen Angemessenheitsbeschluss, etwa das EU–US Data Privacy Framework bei zertifizierten Empfängern, oder EU-Standardvertragsklauseln und gegebenenfalls zusätzliche Schutzmaßnahmen. Einzelheiten und Kopien der für deinen Dienst geltenden Garantien erhältst du über den oben genannten Kontakt."
+
+msgid "7. Retention and deletion"
+msgstr "7. Speicherdauer und Löschung"
+
+msgid "We keep contact, account and contract data for as long as needed for the relationship, then delete it unless legal retention duties or unresolved claims require continued storage. Depending on the document, statutory retention periods are generally six, eight or ten years. Security and operational logs are retained for their diagnostic and security purpose; incident-related records may be retained until the matter is resolved. Backups and retained migration copies are removed as their recovery purpose and applicable retention duties end."
+msgstr "Kontakt-, Konto- und Vertragsdaten speichern wir, solange sie für die Beziehung benötigt werden. Anschließend löschen wir sie, sofern keine gesetzlichen Aufbewahrungspflichten oder offenen Ansprüche entgegenstehen. Gesetzliche Fristen betragen je nach Unterlage regelmäßig sechs, acht oder zehn Jahre. Sicherheits- und Betriebsprotokolle bewahren wir für ihren Diagnose- und Sicherheitszweck auf; vorfallbezogene Nachweise gegebenenfalls bis zur Klärung. Sicherungen und verbliebene Migrationskopien werden entfernt, sobald ihr Wiederherstellungszweck und einschlägige Aufbewahrungspflichten entfallen."
+
+msgid "For the Mail API, cleanup is configured for message text and HTML after 30 days from a final outcome, metadata and events after 90 days, request logs and completed webhook attempts after 30 days, and processed or quarantined callbacks after seven days. Attachments are removed after a definitive sending outcome; content with an uncertain outcome after seven days. Active schedules and unresolved sending or duplicate-prevention records are retained while needed. Suppressions remain until removed. These periods do not govern mailbox storage, provider-side records or backups."
+msgstr "Für die Mail-API ist die Bereinigung von Nachrichtentext und HTML 30 Tage nach einem endgültigen Ergebnis, von Metadaten und Ereignissen nach 90 Tagen, von Anfrageprotokollen und abgeschlossenen Webhook-Versuchen nach 30 Tagen sowie von verarbeiteten oder isolierten Rückmeldungen nach sieben Tagen vorgesehen. Anhänge werden nach einem eindeutigen Versandergebnis entfernt, Inhalte bei unklarem Ergebnis nach sieben Tagen. Aktive Zeitpläne sowie offene Versand- und Duplikatvermeidungsdatensätze bleiben erhalten, solange sie benötigt werden. Sperrlisten bleiben bis zu ihrer Entfernung bestehen. Diese Fristen gelten nicht für Postfachspeicher, Datensätze beim Anbieter oder Sicherungen."
+
+msgid "Suspending a service, archiving a customer or disconnecting an integration does not automatically delete stored data. Incoming-mail storage is retained on deactivation; deletion is a separate operation. Contact us to arrange deletion or export. Disconnecting Vercel removes its stored credential from the active database, but provider-side authorisations must also be revoked at Vercel."
+msgstr "Das Aussetzen eines Dienstes, Archivieren eines Kunden oder Trennen einer Anbindung löscht gespeicherte Daten nicht automatisch. Speicher für eingehende E-Mails bleibt bei Deaktivierung erhalten; die Löschung ist ein eigener Vorgang. Kontaktiere uns für Löschung oder Export. Das Trennen von Vercel entfernt den gespeicherten Zugangsschlüssel aus der aktiven Datenbank; Berechtigungen beim Anbieter müssen zusätzlich bei Vercel widerrufen werden."
+
+msgid "8. Your rights"
+msgstr "8. Deine Rechte"
+
+msgid "Subject to the statutory conditions, you have rights of access, rectification, erasure, restriction and data portability. You may object to processing based on legitimate interests for reasons relating to your situation; you can object to direct marketing at any time. You may withdraw consent without affecting the lawfulness of earlier processing. We may verify your identity to protect your data."
+msgstr "Unter den gesetzlichen Voraussetzungen hast du Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung und Datenübertragbarkeit. Einer Verarbeitung auf Grundlage berechtigter Interessen kannst du aus Gründen deiner besonderen Situation widersprechen; Direktwerbung kannst du jederzeit widersprechen. Eine Einwilligung kannst du widerrufen, ohne dass die Rechtmäßigkeit der vorherigen Verarbeitung entfällt. Zum Schutz deiner Daten können wir deine Identität prüfen."
+
+msgid "You can complain to a supervisory authority, including the authority where you live or work, or to the State Commissioner for Data Protection of Lower Saxony:"
+msgstr "Du kannst dich bei einer Aufsichtsbehörde beschweren, etwa an deinem Wohn- oder Arbeitsort oder bei der Landesbeauftragten für den Datenschutz Niedersachsen:"
+
+msgid "Privacy — Webdock"
+msgstr "Datenschutz — Webdock"
+
+msgid "How Webdock processes personal data, uses service providers and protects your rights."
+msgstr "Wie Webdock personenbezogene Daten verarbeitet, Dienstleister einsetzt und deine Rechte wahrt."
+
+msgid "Terms and conditions"
+msgstr "Allgemeine Geschäftsbedingungen (AGB)"
+
+msgid "These terms apply to Webdock services for consumers and businesses, including agreed website development, project management, hosting, databases and Mail. A consumer acts mainly outside their trade or profession. Individually agreed terms take precedence; mandatory consumer rights remain unaffected."
+msgstr "Diese AGB gelten für Webdock-Leistungen gegenüber Privat- und Geschäftskunden, insbesondere vereinbarte Website-Entwicklung, Projektverwaltung, Hosting, Datenbanken und Mail. Verbraucher handeln überwiegend außerhalb ihrer gewerblichen oder selbstständigen beruflichen Tätigkeit. Individuelle Vereinbarungen gehen vor; zwingende Verbraucherrechte bleiben unberührt."
+
+msgid "1. Provider and contract"
+msgstr "1. Anbieter und Vertragsschluss"
+
+msgid "Full provider details"
+msgstr "Vollständige Anbieterangaben"
+
+msgid "The service description and accepted offer determine what is supplied, the price, payment dates, term and any service-level agreement. A contract is formed when you accept our binding offer or we confirm your order. Website descriptions alone are not binding offers. Creating an account or connecting an integration does not itself create a paid subscription. We provide the agreed terms and required consumer information in a durable form, for example by email."
+msgstr "Leistungsbeschreibung und angenommenes Angebot bestimmen Leistungsumfang, Preis, Zahlungstermine, Laufzeit und gegebenenfalls zugesagte Servicelevels. Ein Vertrag entsteht, wenn du unser verbindliches Angebot annimmst oder wir deine Bestellung bestätigen. Website-Beschreibungen allein sind keine verbindlichen Angebote. Ein Konto oder eine angebundene Integration begründet für sich kein kostenpflichtiges Abonnement. Die vereinbarten Bedingungen und erforderlichen Verbraucherinformationen stellen wir auf einem dauerhaften Datenträger bereit, etwa per E-Mail."
+
+msgid "2. Services and availability"
+msgstr "2. Leistungen und Verfügbarkeit"
+
+msgid "Only the functions and resources included in the accepted offer are owed. Preview or beta features are identified as such and do not expand the agreed service. We maintain and secure the services; maintenance, incidents and external providers can affect availability. A specific uptime, response time, backup schedule or recovery period applies only if agreed. This does not limit statutory rights concerning defects, security updates or non-performance."
+msgstr "Geschuldet sind die im angenommenen Angebot enthaltenen Funktionen und Ressourcen. Vorschau- oder Betafunktionen werden als solche kenntlich gemacht und erweitern die vereinbarte Leistung nicht. Wir warten und sichern die Dienste; Wartung, Störungen und externe Anbieter können die Verfügbarkeit beeinflussen. Bestimmte Verfügbarkeiten, Reaktionszeiten, Sicherungsintervalle oder Wiederherstellungsfristen gelten nur, wenn sie vereinbart wurden. Gesetzliche Rechte bei Mängeln, Sicherheitsupdates oder Nichterfüllung werden dadurch nicht eingeschränkt."
+
+msgid "Optional services must be enabled separately. Incoming Mail is provisioned only when explicitly activated; outgoing-only Mail does not include a mailbox. Successful handoff to a mail relay does not guarantee delivery to the recipient’s inbox. When you connect your own provider account, its contract and charges continue to apply. We remain responsible for the obligations we have agreed to perform."
+msgstr "Optionale Dienste müssen gesondert aktiviert werden. E-Mail-Empfang wird nur nach ausdrücklicher Aktivierung eingerichtet; reiner Versand enthält kein Postfach. Eine erfolgreiche Übergabe an ein Mail-Relay garantiert keine Zustellung im Posteingang des Empfängers. Bindest du ein eigenes Anbieterkonto an, gelten dessen Vertrag und Entgelte weiter. Für unsere vereinbarten Verpflichtungen bleiben wir verantwortlich."
+
+msgid "3. Prices and payment"
+msgstr "3. Preise und Zahlung"
+
+msgid "The accepted offer states the price, currency, billing period and any usage charges. Prices offered to consumers include applicable VAT and other mandatory price components. Additional paid work or resources require your agreement. Invoices are due on the agreed date; statutory default rules apply. Changes to agreed prices require a contractual basis and cannot be imposed merely by changing this page."
+msgstr "Das angenommene Angebot nennt Preis, Währung, Abrechnungszeitraum und gegebenenfalls nutzungsabhängige Entgelte. Verbraucherpreise enthalten anfallende Umsatzsteuer und sonstige zwingende Preisbestandteile. Zusätzliche kostenpflichtige Arbeiten oder Ressourcen bedürfen deiner Zustimmung. Rechnungen sind zum vereinbarten Termin fällig; bei Verzug gelten die gesetzlichen Regeln. Änderungen vereinbarter Preise benötigen eine vertragliche Grundlage und erfolgen nicht allein durch eine Änderung dieser Seite."
+
+msgid "4. Your responsibilities and content"
+msgstr "4. Deine Pflichten und Inhalte"
+
+msgid "Provide accurate account and billing details, protect access credentials and grant only authorised people access. Connect only systems you are entitled to manage. Report suspected misuse promptly. Do not distribute unlawful content, malware or unsolicited advertising, infringe third-party rights, bypass access controls or deliberately disrupt services. For email, you are responsible for lawful recipient lists and any consent needed for sending or open and click tracking."
+msgstr "Gib zutreffende Konto- und Rechnungsdaten an, schütze Zugangsdaten und gewähre nur berechtigten Personen Zugriff. Verbinde nur Systeme, die du verwalten darfst. Melde vermuteten Missbrauch zeitnah. Rechtswidrige Inhalte, Schadsoftware, unverlangte Werbung, Verletzungen fremder Rechte, das Umgehen von Zugriffsschutz und gezielte Störungen sind unzulässig. Bei E-Mails verantwortest du rechtmäßige Empfängerlisten und erforderliche Einwilligungen für Versand sowie Öffnungs- und Klicktracking."
+
+msgid "You retain your rights to your content. You grant us only the rights needed to host, process and deliver it for the agreed service. Rights to individually developed work are governed by the project agreement; third-party and open-source licences remain applicable. Keep independent copies of important data and arrange any required backups with us. Your own precautions do not release us from agreed backup obligations or statutory liability."
+msgstr "Deine Rechte an deinen Inhalten bleiben bei dir. Du räumst uns nur die Rechte ein, die für Speicherung, Verarbeitung und Bereitstellung im vereinbarten Dienst erforderlich sind. Rechte an individuell entwickelten Arbeiten regelt der Projektvertrag; Fremd- und Open-Source-Lizenzen gelten weiterhin. Halte eigene Kopien wichtiger Daten vor und vereinbare benötigte Sicherungen mit uns. Eigene Vorsorge entbindet uns nicht von vereinbarten Sicherungspflichten oder gesetzlicher Haftung."
+
+msgid "5. Privacy and data processing"
+msgstr "5. Datenschutz und Auftragsverarbeitung"
+
+msgid "Our handling of personal data is described in the privacy notice. Where we process personal data on your behalf, a separate data-processing agreement is required before that processing begins. You remain responsible for the lawfulness of your content, instructions and information to affected individuals."
+msgstr "Unser Umgang mit personenbezogenen Daten ist in der Datenschutzerklärung beschrieben. Verarbeiten wir personenbezogene Daten in deinem Auftrag, ist vor Beginn eine gesonderte Vereinbarung zur Auftragsverarbeitung erforderlich. Du verantwortest die Rechtmäßigkeit deiner Inhalte, Weisungen und Informationen gegenüber betroffenen Personen."
+
+msgid "Read the privacy notice"
+msgstr "Zur Datenschutzerklärung"
+
+msgid "6. Term, cancellation and suspension"
+msgstr "6. Laufzeit, Kündigung und Sperrung"
+
+msgid "The offer specifies the term and notice period. If no term is agreed for an ongoing service, it runs indefinitely and can be cancelled at any time with one month’s notice. For consumers, any tacit renewal after an initial term is indefinite and cancellable with no more than one month’s notice. Statutory rights to cancel earlier or for good cause remain unaffected. You can give notice by email to the contact above; any legally required online cancellation facility remains an additional option."
+msgstr "Laufzeit und Kündigungsfrist ergeben sich aus dem Angebot. Ist für einen laufenden Dienst keine Laufzeit vereinbart, läuft er unbefristet und kann jederzeit mit einem Monat Frist gekündigt werden. Bei Verbrauchern erfolgt eine stillschweigende Verlängerung nach einer Erstlaufzeit nur auf unbestimmte Zeit mit einer Kündigungsfrist von höchstens einem Monat. Gesetzliche Rechte zur früheren oder außerordentlichen Kündigung bleiben unberührt. Du kannst per E-Mail an den obigen Kontakt kündigen; eine gesetzlich vorgeschriebene Online-Kündigungsmöglichkeit besteht daneben."
+
+msgid "We may restrict access where proportionate and necessary because of unlawful use, a concrete security risk or a substantial contractual breach. Where feasible, we first explain the reason and allow a reasonable opportunity to remedy it; urgent protective measures may be immediate. We restore access when the reason ends. Payment-related suspension requires the statutory prerequisites."
+msgstr "Wir können den Zugriff einschränken, soweit dies wegen rechtswidriger Nutzung, einer konkreten Sicherheitsgefahr oder einer erheblichen Vertragsverletzung erforderlich und verhältnismäßig ist. Soweit möglich, nennen wir vorher den Grund und geben angemessene Gelegenheit zur Abhilfe; dringende Schutzmaßnahmen können sofort erfolgen. Entfällt der Grund, stellen wir den Zugriff wieder her. Für eine Sperrung wegen Zahlungsrückständen gelten die gesetzlichen Voraussetzungen."
+
+msgid "Arrange an export of needed data before the service ends. We coordinate return or deletion under the service and data-processing agreements and applicable law. Deactivation or suspension is not deletion; retained data remains protected. Removing a Webdock connection does not automatically cancel or revoke your account with a third-party provider."
+msgstr "Vereinbare vor dem Vertragsende den Export benötigter Daten. Rückgabe oder Löschung stimmen wir nach Leistungs- und Auftragsverarbeitungsvertrag sowie geltendem Recht ab. Deaktivierung oder Sperrung ist keine Löschung; zurückbehaltene Daten bleiben geschützt. Das Entfernen einer Webdock-Verbindung kündigt oder widerruft nicht automatisch dein Konto bei einem Drittanbieter."
+
+msgid "7. Defects and liability"
+msgstr "7. Mängel und Haftung"
+
+msgid "Statutory rights concerning defects and statutory liability apply. Please report faults with enough information for us to investigate; this does not restrict your rights. Nothing in these terms excludes liability for intent, gross negligence, injury to life, body or health, or other mandatory liability. No general exclusion of liability or blanket transfer of third-party claims to you is agreed."
+msgstr "Es gelten die gesetzlichen Mängelrechte und Haftungsregeln. Bitte melde Störungen mit den für eine Prüfung nötigen Informationen; deine Rechte werden dadurch nicht eingeschränkt. Eine Haftung für Vorsatz, grobe Fahrlässigkeit, Verletzung von Leben, Körper oder Gesundheit sowie sonstige zwingende Haftung wird nicht ausgeschlossen. Ein pauschaler Haftungsausschluss oder eine pauschale Übertragung fremder Ansprüche auf dich wird nicht vereinbart."
+
+msgid "8. Consumer right of withdrawal"
+msgstr "8. Widerrufsbelehrung für Verbraucher"
+
+msgid "For service contracts concluded at a distance or away from business premises, consumers have the following right of withdrawal. Business customers do not have this statutory consumer right."
+msgstr "Bei Dienstleistungsverträgen im Fernabsatz oder außerhalb von Geschäftsräumen haben Verbraucher das folgende Widerrufsrecht. Für Geschäftskunden besteht dieses gesetzliche Verbraucherrecht nicht."
+
+msgid "You may withdraw from the contract without giving a reason within 14 days from the day it is concluded. To withdraw, send a clear statement of your decision, for example by email or post, to Dominik Spitzli, Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany, dominik@spitzli.dev. You may use the model form below, but do not have to. Sending your statement before the deadline is sufficient."
+msgstr "Du kannst den Vertrag innerhalb von 14 Tagen ab dem Tag des Vertragsschlusses ohne Begründung widerrufen. Sende dazu eine eindeutige Erklärung über deinen Entschluss, etwa per E-Mail oder Post, an Dominik Spitzli, Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Deutschland, dominik@spitzli.dev. Du kannst das folgende Musterformular nutzen, musst es aber nicht. Zur Fristwahrung genügt das Absenden vor Fristablauf."
+
+msgid "If you withdraw, we refund all payments received from you for the contract without undue delay and no later than 14 days after receiving your withdrawal. We use the original payment method unless expressly agreed otherwise; we charge no refund fees. If you expressly requested that services begin during the withdrawal period and were properly informed, you owe a proportionate amount for the services provided up to your withdrawal compared with the full agreed service."
+msgstr "Bei einem Widerruf erstatten wir alle für den Vertrag erhaltenen Zahlungen unverzüglich, spätestens 14 Tage nach Eingang des Widerrufs. Wir verwenden dasselbe Zahlungsmittel, sofern nicht ausdrücklich etwas anderes vereinbart wurde; für die Erstattung berechnen wir keine Gebühren. Hast du ausdrücklich den Leistungsbeginn während der Widerrufsfrist verlangt und wurdest ordnungsgemäß belehrt, ist ein anteiliger Betrag für die bis zum Widerruf erbrachte Leistung im Verhältnis zum vereinbarten Gesamtumfang zu zahlen."
+
+msgid "For a paid service, the right expires early only after full performance and only if you expressly agreed to an early start and acknowledged beforehand that full performance would end your right of withdrawal. Starting an ongoing hosting service alone does not end that right."
+msgstr "Bei einer kostenpflichtigen Dienstleistung erlischt das Widerrufsrecht vorzeitig nur bei vollständiger Erbringung und nur, wenn du dem vorzeitigen Beginn ausdrücklich zugestimmt und vorher bestätigt hast, dass dir der Verlust des Widerrufsrechts bei vollständiger Vertragserfüllung bekannt ist. Der bloße Beginn eines laufenden Hostingdienstes beendet dieses Recht nicht."
+
+msgid "Model withdrawal form"
+msgstr "Muster-Widerrufsformular"
+
+msgid "Complete and send this form only if you wish to withdraw from the contract."
+msgstr "Dieses Formular nur ausfüllen und absenden, wenn du den Vertrag widerrufen möchtest."
+
+msgid "To: Dominik Spitzli, Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany; dominik@spitzli.dev."
+msgstr "An: Dominik Spitzli, Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Deutschland; dominik@spitzli.dev."
+
+msgid "I/We (*) hereby withdraw from the contract concluded by me/us (*) for the provision of the following service: ____________________\nOrdered on: ____________________\nName of consumer(s): ____________________\nAddress of consumer(s): ____________________\nSignature of consumer(s), only if sent on paper: ____________________\nDate: ____________________\n(*) Delete as appropriate."
+msgstr "Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über die Erbringung der folgenden Dienstleistung: ____________________\nBestellt am: ____________________\nName des/der Verbraucher(s): ____________________\nAnschrift des/der Verbraucher(s): ____________________\nUnterschrift des/der Verbraucher(s), nur bei Mitteilung auf Papier: ____________________\nDatum: ____________________\n(*) Unzutreffendes streichen."
+
+msgid "9. Applicable law and changes"
+msgstr "9. Anwendbares Recht und Änderungen"
+
+msgid "German law applies. For consumers, this choice does not remove mandatory protections of the country in which they habitually reside. Statutory jurisdiction rules apply. Changes to these terms do not automatically amend an existing contract; amendments require a valid agreement or legal basis. We inform you about relevant changes in advance."
+msgstr "Es gilt deutsches Recht. Verbrauchern bleibt der zwingende Schutz des Staates ihres gewöhnlichen Aufenthalts erhalten. Es gelten die gesetzlichen Gerichtsstände. Änderungen dieser AGB ändern bestehende Verträge nicht automatisch; dafür ist eine wirksame Vereinbarung oder gesetzliche Grundlage erforderlich. Über relevante Änderungen informieren wir im Voraus."
+
+msgid "Terms and conditions — Webdock"
+msgstr "AGB — Webdock"
+
+msgid "Terms for Webdock services, including consumer cancellation and withdrawal rights."
+msgstr "Bedingungen für Webdock-Leistungen einschließlich Kündigung und Widerrufsrecht für Verbraucher."
+
+msgid "Provider of Webdock pursuant to Section 5 DDG:"
+msgstr "Anbieter von Webdock gemäß § 5 DDG:"
+
+msgid "Owner: Dominik Spitzli · Sole trader"
+msgstr "Inhaber: Dominik Spitzli · Einzelunternehmer"
+
+msgid "Germany"
+msgstr "Deutschland"
+
+msgid "VAT identification number"
+msgstr "Umsatzsteuer-Identifikationsnummer"
+
+msgid "VAT identification number pursuant to Section 27a of the German VAT Act: DE463646700."
+msgstr "Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: DE463646700."
+
+msgid "Webdock and Spitzli Development"
+msgstr "Webdock und Spitzli Development"
+
+msgid "Webdock is a service of Spitzli Development. These provider details apply to Webdock’s own website and services. Independently operated customer websites are the responsibility of their respective providers."
+msgstr "Webdock ist ein Angebot von Spitzli Development. Diese Anbieterangaben gelten für die eigene Webdock-Website und die Webdock-Dienste. Für eigenständig betriebene Kundenwebsites sind deren jeweilige Anbieter verantwortlich."
+
+msgid "Spitzli Development legal notice"
+msgstr "Impressum von Spitzli Development"
+
+msgid "Legal notice — Webdock"
+msgstr "Impressum — Webdock"
+
+msgid "Webdock provider and contact details for Spitzli Development."
+msgstr "Anbieter- und Kontaktangaben zu Webdock von Spitzli Development."
+
+msgid "Terms"
+msgstr "AGB"

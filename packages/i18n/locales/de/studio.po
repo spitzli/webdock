@@ -8103,7 +8103,7 @@ msgstr "Abrechnungskatalog"
 msgid "New product version"
 msgstr "Neue Produktversion"
 
-msgid "Terms"
+msgid "Contract terms"
 msgstr "Vertragsbedingungen"
 
 msgid "Visibility"

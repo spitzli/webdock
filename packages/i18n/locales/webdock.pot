@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-12 20:30+0200\n"
+"POT-Creation-Date: 2026-10-14 11:58+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -30,7 +30,7 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:20
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:204
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:71
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:73
 #: apps/admin/src/components/hosting/allowances.tsx:13
 #: apps/admin/src/components/hosting/app-spec.tsx:58
 #: apps/auth/src/components/hosting-allowances.tsx:13
@@ -39,7 +39,9 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:20
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:210
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:72
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:119
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:109
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:74
 #: apps/admin/src/components/hosting/allowances.tsx:14
 #: apps/admin/src/components/hosting/app-spec.tsx:58
 #: apps/auth/src/components/hosting-allowances.tsx:14
@@ -47,6 +49,7 @@ msgid "Memory"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:22
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:114
 #: apps/admin/src/components/hosting/allowances.tsx:15
 #: apps/admin/src/components/hosting/app-spec.tsx:85
 #: apps/auth/src/components/hosting-allowances.tsx:15
@@ -153,7 +156,7 @@ msgstr ""
 #: apps/admin/src/components/hosting/project-applications.tsx:14
 #: apps/admin/src/components/hosting/project-applications.tsx:16
 #: apps/admin/src/components/hosting/project-context.tsx:21
-#: apps/admin/src/components/navigation.tsx:74
+#: apps/admin/src/components/navigation.tsx:75
 msgid "Applications"
 msgstr ""
 
@@ -162,8 +165,9 @@ msgid "View latest operation"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:18
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:44
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/layout.tsx:24
-#: apps/admin/src/components/navigation.tsx:73
+#: apps/admin/src/components/navigation.tsx:74
 #: packages/cms-ui/src/client.tsx:698
 msgid "Overview"
 msgstr ""
@@ -173,7 +177,8 @@ msgid "Logs"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/layout.tsx:18
-#: apps/admin/src/components/navigation.tsx:20
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:53
+#: apps/admin/src/components/navigation.tsx:21
 msgid "Settings"
 msgstr ""
 
@@ -324,12 +329,15 @@ msgid "Cluster"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:176
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:105
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:66
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:146
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:456
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:506
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:79
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:111
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:159
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:107
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:75
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:37
 #: apps/admin/src/components/hosting/own-infrastructure.tsx:154
@@ -426,6 +434,229 @@ msgstr ""
 msgid "Return to your customers"
 msgstr ""
 
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:82
+msgid "Pause database access"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:83
+msgid "Pause instance"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:85
+msgid "Rotate credentials"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:88
+msgid "Restart instance"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:91
+msgid "Resume database"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:95
+msgid "Request cancellation"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:98
+msgid "Reconcile observed state"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:108
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:148
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:161
+msgid "Unknown or stale"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:113
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:62
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:100
+#: apps/admin/src/components/hosting/databases.tsx:173
+msgid "Database kind"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:115
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:33
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:64
+#: apps/admin/src/components/hosting/databases.tsx:175
+msgid "Shared"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:115
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:33
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:64
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:104
+#: apps/admin/src/components/hosting/databases.tsx:176
+msgid "Dedicated instance"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:122
+msgid "Shared resources"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:129
+msgid "Storage allowance"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:139
+msgid "Measured logical allowance"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:140
+msgid "Bounded database filesystem"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:144
+msgid "Logical data size"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:153
+msgid "Database filesystem usage"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:166
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:45
+msgid "Last observation"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:173
+#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:121
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:46
+#: apps/admin/src/components/hosting/own-mail.tsx:99
+#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:17
+#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:31
+#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
+msgid "Unavailable"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:177
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:67
+msgid "Backups"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:178
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:67
+msgid "Not configured"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:182
+#: apps/admin/src/components/hosting/databases.tsx:115
+msgid "Backups are not configured. No recovery window is included."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:188
+msgid "Your measured storage allowance is nearly reached."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:197
+msgid "The database filesystem is nearly full. Review capacity before importing more data."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:203
+#: apps/admin/src/components/hosting/form.tsx:60
+msgid "View progress"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:209
+msgid "Cancellation requested. Retained data is deleted separately by an operator."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:221
+msgid "Database actions"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:224
+msgid "Pausing interrupts connections and keeps the fixed monthly price. Shared pause affects only your own roles."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:249
+msgid "Upgrade database plan"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:261
+msgid "Retained migration sources"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:267
+msgid "Review source cleanup"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:279
+msgid "Review database deletion"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/deletion/page.tsx:41
+msgid "Permanently delete retained database"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/deletion/page.tsx:42
+msgid "Retain database and end service"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/deletion/page.tsx:49
+msgid "This action affects only this logical database and its roles. The shared pool and other customers remain intact."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/deletion/page.tsx:51
+msgid "This action affects this dedicated PostgreSQL installation."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/deletion/page.tsx:55
+msgid "Backups are not configured. Permanent deletion cannot be undone."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/deletion/page.tsx:60
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/sources/[migrationID]/page.tsx:38
+msgid "Retained until"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/deletion/page.tsx:68
+msgid "Retention has not expired."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/deletion/page.tsx:73
+msgid "Permanently delete database"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/deletion/page.tsx:74
+msgid "End service and retain data"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/deletion/page.tsx:86
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/sources/[migrationID]/page.tsx:54
+msgid "Type the exact database name to confirm"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:37
+msgid "All project databases"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:42
+#: apps/admin/src/components/hosting/tenant-database-navigation.tsx:15
+msgid "Database areas"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:49
+#: apps/admin/src/components/hosting/database-details.tsx:19
+msgid "Connection credentials"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/sources/[migrationID]/page.tsx:26
+msgid "Delete retained migration source"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/sources/[migrationID]/page.tsx:30
+msgid "This deletes only the retained source copy. The current database remains active."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/sources/[migrationID]/page.tsx:34
+msgid "Source installation"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/sources/[migrationID]/page.tsx:43
+msgid "Delete retained source"
+msgstr ""
+
 #: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:32
 #: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:39
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:167
@@ -492,8 +723,9 @@ msgid "Operation progress"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/operations/[operationID]/page.tsx:25
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:57
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:17
-#: apps/admin/src/components/navigation.tsx:18
+#: apps/admin/src/components/navigation.tsx:19
 msgid "Operations"
 msgstr ""
 
@@ -512,6 +744,38 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/operations/[operationID]/page.tsx:58
 msgid "Back to cluster"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:36
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:60
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:64
+#: apps/admin/src/components/hosting/tenant-database-navigation.tsx:20
+msgid "Managed PostgreSQL"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:53
+msgid "No databases ordered."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:56
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:74
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:70
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:112
+#: apps/admin/src/components/databases/forms.tsx:24
+#: apps/admin/src/components/hosting/databases.tsx:64
+#: apps/admin/src/components/hosting/databases.tsx:169
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:148
+#: apps/admin/src/lib/ui-labels.ts:15
+#: apps/auth/src/app/tenants/[customerID]/page.tsx:34
+#: apps/auth/src/components/auth-forms.tsx:689
+#: apps/auth/src/components/plan-fields.tsx:29 packages/cms-ui/src/schema.ts:20
+msgid "Name"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:73
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:22
+msgid "Add database"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:25
@@ -581,13 +845,13 @@ msgid "Verify and bind target"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:190
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:302
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:303
 #: apps/admin/src/lib/git-deployment-messages.ts:87
 msgid "Vercel project ID"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:206
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:39
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:41
 #: apps/admin/src/components/hosting/own-mail.tsx:78
 msgid "Connection"
 msgstr ""
@@ -748,19 +1012,6 @@ msgstr ""
 msgid "No applications deployed yet."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:74
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:68
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:112
-#: apps/admin/src/components/databases/forms.tsx:24
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:148
-#: apps/admin/src/lib/ui-labels.ts:15
-#: apps/auth/src/app/tenants/[customerID]/page.tsx:34
-#: apps/auth/src/components/auth-forms.tsx:689
-#: apps/auth/src/components/plan-fields.tsx:29 packages/cms-ui/src/schema.ts:20
-msgid "Name"
-msgstr ""
-
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:91
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:102
 msgid "Deploy application"
@@ -779,7 +1030,7 @@ msgid "Choose which projects Webdock can manage. Vercel continues to bill your o
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:44
-#: apps/admin/src/components/navigation.tsx:18
+#: apps/admin/src/components/navigation.tsx:19
 msgid "Projects"
 msgstr ""
 
@@ -816,15 +1067,6 @@ msgstr ""
 msgid "Created"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:121
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:44
-#: apps/admin/src/components/hosting/own-mail.tsx:99
-#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:17
-#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:31
-#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
-msgid "Unavailable"
-msgstr ""
-
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:124
 #: apps/auth/src/app/people/page.tsx:63 apps/web/src/components/dock.tsx:8
 msgid "Website"
@@ -855,7 +1097,7 @@ msgid "Domain"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:160
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:48
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:50
 #: apps/admin/src/components/hosting/own-mail.tsx:139
 #: apps/admin/src/lib/ui-labels.ts:7
 #: apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx:36
@@ -864,7 +1106,7 @@ msgid "Verified"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:160
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:48
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:50
 msgid "Not verified"
 msgstr ""
 
@@ -950,14 +1192,15 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:10
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:25
-#: apps/auth/src/app/consent/page.tsx:50 apps/auth/src/lib/i18n-messages.ts:285
+#: apps/auth/src/app/consent/page.tsx:33 apps/auth/src/lib/i18n-messages.ts:286
 msgid "Application"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:11
 #: apps/admin/src/components/hosting/own-mail.tsx:139
 #: apps/admin/src/components/mail/product-page.tsx:17
-#: apps/admin/src/lib/ui-labels.ts:6 apps/auth/src/lib/i18n-labels.ts:4
+#: apps/admin/src/lib/billing-labels.ts:9 apps/admin/src/lib/ui-labels.ts:6
+#: apps/auth/src/lib/i18n-labels.ts:4
 msgid "Pending"
 msgstr ""
 
@@ -967,8 +1210,9 @@ msgid "Reviewed"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:11
-#: apps/admin/src/lib/ui-labels.ts:6 apps/admin/src/lib/ui-labels.ts:10
-#: apps/auth/src/app/tenants/page.tsx:20 apps/auth/src/lib/i18n-labels.ts:4
+#: apps/admin/src/lib/billing-labels.ts:3 apps/admin/src/lib/ui-labels.ts:6
+#: apps/admin/src/lib/ui-labels.ts:10 apps/auth/src/app/tenants/page.tsx:20
+#: apps/auth/src/lib/i18n-labels.ts:4
 msgid "Archived"
 msgstr ""
 
@@ -979,8 +1223,11 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-#: apps/admin/src/lib/customer-fields.ts:15 apps/admin/src/lib/tenants.ts:15
-#: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:152
+#: apps/admin/src/lib/customer-fields.ts:15 apps/admin/src/lib/tenants.ts:16
+#: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:153
+#: apps/auth/src/lib/tenants.ts:16
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:22
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:43
 msgid "Phone"
 msgstr ""
 
@@ -1023,9 +1270,9 @@ msgid "Demo orders"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:27
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:30
 #: apps/admin/src/components/hosting/project-context.tsx:14
-#: apps/admin/src/components/navigation.tsx:18
+#: apps/admin/src/components/navigation.tsx:19
 msgid "Customers"
 msgstr ""
 
@@ -1128,8 +1375,9 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:106
-#: apps/admin/src/lib/customer-fields.ts:19 apps/admin/src/lib/tenants.ts:16
-#: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:43
+#: apps/admin/src/lib/customer-fields.ts:19 apps/admin/src/lib/tenants.ts:17
+#: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:44
+#: apps/auth/src/lib/tenants.ts:17
 msgid "City"
 msgstr ""
 
@@ -1177,7 +1425,7 @@ msgstr ""
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:106
 #: apps/admin/src/lib/ui-labels.ts:15
 #: apps/auth/src/app/tenants/[customerID]/mail/keys/form.tsx:13
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:46
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:50
 msgid "Label"
 msgstr ""
 
@@ -1187,47 +1435,48 @@ msgid "Street and number"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:106
-#: apps/admin/src/lib/customer-fields.ts:18 apps/admin/src/lib/tenants.ts:16
-#: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:157
+#: apps/admin/src/lib/customer-fields.ts:18 apps/admin/src/lib/tenants.ts:17
+#: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:158
+#: apps/auth/src/lib/tenants.ts:17
 msgid "Postal code"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:13
-#: apps/admin/src/components/navigation.tsx:75
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:14
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:21
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:38
+#: apps/admin/src/components/hosting/project-context.tsx:23
+#: apps/admin/src/components/navigation.tsx:76
 msgid "Databases"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:13
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:14
 msgid "Browse tables and query your project data."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:15
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:16
 msgid "No databases are available for your account."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:18
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:19
 msgid "No access assigned"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:19
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:20
+#: apps/admin/src/components/hosting/databases.tsx:47
 msgid "Open database"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:20
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:21
 msgid "Manage access"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:21
-msgid "Add database"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:27
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:30
 #: apps/admin/src/components/hosting/project-context.tsx:14
-#: apps/admin/src/components/navigation.tsx:19
+#: apps/admin/src/components/navigation.tsx:20
 msgid "Workspaces"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:28
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:31
 msgid "Switch workspace"
 msgstr ""
 
@@ -1261,12 +1510,12 @@ msgid "Mailboxes"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/keys/form.tsx:132
-#: apps/auth/src/lib/i18n-messages.ts:62
+#: apps/auth/src/lib/i18n-messages.ts:63
 msgid "Copied."
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/keys/form.tsx:134
-#: apps/auth/src/lib/i18n-messages.ts:63
+#: apps/auth/src/lib/i18n-messages.ts:64
 msgid "Copy failed. Select and copy the values above."
 msgstr ""
 
@@ -1281,58 +1530,186 @@ msgid "Saving…"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx:68
-#: apps/auth/src/lib/i18n-messages.ts:142
+#: apps/auth/src/lib/i18n-messages.ts:143
 msgid "Open tracking"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx:74
-#: apps/auth/src/lib/i18n-messages.ts:44
+#: apps/auth/src/lib/i18n-messages.ts:45
 msgid "Click tracking"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx:86
-#: apps/auth/src/lib/i18n-messages.ts:129
+#: apps/auth/src/lib/i18n-messages.ts:130
 msgid "Match sender domain"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/tracking/page.tsx:260
-#: apps/auth/src/lib/i18n-messages.ts:89
+#: apps/auth/src/lib/i18n-messages.ts:90
 msgid "Dedicated to this sender domain"
 msgstr ""
 
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:23
+msgid "Choose a project to order and manage PostgreSQL."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:28
+msgid "No active projects."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:31
+#: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:27
+#: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:36
+#: apps/admin/src/components/databases/forms.tsx:22
+#: apps/admin/src/components/hosting/customer.tsx:128
+#: apps/admin/src/components/hosting/customer.tsx:201
+#: apps/admin/src/components/hosting/customer.tsx:249
+#: apps/admin/src/lib/ui-labels.ts:10 apps/admin/src/lib/ui-labels.ts:15
+msgid "Project"
+msgstr ""
+
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx:102
-#: apps/auth/src/lib/i18n-messages.ts:27
+#: apps/auth/src/lib/i18n-messages.ts:28
 msgid "Assign plan"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx:123
-#: apps/auth/src/lib/i18n-messages.ts:174
+#: apps/auth/src/lib/i18n-messages.ts:175
 msgid "Save extras"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx:140
-#: apps/auth/src/lib/i18n-messages.ts:77
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:36
+msgid "Assign individual plan"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx:152
+#: apps/auth/src/lib/i18n-messages.ts:78
 msgid "Create offer link"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx:197
-#: apps/auth/src/lib/i18n-messages.ts:173
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx:209
+#: apps/auth/src/lib/i18n-messages.ts:174
 msgid "Revoke offer"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx:212
-#: apps/auth/src/lib/i18n-messages.ts:58
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx:224
+#: apps/auth/src/lib/i18n-messages.ts:59
 msgid "Connect storage"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx:244
-#: apps/auth/src/lib/i18n-messages.ts:169
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx:256
+#: apps/auth/src/lib/i18n-messages.ts:170
 msgid "Refresh measurement"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx:249
-#: apps/auth/src/lib/i18n-messages.ts:90
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx:261
+#: apps/auth/src/lib/i18n-messages.ts:91
 msgid "Disconnect storage"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:58
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:41
+#: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:18
+msgid "Infrastructure"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:70
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:87
+msgid "Database installations"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:75
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:173
+msgid "Database catalog"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:90
+msgid "Physical resources are reserved once per installation. Paused and retained resources keep their reservation."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:96
+msgid "No PostgreSQL installations."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:98
+msgid "ID"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:103
+msgid "Shared pool"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:106
+msgid "Node"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:122
+msgid "Create shared pool"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:125
+msgid "The shared profile reserves PostgreSQL, pooler and job resources. Customer orders use separate logical slots."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:142
+msgid "Reserve observed database pool"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:153
+msgid "Provision shared pool"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:166
+msgid "No qualified PostgreSQL storage agent is available."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:176
+msgid "Plan terms and prices are immutable. Create a new revision to change them; existing orders keep their accepted terms."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:191
+msgid "Set plan availability"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:201
+msgid "Availability"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:203
+#: apps/admin/src/lib/ui-labels.ts:6 apps/auth/src/app/connections/page.tsx:20
+#: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:43
+#: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:54
+#: apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx:28
+#: apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx:29
+#: apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx:37
+#: packages/hosting-contracts/src/resource-field.tsx:46
+msgid "Disabled"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:204
+msgid "Operator pilot"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:205
+msgid "Customer self-service"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:212
+#: apps/admin/src/components/hosting/databases.tsx:198
+msgid "Create disabled plan"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:218
+msgid "Backup TODO"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:221
+msgid "External backups, WAL archiving, PITR and restore verification are deferred. No backup service is active."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:225
+msgid "Public ordering requires a separate product release decision."
 msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/enroll/[enrollmentID]/page.tsx:11
@@ -1345,92 +1722,87 @@ msgid "Cluster management is being configured. Application deployment is not ava
 msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:31
+msgid "PostgreSQL operator management"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:33
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:72
 msgid "Country unverified"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:36
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:38
 msgid "Cluster status"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:43
-msgid "Last observation"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:47
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:49
 msgid "Workload readiness"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:51
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:53
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:115
 #: apps/admin/src/components/hosting/own-infrastructure.tsx:198
 msgid "Location evidence"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:57
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:59
 msgid "A connected agent does not prove workload isolation, storage or TLS readiness."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:62
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:64
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:77
 msgid "Nodes"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:66
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:68
 msgid "No node observations available."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:69
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:71
 msgid "Role"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:69
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:71
 msgid "Control plane"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:69
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:71
 msgid "Worker"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:70
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:72
 msgid "Architecture"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:76
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:78
 msgid "Capacity for applications"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:77
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:79
 msgid "Capacity and security settings"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:80
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:82
 msgid "Reserve platform capacity and record the verified security baseline. Persistent storage requires the private storage helper and verified filesystem capacity."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:92
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:94
 msgid "Update cluster capacity"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:92
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:94
 msgid "Enable managed execution"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:99
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:101
 msgid "Security verification evidence"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:110
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:112
 msgid "Agent connection"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:117
+#: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:119
 msgid "Revoking the agent disconnects management. Existing workloads are not deleted."
-msgstr ""
-
-#: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:41
-#: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:18
-msgid "Infrastructure"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:43
@@ -1463,7 +1835,8 @@ msgid "Infrastructure provider"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:114
-#: apps/admin/src/lib/tenants.ts:16 apps/auth/src/lib/i18n-messages.ts:170
+#: apps/admin/src/lib/tenants.ts:17 apps/auth/src/lib/i18n-messages.ts:171
+#: apps/auth/src/lib/tenants.ts:17
 msgid "Region"
 msgstr ""
 
@@ -1479,31 +1852,31 @@ msgstr ""
 msgid "Shared platform cluster"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/integrations/page.tsx:20
+#: apps/admin/src/app/(console)/(workspace)/integrations/page.tsx:15
 msgid "GitHub connected. Choose an installation and a repository below."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/integrations/page.tsx:22
+#: apps/admin/src/app/(console)/(workspace)/integrations/page.tsx:17
 msgid "GitHub disconnected from this browser. Existing project links are unchanged."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/integrations/page.tsx:23
+#: apps/admin/src/app/(console)/(workspace)/integrations/page.tsx:18
 msgid "GitHub authorization did not complete. Start Connect GitHub again."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/integrations/page.tsx:25
+#: apps/admin/src/app/(console)/(workspace)/integrations/page.tsx:20
 msgid "Your GitHub connection expired. Connect again to choose repositories."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/integrations/page.tsx:27
+#: apps/admin/src/app/(console)/(workspace)/integrations/page.tsx:22
 msgid "The repository could not be linked. Refresh the list and check that the project and GitHub installation are still accessible."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/integrations/page.tsx:28
+#: apps/admin/src/app/(console)/(workspace)/integrations/page.tsx:23
 msgid "Complete the GitHub App setup before connecting."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/integrations/page.tsx:79
+#: apps/admin/src/app/(console)/(workspace)/integrations/page.tsx:39
 msgid "GitHub access could not be checked. Reconnect or review the app’s installation and read-only metadata permission."
 msgstr ""
 
@@ -1538,22 +1911,12 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:26
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:35
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:169
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:170
 #: apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx:44
 #: apps/admin/src/components/hosting/customer.tsx:249
 #: apps/admin/src/lib/ui-labels.ts:10 apps/admin/src/lib/ui-labels.ts:15
 #: apps/auth/src/app/people/page.tsx:73 apps/auth/src/app/people/page.tsx:105
 msgid "Customer"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:27
-#: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:36
-#: apps/admin/src/components/databases/forms.tsx:22
-#: apps/admin/src/components/hosting/customer.tsx:128
-#: apps/admin/src/components/hosting/customer.tsx:201
-#: apps/admin/src/components/hosting/customer.tsx:249
-#: apps/admin/src/lib/ui-labels.ts:10 apps/admin/src/lib/ui-labels.ts:15
-msgid "Project"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:32
@@ -1572,116 +1935,91 @@ msgstr ""
 msgid "Operation"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/delete/page.tsx:19
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/delete/page.tsx:16
 #: apps/admin/src/lib/project-deletion-messages.ts:6
 msgid "Permanently delete project"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/delete/page.tsx:19
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/delete/page.tsx:16
 #: apps/admin/src/lib/project-deletion-messages.ts:7
 msgid "Type the exact project name"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/delete/page.tsx:19
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/delete/page.tsx:16
 #: apps/admin/src/lib/project-deletion-messages.ts:8
 msgid "I confirm permanent deletion of this project and its website data."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:163
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:164
 #: apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx:41
 msgid "Project name"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:183
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:184
 #: apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx:56
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "Website URL"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:189
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:190
 #: apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx:57
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "Repository URL"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:195
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:338
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:196
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:339
 #: apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx:58
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "Notes"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:282
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:283
 msgid "CMS name"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:288
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:289
 msgid "Admin URL"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:295
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:296
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "Database schema"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:298
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:299
 msgid "The isolated schema used by this deployed CMS."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:305
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:306
 msgid "The existing Vercel project ID, starting with prj_."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:309
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:310
 #: apps/admin/src/components/hosting/app-spec.tsx:24
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "Template"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:322
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:323
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "CMS engine version"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:327
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:328
 msgid "Recorded status"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:328
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:329
 msgid "Inventory only. Changing this does not change the running CMS."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:346
+#: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:347
 msgid "This CMS is already deployed"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/projects/new/page.tsx:49
 msgid "Choose a customer"
-msgstr ""
-
-#: apps/admin/src/app/(payload)/api/tenant-preview/[action]/route.ts:8
-#: packages/i18n/src/legacy-message-aliases.ts:116
-msgid "Invalid origin."
-msgstr ""
-
-#: apps/admin/src/app/(payload)/api/tenant-preview/[action]/route.ts:10
-#: packages/i18n/src/legacy-message-aliases.ts:71
-msgid "Page not found."
-msgstr ""
-
-#: apps/admin/src/app/(payload)/api/tenant-preview/[action]/route.ts:12
-#: apps/admin/src/app/(payload)/api/tenant-preview/[action]/route.ts:15
-#: packages/i18n/src/legacy-message-aliases.ts:5
-#: packages/i18n/src/legacy-message-aliases.ts:6
-msgid "The request is too large."
-msgstr ""
-
-#: apps/admin/src/app/(payload)/api/tenant-preview/[action]/route.ts:20
-msgid "Invalid customer."
-msgstr ""
-
-#: apps/admin/src/app/(payload)/api/tenant-preview/[action]/route.ts:28
-msgid "Could not switch customer view. Go back and try again."
 msgstr ""
 
 #: apps/admin/src/app/global-not-found.tsx:3
@@ -1784,12 +2122,12 @@ msgid "Database engine"
 msgstr ""
 
 #: apps/admin/src/components/databases/forms.tsx:25
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:51
 msgid "Environment"
 msgstr ""
 
 #: apps/admin/src/components/databases/forms.tsx:25
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:51
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:31
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
 #: apps/auth/src/lib/i18n-labels.ts:6
@@ -1983,7 +2321,7 @@ msgid "Allocated resources, reservations and measured usage are tracked separate
 msgstr ""
 
 #: apps/admin/src/components/hosting/customer.tsx:107
-#: apps/admin/src/components/navigation.tsx:77
+#: apps/admin/src/components/navigation.tsx:79
 msgid "Plan & usage"
 msgstr ""
 
@@ -2080,6 +2418,121 @@ msgstr ""
 msgid "Also allow this project's images on a shared cluster (applications share the host kernel)"
 msgstr ""
 
+#: apps/admin/src/components/hosting/database-details.tsx:22
+msgid "Use the direct port for migrations and the pooled port for application connections. Always verify TLS."
+msgstr ""
+
+#: apps/admin/src/components/hosting/database-details.tsx:26
+msgid "Application schema"
+msgstr ""
+
+#: apps/admin/src/components/hosting/database-details.tsx:33
+msgid "Host"
+msgstr ""
+
+#: apps/admin/src/components/hosting/database-details.tsx:37
+msgid "Database"
+msgstr ""
+
+#: apps/admin/src/components/hosting/database-details.tsx:41
+msgid "Direct / pooled port"
+msgstr ""
+
+#: apps/admin/src/components/hosting/database-details.tsx:51
+msgid "Application role"
+msgstr ""
+
+#: apps/admin/src/components/hosting/database-details.tsx:52
+msgid "Migration role"
+msgstr ""
+
+#: apps/admin/src/components/hosting/database-details.tsx:55
+msgid "Username"
+msgstr ""
+
+#: apps/admin/src/components/hosting/database-details.tsx:59
+#: apps/auth/src/components/auth-forms.tsx:109
+msgid "Password"
+msgstr ""
+
+#: apps/admin/src/components/hosting/database-details.tsx:76
+msgid "Copy password"
+msgstr ""
+
+#: apps/admin/src/components/hosting/database-details.tsx:99
+msgid "Download CA certificate"
+msgstr ""
+
+#: apps/admin/src/components/hosting/database-details.tsx:106
+msgid "Hide credentials"
+msgstr ""
+
+#: apps/admin/src/components/hosting/database-details.tsx:122
+#: apps/admin/src/components/hosting/databases.tsx:85
+msgid "Loading…"
+msgstr ""
+
+#: apps/admin/src/components/hosting/database-details.tsx:122
+msgid "Reveal credentials"
+msgstr ""
+
+#: apps/admin/src/components/hosting/databases.tsx:74
+msgid "Database plan"
+msgstr ""
+
+#: apps/admin/src/components/hosting/databases.tsx:79
+#: apps/admin/src/components/hosting/databases.tsx:97
+msgid "net / month"
+msgstr ""
+
+#: apps/admin/src/components/hosting/databases.tsx:85
+msgid "Review paid order"
+msgstr ""
+
+#: apps/admin/src/components/hosting/databases.tsx:89
+msgid "No database plans are available yet."
+msgstr ""
+
+#: apps/admin/src/components/hosting/databases.tsx:103
+msgid "Shared CPU and memory; measured logical storage allowance."
+msgstr ""
+
+#: apps/admin/src/components/hosting/databases.tsx:105
+msgid "Dedicated PostgreSQL process and bounded database filesystem."
+msgstr ""
+
+#: apps/admin/src/components/hosting/databases.tsx:119
+msgid "Billing starts after confirmed provisioning. Pausing does not reduce the monthly price."
+msgstr ""
+
+#: apps/admin/src/components/hosting/databases.tsx:132
+msgid "I accept this monthly price and the displayed terms."
+msgstr ""
+
+#: apps/admin/src/components/hosting/databases.tsx:145
+msgid "I agree to interrupt database connections for this upgrade now."
+msgstr ""
+
+#: apps/admin/src/components/hosting/databases.tsx:153
+msgid "Ordering…"
+msgstr ""
+
+#: apps/admin/src/components/hosting/databases.tsx:154
+msgid "Order database with payment obligation"
+msgstr ""
+
+#: apps/admin/src/components/hosting/databases.tsx:180
+msgid "Monthly net price (EUR)"
+msgstr ""
+
+#: apps/admin/src/components/hosting/databases.tsx:189
+msgid "Contract terms"
+msgstr ""
+
+#: apps/admin/src/components/hosting/databases.tsx:202
+msgid "Database plan saved as disabled."
+msgstr ""
+
 #: apps/admin/src/components/hosting/environment.tsx:49
 msgid "Build environment variables"
 msgstr ""
@@ -2150,10 +2603,6 @@ msgstr ""
 
 #: apps/admin/src/components/hosting/form.tsx:31
 msgid "Leave without saving these changes?"
-msgstr ""
-
-#: apps/admin/src/components/hosting/form.tsx:60
-msgid "View progress"
 msgstr ""
 
 #: apps/admin/src/components/hosting/form.tsx:75
@@ -2462,12 +2911,8 @@ msgstr ""
 msgid "Project overview"
 msgstr ""
 
-#: apps/admin/src/components/login-form.tsx:33
-msgid "Check your email and password, or try again later."
-msgstr ""
-
-#: apps/admin/src/components/login-form.tsx:38
-msgid "Sign in failed."
+#: apps/admin/src/components/hosting/tenant-database-navigation.tsx:18
+msgid "Browse data"
 msgstr ""
 
 #: apps/admin/src/components/mail/message-html.tsx:12
@@ -2491,7 +2936,7 @@ msgid "Mail request accepted."
 msgstr ""
 
 #: apps/admin/src/components/mail/product-actions.ts:34
-#: apps/auth/src/lib/i18n-messages.ts:120
+#: apps/auth/src/lib/i18n-messages.ts:121
 msgid "Mail change saved."
 msgstr ""
 
@@ -2525,6 +2970,7 @@ msgid "Unsubscribed"
 msgstr ""
 
 #: apps/admin/src/components/mail/product-page.tsx:17
+#: apps/admin/src/lib/billing-labels.ts:6
 msgid "Scheduled"
 msgstr ""
 
@@ -2533,12 +2979,13 @@ msgid "Sending"
 msgstr ""
 
 #: apps/admin/src/components/mail/product-page.tsx:17
-#: apps/admin/src/lib/ui-labels.ts:6 apps/auth/src/lib/i18n-labels.ts:4
+#: apps/admin/src/lib/billing-labels.ts:32 apps/admin/src/lib/ui-labels.ts:6
+#: apps/auth/src/lib/i18n-labels.ts:4
 msgid "Accepted"
 msgstr ""
 
 #: apps/admin/src/components/mail/product-page.tsx:17
-#: apps/admin/src/lib/ui-labels.ts:9
+#: apps/admin/src/lib/billing-labels.ts:21 apps/admin/src/lib/ui-labels.ts:9
 #: apps/admin/src/lib/workspace-navigation.ts:35
 #: apps/auth/src/lib/i18n-labels.ts:6
 msgid "Failed"
@@ -2549,6 +2996,7 @@ msgid "Outcome unknown"
 msgstr ""
 
 #: apps/admin/src/components/mail/product-page.tsx:17
+#: apps/admin/src/lib/billing-labels.ts:23
 msgid "Canceled"
 msgstr ""
 
@@ -2565,13 +3013,14 @@ msgid "Bounced"
 msgstr ""
 
 #: apps/admin/src/components/mail/product-page.tsx:17
-#: apps/admin/src/lib/ui-labels.ts:7
+#: apps/admin/src/lib/billing-labels.ts:30 apps/admin/src/lib/ui-labels.ts:7
 #: apps/admin/src/lib/workspace-navigation.ts:35
 #: apps/auth/src/lib/i18n-labels.ts:5
 msgid "Ready"
 msgstr ""
 
 #: apps/admin/src/components/mail/product-page.tsx:17
+#: apps/admin/src/lib/billing-labels.ts:24
 msgid "Paused"
 msgstr ""
 
@@ -2595,31 +3044,35 @@ msgstr ""
 msgid "Delivery delayed"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:19
+#: apps/admin/src/components/navigation-pending.tsx:9
+msgid "Loading your workspace…"
+msgstr ""
+
+#: apps/admin/src/components/navigation.tsx:20
 #: apps/auth/src/app/tenants/page.tsx:22
 #: apps/auth/src/components/auth-forms.tsx:319
 #: packages/cms-ui/src/client.tsx:779
 msgid "My websites"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:20
+#: apps/admin/src/components/navigation.tsx:21
 #: apps/auth/src/app/people/page.tsx:11 apps/auth/src/app/people/page.tsx:29
 #: apps/auth/src/components/auth-forms.tsx:319
 #: packages/cms-ui/src/client.tsx:773
 msgid "People & access"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:20
+#: apps/admin/src/components/navigation.tsx:21
 #: apps/auth/src/app/admin/plans/page.tsx:10
 #: apps/auth/src/app/admin/plans/page.tsx:17
 msgid "Plans"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:20
+#: apps/admin/src/components/navigation.tsx:21
 msgid "Connections"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:75
+#: apps/admin/src/components/navigation.tsx:77
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:13
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:24
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:33
@@ -2627,52 +3080,56 @@ msgstr ""
 msgid "Mail"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:76
+#: apps/admin/src/components/navigation.tsx:78
 msgid "Team"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:78
+msgid "Billing"
+msgstr ""
+
+#: apps/admin/src/components/navigation.tsx:80
 msgid "Profile"
 msgstr ""
 
 #: apps/admin/src/components/plan-fields.tsx:10
-#: apps/auth/src/lib/i18n-messages.ts:189
+#: apps/auth/src/lib/i18n-messages.ts:190
 msgid "Storage (MB)"
 msgstr ""
 
 #: apps/admin/src/components/plan-fields.tsx:11
-#: apps/auth/src/lib/i18n-messages.ts:127
+#: apps/auth/src/lib/i18n-messages.ts:128
 msgid "Mail messages"
 msgstr ""
 
 #: apps/admin/src/components/plan-fields.tsx:12
-#: apps/auth/src/lib/i18n-messages.ts:245
+#: apps/auth/src/lib/i18n-messages.ts:246
 msgid "Transfer (GB)"
 msgstr ""
 
 #: apps/admin/src/components/plan-fields.tsx:13
-#: apps/auth/src/lib/i18n-messages.ts:275
+#: apps/auth/src/lib/i18n-messages.ts:276
 msgid "Websites"
 msgstr ""
 
 #: apps/admin/src/components/plan-fields.tsx:14
-#: apps/auth/src/lib/i18n-messages.ts:97
+#: apps/auth/src/lib/i18n-messages.ts:98
 msgid "Editors"
 msgstr ""
 
-#: apps/admin/src/components/vercel-integration.tsx:23
+#: apps/admin/src/components/vercel-integration.tsx:21
 msgid "Vercel connected. Choose a project below."
 msgstr ""
 
-#: apps/admin/src/components/vercel-integration.tsx:25
+#: apps/admin/src/components/vercel-integration.tsx:23
 msgid "Vercel disconnected from Studio."
 msgstr ""
 
-#: apps/admin/src/components/vercel-integration.tsx:27
+#: apps/admin/src/components/vercel-integration.tsx:25
 msgid "The Vercel connection could not be verified. Start from Studio and select the configured team with the required project permissions."
 msgstr ""
 
-#: apps/admin/src/components/vercel-integration.tsx:50
+#: apps/admin/src/components/vercel-integration.tsx:27
 msgid "Vercel could not be reached. Reconnect or review its selected project permissions."
 msgstr ""
 
@@ -2698,6 +3155,120 @@ msgstr ""
 
 #: apps/admin/src/components/vercel-panel.tsx:58
 msgid "The linked Vercel project could not be found."
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:4
+msgid "Change recorded"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:5
+msgid "Change is being processed"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:7
+msgid "Awaiting payment confirmation"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:8
+msgid "Applied"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:10 apps/admin/src/lib/ui-labels.ts:6
+#: apps/auth/src/app/connections/page.tsx:20
+#: apps/auth/src/app/people/page.tsx:147
+#: apps/auth/src/app/tenants/[customerID]/page.tsx:37
+#: apps/auth/src/lib/i18n-labels.ts:4
+msgid "Active"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:11
+msgid "Payment needs attention"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:12
+msgid "Service access suspended"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:13
+msgid "Ended"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:14
+msgid "Withdrawn"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:15
+#: apps/admin/src/lib/billing-labels.ts:38 apps/admin/src/lib/ui-labels.ts:4
+#: apps/admin/src/lib/ui-labels.ts:9
+#: apps/admin/src/lib/workspace-navigation.ts:35
+#: apps/auth/src/lib/i18n-labels.ts:5
+msgid "Review required"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:16
+msgid "Payment received — fulfillment requires review"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:17
+msgid "Payment is being prepared"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:18
+msgid "Payment open"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:19
+msgid "Paid"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:20 apps/admin/src/lib/ui-labels.ts:6
+#: apps/auth/src/app/people/page.tsx:213
+#: apps/auth/src/app/tenants/[customerID]/page.tsx:41
+#: apps/auth/src/lib/i18n-labels.ts:4
+msgid "Expired"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:22
+msgid "Payment overdue"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:25
+msgid "Payment incomplete"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:26
+msgid "Payment expired"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:27
+msgid "Refunded"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:28
+msgid "Partially refunded"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:29 apps/admin/src/lib/ui-labels.ts:7
+#: packages/cms-ui/src/client.tsx:857 packages/cms-ui/src/client.tsx:1000
+#: packages/cms-ui/src/client.tsx:1091
+msgid "Draft"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:31
+msgid "Publication in progress"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:33 apps/admin/src/lib/ui-labels.ts:6
+#: apps/auth/src/app/people/page.tsx:182 apps/auth/src/lib/i18n-labels.ts:4
+msgid "Revoked"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:34
+msgid "Agreement changed"
+msgstr ""
+
+#: apps/admin/src/lib/billing-labels.ts:35
+msgid "Void"
 msgstr ""
 
 #: apps/admin/src/lib/cms-modules.ts:7
@@ -2875,8 +3446,9 @@ msgstr ""
 msgid "Company"
 msgstr ""
 
-#: apps/admin/src/lib/customer-fields.ts:10 apps/admin/src/lib/tenants.ts:14
-#: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:47
+#: apps/admin/src/lib/customer-fields.ts:10 apps/admin/src/lib/tenants.ts:15
+#: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:48
+#: apps/auth/src/lib/tenants.ts:15
 msgid "Company name"
 msgstr ""
 
@@ -2884,10 +3456,10 @@ msgstr ""
 msgid "For business customers."
 msgstr ""
 
-#: apps/admin/src/lib/customer-fields.ts:11 apps/admin/src/lib/tenants.ts:13
+#: apps/admin/src/lib/customer-fields.ts:11 apps/admin/src/lib/tenants.ts:14
 #: apps/admin/src/lib/ui-labels.ts:16
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:62
-#: apps/auth/src/lib/i18n-messages.ts:112
+#: apps/auth/src/lib/i18n-messages.ts:113 apps/auth/src/lib/tenants.ts:14
 msgid "First name"
 msgstr ""
 
@@ -2895,10 +3467,10 @@ msgstr ""
 msgid "For personal customers or the primary contact."
 msgstr ""
 
-#: apps/admin/src/lib/customer-fields.ts:12 apps/admin/src/lib/tenants.ts:13
+#: apps/admin/src/lib/customer-fields.ts:12 apps/admin/src/lib/tenants.ts:14
 #: apps/admin/src/lib/ui-labels.ts:16
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:63
-#: apps/auth/src/lib/i18n-messages.ts:118
+#: apps/auth/src/lib/i18n-messages.ts:119 apps/auth/src/lib/tenants.ts:14
 msgid "Last name"
 msgstr ""
 
@@ -2910,9 +3482,9 @@ msgstr ""
 msgid "Contact details"
 msgstr ""
 
-#: apps/admin/src/lib/customer-fields.ts:14 apps/admin/src/lib/tenants.ts:14
-#: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:60
-#: packages/cms-ui/src/schema.ts:20
+#: apps/admin/src/lib/customer-fields.ts:14 apps/admin/src/lib/tenants.ts:15
+#: apps/admin/src/lib/ui-labels.ts:16 apps/auth/src/lib/i18n-messages.ts:61
+#: apps/auth/src/lib/tenants.ts:15 packages/cms-ui/src/schema.ts:20
 msgid "Contact email"
 msgstr ""
 
@@ -3300,23 +3872,23 @@ msgstr ""
 msgid "External build variables are unsupported."
 msgstr ""
 
-#: apps/admin/src/lib/hosting-actions.ts:186
+#: apps/admin/src/lib/hosting-actions.ts:187
 msgid "turboSMTP connection verified and saved."
 msgstr ""
 
-#: apps/admin/src/lib/hosting-actions.ts:188
+#: apps/admin/src/lib/hosting-actions.ts:189
 msgid "Sender-domain status updated."
 msgstr ""
 
-#: apps/admin/src/lib/hosting-actions.ts:190
+#: apps/admin/src/lib/hosting-actions.ts:191
 msgid "Sender domain registered. Complete DNS setup in turboSMTP."
 msgstr ""
 
-#: apps/admin/src/lib/hosting-actions.ts:193
+#: apps/admin/src/lib/hosting-actions.ts:194
 msgid "turboSMTP disconnected. Your provider resources remain intact."
 msgstr ""
 
-#: apps/admin/src/lib/hosting-actions.ts:196
+#: apps/admin/src/lib/hosting-actions.ts:197
 msgid "Provider state reviewed. You can continue."
 msgstr ""
 
@@ -3564,24 +4136,28 @@ msgstr ""
 msgid "Project deletion is unavailable: the Vercel integration needs project write permission for this team and project."
 msgstr ""
 
-#: apps/admin/src/lib/tenants.ts:13 apps/auth/src/app/people/page.tsx:51
-#: apps/auth/src/lib/i18n-messages.ts:87
+#: apps/admin/src/lib/tenants.ts:14 apps/auth/src/app/people/page.tsx:51
+#: apps/auth/src/lib/i18n-messages.ts:88 apps/auth/src/lib/tenants.ts:14
 msgid "Customer name"
 msgstr ""
 
-#: apps/admin/src/lib/tenants.ts:14 apps/auth/src/lib/i18n-messages.ts:61
+#: apps/admin/src/lib/tenants.ts:15 apps/auth/src/lib/i18n-messages.ts:62
+#: apps/auth/src/lib/tenants.ts:15
 msgid "Contact name"
 msgstr ""
 
-#: apps/admin/src/lib/tenants.ts:15 apps/auth/src/lib/i18n-messages.ts:15
+#: apps/admin/src/lib/tenants.ts:16 apps/auth/src/lib/i18n-messages.ts:16
+#: apps/auth/src/lib/tenants.ts:16
 msgid "Address line 1"
 msgstr ""
 
-#: apps/admin/src/lib/tenants.ts:15 apps/auth/src/lib/i18n-messages.ts:16
+#: apps/admin/src/lib/tenants.ts:16 apps/auth/src/lib/i18n-messages.ts:17
+#: apps/auth/src/lib/tenants.ts:16
 msgid "Address line 2"
 msgstr ""
 
-#: apps/admin/src/lib/tenants.ts:16 apps/auth/src/lib/i18n-messages.ts:76
+#: apps/admin/src/lib/tenants.ts:17 apps/auth/src/lib/i18n-messages.ts:77
+#: apps/auth/src/lib/tenants.ts:17
 msgid "Country code (two letters)"
 msgstr ""
 
@@ -3592,12 +4168,6 @@ msgstr ""
 #: apps/admin/src/lib/ui-labels.ts:4
 #: apps/admin/src/lib/workspace-navigation.ts:35
 msgid "Stopped"
-msgstr ""
-
-#: apps/admin/src/lib/ui-labels.ts:4 apps/admin/src/lib/ui-labels.ts:9
-#: apps/admin/src/lib/workspace-navigation.ts:35
-#: apps/auth/src/lib/i18n-labels.ts:5
-msgid "Review required"
 msgstr ""
 
 #: apps/admin/src/lib/ui-labels.ts:5 apps/auth/src/lib/i18n-labels.ts:6
@@ -3637,22 +4207,9 @@ msgstr ""
 msgid "Cancel invitation"
 msgstr ""
 
-#: apps/admin/src/lib/ui-labels.ts:6 apps/auth/src/app/connections/page.tsx:16
-#: apps/auth/src/app/people/page.tsx:147
-#: apps/auth/src/app/tenants/[customerID]/page.tsx:37
-#: apps/auth/src/lib/i18n-labels.ts:4
-msgid "Active"
-msgstr ""
-
 #: apps/admin/src/lib/ui-labels.ts:6 apps/admin/src/lib/ui-labels.ts:7
 #: apps/auth/src/lib/i18n-labels.ts:4
 msgid "Cancelled"
-msgstr ""
-
-#: apps/admin/src/lib/ui-labels.ts:6 apps/auth/src/app/people/page.tsx:213
-#: apps/auth/src/app/tenants/[customerID]/page.tsx:41
-#: apps/auth/src/lib/i18n-labels.ts:4
-msgid "Expired"
 msgstr ""
 
 #: apps/admin/src/lib/ui-labels.ts:6 apps/auth/src/app/people/page.tsx:147
@@ -3673,21 +4230,6 @@ msgstr ""
 msgid "Enabled"
 msgstr ""
 
-#: apps/admin/src/lib/ui-labels.ts:6 apps/auth/src/app/connections/page.tsx:16
-#: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:43
-#: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:54
-#: apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx:28
-#: apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx:29
-#: apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx:37
-#: packages/hosting-contracts/src/resource-field.tsx:46
-msgid "Disabled"
-msgstr ""
-
-#: apps/admin/src/lib/ui-labels.ts:6 apps/auth/src/app/people/page.tsx:182
-#: apps/auth/src/lib/i18n-labels.ts:4
-msgid "Revoked"
-msgstr ""
-
 #: apps/admin/src/lib/ui-labels.ts:7
 msgid "Building"
 msgstr ""
@@ -3703,11 +4245,6 @@ msgstr ""
 #: apps/admin/src/lib/ui-labels.ts:7
 #: apps/admin/src/lib/workspace-navigation.ts:35
 msgid "Error"
-msgstr ""
-
-#: apps/admin/src/lib/ui-labels.ts:7 packages/cms-ui/src/client.tsx:857
-#: packages/cms-ui/src/client.tsx:1000 packages/cms-ui/src/client.tsx:1091
-msgid "Draft"
 msgstr ""
 
 #: apps/admin/src/lib/ui-labels.ts:7 packages/cms-ui/src/client.tsx:856
@@ -3852,7 +4389,6 @@ msgid "Controls customer sign-in and editing access to connected content manager
 msgstr ""
 
 #: apps/auth/src/app/admin/form.tsx:35
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:27
 msgid "Tenant Mail"
 msgstr ""
 
@@ -3965,31 +4501,31 @@ msgstr ""
 msgid "Removing…"
 msgstr ""
 
-#: apps/auth/src/app/admin/page.tsx:9 apps/auth/src/app/admin/page.tsx:22
+#: apps/auth/src/app/admin/page.tsx:11 apps/auth/src/app/admin/page.tsx:26
 #: apps/auth/src/components/auth-forms.tsx:319
 msgid "Webdock administration"
 msgstr ""
 
-#: apps/auth/src/app/admin/page.tsx:22
+#: apps/auth/src/app/admin/page.tsx:26
 #: apps/auth/src/app/admin/plans/page.tsx:17
 msgid "Root admin"
 msgstr ""
 
-#: apps/auth/src/app/admin/page.tsx:22
+#: apps/auth/src/app/admin/page.tsx:26
 msgid "Platform identity and Mail configuration for all tenants."
 msgstr ""
 
-#: apps/auth/src/app/admin/page.tsx:23 apps/auth/src/app/people/page.tsx:34
-#: apps/auth/src/app/sites/page.tsx:49 apps/auth/src/app/tenants/page.tsx:18
+#: apps/auth/src/app/admin/page.tsx:27 apps/auth/src/app/people/page.tsx:34
+#: apps/auth/src/app/sites/page.tsx:50 apps/auth/src/app/tenants/page.tsx:18
 #: packages/cms-ui/src/client.tsx:770
 msgid "My account"
 msgstr ""
 
-#: apps/auth/src/app/admin/page.tsx:25
+#: apps/auth/src/app/admin/page.tsx:29
 msgid "Plans and allowances"
 msgstr ""
 
-#: apps/auth/src/app/admin/page.tsx:27
+#: apps/auth/src/app/admin/page.tsx:31
 msgid "Only platform operators can change these settings. Tenant administrators manage their own tenant. Account registration remains invitation-only."
 msgstr ""
 
@@ -4089,52 +4625,52 @@ msgstr ""
 msgid "Client secret — save it now. It will not be shown again."
 msgstr ""
 
-#: apps/auth/src/app/connections/page.tsx:16
+#: apps/auth/src/app/connections/page.tsx:20
 msgid "Operator connections"
 msgstr ""
 
-#: apps/auth/src/app/connections/page.tsx:16
+#: apps/auth/src/app/connections/page.tsx:20
 msgid "Connect your tools"
 msgstr ""
 
-#: apps/auth/src/app/connections/page.tsx:16
+#: apps/auth/src/app/connections/page.tsx:20
 msgid "Let an MCP client read your Webdock registry or manage records with your permission."
 msgstr ""
 
-#: apps/auth/src/app/connections/page.tsx:16
+#: apps/auth/src/app/connections/page.tsx:20
 msgid "Server URL: "
 msgstr ""
 
-#: apps/auth/src/app/connections/page.tsx:16
+#: apps/auth/src/app/connections/page.tsx:20
 msgid "Registered clients"
 msgstr ""
 
-#: apps/auth/src/app/connections/page.tsx:16
+#: apps/auth/src/app/connections/page.tsx:20
 msgid "MCP client"
 msgstr ""
 
-#: apps/auth/src/app/connections/page.tsx:16
+#: apps/auth/src/app/connections/page.tsx:20
 msgid "Disable access"
 msgstr ""
 
-#: apps/auth/src/app/connections/page.tsx:16
+#: apps/auth/src/app/connections/page.tsx:20
 msgid "No MCP clients registered yet."
 msgstr ""
 
-#: apps/auth/src/app/connections/page.tsx:16
+#: apps/auth/src/app/connections/page.tsx:20
 msgid "Back to account"
 msgstr ""
 
-#: apps/auth/src/app/consent/page.tsx:9
+#: apps/auth/src/app/consent/page.tsx:8
 #: apps/auth/src/components/auth-forms.tsx:676
 msgid "Authorize access"
 msgstr ""
 
-#: apps/auth/src/app/consent/page.tsx:27
+#: apps/auth/src/app/consent/page.tsx:25
 msgid "Request unavailable"
 msgstr ""
 
-#: apps/auth/src/app/consent/page.tsx:29
+#: apps/auth/src/app/consent/page.tsx:27
 msgid "This authorization request is invalid or has expired. Return to the application and start signing in again."
 msgstr ""
 
@@ -4258,7 +4794,7 @@ msgid "Tenant plan"
 msgstr ""
 
 #: apps/auth/src/app/offers/[token]/page.tsx:21
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:43
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:33
 msgid " · Expires "
 msgstr ""
@@ -4267,7 +4803,7 @@ msgstr ""
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:46
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:90
 #: apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx:20
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:43
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:33
 msgid " UTC"
 msgstr ""
@@ -4485,35 +5021,35 @@ msgstr ""
 msgid "Choose a new password"
 msgstr ""
 
-#: apps/auth/src/app/sites/page.tsx:9 apps/auth/src/app/sites/page.tsx:26
+#: apps/auth/src/app/sites/page.tsx:11 apps/auth/src/app/sites/page.tsx:27
 #: apps/auth/src/app/tenants/[customerID]/page.tsx:28
 msgid "Your websites"
 msgstr ""
 
-#: apps/auth/src/app/sites/page.tsx:27
+#: apps/auth/src/app/sites/page.tsx:28
 msgid "Open a website to edit its content with your Webdock account."
 msgstr ""
 
-#: apps/auth/src/app/sites/page.tsx:30 apps/auth/src/app/tenants/page.tsx:19
+#: apps/auth/src/app/sites/page.tsx:31 apps/auth/src/app/tenants/page.tsx:19
 msgid "Invitation to "
 msgstr ""
 
-#: apps/auth/src/app/sites/page.tsx:35 apps/auth/src/app/tenants/page.tsx:19
+#: apps/auth/src/app/sites/page.tsx:36 apps/auth/src/app/tenants/page.tsx:19
 msgid "Review invitation"
 msgstr ""
 
-#: apps/auth/src/app/sites/page.tsx:43
+#: apps/auth/src/app/sites/page.tsx:44
 msgid "Open content manager"
 msgstr ""
 
-#: apps/auth/src/app/sites/page.tsx:47
+#: apps/auth/src/app/sites/page.tsx:48
 msgid "No website access yet. Accept a pending invitation above or contact your administrator."
 msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/mail/form.tsx:18
 #: apps/auth/src/app/tenants/[customerID]/mail/keys/form.tsx:19
 #: apps/auth/src/app/tenants/[customerID]/mail/tracking/form.tsx:12
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:22
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:23
 msgid "Working…"
 msgstr ""
 
@@ -4625,12 +5161,12 @@ msgid "Select SMTP sending or API sending when creating the credential for your 
 msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx:21
-#: apps/auth/src/lib/i18n-messages.ts:125
+#: apps/auth/src/lib/i18n-messages.ts:126
 msgid "Mail is disabled."
 msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx:21
-#: apps/auth/src/lib/i18n-messages.ts:178
+#: apps/auth/src/lib/i18n-messages.ts:179
 msgid "Sending is paused."
 msgstr ""
 
@@ -4996,7 +5532,7 @@ msgid "A default tracking domain is selected."
 msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx:32
-#: apps/auth/src/lib/i18n-messages.ts:82
+#: apps/auth/src/lib/i18n-messages.ts:83
 msgid "Custom tracking domains"
 msgstr ""
 
@@ -5194,136 +5730,144 @@ msgstr ""
 msgid "No invitations yet."
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:26
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:27
 msgid "Change result"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:29
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:30
 msgid "Shareable offer link"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:29
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:30
 msgid "Copied"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:29
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:30
 msgid "Copy link"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:29
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:30
 msgid "Copy this link now. It is shown only after creation and disappears after your next action. Share it with this tenant’s administrator."
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:31
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:32
 msgid "Assign a plan"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:31
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:32
 msgid "Applies immediately. Existing extras are preserved."
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:32
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:33
 msgid "Plan"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:32
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:33
 msgid "Choose a plan"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:32
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:33
 msgid "Create a reusable plan in the plan library first."
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:33
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:34
 msgid "Additional allowances"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:33
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:34
 msgid "Save the total extras for this tenant. This replaces the previous extras."
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:33
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:34
 msgid "Assign a plan before adding extras."
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:34
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:35
+msgid "Individual plan for this customer"
+msgstr ""
+
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:35
+msgid "Applies immediately to this customer only and replaces their current plan. It is not added to the reusable plan library. Existing extras are preserved."
+msgstr ""
+
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:38
 msgid "Create an individual offer"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:34
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:38
 msgid "Prepare adjusted plan allowances and optional commercial terms for the customer to accept. Acceptance assigns these allowances and preserves the extras shown below. This does not collect payment."
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:36
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:40
 msgid "Start from a plan"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:36
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:40
 msgid "Custom offer"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:38
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:42
 msgid "Commercial terms (optional)"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:38
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:42
 msgid "Agreed price, service scope, or other terms"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:39
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:43
 msgid "Expires after (days)"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:40
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:44
 msgid "Extras preserved on acceptance"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:43
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:33
 msgid "Offers"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:43
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:33
 msgid "No offers yet."
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:44
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:48
 msgid "Storage connections"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:44
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:48
 msgid "Connect each Blob store or a tenant’s exclusive path prefix. Credentials are saved privately and are never displayed. Production and preview storage are measured separately."
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:47
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:51
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:31
 #: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
 #: apps/auth/src/lib/i18n-labels.ts:6 apps/web/src/components/dock.tsx:7
 msgid "Preview"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:48
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:52
 msgid "Blob store ID"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:49
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:53
 msgid "Path prefix (optional)"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:49
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:53
 msgid "Blank measures the entire store. Use an exclusive prefix for a shared store."
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:50
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:54
 msgid "Blob read/write token"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:52
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:56
 msgid "Whole store"
 msgstr ""
 
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:52
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:56
 msgid "Remove this measurement connection. Stored files remain unchanged."
 msgstr ""
 
@@ -5486,10 +6030,6 @@ msgstr ""
 
 #: apps/auth/src/components/auth-forms.tsx:100
 msgid "One account for your workspace and websites."
-msgstr ""
-
-#: apps/auth/src/components/auth-forms.tsx:109
-msgid "Password"
 msgstr ""
 
 #: apps/auth/src/components/auth-forms.tsx:114
@@ -5752,12 +6292,12 @@ msgid "Automatically renew access during your working session"
 msgstr ""
 
 #: apps/auth/src/components/auth-forms.tsx:682
-#: apps/auth/src/lib/i18n-messages.ts:288
+#: apps/auth/src/lib/i18n-messages.ts:289
 msgid "Confirm your identity"
 msgstr ""
 
 #: apps/auth/src/components/auth-forms.tsx:682
-#: apps/auth/src/lib/i18n-messages.ts:289
+#: apps/auth/src/lib/i18n-messages.ts:290
 msgid "Basic profile"
 msgstr ""
 
@@ -5766,12 +6306,12 @@ msgid "Requested profile fields"
 msgstr ""
 
 #: apps/auth/src/components/auth-forms.tsx:689
-#: apps/auth/src/lib/i18n-messages.ts:286
+#: apps/auth/src/lib/i18n-messages.ts:287
 msgid "Email verified"
 msgstr ""
 
 #: apps/auth/src/components/auth-forms.tsx:689
-#: apps/auth/src/lib/i18n-messages.ts:287
+#: apps/auth/src/lib/i18n-messages.ts:288
 msgid "Profile picture"
 msgstr ""
 
@@ -5913,19 +6453,6 @@ msgstr ""
 msgid "Description"
 msgstr ""
 
-#: apps/auth/src/lib/hosting/environment.ts:39
-msgid "Stored application environment could not be opened."
-msgstr ""
-
-#: apps/auth/src/lib/hosting/service.ts:325
-#: apps/auth/src/lib/hosting/service.ts:377
-msgid "Confirm permission to run this project's images on a shared cluster."
-msgstr ""
-
-#: apps/auth/src/lib/hosting/service.ts:374
-msgid "A Kubernetes cluster available to this customer is required."
-msgstr ""
-
 #: apps/auth/src/lib/i18n-feedback.ts:6
 msgid "Connection successful. {count} subaccount available."
 msgid_plural "Connection successful. {count} subaccounts available."
@@ -5960,11 +6487,11 @@ msgstr ""
 msgid "Succeeded"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-labels.ts:7 apps/auth/src/lib/i18n-messages.ts:130
+#: apps/auth/src/lib/i18n-labels.ts:7 apps/auth/src/lib/i18n-messages.ts:131
 msgid "Monthly"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-labels.ts:7 apps/auth/src/lib/i18n-messages.ts:88
+#: apps/auth/src/lib/i18n-labels.ts:7 apps/auth/src/lib/i18n-messages.ts:89
 msgid "Daily"
 msgstr ""
 
@@ -5972,7 +6499,7 @@ msgstr ""
 msgid "Weekly"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-labels.ts:7 apps/auth/src/lib/i18n-messages.ts:276
+#: apps/auth/src/lib/i18n-labels.ts:7 apps/auth/src/lib/i18n-messages.ts:277
 msgid "Yearly"
 msgstr ""
 
@@ -5981,1176 +6508,1180 @@ msgid "Provider administration"
 msgstr ""
 
 #: apps/auth/src/lib/i18n-messages.ts:4
-msgid "A mapped tracking domain belonging to this tenant is required."
+msgid "This database hosts the Webdock control plane. Use the reviewed offline maintenance procedure."
 msgstr ""
 
 #: apps/auth/src/lib/i18n-messages.ts:5
-msgid "A pending invitation already exists. Resend it, or cancel it before choosing another role."
+msgid "A mapped tracking domain belonging to this tenant is required."
 msgstr ""
 
 #: apps/auth/src/lib/i18n-messages.ts:6
-msgid "A ready sending account is required."
+msgid "A pending invitation already exists. Resend it, or cancel it before choosing another role."
 msgstr ""
 
 #: apps/auth/src/lib/i18n-messages.ts:7
-msgid "A ready sending account is required. Ask your operator to complete setup."
+msgid "A ready sending account is required."
 msgstr ""
 
 #: apps/auth/src/lib/i18n-messages.ts:8
-msgid "A secure canonical authentication URL is required."
+msgid "A ready sending account is required. Ask your operator to complete setup."
 msgstr ""
 
 #: apps/auth/src/lib/i18n-messages.ts:9
-msgid "A sender-domain operation is already running. Refresh shortly."
+msgid "A secure canonical authentication URL is required."
 msgstr ""
 
 #: apps/auth/src/lib/i18n-messages.ts:10
-msgid "A tenant can manage up to 50 tracking domains."
+msgid "A sender-domain operation is already running. Refresh shortly."
 msgstr ""
 
 #: apps/auth/src/lib/i18n-messages.ts:11
-msgid "Access saved and invitation email sent."
+msgid "A tenant can manage up to 50 tracking domains."
 msgstr ""
 
 #: apps/auth/src/lib/i18n-messages.ts:12
-msgid "Active tenant administrator access is required."
+msgid "Access saved and invitation email sent."
 msgstr ""
 
 #: apps/auth/src/lib/i18n-messages.ts:13
-msgid "Active tenant and platform operator access are required."
+msgid "Active tenant administrator access is required."
 msgstr ""
 
 #: apps/auth/src/lib/i18n-messages.ts:14
+msgid "Active tenant and platform operator access are required."
+msgstr ""
+
+#: apps/auth/src/lib/i18n-messages.ts:15
 msgid "Active tenant not found or access unavailable."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:17
+#: apps/auth/src/lib/i18n-messages.ts:18
 msgid "Allowances exceed the supported range."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:18
+#: apps/auth/src/lib/i18n-messages.ts:19
 msgid "Allowances must be nonnegative numbers within the supported range."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:19
+#: apps/auth/src/lib/i18n-messages.ts:20
 msgid "Allowances must use whole bytes or whole counts."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:20
+#: apps/auth/src/lib/i18n-messages.ts:21
 msgid "An account is already reserved. Refresh it or reconcile it using Link; do not provision again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:21
+#: apps/auth/src/lib/i18n-messages.ts:22
 msgid "An active, ready Mail account is required."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:22
+#: apps/auth/src/lib/i18n-messages.ts:23
 msgid "An existing tracking domain was found and linked. Review it, then use Remove tracking domain if you want to delete it."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:23
+#: apps/auth/src/lib/i18n-messages.ts:24
 msgid "An operator must reconcile this account before reading or changing provider settings."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:24
+#: apps/auth/src/lib/i18n-messages.ts:25
 msgid "Another tracking change is in progress. Refresh before continuing."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:25
+#: apps/auth/src/lib/i18n-messages.ts:26
 msgid "Ask your operator to review the tracking domain count."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:26
+#: apps/auth/src/lib/i18n-messages.ts:27
 msgid "Assign a plan before adding extra allowances."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:28
+#: apps/auth/src/lib/i18n-messages.ts:29
 msgid "Assign this website to a customer first."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:29
+#: apps/auth/src/lib/i18n-messages.ts:30
 msgid "Change saved."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:30
+#: apps/auth/src/lib/i18n-messages.ts:31
 msgid "Choose EU or global sending infrastructure."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:31
+#: apps/auth/src/lib/i18n-messages.ts:32
 msgid "Choose a default mail limit from 0 to 1,000,000,000."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:32
+#: apps/auth/src/lib/i18n-messages.ts:33
 msgid "Choose a mail limit from 0 to 1,000,000,000."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:33
+#: apps/auth/src/lib/i18n-messages.ts:34
 msgid "Choose a single DNS label such as links."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:34
+#: apps/auth/src/lib/i18n-messages.ts:35
 msgid "Choose a valid record."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:35
+#: apps/auth/src/lib/i18n-messages.ts:36
 msgid "Choose a verified, registered sender domain belonging to this tenant."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:36
+#: apps/auth/src/lib/i18n-messages.ts:37
 msgid "Choose active or paused."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:37
+#: apps/auth/src/lib/i18n-messages.ts:38
 msgid "Choose administrator or member."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:38
+#: apps/auth/src/lib/i18n-messages.ts:39
 msgid "Choose an enabled customer website, not the operator studio."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:39
+#: apps/auth/src/lib/i18n-messages.ts:40
 msgid "Choose enabled or disabled."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:40
+#: apps/auth/src/lib/i18n-messages.ts:41
 msgid "Choose person or company."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:41
+#: apps/auth/src/lib/i18n-messages.ts:42
 msgid "Choose reader, editor or administrator."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:42
+#: apps/auth/src/lib/i18n-messages.ts:43
 msgid "Choose the permitted sending access for this credential."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:45
+#: apps/auth/src/lib/i18n-messages.ts:46
 msgid "Clients are registered through the operator provisioning tool."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:46
+#: apps/auth/src/lib/i18n-messages.ts:47
 msgid "Combined allowance exceeds the supported range."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:48
+#: apps/auth/src/lib/i18n-messages.ts:49
 msgid "Complete operator security setup first."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:49
+#: apps/auth/src/lib/i18n-messages.ts:50
 msgid "Complete your account security setup before managing passkeys."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:50
+#: apps/auth/src/lib/i18n-messages.ts:51
 msgid "Confirm an existing account matching the reserved email and provider ID."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:51
+#: apps/auth/src/lib/i18n-messages.ts:52
 msgid "Confirm removal of this local domain entry."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:52
+#: apps/auth/src/lib/i18n-messages.ts:53
 msgid "Confirm removal of this provider sender domain."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:53
+#: apps/auth/src/lib/i18n-messages.ts:54
 msgid "Confirm removal of this tracking domain."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:54
+#: apps/auth/src/lib/i18n-messages.ts:55
 msgid "Confirm revocation of this credential."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:55
+#: apps/auth/src/lib/i18n-messages.ts:56
 msgid "Confirm that you want to accept this offer and assign the plan."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:56
+#: apps/auth/src/lib/i18n-messages.ts:57
 msgid "Confirm that you want to remove the saved Mail credentials."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:57
+#: apps/auth/src/lib/i18n-messages.ts:58
 msgid "Confirm your identity with your device PIN or biometrics."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:59
+#: apps/auth/src/lib/i18n-messages.ts:60
 msgid "Connect the mail provider in Webdock administration first."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:64
+#: apps/auth/src/lib/i18n-messages.ts:65
 msgid "Could not accept this offer. Please try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:65
+#: apps/auth/src/lib/i18n-messages.ts:66
 msgid "Could not complete authorization. Try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:66
+#: apps/auth/src/lib/i18n-messages.ts:67
 msgid "Could not complete this Mail change. Refresh and review the current state before taking another action."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:67
+#: apps/auth/src/lib/i18n-messages.ts:68
 msgid "Could not complete this change. Refresh and review the current state before retrying."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:68
+#: apps/auth/src/lib/i18n-messages.ts:69
 msgid "Could not complete this credential change. Refresh before retrying."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:69
+#: apps/auth/src/lib/i18n-messages.ts:70
 msgid "Could not complete this credential change. Refresh the list before retrying; a creation may have completed."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:70
+#: apps/auth/src/lib/i18n-messages.ts:71
 msgid "Could not complete this request. Check your operator session and Mail configuration, then try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:71
+#: apps/auth/src/lib/i18n-messages.ts:72
 msgid "Could not complete tracking setup. Refresh to check the current state."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:72
+#: apps/auth/src/lib/i18n-messages.ts:73
 msgid "Could not load credentials. Contact your operator if this persists."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:73
+#: apps/auth/src/lib/i18n-messages.ts:74
 msgid "Could not respond to this invitation. Try again or contact your Webdock administrator."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:74
+#: apps/auth/src/lib/i18n-messages.ts:75
 msgid "Could not save this change. Please try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:75
+#: apps/auth/src/lib/i18n-messages.ts:76
 msgid "Could not save this plan change. Please try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:78
+#: apps/auth/src/lib/i18n-messages.ts:79
 msgid "Credential created. Save the secret now; it cannot be retrieved again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:79
+#: apps/auth/src/lib/i18n-messages.ts:80
 msgid "Credential not found in this tenant account."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:80
+#: apps/auth/src/lib/i18n-messages.ts:81
 msgid "Credential revoked. Applications using it have lost access."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:81
+#: apps/auth/src/lib/i18n-messages.ts:82
 msgid "Current operator authorization is required."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:83
+#: apps/auth/src/lib/i18n-messages.ts:84
 msgid "Custom tracking setting confirmed. Domain availability is shown separately below."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:84
+#: apps/auth/src/lib/i18n-messages.ts:85
 msgid "Customer access record not found."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:85
+#: apps/auth/src/lib/i18n-messages.ts:86
 msgid "Customer assignment changed. Refresh and try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:86
+#: apps/auth/src/lib/i18n-messages.ts:87
 msgid "Customer membership not found."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:91
+#: apps/auth/src/lib/i18n-messages.ts:92
 msgid "Domain added. Publish the DNS records and check ownership to continue."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:92
+#: apps/auth/src/lib/i18n-messages.ts:93
 msgid "Domain enabled"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:93
+#: apps/auth/src/lib/i18n-messages.ts:94
 msgid "Domain is already verified by another tenant."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:94
+#: apps/auth/src/lib/i18n-messages.ts:95
 msgid "Domain not found in this tenant."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:95
+#: apps/auth/src/lib/i18n-messages.ts:96
 msgid "Domain not found."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:96
+#: apps/auth/src/lib/i18n-messages.ts:97
 msgid "Domain ownership verified. You can now register this domain for sending."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:98
+#: apps/auth/src/lib/i18n-messages.ts:99
 msgid "Enter a customer name."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:99
+#: apps/auth/src/lib/i18n-messages.ts:100
 msgid "Enter a name and valid email address."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:100
+#: apps/auth/src/lib/i18n-messages.ts:101
 msgid "Enter a name for this passkey."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:101
+#: apps/auth/src/lib/i18n-messages.ts:102
 msgid "Enter a name of up to 160 characters."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:102
+#: apps/auth/src/lib/i18n-messages.ts:103
 msgid "Enter a platform name of up to 80 characters."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:103
+#: apps/auth/src/lib/i18n-messages.ts:104
 msgid "Enter a public domain name without a scheme or path."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:104
+#: apps/auth/src/lib/i18n-messages.ts:105
 msgid "Enter a readable label of up to 100 characters."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:105
+#: apps/auth/src/lib/i18n-messages.ts:106
 msgid "Enter a valid account email."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:106
+#: apps/auth/src/lib/i18n-messages.ts:107
 msgid "Enter a valid contact email."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:107
+#: apps/auth/src/lib/i18n-messages.ts:108
 msgid "Enter a valid email address."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:108
+#: apps/auth/src/lib/i18n-messages.ts:109
 msgid "Enter a valid support email."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:109
+#: apps/auth/src/lib/i18n-messages.ts:110
 msgid "Enter both provider keys without whitespace."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:110
+#: apps/auth/src/lib/i18n-messages.ts:111
 msgid "Enter both the consumer key and consumer secret to replace the saved credentials."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:111
+#: apps/auth/src/lib/i18n-messages.ts:112
 msgid "Enter valid offer or plan details."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:113
-#: apps/auth/src/lib/i18n-messages.ts:292
+#: apps/auth/src/lib/i18n-messages.ts:114
+#: apps/auth/src/lib/i18n-messages.ts:293
 msgid "If an account exists for that email address, you’ll receive a password reset link. Check your inbox and spam folder."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:114
+#: apps/auth/src/lib/i18n-messages.ts:115
 msgid "Invalid Studio request."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:115
+#: apps/auth/src/lib/i18n-messages.ts:116
 msgid "Invalid account status."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:116
+#: apps/auth/src/lib/i18n-messages.ts:117
 msgid "Invitation email sent. Access starts after acceptance."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:117
+#: apps/auth/src/lib/i18n-messages.ts:118
 msgid "Keep at least one customer administrator."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:119
+#: apps/auth/src/lib/i18n-messages.ts:120
 msgid "Local mapping removed. Stored files are unchanged."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:121
+#: apps/auth/src/lib/i18n-messages.ts:122
 msgid "Mail credential encryption is not configured."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:122
+#: apps/auth/src/lib/i18n-messages.ts:123
 msgid "Mail credentials removed. New live Mail operations are unavailable until credentials are configured again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:123
+#: apps/auth/src/lib/i18n-messages.ts:124
 msgid "Mail credentials saved."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:124
+#: apps/auth/src/lib/i18n-messages.ts:125
 msgid "Mail is disabled by the platform operator."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:126
+#: apps/auth/src/lib/i18n-messages.ts:127
 msgid "Mail is disabled. Existing credentials can still be listed and revoked."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:128
+#: apps/auth/src/lib/i18n-messages.ts:129
 msgid "Mail operation failed. Retry reads safely; ask an operator to review uncertain provider changes."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:131
+#: apps/auth/src/lib/i18n-messages.ts:132
 msgid "Multiple matching provider domains were found. Ask your operator to reconcile this reservation."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:132
+#: apps/auth/src/lib/i18n-messages.ts:133
 msgid "No mapped provider account exists. An operator must provision or link it first."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:133
+#: apps/auth/src/lib/i18n-messages.ts:134
 msgid "No mapped provider sender domain exists."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:134
+#: apps/auth/src/lib/i18n-messages.ts:135
 msgid "Offer accepted. Your plan allocation has been updated; no payment was charged."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:135
+#: apps/auth/src/lib/i18n-messages.ts:136
 msgid "Offer already accepted."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:136
+#: apps/auth/src/lib/i18n-messages.ts:137
 msgid "Offer created. Copy the private link now; it is only shown once."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:137
+#: apps/auth/src/lib/i18n-messages.ts:138
 msgid "Offer expiry must be between 1 and 90 days."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:138
+#: apps/auth/src/lib/i18n-messages.ts:139
 msgid "Offer not found."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:139
+#: apps/auth/src/lib/i18n-messages.ts:140
 msgid "Only a platform operator may change existing memberships."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:140
+#: apps/auth/src/lib/i18n-messages.ts:141
 msgid "Only an unmapped reservation older than 15 minutes can be cancelled. Refresh to reconcile it first."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:141
+#: apps/auth/src/lib/i18n-messages.ts:142
 msgid "Only this tenant's customer administrator can accept the offer."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:143
+#: apps/auth/src/lib/i18n-messages.ts:144
 msgid "Operator access with completed security setup is required."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:144
+#: apps/auth/src/lib/i18n-messages.ts:145
 msgid "Operator or suspended accounts cannot receive customer invitations."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:145
+#: apps/auth/src/lib/i18n-messages.ts:146
 msgid "Passkey added. You can use it the next time you sign in."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:146
+#: apps/auth/src/lib/i18n-messages.ts:147
 msgid "Passkey removed. Remove its saved entry from your device or password manager too."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:147
+#: apps/auth/src/lib/i18n-messages.ts:148
 msgid "Passkey sign-in failed. Try again or use your password."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:148
+#: apps/auth/src/lib/i18n-messages.ts:149
 msgid "Passkey sign-in was cancelled. Try again or use your password."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:149
+#: apps/auth/src/lib/i18n-messages.ts:150
 msgid "Password changed. Other sessions have been signed out."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:150
+#: apps/auth/src/lib/i18n-messages.ts:151
 msgid "Pending invitation not found."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:151
+#: apps/auth/src/lib/i18n-messages.ts:152
 msgid "Pending offer not found."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:153
+#: apps/auth/src/lib/i18n-messages.ts:154
 msgid "Plan change saved."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:154
+#: apps/auth/src/lib/i18n-messages.ts:155
 msgid "Plan not found."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:155
+#: apps/auth/src/lib/i18n-messages.ts:156
 msgid "Platform operator access is required."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:156
+#: apps/auth/src/lib/i18n-messages.ts:157
 msgid "Platform operator accounts are protected."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:158
+#: apps/auth/src/lib/i18n-messages.ts:159
 msgid "Provide a Blob store ID and its matching read/write token."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:159
+#: apps/auth/src/lib/i18n-messages.ts:160
 msgid "Provide a readable project label and production or preview environment."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:160
+#: apps/auth/src/lib/i18n-messages.ts:161
 msgid "Provide both names, accept the provider policy, and configure the assigned sending IP."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:161
+#: apps/auth/src/lib/i18n-messages.ts:162
 msgid "Provider account email does not match."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:162
+#: apps/auth/src/lib/i18n-messages.ts:163
 msgid "Provider returned an unexpected account."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:163
+#: apps/auth/src/lib/i18n-messages.ts:164
 msgid "Provider sender domain removed. Local ownership proof is retained."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:164
+#: apps/auth/src/lib/i18n-messages.ts:165
 msgid "Provisioning needs operator review. The provider may have created the account; reconcile it before continuing."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:165
+#: apps/auth/src/lib/i18n-messages.ts:166
 msgid "Public DNS lookup failed."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:166
+#: apps/auth/src/lib/i18n-messages.ts:167
 msgid "Public DNS lookup timed out."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:167
+#: apps/auth/src/lib/i18n-messages.ts:168
 msgid "Public DNS response too large."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:168
+#: apps/auth/src/lib/i18n-messages.ts:169
 msgid "Reconnect the mail provider."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:171
+#: apps/auth/src/lib/i18n-messages.ts:172
 msgid "Remove associated tracking domains before removing this sender domain."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:172
+#: apps/auth/src/lib/i18n-messages.ts:173
 msgid "Remove or reconcile the sending registration before removing its local domain entry."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:175
+#: apps/auth/src/lib/i18n-messages.ts:176
 msgid "Sender domain registered. Provider DNS verification is still pending."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:176
+#: apps/auth/src/lib/i18n-messages.ts:177
 msgid "Sender-domain operation could not be confirmed using the tenant account. The provider may have applied it; refresh before retrying."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:177
+#: apps/auth/src/lib/i18n-messages.ts:178
 msgid "Sender-domain ownership or account mapping changed. Refresh before retrying."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:179
+#: apps/auth/src/lib/i18n-messages.ts:180
 msgid "Sending is paused. Existing credentials can still be listed and revoked."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:180
+#: apps/auth/src/lib/i18n-messages.ts:181
 msgid "Set a recovery password before removing a passkey."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:181
+#: apps/auth/src/lib/i18n-messages.ts:182
 msgid "Sign in again to reconnect this client."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:182
+#: apps/auth/src/lib/i18n-messages.ts:183
 msgid "Sign in and complete account setup first."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:183
+#: apps/auth/src/lib/i18n-messages.ts:184
 msgid "Sign in before managing passkeys."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:184
+#: apps/auth/src/lib/i18n-messages.ts:185
 msgid "Sign in first."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:185
+#: apps/auth/src/lib/i18n-messages.ts:186
 msgid "Sign in to Studio again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:186
+#: apps/auth/src/lib/i18n-messages.ts:187
 msgid "Sign in to view your websites."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:187
+#: apps/auth/src/lib/i18n-messages.ts:188
 msgid "Sign-in failed. Check your email and password."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:188
+#: apps/auth/src/lib/i18n-messages.ts:189
 msgid "Something went wrong. Try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:190
+#: apps/auth/src/lib/i18n-messages.ts:191
 msgid "Storage mapping and complete inventory saved."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:191
+#: apps/auth/src/lib/i18n-messages.ts:192
 msgid "Storage mapping changed. Refresh and retry."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:192
+#: apps/auth/src/lib/i18n-messages.ts:193
 msgid "Storage mapping not found."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:193
+#: apps/auth/src/lib/i18n-messages.ts:194
 msgid "Storage operation failed. No credentials are shown; check the mapping and retry."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:194
+#: apps/auth/src/lib/i18n-messages.ts:195
 msgid "Stored domain is invalid."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:195
+#: apps/auth/src/lib/i18n-messages.ts:196
 msgid "Stored mail credentials could not be opened. Reconnect the provider."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:196
+#: apps/auth/src/lib/i18n-messages.ts:197
 msgid "Studio request is too large."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:197
+#: apps/auth/src/lib/i18n-messages.ts:198
 msgid "Tenant administrator access is required."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:198
+#: apps/auth/src/lib/i18n-messages.ts:199
 msgid "Tenant not found or access unavailable."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:199
+#: apps/auth/src/lib/i18n-messages.ts:200
 msgid "Tenant not found."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:200
+#: apps/auth/src/lib/i18n-messages.ts:201
 msgid "The Mail account could not be verified."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:201
+#: apps/auth/src/lib/i18n-messages.ts:202
 msgid "The client could not be registered. Check your operator session and try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:202
+#: apps/auth/src/lib/i18n-messages.ts:203
 msgid "The code could not be verified. Try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:203
+#: apps/auth/src/lib/i18n-messages.ts:204
 msgid "The domain is still present. Refresh before retrying removal."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:204
+#: apps/auth/src/lib/i18n-messages.ts:205
 msgid "The domain operation expired. Refresh before retrying."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:205
+#: apps/auth/src/lib/i18n-messages.ts:206
 msgid "The exact mapped provider sender domain could not be confirmed."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:206
+#: apps/auth/src/lib/i18n-messages.ts:207
 msgid "The new passwords do not match."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:207
+#: apps/auth/src/lib/i18n-messages.ts:208
 msgid "The operation could not be completed. Some changes may have been saved. Refresh and review access or invitation status before retrying."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:208
+#: apps/auth/src/lib/i18n-messages.ts:209
 msgid "The passkey could not be added. Try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:209
+#: apps/auth/src/lib/i18n-messages.ts:210
 msgid "The passkey could not be removed."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:210
+#: apps/auth/src/lib/i18n-messages.ts:211
 msgid "The provider did not confirm the requested domain setting. The displayed state reflects its response."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:211
+#: apps/auth/src/lib/i18n-messages.ts:212
 msgid "The provider did not confirm the requested tracking setting. The displayed state reflects its response."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:212
+#: apps/auth/src/lib/i18n-messages.ts:213
 msgid "The provider did not confirm this exact sender domain. Refresh before retrying."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:213
+#: apps/auth/src/lib/i18n-messages.ts:214
 msgid "The provider has not confirmed sender-domain removal. Refresh before retrying."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:214
+#: apps/auth/src/lib/i18n-messages.ts:215
 msgid "The provider rejected account creation. Correct the provider configuration or account details, then submit again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:215
+#: apps/auth/src/lib/i18n-messages.ts:216
 msgid "The provider verified SPF, DKIM and DMARC."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:216
+#: apps/auth/src/lib/i18n-messages.ts:217
 msgid "The public DNS ownership token does not match yet."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:217
+#: apps/auth/src/lib/i18n-messages.ts:218
 msgid "The request failed. Try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:218
+#: apps/auth/src/lib/i18n-messages.ts:219
 msgid "The sender domain is changing. Refresh before creating a tracking domain."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:219
+#: apps/auth/src/lib/i18n-messages.ts:220
 msgid "The sending account could not be verified."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:220
+#: apps/auth/src/lib/i18n-messages.ts:221
 msgid "The sending account could not be verified. Contact your operator."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:221
+#: apps/auth/src/lib/i18n-messages.ts:222
 msgid "The subscription changed. Refresh and try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:222
+#: apps/auth/src/lib/i18n-messages.ts:223
 msgid "This account or domain is already registered or verified elsewhere."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:223
+#: apps/auth/src/lib/i18n-messages.ts:224
 msgid "This browser does not support passkeys. Sign in with your password."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:224
+#: apps/auth/src/lib/i18n-messages.ts:225
 msgid "This browser does not support passkeys. Try a current browser on your phone or computer."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:225
+#: apps/auth/src/lib/i18n-messages.ts:226
 msgid "This exact account was not found under the configured provider master."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:226
+#: apps/auth/src/lib/i18n-messages.ts:227
 msgid "This invitation has already been answered or cancelled. Refresh the page."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:227
+#: apps/auth/src/lib/i18n-messages.ts:228
 msgid "This invitation is unavailable. It may have expired, been answered, or been sent to another email address."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:228
+#: apps/auth/src/lib/i18n-messages.ts:229
 msgid "This offer is expired, revoked or stale. Request a new offer."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:229
+#: apps/auth/src/lib/i18n-messages.ts:230
 msgid "This password reset could not be completed. Check your password or request a new reset link."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:230
+#: apps/auth/src/lib/i18n-messages.ts:231
 msgid "This person is already a member. Contact an operator to change their role."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:231
+#: apps/auth/src/lib/i18n-messages.ts:232
 msgid "This reservation has already been reconciled."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:232
+#: apps/auth/src/lib/i18n-messages.ts:233
 msgid "This reservation has already changed. Refresh before reconciling it again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:233
-#: apps/auth/src/lib/i18n-messages.ts:294
+#: apps/auth/src/lib/i18n-messages.ts:234
+#: apps/auth/src/lib/i18n-messages.ts:295
 msgid "This reset link is invalid or has expired. Request a new link to reset your password."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:234
+#: apps/auth/src/lib/i18n-messages.ts:235
 msgid "This sign-in request has expired or is no longer valid. Start a new sign-in from Studio."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:235
+#: apps/auth/src/lib/i18n-messages.ts:236
 msgid "This store or overlapping folder is already mapped. Remove its existing mapping first."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:236
+#: apps/auth/src/lib/i18n-messages.ts:237
 msgid "This tracking domain is already reserved. Refresh to reconcile its status."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:237
+#: apps/auth/src/lib/i18n-messages.ts:238
 msgid "This tracking setting is required by account policy and cannot be changed here."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:238
+#: apps/auth/src/lib/i18n-messages.ts:239
 msgid "This website already belongs to a customer. Ownership transfers require a separate review."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:239
+#: apps/auth/src/lib/i18n-messages.ts:240
 msgid "Tracking authorization, account state or operation lease changed. Refresh before continuing."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:240
+#: apps/auth/src/lib/i18n-messages.ts:241
 msgid "Tracking could not be completed for this account. Refresh before retrying; an uncertain creation needs reconciliation. Your operator can check account support."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:241
+#: apps/auth/src/lib/i18n-messages.ts:242
 msgid "Tracking domain created. Open and click tracking settings were not changed."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:242
+#: apps/auth/src/lib/i18n-messages.ts:243
 msgid "Tracking domain identity changed. Refresh and ask your operator to reconcile it."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:243
+#: apps/auth/src/lib/i18n-messages.ts:244
 msgid "Tracking domain response did not match this tenant’s domain."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:244
+#: apps/auth/src/lib/i18n-messages.ts:245
 msgid "Tracking state refreshed from the provider."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:246
+#: apps/auth/src/lib/i18n-messages.ts:247
 msgid "Unauthorized"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:247
+#: apps/auth/src/lib/i18n-messages.ts:248
 msgid "Unknown action."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:248
+#: apps/auth/src/lib/i18n-messages.ts:249
 msgid "Unknown administration action."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:249
+#: apps/auth/src/lib/i18n-messages.ts:250
 msgid "Unknown credential action."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:250
+#: apps/auth/src/lib/i18n-messages.ts:251
 msgid "Unknown mail action."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:251
+#: apps/auth/src/lib/i18n-messages.ts:252
 msgid "Unknown plan action."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:252
+#: apps/auth/src/lib/i18n-messages.ts:253
 msgid "Unknown sender-domain action."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:253
+#: apps/auth/src/lib/i18n-messages.ts:254
 msgid "Unknown storage action."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:254
+#: apps/auth/src/lib/i18n-messages.ts:255
 msgid "Unknown tenant action."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:255
+#: apps/auth/src/lib/i18n-messages.ts:256
 msgid "Unknown tracking action."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:256
+#: apps/auth/src/lib/i18n-messages.ts:257
 msgid "Unknown tracking setting."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:257
+#: apps/auth/src/lib/i18n-messages.ts:258
 msgid "Use POST."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:258
+#: apps/auth/src/lib/i18n-messages.ts:259
 msgid "Use a name and an exact HTTPS callback URL (HTTP is allowed only on loopback)."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:259
+#: apps/auth/src/lib/i18n-messages.ts:260
 msgid "Use a relative folder prefix, or leave it empty for the whole store."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:260
+#: apps/auth/src/lib/i18n-messages.ts:261
 msgid "Use a two-letter country code."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:261
+#: apps/auth/src/lib/i18n-messages.ts:262
 msgid "Use individual IPv4 or IPv6 addresses, without CIDR ranges."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:262
+#: apps/auth/src/lib/i18n-messages.ts:263
 msgid "Use the IPv4 sending address assigned by the mail provider."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:263
+#: apps/auth/src/lib/i18n-messages.ts:264
 msgid "Use your tenant portal to manage customer access."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:264
+#: apps/auth/src/lib/i18n-messages.ts:265
 msgid "Verify domain ownership before configuring sending."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:265
+#: apps/auth/src/lib/i18n-messages.ts:266
 msgid "Verify your email before signing in."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:266
+#: apps/auth/src/lib/i18n-messages.ts:267
 msgid "We couldn’t connect. Please try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:267
+#: apps/auth/src/lib/i18n-messages.ts:268
 msgid "We couldn’t connect. Try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:268
+#: apps/auth/src/lib/i18n-messages.ts:269
 msgid "We couldn’t connect. Try signing in again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:269
+#: apps/auth/src/lib/i18n-messages.ts:270
 msgid "We couldn’t connect. Try verifying your code again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:270
+#: apps/auth/src/lib/i18n-messages.ts:271
 msgid "We couldn’t load this invitation. Reload the page to try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:271
-#: apps/auth/src/lib/i18n-messages.ts:291
+#: apps/auth/src/lib/i18n-messages.ts:272
+#: apps/auth/src/lib/i18n-messages.ts:292
 msgid "We couldn’t load your account. Please reload this page."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:272
+#: apps/auth/src/lib/i18n-messages.ts:273
 msgid "We couldn’t request a password reset. Please try again later."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:273
+#: apps/auth/src/lib/i18n-messages.ts:274
 msgid "We couldn’t update your passkeys. Try again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:274
+#: apps/auth/src/lib/i18n-messages.ts:275
 msgid "Webdock settings saved."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:277
+#: apps/auth/src/lib/i18n-messages.ts:278
 msgid "Your authenticator is ready."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:278
-#: apps/auth/src/lib/i18n-messages.ts:293
+#: apps/auth/src/lib/i18n-messages.ts:279
+#: apps/auth/src/lib/i18n-messages.ts:294
 msgid "Your password has been updated and your previous sessions have been signed out. Sign in with your new password."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:279
+#: apps/auth/src/lib/i18n-messages.ts:280
 #: packages/i18n/src/legacy-message-aliases.ts:27
 msgid "Customer view is read-only. Exit the preview first."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:280
+#: apps/auth/src/lib/i18n-messages.ts:281
 #: packages/i18n/src/legacy-message-aliases.ts:46
 msgid "An active operator session with completed security setup is required."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:281
+#: apps/auth/src/lib/i18n-messages.ts:282
 #: packages/i18n/src/legacy-message-aliases.ts:65
 msgid "Tenant unavailable."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:282
+#: apps/auth/src/lib/i18n-messages.ts:283
 #: packages/i18n/src/legacy-message-aliases.ts:45
 msgid "An active mapped tenant is required."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:283
+#: apps/auth/src/lib/i18n-messages.ts:284
 #: packages/i18n/src/legacy-message-aliases.ts:26
 msgid "Customer view has expired or is no longer available. Exit the preview."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:284
+#: apps/auth/src/lib/i18n-messages.ts:285
 #: packages/i18n/src/legacy-message-aliases.ts:62
 msgid "Customer view ended."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:290
+#: apps/auth/src/lib/i18n-messages.ts:291
 msgid "Offer accepted."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:295
+#: apps/auth/src/lib/i18n-messages.ts:296
 msgid "Invalid email or password"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:296
+#: apps/auth/src/lib/i18n-messages.ts:297
 msgid "Invalid password"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:297
+#: apps/auth/src/lib/i18n-messages.ts:298
 msgid "Email not verified"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:298
+#: apps/auth/src/lib/i18n-messages.ts:299
 msgid "Invalid code"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:299
+#: apps/auth/src/lib/i18n-messages.ts:300
 msgid "Invalid backup code"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:300
+#: apps/auth/src/lib/i18n-messages.ts:301
 msgid "Too many attempts. Please request a new code."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:301
+#: apps/auth/src/lib/i18n-messages.ts:302
 msgid "Too many failed verification attempts. Your account is temporarily locked. Please try again later."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:302
+#: apps/auth/src/lib/i18n-messages.ts:303
 msgid "Invalid two factor cookie"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:303
+#: apps/auth/src/lib/i18n-messages.ts:304
 msgid "Too many requests. Please try again later."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:304
+#: apps/auth/src/lib/i18n-messages.ts:305
 msgid "Password is too short"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:305
+#: apps/auth/src/lib/i18n-messages.ts:306
 msgid "Password is too long"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:306
+#: apps/auth/src/lib/i18n-messages.ts:307
 msgid "OTP not enabled"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:307
+#: apps/auth/src/lib/i18n-messages.ts:308
 msgid "OTP is not available"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:308
+#: apps/auth/src/lib/i18n-messages.ts:309
 msgid "OTP has expired"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:309
+#: apps/auth/src/lib/i18n-messages.ts:310
 msgid "TOTP not enabled"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:310
+#: apps/auth/src/lib/i18n-messages.ts:311
 msgid "TOTP is already enabled"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:311
+#: apps/auth/src/lib/i18n-messages.ts:312
 msgid "TOTP is not available"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:312
+#: apps/auth/src/lib/i18n-messages.ts:313
 msgid "Two factor isn't enabled"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:313
+#: apps/auth/src/lib/i18n-messages.ts:314
 msgid "Backup codes aren't enabled"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:314
+#: apps/auth/src/lib/i18n-messages.ts:315
 msgid "Customer name is invalid or too long."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:315
+#: apps/auth/src/lib/i18n-messages.ts:316
 msgid "First name is invalid or too long."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:316
+#: apps/auth/src/lib/i18n-messages.ts:317
 msgid "Last name is invalid or too long."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:317
+#: apps/auth/src/lib/i18n-messages.ts:318
 msgid "Company name is invalid or too long."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:318
+#: apps/auth/src/lib/i18n-messages.ts:319
 msgid "Contact name is invalid or too long."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:319
+#: apps/auth/src/lib/i18n-messages.ts:320
 msgid "Contact email is invalid or too long."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:320
+#: apps/auth/src/lib/i18n-messages.ts:321
 msgid "Phone is invalid or too long."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:321
+#: apps/auth/src/lib/i18n-messages.ts:322
 msgid "Address line 1 is invalid or too long."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:322
+#: apps/auth/src/lib/i18n-messages.ts:323
 msgid "Address line 2 is invalid or too long."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:323
+#: apps/auth/src/lib/i18n-messages.ts:324
 msgid "Postal code is invalid or too long."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:324
+#: apps/auth/src/lib/i18n-messages.ts:325
 msgid "City is invalid or too long."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:325
+#: apps/auth/src/lib/i18n-messages.ts:326
 msgid "Region is invalid or too long."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:326
+#: apps/auth/src/lib/i18n-messages.ts:327
 msgid "Country code (two letters) is invalid or too long."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:327
+#: apps/auth/src/lib/i18n-messages.ts:328
 msgid "Password too short"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:328
+#: apps/auth/src/lib/i18n-messages.ts:329
 msgid "Password too long"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:329
+#: apps/auth/src/lib/i18n-messages.ts:330
 msgid "Invalid email"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:330
+#: apps/auth/src/lib/i18n-messages.ts:331
 msgid "Invalid token"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:331
+#: apps/auth/src/lib/i18n-messages.ts:332
 msgid "Token expired"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:332
+#: apps/auth/src/lib/i18n-messages.ts:333
 msgid "Session expired. Re-authenticate to perform this action."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:333
+#: apps/auth/src/lib/i18n-messages.ts:334
 msgid "Session is not fresh"
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:334
+#: apps/auth/src/lib/i18n-messages.ts:335
 msgid "Provisioning has not completed. An operator must reconcile the existing provider account; do not create it again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:335
+#: apps/auth/src/lib/i18n-messages.ts:336
 msgid "An operator must reconcile the provider account before provisioning again."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:336
+#: apps/auth/src/lib/i18n-messages.ts:337
 msgid "The Mail connection is not configured."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:337
+#: apps/auth/src/lib/i18n-messages.ts:338
 msgid "This tenant is archived."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:339
+#: apps/auth/src/lib/i18n-messages.ts:340
 msgid "Choose owner, administrator or member."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:340
+#: apps/auth/src/lib/i18n-messages.ts:341
 msgid "Tenant owner access is required to manage administrators and owners."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:341
+#: apps/auth/src/lib/i18n-messages.ts:342
 msgid "A tenant owner must be active, verified and have completed account setup."
 msgstr ""
 
-#: apps/auth/src/lib/i18n-messages.ts:342
+#: apps/auth/src/lib/i18n-messages.ts:343
 msgid "Keep at least one active verified customer owner."
 msgstr ""
 
@@ -7192,6 +7723,64 @@ msgstr ""
 
 #: apps/web/src/app/(cms)/layout.tsx:8
 msgid "CMS — Webdock"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:7
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:10
+msgid "Legal notice — Webdock"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:8
+msgid "Webdock provider and contact details for Spitzli Development."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:17
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:17
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:17
+msgid "Webdock · Updated {date}"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:18
+#: apps/web/src/app/(frontend)/(legal)/layout.tsx:15
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:22
+#: apps/web/src/app/(frontend)/page.tsx:52
+msgid "Legal notice"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:19
+msgid "Provider of Webdock pursuant to Section 5 DDG:"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:20
+msgid "Owner: Dominik Spitzli · Sole trader"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:20
+msgid "Germany"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:21
+msgid "Contact"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:24
+msgid "VAT identification number"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:25
+msgid "VAT identification number pursuant to Section 27a of the German VAT Act: DE463646700."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:26
+msgid "Webdock and Spitzli Development"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:27
+msgid "Webdock is a service of Spitzli Development. These provider details apply to Webdock’s own website and services. Independently operated customer websites are the responsibility of their respective providers."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/imprint/page.tsx:28
+msgid "Spitzli Development legal notice"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:5
@@ -7284,7 +7873,6 @@ msgid "and the"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:31
-#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:26
 msgid "privacy notice"
 msgstr ""
 
@@ -7304,268 +7892,290 @@ msgid "Legal"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/layout.tsx:15
-#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:15
 #: apps/web/src/app/(frontend)/page.tsx:52
-msgid "Terms of use"
+msgid "Terms"
 msgstr ""
 
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:5
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:7
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:10
+msgid "Privacy — Webdock"
+msgstr ""
+
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:8
-msgid "Privacy — Webdock Studio"
+msgid "How Webdock processes personal data, uses service providers and protects your rights."
 msgstr ""
 
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:6
-msgid "How Webdock handles account, customer, tenant and Vercel integration data."
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:14
-#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:14
-msgid "Webdock Studio · Updated {date}"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:15
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:18
 msgid "Privacy notice"
 msgstr ""
 
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:16
-msgid "This notice covers Webdock account and tenant management, the private Webdock Studio Vercel integration and these public information pages. It does not replace privacy information for independently operated customer websites or Vercel’s own service."
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:17
-msgid "Who is responsible"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:18
-msgid "Dominik Spitzli, trading as Spitzli Development, is responsible for this processing. For privacy questions, access or deletion requests, email"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:18
-msgid ". Where project data is processed on behalf of a customer, the customer’s instructions and applicable data-processing agreement also apply."
-msgstr ""
-
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:19
-msgid "Customer profiles, accounts and invitations"
+msgid "This notice explains how we process personal data on Webdock’s website and in its account, Studio, hosting, database and Mail services. Customer-operated websites and applications have their own controllers and privacy notices."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:20
-msgid "An operator creates a customer profile containing the customer’s display name and, where provided, person or company names, contact person, email, telephone and postal address. These details support administration of the customer relationship and its projects. Authorised members can view their own tenant profile; tenant administrators can update it and invite people. Internal operator notes are not available in the customer portal."
+msgid "1. Controller and contact"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:21
-msgid "Accounts are invitation-only. We process names, email addresses, invitation status, tenant membership and assigned roles to provide the requested access. Authentication records include password hashes, registered passkey public-key information, configured second-factor information and session records. Account and permission changes are recorded for security and accountability. A contact email in a customer profile does not itself create an account or grant access."
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:21
+msgid "Dominik Spitzli, trading as Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:22
-msgid "Account invitations and security messages are sent through turboSMTP using the recipient’s email address and the message contents, which may include time-limited account-setup links."
+msgid "For privacy questions and requests concerning your data, contact:"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:23
-msgid "Vercel data we receive and why"
+msgid "We are the controller for our website, customer relationships, accounts and service administration. When we host or handle personal data for a customer, we act on their instructions under a data-processing agreement (Article 28 GDPR). This notice does not replace that agreement."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:24
-msgid "When an authorised operator connects Vercel, Vercel supplies an access token, team identifier and installation identifier. We store these together with the connecting operator’s identifier and connection time. The token is encrypted before database storage and is used on the server to authenticate API requests."
+msgid "2. Data, purposes and legal bases"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:25
-msgid "For selected projects, we read project identifiers and names, framework and runtime settings, deployment identifiers, status, URLs and timestamps, production release information, Git branch names, commit identifiers and messages, and domain names, redirects and verification status. Names and commit messages can contain personal information supplied by members of your team. The source is your connected Vercel account. These details let Studio show hosting status alongside its project records."
+msgid "When you visit Webdock, we and our hosting providers process technical request data, including IP address, requested URL, time, browser and operating-system information, to deliver the site, diagnose errors and prevent misuse. This is based on our legitimate interest in secure, reliable operation (Article 6(1)(f) GDPR). Fonts are served locally."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:26
-msgid "Studio stores project mappings and records connection, disconnection and mapping changes in its audit log, including the acting operator, affected record and action. Retrieved hosting snapshots are fetched for display rather than stored as a deployment-history database. The integration does not request environment-variable values, source-code contents, billing data or Vercel account passwords."
+msgid "For enquiries, contracts and billing, we process the contact, company, address, correspondence and contract details you provide. The bases are steps before or performance of a contract (Article 6(1)(b)), legal obligations such as accounting requirements (Article 6(1)(c)), and our legitimate interest in communicating with business contacts (Article 6(1)(f))."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:27
+msgid "For accounts and team access, we process names, email addresses, invitations, customer memberships, roles, password hashes, passkey public keys, configured second-factor data and sessions. Security-relevant actions are logged with the acting account, action and time. Data comes from you or the operator or administrator inviting you. The bases are contract performance for contracting users and our legitimate interests in managing authorised access and preventing misuse for team members."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:28
-msgid "When an operator enables a tenant’s Mail account, Webdock sends the entered account email, first and last name, assigned sending IP and generated account credential to turboSMTP to provision that subaccount. Webdock stores the tenant-to-provider mapping, encrypted credential, account status, limits and usage returned by the provider. Master provider keys are encrypted and are not shown to customers. Provisioning and account changes are audited."
+msgid "The data required for account access and contracted services must be provided for us to supply them; optional profile information is voluntary. Where we ask for consent, processing is based on Article 6(1)(a) GDPR and you may withdraw it at any time with future effect. We do not sell personal data or make solely automated decisions with legal or similarly significant effects."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:29
-msgid "Domain entries contain the requested domain, a random ownership token and verification timestamps. To check ownership, Webdock queries the public TXT record through Cloudflare’s public DNS-over-HTTPS resolver. The domain name is sent to that resolver; account passwords and provider keys are not. DNS ownership verification is distinct from registration and sending-domain verification at the mail provider."
+msgid "3. Projects, hosting and connected services"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:30
-msgid "When requested by an authorised tenant administrator, sender and tracking domain names are registered with turboSMTP and their verification status is retrieved. Administrators explicitly control open and click tracking; enabling those features lets the provider record recipient opens and link clicks for that tenant’s sending activity. Webdock stores the selected tracking settings and domain verification state."
+msgid "Depending on the services enabled, we process project content, files, database contents, domains, configuration, access credentials, deployment and usage data, and operational logs. Authorised team members see data according to their roles. Operators access it where needed to provide support, maintain the service or investigate security incidents. Customer content is processed on the customer’s instructions; service administration relies on contract performance and our legitimate security interests."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:31
-msgid "Authorised administrators can create and revoke SMTP/API keys for their tenant. A newly created key secret is shown once. Webdock displays the provider’s key labels, permissions, creation dates and IP restrictions; secrets are not retained in local key metadata or audit records."
+msgid "Optional Vercel and GitHub connections provide authorisation data and information about selected projects or repositories, deployments, domains, branches and commits. Enabled build and deployment workflows also process the source code, build artefacts and configuration needed for those workflows. Access is limited by the connected account’s permissions and the selected function. Disconnecting in Webdock and revoking access at the provider are separate actions."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:32
-msgid "Mail mappings and domain records remain until removed through the applicable administration process or a deletion request. Removing a local domain entry does not remove DNS records or a provider-side registration; removing stored master credentials does not revoke that key at the provider."
+msgid "4. Mail"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:33
-msgid "For tenants using the Mail API, Webdock stores sender and recipient details, message content, delivery events, schedules and suppression records to process and display their mail activity. Provider credentials and retained attachment contents are encrypted; Webdock API keys are stored as hashes. Request logs contain redacted structural metadata. Configured customer webhooks receive signed event data; message bodies, credentials and Bcc addresses are excluded from those event payloads."
+msgid "Account invitations and security emails are sent through turboSMTP. When Mail is enabled for a customer, we process account and domain details, sender and recipient addresses, message contents and attachments, delivery events, usage and suppression records. Enabled incoming mail uses a separate Stalwart instance for that customer; outgoing-only service does not require one. Mailbox contents and forwarding are processed only for the enabled service."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:34
-msgid "Mail API message text and HTML are retained for 30 days after final acceptance, failure or cancellation. Attachments are removed after a definitive result. Uncertain-send content is removed after seven days, while the unresolved outcome and duplicate-prevention record remain. Active schedules retain content needed for execution. Message metadata and events are retained for 90 days, redacted request logs and finished webhook attempts for 30 days, and processed or quarantined provider callbacks for seven days. Cleanup preserves records still needed by active work. Suppressions remain until explicitly removed. These periods cover Webdock’s operational database; provider records and backups have separate lifecycles."
+msgid "For managed sending, the relay provider receives the account details needed for provisioning and the data needed to deliver messages. Customer-supplied relay accounts use the selected provider. Domain verification sends the domain name to Cloudflare’s DNS resolver. Configured customer webhooks receive delivery event data. Optional email open and click tracking is controlled by the customer administrator, who is responsible for the required recipient information and legal basis. It is separate from website analytics."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:35
-msgid "Legal bases"
+msgid "5. Cookies, preferences and planned analytics"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:36
-msgid "We process data needed to provide an agreed service under Article 6(1)(b) GDPR where you are the contracting party. Administration of team access, hosting visibility and security auditing rely on our legitimate interests in operating a secure project-management service under Article 6(1)(f). Where a legal obligation requires retention or disclosure, Article 6(1)(c) applies. Connecting Vercel grants technical access; it is not blanket consent to unrelated processing."
+msgid "Login and connection cookies maintain sessions and protect authentication flows. Authentication sessions normally expire after eight hours; the Vercel connection cookie lasts up to ten minutes. A language preference explicitly selected by you is stored in a cookie for up to one year; a selected colour theme remains in local storage until removed. These functions use Article 6(1)(b) or (f) GDPR and, where strictly necessary to provide a service you request, Section 25(2)(2) TDDDG. You can remove them through your browser settings; this may sign you out or reset preferences."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:37
-msgid "Hosting, recipients and international processing"
+msgid "Plausible Analytics is planned for the public website but is not currently integrated. The intended setup measures website use without analytics cookies, advertising profiles or cross-site tracking. Before activation, we will update this notice with the actual hosting setup, recipients, data collected, retention and applicable legal basis, and obtain consent where required."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:38
-msgid "Vercel provides hosting and the connected API; Neon provides the PostgreSQL database used to store integration records. Authorised Webdock operators can access the integration’s project information. Data is not sold or used by this integration for advertising or automated decisions with legal or similarly significant effects."
+msgid "How Plausible processes visitor data"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:39
-msgid "These providers operate internationally, including in the United States. An EU application region does not mean all support, network or service processing stays in the EU. Their published transfer safeguards and subprocessors are described in"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:39
-msgid "Vercel’s data-processing addendum"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:39
-msgid "and"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:39
-msgid "Neon’s data-processing agreement"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:39
-msgid ". Contact us for information about safeguards applicable to your project."
+msgid "6. Providers and international transfers"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:40
-msgid "Cookies and technical requests"
+msgid "We use Vercel for web application hosting, Contabo for managed server, database and incoming-mail infrastructure, turboSMTP for email delivery, and Cloudflare for DNS services. GitHub and other customer-selected providers are involved when their integrations are enabled. Neon was the previous platform database provider; retained migration copies remain subject to the retention rules below until deleted. Providers receive only the data needed for their role. We also disclose data where legally required, for example to tax advisers or competent authorities."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:41
-msgid "The connection flow uses a secure, HTTP-only cookie lasting up to ten minutes to bind the Vercel callback to the operator who started it. Studio also requires an authenticated Webdock session. These cookies support authentication and protect against request forgery. These public pages store an explicitly selected colour theme in your browser’s local storage and load fonts locally."
+msgid "Some providers process data outside the EU/EEA, including in the United States. An EU hosting region does not exclude international support or network processing. Where required, transfers rely on an applicable adequacy decision, such as the EU–US Data Privacy Framework for certified recipients, or EU standard contractual clauses and any necessary additional safeguards. You can request details and copies of the safeguards relevant to your service using the contact above."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:42
-msgid "Serving requests entails processing technical data such as IP address, requested URL, timestamp and browser information for delivery, fault diagnosis and abuse prevention. Hosting providers may retain technical logs under their service settings and policies. See"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:42
-msgid "Vercel’s privacy notice"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:42
-msgid "for its own processing."
+msgid "7. Retention and deletion"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:43
-msgid "Retention and disconnection"
+msgid "We keep contact, account and contract data for as long as needed for the relationship, then delete it unless legal retention duties or unresolved claims require continued storage. Depending on the document, statutory retention periods are generally six, eight or ten years. Security and operational logs are retained for their diagnostic and security purpose; incident-related records may be retained until the matter is resolved. Backups and retained migration copies are removed as their recovery purpose and applicable retention duties end."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:44
-msgid "Customer profiles and memberships are retained while needed for the customer relationship and its administration. Archiving a tenant or disabling an account restricts access but does not itself erase the records. Request correction or deletion through the contact above; necessary legal retention and unresolved contractual or security matters are assessed before erasure. Authentication sessions expire after eight hours; account security settings and credentials remain until replaced or removed."
+msgid "For the Mail API, cleanup is configured for message text and HTML after 30 days from a final outcome, metadata and events after 90 days, request logs and completed webhook attempts after 30 days, and processed or quarantined callbacks after seven days. Attachments are removed after a definitive sending outcome; content with an uncertain outcome after seven days. Active schedules and unresolved sending or duplicate-prevention records are retained while needed. Suppressions remain until removed. These periods do not govern mailbox storage, provider-side records or backups."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:45
-msgid "The stored Vercel credential remains until the connection is replaced or disconnected. Disconnecting in Studio deletes that credential from the active database. It does not uninstall the integration at Vercel: revoke that separately in Vercel’s integration settings. Project mappings remain until removed with the project or through an administrative deletion request."
+msgid "Suspending a service, archiving a customer or disconnecting an integration does not automatically delete stored data. Incoming-mail storage is retained on deactivation; deletion is a separate operation. Contact us to arrange deletion or export. Disconnecting Vercel removes its stored credential from the active database, but provider-side authorisations must also be revoked at Vercel."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:46
-msgid "Audit records remain available for security investigations and accountability; disconnection does not automatically erase them. Retention depends on the continuing security purpose, applicable contractual or legal requirements and any unresolved claims. Deletion requests are assessed against those needs. Provider backups and technical logs follow their separate retention lifecycles and are not immediately erased by disconnecting."
+msgid "8. Your rights"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:47
-msgid "Your choices and rights"
+msgid "Subject to the statutory conditions, you have rights of access, rectification, erasure, restriction and data portability. You may object to processing based on legitimate interests for reasons relating to your situation; you can object to direct marketing at any time. You may withdraw consent without affecting the lawfulness of earlier processing. We may verify your identity to protect your data."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:48
-msgid "Connecting Vercel is optional; without it, Studio cannot display live Vercel information. You can restrict the projects selected during installation and revoke access at Vercel."
+msgid "You can complain to a supervisory authority, including the authority where you live or work, or to the State Commissioner for Data Protection of Lower Saxony:"
 msgstr ""
 
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:49
-msgid "Subject to the applicable conditions, you can request access, correction, erasure, restriction and portability of your personal data, and object to processing based on legitimate interests. You can complain to a data-protection supervisory authority, including where you live or work. Contact us using the email above; we may need to verify your identity before disclosing account data. The"
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:7
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:10
+msgid "Terms and conditions — Webdock"
 msgstr ""
 
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:49
-msgid "EU’s information on data-protection rights"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/privacy/page.tsx:49
-msgid "explains these rights further."
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:5
 #: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:8
-msgid "Terms of use — Webdock Studio"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:6
-msgid "Terms for the private Webdock Studio Vercel integration."
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:16
-msgid "These terms govern the private Webdock Studio integration for Vercel, operated by Dominik Spitzli, trading as Spitzli Development. Contact:"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:17
-msgid "Access and permitted use"
+msgid "Terms for Webdock services, including consumer cancellation and withdrawal rights."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:18
-msgid "The integration is provided to authorised Webdock operators to view hosting information for projects they manage. You receive a non-exclusive, non-transferable right to use the integration for that purpose while access is enabled. Only connect a Vercel team and projects you are authorised to manage. Keep your account and authentication devices secure and report suspected misuse promptly."
+msgid "Terms and conditions"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:19
-msgid "Do not bypass access controls, access another organisation’s data without permission, disrupt the service, or use it unlawfully. Access may be restricted or suspended where reasonably necessary to protect users, data or the service."
+msgid "These terms apply to Webdock services for consumers and businesses, including agreed website development, project management, hosting, databases and Mail. A consumer acts mainly outside their trade or profession. Individually agreed terms take precedence; mandatory consumer rights remain unaffected."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:20
-msgid "What the integration does"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:21
-msgid "After installation, Studio reads the selected Vercel projects, deployments, domains and installation configuration. It displays project settings such as framework and runtime, deployment status and URLs, production releases, Git branch and commit metadata, and domain verification status. It does not deploy projects, modify domains, or request access to environment-variable values."
+msgid "1. Provider and contract"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:22
-msgid "Information reflects the latest successful request and can become outdated. Check Vercel directly before relying on a deployment or domain status for operational decisions. Availability depends on Vercel and the hosting services used by Webdock; no separate uptime commitment is made by these terms."
+msgid "Full provider details"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:23
-msgid "Fees and third-party services"
+msgid "The service description and accepted offer determine what is supplied, the price, payment dates, term and any service-level agreement. A contract is formed when you accept our binding offer or we confirm your order. Website descriptions alone are not binding offers. Creating an account or connecting an integration does not itself create a paid subscription. We provide the agreed terms and required consumer information in a durable form, for example by email."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:24
-msgid "Installing this integration does not itself create a paid subscription. Any Webdock development, hosting or support fees require a separate agreement. Your Vercel account remains subject to Vercel’s own terms and charges. Webdock Studio is provided by Spitzli Development, not by Vercel."
+msgid "2. Services and availability"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:25
-msgid "Your data and ending access"
+msgid "Only the functions and resources included in the accepted offer are owed. Preview or beta features are identified as such and do not expand the agreed service. We maintain and secure the services; maintenance, incidents and external providers can affect availability. A specific uptime, response time, backup schedule or recovery period applies only if agreed. This does not limit statutory rights concerning defects, security updates or non-performance."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:26
-msgid "You retain your rights in your project data. Webdock processes it only as described in the"
-msgstr ""
-
-#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:26
-msgid "and any applicable service agreement."
+msgid "Optional services must be enabled separately. Incoming Mail is provisioned only when explicitly activated; outgoing-only Mail does not include a mailbox. Successful handoff to a mail relay does not guarantee delivery to the recipient’s inbox. When you connect your own provider account, its contract and charges continue to apply. We remain responsible for the obligations we have agreed to perform."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:27
-msgid "You can stop using the integration at any time. Disconnecting it in Studio deletes Studio’s stored access token. To revoke the installation’s permission at Vercel, also uninstall it in your Vercel team’s integration settings. Project mappings and security audit records are not automatically removed by disconnecting; contact us for a deletion request."
+msgid "3. Prices and payment"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:28
-msgid "Responsibility and changes"
+msgid "The accepted offer states the price, currency, billing period and any usage charges. Prices offered to consumers include applicable VAT and other mandatory price components. Additional paid work or resources require your agreement. Invoices are due on the agreed date; statutory default rules apply. Changes to agreed prices require a contractual basis and cannot be imposed merely by changing this page."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:29
-msgid "Statutory rights and liability rules remain unaffected. These terms do not exclude liability for intentional misconduct, gross negligence, injury to life, body or health, or any liability that cannot legally be excluded. A separate service agreement takes precedence for the services it expressly covers."
+msgid "4. Your responsibilities and content"
 msgstr ""
 
 #: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:30
-msgid "We may update the integration and these terms as its functionality changes. The date above identifies this version. Material changes affecting existing use will be communicated to the account contact before they take effect; changes do not apply retroactively."
+msgid "Provide accurate account and billing details, protect access credentials and grant only authorised people access. Connect only systems you are entitled to manage. Report suspected misuse promptly. Do not distribute unlawful content, malware or unsolicited advertising, infringe third-party rights, bypass access controls or deliberately disrupt services. For email, you are responsible for lawful recipient lists and any consent needed for sending or open and click tracking."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:31
+msgid "You retain your rights to your content. You grant us only the rights needed to host, process and deliver it for the agreed service. Rights to individually developed work are governed by the project agreement; third-party and open-source licences remain applicable. Keep independent copies of important data and arrange any required backups with us. Your own precautions do not release us from agreed backup obligations or statutory liability."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:32
+msgid "5. Privacy and data processing"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:33
+msgid "Our handling of personal data is described in the privacy notice. Where we process personal data on your behalf, a separate data-processing agreement is required before that processing begins. You remain responsible for the lawfulness of your content, instructions and information to affected individuals."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:33
+msgid "Read the privacy notice"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:34
+msgid "6. Term, cancellation and suspension"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:35
+msgid "The offer specifies the term and notice period. If no term is agreed for an ongoing service, it runs indefinitely and can be cancelled at any time with one month’s notice. For consumers, any tacit renewal after an initial term is indefinite and cancellable with no more than one month’s notice. Statutory rights to cancel earlier or for good cause remain unaffected. You can give notice by email to the contact above; any legally required online cancellation facility remains an additional option."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:36
+msgid "We may restrict access where proportionate and necessary because of unlawful use, a concrete security risk or a substantial contractual breach. Where feasible, we first explain the reason and allow a reasonable opportunity to remedy it; urgent protective measures may be immediate. We restore access when the reason ends. Payment-related suspension requires the statutory prerequisites."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:37
+msgid "Arrange an export of needed data before the service ends. We coordinate return or deletion under the service and data-processing agreements and applicable law. Deactivation or suspension is not deletion; retained data remains protected. Removing a Webdock connection does not automatically cancel or revoke your account with a third-party provider."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:38
+msgid "7. Defects and liability"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:39
+msgid "Statutory rights concerning defects and statutory liability apply. Please report faults with enough information for us to investigate; this does not restrict your rights. Nothing in these terms excludes liability for intent, gross negligence, injury to life, body or health, or other mandatory liability. No general exclusion of liability or blanket transfer of third-party claims to you is agreed."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:40
+msgid "8. Consumer right of withdrawal"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:41
+msgid "For service contracts concluded at a distance or away from business premises, consumers have the following right of withdrawal. Business customers do not have this statutory consumer right."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:42
+msgid "You may withdraw from the contract without giving a reason within 14 days from the day it is concluded. To withdraw, send a clear statement of your decision, for example by email or post, to Dominik Spitzli, Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany, dominik@spitzli.dev. You may use the model form below, but do not have to. Sending your statement before the deadline is sufficient."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:44
+msgid "If you withdraw, we refund all payments received from you for the contract without undue delay and no later than 14 days after receiving your withdrawal. We use the original payment method unless expressly agreed otherwise; we charge no refund fees. If you expressly requested that services begin during the withdrawal period and were properly informed, you owe a proportionate amount for the services provided up to your withdrawal compared with the full agreed service."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:45
+msgid "For a paid service, the right expires early only after full performance and only if you expressly agreed to an early start and acknowledged beforehand that full performance would end your right of withdrawal. Starting an ongoing hosting service alone does not end that right."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:46
+msgid "Model withdrawal form"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:47
+msgid "Complete and send this form only if you wish to withdraw from the contract."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:48
+msgid "To: Dominik Spitzli, Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany; dominik@spitzli.dev."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:49
+msgid ""
+"I/We (*) hereby withdraw from the contract concluded by me/us (*) for the provision of the following service: ____________________\n"
+"Ordered on: ____________________\n"
+"Name of consumer(s): ____________________\n"
+"Address of consumer(s): ____________________\n"
+"Signature of consumer(s), only if sent on paper: ____________________\n"
+"Date: ____________________\n"
+"(*) Delete as appropriate."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:50
+msgid "9. Applicable law and changes"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/(legal)/terms/page.tsx:51
+msgid "German law applies. For consumers, this choice does not remove mandatory protections of the country in which they habitually reside. Statutory jurisdiction rules apply. Changes to these terms do not automatically amend an existing contract; amendments require a valid agreement or legal basis. We inform you about relevant changes in advance."
 msgstr ""
 
 #: apps/web/src/app/(frontend)/layout.tsx:10 apps/web/src/cms/landing.ts:7
@@ -8357,6 +8967,11 @@ msgstr ""
 msgid "Request saved."
 msgstr ""
 
+#: packages/i18n/src/legacy-message-aliases.ts:5
+#: packages/i18n/src/legacy-message-aliases.ts:6
+msgid "The request is too large."
+msgstr ""
+
 #: packages/i18n/src/legacy-message-aliases.ts:7
 msgid "The content management response is too large."
 msgstr ""
@@ -8589,6 +9204,10 @@ msgstr ""
 msgid "Each website can have up to 100 canvas pages."
 msgstr ""
 
+#: packages/i18n/src/legacy-message-aliases.ts:71
+msgid "Page not found."
+msgstr ""
+
 #: packages/i18n/src/legacy-message-aliases.ts:72
 #: packages/i18n/src/legacy-message-aliases.ts:73
 msgid "Saving failed."
@@ -8750,6 +9369,10 @@ msgstr ""
 msgid "Invalid appointment."
 msgstr ""
 
+#: packages/i18n/src/legacy-message-aliases.ts:116
+msgid "Invalid origin."
+msgstr ""
+
 #: packages/i18n/src/legacy-message-aliases.ts:117
 msgid "Invalid revision."
 msgstr ""
@@ -8780,19 +9403,4 @@ msgstr ""
 
 #: packages/search/src/live-form.tsx:150
 msgid "Searching…"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx
-msgid "Individual plan for this customer"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx
-msgid "Assign individual plan"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/usage/form.tsx
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx
-msgid "Applies immediately to this customer only and replaces their current plan. It is not added to the reusable plan library. Existing extras are preserved."
 msgstr ""
