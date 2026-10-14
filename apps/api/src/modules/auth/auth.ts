@@ -17,6 +17,10 @@ import { guardOrganizationRequest } from "./tenant-policy";
 import { cookiePolicy } from "./cookie-policy";
 import { offlineProvisioning } from "./offline";
 import { currentClaims } from "./authorization";
+import {
+  isOperatorOIDCClient,
+  requireOperatorOIDCAccess,
+} from "./operator-oidc";
 import { sendAuthMail } from "./mail";
 import { passkeySecurity, passwordTwoFactor } from "./passkeys";
 import {
@@ -144,6 +148,44 @@ export function createAuthentication(options: {
           }
         }),
         after: createAuthMiddleware(async (ctx) => {
+          if (ctx.path === "/oauth2/introspect") {
+            const result = ctx.context.returned;
+            if (
+              result &&
+              typeof result === "object" &&
+              !(result instanceof APIError) &&
+              "active" in result &&
+              result.active === true &&
+              "client_id" in result &&
+              typeof result.client_id === "string"
+            ) {
+              const client = await ctx.context.adapter.findOne<{
+                metadata?: unknown;
+              }>({
+                model: "oauthClient",
+                where: [{ field: "clientId", value: result.client_id }],
+              });
+              if (isOperatorOIDCClient(client?.metadata))
+                try {
+                  await requireOperatorOIDCAccess({
+                    clientID: result.client_id,
+                    subject:
+                      "sub" in result && typeof result.sub === "string"
+                        ? result.sub
+                        : undefined,
+                    sessionID:
+                      "sid" in result && typeof result.sid === "string"
+                        ? result.sid
+                        : undefined,
+                  });
+                } catch (error) {
+                  if (error instanceof APIError && error.status === "FORBIDDEN")
+                    return ctx.json({ active: false });
+                  throw error;
+                }
+            }
+          }
+
           if (
             ctx.path === "/two-factor/verify-totp" &&
             ctx.context.session?.user.twoFactorEnabled === false &&
@@ -265,6 +307,16 @@ export function createAuthentication(options: {
           extensions: [
             {
               claims: {
+                // Opaque access tokens skip accessToken hooks in provider1.7.7.
+                idToken: async ({ client, metadata, user, sessionId }) => {
+                  if (isOperatorOIDCClient(metadata))
+                    await requireOperatorOIDCAccess({
+                      clientID: client.clientId,
+                      subject: user?.id,
+                      sessionID: sessionId,
+                    });
+                  return {};
+                },
                 accessToken: async ({
                   ctx,
                   metadata,
@@ -302,7 +354,19 @@ export function createAuthentication(options: {
               },
             },
           ],
-          customTokenResponseFields: async ({ metadata, user }) => {
+          customTokenResponseFields: async ({
+            metadata,
+            user,
+            grantType,
+            scopes,
+          }) => {
+            if (
+              isOperatorOIDCClient(metadata) &&
+              (grantType !== "authorization_code" || !scopes.includes("openid"))
+            )
+              throw new APIError("FORBIDDEN", {
+                message: "An interactive OpenID login is required.",
+              });
             if (
               metadata?.webdock_hosting === true &&
               (await currentHostingMCPClaims(user?.id)).disabled

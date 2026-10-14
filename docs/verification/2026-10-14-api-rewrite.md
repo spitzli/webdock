@@ -84,4 +84,4 @@ The only fresh whole-branch reviewer reported no confirmed Critical finding. Rev
 
 No reviewer-reported minor findings were deferred. The three non-blocking lint warnings are disclosed above.
 
-Commit status: the final signed commit attempts timed out while `/opt/1Password/op-ssh-sign` waited for interaction (confirmed by Git trace). HEAD remains the baseline; all implementation changes are staged. Signing was not bypassed.
+Initial commit attempts timed out in `/opt/1Password/op-ssh-sign`. On the follow-up, normal signing succeeded and commit `0fc97b8` was pushed in PR#18. Signing was not bypassed. The owner then authorized PR merge and deployment; release preflight and follow-up compatibility fixes are recorded separately.

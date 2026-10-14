@@ -373,6 +373,7 @@ test('portal mapping can use the verified central session without a Payload runt
     },
   })
   assert.equal((await sso.getDelegatedSession(new Headers({cookie})))?.sessionID,'central-session')
+  assert.equal((await sso.strategy.authenticate({headers:new Headers({cookie}),payload:{} as never})).user,null,'API mappings cannot be used as a Payload authentication strategy')
   active = false
   assert.equal(await sso.getDelegatedSession(new Headers({cookie})),null)
 })

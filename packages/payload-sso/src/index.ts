@@ -136,28 +136,37 @@ export function configurePayloadSSO(options: PayloadSSOOptions) {
       && (value.idToken === undefined || nonempty(value.idToken)) ? value as Session : null
   }
   const introspect = async (token: string) => validateIdentity(await oidc.tokenIntrospection(await configuration(), token), clientId)
-  const findUser = async (payload: Payload | undefined, identity: Identity) => {
-    const mapped = options.lookupUser ? await options.lookupUser(identity) : undefined
-    const result = options.lookupUser ? { docs: mapped ? [mapped] : [] } : await payload!.find({
+  const mappedUser = <T extends object>(user: T | null | undefined, identity: Identity) => {
+    if (!user) return null
+    const fields = user as T & {authSubject?: unknown; role?: unknown; disabled?: unknown}
+    const effectiveRole = intersectRoles(fields.role, identity.role)
+    if (fields.authSubject !== identity.sub || fields.disabled || !effectiveRole) return null
+    return { ...user, role: effectiveRole, collection: 'users' as const, _strategy: 'webdock-sso', _ssoExp: identity.exp }
+  }
+  const findPayloadUser = async (payload: Payload, identity: Identity) => {
+    const result = await payload.find({
       collection: 'users', where: { authSubject: { equals: identity.sub } },
       limit: 2, depth: 0, overrideAccess: true,
     })
-    // Never create/link accounts using mutable email addresses during authentication.
-    if (result.docs.length !== 1) return null
-    const user = result.docs[0]! as typeof result.docs[number] & { authSubject?: string; role?: unknown; disabled?: boolean }
-    const effectiveRole = intersectRoles(user.role, identity.role)
-    if (user.authSubject !== identity.sub || user.disabled || !effectiveRole) return null
-    return { ...user, role: effectiveRole, collection: 'users' as const, _strategy: 'webdock-sso', _ssoExp: identity.exp }
+    // Preserve each CMS's native ID type; never link accounts by mutable email.
+    return result.docs.length === 1 ? mappedUser(result.docs[0], identity) : null
   }
-  const authenticate = async ({ headers, payload }: { headers: Headers; payload?: Payload }) => {
+  const findUser = async (payload: Payload | undefined, identity: Identity) =>
+    options.lookupUser ? mappedUser(await options.lookupUser(identity), identity)
+      : payload ? findPayloadUser(payload, identity) : null
+  const authenticateWith = async <T>(headers: Headers, resolve: (identity: Identity) => Promise<T>) => {
     try {
       const stored = await session(headers)
       if (!stored) return { user: null }
       const identity = await introspect(stored.accessToken)
       if (!identity || identity.sub !== stored.sub) return { user: null }
-      return { user: await findUser(payload, { ...identity, exp: Math.min(identity.exp, stored.exp) }) }
+      return { user: await resolve({ ...identity, exp: Math.min(identity.exp, stored.exp) }) }
     } catch { return { user: null } }
   }
+  const authenticate = ({ headers, payload }: { headers: Headers; payload?: Payload }) =>
+    authenticateWith(headers, identity => findUser(payload, identity))
+  const authenticatePayload = async ({headers, payload}: {headers: Headers; payload?: Payload}) =>
+    options.lookupUser || !payload ? {user: null} : authenticateWith(headers, identity => findPayloadUser(payload, identity))
 
   const hooks: NonNullable<CollectionConfig['hooks']> = {
     beforeOperation: [async ({ operation, req }) => {
@@ -173,7 +182,7 @@ export function configurePayloadSSO(options: PayloadSSOOptions) {
     }],
   }
   return {
-    strategy: { name: 'webdock-sso', authenticate },
+    strategy: { name: 'webdock-sso', authenticate: authenticatePayload },
     hooks,
     hasSessionCookie: (headers: Headers) => (headers.get('cookie') ?? '').split(';').some(part => part.trim().startsWith(`${SESSION}=`)),
     /** Server-only delegation. Never serialize this value into browser props. */
