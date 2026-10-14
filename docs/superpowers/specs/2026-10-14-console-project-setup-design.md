@@ -1,6 +1,6 @@
 # Projekte und verbundenes Anwendungs-Setup in der Webdock Console
 
-Status: Bedienkonzept vom Nutzer am 2026-10-14 bestätigt; technische Spezifikation zur Prüfung. Noch keine Produktimplementierung.
+Status: Bedienkonzept und technische Spezifikation vom Nutzer am 2026-10-14 bestätigt. Implementierungsplanung freigegeben; noch keine Produktimplementierung.
 
 ## Ziel und bestätigter Auftrag
 
