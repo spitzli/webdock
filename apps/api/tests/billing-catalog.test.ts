@@ -82,3 +82,29 @@ test("one-time publication rejects recurring or free-price substitutions", () =>
     ),
   ).toThrow();
 });
+
+test("publication requires the approved bilingual display copy without relaxing financial terms", () => {
+  const terms = {
+    ...expected,
+    name: "Zusätzlicher CMS-Editor",
+    description:
+      "Ein zusätzlicher CMS-Bearbeiter für eine berechtigte Website. Keine Betreuungszeit enthalten.",
+  };
+  const translated = {
+    ...product,
+    name: "Zusätzlicher CMS-Editor / Additional CMS editor",
+    description:
+      terms.description +
+      "\n\nOne additional CMS editor for an eligible website. Support time is not included.",
+  };
+  expect(verifyPublishedProduct(translated, terms).productID).toBe(product.id);
+  expect(() =>
+    verifyPublishedProduct({ ...translated, name: terms.name }, terms),
+  ).toThrow();
+  expect(() =>
+    verifyPublishedProduct(
+      { ...translated, prices: [{ ...product.prices[0], price_amount: 1 }] },
+      terms,
+    ),
+  ).toThrow();
+});

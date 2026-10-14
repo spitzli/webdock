@@ -1037,7 +1037,7 @@
   "Appointments": [
     "Termine"
   ],
-  "Appointments and enquiries module operation": [
+  "Appointments & enquiries": [
     "Modulbetrieb Termine & Anfragen"
   ],
   "Appointments and enquiries setup": [
@@ -6660,9 +6660,6 @@
   "Postal code is invalid or too long.": [
     "Postleitzahl ist ungültig oder zu lang."
   ],
-  "PostgreSQL Dedicated Standard": [
-    "PostgreSQL eigene Instanz Standard"
-  ],
   "PostgreSQL Dedicated Starter": [
     "PostgreSQL eigene Instanz Starter"
   ],
@@ -6671,6 +6668,9 @@
   ],
   "PostgreSQL operator management": [
     "PostgreSQL-Betreiberverwaltung"
+  ],
+  "Postgres Dedicated Standard": [
+    "PostgreSQL eigene Instanz Standard"
   ],
   "Preorder": [
     "Vorbestellung"

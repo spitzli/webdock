@@ -1,4 +1,4 @@
-import { billingProductText } from "@/lib/billing-product-text";
+import { billingProductText } from "@webdock/i18n/billing-products";
 import { getRequestI18n } from "@webdock/i18n/next";
 import { notFound, redirect } from "next/navigation";
 import { studioCall } from "@/lib/studio-client";

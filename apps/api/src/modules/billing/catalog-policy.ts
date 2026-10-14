@@ -1,3 +1,4 @@
+import { bilingualProductText } from "@webdock/i18n/billing-products";
 import { z } from "zod";
 import { BillingError } from "./types";
 export type PublishedTerms = {
@@ -48,8 +49,8 @@ export function verifyPublishedProduct(raw: unknown, expected: PublishedTerms) {
     metadata = row.metadata;
   if (
     row.organization_id !== expected.organizationID ||
-    row.name !== expected.name ||
-    row.description !== expected.description ||
+    row.name !== bilingualProductText(expected.name) ||
+    row.description !== bilingualProductText(expected.description, "\n\n") ||
     row.is_recurring !== (expected.interval !== "once") ||
     row.recurring_interval !==
       (expected.interval === "once" ? null : expected.interval) ||

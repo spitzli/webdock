@@ -8,7 +8,8 @@
     "./react": "./src/react.tsx",
     "./next": "./src/next.ts",
     "./preference": "./src/preference.ts",
-    "./picker": "./src/picker.tsx"
+    "./picker": "./src/picker.tsx",
+    "./billing-products": "./src/billing-products.ts"
   },
   "scripts": {
     "test": "node --import tsx --test tests/*.test.ts",

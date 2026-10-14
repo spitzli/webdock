@@ -1,4 +1,4 @@
-import { billingProductText } from "@/lib/billing-product-text";
+import { billingProductText } from "@webdock/i18n/billing-products";
 import { requireRegistryOperator } from "@/lib/registry-page";
 import Link from "next/link";
 import { billingFamilies } from "@/lib/billing-families";

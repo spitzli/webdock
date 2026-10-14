@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { translator } from '@webdock/i18n';
-import { billingProductText } from '../src/lib/billing-product-text.ts';
+import { billingProductText } from '@webdock/i18n/billing-products';
 
 test('catalog text follows the selected language and preserves custom product copy', () => {
   const german = 'PostgreSQL eigene Instanz Starter';

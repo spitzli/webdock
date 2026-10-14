@@ -24,7 +24,7 @@ msgstr "Modulbetrieb Produktkatalog / Gastro"
 msgid "Recurring module operation in addition to Website Plus, following project-specific setup. Not a complete shop with orders, payment or shipping."
 msgstr "Laufender Modulbetrieb zusätzlich zu Website Plus, nach projektspezifischer Einrichtung. Kein vollständiger Shop mit Bestell-, Zahlungs- oder Versandabwicklung."
 
-msgid "Appointments and enquiries module operation"
+msgid "Appointments & enquiries"
 msgstr "Modulbetrieb Termine & Anfragen"
 
 msgid "Recurring module operation in addition to Website Plus, following project-specific setup. External calendar integration and payment processing are excluded."
@@ -90,7 +90,7 @@ msgstr "Mailbox Basic"
 msgid "Provisional quote: EUR 2.90–4.90 excluding tax per mailbox/month for 2–5 GB. Pricing and operational scope are pending; fully verify incoming and outgoing mail, anti-spam, access and recovery before approval."
 msgstr "Vorläufiges Angebot: 2,90–4,90 EUR netto pro Postfach/Monat für 2–5 GB. Preis und Betriebsumfang offen; Eingang, Ausgang, Anti-Spam, Zugang und Wiederherstellung vor Freigabe vollständig abnehmen."
 
-msgid "PostgreSQL Dedicated Standard"
+msgid "Postgres Dedicated Standard"
 msgstr "PostgreSQL eigene Instanz Standard"
 
 msgid "Dedicated PostgreSQL instance: 1 CPU, 2 GiB RAM and 20 GiB filesystem. Load qualification and operational acceptance are required; do not promise unverified backup or restore capabilities."
