@@ -1,3 +1,4 @@
+import { billingProductText } from "@/lib/billing-product-text";
 import { getRequestI18n } from "@webdock/i18n/next";
 import { notFound, redirect } from "next/navigation";
 import { studioCall } from "@/lib/studio-client";
@@ -125,7 +126,7 @@ export default async function Billing({
       )}
       {view.agreements.map((agreement) => (
         <section className="panel" key={agreement.id}>
-          <h2>{agreement.snapshot.name}</h2>
+          <h2>{billingProductText(i18n, agreement.snapshot.name)}</h2>
           <p>
             {money(agreement.snapshot.amount, agreement.snapshot.currency)} /{" "}
             {i18n.t(
@@ -185,7 +186,7 @@ export default async function Billing({
       ))}
       {view.changes.map((change) => (
         <section className="panel" key={change.id}>
-          <h2>{change.snapshot.name}</h2>
+          <h2>{billingProductText(i18n, change.snapshot.name)}</h2>
           <p>
             {i18n.t(billingLabel(change.status))}
             {change.effectiveAt && change.status !== "failed" && (
@@ -241,7 +242,7 @@ export default async function Billing({
                     <option value="">{i18n.t("Choose a plan")}</option>
                     {(offer ? [offer.version] : view.catalog).map((version) => (
                       <option key={version.versionID} value={version.versionID}>
-                        {version.name} ·{" "}
+                        {billingProductText(i18n, version.name)} ·{" "}
                         {money(version.amount, version.currency)}
                       </option>
                     ))}
@@ -256,7 +257,7 @@ export default async function Billing({
       {changeQuote && changeID && (
         <section className="panel">
           <h2>
-            {changeQuote.current.name} → {changeQuote.target.name}
+            {billingProductText(i18n, changeQuote.current.name)} → {billingProductText(i18n, changeQuote.target.name)}
           </h2>
           <p>
             {money(changeQuote.target.amount, changeQuote.target.currency)} /{" "}
@@ -309,7 +310,7 @@ export default async function Billing({
           <h2>{i18n.t(offer ? "Your offer" : "Choose a website plan")}</h2>
           {offer && (
             <p>
-              {offer.version.name} · {i18n.t(billingLabel(offer.status))}
+              {billingProductText(i18n, offer.version.name)} · {i18n.t(billingLabel(offer.status))}
             </p>
           )}
           {view.sites.length === 0 ? (
@@ -337,7 +338,7 @@ export default async function Billing({
                     <option value="">{i18n.t("Choose a plan")}</option>
                     {view.catalog.map((version) => (
                       <option key={version.versionID} value={version.versionID}>
-                        {version.name} ·{" "}
+                        {billingProductText(i18n, version.name)} ·{" "}
                         {money(version.amount, version.currency)}
                       </option>
                     ))}
@@ -366,9 +367,9 @@ export default async function Billing({
           {quote && (
             <>
               <h3>
-                {quote.name} · {quote.siteName}
+                {billingProductText(i18n, quote.name)} · {quote.siteName}
               </h3>
-              <p>{quote.description}</p>
+              <p>{billingProductText(i18n, quote.description)}</p>
               <p>
                 {money(quote.amount, quote.currency)} /{" "}
                 {i18n.t(quote.interval === "year" ? "Yearly" : "Monthly")} ·{" "}

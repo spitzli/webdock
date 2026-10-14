@@ -197,11 +197,38 @@
   "0 results": [
     "0 Ergebnisse"
   ],
+  "1 app / 1 replica; 0.25 CPU, 512 MB RAM, 1 GB persistent /data and 1 GB temporary storage (decimal). Managed setup is separate; no backups, dedicated database or high availability included.": [
+    "1 App / 1 Replikat; 0,25 CPU, 512 MB RAM, 1 GB persistentes /data und 1 GB temporärer Speicher (dezimal). Betreute Einrichtung separat; kein Backup, keine eigene Datenbank und keine HA enthalten."
+  ],
+  "1 app / 1 replica; 0.5 CPU, 1 GB RAM, 5 GB persistent /data and 1 GB temporary storage (decimal). Shared nodes; setup is separate, no backups or database included.": [
+    "1 App / 1 Replikat; 0,5 CPU, 1 GB RAM, 5 GB persistentes /data und 1 GB temporärer Speicher (dezimal). Geteilte Nodes; Einrichtung separat, kein Backup oder Datenbank enthalten."
+  ],
+  "1 app / 1 replica; 1 CPU, 2 GB RAM, 10 GB persistent /data and 2 GB temporary storage (decimal). Confirm capacity and placement before acceptance; no high availability or backups included.": [
+    "1 App / 1 Replikat; 1 CPU, 2 GB RAM, 10 GB persistentes /data und 2 GB temporärer Speicher (dezimal). Kapazität und Platzierung vor Annahme prüfen; keine HA oder Backups enthalten."
+  ],
+  "1 customer-owned Vercel team or Kubernetes cluster, up to 3 explicitly connected projects/workloads. Provider capacity and billing remain the customer's responsibility; setup is separate.": [
+    "1 eigenes Vercel-Team oder 1 eigener Kubernetes-Cluster, bis 3 ausdrücklich eingebundene Projekte/Workloads. Providerkapazität und Providerrechnung bleiben beim Kunden; Einrichtung separat."
+  ],
+  "1 website, 1 editor, 500 MB media storage (decimal), 100 outgoing emails per month.": [
+    "1 Website, 1 Redakteur, 500 MB Medienspeicher (dezimal) und 100 ausgehende E-Mails pro Monat."
+  ],
+  "1 website, 3 editors, 2000 MB media storage (decimal), 1000 outgoing emails per month.": [
+    "1 Website, 3 Redakteure, 2.000 MB Medienspeicher (dezimal) und 1.000 ausgehende E-Mails pro Monat."
+  ],
+  "1 website, 5 editors, 5000 MB media storage (decimal), 3000 outgoing emails per month.": [
+    "1 Website, 5 Redakteure, 5.000 MB Medienspeicher (dezimal) und 3.000 ausgehende E-Mails pro Monat."
+  ],
+  "1,000 outgoing emails per month; no mailbox. Reserve matching service and provider quotas before approval; do not promise included website allowances twice.": [
+    "1.000 ausgehende E-Mails pro Monat; kein Postfach. Kontingent und Providerquota vor Freigabe passend reservieren; enthaltene Website-Mengen nicht doppelt zusagen."
+  ],
   "1. Controller and contact": [
     "1. Verantwortlicher und Kontakt"
   ],
   "1. Provider and contract": [
     "1. Anbieter und Vertragsschluss"
+  ],
+  "10,000 outgoing emails per month; no mailbox. Confirm the billing period, counting rules and shared provider budget before approval.": [
+    "10.000 ausgehende E-Mails pro Monat; kein Postfach. Abrechnungsperiode, Zählweise und gemeinsames Providerbudget vor Freigabe bestätigen."
   ],
   "15 minutes": [
     "15 Minuten"
@@ -212,8 +239,14 @@
   "2. Services and availability": [
     "2. Leistungen und Verfügbarkeit"
   ],
+  "20 minutes per month for explicitly agreed changes. Unused time does not roll over; additional work requires agreement, and new development is excluded.": [
+    "20 Minuten pro Monat für ausdrücklich vereinbarte Änderungen. Nicht übertragbar; Mehrarbeit nur nach Vereinbarung, keine Neuentwicklung enthalten."
+  ],
   "203.0.113.10, 2001:db8::10": [
     "203.0.113.10, 2001:db8::10"
+  ],
+  "25,000 outgoing emails per month, subject to verified and reserved pool capacity. No inbox or general campaign or delivery guarantee.": [
+    "25.000 ausgehende E-Mails pro Monat, nur bei nachgewiesenem und reserviertem Poolbudget. Keine Inbox und kein allgemeines Kampagnen- oder Zustellversprechen."
   ],
   "3. Prices and payment": [
     "3. Preise und Zahlung"
@@ -232,6 +265,9 @@
   ],
   "4. Your responsibilities and content": [
     "4. Deine Pflichten und Inhalte"
+  ],
+  "45 minutes per month for content or minor configuration work. Defined scope; no new development or unlimited support.": [
+    "45 Minuten pro Monat für Inhalte oder kleine Konfigurationsarbeiten. Abgegrenzter Umfang, keine Neuentwicklung oder allgemeine Support-Flatrate."
   ],
   "5. Cookies, preferences and planned analytics": [
     "5. Cookies, Einstellungen und geplante Statistik"
@@ -364,6 +400,9 @@
   ],
   "A sender-domain registration needs review. Refresh to check whether the provider completed it.": [
     "Eine Versanddomain-Registrierung muss geprüft werden. Aktualisiere den Status, um das Ergebnis beim Anbieter zu prüfen."
+  ],
+  "A separate SQL database and roles in a shared pool; 1 GiB logical quota, no dedicated RAM guarantee. Verify TLS, isolation, quotas, monitoring, backup and restore before public approval.": [
+    "Eigene SQL-Datenbank und Rollen im gemeinsamen Pool; 1 GiB logisches Kontingent, keine eigene RAM-Garantie. TLS, Isolation, Quoten, Überwachung sowie Backup/Restore vor öffentlicher Freigabe abnehmen."
   ],
   "A tenant can manage up to 50 tracking domains.": [
     "Ein Mandant kann bis zu 50 Tracking-Domains verwalten."
@@ -608,6 +647,9 @@
   "Added ": [
     "Hinzugefügt am "
   ],
+  "Additional CMS editor": [
+    "Zusätzlicher CMS-Editor"
+  ],
   "Additional allowances": [
     "Zusätzliche Kontingente"
   ],
@@ -824,6 +866,9 @@
   "An active, ready Mail account is required.": [
     "Ein aktives, einsatzbereites Mail-Konto ist erforderlich."
   ],
+  "An additional 1 GB of decimal CMS media storage, including generated variants. Not a persistent app volume; verify actual Blob costs before approval.": [
+    "Zusätzlich 1 GB dezimaler CMS-Medienspeicher einschließlich erzeugter Varianten. Kein persistentes App-Volume; tatsächliche Blob-Kosten vor Freigabe prüfen."
+  ],
   "An administrator is required to delete content.": [
     "Zum Löschen von Inhalten sind Administratorrechte erforderlich."
   ],
@@ -887,8 +932,23 @@
   "Any IP address": [
     "Beliebige IP-Adresse"
   ],
+  "App Custom": [
+    "App Custom"
+  ],
+  "App Mini": [
+    "App Mini"
+  ],
+  "App Plus": [
+    "App Plus"
+  ],
+  "App Standard": [
+    "App Standard"
+  ],
   "App deployment controls will appear when a verified cluster executor is available.": [
     "Die Anwendungsbereitstellung wird verfügbar, sobald eine geprüfte Ausführung auf dem Cluster eingerichtet ist."
+  ],
+  "App setup": [
+    "App-Einrichtung"
   ],
   "Appearance": [
     "Darstellung"
@@ -976,6 +1036,12 @@
   ],
   "Appointments": [
     "Termine"
+  ],
+  "Appointments and enquiries module operation": [
+    "Modulbetrieb Termine & Anfragen"
+  ],
+  "Appointments and enquiries setup": [
+    "Termine & Anfragen einrichten"
   ],
   "Approve release": [
     "Release freigeben"
@@ -1139,6 +1205,9 @@
   "Awaiting provisioning": [
     "Wartet auf Bereitstellung"
   ],
+  "BYOK connection setup": [
+    "BYOK-Verbindung einrichten"
+  ],
   "Back": [
     "Zurück"
   ],
@@ -1292,6 +1361,9 @@
   "Border colour": [
     "Rahmenfarbe"
   ],
+  "Bot setup": [
+    "Bot online bringen"
+  ],
   "Bounced": [
     "Unzustellbar"
   ],
@@ -1384,6 +1456,9 @@
   ],
   "Business name": [
     "Betriebsname"
+  ],
+  "Business website setup": [
+    "Unternehmenswebsite einrichten"
   ],
   "Button": [
     "Button"
@@ -1757,6 +1832,9 @@
   "Closing heading": [
     "Abschließende Überschrift"
   ],
+  "Club / brochure website setup": [
+    "Vereins-/Visitenkarten-Website einrichten"
+  ],
   "Cluster": [
     "Cluster"
   ],
@@ -1967,6 +2045,9 @@
   "Conflict": [
     "Konflikt"
   ],
+  "Connect": [
+    "Connect"
+  ],
   "Connect / BYOK": [
     "Connect / BYOK"
   ],
@@ -1978,6 +2059,9 @@
   ],
   "Connect GitHub interactively in Studio.": [
     "Verbinde GitHub über den Anmeldedialog in Studio."
+  ],
+  "Connect Team": [
+    "Connect Team"
   ],
   "Connect Vercel": [
     "Vercel verbinden"
@@ -2002,6 +2086,9 @@
   ],
   "Connect a sending account to view Mail activity.": [
     "Verbinde ein Versandkonto, um die Mail-Aktivität anzuzeigen."
+  ],
+  "Connect an existing customer domain, including DNS verification. Domain purchase, transfer and renewal fees are excluded.": [
+    "Anschluss einer vorhandenen Kundendomain einschließlich DNS-Prüfung. Kein Domainkauf, Transfer oder Verlängerungspreis enthalten."
   ],
   "Connect cluster agent": [
     "Cluster-Agent verbinden"
@@ -2538,6 +2625,9 @@
   "Custom container": [
     "Eigener Container"
   ],
+  "Custom development – 1 hour": [
+    "Individuelle Entwicklung – 1 Stunde"
+  ],
   "Custom offer": [
     "Individuelles Angebot"
   ],
@@ -2780,6 +2870,12 @@
   ],
   "Declined": [
     "Abgelehnt"
+  ],
+  "Dedicated PostgreSQL instance: 0.5 CPU, 1 GiB RAM and 10 GiB filesystem. No unverified recovery window or SLA; operational approval follows acceptance testing.": [
+    "Eigene PostgreSQL-Instanz: 0,5 CPU, 1 GiB RAM und 10 GiB Dateisystem. Kein ungeprüftes Restore-Fenster oder SLA; Betriebsfreigabe nach Abnahme."
+  ],
+  "Dedicated PostgreSQL instance: 1 CPU, 2 GiB RAM and 20 GiB filesystem. Load qualification and operational acceptance are required; do not promise unverified backup or restore capabilities.": [
+    "Eigene PostgreSQL-Instanz: 1 CPU, 2 GiB RAM und 20 GiB Dateisystem. Lastqualifizierung und Betriebsabnahme erforderlich; Backup/Restore nicht ungeprüft zusagen."
   ],
   "Dedicated PostgreSQL process and bounded database filesystem.": [
     "Eigener PostgreSQL-Prozess und begrenztes Datenbank-Dateisystem."
@@ -3042,6 +3138,9 @@
   "Domain added. Publish the DNS records and check ownership to continue.": [
     "Domain hinzugefügt. Veröffentliche die DNS-Einträge und prüfe die Inhaberschaft, um fortzufahren."
   ],
+  "Domain connection": [
+    "Domainanschluss"
+  ],
   "Domain enabled": [
     "Domain aktiviert"
   ],
@@ -3065,6 +3164,9 @@
   ],
   "Domain ownership verified. You can now register this domain for sending.": [
     "Domain-Inhaberschaft bestätigt. Du kannst diese Domain jetzt für den Versand registrieren."
+  ],
+  "Domain registration / renewal": [
+    "Domainregistrierung / Verlängerung"
   ],
   "Domain registration needs review. The provider may have completed it; refresh before retrying.": [
     "Die Domain-Registrierung muss geprüft werden. Sie könnte beim Anbieter bereits abgeschlossen sein; aktualisiere vor einem erneuten Versuch."
@@ -3137,6 +3239,9 @@
   ],
   "EU sending settings": [
     "Einstellungen für EU-Versand"
+  ],
+  "EUR 75 excluding tax per hour as a starting point; small changes in 15-minute increments, larger tasks as a scoped quote. Operations and resources are separate.": [
+    "75 EUR netto je Stunde als Ausgangspunkt; kleine Änderungen in 15-Minuten-Schritten, größere Arbeiten als abgegrenztes Angebot. Betrieb und Ressourcen separat."
   ],
   "EU’s information on data-protection rights": [
     "Informationen der EU zu Datenschutzrechten"
@@ -3402,6 +3507,9 @@
   "Enter your provider location evidence. A declaration is not provider verification.": [
     "Gib den Standortnachweis deines Anbieters an. Eine eigene Angabe ist keine Anbieterprüfung."
   ],
+  "Enterprise / custom operations": [
+    "Enterprise / individuelles Betriebskonzept"
+  ],
   "Environment": [
     "Umgebung"
   ],
@@ -3416,6 +3524,21 @@
   ],
   "Error": [
     "Fehler"
+  ],
+  "Estimated EUR 249–499 excluding tax: existing template, up to 5 content sections, supplied text/images and one revision round. Recurring website plan is separate.": [
+    "Angebotsrahmen 249–499 EUR netto: bestehende Vorlage, bis 5 Inhaltsbereiche, angelieferte Texte/Bilder und eine Korrekturrunde. Laufender Website-Tarif separat."
+  ],
+  "Estimated EUR 699–1,490 excluding tax: custom adjustments, up to 5 pages, contact enquiry and CMS introduction. Website Basic/Plus is billed separately.": [
+    "Angebotsrahmen 699–1.490 EUR netto: individuelle Anpassung, bis 5 Seiten, Kontaktanfrage und CMS-Einweisung. Website Basic/Plus separat abrechnen."
+  ],
+  "Estimated EUR 990–1,990 excluding tax: customized enquiry/calendar flow. Website Plus and module operation are separate; payment and external calendar synchronization are excluded.": [
+    "Angebotsrahmen 990–1.990 EUR netto: angepasster Anfrage-/Kalenderablauf. Website Plus und Modulbetrieb separat; keine Zahlung oder externe Kalendersynchronisierung enthalten."
+  ],
+  "Estimated EUR 990–2,490 excluding tax: products, variants/extras, content and administration. Website Plus and module operation are separate; real orders and payment require a follow-up project.": [
+    "Angebotsrahmen 990–2.490 EUR netto: Produkte, Varianten/Extras, Inhalte und Administration. Website Plus und Modulbetrieb separat; echte Bestellungen und Payment sind ein Folgeprojekt."
+  ],
+  "Estimated EUR 99–299 excluding tax, one-time: infrastructure connection, permission/namespace checks and documentation. Provider capacity and general Kubernetes administration are excluded.": [
+    "Angebotsrahmen 99–299 EUR netto einmalig: Infrastrukturverbindung, Rechte-/Namespace-Prüfung und Dokumentation. Keine Providerkapazität oder allgemeine Kubernetes-Administration enthalten."
   ],
   "Europe": [
     "Europa"
@@ -3485,6 +3608,9 @@
   ],
   "Existing webhook secret": [
     "Vorhandener Webhook-Schlüssel"
+  ],
+  "Existing website migration": [
+    "Bestehende Website umziehen"
   ],
   "Exit focus mode": [
     "Fokusmodus verlassen"
@@ -4095,8 +4221,17 @@
   "Individual IPv4 or IPv6 addresses, separated by commas or spaces. Blank allows any IP address.": [
     "Einzelne IPv4- oder IPv6-Adressen, getrennt durch Kommas oder Leerzeichen. Ein leeres Feld erlaubt jede IP-Adresse."
   ],
+  "Individual onboarding, access and operations plan, migration and additional isolation where agreed. SLAs and response times require separate qualification and pricing.": [
+    "Individuelles Onboarding, Zugriffs- und Betriebskonzept, Migration und gegebenenfalls zusätzliche Isolation. SLA und Reaktionszeiten nur nach gesonderter Qualifizierung und Kalkulation."
+  ],
   "Individual plan for this customer": [
     "Individueller Plan für diesen Kunden"
+  ],
+  "Individual quote based on TLD and reseller costs. No invented flat prices or blanket availability guarantees.": [
+    "Individuelles Angebot nach TLD- und Resellerkosten. Keine erfundenen Einheitspreise oder allgemeine Verfügbarkeitszusage."
+  ],
+  "Individual quote for explicitly agreed app, CPU, RAM and storage quantities. No blanket resource or price commitment.": [
+    "Individuelles Angebot für ausdrücklich vereinbarte App-, CPU-, RAM- und Speichermengen. Keine pauschale Ressourcen- oder Preiszusage."
   ],
   "Information reflects the latest successful request and can become outdated. Check Vercel directly before relying on a deployment or domain status for operational decisions. Availability depends on Vercel and the hosting services used by Webdock; no separate uptime commitment is made by these terms.": [
     "Die Informationen entsprechen der letzten erfolgreichen Abfrage und können veralten. Prüfe Vercel direkt, bevor du dich bei betrieblichen Entscheidungen auf einen Deployment- oder Domainstatus verlässt. Die Verfügbarkeit hängt von Vercel und den von Webdock verwendeten Hostingdiensten ab; diese Bedingungen enthalten keine gesonderte Verfügbarkeitszusage."
@@ -4776,6 +4911,15 @@
   "Mail API message text and HTML are retained for 30 days after final acceptance, failure or cancellation. Attachments are removed after a definitive result. Uncertain-send content is removed after seven days, while the unresolved outcome and duplicate-prevention record remain. Active schedules retain content needed for execution. Message metadata and events are retained for 90 days, redacted request logs and finished webhook attempts for 30 days, and processed or quarantined provider callbacks for seven days. Cleanup preserves records still needed by active work. Suppressions remain until explicitly removed. These periods cover Webdock’s operational database; provider records and backups have separate lifecycles.": [
     "Text und HTML von Mail-API-Nachrichten bleiben 30 Tage nach endgültiger Annahme, Fehlschlag oder Abbruch gespeichert. Anhänge werden nach einem eindeutigen Ergebnis entfernt. Inhalte unklarer Sendungen werden nach sieben Tagen entfernt; der ungeklärte Ausgang und der Schutz vor doppeltem Versand bleiben erhalten. Aktive geplante Sendungen behalten die für ihre Ausführung benötigten Inhalte. Nachrichtenmetadaten und Ereignisse bleiben 90 Tage, redigierte Anfrageprotokolle und abgeschlossene Webhook-Versuche 30 Tage sowie verarbeitete oder in Quarantäne gehaltene Provider-Callbacks sieben Tage gespeichert. Noch für laufende Aufträge benötigte Datensätze bleiben von der Bereinigung ausgenommen. Sperrlisten bleiben bis zur ausdrücklichen Entfernung bestehen. Diese Fristen gelten für die operative Webdock-Datenbank; Provider-Daten und Backups haben eigene Aufbewahrungszyklen."
   ],
+  "Mail Plus": [
+    "Mail Plus"
+  ],
+  "Mail Small": [
+    "Mail Small"
+  ],
+  "Mail Standard": [
+    "Mail Standard"
+  ],
   "Mail access expired or was revoked.": [
     "Der Postfachzugriff ist abgelaufen oder wurde entzogen."
   ],
@@ -4932,6 +5076,9 @@
   "Mailbox": [
     "Postfach"
   ],
+  "Mailbox Basic": [
+    "Mailbox Basic"
+  ],
   "Mailbox access": [
     "Postfachzugriff"
   ],
@@ -4955,6 +5102,9 @@
   ],
   "Main navigation": [
     "Hauptnavigation"
+  ],
+  "Maintenance allowance": [
+    "Pflegebudget"
   ],
   "Make room for your next idea.": [
     "Platz für deine nächste Idee."
@@ -5082,6 +5232,9 @@
   "Managed": [
     "Verwaltet"
   ],
+  "Managed Connect": [
+    "Managed Connect"
+  ],
   "Managed Mail": [
     "Verwaltetes Mailkonto"
   ],
@@ -5178,6 +5331,9 @@
   "Media storage (MB)": [
     "Medienspeicher (MB)"
   ],
+  "Media storage +1 GB": [
+    "Medienspeicher +1 GB"
+  ],
   "Medium": [
     "Medium"
   ],
@@ -5231,6 +5387,9 @@
   ],
   "Method not allowed.": [
     "Methode nicht erlaubt."
+  ],
+  "Migration from EUR 149 excluding tax: assessment, limited import and domain switch. Complex CMS migrations are billed by effort; website plan is separate.": [
+    "Migration ab 149 EUR netto: Bestandsprüfung, begrenzter Import und Domainumschaltung. Komplexe CMS-Migration nach Aufwand; Website-Tarif separat."
   ],
   "Migration role": [
     "Migrationsrolle"
@@ -5855,6 +6014,9 @@
   ],
   "One account for your workspace and websites.": [
     "Ein Konto für deinen Arbeitsbereich und deine Websites."
+  ],
+  "One additional CMS editor for an eligible website. Support time is not included.": [
+    "Ein zusätzlicher CMS-Bearbeiter für eine berechtigte Website. Keine Betreuungszeit enthalten."
   ],
   "One workspace. Independent websites.": [
     "Ein Arbeitsbereich. Eigenständige Websites."
@@ -6498,6 +6660,15 @@
   "Postal code is invalid or too long.": [
     "Postleitzahl ist ungültig oder zu lang."
   ],
+  "PostgreSQL Dedicated Standard": [
+    "PostgreSQL eigene Instanz Standard"
+  ],
+  "PostgreSQL Dedicated Starter": [
+    "PostgreSQL eigene Instanz Starter"
+  ],
+  "PostgreSQL Shared": [
+    "PostgreSQL Shared"
+  ],
   "PostgreSQL operator management": [
     "PostgreSQL-Betreiberverwaltung"
   ],
@@ -6608,6 +6779,12 @@
   ],
   "Product archival is not confirmed.": [
     "Die Produktarchivierung ist noch nicht bestätigt."
+  ],
+  "Product catalog / restaurant demo setup": [
+    "Produktkatalog / Gastro-Demo einrichten"
+  ],
+  "Product catalog / restaurant module operation": [
+    "Modulbetrieb Produktkatalog / Gastro"
   ],
   "Product details": [
     "Produktdetails"
@@ -6780,6 +6957,9 @@
   "Provision shared pool": [
     "Shared-Pool bereitstellen"
   ],
+  "Provisional quote: EUR 2.90–4.90 excluding tax per mailbox/month for 2–5 GB. Pricing and operational scope are pending; fully verify incoming and outgoing mail, anti-spam, access and recovery before approval.": [
+    "Vorläufiges Angebot: 2,90–4,90 EUR netto pro Postfach/Monat für 2–5 GB. Preis und Betriebsumfang offen; Eingang, Ausgang, Anti-Spam, Zugang und Wiederherstellung vor Freigabe vollständig abnehmen."
+  ],
   "Provisioning": [
     "Wird eingerichtet"
   ],
@@ -6881,6 +7061,9 @@
   ],
   "Quickstart": [
     "Schnellstart"
+  ],
+  "Quote from EUR 79.90 excluding tax/month: Connect Team plus 30 minutes of agreed operational support. No general OS/cluster management or SLA.": [
+    "Angebot ab 79,90 EUR netto/Monat: Connect Team plus 30 Minuten vereinbarte Betriebsbetreuung. Kein pauschales OS-/Cluster-Management oder SLA."
   ],
   "RAM (bytes)": [
     "Arbeitsspeicher (Bytes)"
@@ -7031,6 +7214,12 @@
   ],
   "Recovery code": [
     "Wiederherstellungscode"
+  ],
+  "Recurring module operation in addition to Website Plus, following project-specific setup. External calendar integration and payment processing are excluded.": [
+    "Laufender Modulbetrieb zusätzlich zu Website Plus, nach projektspezifischer Einrichtung. Keine externe Kalenderintegration oder Zahlungsverarbeitung enthalten."
+  ],
+  "Recurring module operation in addition to Website Plus, following project-specific setup. Not a complete shop with orders, payment or shipping.": [
+    "Laufender Modulbetrieb zusätzlich zu Website Plus, nach projektspezifischer Einrichtung. Kein vollständiger Shop mit Bestell-, Zahlungs- oder Versandabwicklung."
   ],
   "Redacted request": [
     "Bereinigte Anfrage"
@@ -8130,6 +8319,12 @@
   "Setup": [
     "Einrichtung"
   ],
+  "Setup from EUR 49 excluding tax with a suitable container image. Migration, code changes and domain/TLS work are billed according to explicitly agreed effort.": [
+    "Einrichtung ab 49 EUR netto bei bereits passendem Container-Image. Migration, Codeanpassung sowie Domain/TLS nach ausdrücklich vereinbartem Aufwand."
+  ],
+  "Setup from EUR 99 excluding tax for an eligible bot: configuration, health check and data transfer after review. Recurring App Standard plan is separate.": [
+    "Einrichtung ab 99 EUR netto für einen qualifizierten Bot: Konfiguration, Healthcheck und Datenübernahme nach Prüfung. Laufender App-Standard-Tarif separat."
+  ],
   "Setup key": [
     "Einrichtungsschlüssel"
   ],
@@ -8288,6 +8483,9 @@
   ],
   "Slug": [
     "URL-Kürzel"
+  ],
+  "Small changes allowance": [
+    "Kleines Änderungsbudget"
   ],
   "Snapshots of connected stores. Missing or failed measurements are unavailable, never counted as zero. Preview storage is shown separately.": [
     "Gespeicherte Messstände verbundener Speicher. Fehlende oder fehlgeschlagene Messungen gelten als nicht verfügbar und werden niemals als null gezählt. Vorschau-Speicher wird separat angezeigt."
@@ -9579,6 +9777,9 @@
   "Up to 100 matching invitations. Resend from the invitation form above.": [
     "Bis zu 100 passende Einladungen. Sende sie bei Bedarf über das Einladungsformular oben erneut."
   ],
+  "Up to 2 customer-owned infrastructure connections and 10 connected projects/workloads. Provider costs are excluded; supported management and setup must be agreed separately.": [
+    "Bis 2 eigene Infrastrukturverbindungen und 10 eingebundene Projekte/Workloads. Providerkosten nicht enthalten; unterstützte Steuerung und Einrichtung gesondert vereinbaren."
+  ],
   "Up to 200 matching permissions. Customer membership and an active account are also required.": [
     "Bis zu 200 passende Berechtigungen. Eine Kundenmitgliedschaft und ein aktives Konto sind ebenfalls erforderlich."
   ],
@@ -10248,8 +10449,17 @@
   "Website & content": [
     "Website & Inhalte"
   ],
+  "Website Basic": [
+    "Website Basic"
+  ],
   "Website CMS": [
     "Website-CMS"
+  ],
+  "Website Mini": [
+    "Website Mini"
+  ],
+  "Website Plus": [
+    "Website Plus"
   ],
   "Website URL": [
     "Website-URL"

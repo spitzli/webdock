@@ -1,3 +1,4 @@
+import { billingProductText } from "@/lib/billing-product-text";
 import { requireRegistryOperator } from "@/lib/registry-page";
 import Link from "next/link";
 import { billingFamilies } from "@/lib/billing-families";
@@ -64,7 +65,7 @@ export default async function Products({
       {products.map((product) => (
         <section className="panel" key={product.id}>
           <h2>
-            {product.name} · v{product.version}
+            {billingProductText(i18n, product.name)} · v{product.version}
           </h2>
           <p>
             {i18n.t(billingFamilies.find(([family]) => family === product.family)?.[1] || "Websites")} · {product.sku} ·{" "}
@@ -75,7 +76,7 @@ export default async function Products({
             / {i18n.t(product.interval === "once" ? "One-time" : product.interval === "year" ? "Yearly" : "Monthly")} ·{" "}
             {i18n.t(product.taxBehavior === "inclusive" ? "Tax included" : "Tax excluded")} · {i18n.t(billingLabel(product.status || "draft"))}
           </p>
-          <p>{product.description}</p>
+          <p>{billingProductText(i18n, product.description)}</p>
           <AvailabilityForm
             productID={product.productID}
             visibility={product.visibility}
