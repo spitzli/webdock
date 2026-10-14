@@ -106,6 +106,7 @@ const ready = async () => {
 };
 await ready();
 const app = await createApp(config, { mounts, ready });
+const { handleConsoleOrigin } = await import("./console-origin");
 const ingressSecret = process.env.WEBDOCK_INGRESS_SECRET;
 const trustedProxies = (process.env.WEBDOCK_TRUSTED_PROXIES || "")
   .split(",")
@@ -124,13 +125,13 @@ const server = Bun.serve({
       request,
       server.requestIP(request)?.address,
       {
-        origins: [config.apiOrigin, config.authOrigin, config.studioOrigin],
+        origins: [config.apiOrigin, config.authOrigin, config.studioOrigin, ...(config.consoleOrigin ? [config.consoleOrigin] : [])],
         trustedProxies,
         secret: ingressSecret,
         production: config.production,
       },
     );
-    return normalized instanceof Response ? normalized : app.handle(normalized);
+    return normalized instanceof Response ? normalized : handleConsoleOrigin(normalized, config, request => app.handle(request));
   },
 });
 let stopping = false;

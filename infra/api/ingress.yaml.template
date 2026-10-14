@@ -87,6 +87,49 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
+  name: console-identity
+  namespace: webdock-platform
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Host: console.webdock.dev
+      X-Forwarded-Proto: https
+      X-Webdock-Client-IP: ''
+      X-Vercel-Forwarded-For: ''
+      Forwarded: ''
+      X-Webdock-Ingress-Token: ${WEBDOCK_INGRESS_SECRET}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: console
+  namespace: webdock-platform
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - kind: Rule
+    match: Host(`console.webdock.dev`) && ((PathPrefix(`/api/`) && !Path(`/api/locale`))
+      || PathPrefix(`/.well-known/`))
+    priority: 100
+    middlewares:
+    - name: console-identity
+    services:
+    - name: api
+      port: 3130
+  - kind: Rule
+    match: Host(`console.webdock.dev`) && !QueryRegexp(`x-vercel-set-bypass-cookie`,
+      `.*`) && !QueryRegexp(`x-vercel-protection-bypass`, `.*`)
+    priority: 10
+    services:
+    - name: ui-proxy
+      port: 8080
+  tls:
+    certResolver: webdock
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
   name: https-only
   namespace: webdock-platform
 spec:
@@ -104,7 +147,7 @@ spec:
   - web
   routes:
   - kind: Rule
-    match: Host(`auth.webdock.dev`) || Host(`studio.webdock.dev`) || Host(`api.webdock.dev`)
+    match: Host(`auth.webdock.dev`) || Host(`studio.webdock.dev`) || Host(`console.webdock.dev`) || Host(`api.webdock.dev`)
     middlewares:
     - name: https-only
     services:

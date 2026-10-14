@@ -38,18 +38,23 @@ http {
  }
  server {
   listen 8080;
-  server_name studio.webdock.dev;
+  server_name console.webdock.dev;
   location / {
    set $vercel_origin ${STUDIO_UI_HOST};
    proxy_pass https://$vercel_origin;
    proxy_ssl_name $vercel_origin;
    proxy_set_header Host $vercel_origin;
-   proxy_set_header X-Forwarded-Host studio.webdock.dev;
+   proxy_set_header X-Forwarded-Host console.webdock.dev;
    proxy_set_header X-Forwarded-Proto https;
    proxy_set_header X-Vercel-Protection-Bypass ${STUDIO_UI_BYPASS_SECRET};
    proxy_set_header X-Vercel-Set-Bypass-Cookie "";
    proxy_set_header X-Webdock-Ingress-Token "";
    proxy_set_header Connection "";
   }
+ }
+ server {
+  listen 8080;
+  server_name studio.webdock.dev;
+  return 308 https://console.webdock.dev$request_uri;
  }
 }
