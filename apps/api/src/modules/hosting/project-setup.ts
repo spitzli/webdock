@@ -1,3 +1,4 @@
+import { repairSetupEnvironment, resetGitSetupRetry } from "./setup-recovery";
 import { executeAppCommand } from "./apps";
 import {
   HostingError,
@@ -121,6 +122,7 @@ export async function executeProjectSetup(actor: HostingActor, raw: unknown) {
       projectID: saved.project_id,
       revision: saved.revision,
       configuration: saved.configuration,
+      environmentNames: setupView(saved).environmentNames,
       databaseID: saved.resources.databaseID,
       appID: saved.resources.appID,
     });
@@ -186,44 +188,53 @@ export async function executeProjectSetup(actor: HostingActor, raw: unknown) {
         "Setup changed. Review the current configuration.",
       );
     if (cmd.action === "setup.save") {
-      if (row && (row.state === "running" || Object.keys(row.resources).length))
-        throw new HostingError(
-          409,
-          "Use application settings for changes after provisioning has started.",
-        );
-      const id =
-        row?.id ??
-        (await db.query("SELECT webdock_auth.next_snowflake() AS id")).rows[0]
-          .id;
-      const environment = sealEnvironment(
-        "setup:" + id,
-        patchEnvironment(
-          openEnvironment("setup:" + id, row?.environment_encrypted),
+      if (row && Object.keys(row.resources).length) {
+        row = await repairSetupEnvironment(
+          db,
+          row,
+          cmd.configuration,
           cmd.environment ?? [],
-        ),
-      );
-      row = (
-        await db.query(
-          `INSERT INTO webdock_auth.hosting_setup(id,customer_id,project_id,subject,configuration,environment_encrypted,steps) VALUES($1,$2,$3,$4,$5,$6,$7)
+        );
+      } else {
+        if (row && row.state === "running")
+          throw new HostingError(
+            409,
+            "Use application settings for changes after provisioning has started.",
+          );
+        const id =
+          row?.id ??
+          (await db.query("SELECT webdock_auth.next_snowflake() AS id")).rows[0]
+            .id;
+        const environment = sealEnvironment(
+          "setup:" + id,
+          patchEnvironment(
+            openEnvironment("setup:" + id, row?.environment_encrypted),
+            cmd.environment ?? [],
+          ),
+        );
+        row = (
+          await db.query(
+            `INSERT INTO webdock_auth.hosting_setup(id,customer_id,project_id,subject,configuration,environment_encrypted,steps) VALUES($1,$2,$3,$4,$5,$6,$7)
         ON CONFLICT(id) DO UPDATE SET configuration=$5,environment_encrypted=$6,revision=hosting_setup.revision+1,state='draft',preview=NULL,confirmed_preview_id=NULL,reason=NULL,updated_at=now() RETURNING *`,
-          [
-            id,
-            access.customerID,
-            cmd.projectID,
-            actor.subject,
-            JSON.stringify(cmd.configuration),
-            environment,
-            JSON.stringify(
-              setupSteps.map((name) => ({
-                name,
-                state: "pending",
-                operationID: null,
-                reason: null,
-              })),
-            ),
-          ],
-        )
-      ).rows[0];
+            [
+              id,
+              access.customerID,
+              cmd.projectID,
+              actor.subject,
+              JSON.stringify(cmd.configuration),
+              environment,
+              JSON.stringify(
+                setupSteps.map((name) => ({
+                  name,
+                  state: "pending",
+                  operationID: null,
+                  reason: null,
+                })),
+              ),
+            ],
+          )
+        ).rows[0];
+      }
     } else {
       if (!row?.preview)
         throw new HostingError(409, "Review the setup before deploying.");
@@ -259,6 +270,18 @@ export async function executeProjectSetup(actor: HostingActor, raw: unknown) {
         );
         if (interrupted && ["build", "release"].includes(interrupted.name)) {
           interrupted.attempt = (interrupted.attempt ?? 0) + 1;
+          if (
+            interrupted.name === "release" &&
+            row.configuration.source.kind === "git"
+          ) {
+            const release = (
+              await db.query(
+                "SELECT r.status FROM webdock_auth.git_release r JOIN webdock_auth.git_artifact a ON a.id=r.artifact_id WHERE r.project_id=$1 AND r.source_id=$2 AND a.build_id=$3 ORDER BY r.created_at DESC,r.id DESC LIMIT 1",
+                [row.project_id, row.resources.sourceID, row.resources.buildID],
+              )
+            ).rows[0];
+            resetGitSetupRetry(row, release?.status);
+          }
           if (interrupted.name === "build") {
             delete row.resources.buildID;
             delete row.resources.releaseID;

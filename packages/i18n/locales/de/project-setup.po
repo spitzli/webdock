@@ -574,3 +574,18 @@ msgstr "Dienste des Arbeitsbereichs"
 
 msgid "Refresh"
 msgstr "Aktualisieren"
+
+msgid "Choose distinct service variables and remove conflicting manual variables before deploying."
+msgstr "Wähle unterschiedliche Dienstvariablen und entferne kollidierende manuelle Variablen vor der Bereitstellung."
+
+msgid "Reconcile the interrupted Git release in Deployments before retrying setup."
+msgstr "Gleiche das unterbrochene Git-Release unter Bereitstellungen ab, bevor du die Einrichtung erneut versuchst."
+
+msgid "Correct draft variables"
+msgstr "Entwurfsvariablen korrigieren"
+
+msgid "Save variables"
+msgstr "Variablen speichern"
+
+msgid "Remove conflicting manual variables, save, then retry setup. Provisioned services are kept."
+msgstr "Entferne kollidierende manuelle Variablen, speichere und versuche die Einrichtung erneut. Bereits bereitgestellte Dienste bleiben erhalten."

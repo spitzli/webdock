@@ -20,6 +20,7 @@ export async function bindingRuntime(
   db: Connection,
   appID: string,
   environment: Record<string, string>,
+  requireReady = true,
 ) {
   const rows = (
     await db.query(
@@ -29,7 +30,7 @@ export async function bindingRuntime(
   ).rows;
   const runtime: ServiceRuntime[] = [];
   for (const row of rows) {
-    if (row.state === "blocked" || !row.secret_encrypted)
+    if ((requireReady && row.state === "blocked") || !row.secret_encrypted)
       throw new HostingError(
         409,
         "A connected service needs attention before deployment.",
@@ -42,7 +43,7 @@ export async function bindingRuntime(
           "Managed service variables cannot be edited manually.",
         );
     }
-    if (row.service.kind === "postgres") {
+    if (requireReady && row.service.kind === "postgres") {
       const current =
         currentDatabaseScope()?.kind === "system" &&
         process.env.DATABASE_RLS_SECRET
@@ -74,7 +75,11 @@ export async function bindingRuntime(
           "Refresh the database connection before deployment.",
         );
     }
-    if (row.service.kind === "mail" && !(await bindingMailReady(db, row.id)))
+    if (
+      requireReady &&
+      row.service.kind === "mail" &&
+      !(await bindingMailReady(db, row.id))
+    )
       throw new HostingError(
         409,
         "Native Mail connection needs attention before deployment.",

@@ -1880,6 +1880,9 @@
   "Choose an installation and repository you can access. GitHub consent is completed on GitHub.": [
     "Wähle eine Installation und ein Repository, auf die du Zugriff hast. Die Freigabe erfolgt bei GitHub."
   ],
+  "Choose distinct service variables and remove conflicting manual variables before deploying.": [
+    "Wähle unterschiedliche Dienstvariablen und entferne kollidierende manuelle Variablen vor der Bereitstellung."
+  ],
   "Choose enabled or disabled.": [
     "Wähle aktiviert oder deaktiviert."
   ],
@@ -2630,6 +2633,9 @@
   ],
   "Corner radius": [
     "Rundung"
+  ],
+  "Correct draft variables": [
+    "Entwurfsvariablen korrigieren"
   ],
   "Could not accept this offer. Please try again.": [
     "Das Angebot konnte nicht angenommen werden. Bitte versuche es erneut."
@@ -7662,6 +7668,9 @@
   "Reconcile release": [
     "Release-Status abgleichen"
   ],
+  "Reconcile the interrupted Git release in Deployments before retrying setup.": [
+    "Gleiche das unterbrochene Git-Release unter Bereitstellungen ab, bevor du die Einrichtung erneut versuchst."
+  ],
   "Reconnect GitHub": [
     "GitHub erneut verbinden"
   ],
@@ -7844,6 +7853,9 @@
   ],
   "Remove attachment": [
     "Anhang entfernen"
+  ],
+  "Remove conflicting manual variables, save, then retry setup. Provisioned services are kept.": [
+    "Entferne kollidierende manuelle Variablen, speichere und versuche die Einrichtung erneut. Bereits bereitgestellte Dienste bleiben erhalten."
   ],
   "Remove credentials": [
     "Zugangsdaten entfernen"
@@ -8459,6 +8471,9 @@
   ],
   "Save this secret now. It is shown only once.": [
     "Speichere dieses Geheimnis jetzt. Es wird nur einmal angezeigt."
+  ],
+  "Save variables": [
+    "Variablen speichern"
   ],
   "Save your new credential": [
     "Neue Zugangsdaten sicher speichern"

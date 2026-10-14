@@ -69,3 +69,18 @@ test("confirmation accepts identity and consent references, never client prices 
       false,
     );
 });
+test("initial setup requires at least one instance for observed readiness", () => {
+  assert.equal(
+    setupCommandSchema.safeParse({
+      action: "setup.save",
+      projectID: "11",
+      revision: 0,
+      configuration: {
+        ...configuration,
+        spec: { ...configuration.spec, replicas: 0 },
+      },
+      idempotencyKey: "zero-instance-setup",
+    }).success,
+    false,
+  );
+});

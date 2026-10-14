@@ -28,6 +28,7 @@ export async function previewProjectSetup(
     projectID: string;
     revision: number;
     configuration: SetupConfiguration;
+    environmentNames?: string[];
     databaseID?: string;
     appID?: string;
   },
@@ -43,6 +44,17 @@ export async function previewProjectSetup(
     blockers: [],
     offers: [],
   };
+  const managedNames = [
+    ...(config.database.mode === "none" ? [] : [config.database.variable]),
+    ...(config.mail ? [config.mail.variable, "WEBDOCK_MAIL_API_URL"] : []),
+  ];
+  if (
+    new Set(managedNames).size !== managedNames.length ||
+    managedNames.some((name) => input.environmentNames?.includes(name))
+  )
+    result.blockers.push(
+      "Choose distinct service variables and remove conflicting manual variables before deploying.",
+    );
   await transaction(async (db) => {
     const access = await authorizeHosting(
       actor,

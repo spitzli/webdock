@@ -1,3 +1,4 @@
+import { SetupEnvironmentRepair } from "./setup-environment-repair";
 import Link from "next/link";
 import { randomUUID } from "node:crypto";
 import { getRequestI18n } from "@webdock/i18n/next";
@@ -25,9 +26,11 @@ const states = {
 export async function SetupProgress({
   view,
   canManage,
+  canRepairEnvironment = false,
 }: {
   view: SetupView;
   canManage: boolean;
+  canRepairEnvironment?: boolean;
 }) {
   const { t, error } = await getRequestI18n();
   const base = `/hosting/projects/${view.projectID}`;
@@ -126,6 +129,9 @@ export async function SetupProgress({
             </Link>
           )}
       </div>
+      {canManage && canRepairEnvironment && (
+        <SetupEnvironmentRepair view={view} requestKey={randomUUID()} />
+      )}
       {canManage && ["blocked", "failed"].includes(view.state) && (
         <section className="panel">
           <h2>{t("Continue setup")}</h2>

@@ -40,7 +40,21 @@ export default async function Page({
       !Object.keys(view.resources).length &&
       view.state !== "running");
   if (!editing || !options.project.canManage)
-    return <SetupProgress view={view} canManage={options.project.canManage} />;
+    return (
+      <SetupProgress
+        view={view}
+        canManage={options.project.canManage}
+        canRepairEnvironment={
+          view.state === "blocked" &&
+          view.steps.some(
+            (s) => s.name === "bindings" && s.state === "blocked",
+          ) &&
+          options.applications.some(
+            (a) => a.id === view.resources.appID && a.lifecycle === "draft",
+          )
+        }
+      />
+    );
   let inspection: SetupInspection | undefined,
     inspectionError: string | undefined;
   if (query.inspect === "1")

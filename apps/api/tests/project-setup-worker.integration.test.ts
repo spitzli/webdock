@@ -220,3 +220,90 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
   },
   90000,
 );
+(enabled ? test : test.skip)(
+  "blocked draft environment repair runs under the tenant role and preserves resources",
+  async () => {
+    const url = new URL(process.env.API_TEST_OWNER_URL!);
+    if (url.hostname !== "127.0.0.1" || url.pathname !== "/webdock_rls_test")
+      throw Error("Restricted local fixture required");
+    const db = new Pool({ connectionString: url.href, max: 1 }),
+      f = await createSetupFixture(db);
+    try {
+      const configuration = {
+        name: "Repair fixture",
+        source: { kind: "template", template: "healthcheck" },
+        spec: {
+          args: [],
+          port: 8080,
+          healthPath: "/ping",
+          cpuMillicores: 100,
+          memoryBytes: 67108864,
+          ephemeralBytes: 67108864,
+          replicas: 1,
+        },
+        database: { mode: "none" },
+        mail: null,
+        autoPublish: false,
+      };
+      const saved = await executeHosting(f.actor, {
+        action: "setup.save",
+        projectID: f.projectID,
+        revision: 0,
+        configuration,
+        environment: [{ name: "CONFLICT", value: "private" }],
+        idempotencyKey: randomUUID(),
+      });
+      const app = await executeHosting(f.actor, {
+        action: "apps.prepare",
+        projectID: f.projectID,
+        name: configuration.name,
+        spec: configuration.spec,
+        environment: [{ name: "CONFLICT", value: "private" }],
+        subscriptionRevision: 1,
+        idempotencyKey: randomUUID(),
+      });
+      await db.query(
+        "UPDATE webdock_auth.hosting_setup SET state='blocked',resources=$2,steps=$3 WHERE id=$1",
+        [
+          saved.id,
+          JSON.stringify({ appID: app.appID }),
+          JSON.stringify([
+            {
+              name: "bindings",
+              state: "blocked",
+              operationID: null,
+              reason: "conflict",
+            },
+          ]),
+        ],
+      );
+      const repair = {
+        action: "setup.save",
+        projectID: f.projectID,
+        setupID: saved.id,
+        revision: saved.revision,
+        configuration,
+        environment: [{ name: "CONFLICT", value: null }],
+        idempotencyKey: randomUUID(),
+      };
+      await expect(
+        executeHosting({ ...f.actor, scopes: ["hosting:read"] }, repair),
+      ).rejects.toThrow();
+      const fixed = await executeHosting(f.actor, repair);
+      expect(fixed.environmentNames).toEqual([]);
+      expect(fixed.resources.appID).toBe(app.appID);
+      expect(fixed.state).toBe("blocked");
+      expect(
+        (
+          await executeHosting(f.actor, {
+            action: "apps.get",
+            appID: app.appID,
+          })
+        ).environmentNames,
+      ).toEqual([]);
+    } finally {
+      await f.cleanup();
+      await db.end();
+    }
+  },
+);

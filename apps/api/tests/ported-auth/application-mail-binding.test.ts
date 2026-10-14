@@ -1,3 +1,4 @@
+import { bindingRuntime } from "../../src/modules/hosting/binding-runtime";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
@@ -129,6 +130,19 @@ test("native mail bindings recover the same private key after interruption and r
           )
         ).rows[0].n,
         before,
+      );
+      await f.db.query(
+        "UPDATE webdock_auth.mail_api_key SET revoked_at=now() WHERE customer_id=$1",
+        [f.customers[0]],
+      );
+      await assert.rejects(
+        bindingRuntime(f.db, app.appID, env),
+        /Mail connection needs attention/,
+      );
+      assert.equal(
+        (await bindingRuntime(f.db, app.appID, env, false)).length,
+        1,
+        "shutdown retains bindings without requiring a healthy Mail key",
       );
       const rotation = {
         action: "services.rotate",

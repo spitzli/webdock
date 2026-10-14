@@ -14,9 +14,7 @@ import { executeServiceBinding } from "./service-bindings";
 import { executeGitDeployment } from "./git-deployments";
 import { openEnvironment } from "./environment";
 import type { SetupRow } from "./project-setup";
-export async function executeSetupStep(
-  row: SetupRow,
-): Promise<{
+export async function executeSetupStep(row: SetupRow): Promise<{
   resources: SetupRow["resources"];
   steps: SetupProgress[];
   ready: boolean;
@@ -204,10 +202,27 @@ export async function executeSetupStep(
             page: 1,
             limit: 100,
           });
+          const releases = await call({
+            action: "git.releases.list",
+            projectID: row.project_id,
+            sourceID: resources.sourceID,
+            page: 1,
+            limit: 100,
+          });
+          const terminal = new Set(
+            releases.docs
+              .filter((r: { status: string }) =>
+                ["failed", "superseded", "needs-reconciliation"].includes(
+                  r.status,
+                ),
+              )
+              .map((r: { buildID: string }) => r.buildID),
+          );
           resources.buildID = builds.docs.find(
-            (b: { sourceSHA: string; status: string }) =>
+            (b: { id: string; sourceSHA: string; status: string }) =>
               b.sourceSHA === row.preview!.sourceSHA &&
-              b.status === "succeeded",
+              b.status === "succeeded" &&
+              !terminal.has(b.id),
           )?.id;
           if (!resources.buildID) {
             step.reason =

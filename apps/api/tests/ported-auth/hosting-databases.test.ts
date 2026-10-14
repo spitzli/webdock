@@ -1,3 +1,4 @@
+import { verifySetupDatabaseFlow } from "../helpers/setup-database-flow";
 import { serviceBindingSchemaSQL } from "../../src/modules/hosting/service-binding-schema";
 import { reportDatabaseObservations } from "../../src/modules/hosting/database-observations";
 import { readFileSync } from "node:fs";
@@ -543,6 +544,13 @@ test("database migration, operator catalog and tenant ordering use real transact
             })
           ).environmentNames,
           [],
+        );
+        await verifySetupDatabaseFlow(
+          root,
+          project,
+          one.databaseID,
+          planID,
+          agent,
         );
         // Dedicated orders reserve a physical installation; upgrades reserve their delta before execution.
         await database.query(

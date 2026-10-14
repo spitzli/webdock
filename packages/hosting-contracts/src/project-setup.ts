@@ -41,7 +41,10 @@ export const setupConfigurationSchema = z
         })
         .strict(),
     ]),
-    spec: preparedAppSpecSchema,
+    spec: preparedAppSpecSchema.refine(
+      (s) => s.replicas > 0,
+      "Initial deployment requires at least one instance.",
+    ),
     database: z
       .discriminatedUnion("mode", [
         z.object({ mode: z.literal("none") }).strict(),

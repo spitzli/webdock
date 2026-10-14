@@ -525,7 +525,12 @@ export async function executeAppCommand(
       action,
     )
       ? []
-      : await bindingRuntime(db, row?.id ?? "0", environment);
+      : await bindingRuntime(
+          db,
+          row?.id ?? "0",
+          environment,
+          spec.replicas > 0,
+        );
     const hadBindings = row
       ? (
           await db.query(

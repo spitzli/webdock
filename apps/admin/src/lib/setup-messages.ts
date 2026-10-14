@@ -96,4 +96,10 @@ export const setupMessages = [
   msgid("Waiting for database readiness."),
   msgid("Waiting for observed application and service readiness."),
   msgid("Waiting for the build artifact."),
+  msgid(
+    "Choose distinct service variables and remove conflicting manual variables before deploying.",
+  ),
+  msgid(
+    "Reconcile the interrupted Git release in Deployments before retrying setup.",
+  ),
 ];
