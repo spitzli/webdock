@@ -21,7 +21,10 @@ export async function databaseBilling(db: Connection, customerID: string) {
     const price = r.snapshot.monthlyPriceCents;
     if (
       !Number.isSafeInteger(price) ||
-      price < 1 ||
+      price < 0 ||
+      (price === 0
+        ? r.snapshot.sponsoredCustomerID !== customerID
+        : r.snapshot.sponsoredCustomerID !== undefined) ||
       r.snapshot.currency !== "EUR"
     )
       throw new HostingError(

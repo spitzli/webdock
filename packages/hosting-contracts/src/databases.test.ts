@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { commandSchema, databaseViewSchema, databasePlanSchema } from "./index";
+import {
+  commandSchema,
+  databaseViewSchema,
+  databasePlanSchema,
+  databasePlanAvailableTo,
+} from "./index";
 const key = "database-test-key-123";
 test("database create requires accepted order and rejects CNPG specs and secret injection", () => {
   const create = {
@@ -117,6 +122,47 @@ test("database view cannot carry plaintext or claim shared filesystem enforcemen
     databaseViewSchema.safeParse({
       ...view,
       storageEnforcement: "bounded-filesystem",
+    }).success,
+    false,
+  );
+});
+
+test("zero-price database plans require an explicit sponsorship customer", () => {
+  const sponsored = {
+    kind: "dedicated",
+    name: "Sponsored DB",
+    monthlyPriceCents: 0,
+    currency: "EUR",
+    postgresMajor: 18,
+    cpuMillicores: 1000,
+    memoryBytes: 2147483648,
+    volumeBytes: 21474836480,
+    logicalStorageAllowanceBytes: null,
+    connectionLimit: 20,
+    terms: "Sponsoring for this customer only; no billing or backup guarantee.",
+    sponsoredCustomerID: "123",
+  };
+  assert.equal(databasePlanSchema.safeParse(sponsored).success, true);
+  const parsed = databasePlanSchema.parse(sponsored);
+  assert.equal(databasePlanAvailableTo(parsed, "123", "pilot"), true);
+  assert.equal(databasePlanAvailableTo(parsed, "456", "pilot"), false);
+  assert.equal(databasePlanAvailableTo(parsed, "123", "public"), false);
+  assert.equal(
+    databasePlanSchema.safeParse({
+      ...sponsored,
+      sponsoredCustomerID: undefined,
+    }).success,
+    false,
+  );
+  assert.equal(
+    databasePlanSchema.safeParse({ ...sponsored, monthlyPriceCents: 100 })
+      .success,
+    false,
+  );
+  assert.equal(
+    databasePlanSchema.safeParse({
+      ...sponsored,
+      sponsoredCustomerID: "invalid",
     }).success,
     false,
   );

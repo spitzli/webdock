@@ -13,6 +13,7 @@ import {
   resourceID,
   databaseCommandSchema,
   databasePlanSchema,
+  databasePlanAvailableTo,
   databaseViewSchema,
   HostingError,
   type HostingActor,
@@ -196,7 +197,7 @@ export async function executeDatabaseCommand(
       );
       return (
         await db.query(
-          "SELECT id,plan,availability,revision FROM webdock_auth.hosting_database_plan WHERE $1 OR availability='public' ORDER BY created_at,id",
+          "SELECT id,plan,availability,revision FROM webdock_auth.hosting_database_plan WHERE $1 OR (availability='public' AND NOT (plan ? 'sponsoredCustomerID')) ORDER BY created_at,id",
           [access.operator],
         )
       ).rows;
@@ -227,7 +228,7 @@ export async function executeDatabaseCommand(
           );
         result = (
           await db.query(
-            "UPDATE webdock_auth.hosting_database_plan SET availability=$2,revision=revision+1 WHERE id=$1 AND revision=$3 RETURNING id,plan,availability,revision",
+            "UPDATE webdock_auth.hosting_database_plan SET availability=$2,revision=revision+1 WHERE id=$1 AND revision=$3 AND NOT ($2='public' AND plan ? 'sponsoredCustomerID') RETURNING id,plan,availability,revision",
             [cmd.planRevisionID, cmd.availability, cmd.revision],
           )
         ).rows[0];
@@ -276,6 +277,18 @@ export async function executeDatabaseCommand(
           409,
           "Managed PostgreSQL ordering is not enabled.",
         );
+      const parsedPlan = databasePlanSchema.parse(plan.plan);
+      if (
+        !databasePlanAvailableTo(
+          parsedPlan,
+          resourceID.parse(access.customerID),
+          plan.availability,
+        )
+      )
+        throw new HostingError(
+          403,
+          "This database sponsorship belongs to another customer or is not private.",
+        );
       let source;
       if (cmd.databaseID) {
         source = await databaseAccess(db, actor, cmd.databaseID, true);
@@ -291,9 +304,11 @@ export async function executeDatabaseCommand(
           );
       }
       const snapshot = {
-        ...databasePlanSchema.parse(plan.plan),
+        ...parsedPlan,
         backupStatus: "not-configured",
-        billing: "monthly-net-fixed",
+        billing: parsedPlan.sponsoredCustomerID
+          ? "sponsored"
+          : "monthly-net-fixed",
         billingStarts: "observed-ready",
         ...(source
           ? {
