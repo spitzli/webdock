@@ -1,10 +1,10 @@
 # Tenant database browser
 
-Studio embeds the Tabularis explorer, SQL editor and data grid. Webdock Auth owns project bindings and explicit per-user grants; this gateway connects each grant to a dedicated Tabularis runtime. The integration supports PostgreSQL and project-owned SQLite volumes. Operators administer bindings and grants with MFA, but also need an explicit grant to browse a database. Customer preview cannot open database sessions.
+Studio embeds the Tabularis explorer, SQL editor and data grid. The API authorizes Managed PostgreSQL tenant administrators and owns project bindings with explicit per-user grants for registered databases. This gateway connects each authorized session to an isolated Tabularis runtime. The integration supports PostgreSQL and project-owned SQLite volumes. Operators administer bindings and grants with MFA, but also need an explicit grant to browse a database. Customer preview cannot open database sessions.
 
-## Activation
+## Registered project databases
 
-1. Apply the existing Auth, hosting and Studio migrations first, then run `node --import tsx apps/auth/scripts/migrate-databases.ts` with the Auth migration database credentials. The new tables live in `webdock_auth`; use the existing schema owner/runtime privilege conventions.
+1. Apply the existing Auth, hosting and Studio migrations first, then run `node --import tsx apps/api/scripts/legacy/migrate-databases.ts` with the Auth migration database credentials. The new tables live in `webdock_auth`; use the existing schema owner/runtime privilege conventions.
 2. Configure Auth with `WEBDOCK_DATABASE_GATEWAY_ORIGIN` and a random `WEBDOCK_DATABASE_GATEWAY_SECRET` of at least 32 characters. The gateway uses the same secret. Auth also needs its existing `BETTER_AUTH_SECRET`, Studio OAuth consumer configuration and hosting region configuration. Production authorization retains the existing verified-region gate (`WEBDOCK_HOSTING_EU_VERIFIED=true` for the verified non-Vercel runtime, or the existing `vercel-fra1` policy).
 3. Configure and start the gateway with Node 24 using `.env.example` and `npm start -w @webdock/database-gateway`. Put TLS in front of it, including WebSocket upgrades. Use a gateway hostname on the same site as Studio, for example `database.webdock.dev` and `studio.webdock.dev`. The session cookie is HttpOnly, SameSite=Strict, Secure over HTTPS, and scoped to its workspace path. Cross-site embedding is not supported.
 4. Provision a separate Tabularis process/container **and storage directory for every database binding, user and permission profile**. Restrict network access to the gateway and the assigned database. Configure only the assigned saved connection; do not mount unrelated credentials, plugins or host files. Runtime origins must be explicitly included in the gateway allowlist.
@@ -13,7 +13,87 @@ Studio embeds the Tabularis explorer, SQL editor and data grid. Webdock Auth own
 7. Start Tabularis in proxy authentication mode (`tabularis web --help` documents the exact options). Configure its public origin, allowed gateway origin, data directory and a unique proxy secret. Terminate HTTPS on its private origin. Never expose the proxy-authenticated backend directly to customers. Store its saved connection and database credentials only in that runtime's protected storage.
 8. In Studio → tenant → Databases, register the project database and assign access to the intended customer or operator using its isolated runtime origin, connection ID and proxy secret. The operator verifies isolation and database-role privileges before activation. Secrets are encrypted by Auth and are never returned in directory/launch DTOs.
 
-This delivery registers existing runtimes. It does not schedule containers, provision database roles, deploy infrastructure or execute production migrations. Hand the runtime deployment requirements to the GitOps deployment workstream. For the repository's existing Vercel applications, install the Vercel CLI (`npm i -g vercel`) when managing their environments or deployments; it is not required to run this standalone gateway.
+Registered project databases continue to use explicitly provisioned runtimes. Managed PostgreSQL uses the automatic process lifecycle below. Neither path provisions database roles, deploys infrastructure or executes production migrations. Hand the runtime deployment requirements to the GitOps deployment workstream. For the repository's existing Vercel applications, install the Vercel CLI (`npm i -g vercel`) when managing their environments or deployments; it is not required to run this standalone gateway.
+
+## Automatic Managed PostgreSQL viewer
+
+Every ready Managed PostgreSQL database offers its viewer to the tenant's current
+administrator. No project binding, per-user grant, runtime origin or connection
+secret must be entered for each database. Operators using customer preview cannot
+launch it. The existing project database workflow above remains separate.
+
+Deploy the API migration `apps/api/drizzle/0022_managed_database_viewer.sql` through
+the normal migration runner, then install the matching platform RLS policies with
+`apps/api/scripts/install-platform-rls.ts`. Deploy the API routes before activating
+the gateway feature. `WEBDOCK_AUTH_ORIGIN` must point to the **Auth hostname** serving the API-owned
+legacy route `/api/databases/gateway` (normally `https://auth.webdock.dev`).
+The API implementation preserves this host boundary; using `api.webdock.dev`
+for this route returns 404. When Auth shares the gateway's cluster, public HTTPS
+is translated to Traefik's private pod port 8443 before network-policy evaluation.
+The renderer permits only the gateway to reach kube-system's Traefik pods on that
+port, in addition to public HTTPS; it retains normal hostname/TLS verification. API and gateway use
+the same gateway secret. Configure `https://console.webdock.dev` and any legacy
+Studio origin in `WEBDOCK_DATABASE_BROWSER_ORIGINS`.
+
+Build the gateway image with the pinned Tabularis runtime image already available
+locally. Its Dockerfile copies Node 24 into `webdock-tabularis:production-fdd6c0a6`,
+retaining the runtime's Linux libraries and web assets. Override `TABULARIS_IMAGE`
+only with the matching verified source commit/image digest. The runtime process
+still runs as UID/GID 65532 with no extra capabilities; it needs a writable private
+`/tmp` volume. Set `WEBDOCK_DATABASE_MANAGED_RUNTIMES=true` to enable it, and set
+`TABULARIS_EXPECTED_COMMIT` to `vendor/tabularis-web-ui.json`'s full source commit.
+A missing executable, incompatible build or exhausted capacity fails closed.
+
+The default limit is eight simultaneous processes; configure
+`WEBDOCK_DATABASE_RUNTIME_CAPACITY` (1–64) to fit the deployment's tested memory
+budget. Each gateway session gets one process, one private mode-0700 temporary
+directory and exactly one saved PostgreSQL connection. Credentials and its CA are
+mode-0600 files; PostgreSQL uses `verify-full` TLS. The loopback listener has its own
+random proxy secret, which the browser never receives. Runtime stdout/stderr and
+Rust logging are disabled; only the gateway's existing metadata audit is logged.
+Gateway secrets and other service environment variables are not inherited.
+
+A session is permanently bound to its authorized user, database and revision.
+Credential rotation, database migration/state changes, loss of membership or native
+login revocation end access; an old session never switches to a new backend.
+Expiry, logout, authorization failure and gateway shutdown close requests/events,
+terminate the process and remove its directory. Idle managed sessions are checked
+every three seconds. **Saved queries, notebooks, history and editor preferences in
+managed runtimes are temporary and disappear when that session ends.** Export or
+copy anything needed beyond the session. Registered runtimes retain their existing
+persistent storage.
+
+For Kubernetes, pass `--managed-runtimes-config /private/managed-viewer.json` to the
+existing renderer with an explicit cluster network inventory:
+
+```json
+{
+  "authOrigin": "https://auth.webdock.dev",
+  "capacity": 4,
+  "clusters": [
+    {"addressIPv4": "79.143.177.157", "port": 32000, "endPort": 32199}
+  ]
+}
+```
+
+Use the verified public address of each authorized database cluster. The renderer
+allows only these `/32` addresses and the managed backend NodePort allocation
+range 32000–32199, enabling future databases without individual network changes.
+It retains default-deny networking and the registered runtime allowlist, adds a
+memory-backed temporary volume and increases the gateway resource budget/quota.
+The API sends each database's current CA over the authenticated control channel;
+no global database CA mount or certificate-verification bypass is needed. Existing
+runtime TLS trust remains unchanged. Without the optional config, managed mode is
+disabled and no database egress is added.
+
+Before enabling production, review the rendered gateway/NetworkPolicy/quota changes,
+verify cluster firewalls/HBA permit the gateway source, confirm the database owner
+role cannot access another tenant, and test the exact pinned image under nonroot,
+read-only-root-filesystem constraints. The processes share a container and UID;
+private directories isolate application state, not an OS security boundary against
+a compromised runtime. Size CPU/memory and node PID limits for the chosen capacity.
+For a hard per-process OS boundary, provision separate restricted containers.
+No production migration, deployment or firewall change is performed automatically.
 
 ## Lifecycle and limits
 
@@ -33,7 +113,7 @@ From the repository root with Node 24:
 npm test -w @webdock/database-gateway
 npm run check -w @webdock/database-gateway
 node --import tsx --test packages/database-contracts/src/index.test.ts
-node --env-file=.env.database-test.local --import tsx --test apps/auth/tests/databases/integration.test.ts
+node --env-file=.env.database-test.local --import tsx --test apps/api/tests/ported-auth/databases/integration.test.ts
 ```
 
 The Auth integration test intentionally resets schemas only in the dedicated fixture database `postgres://…@127.0.0.1:55441/webdock_admin_test`; it refuses other destinations. Do not point this test at a shared development or production database. Real-runtime tests are opt-in with `WEBDOCK_DATABASE_RUNTIME_TEST=true` and use local reader/writer runtimes on ports 3138/3158, with their protected HTTPS proxies on 3139/3159. See the test sources and the verification record for fixture requirements.
@@ -42,13 +122,13 @@ The Auth integration test intentionally resets schemas only in the dedicated fix
 
 ## Container deployment
 
-Build the gateway with `npm run build -w @webdock/database-gateway`, then build its Dockerfile from `apps/database-gateway`. The Tabularis image uses `deploy/Tabularis.Dockerfile` against an archived pinned source tree containing built `packages/web-ui/dist` assets. Stamp the full `SOURCE_COMMIT`. Import the exact images into k3s; pods intentionally use `imagePullPolicy: Never`. Keep a copy of the image digests in the rollout record.
+Build the gateway with `npm run build -w @webdock/database-gateway`, then build its Dockerfile from `apps/database-gateway` after loading/building the pinned Tabularis image. The Tabularis image uses `deploy/Tabularis.Dockerfile` against an archived pinned source tree containing built `packages/web-ui/dist` assets. Stamp the full `SOURCE_COMMIT`. Import the exact images into k3s; pods intentionally use `imagePullPolicy: Never`. Keep a copy of the image digests in the rollout record.
 
 `deploy/render.py` renders restricted pods, per-runtime secrets/state claims, internal TLS, default-deny network policies and the gateway ingress from a private operator inventory. Its JSON output contains secrets and must remain outside Git with mode 0600. CA keys and runtime keys are private; leaf certificates expire after 365 days and must be renewed before expiry. Use a server-side dry run before applying. The SQLite inventory references an existing approved claim; Lunares uses a retained local-PV alias of the same quota-backed data directory as its bot, on the same node, so SQLite locking/WAL are shared. This alias does not allocate another copy of the database. Revoke database grants and stop browser runtimes before decommissioning the bot volume; retain/delete handling must respect both consumers. Existing customer workload quotas are unchanged.
 
 The cluster's admission policy also requires the `security.webdock.dev/ready=true` namespace label. Set it only after applying and inspecting the rendered ResourceQuota, network policies and Restricted Pod Security labels. Build `deploy/TLS.Dockerfile` for the TLS sidecar: it removes Caddy's privileged-port file capability, allowing port 8443 with all capabilities dropped. No admission policy exemption is required.
 
-After authenticated runtime checks pass, the explicitly invoked offline Auth script `scripts/provision-database-browser.ts <private-inventory.json>` can register the verified schema-access grants. It requires `WEBDOCK_DATABASE_OPERATOR_ID`, an active MFA-enabled operator, and validates each subject's existing customer membership. Use the Auth production environment and keep inventory secrets out of logs/Git. Running it again replaces those grants and revokes their previous sessions through the revision increment.
+After authenticated runtime checks pass, the explicitly invoked offline Auth script `apps/api/scripts/legacy/provision-database-browser.ts <private-inventory.json>` can register the verified schema-access grants. It requires `WEBDOCK_DATABASE_OPERATOR_ID`, an active MFA-enabled operator, and validates each subject's existing customer membership. Use the Auth production environment and keep inventory secrets out of logs/Git. Running it again replaces those grants and revokes their previous sessions through the revision increment.
 
 ## Moving one PostgreSQL browser runtime
 
@@ -125,3 +205,24 @@ This retains the saved TLS CA and verification settings without sending host-fil
 parameters through Tabularis's restricted remote connection-test endpoint. Supplied
 client parameters are ignored; the probe uses normal query limits, deadlines,
 revocation checks and cancellation.
+
+Managed process verification uses an optional local Tabularis binary and creates a
+fresh disposable PostgreSQL 18 Docker container with synthetic credentials and a
+self-signed test CA. It checks schema/data edits, verified TLS (including rejection
+of an unrelated CA), connection scoping, revocation and temporary-state cleanup:
+
+```sh
+WEBDOCK_MANAGED_RUNTIME_TEST_BINARY=/path/to/tabularis \
+  node --import tsx --test apps/database-gateway/tests/managed-real-runtime.test.ts
+```
+
+The regular suite tests process concurrency/capacity, startup failures, expiry,
+revision changes, secret redaction, and opt-in behavior without Docker.
+
+To exercise the actual packaged runtime and its stamped commit, build the gateway
+image and replace the binary variable above with
+`WEBDOCK_MANAGED_RUNTIME_TEST_IMAGE=webdock-database-gateway:managed-viewer-test`.
+This variant also verifies UID 65532 with a read-only root filesystem, all Linux
+capabilities dropped, no privilege escalation, a 256 PID limit and private tmpfs.
+Its test containers use host networking solely to reach the disposable loopback
+PostgreSQL fixture; deployment networking remains governed by NetworkPolicy.

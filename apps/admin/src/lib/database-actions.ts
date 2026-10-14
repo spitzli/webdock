@@ -13,7 +13,7 @@ export async function saveDatabase(_state: { error?: string; message?: string },
       connectionID: value("connectionID"), proxySecret: value("proxySecret"), isolationVerified: value("isolationVerified") === "on", databaseRoleVerified: value("databaseRoleVerified") === "on" } :
     action === "revoke" ? { action, bindingID, subject: value("subject") } : { action, bindingID };
   const parsed = databaseCommand.safeParse(input);
-  if (!parsed.success || ["get", "list", "open"].includes(parsed.data.action)) return { error: "Check the database configuration fields." };
+  if (!parsed.success || ["get", "list", "open", "openManaged"].includes(parsed.data.action)) return { error: "Check the database configuration fields." };
   try {
     await databaseCall(parsed.data);
     revalidatePath("/tenants", "layout");
@@ -23,5 +23,10 @@ export async function saveDatabase(_state: { error?: string; message?: string },
 
 export async function launchDatabase(bindingID: string): Promise<{ launch?: DatabaseLaunch; error?: string }> {
   try { return { launch: await databaseCall<DatabaseLaunch>({ action: "open", bindingID }) }; }
+  catch (error) { return { error: error instanceof HostingError ? error.message : "Database access is unavailable." }; }
+}
+
+export async function launchManagedDatabase(databaseID: string): Promise<{ launch?: DatabaseLaunch; error?: string }> {
+  try { return { launch: await databaseCall<DatabaseLaunch>({ action: "openManaged", databaseID }) }; }
   catch (error) { return { error: error instanceof HostingError ? error.message : "Database access is unavailable." }; }
 }

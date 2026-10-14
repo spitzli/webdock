@@ -100,6 +100,9 @@ export default async function DatabaseDetails({
     <>
       {view === "overview" && (
         <section className="panel">
+          {access.canWrite && d.state === "ready" && d.endpoint && <p>
+            <Link className="button" href={`${path}/viewer`}>{t("Open in Tabularis")}</Link>
+          </p>}
           <dl className="allowance-list">
             <div>
               <dt>{t("Status")}</dt>

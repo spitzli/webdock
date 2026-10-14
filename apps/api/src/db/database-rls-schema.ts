@@ -610,6 +610,8 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         ].includes(t.name)
       )
         read += ` OR webdock_rls.mail_key(${col("customer_id")})`;
+      if (["hosting_database", "hosting_project"].includes(t.name))
+        workRead += ` OR ${worker(["database-gateway"])}`;
       if (t.name === "hosting_turbosmtp")
         workRead += ` OR ${worker(["mail-cron", "mail-send-gateway"])}`;
     } else if (t.name === "app_binding" || t.name === "project_grant") {
@@ -618,6 +620,19 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         t.name === "app_binding"
           ? "webdock_rls.operator()"
           : `webdock_rls.organization_allowed(${col("organization_id")},true) AND EXISTS(SELECT 1 FROM webdock_auth.app_binding b WHERE b.id::text=${col("binding_id")} AND b.organization_id::text=${col("organization_id")})`;
+    } else if (
+      ["managed_database_launch", "managed_database_session"].includes(t.name)
+    ) {
+      const own = `${col("subject")}=webdock_rls.subject() AND ${col("session_id")}=webdock_rls.actor()->>'sessionID' AND webdock_rls.actor()->'preview'='null'::jsonb`;
+      const target = `EXISTS(SELECT 1 FROM webdock_auth.hosting_database d WHERE d.id::text=${col("database_id")} AND webdock_rls.customer_allowed(d.customer_id,true))`;
+      if (t.name === "managed_database_launch") {
+        read = write = `(${own}) AND (${target})`;
+        runtimeUpdate = runtimeDelete = "false";
+      }
+      workRead = worker(["database-gateway"]);
+      workWrite = t.name === "managed_database_session" ? workRead : "false";
+      workUpdate = t.name === "managed_database_launch" ? workRead : "false";
+      workDelete = t.name === "managed_database_session" ? workRead : "false";
     } else if (t.name === "database_binding") {
       read = `webdock_rls.project_allowed(${col("project_id")})`;
       write = "webdock_rls.operator()";
@@ -765,6 +780,7 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         workRead += ` OR (${worker(["database-order"])} AND (${col("availability")}='public' OR webdock_rls.plan_owned(${col("id")}) OR EXISTS(SELECT 1 FROM webdock_auth.hosting_database_offer o WHERE o.plan_revision_id::text=${col("id")} AND webdock_rls.customer_allowed(o.customer_id))))`;
       }
       if (t.name === "hosting_database_backend") {
+        workRead += ` OR ${worker(["database-gateway"])}`;
         read = `webdock_rls.operator() OR webdock_rls.backend_owned(${col("id")}) OR (webdock_rls.actor() IS NOT NULL AND ${col("kind")}='shared-pool' AND ${col("state")}='ready')`;
         write = `webdock_rls.operator() OR (${col("kind")}='dedicated' AND webdock_rls.backend_owned(${col("id")},true))`;
         const order = worker(["database-order"], col("cluster_id"));
@@ -830,6 +846,14 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         );
       if (t.schema === "webdock_auth" && t.name === "hosting_database_backend")
         sql.push(`REVOKE DELETE ON ${q} FROM webdock_auth_runtime;`);
+      if (t.schema === "webdock_auth" && t.name === "managed_database_launch")
+        sql.push(
+          `REVOKE UPDATE,DELETE ON ${q} FROM webdock_auth_runtime; REVOKE INSERT,DELETE ON ${q} FROM webdock_worker_runtime; REVOKE UPDATE ON ${q} FROM webdock_worker_runtime; GRANT UPDATE(consumed_at) ON ${q} TO webdock_worker_runtime;`,
+        );
+      if (t.schema === "webdock_auth" && t.name === "managed_database_session")
+        sql.push(
+          `REVOKE ALL ON ${q} FROM webdock_auth_runtime; REVOKE UPDATE ON ${q} FROM webdock_worker_runtime;`,
+        );
       // The app's identity joins need no password/token columns or arbitrary identity mutations.
       if (t.schema === "webdock_auth" && t.name === "session") {
         sql.push(

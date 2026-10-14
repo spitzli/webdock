@@ -5,7 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { HttpTransport, TabularisClient } from "@tabularis/web-ui";
 import "@tabularis/web-ui/workspace.css";
 import { useI18n } from "@webdock/i18n/react";
-import { launchDatabase } from "@/lib/database-actions";
+import { launchDatabase, launchManagedDatabase } from "@/lib/database-actions";
 
 const Workspace = dynamic(() => import("@tabularis/web-ui").then(module => module.TabularisWorkspace), { ssr: false });
 const theme = () => document.documentElement.dataset.theme === "light" ? "light" : document.documentElement.dataset.theme === "dark" ? "dark" : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -15,7 +15,7 @@ const subscribeTheme = (notify: () => void) => {
   return () => { observer.disconnect(); media.removeEventListener("change", notify); };
 };
 
-export function DatabaseWorkbench({ bindingID }: { bindingID: string }) {
+export function DatabaseWorkbench({ bindingID, managed = false }: { bindingID: string; managed?: boolean }) {
   const i18n = useI18n();
   const appearance = useSyncExternalStore(subscribeTheme, theme, () => "light");
   const [workspace, setWorkspace] = useState<{ scopeID: string; connectionID: string; client: TabularisClient }>();
@@ -23,7 +23,7 @@ export function DatabaseWorkbench({ bindingID }: { bindingID: string }) {
   useEffect(() => {
     let active = true; let close: (() => void) | undefined;
     void (async () => {
-      const result = await launchDatabase(bindingID);
+      const result = await (managed ? launchManagedDatabase(bindingID) : launchDatabase(bindingID));
       if (!active) return;
       if (!result.launch) throw Error(result.error || "Database access is unavailable.");
       const response = await fetch(result.launch.gatewayOrigin+"/session", { method: "POST", credentials: "include", redirect: "error",
@@ -38,7 +38,7 @@ export function DatabaseWorkbench({ bindingID }: { bindingID: string }) {
       setWorkspace({ scopeID: session.scopeID, connectionID: session.connectionID, client: new TabularisClient(transport) });
     })().catch((cause: unknown) => { if (active) setError(cause instanceof Error ? cause.message : "Database access is unavailable."); });
     return () => { active = false; close?.(); };
-  }, [bindingID]);
+  }, [bindingID, managed]);
   if (error) return <p className="notice error" role="alert">{i18n.error(error)}</p>;
   if (!workspace) return <p role="status">{i18n.t("Connecting to database…")}</p>;
   return <div className="database-workbench"><Workspace client={workspace.client} scopeId={workspace.scopeID} connectionId={workspace.connectionID} locale={i18n.locale} theme={appearance as "light" | "dark"} /></div>;

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-14 16:08+0200\n"
+"POT-Creation-Date: 2026-10-14 21:48+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -39,7 +39,7 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:20
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:210
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:119
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:122
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:109
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:74
 #: apps/admin/src/components/hosting/allowances.tsx:14
@@ -153,15 +153,15 @@ msgstr ""
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:125
 #: apps/admin/src/app/(console)/(portal)/hosting/operations/[operationID]/page.tsx:28
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:22
-#: apps/admin/src/components/console-controls.tsx:79
+#: apps/admin/src/components/console-controls.tsx:80
 #: apps/admin/src/components/hosting/project-applications.tsx:14
 #: apps/admin/src/components/hosting/project-applications.tsx:16
 #: apps/admin/src/components/hosting/project-context.tsx:20
 #: apps/admin/src/components/navigation.tsx:36
 #: apps/admin/src/lib/console-context.ts:50
-#: apps/admin/src/lib/console-context.ts:73
 #: apps/admin/src/lib/console-context.ts:74
-#: apps/admin/src/lib/console-search-server.ts:36
+#: apps/admin/src/lib/console-context.ts:75
+#: apps/admin/src/lib/console-search-server.ts:37
 msgid "Applications"
 msgstr ""
 
@@ -316,7 +316,7 @@ msgid "Cluster"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:176
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:105
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:108
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:66
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:146
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:456
@@ -449,27 +449,32 @@ msgstr ""
 msgid "Reconcile observed state"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:108
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:148
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:161
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:104
+#: apps/admin/src/components/databases/managed-rows.tsx:14
+msgid "Open in Tabularis"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:111
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:151
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:164
 msgid "Unknown or stale"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:113
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:116
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:62
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:100
 #: apps/admin/src/components/hosting/databases.tsx:173
 msgid "Database kind"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:115
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:118
 #: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:31
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:64
 #: apps/admin/src/components/hosting/databases.tsx:175
 msgid "Shared"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:115
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:118
 #: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:31
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:64
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:104
@@ -477,36 +482,36 @@ msgstr ""
 msgid "Dedicated instance"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:122
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:125
 msgid "Shared resources"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:129
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:132
 msgid "Storage allowance"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:139
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:142
 msgid "Measured logical allowance"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:140
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:143
 msgid "Bounded database filesystem"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:144
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:147
 msgid "Logical data size"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:153
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:156
 msgid "Database filesystem usage"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:166
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:169
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:45
 msgid "Last observation"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:173
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:176
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:121
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:46
 #: apps/admin/src/components/hosting/own-mail.tsx:99
@@ -516,59 +521,59 @@ msgstr ""
 msgid "Unavailable"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:177
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:180
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:67
 msgid "Backups"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:178
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:181
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:67
 msgid "Not configured"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:182
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:185
 #: apps/admin/src/components/hosting/databases.tsx:115
 msgid "Backups are not configured. No recovery window is included."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:188
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:191
 msgid "Your measured storage allowance is nearly reached."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:197
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:200
 msgid "The database filesystem is nearly full. Review capacity before importing more data."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:203
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:206
 #: apps/admin/src/components/hosting/form.tsx:60
 msgid "View progress"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:209
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:212
 msgid "Cancellation requested. Retained data is deleted separately by an operator."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:221
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:224
 msgid "Database actions"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:224
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:227
 msgid "Pausing interrupts connections and keeps the fixed monthly price. Shared pause affects only your own roles."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:249
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:252
 msgid "Upgrade database plan"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:261
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:264
 msgid "Retained migration sources"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:267
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:270
 msgid "Review source cleanup"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:279
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:282
 msgid "Review database deletion"
 msgstr ""
 
@@ -634,8 +639,30 @@ msgstr ""
 msgid "Delete retained source"
 msgstr ""
 
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/viewer/page.tsx:14
+msgid "The database must be ready before opening Tabularis."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/viewer/page.tsx:16
+msgid "Queries saved in this viewer are available only for this session. Copy any SQL you want to keep."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/viewer/page.tsx:18
+#: apps/admin/src/components/databases/forms.tsx:25
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:51
+#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:31
+#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
+#: apps/auth/src/lib/i18n-labels.ts:6
+msgid "Production"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/viewer/page.tsx:18
+#: apps/admin/src/components/databases/forms.tsx:36
+msgid "Manage schema"
+msgstr ""
+
 #: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:11
-#: apps/admin/src/lib/console-search-server.ts:31
+#: apps/admin/src/lib/console-search-server.ts:32
 msgid "Developer tools"
 msgstr ""
 
@@ -820,7 +847,7 @@ msgid "Name"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:73
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:21
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:23
 msgid "Add database"
 msgstr ""
 
@@ -1076,11 +1103,11 @@ msgid "Choose which projects Webdock can manage. Vercel continues to bill your o
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:44
-#: apps/admin/src/components/console-controls.tsx:79
-#: apps/admin/src/components/console-controls.tsx:111
+#: apps/admin/src/components/console-controls.tsx:80
+#: apps/admin/src/components/console-controls.tsx:112
 #: apps/admin/src/components/navigation.tsx:19
 #: apps/admin/src/lib/console-context.ts:48
-#: apps/admin/src/lib/console-search-server.ts:43
+#: apps/admin/src/lib/console-search-server.ts:44
 msgid "Projects"
 msgstr ""
 
@@ -1104,8 +1131,8 @@ msgstr ""
 #: apps/admin/src/components/hosting/project-applications.tsx:20
 #: apps/admin/src/components/hosting/project-context.tsx:21
 #: apps/admin/src/lib/console-context.ts:50
-#: apps/admin/src/lib/console-context.ts:74
-#: apps/admin/src/lib/console-search-server.ts:42
+#: apps/admin/src/lib/console-context.ts:75
+#: apps/admin/src/lib/console-search-server.ts:43
 msgid "Deployments"
 msgstr ""
 
@@ -1494,46 +1521,46 @@ msgstr ""
 msgid "Postal code"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:13
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:20
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:37
-#: apps/admin/src/components/console-controls.tsx:79
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:14
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:31
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:50
+#: apps/admin/src/components/console-controls.tsx:80
 #: apps/admin/src/components/hosting/project-context.tsx:22
 #: apps/admin/src/components/navigation.tsx:37
 #: apps/admin/src/lib/billing-families.ts:9
 #: apps/admin/src/lib/console-context.ts:50
-#: apps/admin/src/lib/console-context.ts:74
-#: apps/admin/src/lib/console-search-server.ts:36
+#: apps/admin/src/lib/console-context.ts:75
+#: apps/admin/src/lib/console-search-server.ts:37
 msgid "Databases"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:13
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:14
 msgid "Browse tables and query your project data."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:15
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:16
 msgid "No databases are available for your account."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:18
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:20
 msgid "No access assigned"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:19
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:21
 #: apps/admin/src/components/hosting/databases.tsx:47
 msgid "Open database"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:20
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:22
 msgid "Manage access"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:25
-#: apps/admin/src/components/console-controls.tsx:79
-#: apps/admin/src/components/console-controls.tsx:111
+#: apps/admin/src/components/console-controls.tsx:80
+#: apps/admin/src/components/console-controls.tsx:112
 #: apps/admin/src/components/hosting/project-context.tsx:13
 #: apps/admin/src/components/navigation.tsx:20
-#: apps/admin/src/lib/console-search-server.ts:29
+#: apps/admin/src/lib/console-search-server.ts:30
 msgid "Workspaces"
 msgstr ""
 
@@ -1563,7 +1590,7 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/inbox/page.tsx:14
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/page.tsx:8
-#: apps/admin/src/lib/console-search-server.ts:38
+#: apps/admin/src/lib/console-search-server.ts:39
 msgid "Mailboxes"
 msgstr ""
 
@@ -1607,15 +1634,15 @@ msgstr ""
 msgid "Dedicated to this sender domain"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:22
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:35
 msgid "Choose a project to order and manage PostgreSQL."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:27
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:40
 msgid "No active projects."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:30
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:43
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:27
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:36
 #: apps/admin/src/components/databases/forms.tsx:22
@@ -2190,157 +2217,157 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:65
-#: apps/admin/src/lib/console-search-server.ts:48
+#: apps/admin/src/components/console-controls.tsx:66
+#: apps/admin/src/lib/console-search-server.ts:49
 msgid "Search is temporarily unavailable. Please try again."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:79
+#: apps/admin/src/components/console-controls.tsx:80
 msgid "Go to"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:79
+#: apps/admin/src/components/console-controls.tsx:80
 #: apps/admin/src/components/plan-fields.tsx:13
 #: apps/admin/src/lib/billing-families.ts:3
 #: apps/auth/src/lib/i18n-messages.ts:276
 msgid "Websites"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:82
+#: apps/admin/src/components/console-controls.tsx:83
 msgid "Open navigation"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:83
+#: apps/admin/src/components/console-controls.tsx:84
 msgid "Console"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:84
-#: apps/admin/src/components/console-controls.tsx:110
+#: apps/admin/src/components/console-controls.tsx:85
+#: apps/admin/src/components/console-controls.tsx:111
 msgid "Switch workspace or project"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:85
+#: apps/admin/src/components/console-controls.tsx:86
 msgid "Select workspace"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:87
-#: apps/admin/src/components/console-controls.tsx:91
+#: apps/admin/src/components/console-controls.tsx:88
 #: apps/admin/src/components/console-controls.tsx:92
+#: apps/admin/src/components/console-controls.tsx:93
 msgid "Search resources and services"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:91
+#: apps/admin/src/components/console-controls.tsx:92
 msgid "Close search"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:92
+#: apps/admin/src/components/console-controls.tsx:93
 msgid "Name or domain"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:93
+#: apps/admin/src/components/console-controls.tsx:94
 msgid "Search in"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:94
+#: apps/admin/src/components/console-controls.tsx:95
 msgid "Current project"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:94
+#: apps/admin/src/components/console-controls.tsx:95
 msgid "Current workspace"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:94
+#: apps/admin/src/components/console-controls.tsx:95
 msgid "Available resources"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:94
+#: apps/admin/src/components/console-controls.tsx:95
 msgid "All workspaces"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:95
+#: apps/admin/src/components/console-controls.tsx:96
 msgid "Applications, databases and navigation"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:95
+#: apps/admin/src/components/console-controls.tsx:96
 msgid "Projects, websites and navigation"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:95
+#: apps/admin/src/components/console-controls.tsx:96
 msgid "Workspaces, websites and navigation"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:97
+#: apps/admin/src/components/console-controls.tsx:98
 #: packages/search/src/live-form.tsx:150
 msgid "Searching…"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:99
+#: apps/admin/src/components/console-controls.tsx:100
 msgid "No results. Try a different name or change the search scope."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:104
+#: apps/admin/src/components/console-controls.tsx:105
 msgid "Some resources could not be loaded. Try the search again."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:105
-#: apps/admin/src/components/console-controls.tsx:115
+#: apps/admin/src/components/console-controls.tsx:106
+#: apps/admin/src/components/console-controls.tsx:116
 msgid "More results are available. Narrow your search."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:107
+#: apps/admin/src/components/console-controls.tsx:108
 msgid "Type at least two characters to find resources."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:107
+#: apps/admin/src/components/console-controls.tsx:108
 msgid "Navigate"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:107
+#: apps/admin/src/components/console-controls.tsx:108
 msgid "Close"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:110
+#: apps/admin/src/components/console-controls.tsx:111
 msgid "Close workspace selector"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:112
+#: apps/admin/src/components/console-controls.tsx:113
 msgid "Filter by name"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:112
+#: apps/admin/src/components/console-controls.tsx:113
 msgid "Filter workspaces and projects"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:114
 #: apps/admin/src/components/console-controls.tsx:115
+#: apps/admin/src/components/console-controls.tsx:116
 msgid "Selected"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:115
+#: apps/admin/src/components/console-controls.tsx:116
 msgid "Loading projects…"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:115
+#: apps/admin/src/components/console-controls.tsx:116
 msgid "Projects could not be loaded. Please try again."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:115
+#: apps/admin/src/components/console-controls.tsx:116
 msgid "No matching projects in this workspace."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:116
+#: apps/admin/src/components/console-controls.tsx:117
 msgid "No matching workspaces."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:118
+#: apps/admin/src/components/console-controls.tsx:119
 msgid "Open full overview"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:121
+#: apps/admin/src/components/console-controls.tsx:122
 msgid "Navigation"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:121
+#: apps/admin/src/components/console-controls.tsx:122
 msgid "Close navigation"
 msgstr ""
 
@@ -2371,14 +2398,6 @@ msgstr ""
 #: apps/admin/src/components/databases/forms.tsx:25
 #: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:51
 msgid "Environment"
-msgstr ""
-
-#: apps/admin/src/components/databases/forms.tsx:25
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:51
-#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:31
-#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
-#: apps/auth/src/lib/i18n-labels.ts:6
-msgid "Production"
 msgstr ""
 
 #: apps/admin/src/components/databases/forms.tsx:25
@@ -2421,10 +2440,6 @@ msgstr ""
 msgid "Edit data"
 msgstr ""
 
-#: apps/admin/src/components/databases/forms.tsx:36
-msgid "Manage schema"
-msgstr ""
-
 #: apps/admin/src/components/databases/forms.tsx:37
 msgid "Runtime origin"
 msgstr ""
@@ -2447,6 +2462,10 @@ msgstr ""
 
 #: apps/admin/src/components/databases/forms.tsx:43
 msgid "Revoke access"
+msgstr ""
+
+#: apps/admin/src/components/databases/managed-rows.tsx:12
+msgid "Manage database"
 msgstr ""
 
 #: apps/admin/src/components/databases/workspace-frame.tsx:51
@@ -2569,7 +2588,7 @@ msgstr ""
 
 #: apps/admin/src/components/hosting/customer.tsx:107
 #: apps/admin/src/components/navigation.tsx:43
-#: apps/admin/src/lib/console-search-server.ts:37
+#: apps/admin/src/lib/console-search-server.ts:38
 msgid "Plan & usage"
 msgstr ""
 
@@ -2667,7 +2686,7 @@ msgid "Also allow this project's images on a shared cluster (applications share 
 msgstr ""
 
 #: apps/admin/src/components/hosting/database-details.tsx:19
-#: apps/admin/src/lib/console-context.ts:63
+#: apps/admin/src/lib/console-context.ts:64
 msgid "Connection credentials"
 msgstr ""
 
@@ -3170,6 +3189,7 @@ msgid "Database areas"
 msgstr ""
 
 #: apps/admin/src/components/hosting/tenant-database-navigation.tsx:18
+#: apps/admin/src/lib/console-context.ts:63
 msgid "Browse data"
 msgstr ""
 
@@ -3308,7 +3328,7 @@ msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:20
 #: apps/admin/src/lib/console-context.ts:38
-#: apps/admin/src/lib/console-search-server.ts:30
+#: apps/admin/src/lib/console-search-server.ts:31
 #: apps/auth/src/app/tenants/page.tsx:22
 #: apps/auth/src/components/auth-forms.tsx:319
 #: packages/cms-ui/src/client.tsx:779
@@ -3316,7 +3336,7 @@ msgid "My websites"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:21
-#: apps/admin/src/lib/console-search-server.ts:43
+#: apps/admin/src/lib/console-search-server.ts:44
 #: apps/auth/src/app/people/page.tsx:11 apps/auth/src/app/people/page.tsx:29
 #: apps/auth/src/components/auth-forms.tsx:319
 #: packages/cms-ui/src/client.tsx:773
@@ -3324,21 +3344,21 @@ msgid "People & access"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:21
-#: apps/admin/src/lib/console-search-server.ts:43
+#: apps/admin/src/lib/console-search-server.ts:44
 #: apps/auth/src/app/admin/plans/page.tsx:10
 #: apps/auth/src/app/admin/plans/page.tsx:17
 msgid "Plans"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:21
-#: apps/admin/src/lib/console-search-server.ts:43
+#: apps/admin/src/lib/console-search-server.ts:44
 msgid "Connections"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:21
 #: apps/admin/src/lib/console-context.ts:58
-#: apps/admin/src/lib/console-context.ts:64
-#: apps/admin/src/lib/console-search-server.ts:43
+#: apps/admin/src/lib/console-context.ts:65
+#: apps/admin/src/lib/console-search-server.ts:44
 msgid "Settings"
 msgstr ""
 
@@ -3346,7 +3366,7 @@ msgstr ""
 #: apps/admin/src/lib/console-context.ts:39
 #: apps/admin/src/lib/console-context.ts:56
 #: apps/admin/src/lib/console-context.ts:62
-#: apps/admin/src/lib/console-search-server.ts:36
+#: apps/admin/src/lib/console-search-server.ts:37
 #: packages/cms-ui/src/client.tsx:698
 msgid "Overview"
 msgstr ""
@@ -3354,7 +3374,7 @@ msgstr ""
 #: apps/admin/src/components/navigation.tsx:38
 #: apps/admin/src/components/workspace-sidebar.tsx:15
 #: apps/admin/src/lib/billing-families.ts:6
-#: apps/admin/src/lib/console-search-server.ts:38
+#: apps/admin/src/lib/console-search-server.ts:39
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:13
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:24
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:33
@@ -3363,17 +3383,17 @@ msgid "Mail"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:42
-#: apps/admin/src/lib/console-search-server.ts:39
+#: apps/admin/src/lib/console-search-server.ts:40
 msgid "Team"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:42
-#: apps/admin/src/lib/console-search-server.ts:39
+#: apps/admin/src/lib/console-search-server.ts:40
 msgid "Billing"
 msgstr ""
 
 #: apps/admin/src/components/navigation.tsx:44
-#: apps/admin/src/lib/console-search-server.ts:37
+#: apps/admin/src/lib/console-search-server.ts:38
 msgid "Profile"
 msgstr ""
 
@@ -3731,11 +3751,11 @@ msgstr ""
 msgid "Logs"
 msgstr ""
 
-#: apps/admin/src/lib/console-search-server.ts:31
+#: apps/admin/src/lib/console-search-server.ts:32
 msgid "API & MCP"
 msgstr ""
 
-#: apps/admin/src/lib/console-search-server.ts:38
+#: apps/admin/src/lib/console-search-server.ts:39
 msgid "Quickstart"
 msgstr ""
 

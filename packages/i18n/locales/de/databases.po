@@ -123,3 +123,15 @@ msgstr "Vollbild verlassen"
 
 msgid "Database engine"
 msgstr "Datenbanktyp"
+
+msgid "Open in Tabularis"
+msgstr "In Tabularis öffnen"
+
+msgid "Manage database"
+msgstr "Datenbank verwalten"
+
+msgid "The database must be ready before opening Tabularis."
+msgstr "Die Datenbank muss bereit sein, bevor Tabularis geöffnet werden kann."
+
+msgid "Queries saved in this viewer are available only for this session. Copy any SQL you want to keep."
+msgstr "In diesem Viewer gespeicherte Abfragen sind nur während dieser Sitzung verfügbar. Kopiere SQL, das du behalten möchtest."

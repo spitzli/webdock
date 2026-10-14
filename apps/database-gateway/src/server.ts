@@ -1,7 +1,8 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { randomBytes, randomUUID } from "node:crypto";
 import { WebSocket, WebSocketServer, type RawData } from "ws";
-import { runtimeOrigin, type RuntimeAccess } from "@webdock/database-contracts";
+import { runtimeOrigin, type RuntimeAccess, type GatewayAccess } from "@webdock/database-contracts";
+import { managedIdentity, type ManagedRuntimeManager, type ManagedRuntime } from "./managed-runtimes";
 import { authorizeRpc, publicResult, GatewayError, record } from "./policy";
 
 export interface GatewayOptions {
@@ -9,10 +10,11 @@ export interface GatewayOptions {
   allowedOrigins: string[];
   runtimeOrigins: string[];
   expectedCommit?: string;
+  managedRuntimes?: ManagedRuntimeManager;
   control: (body: Record<string, string>) => Promise<unknown>;
   audit?: (event: { scopeID: string; subject: string; command: string; status: number; durationMs: number }) => void;
 }
-type Session = { token: string; scopeID: string; expires: number; cookie?: string; csrf?: string; starting?: Promise<Record<string, unknown>>; negotiation?: Record<string, unknown>; active: number; queries: number };
+type Session = { id: string; ended?: Promise<void>; managed?: string; sensitive?: string[]; runtime?: ManagedRuntime; expiry?: NodeJS.Timeout; revalidation?: NodeJS.Timeout; cleanup: Set<() => void>; token: string; scopeID: string; expires: number; cookie?: string; csrf?: string; starting?: Promise<Record<string, unknown>>; negotiation?: Record<string, unknown>; active: number; queries: number };
 const COOKIE = "webdock_database";
 const MAX_BODY = 1_048_576, MAX_RESPONSE = 8_388_608;
 
@@ -45,18 +47,42 @@ export function createGateway(options: GatewayOptions) {
   const sockets = new WebSocketServer({ noServer: true, maxPayload: MAX_BODY });
   const upstreamSockets = new Set<WebSocket>();
   let upgrades = 0;
+  const retire = (session: Session): Promise<void> => {
+    if (session.ended) return session.ended;
+    session.expires = 0; session.sensitive = undefined;
+    clearTimeout(session.expiry); clearInterval(session.revalidation);
+    for (const [key, value] of sessions) if (value === session) sessions.delete(key);
+    for (const close of session.cleanup) close(); session.cleanup.clear();
+    session.ended = options.managedRuntimes?.release(session.id) ?? Promise.resolve();
+    return session.ended;
+  };
   const inspect = async (session: Session): Promise<RuntimeAccess> => {
-    if (session.expires <= Date.now()) throw new GatewayError(401, "Database session expired.");
-    let access: RuntimeAccess;
-    try { access = await options.control({ action: "inspect", token: session.token }) as RuntimeAccess; }
-    catch { throw new GatewayError(401, "Database access expired or was revoked."); }
-    if (access.scopeID !== session.scopeID || !runtimeOrigins.has(access.runtimeOrigin) || new Date(access.expiresAt).getTime() <= Date.now()) {
-      throw new GatewayError(403, "Database runtime is not authorized.");
-    }
-    return access;
+    try {
+      if (session.expires <= Date.now()) throw new GatewayError(401, "Database session expired.");
+      let access: GatewayAccess;
+      try { access = await options.control({ action: "inspect", token: session.token }) as GatewayAccess; }
+      catch { throw new GatewayError(401, "Database access expired or was revoked."); }
+      const expires = new Date(access.expiresAt).getTime();
+      if (session.expires <= Date.now() || access.scopeID !== session.scopeID || !Number.isFinite(expires) || expires <= Date.now()) {
+        throw new GatewayError(401, "Database runtime is not authorized.");
+      }
+      if ("kind" in access && access.kind === "managed") {
+        if (!options.managedRuntimes) throw new GatewayError(503, "Managed database runtime unavailable.");
+        const identity = managedIdentity(access);
+        if (session.managed && session.managed !== identity) throw new GatewayError(401, "Database access changed. Open a new session.");
+        session.managed = identity;
+        session.sensitive = [access.database.password, access.database.host, access.database.username, access.database.caCertificate].filter(value => value.length > 0);
+        const resolved = await options.managedRuntimes.acquire(session.id, access);
+        if (session.expires <= Date.now()) throw new GatewayError(401, "Database session expired.");
+        session.runtime = resolved;
+        return resolved;
+      }
+      if (session.managed || !("runtimeOrigin" in access) || !runtimeOrigins.has(access.runtimeOrigin)) throw new GatewayError(403, "Database runtime is not authorized.");
+      return access;
+    } catch (error) { await retire(session); throw error; }
   };
   const upstreamHeaders = (session: Session, access: RuntimeAccess) => ({
-    "Content-Type": "application/json", Origin: access.runtimeOrigin,
+    "Content-Type": "application/json", Origin: session.runtime?.authenticationOrigin ?? access.runtimeOrigin,
     "X-Tabularis-User": access.subject, "X-Tabularis-Proxy-Secret": access.proxySecret,
     ...(session.cookie ? { Cookie: session.cookie } : {}),
     ...(session.csrf ? { "X-Tabularis-Csrf": session.csrf } : {}),
@@ -78,7 +104,7 @@ export function createGateway(options: GatewayOptions) {
         queryResponsePolicy: { ...record(data.queryResponsePolicy), maxResponseBytes: MAX_RESPONSE },
       };
       return session.negotiation;
-    })().catch(error => { session.starting = undefined; throw error; });
+    })().catch(async error => { session.starting = undefined; if (session.managed) await retire(session); throw error; });
     return session.starting;
   };
   const locate = (req: IncomingMessage) => {
@@ -109,17 +135,24 @@ export function createGateway(options: GatewayOptions) {
         res.writeHead(204); return res.end();
       }
       if (req.url === "/session" && req.method === "POST") {
-        for (const [key, session] of sessions) if (session.expires <= Date.now()) sessions.delete(key);
+        for (const session of sessions.values()) if (session.expires <= Date.now()) await retire(session);
         if (sessions.size >= 256) throw new GatewayError(503, "Database gateway is at capacity.");
         const body = record(await readRequest(req));
         if (typeof body.code !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(body.code) || Object.keys(body).length !== 1) throw new GatewayError(400, "Invalid launch code.");
         let exchange: Record<string, unknown>;
         try { exchange = record(await options.control({ action: "exchange", code: body.code })); } catch { throw new GatewayError(401, "Launch code expired or was already used."); }
         if (typeof exchange.token !== "string" || typeof exchange.scopeID !== "string" || !/^[1-9][0-9]{0,18}$/.test(exchange.scopeID)) throw new GatewayError(502, "Invalid session response.");
-        const session: Session = { token: exchange.token, scopeID: exchange.scopeID, expires: new Date(String(exchange.expiresAt)).getTime(), active: 0, queries: 0 };
+        const session: Session = { id: randomUUID(), cleanup: new Set(), token: exchange.token, scopeID: exchange.scopeID, expires: new Date(String(exchange.expiresAt)).getTime(), active: 0, queries: 0 };
         if (!Number.isFinite(session.expires) || session.expires <= Date.now()) throw new GatewayError(401, "Session expired.");
         await inspect(session);
         const cookie = randomBytes(32).toString("base64url"); sessions.set(cookie, session);
+        session.expiry = setTimeout(() => { void retire(session); }, Math.min(session.expires - Date.now(), 2_147_483_647));
+        session.expiry.unref();
+        if (session.managed) {
+          let checking = false;
+          session.revalidation = setInterval(async () => { if (checking) return; checking = true; try { await inspect(session); } catch {} finally { checking = false; } }, 3000);
+          session.revalidation.unref();
+        }
         res.setHeader("Set-Cookie", `${COOKIE}=${cookie}; Path=/s/${session.scopeID}/; HttpOnly; SameSite=Strict; Max-Age=${Math.min(900, Math.floor((session.expires-Date.now())/1000))}${origin.startsWith("https:") ? "; Secure" : ""}`);
         return json(res, 200, { scopeID: session.scopeID, connectionID: session.scopeID, baseUrl: `${origin}/s/${session.scopeID}`, expiresAt: new Date(session.expires).toISOString() });
       }
@@ -132,8 +165,9 @@ export function createGateway(options: GatewayOptions) {
       await negotiate(session, access);
       if (req.headers["x-tabularis-csrf"] !== session.csrf) throw new GatewayError(403, "Invalid database CSRF token.");
       if (path === "/api/v1/logout") {
-        sessions.delete(cookie); session.expires = 0;
+        sessions.delete(cookie);
         await fetch(access.runtimeOrigin+"/api/v1/logout", { method: "POST", headers: upstreamHeaders(session, access), redirect: "error", signal: AbortSignal.timeout(2000) }).catch(() => {});
+        await retire(session);
         await options.control({ action: "logout", token: session.token });
         return json(res, 200, { ok: true });
       }
@@ -164,6 +198,7 @@ export function createGateway(options: GatewayOptions) {
           body: JSON.stringify({ connectionId: access.connectionID, queryRequestId: headers["x-request-id"] }),
         }).catch(() => {});
       };
+      session.cleanup.add(cancel);
       const timeout = setTimeout(cancel, 35_000);
       const revalidate = setInterval(async () => {
         if (checking || revoked) return; checking = true;
@@ -175,12 +210,19 @@ export function createGateway(options: GatewayOptions) {
         const response = await fetch(access.runtimeOrigin+upstreamPath, { method: "POST", headers, body: JSON.stringify(input), redirect: "error", signal: abort.signal });
         const result = record(await boundedJSON(response));
         await inspect(session);
+        if (session.managed && result.ok === false) {
+          result.error = result.error ? JSON.parse(JSON.stringify(result.error), (_key, value) => {
+            if (typeof value !== "string") return value;
+            for (const secret of session.sensitive ?? []) value = value.replaceAll(secret, "[redacted]");
+            return value;
+          }) : { code: "DATABASE_RUNTIME_ERROR", message: "Database operation failed." };
+        }
         if (result.ok === true) result.data = command === "test_connection" ? "Connection successful!" : publicResult(command, result.data, access);
         return json(res, response.status, result);
       } catch (error) {
         if (revoked) throw new GatewayError(401, "Database access expired or was revoked.");
         throw error;
-      } finally { clearTimeout(timeout); clearInterval(revalidate); res.off("close", disconnected); }
+      } finally { session.cleanup.delete(cancel); clearTimeout(timeout); clearInterval(revalidate); res.off("close", disconnected); }
     } catch (error) {
       if (!res.destroyed && !res.headersSent) json(res, error instanceof GatewayError ? error.status : 502,
         { ok: false, error: { code: "DATABASE_GATEWAY_ERROR", message: error instanceof GatewayError ? error.message : "Database request failed. Check its outcome before retrying.", details: null, requestId: randomBytes(8).toString("hex") } });
@@ -198,7 +240,9 @@ export function createGateway(options: GatewayOptions) {
         const upstream = new WebSocket(target, { headers: upstreamHeaders(session, access), maxPayload: MAX_RESPONSE });
         upstreamSockets.add(upstream);
         const pending: string[] = []; let pendingBytes = 0, closed = false, checking = false;
-        const close = () => { if (closed) return; closed = true; clearInterval(timer); upstreamSockets.delete(upstream); client.close(1008, "Database session ended"); upstream.close(); };
+        const close = () => { if (closed) return; closed = true; clearInterval(timer); upstreamSockets.delete(upstream); session.cleanup.delete(close); client.close(1008, "Database session ended"); upstream.close();
+          const terminate = setTimeout(() => { client.terminate(); upstream.terminate(); }, 1000); terminate.unref(); };
+        session.cleanup.add(close);
         const timer = setInterval(async () => { if (checking) return; checking = true; try { await inspect(session); } catch { close(); } finally { checking = false; } }, 3000);
         upstream.on("open", () => { for (const message of pending) upstream.send(message); pending.length = 0; });
         // Authorization is asynchronous; preserve wire order in each direction.
@@ -243,12 +287,16 @@ export function createGateway(options: GatewayOptions) {
     } catch { socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n"); socket.destroy(); }
     finally { upgrades--; }
   });
-  server.on("close", () => { for (const client of sockets.clients) client.terminate(); sockets.close(); sessions.clear(); });
+  server.on("close", () => { for (const client of sockets.clients) client.terminate(); sockets.close(); void Promise.all([...sessions.values()].map(retire)).then(() => options.managedRuntimes?.shutdown()); });
   server.requestTimeout = 15_000;
   server.headersTimeout = 15_000;
-  return Object.assign(server, { shutdown: () => new Promise<void>(resolve => {
+  return Object.assign(server, { shutdown: async () => {
+    await Promise.all([...sessions.values()].map(retire));
+    await options.managedRuntimes?.shutdown();
+    await new Promise<void>(resolve => {
     for (const client of sockets.clients) client.terminate();
     for (const upstream of upstreamSockets) upstream.terminate();
     server.close(() => resolve()); server.closeAllConnections();
-  }) });
+    });
+  } });
 }

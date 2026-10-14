@@ -60,6 +60,7 @@ export const getConsoleContext = cache(async (route: string) => {
       const { database, access, path } = await getManagedDatabasePage(id);
       projectID = database.projectID; name = database.name;
       links = [{ href: path, label: t('Overview'), exact: true }, ...(access.canWrite ? [
+        { href: path + '/viewer', label: t('Browse data') },
         { href: path + '/connection', label: t('Connection credentials') },
         { href: path + '/settings', label: t('Settings'), activePaths: [path + '/deletion', path + '/sources'] },
       ] : [])];

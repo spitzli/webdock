@@ -3,10 +3,11 @@ import {
   databaseCommand,
   publicBinding,
   runtimeOrigin,
-  type RuntimeAccess,
+  type GatewayAccess,
 } from "@webdock/database-contracts";
 import { HostingError, type HostingActor } from "@webdock/hosting-contracts";
 import { authorizeHosting, type Connection } from "../hosting/authorization";
+import { audit as hostingAudit } from "../hosting/db";
 import { encryptMailSecret, decryptMailSecret } from "../platform/platform";
 
 const fail = () => new HostingError(404, "Database access is unavailable.");
@@ -88,6 +89,21 @@ export async function executeDatabase(
         ).rows
       : [];
     return {
+      managed: (
+        await db.query(
+          `SELECT d.id,d.project_id AS "projectID",d.name,d.state,
+         ($2::boolean AND d.state='ready' AND d.pending_backend_id IS NULL
+          AND d.confirmed_credentials_encrypted IS NOT NULL AND d.confirmed_credential_revision=d.credential_revision
+          AND b.state='ready' AND b.endpoint_ready AND COALESCE(b.ca_certificate,'')<>'') AS "canOpen"
+         FROM webdock_auth.hosting_database d JOIN webdock_admin.projects p ON p.id=d.project_id
+         JOIN webdock_auth.hosting_database_backend b ON b.id=d.backend_id
+         WHERE d.customer_id=$1 AND p.status='active' AND d.state<>'purged' ORDER BY d.name,d.id LIMIT 200`,
+          [
+            cmd.customerID,
+            auth.canWrite && actor.scopes.includes("hosting:write"),
+          ],
+        )
+      ).rows,
       bindings: rows.map((row) => publicBinding.parse(row)),
       operator: auth.operator,
       projects,
@@ -109,6 +125,8 @@ export async function executeDatabase(
     await audit(db, actor, "binding.create", row.id);
     return { id: row.id };
   }
+  if (cmd.action === "openManaged")
+    return openManagedDatabase(db, actor, cmd.databaseID);
   const management = ["grant", "revoke", "disable"].includes(cmd.action);
   const { row } = await binding(db, actor, cmd.bindingID, management);
   if (cmd.action === "get") return publicBinding.parse(row);
@@ -264,7 +282,7 @@ export async function exchangeLaunch(db: Connection, code: string) {
       [hash(code)],
     )
   ).rows[0];
-  if (!launch) throw fail();
+  if (!launch) return exchangeManagedLaunch(db, code);
   await authorizeGrant(
     db,
     launch.grant_id,
@@ -294,7 +312,7 @@ export async function exchangeLaunch(db: Connection, code: string) {
 export async function inspectSession(
   db: Connection,
   sessionToken: string,
-): Promise<RuntimeAccess> {
+): Promise<GatewayAccess> {
   if (!/^[A-Za-z0-9_-]{43}$/.test(sessionToken)) throw fail();
   const session = (
     await db.query(
@@ -302,7 +320,7 @@ export async function inspectSession(
       [hash(sessionToken)],
     )
   ).rows[0];
-  if (!session) throw fail();
+  if (!session) return inspectManagedSession(db, sessionToken);
   const grant = await authorizeGrant(
     db,
     session.grant_id,
@@ -320,5 +338,180 @@ export async function inspectSession(
       `database:${grant.binding_id}:${grant.subject}`,
     ),
     expiresAt: new Date(session.expires_at).toISOString(),
+  };
+}
+
+const managedSelection = `SELECT d.*,b.host,b.direct_port,b.endpoint_ready,b.ca_certificate,b.state AS backend_state
+ FROM webdock_auth.hosting_database d JOIN webdock_auth.hosting_database_backend b ON b.id=d.backend_id`;
+
+async function authorizeManaged(
+  db: Connection,
+  actor: HostingActor,
+  databaseID: string,
+) {
+  if (actor.source !== "studio") throw fail();
+  const d = (
+    await db.query(managedSelection + " WHERE d.id=$1 FOR SHARE OF d,b", [
+      databaseID,
+    ])
+  ).rows[0];
+  if (!d) throw fail();
+  await authorizeHosting(
+    actor,
+    { projectID: d.project_id, write: true, tenantAdmin: true, live: true },
+    db,
+  );
+  if (
+    d.state !== "ready" ||
+    d.pending_backend_id ||
+    d.backend_state !== "ready" ||
+    !d.endpoint_ready ||
+    !d.ca_certificate ||
+    !d.confirmed_credentials_encrypted ||
+    d.confirmed_credential_revision !== d.credential_revision
+  )
+    throw fail();
+  return d;
+}
+
+async function openManagedDatabase(
+  db: Connection,
+  actor: HostingActor,
+  databaseID: string,
+) {
+  const d = await authorizeManaged(db, actor, databaseID);
+  const origin = runtimeOrigin.safeParse(
+    process.env.WEBDOCK_DATABASE_GATEWAY_ORIGIN,
+  );
+  if (!origin.success)
+    throw new HostingError(503, "Database gateway is not configured.");
+  const code = token();
+  const launch = (
+    await db.query(
+      `INSERT INTO webdock_auth.managed_database_launch(token_hash,database_id,backend_id,database_revision,credential_revision,subject,session_id,expires_at)
+     VALUES($1,$2,$3,$4,$5,$6,$7,now()+interval '60 seconds') RETURNING expires_at`,
+      [
+        hash(code),
+        d.id,
+        d.backend_id,
+        d.revision,
+        d.confirmed_credential_revision,
+        actor.subject,
+        actor.sessionID,
+      ],
+    )
+  ).rows[0];
+  await hostingAudit(db, actor, "databases.viewer.launch", d.id);
+  return {
+    code,
+    gatewayOrigin: origin.data,
+    binding: publicBinding.parse({
+      id: d.id,
+      customerID: d.customer_id,
+      projectID: d.project_id,
+      name: d.name,
+      environment: "production",
+      engine: "postgresql",
+      profile: "schema",
+    }),
+    expiresAt: new Date(launch.expires_at).toISOString(),
+  };
+}
+
+async function authorizeManagedSession(
+  db: Connection,
+  session: {
+    subject: string;
+    session_id: string;
+    database_id: string;
+    backend_id: string;
+    database_revision: number;
+    credential_revision: number;
+  },
+) {
+  const d = await authorizeManaged(
+    db,
+    {
+      subject: session.subject,
+      sessionID: session.session_id,
+      source: "studio",
+      scopes: ["hosting:read", "hosting:write"],
+    },
+    session.database_id,
+  );
+  if (
+    d.backend_id !== session.backend_id ||
+    d.revision !== session.database_revision ||
+    d.confirmed_credential_revision !== session.credential_revision
+  )
+    throw fail();
+  return d;
+}
+
+async function exchangeManagedLaunch(db: Connection, code: string) {
+  const launch = (
+    await db.query(
+      `UPDATE webdock_auth.managed_database_launch SET consumed_at=now()
+     WHERE token_hash=$1 AND consumed_at IS NULL AND expires_at>now() RETURNING *`,
+      [hash(code)],
+    )
+  ).rows[0];
+  if (!launch) throw fail();
+  await authorizeManagedSession(db, launch);
+  const sessionToken = token();
+  const session = (
+    await db.query(
+      `INSERT INTO webdock_auth.managed_database_session(token_hash,database_id,backend_id,database_revision,credential_revision,subject,session_id,expires_at)
+     VALUES($1,$2,$3,$4,$5,$6,$7,now()+interval '15 minutes') RETURNING id,expires_at`,
+      [
+        hash(sessionToken),
+        launch.database_id,
+        launch.backend_id,
+        launch.database_revision,
+        launch.credential_revision,
+        launch.subject,
+        launch.session_id,
+      ],
+    )
+  ).rows[0];
+  return {
+    token: sessionToken,
+    scopeID: session.id,
+    expiresAt: new Date(session.expires_at).toISOString(),
+  };
+}
+
+async function inspectManagedSession(
+  db: Connection,
+  sessionToken: string,
+): Promise<GatewayAccess> {
+  const session = (
+    await db.query(
+      "SELECT * FROM webdock_auth.managed_database_session WHERE token_hash=$1 AND expires_at>now()",
+      [hash(sessionToken)],
+    )
+  ).rows[0];
+  if (!session) throw fail();
+  const d = await authorizeManagedSession(db, session);
+  const secret = decryptMailSecret<{ migrationPassword: string }>(
+    d.confirmed_credentials_encrypted,
+    `database:${d.id}:${d.confirmed_credential_revision}`,
+  );
+  return {
+    kind: "managed",
+    scopeID: session.id,
+    subject: session.subject,
+    connectionID: d.id,
+    profile: "schema",
+    expiresAt: new Date(session.expires_at).toISOString(),
+    revision: `${d.backend_id}:${d.confirmed_credential_revision}:${d.revision}`,
+    database: {
+      host: d.host,
+      port: d.direct_port,
+      database: d.database_name,
+      username: `wd_migrate_${d.id}`,
+      password: secret.migrationPassword,
+      caCertificate: d.ca_certificate,
+    },
   };
 }
