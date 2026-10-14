@@ -2,6 +2,7 @@ import { assertDatabaseMaintenanceAllowed } from "./database-protection";
 import { randomBytes, createHash } from "node:crypto";
 import {
   databasePlanSchema,
+  databasePlanAvailableTo,
   HostingError,
   resourceID,
   type HostingActor,
@@ -418,6 +419,17 @@ export async function acceptDatabaseOrder(
   )
     throw new HostingError(409, "Database ordering is not enabled.");
   const plan = databasePlanSchema.parse(planRow.plan);
+  if (
+    !databasePlanAvailableTo(
+      plan,
+      resourceID.parse(access.customerID),
+      planRow.availability,
+    )
+  )
+    throw new HostingError(
+      403,
+      "This database sponsorship belongs to another customer or is not private.",
+    );
   const source = offer.snapshot.sourceDatabaseID
     ? (
         await db.query(

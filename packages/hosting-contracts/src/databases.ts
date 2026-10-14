@@ -52,13 +52,21 @@ export const databasePlanSchema = z
   .object({
     ...resourceShape,
     name,
-    monthlyPriceCents: z.number().int().min(1).max(1000000),
+    monthlyPriceCents: z.number().int().min(0).max(1000000),
+    sponsoredCustomerID: id.optional(),
     currency: z.literal("EUR"),
     connectionLimit: z.number().int().min(2).max(100),
     terms: z.string().trim().min(40).max(6000),
   })
   .strict()
-  .refine(validResources, "Resources must match the database kind.");
+  .refine(validResources, "Resources must match the database kind.")
+  .refine(
+    (plan) =>
+      plan.sponsoredCustomerID
+        ? plan.monthlyPriceCents === 0
+        : plan.monthlyPriceCents > 0,
+    "Zero-price plans require a sponsorship customer.",
+  );
 export const databaseViewSchema = z
   .object({
     ...resourceShape,
@@ -335,3 +343,14 @@ export type DatabaseBillingView = {
     cancellationRequestedAt: string | null;
   }>;
 };
+
+export function databasePlanAvailableTo(
+  plan: DatabasePlan,
+  customerID: string,
+  availability: string,
+): boolean {
+  return (
+    !plan.sponsoredCustomerID ||
+    (availability === "pilot" && plan.sponsoredCustomerID === customerID)
+  );
+}

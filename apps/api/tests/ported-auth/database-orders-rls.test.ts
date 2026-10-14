@@ -52,6 +52,7 @@ test(
     const scope = <T>(run: () => T) =>
       withDatabaseScope({ kind: "session", subject, sessionID: session }, run);
     let org: string | undefined;
+    const sponsoredPlanIDs: string[] = [];
     const key = () => randomBytes(20).toString("hex");
     const plan = {
       kind: "dedicated",
@@ -375,6 +376,75 @@ test(
         ).rows[0].backend_id,
         sharedBackend,
       );
+      await owner.query(
+        'INSERT INTO webdock_auth."user"(id,name,email,role,"emailVerified","mustChangePassword","twoFactorEnabled") VALUES($1,$1,$2,\'operator\',true,false,true)',
+        [id(80), id(80) + "@rls.invalid"],
+      );
+      await owner.query(
+        'INSERT INTO webdock_auth.session(id,token,"userId","expiresAt","updatedAt") VALUES($1,$1,$2,now()+interval \'1 hour\',now())',
+        [id(81), id(80)],
+      );
+      const operatorActor = { ...actor, subject: id(80), sessionID: id(81) };
+      for (const target of [customer, id(99)]) {
+        const sponsored: any = await executeHosting(operatorActor, {
+          action: "databases.plans.create",
+          plan: { ...plan, monthlyPriceCents: 0, sponsoredCustomerID: target },
+          idempotencyKey: key(),
+        });
+        sponsoredPlanIDs.push(sponsored.id);
+        await assert.rejects(
+          executeHosting(operatorActor, {
+            action: "databases.plans.setAvailability",
+            planRevisionID: sponsored.id,
+            availability: "public",
+            revision: 1,
+            idempotencyKey: key(),
+          }),
+          /Database plan changed/,
+        );
+        await executeHosting(operatorActor, {
+          action: "databases.plans.setAvailability",
+          planRevisionID: sponsored.id,
+          availability: "pilot",
+          revision: 1,
+          idempotencyKey: key(),
+        });
+        const request = {
+          action: "databases.offers.create",
+          projectID: project,
+          planRevisionID: sponsored.id,
+          name: "Sponsored database",
+          idempotencyKey: key(),
+        };
+        if (target !== customer) {
+          await assert.rejects(
+            executeHosting(operatorActor, request),
+            /sponsorship belongs to another customer/,
+          );
+          continue;
+        }
+        const sponsoredOffer: any = await executeHosting(
+          operatorActor,
+          request,
+        );
+        assert.equal(sponsoredOffer.snapshot.billing, "sponsored");
+        const sponsoredOrder: any = await executeHosting(operatorActor, {
+          action: "databases.acceptOrder",
+          projectID: project,
+          offerID: sponsoredOffer.id,
+          idempotencyKey: key(),
+        });
+        assert.ok(sponsoredOrder.databaseID);
+        const billing: any = await executeHosting(operatorActor, {
+          action: "databases.orders.list",
+          customerID: customer,
+        });
+        assert.equal(
+          billing.orders.find((o: any) => o.id === sponsoredOrder.orderID)
+            .monthlyPriceCents,
+          0,
+        );
+      }
     } finally {
       const cleanup = await owner.connect();
       try {
@@ -424,7 +494,7 @@ test(
         );
         await cleanup.query(
           "DELETE FROM webdock_auth.hosting_database_plan WHERE id=ANY($1)",
-          [[planID, upgradePlan, sharedPlan]],
+          [[planID, upgradePlan, sharedPlan, ...sponsoredPlanIDs]],
         );
         await cleanup.query(
           "DELETE FROM webdock_auth.hosting_database_pool WHERE cluster_id=$1",
@@ -462,6 +532,20 @@ test(
         ]);
         await cleanup.query('DELETE FROM webdock_auth."user" WHERE id=$1', [
           subject,
+        ]);
+        await cleanup.query(
+          "DELETE FROM webdock_auth.hosting_operation WHERE subject=$1",
+          [id(80)],
+        );
+        await cleanup.query(
+          "DELETE FROM webdock_auth.hosting_audit WHERE subject=$1",
+          [id(80)],
+        );
+        await cleanup.query("DELETE FROM webdock_auth.session WHERE id=$1", [
+          id(81),
+        ]);
+        await cleanup.query('DELETE FROM webdock_auth."user" WHERE id=$1', [
+          id(80),
         ]);
         await cleanup.query("COMMIT");
       } catch (error) {
