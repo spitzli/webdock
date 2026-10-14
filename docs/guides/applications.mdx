@@ -1,0 +1,29 @@
+---
+title: "Applications and deployments"
+description: "Manage application configuration, deployment operations and runtime state."
+---
+
+Managed applications belong to a customer and project. Creating or changing one requires enabled hosting, sufficient allowance and a compatible execution target.
+
+## Lifecycle
+
+Use the application page to inspect configuration, runtime state, recent operations and logs. Start, stop, restart and deployment actions run as operations. Wait for the outcome and check application health before treating a change as complete.
+
+| State | What to do |
+| --- | --- |
+| Running or ready | Check application health and the expected endpoint |
+| Change in progress | Follow the current operation rather than submitting it again |
+| Stopped | Start the application when needed, subject to permissions and limits |
+| Failed or review required | Read the operation error and resolve the reported condition |
+
+## Deploy from Git
+
+Where Git deployments are enabled, connect an authorized repository and configure a supported build target. Repository selection and deployment authorization are separate checks. A saved repository URL alone does not enable deployments.
+
+Deployments use immutable artifacts. After a failure, inspect the existing deployment and operation before retrying. Rollback selects a retained artifact; it does not restore application data or reverse database migrations.
+
+## Environment and data
+
+Configure environment values through authorized Console controls. Keep credentials out of source files and logs. Use [persistent storage](/guides/storage) for data that must survive process restarts.
+
+<Warning>Application deletion and permanent storage deletion are separate operations. Review the current deletion preview and retained data before confirming either action.</Warning>

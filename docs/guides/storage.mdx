@@ -1,0 +1,24 @@
+---
+title: "Persistent storage"
+description: "Understand application data retention, storage allowances and deletion."
+---
+
+Applications with an approved persistent-storage allocation use a fixed-size volume mounted at `/data`. Keep durable application files there rather than in the container's temporary filesystem.
+
+## Capacity and lifecycle
+
+Storage requires a compatible storage agent and enough customer and cluster capacity. The fixed-volume model supports one application replica. Do not assume several replicas can safely share the volume.
+
+| Action | Effect on persistent data |
+| --- | --- |
+| Stop or restart | Retains the volume |
+| Delete application | Retains data and its storage accounting |
+| Purge retained storage | Permanently destroys the selected data |
+
+Retained data continues to consume capacity. An authorized platform administrator reviews the separate purge action.
+
+## Backups and availability
+
+A retained volume is not a backup. This storage model does not by itself provide replication, automatic cross-node failover or a restore service. Confirm the backup and recovery arrangements for your application.
+
+<Warning>Export data with an application-consistent procedure before a destructive change. Copying a database file while it is being written may not produce a usable backup.</Warning>

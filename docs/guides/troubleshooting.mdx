@@ -1,0 +1,17 @@
+---
+title: "Troubleshooting"
+description: "Resolve common account, resource and integration problems."
+---
+
+<AccordionGroup>
+  <Accordion title="My workspace or website is missing">Confirm the account and accepted invitation. Ask an administrator to check current membership, website grants and resource status. A contact email or pending invitation does not grant access.</Accordion>
+  <Accordion title="Console asks me to sign in after using Studio">Console has its own host-only application session. Complete central sign-in. Restart an in-progress provider connection from Console instead of reusing an old callback URL.</Accordion>
+  <Accordion title="An action is accepted but the resource has not changed">Open its operation record and inspect progress, readiness and errors. Avoid repeating a pending mutation. Successful submission is not completed execution.</Accordion>
+  <Accordion title="Mail was accepted but has not arrived">Look up message status, recipient results and events. Provider acceptance is not delivery. If the outcome is unknown, reconcile the existing message instead of sending it again with a new idempotency key.</Accordion>
+  <Accordion title="OAuth returns 401">Check token expiry, resource audience and scopes. Reconnect if the session or client was revoked. Console's browser URL does not replace the registered Studio MCP audience.</Accordion>
+  <Accordion title="Storage remains allocated after deletion">Application deletion retains persistent data. A platform administrator reviews the separate permanent-purge operation.</Accordion>
+</AccordionGroup>
+
+## Reporting a problem
+
+Include the resource ID, operation or request ID, timestamp, action and error text. State whether the issue occurred in Console, an API client or an application. Remove credentials, cookies, payment URLs and private message content.

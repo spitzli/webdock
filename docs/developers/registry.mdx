@@ -1,0 +1,45 @@
+---
+title: "Registry REST API"
+description: "Query customer, project and CMS inventory with the same OAuth resource used by MCP."
+---
+
+The registry API accepts OAuth bearer tokens for the Webdock MCP resource and the corresponding registry scopes. Browser cookies are not registry API authorization.
+
+## Discover the contract
+
+`GET /api/registry` returns supported operations, collections and JSON schemas. Use that response before constructing writes.
+
+```bash
+curl --fail-with-body \
+  -H "Authorization: Bearer $WEBDOCK_ACCESS_TOKEN" \
+  'https://studio.webdock.dev/api/registry'
+```
+
+## Collections and operations
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/registry/{collection}` | List records |
+| GET | `/api/registry/{collection}/{id}` | Read one record |
+| POST | `/api/registry/customers` | Create a customer |
+| POST | `/api/registry/projects` | Create a project |
+| POST | `/api/registry/cms-instances` | Record an existing CMS connection |
+| PUT | `/api/registry/{collection}/{id}` | Update a writable record |
+| PATCH | `/api/registry/customers/{id}` | Archive or restore a customer |
+| PATCH | `/api/registry/projects/{id}` | Archive or restore a project |
+
+Collections are `customers`, `projects`, `cms-instances` and read-only `audit-events`. Recording a CMS requires the documented `data` body and `confirmExisting: true`; it does not deploy a website.
+
+## Filtering and pagination
+
+Lists support validated `search`, `page`, `limit`, `status` and `sort` parameters. The maximum list limit is 50. Projects accept a `customer` filter; CMS connections accept `project`; audit activity accepts `targetCollection` and `targetID`.
+
+```bash
+curl --fail-with-body \
+  -H "Authorization: Bearer $WEBDOCK_ACCESS_TOKEN" \
+  'https://studio.webdock.dev/api/registry/projects?status=active&sort=name&limit=20'
+```
+
+Keep IDs as strings. Unknown fields, unsupported filters and duplicate query parameters are rejected. JSON request bodies are limited to 64 KiB.
+
+<Warning>Registry creates are not idempotent. After an ambiguous timeout, inspect existing records before retrying. Registry archive/restore does not implement infrastructure deletion.</Warning>

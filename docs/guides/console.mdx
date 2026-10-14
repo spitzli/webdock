@@ -1,0 +1,30 @@
+---
+title: "Console and workspaces"
+description: "Understand workspaces, projects and resources in Webdock Console."
+---
+
+Open [Webdock Console](https://console.webdock.dev) to manage your resources. Console is the current browser application; older documents and integration URLs may still use Studio.
+
+## Resource hierarchy
+
+| Concept | What it represents |
+| --- | --- |
+| Workspace | The customer account, members, enabled services and allowances |
+| Project | A grouping of related resources belonging to a customer |
+| Website | An independently running website with its own CMS and content |
+| Application | A managed workload with configuration, runtime state and operations |
+| Database | A provisioned database service associated with a project |
+
+A project is an organizational record. Provisioning a website, application or database is a separate action.
+
+## Customer and operator views
+
+Customers see their assigned workspaces and resources. Platform operators also manage customers, infrastructure, plans, integrations and operations. Workspace administrator access does not grant platform operator access.
+
+Operators can enter a time-limited, read-only customer view. It preserves the operator identity and blocks changes, purchases and payment management. Leave that view before performing an authorized administrative change.
+
+## Operation state
+
+An accepted action can start an asynchronous operation. Open its details to see whether it finished. A queued restart or deployment is not evidence that the application is healthy.
+
+<Tip>Keep resource and operation IDs when reporting a failure. Do not include API keys or private connection strings.</Tip>

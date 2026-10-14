@@ -1,20 +1,29 @@
 ---
-title: "Introduction"
-description: "Welcome to your project"
+title: "Webdock documentation"
+description: "Manage websites, applications and workspace services, and connect your tools through the Webdock APIs."
 ---
 
-Write a short description of your product here. What it does, who it's for, and what they can accomplish with it.
+Webdock brings your websites, applications and workspace services into one console. Your account controls which workspaces and resources you can access. Website content stays in the website's own CMS instance.
 
-<Tip>
-  Ready to make this your own? Start by editing this page. Update your `docs.json` file to customize your site. Then fill out the [Quickstart](/quickstart) page.
-</Tip>
+<Columns cols={2}>
+  <Card title="Get started" icon="rocket" href="/quickstart">Accept your invitation, secure your account and open your workspace.</Card>
+  <Card title="Use Console" icon="browser" href="/guides/console">Find your projects, websites, team and service settings.</Card>
+  <Card title="Connect an integration" icon="plug" href="/developers/overview">Choose between Mail API keys, registry OAuth and Hosting MCP.</Card>
+  <Card title="Develop Webdock" icon="code" href="/developers/local-development">Understand the repository and run isolated development checks.</Card>
+</Columns>
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-  This card links to the quickstart page in your project.
-</Card>
-<Card title="Components" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  Add cards, callouts, steps, tabs, and more to design and structure your pages.
-</Card>
-<Card title="Settings" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  Set your site name, branding, and navigation in the `docs.json` file.
-</Card>
+## Your Webdock addresses
+
+| Address | Purpose |
+| --- | --- |
+| [console.webdock.dev](https://console.webdock.dev) | Workspace and resource management |
+| [auth.webdock.dev](https://auth.webdock.dev) | Sign-in, account security and OAuth consent |
+| [webdock.dev](https://webdock.dev) | Product website |
+
+<Note>
+Console is the browser application. Existing integrations keep their registered protocol addresses, including the Studio MCP endpoint. See [authentication](/developers/authentication) before changing an integration URL.
+</Note>
+
+## Availability
+
+Services depend on your workspace's enabled products, permissions and capacity. An API reference describes a contract; it does not mean a service is enabled for every workspace. Check the relevant product guide and the state shown in Console.

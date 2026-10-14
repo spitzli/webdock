@@ -1,0 +1,25 @@
+---
+title: "Developer overview"
+description: "Choose the Webdock integration surface that matches your task."
+---
+
+Webdock exposes different interfaces for message sending, registry automation and hosting operations. Their credentials and permissions are not interchangeable.
+
+| Task | Interface | Authorization |
+| --- | --- | --- |
+| Send transactional email | Mail REST API | Workspace-scoped Webdock Mail API key |
+| Read or maintain customer and project inventory | Registry REST API or MCP | Registered OAuth client and registry scopes |
+| Inspect or manage hosting resources | Hosting MCP | Registered OAuth client and hosting scopes |
+| Integrate a website CMS | Website SSO and protected bridges | Server-side website integration |
+| Work on Webdock itself | Repository and internal HTTP client | Isolated local development configuration |
+
+<Columns cols={2}>
+  <Card title="Mail API" icon="envelope" href="/developers/mail-quickstart">Send a simulator message with a restricted application key.</Card>
+  <Card title="MCP" icon="plug" href="/developers/mcp">Connect a tool using registered OAuth scopes.</Card>
+  <Card title="Registry REST" icon="database" href="/developers/registry">Read inventory and discover the supported schemas.</Card>
+  <Card title="Local development" icon="code" href="/developers/local-development">Use the monorepo's existing packages and test fixtures.</Card>
+</Columns>
+
+## Integration rules
+
+Treat platform IDs as decimal strings. Keep credentials on the server and request only the permissions needed. Inspect operation outcomes before retrying mutations. Use the documented public protocol; the Console's internal browser API is not a substitute for an authorized integration.

@@ -1,0 +1,26 @@
+---
+title: "Website integration"
+description: "Connect an independent CMS to Webdock without exposing administrative credentials."
+---
+
+A Webdock website keeps its own Payload schema and runtime. Central identity and Console provide access to that site through configured SSO and protected server-side bridges.
+
+## Identity and inventory
+
+The CMS inventory instance ID and Auth website binding ID are different identifiers. Keep their explicit mapping; do not infer it from a name, email address or matching-looking ID.
+
+A CMS inventory record alone does not provision an instance or establish SSO. Configure the relying client, website binding, central membership and the website's protected integration.
+
+## Use the shared packages
+
+The monorepo includes `@webdock/payload-sso`, `@webdock/instance-kit` and `@webdock/cms-ui`. Follow the existing website integration and package contracts instead of adding a second password system.
+
+Native Payload credentials and account screens are disabled when enforced SSO is active. Local user records are managed identity projections. Server-side APIs must still enforce current tenant and website authorization.
+
+## Content boundaries
+
+Keep draft, preview and published state separate. Do not publish unsaved preview state or silently overwrite version conflicts. Canvas features require the website's matching integration; not every CMS schema becomes editable through a generic designer.
+
+<Warning>Administrative bridge secrets belong only in the server environment. Never put them in browser code, mobile clients, public examples or content fields.</Warning>
+
+Source guides: [Payload SSO](https://github.com/spitzli/webdock/tree/main/packages/payload-sso) and [CMS UI](https://github.com/spitzli/webdock/tree/main/packages/cms-ui).
