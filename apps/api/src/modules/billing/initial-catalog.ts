@@ -175,14 +175,6 @@ export const initialCatalog: Draft[] = [
     "Ein zusätzlicher CMS-Bearbeiter für eine berechtigte Website. Keine Betreuungszeit enthalten.",
   ),
   manual(
-    "domain-connect-once-v1",
-    "Domainanschluss",
-    "service",
-    2900,
-    "once",
-    "Anschluss einer vorhandenen Kundendomain einschließlich DNS-Prüfung. Kein Domainkauf, Transfer oder Verlängerungspreis enthalten.",
-  ),
-  manual(
     "postgres-shared-month-v1",
     "PostgreSQL Shared",
     "database",
