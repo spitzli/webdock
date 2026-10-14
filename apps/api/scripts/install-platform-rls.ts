@@ -203,10 +203,16 @@ try {
   const plan = buildDatabaseRls(tables);
   if (plan.unknownTables.length)
     throw Error("Unclassified tables: " + plan.unknownTables.join(", "));
-  // ALTER FUNCTION OWNER requires CREATE for the new owner, even when the
-  // offline caller already inherits both owner roles.
+  // Acquire the complete table lock set before changing grants. A busy old writer
+  // must make the offline cutover fail immediately, not deadlock mid-installation.
   await db.query(
-    "GRANT USAGE,CREATE ON SCHEMA webdock_rls TO webdock_platform_owner",
+    `LOCK TABLE ${tables.map((t) => q(t.schema) + "." + q(t.name)).join(",")} IN ACCESS EXCLUSIVE MODE NOWAIT`,
+  );
+  // ALTER FUNCTION OWNER requires CREATE for the new owner, even when the
+  // offline caller already inherits both owner roles. The website tables briefly
+  // move through platform ownership and need the same temporary schema privilege.
+  await db.query(
+    "GRANT USAGE,CREATE ON SCHEMA webdock_rls,webdock TO webdock_platform_owner",
   );
   for (const schema of schemas)
     await db.query(
@@ -305,7 +311,7 @@ try {
     ALTER DEFAULT PRIVILEGES FOR ROLE webdock_platform_owner REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
     ALTER DEFAULT PRIVILEGES FOR ROLE webdock_policy_owner REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;`);
   await db.query(
-    "REVOKE CREATE ON SCHEMA webdock_rls FROM webdock_platform_owner",
+    "REVOKE CREATE ON SCHEMA webdock_rls FROM webdock_platform_owner; REVOKE USAGE,CREATE ON SCHEMA webdock FROM webdock_platform_owner",
   );
   await db.query("COMMIT");
   console.log(
