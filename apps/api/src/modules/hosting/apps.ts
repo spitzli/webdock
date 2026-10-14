@@ -1,3 +1,4 @@
+import { revokeBindingMail } from "./mail-binding";
 import { bindingRuntime } from "./binding-runtime";
 import { searchPage } from "@webdock/search";
 import { createHash } from "node:crypto";
@@ -314,6 +315,15 @@ export async function executeAppCommand(
       !["apps.purgeStorage", "apps.reconcile"].includes(action)
     )
       throw new HostingError(409, "Application is deleted.");
+    if (row && action === "apps.delete") {
+      for (const binding of (
+        await db.query(
+          "SELECT id FROM webdock_auth.hosting_service_binding WHERE app_id=$1 AND service->>'kind'='mail' AND state<>'disconnected'",
+          [row.id],
+        )
+      ).rows)
+        await revokeBindingMail(db, binding.id);
+    }
     if (row?.lifecycle === "draft") {
       if (action === "apps.delete") {
         const preview = deletionPlan(row);

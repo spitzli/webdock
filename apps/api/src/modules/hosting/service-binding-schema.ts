@@ -13,5 +13,7 @@ CREATE TABLE IF NOT EXISTS webdock_auth.hosting_service_binding (
  FOREIGN KEY(project_id,customer_id) REFERENCES webdock_auth.hosting_project(project_id,customer_id),
  FOREIGN KEY(app_id,project_id) REFERENCES webdock_auth.hosting_app(id,project_id)
 );
+ALTER TABLE webdock_auth.hosting_service_binding ADD COLUMN IF NOT EXISTS mail_key_id text;
+ALTER TABLE webdock_auth.hosting_service_binding ADD COLUMN IF NOT EXISTS retiring_mail_key_id text;
 CREATE UNIQUE INDEX IF NOT EXISTS hosting_binding_variable ON webdock_auth.hosting_service_binding(app_id,variable) WHERE state<>'disconnected';
 `;

@@ -1,4 +1,9 @@
 import {
+  mailBindingMaterial,
+  revokeBindingMail,
+  bindingMailReady,
+} from "./mail-binding";
+import {
   HostingError,
   serviceCommandSchema,
   type HostingActor,
@@ -10,7 +15,7 @@ import { replay, recordResult } from "./operations";
 import { openEnvironment, sealEnvironment } from "./environment";
 import { encryptMailSecret } from "../platform/platform";
 import { databaseBindingMaterial } from "./database-binding";
-import { openBinding } from "./binding-runtime";
+import { openBinding, type BindingMaterial } from "./binding-runtime";
 import { executeAppCommand } from "./apps";
 import { limits } from "./allowances";
 
@@ -61,11 +66,24 @@ export async function executeServiceBinding(actor: HostingActor, raw: unknown) {
             !current.endpoint_ready ||
             current.credential_revision !== row.credential_revision ||
             current.confirmed_credential_revision !== row.credential_revision ||
-            current.ca_certificate !== material.runtime.caCertificate
+            current.ca_certificate !==
+              ("caCertificate" in material.runtime
+                ? material.runtime.caCertificate
+                : null)
           ) {
             row.state = "blocked";
             row.reason = "Refresh the database connection before deployment.";
           }
+        }
+      for (const row of rows)
+        if (
+          row.service.kind === "mail" &&
+          !["disconnected", "disconnecting"].includes(row.state) &&
+          !(await bindingMailReady(db, row.id))
+        ) {
+          row.state = "blocked";
+          row.reason =
+            "Native Mail connection needs attention before deployment.";
         }
       return rows.map(view);
     }
@@ -106,10 +124,21 @@ export async function executeServiceBinding(actor: HostingActor, raw: unknown) {
       throw new HostingError(404, "Application is unavailable.");
     const environment = openEnvironment(app.id, app.environment_encrypted);
     const service = cmd.action === "services.bind" ? cmd.service : row.service;
+    if (cmd.action === "services.rotate" && service.kind !== "mail")
+      throw new HostingError(
+        409,
+        "Rotate database credentials from the database settings.",
+      );
+    if (row?.retiring_mail_key_id && cmd.action !== "services.disconnect")
+      throw new HostingError(
+        409,
+        "Wait for the current Mail key rollout before changing this connection.",
+      );
     const oldNames = row?.secret_encrypted
       ? Object.keys(openBinding(row.id, row.secret_encrypted).environment)
       : [];
     if (cmd.action === "services.disconnect") {
+      if (service.kind === "mail") await revokeBindingMail(db, row.id);
       for (const name of oldNames) delete environment[name];
       row = (
         await db.query(
@@ -121,8 +150,6 @@ export async function executeServiceBinding(actor: HostingActor, raw: unknown) {
         )
       ).rows[0];
     } else {
-      if (service.kind !== "postgres")
-        throw new HostingError(409, "Native Mail binding is not configured.");
       const capable = (
         await db.query(
           "SELECT observation->'capabilities'->>'serviceBindingsVersion' AS version FROM webdock_auth.hosting_agent WHERE cluster_id=$1 AND NOT revoked",
@@ -156,21 +183,60 @@ export async function executeServiceBinding(actor: HostingActor, raw: unknown) {
         row?.id ??
         (await db.query("SELECT webdock_auth.next_snowflake() AS id")).rows[0]
           .id;
-      const material = await databaseBindingMaterial(db, {
-        databaseID: service.databaseID,
-        projectID: cmd.projectID,
-        customerID: access.customerID!,
-        clusterID: access.project.cluster_id,
-        bindingID: id,
-        variable: service.variable,
-      });
+      const material: BindingMaterial =
+        service.kind === "mail"
+          ? await mailBindingMaterial(
+              db,
+              actor,
+              {
+                customerID: access.customerID!,
+                connectionID: service.connectionID,
+                domainID: service.domainID,
+                bindingID: id,
+                variable: service.variable,
+              },
+              cmd.action !== "services.rotate" && row?.secret_encrypted
+                ? openBinding(row.id, row.secret_encrypted)
+                : undefined,
+            )
+          : await databaseBindingMaterial(db, {
+              databaseID: service.databaseID,
+              projectID: cmd.projectID,
+              customerID: access.customerID!,
+              clusterID: access.project.cluster_id,
+              bindingID: id,
+              variable: service.variable,
+            });
+      for (const name of Object.keys(material.environment))
+        if (Object.hasOwn(environment, name) && !oldNames.includes(name))
+          throw new HostingError(
+            409,
+            "An environment variable already uses this name.",
+          );
+      if (
+        row?.mail_key_id &&
+        row.mail_key_id !== material.mailKeyID &&
+        app.lifecycle === "draft"
+      )
+        await revokeBindingMail(db, row.id);
+      const retiringKeyID =
+        row?.mail_key_id &&
+        row.mail_key_id !== material.mailKeyID &&
+        app.lifecycle !== "draft"
+          ? row.mail_key_id
+          : null;
+      if (service.kind === "mail")
+        material.credentialRevision =
+          row?.mail_key_id === material.mailKeyID
+            ? row.credential_revision
+            : (row?.credential_revision ?? 0) + 1;
       for (const name of oldNames) delete environment[name];
       Object.assign(environment, material.environment);
       const sealed = encryptMailSecret(material, "hosting-binding:" + id);
       row = (
         await db.query(
-          `INSERT INTO webdock_auth.hosting_service_binding(id,customer_id,project_id,app_id,service,variable,credential_revision,secret_encrypted)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO UPDATE SET service=$5,credential_revision=$7,secret_encrypted=$8,revision=hosting_service_binding.revision+1,state='pending',reason=NULL RETURNING *`,
+          `INSERT INTO webdock_auth.hosting_service_binding(id,customer_id,project_id,app_id,service,variable,credential_revision,secret_encrypted,mail_key_id,retiring_mail_key_id)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(id) DO UPDATE SET service=$5,credential_revision=$7,secret_encrypted=$8,mail_key_id=$9,retiring_mail_key_id=$10,revision=hosting_service_binding.revision+1,state='pending',reason=NULL RETURNING *`,
           [
             id,
             access.customerID,
@@ -180,6 +246,8 @@ export async function executeServiceBinding(actor: HostingActor, raw: unknown) {
             service.variable,
             material.credentialRevision,
             sealed,
+            material.mailKeyID ?? null,
+            retiringKeyID,
           ],
         )
       ).rows[0];

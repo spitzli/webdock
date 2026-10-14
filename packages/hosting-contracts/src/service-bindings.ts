@@ -47,6 +47,15 @@ export const serviceCommands = [
     .strict(),
   z
     .object({
+      action: z.literal("services.rotate"),
+      projectID: resourceID,
+      bindingID: resourceID,
+      revision: resourceRevision,
+      idempotencyKey,
+    })
+    .strict(),
+  z
+    .object({
       action: z.literal("services.reconcile"),
       projectID: resourceID,
       bindingID: resourceID,
@@ -71,7 +80,7 @@ export type ServiceBindingView = {
   state: "pending" | "connected" | "blocked" | "disconnecting" | "disconnected";
   reason: string | null;
 };
-export const serviceRuntimeSchema = z
+const postgresRuntimeSchema = z
   .object({
     id: resourceID,
     revision: resourceRevision,
@@ -79,4 +88,15 @@ export const serviceRuntimeSchema = z
     caCertificate: z.string().min(1).max(16384),
   })
   .strict();
+export const serviceRuntimeSchema = z.union([
+  postgresRuntimeSchema,
+  z
+    .object({
+      id: resourceID,
+      revision: resourceRevision,
+      kind: z.literal("mail"),
+      egressCIDRs: z.array(z.string().max(64)).min(1).max(8),
+    })
+    .strict(),
+]);
 export type ServiceRuntime = z.infer<typeof serviceRuntimeSchema>;

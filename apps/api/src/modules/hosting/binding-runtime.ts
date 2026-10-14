@@ -1,3 +1,4 @@
+import { bindingMailReady } from "./mail-binding";
 import { currentDatabaseScope } from "@webdock/database-runtime";
 import {
   HostingError,
@@ -10,6 +11,7 @@ export type BindingMaterial = {
   environment: Record<string, string>;
   runtime: ServiceRuntime;
   credentialRevision: number;
+  mailKeyID?: string;
 };
 export function openBinding(id: string, sealed: string): BindingMaterial {
   return decryptMailSecret<BindingMaterial>(sealed, "hosting-binding:" + id);
@@ -62,13 +64,21 @@ export async function bindingRuntime(
         !current.endpoint_ready ||
         current.credential_revision !== row.credential_revision ||
         current.confirmed_credential_revision !== row.credential_revision ||
-        current.ca_certificate !== material.runtime.caCertificate
+        current.ca_certificate !==
+          ("caCertificate" in material.runtime
+            ? material.runtime.caCertificate
+            : null)
       )
         throw new HostingError(
           409,
           "Refresh the database connection before deployment.",
         );
     }
+    if (row.service.kind === "mail" && !(await bindingMailReady(db, row.id)))
+      throw new HostingError(
+        409,
+        "Native Mail connection needs attention before deployment.",
+      );
     runtime.push(
       serviceRuntimeSchema.parse({
         ...material.runtime,

@@ -1,3 +1,4 @@
+import { revokeBindingMail } from "./mail-binding";
 import { z } from "zod";
 import { totals } from "./allowances";
 import { createHash, createHmac } from "node:crypto";
@@ -372,6 +373,15 @@ export async function completeOperation(
           "Persistent storage proof does not match the operation.",
         );
       if (row.desired.serviceBindingsVersion === 1) {
+        if (proof.replicas > 0)
+          for (const binding of (
+            await db.query(
+              "SELECT id FROM webdock_auth.hosting_service_binding WHERE app_id=$1 AND operation_id=$2 AND retiring_mail_key_id IS NOT NULL",
+              [row.app_id, row.id],
+            )
+          ).rows)
+            await revokeBindingMail(db, binding.id, true);
+
         const expected = (
           row.desired.serviceBindings as { id: string; revision: number }[]
         ).map(({ id, revision }) => ({ id, revision }));

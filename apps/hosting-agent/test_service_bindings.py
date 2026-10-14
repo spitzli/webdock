@@ -31,3 +31,11 @@ class ServiceBindingTests(unittest.TestCase):
         with self.assertRaises(ValueError):validate(p)
         p=self.packet();p['serviceBindingsVersion']=2
         with self.assertRaises(ValueError):validate(p)
+
+    def test_mail_egress_is_pinned_to_native_api_hosts_and_https(self):
+        p=self.packet();p['serviceBindings']=[{'id':'444','revision':1,'kind':'mail','egressCIDRs':['192.0.2.10/32']}]
+        secret,policy=manifests(p)
+        self.assertIsNone(secret)
+        self.assertEqual(policy['spec']['egress'],[{'to':[{'ipBlock':{'cidr':'192.0.2.10/32'}}],'ports':[{'protocol':'TCP','port':443}]}])
+        p['serviceBindings'][0]['egressCIDRs']=['0.0.0.0/0']
+        with self.assertRaises(ValueError):validate(p)

@@ -60,6 +60,15 @@ export async function createMailKey(
   actor: MailActor,
   input: { name: string; permission: Permission; domainID?: string },
 ): Promise<{ id: string; key: string; prefix: string }> {
+  return withMailTransaction((db) =>
+    createMailKeyInTransaction(db, actor, input),
+  );
+}
+export async function createMailKeyInTransaction(
+  db: Pick<import("pg").PoolClient, "query">,
+  actor: MailActor,
+  input: { name: string; permission: Permission; domainID?: string },
+): Promise<{ id: string; key: string; prefix: string }> {
   if (
     typeof input.name !== "string" ||
     !input.name.trim() ||
@@ -69,68 +78,66 @@ export async function createMailKey(
   )
     throw new MailError(422, "validation_error", "Invalid key details");
   if (input.domainID) parseID(input.domainID);
-  return withMailTransaction(async (db) => {
-    await assertMailAccess(actor, "manage", db);
-    // Serialize creation per tenant, including separate connections, for the hourly limit.
-    await db.query(
-      "SELECT id FROM webdock_admin.customers WHERE id=$1 FOR UPDATE",
-      [actor.customerID],
-    );
-    if (actor.principal.kind === "api_key") {
-      const parent = (
-        await db.query(
-          "SELECT domain_id FROM webdock_auth.mail_api_key WHERE id=$1",
-          [actor.principal.keyID],
-        )
-      ).rows[0];
-      if (parent?.domain_id && input.domainID !== parent.domain_id)
-        mailUnavailable();
-    }
-    if (
-      input.domainID &&
-      !(
-        await db.query(
-          "SELECT 1 FROM webdock_auth.mail_connection_domain b JOIN webdock_auth.mail_sender_domain d ON d.id=b.domain_id WHERE b.customer_id=$1 AND b.connection_id=$2 AND d.id=$3 AND d.deleted_at IS NULL",
-          [actor.customerID, actor.connectionID, input.domainID],
-        )
-      ).rowCount
-    )
-      mailUnavailable();
-    if (
-      Number(
-        (
-          await db.query(
-            process.env.DATABASE_RLS_SECRET
-              ? "SELECT webdock_rls.mail_admission_count($1,'keys') AS count"
-              : "SELECT count(*) FROM webdock_auth.mail_api_key WHERE customer_id=$1 AND created_at>now()-interval '1 hour'",
-            [actor.customerID],
-          )
-        ).rows[0].count,
-      ) >= 10
-    )
-      throw new MailError(
-        429,
-        "rate_limit_exceeded",
-        "Key creation limit reached",
-      );
-    const key = "wdm_" + randomBytes(32).toString("base64url"),
-      prefix = key.slice(0, 12);
-    const row = (
+  await assertMailAccess(actor, "manage", db);
+  // Serialize creation per tenant, including separate connections, for the hourly limit.
+  await db.query(
+    "SELECT id FROM webdock_admin.customers WHERE id=$1 FOR UPDATE",
+    [actor.customerID],
+  );
+  if (actor.principal.kind === "api_key") {
+    const parent = (
       await db.query(
-        "INSERT INTO webdock_auth.mail_api_key(customer_id,connection_id,name,prefix,key_hash,permission,domain_id) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id",
-        [
-          actor.customerID,
-          actor.connectionID,
-          input.name.trim(),
-          prefix,
-          hash(key),
-          input.permission,
-          input.domainID ?? null,
-        ],
+        "SELECT domain_id FROM webdock_auth.mail_api_key WHERE id=$1",
+        [actor.principal.keyID],
       )
     ).rows[0];
-    return { id: row.id, key, prefix };
-  });
+    if (parent?.domain_id && input.domainID !== parent.domain_id)
+      mailUnavailable();
+  }
+  if (
+    input.domainID &&
+    !(
+      await db.query(
+        "SELECT 1 FROM webdock_auth.mail_connection_domain b JOIN webdock_auth.mail_sender_domain d ON d.id=b.domain_id WHERE b.customer_id=$1 AND b.connection_id=$2 AND d.id=$3 AND d.deleted_at IS NULL",
+        [actor.customerID, actor.connectionID, input.domainID],
+      )
+    ).rowCount
+  )
+    mailUnavailable();
+  if (
+    Number(
+      (
+        await db.query(
+          process.env.DATABASE_RLS_SECRET
+            ? "SELECT webdock_rls.mail_admission_count($1,'keys') AS count"
+            : "SELECT count(*) FROM webdock_auth.mail_api_key WHERE customer_id=$1 AND created_at>now()-interval '1 hour'",
+          [actor.customerID],
+        )
+      ).rows[0].count,
+    ) >= 10
+  )
+    throw new MailError(
+      429,
+      "rate_limit_exceeded",
+      "Key creation limit reached",
+    );
+  const key = "wdm_" + randomBytes(32).toString("base64url"),
+    prefix = key.slice(0, 12);
+  const row = (
+    await db.query(
+      "INSERT INTO webdock_auth.mail_api_key(customer_id,connection_id,name,prefix,key_hash,permission,domain_id) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id",
+      [
+        actor.customerID,
+        actor.connectionID,
+        input.name.trim(),
+        prefix,
+        hash(key),
+        input.permission,
+        input.domainID ?? null,
+      ],
+    )
+  ).rows[0];
+  return { id: row.id, key, prefix };
 }
 export async function listMailKeys(actor: MailActor) {
   await assertMailAccess(actor, "manage");
