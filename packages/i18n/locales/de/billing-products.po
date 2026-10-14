@@ -1,0 +1,224 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Webdock Studio\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-05 00:00+0000\n"
+"PO-Revision-Date: 2026-10-05 00:00+0000\n"
+"Last-Translator: Webdock\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Domain registration / renewal"
+msgstr "Domainregistrierung / Verlängerung"
+
+msgid "Individual quote based on TLD and reseller costs. No invented flat prices or blanket availability guarantees."
+msgstr "Individuelles Angebot nach TLD- und Resellerkosten. Keine erfundenen Einheitspreise oder allgemeine Verfügbarkeitszusage."
+
+msgid "Product catalog / restaurant module operation"
+msgstr "Modulbetrieb Produktkatalog / Gastro"
+
+msgid "Recurring module operation in addition to Website Plus, following project-specific setup. Not a complete shop with orders, payment or shipping."
+msgstr "Laufender Modulbetrieb zusätzlich zu Website Plus, nach projektspezifischer Einrichtung. Kein vollständiger Shop mit Bestell-, Zahlungs- oder Versandabwicklung."
+
+msgid "Appointments & enquiries"
+msgstr "Modulbetrieb Termine & Anfragen"
+
+msgid "Recurring module operation in addition to Website Plus, following project-specific setup. External calendar integration and payment processing are excluded."
+msgstr "Laufender Modulbetrieb zusätzlich zu Website Plus, nach projektspezifischer Einrichtung. Keine externe Kalenderintegration oder Zahlungsverarbeitung enthalten."
+
+msgid "BYOK connection setup"
+msgstr "BYOK-Verbindung einrichten"
+
+msgid "Estimated EUR 99–299 excluding tax, one-time: infrastructure connection, permission/namespace checks and documentation. Provider capacity and general Kubernetes administration are excluded."
+msgstr "Angebotsrahmen 99–299 EUR netto einmalig: Infrastrukturverbindung, Rechte-/Namespace-Prüfung und Dokumentation. Keine Providerkapazität oder allgemeine Kubernetes-Administration enthalten."
+
+msgid "App setup"
+msgstr "App-Einrichtung"
+
+msgid "Setup from EUR 49 excluding tax with a suitable container image. Migration, code changes and domain/TLS work are billed according to explicitly agreed effort."
+msgstr "Einrichtung ab 49 EUR netto bei bereits passendem Container-Image. Migration, Codeanpassung sowie Domain/TLS nach ausdrücklich vereinbartem Aufwand."
+
+msgid "Custom development – 1 hour"
+msgstr "Individuelle Entwicklung – 1 Stunde"
+
+msgid "EUR 75 excluding tax per hour as a starting point; small changes in 15-minute increments, larger tasks as a scoped quote. Operations and resources are separate."
+msgstr "75 EUR netto je Stunde als Ausgangspunkt; kleine Änderungen in 15-Minuten-Schritten, größere Arbeiten als abgegrenztes Angebot. Betrieb und Ressourcen separat."
+
+msgid "Existing website migration"
+msgstr "Bestehende Website umziehen"
+
+msgid "Migration from EUR 149 excluding tax: assessment, limited import and domain switch. Complex CMS migrations are billed by effort; website plan is separate."
+msgstr "Migration ab 149 EUR netto: Bestandsprüfung, begrenzter Import und Domainumschaltung. Komplexe CMS-Migration nach Aufwand; Website-Tarif separat."
+
+msgid "Bot setup"
+msgstr "Bot online bringen"
+
+msgid "Setup from EUR 99 excluding tax for an eligible bot: configuration, health check and data transfer after review. Recurring App Standard plan is separate."
+msgstr "Einrichtung ab 99 EUR netto für einen qualifizierten Bot: Konfiguration, Healthcheck und Datenübernahme nach Prüfung. Laufender App-Standard-Tarif separat."
+
+msgid "Product catalog / restaurant demo setup"
+msgstr "Produktkatalog / Gastro-Demo einrichten"
+
+msgid "Estimated EUR 990–2,490 excluding tax: products, variants/extras, content and administration. Website Plus and module operation are separate; real orders and payment require a follow-up project."
+msgstr "Angebotsrahmen 990–2.490 EUR netto: Produkte, Varianten/Extras, Inhalte und Administration. Website Plus und Modulbetrieb separat; echte Bestellungen und Payment sind ein Folgeprojekt."
+
+msgid "Appointments and enquiries setup"
+msgstr "Termine & Anfragen einrichten"
+
+msgid "Estimated EUR 990–1,990 excluding tax: customized enquiry/calendar flow. Website Plus and module operation are separate; payment and external calendar synchronization are excluded."
+msgstr "Angebotsrahmen 990–1.990 EUR netto: angepasster Anfrage-/Kalenderablauf. Website Plus und Modulbetrieb separat; keine Zahlung oder externe Kalendersynchronisierung enthalten."
+
+msgid "Business website setup"
+msgstr "Unternehmenswebsite einrichten"
+
+msgid "Estimated EUR 699–1,490 excluding tax: custom adjustments, up to 5 pages, contact enquiry and CMS introduction. Website Basic/Plus is billed separately."
+msgstr "Angebotsrahmen 699–1.490 EUR netto: individuelle Anpassung, bis 5 Seiten, Kontaktanfrage und CMS-Einweisung. Website Basic/Plus separat abrechnen."
+
+msgid "Club / brochure website setup"
+msgstr "Vereins-/Visitenkarten-Website einrichten"
+
+msgid "Estimated EUR 249–499 excluding tax: existing template, up to 5 content sections, supplied text/images and one revision round. Recurring website plan is separate."
+msgstr "Angebotsrahmen 249–499 EUR netto: bestehende Vorlage, bis 5 Inhaltsbereiche, angelieferte Texte/Bilder und eine Korrekturrunde. Laufender Website-Tarif separat."
+
+msgid "Mailbox Basic"
+msgstr "Mailbox Basic"
+
+msgid "Provisional quote: EUR 2.90–4.90 excluding tax per mailbox/month for 2–5 GB. Pricing and operational scope are pending; fully verify incoming and outgoing mail, anti-spam, access and recovery before approval."
+msgstr "Vorläufiges Angebot: 2,90–4,90 EUR netto pro Postfach/Monat für 2–5 GB. Preis und Betriebsumfang offen; Eingang, Ausgang, Anti-Spam, Zugang und Wiederherstellung vor Freigabe vollständig abnehmen."
+
+msgid "Postgres Dedicated Standard"
+msgstr "PostgreSQL eigene Instanz Standard"
+
+msgid "Dedicated PostgreSQL instance: 1 CPU, 2 GiB RAM and 20 GiB filesystem. Load qualification and operational acceptance are required; do not promise unverified backup or restore capabilities."
+msgstr "Eigene PostgreSQL-Instanz: 1 CPU, 2 GiB RAM und 20 GiB Dateisystem. Lastqualifizierung und Betriebsabnahme erforderlich; Backup/Restore nicht ungeprüft zusagen."
+
+msgid "PostgreSQL Dedicated Starter"
+msgstr "PostgreSQL eigene Instanz Starter"
+
+msgid "Dedicated PostgreSQL instance: 0.5 CPU, 1 GiB RAM and 10 GiB filesystem. No unverified recovery window or SLA; operational approval follows acceptance testing."
+msgstr "Eigene PostgreSQL-Instanz: 0,5 CPU, 1 GiB RAM und 10 GiB Dateisystem. Kein ungeprüftes Restore-Fenster oder SLA; Betriebsfreigabe nach Abnahme."
+
+msgid "PostgreSQL Shared"
+msgstr "PostgreSQL Shared"
+
+msgid "A separate SQL database and roles in a shared pool; 1 GiB logical quota, no dedicated RAM guarantee. Verify TLS, isolation, quotas, monitoring, backup and restore before public approval."
+msgstr "Eigene SQL-Datenbank und Rollen im gemeinsamen Pool; 1 GiB logisches Kontingent, keine eigene RAM-Garantie. TLS, Isolation, Quoten, Überwachung sowie Backup/Restore vor öffentlicher Freigabe abnehmen."
+
+msgid "Maintenance allowance"
+msgstr "Pflegebudget"
+
+msgid "45 minutes per month for content or minor configuration work. Defined scope; no new development or unlimited support."
+msgstr "45 Minuten pro Monat für Inhalte oder kleine Konfigurationsarbeiten. Abgegrenzter Umfang, keine Neuentwicklung oder allgemeine Support-Flatrate."
+
+msgid "Small changes allowance"
+msgstr "Kleines Änderungsbudget"
+
+msgid "20 minutes per month for explicitly agreed changes. Unused time does not roll over; additional work requires agreement, and new development is excluded."
+msgstr "20 Minuten pro Monat für ausdrücklich vereinbarte Änderungen. Nicht übertragbar; Mehrarbeit nur nach Vereinbarung, keine Neuentwicklung enthalten."
+
+msgid "Domain connection"
+msgstr "Domainanschluss"
+
+msgid "Connect an existing customer domain, including DNS verification. Domain purchase, transfer and renewal fees are excluded."
+msgstr "Anschluss einer vorhandenen Kundendomain einschließlich DNS-Prüfung. Kein Domainkauf, Transfer oder Verlängerungspreis enthalten."
+
+msgid "Additional CMS editor"
+msgstr "Zusätzlicher CMS-Editor"
+
+msgid "One additional CMS editor for an eligible website. Support time is not included."
+msgstr "Ein zusätzlicher CMS-Bearbeiter für eine berechtigte Website. Keine Betreuungszeit enthalten."
+
+msgid "Media storage +1 GB"
+msgstr "Medienspeicher +1 GB"
+
+msgid "An additional 1 GB of decimal CMS media storage, including generated variants. Not a persistent app volume; verify actual Blob costs before approval."
+msgstr "Zusätzlich 1 GB dezimaler CMS-Medienspeicher einschließlich erzeugter Varianten. Kein persistentes App-Volume; tatsächliche Blob-Kosten vor Freigabe prüfen."
+
+msgid "Mail Plus"
+msgstr "Mail Plus"
+
+msgid "25,000 outgoing emails per month, subject to verified and reserved pool capacity. No inbox or general campaign or delivery guarantee."
+msgstr "25.000 ausgehende E-Mails pro Monat, nur bei nachgewiesenem und reserviertem Poolbudget. Keine Inbox und kein allgemeines Kampagnen- oder Zustellversprechen."
+
+msgid "Mail Standard"
+msgstr "Mail Standard"
+
+msgid "10,000 outgoing emails per month; no mailbox. Confirm the billing period, counting rules and shared provider budget before approval."
+msgstr "10.000 ausgehende E-Mails pro Monat; kein Postfach. Abrechnungsperiode, Zählweise und gemeinsames Providerbudget vor Freigabe bestätigen."
+
+msgid "Mail Small"
+msgstr "Mail Small"
+
+msgid "1,000 outgoing emails per month; no mailbox. Reserve matching service and provider quotas before approval; do not promise included website allowances twice."
+msgstr "1.000 ausgehende E-Mails pro Monat; kein Postfach. Kontingent und Providerquota vor Freigabe passend reservieren; enthaltene Website-Mengen nicht doppelt zusagen."
+
+msgid "Enterprise / custom operations"
+msgstr "Enterprise / individuelles Betriebskonzept"
+
+msgid "Individual onboarding, access and operations plan, migration and additional isolation where agreed. SLAs and response times require separate qualification and pricing."
+msgstr "Individuelles Onboarding, Zugriffs- und Betriebskonzept, Migration und gegebenenfalls zusätzliche Isolation. SLA und Reaktionszeiten nur nach gesonderter Qualifizierung und Kalkulation."
+
+msgid "Managed Connect"
+msgstr "Managed Connect"
+
+msgid "Quote from EUR 79.90 excluding tax/month: Connect Team plus 30 minutes of agreed operational support. No general OS/cluster management or SLA."
+msgstr "Angebot ab 79,90 EUR netto/Monat: Connect Team plus 30 Minuten vereinbarte Betriebsbetreuung. Kein pauschales OS-/Cluster-Management oder SLA."
+
+msgid "Connect Team"
+msgstr "Connect Team"
+
+msgid "Up to 2 customer-owned infrastructure connections and 10 connected projects/workloads. Provider costs are excluded; supported management and setup must be agreed separately."
+msgstr "Bis 2 eigene Infrastrukturverbindungen und 10 eingebundene Projekte/Workloads. Providerkosten nicht enthalten; unterstützte Steuerung und Einrichtung gesondert vereinbaren."
+
+msgid "Connect"
+msgstr "Connect"
+
+msgid "1 customer-owned Vercel team or Kubernetes cluster, up to 3 explicitly connected projects/workloads. Provider capacity and billing remain the customer's responsibility; setup is separate."
+msgstr "1 eigenes Vercel-Team oder 1 eigener Kubernetes-Cluster, bis 3 ausdrücklich eingebundene Projekte/Workloads. Providerkapazität und Providerrechnung bleiben beim Kunden; Einrichtung separat."
+
+msgid "App Custom"
+msgstr "App Custom"
+
+msgid "Individual quote for explicitly agreed app, CPU, RAM and storage quantities. No blanket resource or price commitment."
+msgstr "Individuelles Angebot für ausdrücklich vereinbarte App-, CPU-, RAM- und Speichermengen. Keine pauschale Ressourcen- oder Preiszusage."
+
+msgid "App Plus"
+msgstr "App Plus"
+
+msgid "1 app / 1 replica; 1 CPU, 2 GB RAM, 10 GB persistent /data and 2 GB temporary storage (decimal). Confirm capacity and placement before acceptance; no high availability or backups included."
+msgstr "1 App / 1 Replikat; 1 CPU, 2 GB RAM, 10 GB persistentes /data und 2 GB temporärer Speicher (dezimal). Kapazität und Platzierung vor Annahme prüfen; keine HA oder Backups enthalten."
+
+msgid "App Standard"
+msgstr "App Standard"
+
+msgid "1 app / 1 replica; 0.5 CPU, 1 GB RAM, 5 GB persistent /data and 1 GB temporary storage (decimal). Shared nodes; setup is separate, no backups or database included."
+msgstr "1 App / 1 Replikat; 0,5 CPU, 1 GB RAM, 5 GB persistentes /data und 1 GB temporärer Speicher (dezimal). Geteilte Nodes; Einrichtung separat, kein Backup oder Datenbank enthalten."
+
+msgid "App Mini"
+msgstr "App Mini"
+
+msgid "1 app / 1 replica; 0.25 CPU, 512 MB RAM, 1 GB persistent /data and 1 GB temporary storage (decimal). Managed setup is separate; no backups, dedicated database or high availability included."
+msgstr "1 App / 1 Replikat; 0,25 CPU, 512 MB RAM, 1 GB persistentes /data und 1 GB temporärer Speicher (dezimal). Betreute Einrichtung separat; kein Backup, keine eigene Datenbank und keine HA enthalten."
+
+msgid "Website Plus"
+msgstr "Website Plus"
+
+msgid "1 website, 5 editors, 5000 MB media storage (decimal), 3000 outgoing emails per month."
+msgstr "1 Website, 5 Redakteure, 5.000 MB Medienspeicher (dezimal) und 3.000 ausgehende E-Mails pro Monat."
+
+msgid "Website Basic"
+msgstr "Website Basic"
+
+msgid "1 website, 3 editors, 2000 MB media storage (decimal), 1000 outgoing emails per month."
+msgstr "1 Website, 3 Redakteure, 2.000 MB Medienspeicher (dezimal) und 1.000 ausgehende E-Mails pro Monat."
+
+msgid "Website Mini"
+msgstr "Website Mini"
+
+msgid "1 website, 1 editor, 500 MB media storage (decimal), 100 outgoing emails per month."
+msgstr "1 Website, 1 Redakteur, 500 MB Medienspeicher (dezimal) und 100 ausgehende E-Mails pro Monat."
+

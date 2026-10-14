@@ -183,22 +183,6 @@ export const initialCatalog: Draft[] = [
     "Anschluss einer vorhandenen Kundendomain einschließlich DNS-Prüfung. Kein Domainkauf, Transfer oder Verlängerungspreis enthalten.",
   ),
   manual(
-    "changes-small-month-v1",
-    "Kleines Änderungsbudget",
-    "service",
-    2900,
-    "month",
-    "20 Minuten pro Monat für ausdrücklich vereinbarte Änderungen. Nicht übertragbar; Mehrarbeit nur nach Vereinbarung, keine Neuentwicklung enthalten.",
-  ),
-  manual(
-    "care-month-v1",
-    "Pflegebudget",
-    "service",
-    5900,
-    "month",
-    "45 Minuten pro Monat für Inhalte oder kleine Konfigurationsarbeiten. Abgegrenzter Umfang, keine Neuentwicklung oder allgemeine Support-Flatrate.",
-  ),
-  manual(
     "postgres-shared-month-v1",
     "PostgreSQL Shared",
     "database",
@@ -277,14 +261,6 @@ export const initialCatalog: Draft[] = [
     null,
     "once",
     "Migration ab 149 EUR netto: Bestandsprüfung, begrenzter Import und Domainumschaltung. Komplexe CMS-Migration nach Aufwand; Website-Tarif separat.",
-  ),
-  manual(
-    "development-hour-once-v1",
-    "Individuelle Entwicklung – 1 Stunde",
-    "service",
-    7500,
-    "once",
-    "75 EUR netto je Stunde als Ausgangspunkt; kleine Änderungen in 15-Minuten-Schritten, größere Arbeiten als abgegrenztes Angebot. Betrieb und Ressourcen separat.",
   ),
   manual(
     "app-setup-once-v1",

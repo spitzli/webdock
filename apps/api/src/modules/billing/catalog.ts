@@ -1,3 +1,4 @@
+import { bilingualProductText } from "@webdock/i18n/billing-products";
 import { randomUUID, createHash } from "node:crypto";
 import { and, eq, sql, desc } from "drizzle-orm";
 import { z } from "zod";
@@ -187,8 +188,8 @@ function provider(environment: BillingEnvironment, token: string): Provider {
     },
     create: (terms) =>
       polar.products.create({
-        name: terms.name,
-        description: terms.description,
+        name: bilingualProductText(terms.name),
+        description: bilingualProductText(terms.description, "\n\n"),
         // OAT writes must omit organization_id; readback still verifies ownership.
         visibility: terms.visibility as "public" | "private",
         ...(terms.interval === "once"

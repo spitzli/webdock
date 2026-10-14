@@ -47,7 +47,7 @@ Use `npm run dev -w @webdock/api` with the existing local database configuration
 
 ## Webdock catalog
 
-The original operator-authorized catalog contained 35 draft entries from the owner-provided product plan: websites, apps/bots, Connect/BYOK, mail, media/editor add-ons, databases and services. The owner subsequently removed the separate product-catalog module subscription: the product catalog belongs to the website package. The current source inventory has 21 fixed-price entries and 13 quote-only entries; the removed subscription remains archived for audit history. The three website prices are yearly and include tax:
+The original operator-authorized catalog contained 35 draft entries from the owner-provided product plan: websites, apps/bots, Connect/BYOK, mail, media/editor add-ons, databases and services. The owner subsequently removed the separate product-catalog module subscription: the product catalog belongs to the website package. The current source inventory has 18 fixed-price entries and 13 quote-only entries. The owner also removed hourly development and the two time-based change/maintenance allowances; all four removed subscriptions/products remain archived for audit history. The three website prices are yearly and include tax:
 
 | SKU | Annual price incl. tax | Websites | Editors | Media | Emails/month |
 |---|---:|---:|---:|---:|---:|
@@ -55,13 +55,13 @@ The original operator-authorized catalog contained 35 draft entries from the own
 | website-basic-year-v1 | EUR 118.80 | 1 | 3 | 2,000 MB | 1,000 |
 | website-plus-year-v1 | EUR 238.80 | 1 | 5 | 5,000 MB | 3,000 |
 
-All 21 fixed-price entries are mapped as ready in both Polar environments through the operator workflow. Webdock sales and enforcement remain disabled. The earlier one-time Test Product is now archived. The live organization connection has also been saved successfully through the authenticated Webdock operator API.
+All 18 fixed-price entries are mapped as ready in both Polar environments through the operator workflow. Webdock sales and enforcement remain disabled. The earlier one-time Test Product is now archived. The live organization connection has also been saved successfully through the authenticated Webdock operator API.
 
 The current source inventory is `apps/api/src/modules/billing/initial-catalog.ts`. Non-website prices follow the source's **net EUR** basis. Price ranges, starting prices and unspecified amounts are quote-only, never zero-price products. Service descriptions preserve the original capacity/backup/SLA limits. Additional websites reuse a website package; customer-specific sponsorships and individual plans are not sold as reusable free catalog products.
 
 Migration `0021_full_catalog.sql` adds services, one-time intervals and nullable prices for quotes. Manual fulfillment is explicit; the existing SQL purchase function remains website-only. Quote-only entries cannot be published to Polar. No additional customer resources, service grants, sales enablement or operational approvals are created by seeding the catalog.
 
-The initial production seed contained 35 catalog SKUs and 13 null-priced quote entries. After publication and the owner’s correction, each environment has 21 ready mappings, one archived module subscription and 13 quote-only entries. Existing website rows were preserved; the other 32 were created through the authenticated operator endpoint. The API and worker use image `sha256:2a2d6c40ba5c4f6d046bfe5714c4c8c55c2740b7ed0305106559b53a217fd7cb`. Restricted-role MCP catalog persistence, existing checkout and private-offer regressions passed.
+The initial production seed contained 35 catalog SKUs and 13 null-priced quote entries. After publication and the owner’s correction, each environment has 18 ready mappings, four archived products and 13 quote-only entries. Existing website rows were preserved; the other 32 were created through the authenticated operator endpoint. The API and worker use image `sha256:a981aa197a0e2b60912294a49dda29887ddbf6731d755fd05d7be6c4b9eb6fe7`. Restricted-role MCP catalog persistence, existing checkout and private-offer regressions passed.
 
 ## Publication read-after-write fix
 
@@ -70,3 +70,9 @@ Polar returned complete product-create responses while immediate GET/list reques
 A diagnostic retry created one sandbox duplicate; it was archived and marked as replaced by the original. The removed `catalog-module-month-v1` subscription is archived in both environments; it is not an extra website charge. No payments or customer resources were created.
 
 Regression coverage reproduces a successful create with a GET returning 404 and retains the lost-response/idempotency checks.
+
+## Product translations
+
+Webdock displays known catalog names and descriptions in the selected German/English locale using the shared Gettext catalog. Exact source-text lookup leaves custom or revised text unchanged. Signed agreement terms remain unchanged.
+
+At the owner's request, Polar names and descriptions contain German and English together (identical brand names appear only once). Existing product IDs were updated in place; no language-specific products were created. The shared provider rendering and strict publication validation use the same bilingual text. Prices, recurrence, IDs and metadata were preserved and checked. Independent list/GET verification confirms exactly 18 active products in each environment after the removed time-based offers were archived.
