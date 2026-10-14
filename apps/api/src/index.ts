@@ -28,7 +28,8 @@ for (const domain of config.domains)
       throw Error(`API domain ${domain} requires ${required} ownership`);
 const { databasePools: databases } = await import("./db/runtime");
 let views:
-  ReturnType<(typeof import("./cache"))["connectViewCache"]> | undefined;
+  | ReturnType<(typeof import("./cache"))["connectViewCache"]>
+  | undefined;
 if (process.env.VIEW_CACHE_URL) {
   try {
     views = (await import("./cache")).connectViewCache(
@@ -72,6 +73,12 @@ if (config.domains.includes("billing")) {
   mounts.push(
     (await import("./protocols/webhooks/polar")).polarWebhooks(config),
   );
+  if (process.env.POLAR_ACCESS_TOKEN)
+    mounts.push(
+      ...(await import("./protocols/polar-hosted")).hostedPolarProtocols(
+        config,
+      ),
+    );
 }
 if (config.domains.includes("registry"))
   mounts.push(
