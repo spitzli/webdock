@@ -58,7 +58,7 @@ test("website purchases retain their original priced recurring entitlement bound
 });
 import { initialCatalog } from "../src/modules/billing/initial-catalog";
 test("the complete source catalog preserves prices and leaves ranges unpriced and disabled", () => {
-  expect(initialCatalog).toHaveLength(31);
+  expect(initialCatalog).toHaveLength(30);
   expect(new Set(initialCatalog.map((p) => p.sku)).size).toBe(
     initialCatalog.length,
   );
@@ -75,6 +75,7 @@ test("the complete source catalog preserves prices and leaves ranges unpriced an
   expect(
     initialCatalog.filter((p) =>
       [
+        "domain-connect-once-v1",
         "development-hour-once-v1",
         "changes-small-month-v1",
         "care-month-v1",
