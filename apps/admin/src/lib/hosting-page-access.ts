@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { safeAdminReturnTo } from "@webdock/payload-sso";
+import { safeAdminReturnTo } from "@webdock/payload-sso/return-to";
 import { HostingError } from "@webdock/hosting-contracts";
 
 /** Only absent/expired local credentials can automatically start a new login. */

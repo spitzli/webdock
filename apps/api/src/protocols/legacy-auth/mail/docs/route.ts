@@ -1,0 +1,15 @@
+export function GET() {
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Webdock Mail API</title><style>body{margin:0;font:16px system-ui}header{padding:1rem;border-bottom:1px solid #888}label{display:block}input,button{font:inherit;padding:.5rem;margin:.25rem}input{width:min(28rem,75vw)}</style></head><body><header><h1>Webdock Mail API</h1><p>API keys belong in server-side applications. Accepted does not mean delivered. Unknown handoffs must not be resent with a new idempotency key.</p><p><a href="/api/mail/v1/openapi.json">Download OpenAPI</a> · <a href="#api">Browse operations</a></p><form id="enable"><label for="key">Optional test key to enable requests on this page</label><input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="wdm_…" required><button>Enable test requests</button><p id="status" role="status">Test requests are disabled. Keys stay in memory and are never saved by this page.</p></form></header><main id="api"></main><script src="/vendor/scalar/1.73.1/standalone.js"></script><script>
+const configuration={url:'/api/mail/v1/openapi.json',withDefaultFonts:false,telemetry:false,persistAuth:false,showDeveloperTools:'never',mcp:{disabled:true},hideClientButton:true,hideTestRequestButton:true,agent:{disabled:true}};
+const api=Scalar.createApiReference('#api',configuration);
+document.getElementById('enable').addEventListener('submit',function(event){event.preventDefault();const field=document.getElementById('key');const token=field.value;if(!/^wdm_[A-Za-z0-9_-]{43}$/.test(token)){document.getElementById('status').textContent='Enter a valid Webdock Mail test key.';return;}api.updateConfiguration({...configuration,hideTestRequestButton:false,authentication:{preferredSecurityScheme:'MailApiKey',securitySchemes:{MailApiKey:{token}}}});field.value='';document.getElementById('status').textContent='Test requests are enabled for this tab. Reload to forget the key.';});
+</script></body></html>`;
+  return new Response(html, {
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+      "content-security-policy":
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self' data:; frame-src 'none'; form-action 'self'; base-uri 'none'",
+    },
+  });
+}

@@ -1,7 +1,7 @@
 
 import { getRequestI18n } from '@webdock/i18n/next';
 import Link from "next/link";
-import type { GitHubRepository } from "../lib/github";
+import type { GitHubRepository } from "@webdock/api-client/integrations";
 
 export async function GitHubRepositories({
   repositories,

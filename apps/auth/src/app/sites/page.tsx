@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
-import { database } from "@/lib/db";
+import { listTenantInvitations } from "@/lib/tenants";
 import { accountSites } from "@/lib/access-management";
 export async function generateMetadata() { const { t } = await getRequestI18n(); return { title: t("Your websites") }; }
 export default async function Sites() {
@@ -20,16 +20,13 @@ export default async function Sites() {
   return withAuthenticatedDatabase(await headers(), async () => {
   const [sites, invites] = await Promise.all([
     accountSites(requestHeaders),
-    database.query(
-      'SELECT i.id,o.name FROM webdock_auth.invitation i JOIN webdock_auth.organization o ON o.id=i."organizationId" WHERE lower(i.email)=lower($1) AND i.status=\'pending\' AND i."expiresAt">now()',
-      [session.user.email],
-    ),
+    listTenantInvitations(requestHeaders),
   ]);
   return (
     <section className="account">
       <h1>{t("Your websites")}</h1>
       <p>{t("Open a website to edit its content with your Webdock account.")}</p>
-      {invites.rows.map((invite) => (
+      {invites.map((invite) => (
         <article className="access-record" key={invite.id}>
           <h2>{t("Invitation to ")}{invite.name}</h2>
           <Link

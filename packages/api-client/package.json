@@ -1,0 +1,26 @@
+{
+  "name": "@webdock/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./contracts": "./src/studio-contracts.ts",
+    "./errors": "./src/studio-errors.ts",
+    "./cms": "./src/cms-contracts.ts",
+    "./integrations": "./src/integration-contracts.ts",
+    "./registry": "./src/registry-types.ts",
+    "./lifecycle": "./src/lifecycle-contracts.ts",
+    "./billing": "./src/billing-contracts.ts",
+    "./flow-cookies": "./src/flow-cookies.ts"
+  },
+  "scripts": {
+    "test": "node --import tsx --test src/*.test.ts"
+  },
+  "dependencies": {
+    "@webdock/mail-core": "*",
+    "@webdock/hosting-contracts": "*",
+    "@webdock/database-contracts": "*",
+    "@webdock/mail-contracts": "*"
+  }
+}

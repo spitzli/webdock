@@ -9,7 +9,7 @@ import { AccessError } from "@/lib/access-management";
 import { getOffer, PlanError } from "@/lib/plans";
 import { AllowanceList } from "@/components/plan-fields";
 import { OfferForm } from "./form";
-export async function generateMetadata(): Promise<Metadata> { const { t } = await getRequestI18n(); return { title: t("Your offer"), robots: { index: false, follow: false }, referrer: "no-referrer" }; }
+export async function generateMetadata(): Promise<Metadata> { const { t } = await getRequestI18n(); return { title: t("Your offer"), robots: { index: false, follow: false }, referrer: "same-origin" }; }
 export default async function Offer({ params }: { params: Promise<{ token: string }> }) {
  const { t, date: formatDate } = await getRequestI18n();
   const { token } = await params, requestHeaders = await headers();

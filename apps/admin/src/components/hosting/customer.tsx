@@ -1,4 +1,4 @@
-import { requireOperator } from "@/lib/server";
+import { requireRegistryOperator as requireOperator } from "@/lib/registry-page";
 import { OwnInfrastructure } from "./own-infrastructure";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";

@@ -1,0 +1,483 @@
+{
+  "date": "2026-10-14",
+  "environment": "Polar sandbox / isolated local PostgreSQL18",
+  "productionDeployment": false,
+  "organizationID": "a1024d4d-f7b2-4142-bf3b-e097a7cd7e82",
+  "initialAndUpgradeAndScheduledDowngrade": {
+    "at": "2026-10-14T01:45:49.252Z",
+    "organizationID": "a1024d4d-f7b2-4142-bf3b-e097a7cd7e82",
+    "customerID": "103665429397897216",
+    "contracts": [
+      {
+        "id": "103666726981341184",
+        "state": "active",
+        "service_status": "active",
+        "projected_at": "2026-10-14T01:38:55.903Z"
+      }
+    ],
+    "changes": [
+      {
+        "id": "103668630339719168",
+        "status": "applied",
+        "direction": "upgrade",
+        "error_code": null,
+        "applied_at": "2026-10-14T01:42:16.614Z",
+        "effective_at": null
+      },
+      {
+        "id": "103669107416633344",
+        "status": "scheduled",
+        "direction": "downgrade",
+        "error_code": null,
+        "applied_at": null,
+        "effective_at": "2026-11-14T01:38:52.954Z"
+      }
+    ],
+    "subscriptions": [
+      {
+        "id": "103667826526523392",
+        "polar_subscription_id": "4be02f16-59a8-4f50-9693-e76083733c4e",
+        "status": "active",
+        "initial_order_paid": true,
+        "cancel_at_period_end": false
+      }
+    ],
+    "orders": [
+      {
+        "polar_order_id": "e18d55ef-ad33-4e62-8355-900d7e7be914",
+        "status": "paid",
+        "paid_at": null,
+        "net_amount": "84",
+        "tax_amount": "16",
+        "total_amount": "100",
+        "currency": "EUR"
+      },
+      {
+        "polar_order_id": "47858eb9-f53a-4392-a3dd-bb4ee8d35a5d",
+        "status": "paid",
+        "paid_at": null,
+        "net_amount": "84",
+        "tax_amount": "16",
+        "total_amount": "100",
+        "currency": "EUR"
+      }
+    ],
+    "events": [
+      {
+        "event_type": "checkout.updated",
+        "status": "processed",
+        "count": 8
+      },
+      {
+        "event_type": "customer.state_changed",
+        "status": "processed",
+        "count": 4
+      },
+      {
+        "event_type": "order.paid",
+        "status": "processed",
+        "count": 2
+      },
+      {
+        "event_type": "subscription.created",
+        "status": "processed",
+        "count": 1
+      },
+      {
+        "event_type": "subscription.updated",
+        "status": "processed",
+        "count": 3
+      }
+    ],
+    "jobs": [
+      {
+        "kind": "catalog",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 1
+      },
+      {
+        "kind": "checkout",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 1
+      },
+      {
+        "kind": "endpoint",
+        "status": "succeeded",
+        "error_code": "endpoint_unconfirmed",
+        "count": 1
+      },
+      {
+        "kind": "publish",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 3
+      },
+      {
+        "kind": "reconcile",
+        "status": "needs_review",
+        "error_code": "unmatched_order",
+        "count": 1
+      },
+      {
+        "kind": "reconcile",
+        "status": "pending",
+        "error_code": null,
+        "count": 1
+      },
+      {
+        "kind": "reconcile",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 21
+      },
+      {
+        "kind": "subscription-change",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 2
+      },
+      {
+        "kind": "webhook",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 18
+      }
+    ],
+    "liveSubscriptions": 0,
+    "liveTenantPlans": 0
+  },
+  "customerPortalCancellation": {
+    "at": "2026-10-14T01:47:56.653Z",
+    "organizationID": "a1024d4d-f7b2-4142-bf3b-e097a7cd7e82",
+    "customerID": "103665429397897216",
+    "contracts": [
+      {
+        "id": "103666726981341184",
+        "state": "active",
+        "service_status": "active",
+        "projected_at": "2026-10-14T01:38:55.903Z"
+      }
+    ],
+    "changes": [
+      {
+        "id": "103668630339719168",
+        "status": "applied",
+        "direction": "upgrade",
+        "error_code": null,
+        "applied_at": "2026-10-14T01:42:16.614Z",
+        "effective_at": null
+      },
+      {
+        "id": "103669107416633344",
+        "status": "scheduled",
+        "direction": "downgrade",
+        "error_code": null,
+        "applied_at": null,
+        "effective_at": "2026-11-14T01:38:52.954Z"
+      }
+    ],
+    "subscriptions": [
+      {
+        "id": "103667826526523392",
+        "polar_subscription_id": "4be02f16-59a8-4f50-9693-e76083733c4e",
+        "status": "active",
+        "initial_order_paid": true,
+        "cancel_at_period_end": true
+      }
+    ],
+    "orders": [
+      {
+        "polar_order_id": "47858eb9-f53a-4392-a3dd-bb4ee8d35a5d",
+        "status": "paid",
+        "paid_at": null,
+        "net_amount": "84",
+        "tax_amount": "16",
+        "total_amount": "100",
+        "currency": "EUR"
+      },
+      {
+        "polar_order_id": "e18d55ef-ad33-4e62-8355-900d7e7be914",
+        "status": "paid",
+        "paid_at": null,
+        "net_amount": "84",
+        "tax_amount": "16",
+        "total_amount": "100",
+        "currency": "EUR"
+      }
+    ],
+    "events": [
+      {
+        "event_type": "checkout.updated",
+        "status": "processed",
+        "count": 8
+      },
+      {
+        "event_type": "customer.state_changed",
+        "status": "processed",
+        "count": 5
+      },
+      {
+        "event_type": "order.paid",
+        "status": "processed",
+        "count": 2
+      },
+      {
+        "event_type": "subscription.created",
+        "status": "processed",
+        "count": 1
+      },
+      {
+        "event_type": "subscription.updated",
+        "status": "processed",
+        "count": 4
+      }
+    ],
+    "jobs": [
+      {
+        "kind": "catalog",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 1
+      },
+      {
+        "kind": "checkout",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 1
+      },
+      {
+        "kind": "endpoint",
+        "status": "succeeded",
+        "error_code": "endpoint_unconfirmed",
+        "count": 1
+      },
+      {
+        "kind": "publish",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 3
+      },
+      {
+        "kind": "reconcile",
+        "status": "needs_review",
+        "error_code": "unmatched_order",
+        "count": 1
+      },
+      {
+        "kind": "reconcile",
+        "status": "pending",
+        "error_code": null,
+        "count": 1
+      },
+      {
+        "kind": "reconcile",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 23
+      },
+      {
+        "kind": "subscription-change",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 2
+      },
+      {
+        "kind": "webhook",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 20
+      }
+    ],
+    "liveSubscriptions": 0,
+    "liveTenantPlans": 0
+  },
+  "terminalReconciliation": {
+    "at": "2026-10-14T01:52:34.003Z",
+    "organizationID": "a1024d4d-f7b2-4142-bf3b-e097a7cd7e82",
+    "customerID": "103665429397897216",
+    "contracts": [
+      {
+        "id": "103666726981341184",
+        "state": "ended",
+        "service_status": "ended",
+        "projected_at": "2026-10-14T01:38:55.903Z"
+      }
+    ],
+    "changes": [
+      {
+        "id": "103668630339719168",
+        "status": "applied",
+        "direction": "upgrade",
+        "error_code": null,
+        "applied_at": "2026-10-14T01:42:16.614Z",
+        "effective_at": null
+      },
+      {
+        "id": "103669107416633344",
+        "status": "failed",
+        "direction": "downgrade",
+        "error_code": "subscription_ended",
+        "applied_at": null,
+        "effective_at": "2026-11-14T01:38:52.954Z"
+      }
+    ],
+    "subscriptions": [
+      {
+        "id": "103667826526523392",
+        "polar_subscription_id": "4be02f16-59a8-4f50-9693-e76083733c4e",
+        "status": "canceled",
+        "initial_order_paid": true,
+        "cancel_at_period_end": true
+      }
+    ],
+    "orders": [
+      {
+        "polar_order_id": "47858eb9-f53a-4392-a3dd-bb4ee8d35a5d",
+        "status": "paid",
+        "paid_at": null,
+        "net_amount": "84",
+        "tax_amount": "16",
+        "total_amount": "100",
+        "currency": "EUR"
+      },
+      {
+        "polar_order_id": "e18d55ef-ad33-4e62-8355-900d7e7be914",
+        "status": "paid",
+        "paid_at": null,
+        "net_amount": "84",
+        "tax_amount": "16",
+        "total_amount": "100",
+        "currency": "EUR"
+      }
+    ],
+    "events": [
+      {
+        "event_type": "checkout.updated",
+        "status": "processed",
+        "count": 8
+      },
+      {
+        "event_type": "customer.state_changed",
+        "status": "processed",
+        "count": 6
+      },
+      {
+        "event_type": "order.paid",
+        "status": "processed",
+        "count": 2
+      },
+      {
+        "event_type": "subscription.created",
+        "status": "processed",
+        "count": 1
+      },
+      {
+        "event_type": "subscription.updated",
+        "status": "processed",
+        "count": 5
+      }
+    ],
+    "jobs": [
+      {
+        "kind": "catalog",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 1
+      },
+      {
+        "kind": "checkout",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 1
+      },
+      {
+        "kind": "endpoint",
+        "status": "succeeded",
+        "error_code": "endpoint_unconfirmed",
+        "count": 1
+      },
+      {
+        "kind": "publish",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 3
+      },
+      {
+        "kind": "reconcile",
+        "status": "pending",
+        "error_code": null,
+        "count": 1
+      },
+      {
+        "kind": "reconcile",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 28
+      },
+      {
+        "kind": "subscription-change",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 2
+      },
+      {
+        "kind": "webhook",
+        "status": "succeeded",
+        "error_code": null,
+        "count": 22
+      }
+    ],
+    "liveSubscriptions": 0,
+    "liveTenantPlans": 0
+  },
+  "workerCrashRecovery": {
+    "at": "2026-10-14T01:49:56.782Z",
+    "id": "103670308484943872",
+    "status": "succeeded",
+    "attempts": 2,
+    "recovered": true
+  },
+  "realWebhookRedelivery": {
+    "at": "2026-10-14T01:54:47.480Z",
+    "eventID": "bbd88860-685e-429f-9508-855aa2c2d80c",
+    "deliveries": [
+      {
+        "id": "f52c7797-16ef-4d7e-b770-e73efe93fb6f",
+        "success": true,
+        "http": 200
+      },
+      {
+        "id": "7ff24b40-5ff0-4d2c-87d0-342d145f8709",
+        "success": true,
+        "http": 202
+      }
+    ],
+    "duplicateAccepted": true
+  },
+  "receiverBoundary": {
+    "at": "2026-10-14T02:09:03.995Z",
+    "unsignedWebhook": 403,
+    "otherRoutes": 404
+  },
+  "cleanup": {
+    "at": "2026-10-14T01:56:25.134Z",
+    "endpointID": "cffac373-d12b-4e88-a2b9-4d7a457a0ab3",
+    "endpointDisabled": true,
+    "archivedProducts": [
+      "40baa624-2339-4371-8887-56e234d5585e",
+      "1f9960e1-c924-481f-9f29-a0a163a3987d",
+      "490fb2b1-7bd7-4ff9-a92c-1aca512bf550"
+    ],
+    "salesEnabled": false,
+    "historyPreserved": true,
+    "portalSelfChangesDisabled": true
+  },
+  "limits": [
+    "Initial local browser identity/session was a synthetic fixture; real password/MFA/OIDC are separately tested by native protocol regressions.",
+    "Auth/Studio browser rehearsal used loopback HTTP; actual Polar webhook delivery used verified public HTTPS.",
+    "Scheduled downgrade confirmed for 2026-11-14; period-boundary application tested locally, not by advancing a real Polar billing clock.",
+    "No live Polar connection, live payment, production DB migration, DNS change or production rollout was performed."
+  ]
+}

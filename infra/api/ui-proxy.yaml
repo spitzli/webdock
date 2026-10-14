@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: ui-proxy, namespace: webdock-platform}
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 1, maxUnavailable: 0}
+  selector:
+    matchLabels: {app: webdock-ui-proxy}
+  template:
+    metadata:
+      labels: {app: webdock-ui-proxy}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: proxy
+          image: nginxinc/nginx-unprivileged@sha256:56b8272e43a0525f67aed68d1e0794a712d10e3e45a563e118e9a77c817e6f86
+          command: [nginx, -g, 'daemon off;']
+          ports:
+            - {name: http, containerPort: 8080}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 25m, memory: 32Mi, ephemeral-storage: 16Mi}
+            limits: {cpu: 250m, memory: 96Mi, ephemeral-storage: 64Mi}
+          startupProbe:
+            httpGet: {path: /_webdock_proxy_health, port: http}
+            failureThreshold: 12
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: {path: /_webdock_proxy_health, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /_webdock_proxy_health, port: http}
+            periodSeconds: 30
+          volumeMounts:
+            - {name: config, mountPath: /etc/nginx/nginx.conf, subPath: nginx.conf, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: config
+          secret: {secretName: ui-proxy-config}
+        - name: tmp
+          emptyDir: {medium: Memory, sizeLimit: 32Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: ui-proxy, namespace: webdock-platform}
+spec:
+  selector: {app: webdock-ui-proxy}
+  ports:
+    - {name: http, port: 8080, targetPort: http}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ui-proxy-ingress, namespace: webdock-platform}
+spec:
+  podSelector:
+    matchLabels: {app: webdock-ui-proxy}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: traefik}
+      ports:
+        - {protocol: TCP, port: 8080}

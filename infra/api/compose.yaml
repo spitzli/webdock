@@ -1,0 +1,55 @@
+# Reviewed single-host candidate, NOT the Managed Mail production control plane.
+# Do not start until docs/operations/api-cutover.md host and pool gates pass.
+name: webdock-api
+x-runtime: &runtime
+  image: ${WEBDOCK_API_IMAGE:?Use the reviewed immutable image digest}
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  tmpfs: [/tmp:rw,noexec,nosuid,size=32m,mode=1777]
+  pids_limit: 128
+  mem_limit: 768m
+  cpus: 1
+  stop_grace_period: 30s
+services:
+  api:
+    <<: *runtime
+    env_file: [.env.api.local]
+    expose: ['3130']
+    networks: [ingress, outbound, cache]
+    healthcheck:
+      test: [CMD, bun, -e, "const r=await fetch('http://127.0.0.1:3130/readyz');if(!r.ok)process.exit(1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+  worker:
+    <<: *runtime
+    command: [bun, dist/worker.ts]
+    env_file: [.env.worker.local]
+    networks: [outbound]
+  views:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly:v2.0.2@sha256:061f00b201b58e12f974e4e96c761a881ee1c05e9d8ee967466a604b7299753b
+    user: '65532:65532'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    pids_limit: 64
+    mem_limit: 512m
+    cpus: 1
+    tmpfs: [/tmp:rw,noexec,nosuid,size=16m,mode=1777]
+    env_file: [.env.cache.local]
+    entrypoint: [/usr/bin/tini, --, /bin/sh, -ec]
+    command:
+      - ': "$${DFLY_requirepass:?Cache authentication is required}"; exec dragonfly --logtostderr --proactor_threads=1 --maxmemory=256MiB --cache_mode=true --version_check=false --snapshot_cron= --dir=/tmp'
+    networks: [cache]
+    # Deliberately no published port, persistent volume or authority-bearing data.
+networks:
+  ingress:
+    external: true
+    name: ${WEBDOCK_INGRESS_NETWORK:?Use the existing controlled ingress network}
+  outbound: {}
+  cache:
+    internal: true

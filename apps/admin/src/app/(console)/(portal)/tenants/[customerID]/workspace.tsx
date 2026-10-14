@@ -33,7 +33,7 @@ export async function TenantWorkspace({
   }
   const { tenant, canManage, operator, sites, members, invitations } = data;
   const owner = operator || tenant.member_role === "owner";
-  const bridges = demoBridges();
+  const bridges = await demoBridges();
   return (
     <div className="access-page">
       <header className="account-heading">

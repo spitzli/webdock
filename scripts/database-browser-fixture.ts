@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { Pool, type PoolClient } from "pg";
 import { sealData } from "iron-session";
 import { WebSocket, WebSocketServer } from "ws";
-import { executeDatabase, exchangeLaunch, inspectSession } from "../apps/auth/src/lib/databases/service";
+import { executeDatabase, exchangeLaunch, inspectSession } from "../apps/api/src/modules/databases/service";
 import { createGateway } from "../apps/database-gateway/src/server";
 
 const url = new URL(process.env.WEBDOCK_DATABASE_TEST_URL || "");

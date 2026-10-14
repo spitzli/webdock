@@ -1,3 +1,5 @@
+import {studioCall} from "@/lib/studio-client";
+import type {BillingOfferView} from "@webdock/api-client/billing";
 import {uiLabel} from "@/lib/ui-labels";
 
 import { getRequestI18n } from '@webdock/i18n/next';
@@ -12,7 +14,7 @@ import { OfferForm } from "./form";
 export async function generateMetadata(){ const i18n = await getRequestI18n(); return {
   title: i18n.t("Your offer"),
   robots: { index: false, follow: false },
-  referrer: "no-referrer",
+  referrer: "same-origin",
 }; }
 export default async function Offer({
   params,
@@ -23,11 +25,12 @@ export default async function Offer({
 
   const { token } = await params,
     requestHeaders = await headers();
-  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) notFound();
+  if (!/^(?:billing\.)?[A-Za-z0-9_-]{43}$/.test(token)) notFound();
   if (!(await auth.api.getSession({ headers: requestHeaders })))
     redirect(
       `/api/sso/login?returnTo=${encodeURIComponent(`/offers/${token}`)}`,
     );
+  if(token.startsWith('billing.')){const billing=await studioCall<BillingOfferView>('billing.offer',[token]);redirect(`/tenants/${billing.customerID}/billing?environment=${billing.environment}&offer=${encodeURIComponent(token)}`);}
   let offer;
   try {
     offer = await getOffer(requestHeaders, token);
