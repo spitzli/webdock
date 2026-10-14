@@ -4,7 +4,14 @@ import { z } from "zod";
 const id = z.string().regex(/^[1-9][0-9]{0,18}$/);
 const state = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 export const gitOAuthCommandSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("git.oauth.begin"), customerID: id }).strict(),
+  z.object({ action: z.literal("git.oauth.return"), state }).strict(),
+  z
+    .object({
+      action: z.literal("git.oauth.begin"),
+      customerID: id,
+      setupID: id.optional(),
+    })
+    .strict(),
   z
     .object({
       action: z.literal("git.oauth.exchange"),

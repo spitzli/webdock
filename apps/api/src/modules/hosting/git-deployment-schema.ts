@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS webdock_auth.git_flow (
  state_hash text PRIMARY KEY,subject text NOT NULL,session_id text NOT NULL,customer_id varchar NOT NULL REFERENCES webdock_admin.customers(id),
  expires_at timestamptz NOT NULL,consumed_at timestamptz,user_token_encrypted text,installation_id text
 );
+ALTER TABLE webdock_auth.git_flow ADD COLUMN IF NOT EXISTS setup_id varchar;
 CREATE TABLE IF NOT EXISTS webdock_auth.git_source (
  id varchar PRIMARY KEY DEFAULT webdock_auth.next_snowflake(),customer_id varchar NOT NULL REFERENCES webdock_admin.customers(id),
  project_id varchar NOT NULL REFERENCES webdock_auth.hosting_project(project_id),connection_id varchar NOT NULL,repository_id text NOT NULL,

@@ -1,3 +1,6 @@
+import { readSetup } from "./project-setup";
+import { createGitHubProvider } from "./git-github";
+import { inspectRepositoryFiles } from "./setup-inspection";
 import {
   HostingError,
   setupCommandSchema,
@@ -10,11 +13,54 @@ import { executeDatabaseCommand } from "./databases";
 import { limits } from "./allowances";
 export async function executeSetupSource(actor: HostingActor, raw: unknown) {
   const cmd = setupCommandSchema.parse(raw);
+  if (cmd.action === "setup.inspectSource") {
+    const saved = await readSetup(actor, cmd.projectID, cmd.setupID);
+    const source = saved.configuration.source;
+    if (saved.revision !== cmd.revision)
+      throw new HostingError(
+        409,
+        "Setup changed. Review the current configuration.",
+      );
+    if (source.kind !== "git" || !source.connectionID || !source.repositoryID)
+      throw new HostingError(
+        409,
+        "Connect an authorized GitHub repository first.",
+      );
+    const connection = await transaction(async (db) => {
+      await authorizeHosting(actor, { projectID: cmd.projectID }, db);
+      return (
+        await db.query(
+          "SELECT c.installation_id FROM webdock_auth.git_connection c JOIN webdock_auth.git_repository r ON r.connection_id=c.id WHERE c.id=$1 AND c.customer_id=$2 AND r.repository_id=$3 AND c.state='active'",
+          [source.connectionID, saved.customer_id, source.repositoryID],
+        )
+      ).rows[0];
+    });
+    if (!connection)
+      throw new HostingError(404, "Git deployment is unavailable.");
+    const provider = createGitHubProvider();
+    const input = {
+      installationID: connection.installation_id,
+      repositoryID: source.repositoryID,
+      branch: source.branch,
+    };
+    const resolved = await provider.resolveSource(input);
+    const files: Record<string, string> = {};
+    for (const name of ["Dockerfile", "package.json"]) {
+      const text = await provider.readSourceFile(
+        input,
+        resolved.sha,
+        source.rootDirectory === "." ? name : source.rootDirectory + "/" + name,
+      );
+      if (text !== null) files[name] = text;
+    }
+    return {
+      ...inspectRepositoryFiles(files),
+      sourceSHA: resolved.sha,
+      rootDirectory: source.rootDirectory,
+    };
+  }
   if (cmd.action !== "setup.options")
-    throw new HostingError(
-      409,
-      "Save the source configuration before inspecting this repository.",
-    );
+    throw new HostingError(400, "Unknown setup source operation.");
   const context = await transaction(async (db) => {
     const access = await authorizeHosting(
       actor,

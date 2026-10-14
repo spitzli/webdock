@@ -688,18 +688,15 @@ export async function executeGitDeployment(
         if (existing.source_id !== s.id) throw conflict();
         return buildView(existing);
       }
-      const resolved = await (provider ?? createGitHubProvider()).resolveSource(
-        {
-          installationID: s.installation_id,
-          repositoryID: s.repository_id,
-          branch: s.branch,
-        },
-      );
-      if (cmd.sourceSHA && cmd.sourceSHA !== resolved.sha)
-        throw new HostingError(
-          409,
-          "Repository changed. Review the source again before deploying.",
-        );
+      const github = provider ?? createGitHubProvider();
+      const selected = {
+        installationID: s.installation_id,
+        repositoryID: s.repository_id,
+        branch: s.branch,
+      };
+      const resolved = cmd.sourceSHA
+        ? await github.resolveCommit(selected, cmd.sourceSHA)
+        : await github.resolveSource(selected);
       const b = await queue(
         db,
         s,
