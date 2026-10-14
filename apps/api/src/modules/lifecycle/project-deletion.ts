@@ -172,6 +172,16 @@ async function requireNoBilling(
   id: string,
 ) {
   try {
+    await db.query("SELECT webdock_rls.project_without_setup($1)", [id]);
+  } catch (error) {
+    if ((error as { code?: string }).code === "P0001")
+      throw new APIError(
+        "Application setup history prevents deletion. Archive this project instead.",
+        409,
+      );
+    throw error;
+  }
+  try {
     await db.query("SELECT webdock_rls.project_without_billing($1)", [id]);
   } catch (error) {
     if ((error as { code?: string }).code === "P0001")

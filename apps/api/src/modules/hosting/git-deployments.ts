@@ -112,7 +112,8 @@ const releaseView = (r: {
   source_id: string;
   target_id?: string;
   artifact_id: string;
-  publication_target?: {targetID?: string};
+  build_id?: string;
+  publication_target?: { targetID?: string };
   status: string;
   revision: number;
   approved_by: string | null;
@@ -125,6 +126,7 @@ const releaseView = (r: {
   sourceID: r.source_id,
   targetID: r.target_id ?? r.publication_target?.targetID,
   artifactID: r.artifact_id,
+  buildID: r.build_id,
   status: r.status,
   revision: r.revision,
   approvedBy: r.approved_by,
@@ -160,12 +162,22 @@ async function connectionView(
     ).rows.map((v) => v.metadata),
   };
 }
-async function source(db: Connection, projectID: string, selector: {targetID?: string; sourceID?: string} = {}) {
-  const rows = (await db.query(
-    "SELECT s.*,r.metadata->>'fullName' AS repository_name,c.installation_id,c.generation AS connection_generation,c.state AS connection_state FROM webdock_auth.git_source s JOIN webdock_auth.git_connection c ON c.id=s.connection_id JOIN webdock_auth.git_repository r ON r.connection_id=s.connection_id AND r.repository_id=s.repository_id WHERE s.project_id=$1 AND ($2::text IS NULL OR s.target_id=$2) AND ($3::text IS NULL OR s.id=$3) ORDER BY s.id FOR UPDATE OF s",
-    [projectID, selector.targetID ?? null, selector.sourceID ?? null],
-  )).rows;
-  if (rows.length > 1) throw new HostingError(409, "Select an application for this Git operation.");
+async function source(
+  db: Connection,
+  projectID: string,
+  selector: { targetID?: string; sourceID?: string } = {},
+) {
+  const rows = (
+    await db.query(
+      "SELECT s.*,r.metadata->>'fullName' AS repository_name,c.installation_id,c.generation AS connection_generation,c.state AS connection_state FROM webdock_auth.git_source s JOIN webdock_auth.git_connection c ON c.id=s.connection_id JOIN webdock_auth.git_repository r ON r.connection_id=s.connection_id AND r.repository_id=s.repository_id WHERE s.project_id=$1 AND ($2::text IS NULL OR s.target_id=$2) AND ($3::text IS NULL OR s.id=$3) ORDER BY s.id FOR UPDATE OF s",
+      [projectID, selector.targetID ?? null, selector.sourceID ?? null],
+    )
+  ).rows;
+  if (rows.length > 1)
+    throw new HostingError(
+      409,
+      "Select an application for this Git operation.",
+    );
   return rows[0];
 }
 function active(s: SourceRow | undefined) {
@@ -308,7 +320,10 @@ async function queue(
       [s.project_id, key],
     )
   ).rows[0];
-  if (prior) { if (prior.source_id !== s.id) throw conflict(); return prior; }
+  if (prior) {
+    if (prior.source_id !== s.id) throw conflict();
+    return prior;
+  }
   const waiting = (
     await db.query(
       "SELECT count(*)::int n FROM webdock_auth.git_build WHERE project_id=$1 AND status IN ('queued','running')",
@@ -344,7 +359,7 @@ async function queue(
     [s.id, r.id, environment.identity],
   );
   await enqueueGitCheck(db, r.id, "queued");
-  return {...r, target_id:s.target_id};
+  return { ...r, target_id: s.target_id };
 }
 export async function executeGitDeployment(
   actor: HostingActor,
@@ -404,11 +419,25 @@ export async function executeGitDeployment(
       };
     if (!("projectID" in cmd)) throw unavailable();
     if (cmd.action === "git.sources.list") {
-      const rows = (await db.query("SELECT s.*,r.metadata->>'fullName' AS repository_name FROM webdock_auth.git_source s JOIN webdock_auth.git_repository r ON r.connection_id=s.connection_id AND r.repository_id=s.repository_id WHERE s.project_id=$1 AND s.customer_id=$2 ORDER BY s.id", [cmd.projectID, access.customerID])).rows;
-      return {docs: rows.map(row => ({...sourceView(row), repositoryName: row.repository_name}))};
+      const rows = (
+        await db.query(
+          "SELECT s.*,r.metadata->>'fullName' AS repository_name FROM webdock_auth.git_source s JOIN webdock_auth.git_repository r ON r.connection_id=s.connection_id AND r.repository_id=s.repository_id WHERE s.project_id=$1 AND s.customer_id=$2 ORDER BY s.id",
+          [cmd.projectID, access.customerID],
+        )
+      ).rows;
+      return {
+        docs: rows.map((row) => ({
+          ...sourceView(row),
+          repositoryName: row.repository_name,
+        })),
+      };
     }
-    const s = (cmd.action === "git.source.get" || cmd.action === "git.source.configure" || cmd.action === "git.builds.request")
-      ? await source(db, cmd.projectID, {targetID: cmd.targetID}) : undefined;
+    const s =
+      cmd.action === "git.source.get" ||
+      cmd.action === "git.source.configure" ||
+      cmd.action === "git.builds.request"
+        ? await source(db, cmd.projectID, { targetID: cmd.targetID })
+        : undefined;
     if (cmd.action === "git.source.get") {
       const targets =
         access.project?.provider === "k3s"
@@ -597,7 +626,7 @@ export async function executeGitDeployment(
         view = table === "git_build" ? buildView : releaseView;
       const rows = (
         await db.query(
-          `SELECT v.*,s.target_id FROM webdock_auth.${table} v JOIN webdock_auth.git_source s ON s.id=v.source_id WHERE v.project_id=$1 AND v.customer_id=$2 AND ($5::text IS NULL OR v.source_id=$5) ORDER BY v.created_at DESC,v.id DESC LIMIT $3 OFFSET $4`,
+          `SELECT v.*,s.target_id,${table === "git_release" ? "(SELECT build_id FROM webdock_auth.git_artifact WHERE id=v.artifact_id) AS build_id" : "v.id AS build_id"} FROM webdock_auth.${table} v JOIN webdock_auth.git_source s ON s.id=v.source_id WHERE v.project_id=$1 AND v.customer_id=$2 AND ($5::text IS NULL OR v.source_id=$5) ORDER BY v.created_at DESC,v.id DESC LIMIT $3 OFFSET $4`,
           [
             cmd.projectID,
             access.customerID,
@@ -655,7 +684,10 @@ export async function executeGitDeployment(
           [cmd.projectID, cmd.idempotencyKey],
         )
       ).rows[0];
-      if (existing) { if (existing.source_id !== s.id) throw conflict(); return buildView(existing); }
+      if (existing) {
+        if (existing.source_id !== s.id) throw conflict();
+        return buildView(existing);
+      }
       const resolved = await (provider ?? createGitHubProvider()).resolveSource(
         {
           installationID: s.installation_id,
@@ -663,6 +695,11 @@ export async function executeGitDeployment(
           branch: s.branch,
         },
       );
+      if (cmd.sourceSHA && cmd.sourceSHA !== resolved.sha)
+        throw new HostingError(
+          409,
+          "Repository changed. Review the source again before deploying.",
+        );
       const b = await queue(
         db,
         s,
@@ -684,7 +721,7 @@ export async function executeGitDeployment(
         )
       ).rows[0];
       if (!r) throw unavailable();
-      const s = await source(db, cmd.projectID, {sourceID:r.source_id});
+      const s = await source(db, cmd.projectID, { sourceID: r.source_id });
       active(s);
       const prior = (
         await db.query(
@@ -692,7 +729,10 @@ export async function executeGitDeployment(
           [cmd.projectID, cmd.idempotencyKey],
         )
       ).rows[0];
-      if (prior) { if (prior.source_id !== s.id) throw conflict(); return releaseView(prior); }
+      if (prior) {
+        if (prior.source_id !== s.id) throw conflict();
+        return releaseView(prior);
+      }
       const environment = await gitEnvironmentSnapshot(db, s);
       if (r.environment_identity !== environment.identity)
         throw new HostingError(
@@ -966,7 +1006,7 @@ export async function completeGitBuild(
       (result.failureCode && !/^[A-Z0-9_]{1,80}$/.test(result.failureCode))
     )
       throw new HostingError(400, "Invalid build result.");
-    const s = await source(db, b.project_id, {sourceID:b.source_id});
+    const s = await source(db, b.project_id, { sourceID: b.source_id });
     if (
       !s ||
       s.revision !== b.source_revision ||
@@ -1261,7 +1301,8 @@ export async function processGitEvents(
                 continue;
             }
           }
-          const key = "actions:" + data.runID + ":" + data.runAttempt + ":" + s.id;
+          const key =
+            "actions:" + data.runID + ":" + data.runAttempt + ":" + s.id;
           const prior = (
             await db.query(
               "SELECT id FROM webdock_auth.git_build WHERE source_id=$1 AND actions_provenance->>'runID'=$2 AND actions_provenance->>'runAttempt'=$3",
@@ -1331,7 +1372,9 @@ export async function claimGitRelease(credential: string) {
       )
     ).rows[0];
     if (!r) return null;
-    const sourceState = await source(db, r.project_id, {sourceID:r.source_id});
+    const sourceState = await source(db, r.project_id, {
+      sourceID: r.source_id,
+    });
     const environment = await gitEnvironmentSnapshot(db, sourceState);
     if (environment.identity !== r.environment_identity) {
       await db.query(
@@ -1404,7 +1447,7 @@ export async function completeGitRelease(
         r.provider_deployment_id !== result.providerDeploymentID)
     )
       throw new HostingError(409, "Publication identity cannot be replaced.");
-    const s = await source(db, r.project_id, {sourceID:r.source_id});
+    const s = await source(db, r.project_id, { sourceID: r.source_id });
     const current =
       s &&
       s.enabled &&

@@ -81,7 +81,7 @@ export async function createMailKeyInTransaction(
   await assertMailAccess(actor, "manage", db);
   // Serialize creation per tenant, including separate connections, for the hourly limit.
   await db.query(
-    "SELECT id FROM webdock_admin.customers WHERE id=$1 FOR UPDATE",
+    "SELECT pg_advisory_xact_lock(hashtextextended('native-mail-keys:' || $1,0))",
     [actor.customerID],
   );
   if (actor.principal.kind === "api_key") {

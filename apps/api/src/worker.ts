@@ -6,7 +6,9 @@ const selected = (process.env.WEBDOCK_WORKER_DOMAINS || "")
   .split(",")
   .filter(Boolean);
 if (
-  selected.some((name) => !["mail", "storage", "billing"].includes(name)) ||
+  selected.some(
+    (name) => !["mail", "storage", "billing", "hosting"].includes(name),
+  ) ||
   !selected.length
 )
   throw Error("Explicit worker domain ownership required");
@@ -33,6 +35,12 @@ if (selected.includes("mail")) {
       }),
     );
 }
+if (selected.includes("hosting")) {
+  const { runSetupBatch } = await import("./modules/hosting/setup-worker");
+  handlers.set("hosting.setup", async () => {
+    await runSetupBatch();
+  });
+}
 if (selected.includes("storage")) {
   const { refreshStorageBatch } =
     await import("./modules/platform/storage-usage");
@@ -57,9 +65,11 @@ try {
     const now = Date.now();
     for (const name of handlers.keys()) {
       const interval =
-        name === "storage.refresh" || name === "mail.maintenance"
-          ? 3_600_000
-          : 60_000;
+        name === "hosting.setup"
+          ? 10_000
+          : name === "storage.refresh" || name === "mail.maintenance"
+            ? 3_600_000
+            : 60_000;
       const offset = name === "mail.maintenance" ? 17 * 60_000 : 0;
       await scheduler(() =>
         schedule(

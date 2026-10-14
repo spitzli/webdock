@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   commandSchema,
   serviceCommands,
+  setupCommands,
   byokCommands,
   gitCommands,
   databaseCommands,
@@ -10,6 +11,15 @@ import {
   type HostingCommand,
 } from "@webdock/hosting-contracts";
 export const hostingTools: Record<HostingCommand["action"], string> = {
+  ...(Object.fromEntries(
+    setupCommands.map((s) => [
+      s.shape.action.value,
+      s.shape.action.value.replaceAll(".", "_"),
+    ]),
+  ) as Record<
+    (typeof setupCommands)[number]["shape"]["action"]["value"],
+    string
+  >),
   ...(Object.fromEntries(
     serviceCommands.map((s) => [
       s.shape.action.value,
