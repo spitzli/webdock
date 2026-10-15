@@ -98,6 +98,10 @@ export async function databaseGateway(request: Request) {
             "DELETE FROM webdock_auth.database_session WHERE token_hash=$1",
             [createHash("sha256").update(body.token).digest("hex")],
           );
+          await db.query(
+            "DELETE FROM webdock_auth.managed_database_session WHERE token_hash=$1",
+            [createHash("sha256").update(body.token).digest("hex")],
+          );
           return { ok: true };
         }),
     );

@@ -124,6 +124,166 @@ test(
         "INSERT INTO webdock_auth.database_runtime_owner(runtime_origin,binding_id,subject,profile) VALUES($1,$2,$3,'schema')",
         [origin, binding, subject],
       );
+      const cluster = id(10),
+        backend = id(11),
+        plan = id(12),
+        offer = id(13),
+        order = id(14),
+        managed = id(15);
+      await owner.query(
+        "INSERT INTO webdock_auth.hosting_cluster(id,name,provider,country,region,location_evidence,verified,capacity) VALUES($1::text,$1::text,'local','DE','test','Synthetic viewer fixture',true,'{}')",
+        [cluster],
+      );
+      await owner.query(
+        "INSERT INTO webdock_auth.hosting_database_backend(id,cluster_id,kind,node,pool_id,state,demand,max_databases,logical_capacity_bytes,host,direct_port,pooled_port,endpoint_ready,ca_certificate) VALUES($1,$2,'dedicated','local','00000000-0000-0000-0000-000000000001','ready','{}',1,1024,'managed.rls.invalid',30432,30433,true,'synthetic-ca')",
+        [backend, cluster],
+      );
+      await owner.query(
+        "INSERT INTO webdock_auth.hosting_database_plan(id,plan) VALUES($1,'{}')",
+        [plan],
+      );
+      await owner.query(
+        "INSERT INTO webdock_auth.hosting_database_offer(id,customer_id,project_id,plan_revision_id,name,snapshot) VALUES($1,$2,$3,$4,'Viewer fixture','{}')",
+        [offer, customer, project, plan],
+      );
+      await owner.query(
+        "INSERT INTO webdock_auth.hosting_database_order(id,offer_id,customer_id,project_id,plan_revision_id,accepted_by,snapshot) VALUES($1,$2,$3,$4,$5,$6,'{}')",
+        [order, offer, customer, project, plan, subject],
+      );
+      await owner.query(
+        "INSERT INTO webdock_auth.hosting_database(id,customer_id,project_id,order_id,plan_revision_id,backend_id,kind,name,database_name,state,credentials_encrypted,confirmed_credentials_encrypted,confirmed_credential_revision) VALUES($1,$2,$3,$4,$5,$6,'dedicated','Viewer fixture',$7,'ready',$8,$8,1)",
+        [
+          managed,
+          customer,
+          project,
+          order,
+          plan,
+          backend,
+          "db_" + managed,
+          encryptMailSecret(
+            { migrationPassword: "managed-secret" },
+            `database:${managed}:1`,
+          ),
+        ],
+      );
+      const managedOpen = () =>
+        user(() =>
+          transaction((db) =>
+            executeDatabase(db, actor, {
+              action: "openManaged",
+              databaseID: managed,
+            }),
+          ),
+        ) as Promise<{ code: string }>;
+      await assert.rejects(managedOpen(), /managed by your operator/);
+      await owner.query(
+        `UPDATE webdock_auth.member SET role='admin' WHERE "userId"=$1`,
+        [subject],
+      );
+      const directory = (await user(() =>
+        transaction((db) =>
+          executeDatabase(db, actor, { action: "list", customerID: customer }),
+        ),
+      )) as { managed: { id: string; canOpen: boolean }[] };
+      assert.deepEqual(
+        directory.managed.map((d) => [d.id, d.canOpen]),
+        [[managed, true]],
+      );
+      const managedLaunch = await managedOpen();
+      await assert.rejects(
+        user(() =>
+          database.query(
+            "UPDATE webdock_auth.managed_database_launch SET consumed_at=NULL WHERE database_id=$1",
+            [managed],
+          ),
+        ),
+        /permission denied/,
+      );
+      await assert.rejects(
+        user(() =>
+          database.query(
+            "INSERT INTO webdock_auth.managed_database_session SELECT * FROM webdock_auth.managed_database_session",
+          ),
+        ),
+        /permission denied/,
+      );
+      const managedReply = await http({
+        action: "exchange",
+        code: managedLaunch.code,
+      });
+      assert.equal(
+        managedReply.status,
+        200,
+        JSON.stringify(await managedReply.clone().json()),
+      );
+      const managedSession = (await managedReply.json()).data;
+      const managedInspect = await http({
+        action: "inspect",
+        token: managedSession.token,
+      });
+      assert.equal(
+        managedInspect.status,
+        200,
+        JSON.stringify(await managedInspect.clone().json()),
+      );
+      const managedAccess = (await managedInspect.json()).data;
+      assert.equal(managedAccess.kind, "managed");
+      assert.equal(managedAccess.database.username, "wd_migrate_" + managed);
+      assert.equal(managedAccess.database.password, "managed-secret");
+      assert.equal(
+        (await http({ action: "exchange", code: managedLaunch.code })).status,
+        404,
+      );
+      await assert.rejects(
+        broker(() =>
+          database.query(
+            "UPDATE webdock_auth.hosting_database SET name='denied' WHERE id=$1",
+            [managed],
+          ),
+        ),
+        /row-level security/,
+      );
+      await assert.rejects(
+        broker(() =>
+          database.query(
+            "UPDATE webdock_auth.hosting_database_backend SET host='denied.invalid' WHERE id=$1",
+            [backend],
+          ),
+        ),
+        /row-level security/,
+      );
+      await owner.query(
+        `UPDATE webdock_auth.member SET role='member' WHERE "userId"=$1`,
+        [subject],
+      );
+      assert.notEqual(
+        (await http({ action: "inspect", token: managedSession.token })).status,
+        200,
+      );
+      await owner.query(
+        `UPDATE webdock_auth.member SET role='admin' WHERE "userId"=$1`,
+        [subject],
+      );
+      await owner.query(
+        "UPDATE webdock_auth.hosting_database SET credential_revision=2 WHERE id=$1",
+        [managed],
+      );
+      assert.equal(
+        (await http({ action: "inspect", token: managedSession.token })).status,
+        404,
+      );
+      await owner.query(
+        "UPDATE webdock_auth.hosting_database SET credential_revision=1 WHERE id=$1",
+        [managed],
+      );
+      assert.equal(
+        (await http({ action: "logout", token: managedSession.token })).status,
+        200,
+      );
+      assert.equal(
+        (await http({ action: "inspect", token: managedSession.token })).status,
+        404,
+      );
       const launch = await open();
       const exchanged = await broker(() =>
         transaction((db) => exchangeLaunch(db, launch.code)),
@@ -134,6 +294,9 @@ test(
       assert.equal(inspected.subject, subject);
       assert.equal(inspected.profile, "schema");
       assert.equal(inspected.connectionID, connection);
+      assert.ok("runtimeOrigin" in inspected);
+      if (!("runtimeOrigin" in inspected))
+        throw Error("Expected legacy runtime");
       assert.equal(inspected.runtimeOrigin, origin);
       assert.equal(inspected.proxySecret, proxySecret);
       assert.equal(inspected.scopeID, exchanged.scopeID);
@@ -223,6 +386,42 @@ test(
         await cleanup.query(
           "DELETE FROM webdock_auth.database_binding WHERE id=$1",
           [binding],
+        );
+        await cleanup.query(
+          "DELETE FROM webdock_auth.managed_database_session WHERE database_id=$1",
+          [id(15)],
+        );
+        await cleanup.query(
+          "DELETE FROM webdock_auth.managed_database_launch WHERE database_id=$1",
+          [id(15)],
+        );
+        await cleanup.query(
+          "DELETE FROM webdock_auth.hosting_audit WHERE target_id=$1",
+          [id(15)],
+        );
+        await cleanup.query(
+          "DELETE FROM webdock_auth.hosting_database WHERE id=$1",
+          [id(15)],
+        );
+        await cleanup.query(
+          "DELETE FROM webdock_auth.hosting_database_order WHERE id=$1",
+          [id(14)],
+        );
+        await cleanup.query(
+          "DELETE FROM webdock_auth.hosting_database_offer WHERE id=$1",
+          [id(13)],
+        );
+        await cleanup.query(
+          "DELETE FROM webdock_auth.hosting_database_plan WHERE id=$1",
+          [id(12)],
+        );
+        await cleanup.query(
+          "DELETE FROM webdock_auth.hosting_database_backend WHERE id=$1",
+          [id(11)],
+        );
+        await cleanup.query(
+          "DELETE FROM webdock_auth.hosting_cluster WHERE id=$1",
+          [id(10)],
         );
         await cleanup.query("DELETE FROM webdock_admin.projects WHERE id=$1", [
           project,

@@ -14,6 +14,16 @@ test("database commands reject forged tenant and unknown fields", () => {
   assert.equal(databaseCommand.safeParse({ action: "grant", bindingID: "10", profile: "owner" }).success, false);
 });
 
+test("managed database launches take only a database ID, never credentials or a tenant override", () => {
+  assert.deepEqual(databaseCommand.parse({ action: "openManaged", databaseID: "101988493768523776" }), {
+    action: "openManaged", databaseID: "101988493768523776",
+  });
+  for (const extra of [{ customerID: "20" }, { host: "attacker.invalid" }, { profile: "schema" }]) {
+    assert.equal(databaseCommand.safeParse({ action: "openManaged", databaseID: "10", ...extra }).success, false);
+  }
+  assert.equal(databaseCommand.safeParse({ action: "openManaged", databaseID: 101988493768523776 }).success, false);
+});
+
 test("public binding DTOs cannot expose runtime addresses or secrets", () => {
   const result = publicBinding.parse({ id: "10", projectID: "20", customerID: "30", name: "Orders", environment: "production", profile: "read", engine: "postgresql", runtimeOrigin: "https://private", proxySecret: "secret" });
   assert.equal("runtimeOrigin" in result, false);

@@ -5538,6 +5538,9 @@
   "Manage customer names and addresses. Sign-in and permissions remain protected.": [
     "Kundennamen und Adressen verwalten. Anmeldung und Berechtigungen bleiben geschützt."
   ],
+  "Manage database": [
+    "Datenbank verwalten"
+  ],
   "Manage database access": [
     "Datenbankzugriff verwalten"
   ],
@@ -6576,6 +6579,9 @@
   "Open hosting": [
     "Hosting öffnen"
   ],
+  "Open in Tabularis": [
+    "In Tabularis öffnen"
+  ],
   "Open jobs": [
     "Offene Aufträge"
   ],
@@ -7550,6 +7556,9 @@
   ],
   "Quarantined": [
     "In Quarantäne"
+  ],
+  "Queries saved in this viewer are available only for this session. Copy any SQL you want to keep.": [
+    "In diesem Viewer gespeicherte Abfragen sind nur während dieser Sitzung verfügbar. Kopiere SQL, das du behalten möchtest."
   ],
   "Question": [
     "Frage"
@@ -9626,6 +9635,9 @@
   ],
   "The database filesystem is nearly full. Review capacity before importing more data.": [
     "Das Datenbank-Dateisystem ist nahezu voll. Prüfe die Kapazität vor weiteren Datenimporten."
+  ],
+  "The database must be ready before opening Tabularis.": [
+    "Die Datenbank muss bereit sein, bevor Tabularis geöffnet werden kann."
   ],
   "The database role enforces the selected permission and denies other tenants.": [
     "Die Datenbankrolle erzwingt die gewählte Berechtigung und sperrt andere Mandanten."

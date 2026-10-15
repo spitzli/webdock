@@ -26,6 +26,7 @@ export const databaseCommand = z.discriminatedUnion("action", [
   z.object({ action: z.literal("revoke"), bindingID: resourceID, subject: z.string().min(1).max(128) }).strict(),
   z.object({ action: z.literal("disable"), bindingID: resourceID }).strict(),
   z.object({ action: z.literal("open"), bindingID: resourceID }).strict(),
+  z.object({ action: z.literal("openManaged"), databaseID: resourceID }).strict(),
 ]);
 export type DatabaseCommand = z.infer<typeof databaseCommand>;
 export const publicBinding = z.object({
@@ -34,10 +35,18 @@ export const publicBinding = z.object({
   profile: accessProfile.nullable(),
 });
 export type DatabaseBinding = z.infer<typeof publicBinding>;
-export type DatabaseDirectory = { bindings: DatabaseBinding[]; operator: boolean; projects: { id: string; name: string }[]; people: { id: string; name: string; email: string }[] };
+export type ManagedDatabaseEntry = { id: string; projectID: string; name: string; state: string; canOpen: boolean };
+export type DatabaseDirectory = { bindings: DatabaseBinding[]; managed: ManagedDatabaseEntry[]; operator: boolean; projects: { id: string; name: string }[]; people: { id: string; name: string; email: string }[] };
 export type DatabaseLaunch = { code: string; gatewayOrigin: string; binding: DatabaseBinding; expiresAt: string };
 /** Confidential gateway contract: never serialize to Studio/browser responses. */
 export type RuntimeAccess = {
   scopeID: string; subject: string; connectionID: string; profile: AccessProfile;
   runtimeOrigin: string; proxySecret: string; expiresAt: string;
 };
+/** Confidential gateway-only credentials. Never send this object to a browser. */
+export type ManagedRuntimeAccess = {
+  kind: "managed"; scopeID: string; subject: string; connectionID: string;
+  profile: "schema"; expiresAt: string; revision: string;
+  database: { host: string; port: number; database: string; username: string; password: string; caCertificate: string };
+};
+export type GatewayAccess = RuntimeAccess | ManagedRuntimeAccess;

@@ -122,6 +122,7 @@ export const getConsoleContext = cache(async (route: string) => {
         { href: path, label: t("Overview"), exact: true },
         ...(access.canWrite
           ? [
+              { href: path + "/viewer", label: t("Browse data") },
               {
                 href: path + "/connection",
                 label: t("Connection credentials"),
@@ -134,6 +135,7 @@ export const getConsoleContext = cache(async (route: string) => {
             ]
           : []),
       ];
+
     }
     selectedProjectID = projectID;
     const project = await getHostingProject(projectID),

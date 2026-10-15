@@ -30,7 +30,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: api
-          image: docker.io/library/webdock-api@sha256:49c29baefe959fad194f3aa971c20f13e024265166698996cb31204fc990dd7b
+          image: docker.io/library/webdock-api@sha256:d06903d4ebcea31013bc4d9aee6be34abbcc3580b0ee56b5a08d25152f2e789a
           imagePullPolicy: Never
           env:
             - {name: WEBDOCK_CONSOLE_ORIGIN, value: "https://console.webdock.dev"}

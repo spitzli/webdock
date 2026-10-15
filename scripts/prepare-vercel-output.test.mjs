@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { prepareVercelOutput } from './prepare-vercel-output.mjs';
@@ -20,4 +20,28 @@ test('prebuilt output omits dotenv references without touching source secrets an
     await writeFile(config, JSON.stringify({ environment: { PRIVATE: 'unexpected' } }));
     await assert.rejects(prepareVercelOutput(join(root, 'output')), /environment overrides/);
   } finally { await rm(root, { recursive: true }); }
+});
+
+test('a parallel root slot cannot omit the actual home page and its traced files from a prebuilt function', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'webdock-prebuilt-root-'));
+  try {
+    const output = join(root, '.vercel/output'), fn = join(output, 'functions/shared.func');
+    const server = join(root, 'apps/admin/.next/server'), page = 'app/(console)/(workspace)/page.js';
+    await mkdir(fn, { recursive: true });
+    await symlink('shared.func', join(output, 'functions/index.func'));
+    await mkdir(join(server, 'app/(console)/(workspace)'), { recursive: true });
+    await mkdir(join(server, 'chunks'), { recursive: true });
+    await writeFile(join(server, 'app-paths-manifest.json'), JSON.stringify({ '/(console)/(workspace)/page': page, '/(console)/@toolbar/page': 'app/(console)/@toolbar/page.js' }));
+    await writeFile(join(server, page), 'module.exports = {};');
+    await writeFile(join(server, page + '.nft.json'), JSON.stringify({ files: ['../../../chunks/home.js'] }));
+    await writeFile(join(server, 'chunks/home.js'), 'module.exports = {};');
+    await writeFile(join(server, page.replace('.js', '_client-reference-manifest.js')), 'self.manifest = {};');
+    const file = join(fn, '.vc-config.json');
+    await writeFile(file, JSON.stringify({ handler: 'apps/admin/___next_launcher.cjs', environment: {}, filePathMap: {} }));
+    await prepareVercelOutput(output);
+    const config = JSON.parse(await readFile(file));
+    for (const path of [page, 'chunks/home.js', page.replace('.js', '_client-reference-manifest.js')]) {
+      assert.equal(config.filePathMap['apps/admin/.next/server/' + path], 'apps/admin/.next/server/' + path);
+    }
+  } finally { await rm(root, { recursive: true, force: true }); }
 });

@@ -32,12 +32,16 @@ class RendererTest(unittest.TestCase):
                     'username': 'synthetic-user', 'password': 'synthetic-private-password',
                     'database': 'website', 'ssl_mode': 'require'}}]}
 
-    def render(self, rows):
+    def render(self, rows, managed=None):
         (self.root / 'inventory.json').write_text(json.dumps(rows))
+        extra = []
+        if managed is not None:
+            (self.root / 'managed.json').write_text(json.dumps(managed))
+            extra = ['--managed-runtimes-config', str(self.root / 'managed.json')]
         result = subprocess.run(['python3', str(RENDER), '--inventory', str(self.root / 'inventory.json'),
                                  '--private-dir', str(self.root), '--gateway-image', 'gateway',
                                  '--runtime-image', 'runtime', '--tls-image', 'tls',
-                                 '--runtime-commit', 'pin', '--output', str(self.root / 'output.json')],
+                                 '--runtime-commit', 'pin', '--output', str(self.root / 'output.json')] + extra,
                                 capture_output=True, text=True)
         self.assertNotIn('synthetic-private', result.stdout + result.stderr)
         return result
@@ -114,6 +118,48 @@ class RendererTest(unittest.TestCase):
             rows = copy.deepcopy(self.rows)
             rows[0]['databaseTarget'][field] = value
             self.assertNotEqual(self.render(rows).returncode, 0)
+
+    def test_gateway_reaches_same_cluster_auth_after_ingress_destination_translation(self):
+        self.assertEqual(self.render(self.rows).returncode, 0)
+        policy = next(x for x in self.manifest() if x['kind'] == 'NetworkPolicy' and x['metadata']['name'] == 'gateway-network')
+        self.assertIn({'to': [{'namespaceSelector': {'matchLabels': {
+            'kubernetes.io/metadata.name': 'kube-system'}}, 'podSelector': {'matchLabels': {
+                'app.kubernetes.io/name': 'traefik'}}}], 'ports': [
+                    {'protocol': 'TCP', 'port': 8443}]}, policy['spec']['egress'])
+
+    def test_managed_mode_adds_bounded_cluster_egress_and_private_process_storage(self):
+        config = {'authOrigin': 'https://auth.webdock.dev', 'capacity': 4,
+                  'clusters': [{'addressIPv4': '79.143.177.157', 'port': 32000, 'endPort': 32199}]}
+        self.assertEqual(self.render(self.rows, config).returncode, 0)
+        items = self.manifest()
+        gateway = next(x for x in items if x['kind'] == 'Deployment' and x['metadata']['name'] == 'database-gateway')
+        pod = gateway['spec']['template']['spec']
+        container = pod['containers'][0]
+        env = {x['name']: x['value'] for x in container['env']}
+        self.assertEqual(env['WEBDOCK_DATABASE_MANAGED_RUNTIMES'], 'true')
+        self.assertEqual(env['WEBDOCK_DATABASE_RUNTIME_CAPACITY'], '4')
+        self.assertEqual(env['WEBDOCK_AUTH_ORIGIN'], 'https://auth.webdock.dev')
+        self.assertIn({'name': 'managed-runtime-state', 'mountPath': '/tmp'}, container['volumeMounts'])
+        self.assertIn({'name': 'managed-runtime-state', 'emptyDir': {'medium': 'Memory', 'sizeLimit': '128Mi'}}, pod['volumes'])
+        self.assertEqual(container['resources']['limits']['memory'], '1280Mi')
+        self.assertTrue(container['securityContext']['readOnlyRootFilesystem'])
+        self.assertEqual(pod['securityContext']['runAsUser'], 65532)
+        policy = next(x for x in items if x['kind'] == 'NetworkPolicy' and x['metadata']['name'] == 'gateway-network')
+        self.assertIn({'to': [{'ipBlock': {'cidr': '79.143.177.157/32'}}], 'ports': [
+            {'protocol': 'TCP', 'port': 32000, 'endPort': 32199}]}, policy['spec']['egress'])
+
+    def test_managed_mode_rejects_unbounded_egress_and_invalid_config(self):
+        valid = {'authOrigin': 'https://auth.webdock.dev', 'capacity': 4,
+                 'clusters': [{'addressIPv4': '79.143.177.157', 'port': 32000, 'endPort': 32199}]}
+        for field, value in [('addressIPv4', '0.0.0.0/0'), ('addressIPv4', '127.0.0.1'),
+                             ('port', 1), ('endPort', 65535), ('endPort', 31999)]:
+            config = copy.deepcopy(valid)
+            config['clusters'][0][field] = value
+            self.assertNotEqual(self.render(self.rows, config).returncode, 0)
+        for field, value in [('capacity', 0), ('capacity', 65), ('authOrigin', 'http://api.webdock.dev'), ('clusters', [])]:
+            config = copy.deepcopy(valid)
+            config[field] = value
+            self.assertNotEqual(self.render(self.rows, config).returncode, 0)
 
     def test_rejects_noncertificate_content_without_disclosure(self):
         self.target()
