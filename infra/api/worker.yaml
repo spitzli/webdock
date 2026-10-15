@@ -25,7 +25,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: worker
-        image: docker.io/library/webdock-api@sha256:7cef4b5c18a6360f4efd8b18da80b71c898a4eaebd92e876652b433679ddde17
+        image: docker.io/library/webdock-api@sha256:6c5b34663c397e4e9793935efe73afb84b6435a858c3d9dafdea6fcfba39d7cf
         imagePullPolicy: Never
         envFrom:
         - secretRef:
@@ -51,7 +51,7 @@ spec:
             - bun
             - -e
             - process.env.WEBDOCK_PROCESS_ROLE='worker';const{databasePools,workerDatabase}=await
-              import('./dist/db/runtime.ts');try{await(await import('./dist/db/readiness.ts')).verifyWorkerReadiness(workerDatabase,['billing']);}finally{await
+              import('./dist/db/runtime.ts');try{await(await import('./dist/db/readiness.ts')).verifyWorkerReadiness(workerDatabase,['billing','storage','hosting']);}finally{await
               databasePools.close();}
           periodSeconds: 10
           timeoutSeconds: 15
@@ -70,7 +70,7 @@ spec:
             - bun
             - -e
             - process.env.WEBDOCK_PROCESS_ROLE='worker';const{databasePools,workerDatabase}=await
-              import('./dist/db/runtime.ts');try{await(await import('./dist/db/readiness.ts')).verifyWorkerReadiness(workerDatabase,['billing']);}finally{await
+              import('./dist/db/runtime.ts');try{await(await import('./dist/db/readiness.ts')).verifyWorkerReadiness(workerDatabase,['billing','storage','hosting']);}finally{await
               databasePools.close();}
           periodSeconds: 60
           timeoutSeconds: 15
@@ -80,6 +80,40 @@ spec:
         command:
         - bun
         - dist/worker.ts
+        env:
+        - name: WEBDOCK_SETUP_ENABLED
+          value: 'true'
+        - name: MAIL_API_ORIGIN
+          value: https://api.webdock.dev
+        - name: WEBDOCK_APPLICATION_MAIL_EGRESS_CIDRS
+          value: 178.104.141.95/32
+        - name: WEBDOCK_WORKER_DOMAINS
+          value: billing,storage,hosting
+        - name: WEBDOCK_GITHUB_APP_ID
+          valueFrom:
+            secretKeyRef:
+              name: api-runtime
+              key: WEBDOCK_GITHUB_APP_ID
+        - name: WEBDOCK_GITHUB_APP_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-runtime
+              key: WEBDOCK_GITHUB_APP_PRIVATE_KEY
+        - name: WEBDOCK_DATABASE_CLUSTER_ID
+          valueFrom:
+            secretKeyRef:
+              name: api-runtime
+              key: WEBDOCK_DATABASE_CLUSTER_ID
+        - name: WEBDOCK_DATABASE_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: api-runtime
+              key: WEBDOCK_DATABASE_DOMAIN
+        - name: WEBDOCK_HOSTING_EU_VERIFIED
+          valueFrom:
+            secretKeyRef:
+              name: api-runtime
+              key: WEBDOCK_HOSTING_EU_VERIFIED
       volumes:
       - name: tmp
         emptyDir:

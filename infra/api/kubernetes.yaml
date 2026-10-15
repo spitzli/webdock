@@ -30,10 +30,13 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: api
-          image: docker.io/library/webdock-api@sha256:d06903d4ebcea31013bc4d9aee6be34abbcc3580b0ee56b5a08d25152f2e789a
+          image: docker.io/library/webdock-api@sha256:6c5b34663c397e4e9793935efe73afb84b6435a858c3d9dafdea6fcfba39d7cf
           imagePullPolicy: Never
           env:
             - {name: WEBDOCK_CONSOLE_ORIGIN, value: "https://console.webdock.dev"}
+            - {name: WEBDOCK_SETUP_ENABLED, value: "true"}
+            - {name: MAIL_API_ORIGIN, value: "https://api.webdock.dev"}
+            - {name: WEBDOCK_APPLICATION_MAIL_EGRESS_CIDRS, value: "178.104.141.95/32"}
           envFrom:
             - secretRef: {name: api-runtime}
           ports:

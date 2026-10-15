@@ -19,3 +19,14 @@ The release integrates current `main`, the project setup feature and the already
 - Existing production database-browser API and Console behavior are preserved by integrating commits `32fe83c` and `4274327`.
 
 Production rollout evidence is appended after the guarded migration and workload checks complete. No real Mail delivery or customer data mutation is part of the smoke checks.
+
+## API and agent rollout
+
+- API and worker now use `docker.io/library/webdock-api@sha256:6c5b34663c397e4e9793935efe73afb84b6435a858c3d9dafdea6fcfba39d7cf`; both deployments report ready. The image overlays the verified existing production runtime with the merged API/workspace artifacts; dependencies and existing database-viewer fixes are preserved.
+- Production now records 36 checksummed migrations. All seven historical Git releases retain non-null source identity. FORCE RLS remains active on Git history, setup and binding tables.
+- The migration ran in an isolated non-root Kubernetes job with an explicit database target, verified CA, restricted egress and a temporary non-superuser account. The worker paused briefly to fit the existing platform resource quota, then resumed with `billing,storage,hosting`. The public API stayed available during migration.
+- The database sees NodePort clients through its cluster gateway; the temporary HBA entry was corrected to that observed source. The job, secret, network policy, HBA entry and temporary role were removed afterward. The original website-browser ownership membership was retained through a permanent root-issued grant.
+- Setup is enabled on API and worker. Worker receives only the required GitHub/database configuration references in addition to its existing restricted worker credentials. Existing encryption and context-signing keys match and were retained.
+- Native application Mail egress is configured to the existing HTTPS API at `api.webdock.dev`, restricted to its exact IPv4 host. This does not activate incoming Mail, create provider accounts, place paid orders or enable previously disabled native sending workers.
+- Both existing hosting agents advertise service-binding version 1 after a guarded update. Original agent directories remain available for rollback; the database host retains its existing HTTP01 resource allowance and other host-specific modules.
+- Public API readiness returned HTTP 200 after rollout. Git build capacity, registry project authorization, database offers and Mail sender verification remain checked per setup; the feature does not bypass missing prerequisites.
