@@ -1,0 +1,79 @@
+diff --git a/packages/web-ui/src/embed/WorkspaceRuntime.tsx b/packages/web-ui/src/embed/WorkspaceRuntime.tsx
+index 671ab2d2..47c0e37a 100644
+--- a/packages/web-ui/src/embed/WorkspaceRuntime.tsx
++++ b/packages/web-ui/src/embed/WorkspaceRuntime.tsx
+@@ -45,6 +45,7 @@ export function WorkspaceRuntime(props: WorkspaceRuntimeProps) {
+               <BrowserPlatformDialogs />
+               <CommandPaletteProvider><WorkspaceLayout>
+                 <Routes><Route path={BROWSER_ROUTES.connectionEditor} element={<ConnectionEditorRoute />} />
++                  <Route path={BROWSER_ROUTES.editor} element={<ConnectionEditorRoute />} />
+                   <Route path="*" element={<p role="alert">{props.locale === "de" ? "Datenbank nicht verfügbar. Bitte erneut über die Anwendung öffnen." : "Database unavailable. Reopen it from the host application."}</p>} />
+                 </Routes>
+               </WorkspaceLayout></CommandPaletteProvider>
+diff --git a/packages/web-ui/tests/embed/editorNavigation.test.tsx b/packages/web-ui/tests/embed/editorNavigation.test.tsx
+new file mode 100644
+index 00000000..cb95e36e
+--- /dev/null
++++ b/packages/web-ui/tests/embed/editorNavigation.test.tsx
+@@ -0,0 +1,61 @@
++import { fireEvent, render, screen, waitFor } from "@testing-library/react";
++import { useEffect } from "react";
++import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
++import { describe, expect, it, vi } from "vitest";
++import { WorkspaceRuntime } from "../../src/embed/WorkspaceRuntime";
++import { openEditor } from "../../src/utils/editorNavigation";
++import type { TabularisClient } from "../../src/api/client";
++
++const { wrapper, database, consumeIntent, mountEditor } = vi.hoisted(() => ({
++  consumeIntent: vi.fn(), mountEditor: vi.fn(),
++  wrapper: ({ children }: { children?: import("react").ReactNode }) => children,
++  database: { activeConnectionId: "authorized", connect: vi.fn(), isConnectionOpen: () => true, switchConnection: vi.fn() },
++}));
++vi.mock("../../src/contexts/TabularisClientProvider", () => ({ TabularisClientProvider: wrapper }));
++vi.mock("../../src/contexts/UiStateProvider", () => ({ UiStateProvider: wrapper }));
++vi.mock("../../src/contexts/PlatformCapabilitiesProvider", () => ({ PlatformCapabilitiesProvider: wrapper }));
++vi.mock("../../src/contexts/ToastProvider", () => ({ ToastProvider: wrapper }));
++vi.mock("../../src/contexts/AlertProvider", () => ({ AlertProvider: wrapper }));
++vi.mock("../../src/contexts/DatabaseProvider", () => ({ DatabaseProvider: wrapper }));
++vi.mock("../../src/contexts/SavedQueriesProvider", () => ({ SavedQueriesProvider: wrapper }));
++vi.mock("../../src/contexts/QueryHistoryProvider", () => ({ QueryHistoryProvider: wrapper }));
++vi.mock("../../src/contexts/EditorProvider", () => ({ EditorProvider: wrapper }));
++vi.mock("../../src/contexts/ProductionGuardContext", () => ({ ProductionGuardProvider: wrapper }));
++vi.mock("../../src/contexts/KeybindingsProvider", () => ({ KeybindingsProvider: wrapper }));
++vi.mock("../../src/contexts/ConnectionLayoutProvider", () => ({ ConnectionLayoutProvider: wrapper }));
++vi.mock("../../src/contexts/RightSidebarProvider", () => ({ RightSidebarProvider: wrapper }));
++vi.mock("../../src/contexts/CommandPaletteProvider", () => ({ CommandPaletteProvider: wrapper }));
++vi.mock("../../src/contexts/PluginModalProvider", () => ({ PluginModalProvider: wrapper }));
++vi.mock("../../src/components/modals/BrowserPlatformDialogs", () => ({ BrowserPlatformDialogs: () => null }));
++vi.mock("../../src/components/ui/EditorErrorBoundary", () => ({ EditorErrorBoundary: wrapper }));
++vi.mock("../../src/embed/WorkspaceAppearance", () => ({ WorkspaceAppearance: wrapper }));
++vi.mock("../../src/embed/WorkspaceLayout", () => ({ WorkspaceLayout: wrapper }));
++vi.mock("../../src/embed/platform", () => ({ createEmbeddedPlatform: () => ({}) }));
++vi.mock("../../src/hooks/useDatabase", () => ({ useDatabase: () => database }));
++vi.mock("../../src/pages/Editor", () => ({
++  Editor: function EditorProbe() {
++    const location = useLocation(), navigate = useNavigate();
++    useEffect(() => { mountEditor(); }, []);
++    useEffect(() => {
++      if (location.state) consumeIntent(location.state);
++    }, [location.state]);
++    return <><button onClick={() => openEditor(navigate, { kind: "table", tableName: "test", schema: "app", initialQuery: 'SELECT * FROM "app"."test"', targetConnectionId: "authorized" })}>Open table</button>
++      <output data-testid="route">{location.pathname}</output></>;
++  },
++}));
++
++describe("embedded editor navigation", () => {
++  it("opens a table through the shared editor action without losing the authorized connection or navigation intent", async () => {
++    const hostURL = window.location.href;
++    render(<MemoryRouter initialEntries={["/connections/authorized/editor"]}>
++      <WorkspaceRuntime scopeId="session" connectionId="authorized" client={{} as TabularisClient} root={document.createElement("div")} />
++    </MemoryRouter>);
++    fireEvent.click(screen.getByText("Open table"));
++    await waitFor(() => expect(consumeIntent).toHaveBeenCalledWith(expect.objectContaining({ tableName: "test", schema: "app", targetConnectionId: "authorized" })));
++    expect(screen.getByTestId("route")).toHaveTextContent("/connections/authorized/editor");
++    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
++    expect(window.location.href).toBe(hostURL);
++    expect(database.connect).not.toHaveBeenCalled();
++    expect(mountEditor).toHaveBeenCalledTimes(1);
++  });
++});
