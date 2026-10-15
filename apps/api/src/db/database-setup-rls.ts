@@ -1,5 +1,4 @@
 export const setupHelperSQL = String.raw`
-GRANT USAGE,CREATE ON SCHEMA webdock_rls TO webdock_platform_owner;
 CREATE OR REPLACE FUNCTION webdock_rls.setup_allowed(customer text,project text DEFAULT NULL) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
 BEGIN
  IF NOT webdock_rls.worker(ARRAY['hosting-setup']) THEN RETURN false; END IF;
@@ -37,7 +36,6 @@ ALTER FUNCTION webdock_rls.setup_identity(text,text) OWNER TO webdock_platform_o
 ALTER FUNCTION webdock_rls.setup_cluster(text) OWNER TO webdock_platform_owner;
 REVOKE ALL ON FUNCTION webdock_rls.setup_allowed(text,text),webdock_rls.setup_identity(text,text),webdock_rls.setup_cluster(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION webdock_rls.setup_allowed(text,text),webdock_rls.setup_identity(text,text),webdock_rls.setup_cluster(text) TO webdock_worker_runtime,webdock_auth_runtime,webdock_policy_owner;
-REVOKE CREATE ON SCHEMA webdock_rls FROM webdock_platform_owner;
 `;
 export function setupPolicyFor(t: {
   schema: string;

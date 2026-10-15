@@ -1,5 +1,5 @@
 GRANT USAGE,CREATE ON SCHEMA webdock_rls TO webdock_platform_owner;
-CREATE FUNCTION webdock_rls.setup_allowed(customer text,project text DEFAULT NULL) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
+CREATE OR REPLACE FUNCTION webdock_rls.setup_allowed(customer text,project text DEFAULT NULL) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
 BEGIN
  IF NOT webdock_rls.worker(ARRAY['hosting-setup']) THEN RETURN false; END IF;
  RETURN EXISTS(
@@ -21,11 +21,11 @@ BEGIN
  AND NOT EXISTS(SELECT 1 FROM webdock_auth.studio_tenant_preview preview WHERE preview.session_id=session.id)
  AND NOT EXISTS(SELECT 1 FROM webdock_admin.project_deletion deletion WHERE deletion.project_id=s.project_id AND deletion.status<>'deleted'));
 END $$;
-CREATE FUNCTION webdock_rls.setup_identity(subject text,session text DEFAULT NULL) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
+CREATE OR REPLACE FUNCTION webdock_rls.setup_identity(subject text,session text DEFAULT NULL) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
 BEGIN
  RETURN EXISTS(SELECT 1 FROM webdock_auth.hosting_setup s WHERE s.id=webdock_rls.request_scope()->>'setupID' AND s.actor->>'subject'=subject AND (session IS NULL OR s.actor->>'sessionID'=session) AND webdock_rls.setup_allowed(s.customer_id::text,s.project_id::text));
 END $$;
-CREATE FUNCTION webdock_rls.setup_cluster(cluster text) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
+CREATE OR REPLACE FUNCTION webdock_rls.setup_cluster(cluster text) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
 BEGIN
  RETURN EXISTS(SELECT 1 FROM webdock_auth.hosting_setup s JOIN webdock_auth.hosting_project h ON h.project_id=s.project_id WHERE s.id=webdock_rls.request_scope()->>'setupID' AND h.cluster_id=cluster AND webdock_rls.setup_allowed(s.customer_id::text,s.project_id::text));
 END $$;
