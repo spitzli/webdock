@@ -6,6 +6,7 @@ import { HttpTransport, TabularisClient } from "@tabularis/web-ui";
 import "@tabularis/web-ui/workspace.css";
 import { useI18n } from "@webdock/i18n/react";
 import { launchDatabase, launchManagedDatabase } from "@/lib/database-actions";
+import { rememberDatabaseSchemas } from "@/lib/database-schema-preferences";
 
 const Workspace = dynamic(() => import("@tabularis/web-ui").then(module => module.TabularisWorkspace), { ssr: false });
 const theme = () => document.documentElement.dataset.theme === "light" ? "light" : document.documentElement.dataset.theme === "dark" ? "dark" : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -15,7 +16,7 @@ const subscribeTheme = (notify: () => void) => {
   return () => { observer.disconnect(); media.removeEventListener("change", notify); };
 };
 
-export function DatabaseWorkbench({ bindingID, managed = false }: { bindingID: string; managed?: boolean }) {
+export function DatabaseWorkbench({ bindingID, userID, managed = false }: { bindingID: string; userID: string; managed?: boolean }) {
   const i18n = useI18n();
   const appearance = useSyncExternalStore(subscribeTheme, theme, () => "light");
   const [workspace, setWorkspace] = useState<{ scopeID: string; connectionID: string; client: TabularisClient }>();
@@ -35,10 +36,12 @@ export function DatabaseWorkbench({ bindingID, managed = false }: { bindingID: s
       const negotiation = await transport.initialize();
       close = () => { void fetch(session.baseUrl+"/api/v1/logout", { method: "POST", credentials: "include", keepalive: true, headers: { "X-Tabularis-Csrf": negotiation.csrfToken } }).catch(() => {}); };
       if (!active) { close(); return; }
-      setWorkspace({ scopeID: session.scopeID, connectionID: session.connectionID, client: new TabularisClient(transport) });
+      const client = new TabularisClient(transport);
+      rememberDatabaseSchemas(client, { userID, bindingID, kind: managed ? "managed" : "registered", connectionID: session.connectionID });
+      setWorkspace({ scopeID: session.scopeID, connectionID: session.connectionID, client });
     })().catch((cause: unknown) => { if (active) setError(cause instanceof Error ? cause.message : "Database access is unavailable."); });
     return () => { active = false; close?.(); };
-  }, [bindingID, managed]);
+  }, [bindingID, userID, managed]);
   if (error) return <p className="notice error" role="alert">{i18n.error(error)}</p>;
   if (!workspace) return <p role="status">{i18n.t("Connecting to database…")}</p>;
   return <div className="database-workbench"><Workspace client={workspace.client} scopeId={workspace.scopeID} connectionId={workspace.connectionID} locale={i18n.locale} theme={appearance as "light" | "dark"} /></div>;
