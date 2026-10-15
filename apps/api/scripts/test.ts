@@ -19,6 +19,7 @@ const files = (await readdir(root + "tests")).filter((name) =>
 );
 const integration = new Set([
   "auth-adapter.test.ts",
+  "mail-origin.integration.test.ts",
   "auth-protocol.test.ts",
   "database-compat.test.ts",
   "native-ui.integration.test.ts",

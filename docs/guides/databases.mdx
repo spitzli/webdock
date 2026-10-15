@@ -1,0 +1,20 @@
+---
+title: "Managed PostgreSQL"
+description: "Review PostgreSQL availability, service models and connection requirements."
+---
+
+<Info>Managed PostgreSQL requires operator enablement and capacity. The documented initial rollout is a pilot, not a general-availability promise. Use the offers and status shown for your workspace.</Info>
+
+The initial managed database model uses PostgreSQL 18 with transaction pooling. Shared customers have separate databases and roles. Dedicated services receive their own installation.
+
+## Order and readiness
+
+Select a project, review the offered resources and terms, then accept explicitly. Provisioning starts after reservation and availability checks. A created order is not a ready database; wait for verified readiness before connecting applications.
+
+## Connections and lifecycle
+
+Use the connection details provided for your database. Keep credentials server-side and verify TLS. Transaction pooling does not preserve a client session on one connection across transactions; choose an appropriate connection mode for tools needing session state.
+
+Project creation and sign-in do not automatically create a database. Pausing does not necessarily end billing or release retained storage. Review the accepted terms before cancellation.
+
+<Warning>The initial service is single-primary. Automatic backups, point-in-time recovery, backup-based cloning and automatic failover are not included in the documented initial implementation. Retained volumes are not backups.</Warning>

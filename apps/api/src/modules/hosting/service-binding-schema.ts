@@ -1,5 +1,6 @@
 // Offline schema installation only; requests never execute this SQL.
 export const serviceBindingSchemaSQL = `
+CREATE UNIQUE INDEX IF NOT EXISTS hosting_project_customer_key ON webdock_auth.hosting_project(project_id,customer_id);
 CREATE UNIQUE INDEX IF NOT EXISTS hosting_app_project_identity ON webdock_auth.hosting_app(id,project_id);
 CREATE TABLE IF NOT EXISTS webdock_auth.hosting_service_binding (
  id varchar PRIMARY KEY DEFAULT webdock_auth.next_snowflake(),

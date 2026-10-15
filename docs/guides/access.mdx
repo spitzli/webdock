@@ -1,0 +1,24 @@
+---
+title: "Accounts and access"
+description: "Manage account security, workspace membership and website permissions."
+---
+
+Your account identity, workspace membership and website permissions are separate. Changing a customer's contact email does not invite that person or give them access.
+
+## Workspace membership
+
+An authorized administrator invites you. Complete account setup and accept the invitation before opening the workspace. Roles include owner, administrator and member; platform operator permissions are separate. Use the membership controls available to your role. Last-administrator protections can block removal.
+
+## Website access
+
+Owners and administrators of a mapped workspace can receive administrator access to websites in that workspace. Ordinary members need an enabled website grant. An explicitly revoked grant, disabled binding or suspended account can prevent access even when other permissions exist.
+
+Sign in through Console. Website CMS identities are managed by Webdock; they are not independent passwords to reset at each website.
+
+## Account security
+
+At [My account](https://auth.webdock.dev/account), manage passwords, passkeys and multi-factor authentication. Passkeys are bound to `auth.webdock.dev` and require device verification. Operators must complete the required security setup.
+
+Central sign-out invalidates access tied to the current session. Other sessions are managed separately. OAuth clients must handle expired or revoked access.
+
+<Note>Browser cookies are host-specific. Your first Console visit may establish a new application session through central sign-in, even if you previously used Studio.</Note>

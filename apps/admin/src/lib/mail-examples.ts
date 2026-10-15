@@ -1,9 +1,9 @@
-export const mailSendExample=`curl https://auth.webdock.dev/api/mail/v1/emails \\
+export const mailSendExample=`curl https://api.webdock.dev/api/mail/v1/emails \\
   -H "Authorization: Bearer $WEBDOCK_MAIL_API_KEY" \\
   -H "Content-Type: application/json" \\
   -H "Idempotency-Key: order-42-receipt" \\
   -d '{"from":"Shop <mail@example.com>","to":"delivered@test.mail.webdock.dev","subject":"Receipt","text":"Thank you."}'`;
-export const mailFetchExample=`const response = await fetch("https://auth.webdock.dev/api/mail/v1/emails", {
+export const mailFetchExample=`const response = await fetch("https://api.webdock.dev/api/mail/v1/emails", {
   method: "POST",
   headers: {
     Authorization: "Bearer " + process.env.WEBDOCK_MAIL_API_KEY,

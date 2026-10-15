@@ -158,3 +158,86 @@ test("an ALL protocol mount cannot silently shadow a method-specific handler", a
     "collision",
   );
 });
+
+test("explicit mail aliases preserve the request and do not expose other hosts or protocols", async () => {
+  const cfg = config();
+  const app = await createApp(cfg, {
+    mounts: [
+      {
+        app: new Elysia().post(
+          "/api/mail/v1/emails",
+          async ({ request }) => {
+            if (request.headers.get("authorization") !== "Bearer fixture")
+              return new Response(null, { status: 401 });
+            return Response.json({
+              body: await request.text(),
+              key: request.headers.get("idempotency-key"),
+            });
+          },
+          { parse: "none" },
+        ),
+        host: cfg.apiOrigin,
+        aliases: [cfg.authOrigin],
+        category: "mail_key",
+      },
+      {
+        app: new Elysia().post("/api/mail/gateway", () => "private gateway"),
+        host: cfg.authOrigin,
+        category: "agent",
+      },
+    ],
+  });
+  const body = ' { "subject": "Grüße" }\n';
+  for (const origin of [cfg.apiOrigin, cfg.authOrigin]) {
+    const response = await app.handle(
+      new Request(origin + "/api/mail/v1/emails", {
+        method: "POST",
+        body,
+        headers: {
+          authorization: "Bearer fixture",
+          "idempotency-key": "same-message",
+        },
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+    expect(await response.json()).toEqual({ body, key: "same-message" });
+    expect(
+      (
+        await app.handle(
+          new Request(origin + "/api/mail/v1/emails", { method: "POST", body }),
+        )
+      ).status,
+    ).toBe(401);
+  }
+  for (const origin of [cfg.studioOrigin, "https://foreign.invalid"])
+    expect(
+      (
+        await app.handle(
+          new Request(origin + "/api/mail/v1/emails", { method: "POST", body }),
+        )
+      ).status,
+    ).toBe(404);
+  expect(
+    (
+      await app.handle(
+        new Request(cfg.apiOrigin + "/api/mail/gateway", { method: "POST" }),
+      )
+    ).status,
+  ).toBe(404);
+});
+
+test("mount aliases must be explicitly configured trusted origins", async () => {
+  await expect(
+    createApp(config(), {
+      mounts: [
+        {
+          app: new Elysia().get("/alias", () => "private"),
+          host: "http://localhost:3130",
+          aliases: ["https://foreign.invalid"],
+          category: "public",
+        },
+      ],
+    }),
+  ).rejects.toThrow("Unknown mount host");
+});

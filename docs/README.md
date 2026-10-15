@@ -1,55 +1,75 @@
-# Mintlify Starter Kit
+# Webdock documentation
 
-Use the starter kit to get your docs deployed and ready to customize.
+Mintlify root: this `docs/` directory. Configure the Mintlify Git connection for
+`spitzli/webdock`, branch `main`, and directory `docs`.
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+## Local preview
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
+Use Node.js 24:
 
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
-
-## AI-assisted writing
-
-Set up your AI coding tool to work with Mintlify:
-
-```bash
-npx skills add https://mintlify.com/docs
+```sh
+npm install -g mint
+cd docs
+mint dev --no-open
 ```
 
-This command installs Mintlify's documentation skill for your configured AI tools like Claude Code, Cursor, Windsurf, and others. The skill includes component reference, writing standards, and workflow guidance.
+## Checks
 
-See the [AI tools guides](/ai-tools) for tool-specific setup.
+From the repository root:
 
-## Development
-
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
-
-```
-npm i -g mint
+```sh
+bun docs/scripts/export-mail-openapi.ts --check
 ```
 
-Run the following command at the root of your documentation, where your `docs.json` is located:
+From `docs/`:
 
+```sh
+mint validate
+mint broken-links
 ```
-mint dev
+
+## Structure
+
+- `index.mdx`, `quickstart.mdx`, `guides/`: customer and product documentation.
+- `developers/`: authentication, MCP, registry, Mail, CMS and contribution guides.
+- `openapi/mail.json`: generated Mail API reference with 29 operations.
+- `docs.json`: navigation, branding and API-reference configuration.
+- `.mintignore`: explicit publication exclusions.
+
+Internal architecture, operations, plans/specifications, verification records
+and UX inventories remain in Git and are excluded from Mintlify. Do not publish
+them by merely removing their navigation entries. Do not modify old evidence to
+make it appear current; use current source to update the public guides.
+
+## Update the Mail contract
+
+```sh
+bun docs/scripts/export-mail-openapi.ts
+bun docs/scripts/export-mail-openapi.ts --check
 ```
 
-View your local preview at `http://localhost:3000`.
+The exporter calls `mailOpenAPI()` from `apps/api`, adds readable operation titles
+and groups, and resolves the relative server URL to `https://api.webdock.dev/api/mail/v1`.
+Paths, authentication, parameters and schemas remain unchanged. Review the JSON change with the source
+contract change. The documentation playground is disabled; no live send is part
+of documentation validation.
 
-## Publishing changes
+The imported starter's MIT notice remains in `LICENSE`. The site now uses the
+existing Webdock logo and icon. Follow `AGENTS.md` and the public documentation
+maintenance page when adding pages.
 
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
+## Content sources
 
-## Need help?
+Public guides were checked against the current `apps/api` services and the
+Console navigation, with these internal records used for rollout boundaries:
 
-### Troubleshooting
+- `verification/2026-10-14-console-domain.md`: browser vs. protocol origins.
+- `verification/2026-10-14-api-production.md`: API and frontend ownership.
+- `architecture/customer-tenants.md`: membership and website authorization.
+- `architecture/studio-integrations.md`: registry and OAuth contracts, checked against current handlers.
+- `operations/managed-postgresql.md`: pilot, storage and backup limits.
+- `verification/webdock-mail-relaykit-acceptance.md`: Mail implementation vs. release acceptance.
+- `operations/polar.md`: accepted agreements and sandbox/live separation.
 
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
-
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+Do not expose these source records through Mintlify. Recheck current source
+and newer rollout evidence when updating a public claim.

@@ -1,0 +1,39 @@
+---
+title: "Send your first message"
+description: "Use a simulator recipient before sending through an enabled Mail connection."
+---
+
+You need an enabled Mail connection, a verified sender domain and a Webdock Mail API key. Keep the key in a private server-side environment variable named `WEBDOCK_MAIL_API_KEY`.
+
+<Steps>
+  <Step title="Prepare the sender">Follow [Mail setup](/guides/mail). Replace the example sender below with an address on your verified domain.</Step>
+  <Step title="Use a simulator recipient">The `delivered@test.mail.webdock.dev` recipient simulates delivery without sending to an external inbox. Simulator results do not prove live provider delivery.</Step>
+  <Step title="Submit once">Use one stable idempotency key for the logical message. Keep the same body and key when retrying that request.</Step>
+</Steps>
+
+```bash
+curl --fail-with-body 'https://api.webdock.dev/api/mail/v1/emails' \
+  -H "Authorization: Bearer $WEBDOCK_MAIL_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: order-42-receipt' \
+  -d '{
+    "from": "Shop <mail@example.com>",
+    "to": "delivered@test.mail.webdock.dev",
+    "subject": "Receipt",
+    "text": "Thank you for your order."
+  }'
+```
+
+## Inspect the result
+
+Save the returned message ID and inspect its state in Console. Reading message details through the API requires `full_access`; a sending-only key is deliberately narrower.
+
+<Warning>If the API reports `send_outcome_unknown`, inspect its existing `email_id`. Never switch to a new idempotency key to force a resend: the original may already have reached the provider.</Warning>
+
+An accepted response is not proof of delivery. Use message events and recipient state. Before sending to a real recipient, confirm that your connection's live dispatcher and event processing are enabled.
+
+Continue with [Mail API behavior](/developers/mail-api) and [webhooks](/developers/mail-webhooks).
+
+## Existing Auth-host clients
+
+The previous `https://auth.webdock.dev/api/mail/v1` base remains an alias. Use the API host for new integrations. Both addresses share keys, quotas and idempotency records; changing host is not a reason to resend an uncertain message with a new key.

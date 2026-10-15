@@ -188,7 +188,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers =
@@ -204,7 +209,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers = await import("./legacy-auth/api/mail/v1/api-keys/route");
@@ -229,7 +239,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers =
@@ -245,7 +260,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers =
@@ -271,7 +291,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers =
@@ -287,7 +312,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers = await import("./legacy-auth/api/mail/v1/domains/route");
@@ -312,7 +342,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers =
@@ -328,7 +363,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers =
@@ -354,7 +394,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers =
@@ -370,7 +415,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers = await import("./legacy-auth/api/mail/v1/emails/route");
@@ -395,7 +445,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers = await import("./legacy-auth/api/mail/v1/logs/[id]/route");
@@ -410,7 +465,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers = await import("./legacy-auth/api/mail/v1/logs/route");
@@ -425,7 +485,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers =
@@ -441,7 +506,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "public" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "public",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers =
@@ -457,7 +527,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers =
@@ -483,7 +558,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers =
@@ -499,7 +579,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers =
@@ -515,7 +600,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers =
@@ -531,7 +621,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers =
@@ -567,7 +662,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("mail")) {
     const handlers = await import("./legacy-auth/api/mail/v1/webhooks/route");
@@ -592,7 +692,12 @@ export async function legacyAuthProtocols(config: ApiConfig): Promise<Mount[]> {
         ]),
       { parse: "none" },
     );
-    mounts.push({ app, host: config.authOrigin, category: "mail_key" });
+    mounts.push({
+      app,
+      host: config.apiOrigin,
+      aliases: [config.authOrigin],
+      category: "mail_key",
+    });
   }
   if (config.domains.includes("auth")) {
     const handlers = await import("./legacy-auth/api/mcp/introspect/route");

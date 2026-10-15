@@ -1,54 +1,124 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "name": "Webdock",
+  "description": "Product guides and developer documentation for Webdock Console, hosting, websites and Mail.",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#B84F18",
+    "light": "#FF9255",
+    "dark": "#D96529"
   },
   "favicon": "/favicon.svg",
-  "navigation": {
-    "pages": [
-      {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "quickstart",
-          "project-setup"
-        ]
-      }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
   "logo": {
     "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "dark": "/logo/dark.svg",
+    "href": "/"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": [
+              "index",
+              "quickstart",
+              "guides/console",
+              "guides/access"
+            ]
+          },
+          {
+            "group": "Products",
+            "pages": [
+              "guides/websites",
+              "guides/applications",
+              "guides/project-setup",
+              "guides/storage",
+              "guides/databases",
+              "guides/mail",
+              "guides/plans-and-billing"
+            ]
+          },
+          {
+            "group": "Your infrastructure (BYOK)",
+            "pages": [
+              "guides/byok",
+              "guides/byok-kubernetes",
+              "guides/byok-vercel",
+              "guides/byok-mail"
+            ]
+          },
+          {
+            "group": "Help",
+            "pages": [
+              "guides/troubleshooting"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Developers",
+        "groups": [
+          {
+            "group": "Integrations",
+            "pages": [
+              "developers/overview",
+              "developers/authentication",
+              "developers/mcp",
+              "developers/byok",
+              "developers/registry",
+              "developers/website-integration"
+            ]
+          },
+          {
+            "group": "Mail",
+            "pages": [
+              "developers/mail-quickstart",
+              "developers/mail-api",
+              "developers/mail-webhooks"
+            ]
+          },
+          {
+            "group": "Contribute",
+            "pages": [
+              "developers/local-development",
+              "developers/documentation"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Mail API reference",
+        "groups": [
+          {
+            "group": "Mail API",
+            "openapi": "/openapi/mail.json"
+          }
+        ]
+      }
+    ]
   },
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:support@mintlify.com"
+        "label": "Website",
+        "href": "https://webdock.dev"
+      },
+      {
+        "label": "Source",
+        "href": "https://github.com/spitzli/webdock"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
+      "label": "Open Console",
+      "href": "https://console.webdock.dev"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/spitzli/webdock"
     }
   },
   "contextual": {
@@ -57,17 +127,19 @@
       "view",
       "chatgpt",
       "claude",
-      "perplexity",
-      "mcp",
-      "cursor",
-      "vscode"
+      "mcp"
     ]
   },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+  "api": {
+    "playground": {
+      "display": "none"
+    },
+    "examples": {
+      "languages": [
+        "curl",
+        "javascript",
+        "python"
+      ]
     }
   }
 }

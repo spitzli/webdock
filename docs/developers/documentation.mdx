@@ -1,0 +1,50 @@
+---
+title: "Maintain these docs"
+description: "Add Mintlify pages, update navigation and keep the API reference in sync."
+---
+
+The documentation root is `docs/`. Public pages use MDX with YAML frontmatter; navigation and branding live in `docs.json`.
+
+## Preview and validate
+
+Install the Mintlify CLI with Node.js 24, then run from the documentation root:
+
+```bash
+npm install -g mint
+cd docs
+mint dev --no-open
+```
+
+Before committing:
+
+```bash
+mint validate
+mint broken-links
+```
+
+## Add a page
+
+Give each page a `title` and `description`, use a kebab-case filename, and add its extensionless path to the correct group in `docs.json`. Use root-relative internal links such as `/guides/mail`. Use language tags on fenced code blocks.
+
+Use built-in `Steps` for procedures, `Columns` and `Card` for entry points, and callouts for relevant limits. Prefer short, task-focused pages over copied implementation logs.
+
+## Refresh the Mail reference
+
+From the repository root, use Bun to export the actual API builder:
+
+```bash
+bun docs/scripts/export-mail-openapi.ts
+bun docs/scripts/export-mail-openapi.ts --check
+```
+
+The exporter resolves the relative server URL to the canonical Mail API host and adds readable operation titles and navigation groups. Paths, authentication, parameters and schemas come from the application unchanged. It does not send messages or contact a provider. Review and commit the snapshot together with contract changes.
+
+## Public and internal material
+
+The `.mintignore` file excludes `architecture/`, `operations/`, `superpowers/`, `verification/`, `ux/`, contributor instructions and scripts. These records stay in Git as source evidence and historical context. Do not link a public page to an excluded local file.
+
+Removing a page from navigation alone is not a publication boundary: hidden pages can still be addressable. Keep internal material explicitly excluded.
+
+## Connect the repository
+
+For this monorepo, select `spitzli/webdock`, branch `main`, and documentation directory `docs` in the Mintlify project settings. The connection must already be authorized. Local configuration changes do not prove that the hosted site deployed.

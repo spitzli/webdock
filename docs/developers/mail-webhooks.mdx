@@ -1,0 +1,27 @@
+---
+title: "Mail webhooks"
+description: "Verify signatures and process events without repeating side effects."
+---
+
+Mail webhooks deliver events at least once. Create an HTTPS endpoint through the enabled connection's Mail controls or API. Keep the returned signing secret server-side and separate from your Mail API key.
+
+## Verify before parsing
+
+Read the exact raw request body. The signature uses HMAC-SHA256 over `id.timestamp.rawBody`, with the base64-decoded key after the `whsec_` prefix. Headers are `webhook-id`, `webhook-timestamp` and `webhook-signature`; the signature value starts with `v1,`.
+
+Use a constant-time comparison and reject timestamps outside your accepted replay window. Parsing and reserializing JSON before verification changes the signed bytes. The existing Console integration examples use a five-minute timestamp window.
+
+## Process idempotently
+
+<Steps>
+  <Step title="Verify the signature">Reject invalid signatures and timestamps before processing the payload.</Step>
+  <Step title="Deduplicate the delivery">Store the webhook ID under a unique constraint. A repeated ID must not repeat business side effects.</Step>
+  <Step title="Commit the event and work">Atomically record the accepted event and your durable work or state change. Handle events that arrive late or out of order.</Step>
+  <Step title="Acknowledge after commit">Return a successful response only after durable acceptance. A replay of an already accepted event can return success without repeating the work.</Step>
+</Steps>
+
+## Testing and rotation
+
+Use the delivery history to inspect failures and replay a delivery after fixing the receiver. A replay still requires deduplication. Secret rotation is a separate action; coordinate the receiver with the connection's current signing configuration.
+
+<Note>Simulator events are useful for application testing but do not verify the live provider callback chain. Confirm that live webhook dispatch is enabled before relying on it for production workflows.</Note>

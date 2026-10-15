@@ -1,33 +1,32 @@
-> **First-time setup**: Customize this file for your project. Prompt the user to customize this file for their project.
-> For Mintlify product knowledge (components, configuration, writing standards),
-> install the Mintlify skill: `npx skills add https://mintlify.com/docs`
+# Webdock documentation
 
-# Documentation project instructions
+This directory contains the public Mintlify site and internal repository records.
 
-## About this project
+## Public documentation
 
-- This is a documentation site built on [Mintlify](https://mintlify.com)
-- Pages are MDX files with YAML frontmatter
-- Configuration lives in `docs.json`
-- Use the Mintlify MCP server, `https://mcp.mintlify.com`, to edit content and settings via MCP
-- Use the Mintlify docs MCP server, `https://www.mintlify.com/docs/mcp`, to query information about using Mintlify via MCP
+- Public pages are `index.mdx`, `quickstart.mdx`, `guides/` and `developers/`.
+- `openapi/mail.json` is generated from the API's Mail contract; never hand-edit it.
+- `docs.json` owns branding, navigation and API-reference generation.
+- Use English source text, sentence-case titles and concise task-focused content.
+- Each MDX page needs `title` and `description` frontmatter, an explicit navigation entry and language-tagged code fences.
+- Internal page links are root-relative, extensionless routes. Use built-in Mintlify components.
 
-## Terminology
+## Terminology and evidence
 
-{/* Add product-specific terms and preferred usage */}
-{/* Example: Use "workspace" not "project", "member" not "user" */}
+- Console is the browser UI at `https://console.webdock.dev`; the workspace directory remains `apps/admin`.
+- Studio protocol URLs, OAuth issuer and MCP audiences remain compatibility contracts. Never globally replace them with the Console domain.
+- Distinguish workspaces, projects, applications, websites and database services.
+- CMS instance IDs and Auth website binding IDs are different. Preserve decimal Snowflake IDs as strings.
+- Verify claims against current source and dated evidence. Mark pilot, opt-in and incomplete rollout boundaries; do not describe old plans as delivered features.
+- Keep credentials, customer-specific infrastructure, private inventories and operational evidence out of public pages.
 
-## Style preferences
+## Internal records
 
-{/* Add any project-specific style rules below */}
+`architecture/`, `operations/`, `superpowers/`, `verification/` and `ux/` remain repository material. `.mintignore` excludes them from the site. Preserve their contents unless explicitly asked to edit them; do not mass-convert them into public pages. A hidden navigation page is not an access-control boundary.
 
-- Use active voice and second person ("you")
-- Keep sentences concise — one idea per sentence
-- Use sentence case for headings
-- Bold for UI elements: Click **Settings**
-- Code formatting for file names, commands, paths, and code references
+## Verification
 
-## Content boundaries
-
-{/* Define what should and shouldn't be documented */}
-{/* Example: Don't document internal admin features */}
+From the repository root: `bun docs/scripts/export-mail-openapi.ts --check`.
+From `docs/`: `mint validate` and `mint broken-links`.
+Preview using `mint dev --no-open`; inspect the rendered navigation and pages.
+Consult the official Mintlify documentation for current configuration and components.

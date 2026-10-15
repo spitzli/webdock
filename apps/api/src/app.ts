@@ -83,7 +83,11 @@ export async function createApp(
     const guarded = new Elysia()
       .guard({
         beforeHandle: async ({ request }) => {
-          if (new URL(request.url).origin !== mount.host)
+          if (
+            ![mount.host, ...(mount.aliases ?? [])].includes(
+              new URL(request.url).origin,
+            )
+          )
             return new Response(null, { status: 404 });
           if (
             ["tenant", "operator"].includes(mount.category) &&

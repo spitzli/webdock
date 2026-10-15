@@ -1,0 +1,31 @@
+---
+title: "Mail"
+description: "Choose sending or incoming mail and prepare a verified sender domain."
+---
+
+Mail belongs to your workspace. Connections, domains, keys and message history are checked against its permissions.
+
+| Need | Product boundary |
+| --- | --- |
+| Send transactional messages | Mail API key and verified sender domain |
+| Receive or forward incoming mail | Explicitly enabled incoming-mail service |
+| Use your own supported provider | Operator-enabled connection with separate credentials and limits |
+
+Sending-only does not require a mailbox server. Incoming Mail is a separate activation. Connecting a sender domain does not automatically create mailboxes.
+
+## Prepare a sender domain
+
+<Steps>
+  <Step title="Choose the connection">Open Mail in the correct workspace and select the intended connection.</Step>
+  <Step title="Add a domain">Use a domain you control. Copy the exact DNS records shown for it.</Step>
+  <Step title="Publish and verify DNS">Add the supplied records with your DNS provider, then request verification. Resolve existing-record conflicts before replacing an SPF or other mail record.</Step>
+  <Step title="Create an application key">Create a sending key, restricted to its sender domain where appropriate. Store it in the application's private environment.</Step>
+</Steps>
+
+<Note>The expanded Mail API has a verified implementation contract, but production workers and the provider event chain have separate rollout gates. Availability depends on the enabled connection. Incoming-mail integration and advanced sending features must be confirmed for your workspace.</Note>
+
+Continue with [your first API message](/developers/mail-quickstart) and the [Mail API overview](/developers/mail-api).
+
+## Bring your own sending account
+
+Use the [turboSMTP BYOK guide](/guides/byok-mail) for account credentials, domain verification, application keys and disconnect behavior.

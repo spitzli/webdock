@@ -1,6 +1,6 @@
 # Console project setup — verification, 2026-10-14
 
-Implementation branch: `t3code/console-container-setup`. Specification: [approved design](../superpowers/specs/2026-10-14-console-project-setup-design.md). Usage: [application setup](../project-setup.mdx).
+Implementation branch: `t3code/console-container-setup`. Specification: [approved design](../superpowers/specs/2026-10-14-console-project-setup-design.md). Usage: [application setup](../guides/project-setup.mdx).
 
 ## Delivered behavior
 

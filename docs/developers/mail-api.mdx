@@ -1,0 +1,41 @@
+---
+title: "Mail API behavior"
+description: "Understand the generated reference, credentials, limits and safe retries."
+---
+
+The Mail API base is `https://api.webdock.dev/api/mail/v1`. The **Mail API reference** tab is generated from the same OpenAPI builder as the application, covering messages, batches, domains, keys, webhooks, suppressions, logs and analytics.
+
+<Info>The reference documents the implementation contract. Individual connections and production workers have separate enablement gates. The public documentation does not send authenticated requests from an embedded playground.</Info>
+
+## Authorization
+
+Send `Authorization: Bearer YOUR_KEY`. Use a Webdock Mail key, not a provider key or Console cookie. Sending endpoints accept `sending_access`; reading or managing other resources requires `full_access`, within the key's resource restrictions.
+
+## Request limits
+
+| Limit | Value |
+| --- | --- |
+| JSON body | 4,000,000 bytes |
+| Text and HTML combined | 512 KiB |
+| Requests | 120 per minute per tenant |
+| Attachments | Up to 10, with 2 MiB decoded content in total |
+| Batch | 1–100 messages; no attachments or scheduling in batch items |
+| List page | Default 20, maximum 100; opaque `after` cursor |
+
+Use base64 content for attachments; filesystem paths and remote attachment URLs are unsupported. Consult the generated schema for each operation's fields and response shapes.
+
+## Idempotency and revisions
+
+Use a stable `Idempotency-Key` when sending a message or batch. Completed responses replay for 24 hours. Unknown handoffs remain reserved until reconciliation. Do not change the key to bypass an uncertain result.
+
+Rescheduling and cancellation require the current message revision in `If-Match`. A missing revision returns 428; a stale revision returns 409. Read the current message before making another change.
+
+## Message and recipient state
+
+Acceptance, delivery, bounce and complaint are different events. A batch can have partial outcomes; inspect the batch and individual messages before deciding what to retry. Simulation is marked separately from live sending and is excluded from default analytics unless requested.
+
+The currently verified Turbo transport may provide HTML without a separate text alternative when both are supplied. For inline attachments, follow the documented CID convention: a `content_id` local part is referenced in HTML with the sender domain appended.
+
+## Contract source
+
+The reference snapshot is exported from [the Mail OpenAPI builder](https://github.com/spitzli/webdock/blob/main/apps/api/src/modules/mail/product/openapi.ts). Download the [OpenAPI JSON](https://raw.githubusercontent.com/spitzli/webdock/main/docs/openapi/mail.json) for client tooling. Refresh it whenever the source contract changes; see [documentation maintenance](/developers/documentation).
