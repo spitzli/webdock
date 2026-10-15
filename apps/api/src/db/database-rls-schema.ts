@@ -1,3 +1,4 @@
+import { setupHelperSQL, setupPolicyFor } from "./database-setup-rls";
 import { billingTables, billingPolicy } from "../modules/billing/rls";
 import { createHash } from "node:crypto";
 import { tenantProfileColumns } from "../modules/access/tenant-schema";
@@ -29,7 +30,7 @@ const identity = new Set(
   ),
 );
 const authCustomer = new Set(
-  "tenant_customer hosting_project hosting_limit hosting_operation hosting_reservation hosting_byok_policy hosting_vercel hosting_vercel_flow hosting_turbosmtp hosting_database hosting_database_offer hosting_database_order git_connection git_repository git_flow git_source git_build git_artifact git_release git_vercel_target plan_offer tenant_subscription subscription_history tenant_storage mail_sender_domain mail_tenant_account mail_tracking_domain mail_tracking_operation mail_tracking_settings mail_connection mail_connection_tracking_settings mail_connection_secret mail_provider_operation mail_connection_domain mail_api_key mail_message mail_message_content mail_recipient mail_event mail_suppression mail_webhook mail_webhook_delivery mail_webhook_attempt mail_batch mail_batch_item mail_idempotency mail_usage_period mail_usage_reservation mail_rate_window mail_request_log mail_import_map".split(
+  "hosting_setup hosting_service_binding tenant_customer hosting_project hosting_limit hosting_operation hosting_reservation hosting_byok_policy hosting_vercel hosting_vercel_flow hosting_turbosmtp hosting_database hosting_database_offer hosting_database_order git_connection git_repository git_flow git_source git_build git_artifact git_release git_vercel_target plan_offer tenant_subscription subscription_history tenant_storage mail_sender_domain mail_tenant_account mail_tracking_domain mail_tracking_operation mail_tracking_settings mail_connection mail_connection_tracking_settings mail_connection_secret mail_provider_operation mail_connection_domain mail_api_key mail_message mail_message_content mail_recipient mail_event mail_suppression mail_webhook mail_webhook_delivery mail_webhook_attempt mail_batch mail_batch_item mail_idempotency mail_usage_period mail_usage_reservation mail_rate_window mail_request_log mail_import_map".split(
     " ",
   ),
 );
@@ -231,6 +232,7 @@ CREATE OR REPLACE FUNCTION webdock_rls.worker(purposes text[], cluster text) RET
 CREATE OR REPLACE FUNCTION webdock_rls.customer_allowed(customer text, writing boolean DEFAULT false) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
 DECLARE a jsonb;
 BEGIN
+ IF webdock_rls.worker(ARRAY['hosting-setup']) THEN RETURN webdock_rls.setup_allowed(customer); END IF;
  IF webdock_rls.worker(ARRAY['database-order']) THEN RETURN customer IS NOT NULL AND webdock_rls.request_scope()->>'customerID'=customer; END IF;
  a:=webdock_rls.actor(); IF a IS NULL THEN RETURN false; END IF;
  IF (a->>'operator')::boolean THEN RETURN true; END IF;
@@ -344,6 +346,7 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
     }
   }
   sql.push(helperSQL);
+  sql.push(setupHelperSQL);
   for (const signature of signatures)
     sql.push(
       `ALTER FUNCTION webdock_rls.${signature} OWNER TO webdock_policy_owner; REVOKE ALL ON FUNCTION webdock_rls.${signature} FROM PUBLIC; GRANT EXECUTE ON FUNCTION webdock_rls.${signature} TO webdock_auth_runtime,webdock_worker_runtime,webdock_registry_runtime,webdock_platform_owner;`,
@@ -563,7 +566,10 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
           "mail-webmail-gateway",
           "database-gateway",
         ]);
-      if (t.name.startsWith("hosting_") || t.name === "tenant_customer") {
+      if (
+        (t.name.startsWith("hosting_") && t.name !== "hosting_setup") ||
+        t.name === "tenant_customer"
+      ) {
         const agent = t.columns.includes("cluster_id")
           ? worker(["agent"], col("cluster_id"))
           : t.name === "hosting_database"
@@ -576,6 +582,7 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         if (
           [
             "hosting_project",
+            "hosting_service_binding",
             "hosting_app",
             "hosting_operation",
             "hosting_reservation",
@@ -610,6 +617,8 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         ].includes(t.name)
       )
         read += ` OR webdock_rls.mail_key(${col("customer_id")})`;
+      if (["hosting_database", "hosting_project"].includes(t.name))
+        workRead += ` OR ${worker(["database-gateway"])}`;
       if (t.name === "hosting_turbosmtp")
         workRead += ` OR ${worker(["mail-cron", "mail-send-gateway"])}`;
     } else if (t.name === "app_binding" || t.name === "project_grant") {
@@ -618,6 +627,19 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         t.name === "app_binding"
           ? "webdock_rls.operator()"
           : `webdock_rls.organization_allowed(${col("organization_id")},true) AND EXISTS(SELECT 1 FROM webdock_auth.app_binding b WHERE b.id::text=${col("binding_id")} AND b.organization_id::text=${col("organization_id")})`;
+    } else if (
+      ["managed_database_launch", "managed_database_session"].includes(t.name)
+    ) {
+      const own = `${col("subject")}=webdock_rls.subject() AND ${col("session_id")}=webdock_rls.actor()->>'sessionID' AND webdock_rls.actor()->'preview'='null'::jsonb`;
+      const target = `EXISTS(SELECT 1 FROM webdock_auth.hosting_database d WHERE d.id::text=${col("database_id")} AND webdock_rls.customer_allowed(d.customer_id,true))`;
+      if (t.name === "managed_database_launch") {
+        read = write = `(${own}) AND (${target})`;
+        runtimeUpdate = runtimeDelete = "false";
+      }
+      workRead = worker(["database-gateway"]);
+      workWrite = t.name === "managed_database_session" ? workRead : "false";
+      workUpdate = t.name === "managed_database_launch" ? workRead : "false";
+      workDelete = t.name === "managed_database_session" ? workRead : "false";
     } else if (t.name === "database_binding") {
       read = `webdock_rls.project_allowed(${col("project_id")})`;
       write = "webdock_rls.operator()";
@@ -765,6 +787,7 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         workRead += ` OR (${worker(["database-order"])} AND (${col("availability")}='public' OR webdock_rls.plan_owned(${col("id")}) OR EXISTS(SELECT 1 FROM webdock_auth.hosting_database_offer o WHERE o.plan_revision_id::text=${col("id")} AND webdock_rls.customer_allowed(o.customer_id))))`;
       }
       if (t.name === "hosting_database_backend") {
+        workRead += ` OR ${worker(["database-gateway"])}`;
         read = `webdock_rls.operator() OR webdock_rls.backend_owned(${col("id")}) OR (webdock_rls.actor() IS NOT NULL AND ${col("kind")}='shared-pool' AND ${col("state")}='ready')`;
         write = `webdock_rls.operator() OR (${col("kind")}='dedicated' AND webdock_rls.backend_owned(${col("id")},true))`;
         const order = worker(["database-order"], col("cluster_id"));
@@ -801,6 +824,14 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
       }
     } else known = false;
     if (known) {
+      const setup = setupPolicyFor(t);
+      if (setup) {
+        const previousWrite = workWrite;
+        workRead += ` OR (${setup.read})`;
+        workWrite += ` OR (${setup.write})`;
+        workDelete ??= workUpdate ?? previousWrite;
+        workUpdate = `(${workUpdate ?? previousWrite}) OR (${setup.update ?? setup.write})`;
+      }
       classifiedTables.push(key);
       policy(
         "webdock_auth_runtime",
@@ -814,10 +845,14 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         "webdock_worker_runtime",
         workRead,
         workWrite,
-        true,
+        t.name !== "hosting_setup",
         workUpdate,
         workDelete,
       );
+      if (t.schema === "webdock_auth" && t.name === "hosting_setup")
+        sql.push(
+          `GRANT SELECT ON ${q} TO webdock_worker_runtime; GRANT UPDATE(state,reason,resources,steps,generation,lease_until,next_attempt_at,updated_at) ON ${q} TO webdock_worker_runtime;`,
+        );
       if (t.schema === "webdock_admin" && t.name === "customers") {
         const profile = [...tenantProfileColumns, "updated_at"];
         sql.push(
@@ -830,6 +865,14 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         );
       if (t.schema === "webdock_auth" && t.name === "hosting_database_backend")
         sql.push(`REVOKE DELETE ON ${q} FROM webdock_auth_runtime;`);
+      if (t.schema === "webdock_auth" && t.name === "managed_database_launch")
+        sql.push(
+          `REVOKE UPDATE,DELETE ON ${q} FROM webdock_auth_runtime; REVOKE INSERT,DELETE ON ${q} FROM webdock_worker_runtime; REVOKE UPDATE ON ${q} FROM webdock_worker_runtime; GRANT UPDATE(consumed_at) ON ${q} TO webdock_worker_runtime;`,
+        );
+      if (t.schema === "webdock_auth" && t.name === "managed_database_session")
+        sql.push(
+          `REVOKE ALL ON ${q} FROM webdock_auth_runtime; REVOKE UPDATE ON ${q} FROM webdock_worker_runtime;`,
+        );
       // The app's identity joins need no password/token columns or arbitrary identity mutations.
       if (t.schema === "webdock_auth" && t.name === "session") {
         sql.push(

@@ -326,6 +326,9 @@
   "A connected agent does not prove workload isolation, storage or TLS readiness.": [
     "Ein verbundener Agent weist weder die Isolation von Anwendungen noch einsatzbereiten Speicher oder TLS nach."
   ],
+  "A connected service needs attention before deployment.": [
+    "Ein verbundener Dienst muss vor dem Deployment geprüft werden."
+  ],
   "A contact address does not grant access. Invite members from Tenant & invitations after saving.": [
     "Eine Kontaktadresse gewährt keinen Zugriff. Lade nach dem Speichern Mitglieder unter Mandant & Einladungen ein."
   ],
@@ -334,6 +337,9 @@
   ],
   "A current preview hash is required.": [
     "Eine aktuelle Löschvorschau ist erforderlich."
+  ],
+  "A database in the same project and cluster is required.": [
+    "Die Datenbank muss zum selben Projekt und Cluster gehören."
   ],
   "A dedicated address for your work in progress. Review it together, share feedback and make the next version better.": [
     "Eine eigene Adresse für dein laufendes Projekt. Gemeinsam ansehen, Rückmeldungen teilen und die nächste Version verbessern."
@@ -404,6 +410,9 @@
   "A separate SQL database and roles in a shared pool; 1 GiB logical quota, no dedicated RAM guarantee. Verify TLS, isolation, quotas, monitoring, backup and restore before public approval.": [
     "Eigene SQL-Datenbank und Rollen im gemeinsamen Pool; 1 GiB logisches Kontingent, keine eigene RAM-Garantie. TLS, Isolation, Quoten, Überwachung sowie Backup/Restore vor öffentlicher Freigabe abnehmen."
   ],
+  "A service connection needs attention before setup can finish.": [
+    "Eine Dienstverbindung muss geprüft werden, bevor die Einrichtung abgeschlossen werden kann."
+  ],
   "A tenant can manage up to 50 tracking domains.": [
     "Ein Mandant kann bis zu 50 Tracking-Domains verwalten."
   ],
@@ -430,6 +439,9 @@
   ],
   "Accept offer and assign plan": [
     "Angebot annehmen und Tarif zuweisen"
+  ],
+  "Accept order and deploy": [
+    "Bestellung bestätigen und bereitstellen"
   ],
   "Accept the GitHub App Actions read permission first.": [
     "Akzeptiere zuerst die Actions-Leseberechtigung der GitHub-App."
@@ -545,6 +557,9 @@
   "Accounts page ": [
     "Konten-Seite "
   ],
+  "Action required": [
+    "Aktion erforderlich"
+  ],
   "Actions": [
     "Aktionen"
   ],
@@ -590,6 +605,9 @@
   "Add Webdock to your authenticator": [
     "Webdock zur Authenticator-App hinzufügen"
   ],
+  "Add a Dockerfile in this directory before deploying from Git.": [
+    "Füge vor dem Git-Deployment eine Dockerfile in diesem Verzeichnis hinzu."
+  ],
   "Add a customer and a project to keep its website and CMS details together.": [
     "Lege einen Kunden und ein Projekt an, um Website- und CMS-Daten gemeinsam zu verwalten."
   ],
@@ -604,6 +622,9 @@
   ],
   "Add and verify a sender domain in Mail before creating a tracking domain.": [
     "Füge unter Mail eine Absenderdomain hinzu und bestätige sie, bevor du eine Tracking-Domain erstellst."
+  ],
+  "Add application": [
+    "Anwendung hinzufügen"
   ],
   "Add appointment": [
     "Termin eintragen"
@@ -836,6 +857,9 @@
   "Allow own turboSMTP account": [
     "Eigenes turboSMTP-Konto erlauben"
   ],
+  "Allow repository builds and custom container images": [
+    "Repository-Builds und eigene Container-Images erlauben"
+  ],
   "Allowances exceed the supported range.": [
     "Die Kontingente überschreiten den unterstützten Bereich."
   ],
@@ -889,6 +913,12 @@
   ],
   "An administrator is required to restore versions.": [
     "Zum Wiederherstellen von Versionen sind Administratorrechte erforderlich."
+  ],
+  "An application already uses this name.": [
+    "Eine Anwendung verwendet diesen Namen bereits."
+  ],
+  "An environment variable already uses this name.": [
+    "Eine Umgebungsvariable verwendet diesen Namen bereits."
   ],
   "An exact commit is required.": [
     "Ein bestimmter Commit ist erforderlich."
@@ -977,14 +1007,26 @@
   "Application configuration": [
     "Anwendungskonfiguration"
   ],
+  "Application connections": [
+    "Anwendungsverbindungen"
+  ],
   "Application controls": [
     "Anwendung steuern"
   ],
   "Application deployment is not enabled yet.": [
     "Die Anwendungsbereitstellung ist noch nicht aktiviert."
   ],
+  "Application deployment needs attention. Review its operation and logs.": [
+    "Das Deployment muss geprüft werden. Öffne den Vorgang und die Logs der Anwendung."
+  ],
   "Application environment encryption is not configured.": [
     "Die Verschlüsselung für Umgebungsvariablen ist nicht eingerichtet."
+  ],
+  "Application is deleted.": [
+    "Die Anwendung wurde gelöscht."
+  ],
+  "Application is unavailable.": [
+    "Die Anwendung ist nicht verfügbar."
   ],
   "Application logs": [
     "Anwendungsprotokolle"
@@ -992,11 +1034,23 @@
   "Application name": [
     "Anwendungsname"
   ],
+  "Application project is unavailable.": [
+    "Das Projekt der Anwendung ist nicht verfügbar."
+  ],
   "Application role": [
     "Anwendungsrolle"
   ],
   "Application schema": [
     "Anwendungsschema"
+  ],
+  "Application setup": [
+    "Anwendungseinrichtung"
+  ],
+  "Application setup requires project management access.": [
+    "Für die Einrichtung benötigst du Verwaltungsrechte für das Projekt."
+  ],
+  "Application source": [
+    "Quelle der Anwendung"
   ],
   "Applications": [
     "Anwendungen"
@@ -1009,6 +1063,9 @@
   ],
   "Applications run without root or API tokens, with a read-only filesystem and temporary /tmp storage. Cached images only; no unverified registry pulls.": [
     "Anwendungen laufen ohne Root-Rechte oder API-Tokens, mit schreibgeschütztem Dateisystem und temporärem /tmp-Speicher. Nur vorhandene Images; kein Abruf von ungeprüften Registries."
+  ],
+  "Applications, connected services and deployment activity in one place.": [
+    "Anwendungen, verbundene Dienste und Deployments an einem Ort."
   ],
   "Applications, databases and navigation": [
     "Anwendungen, Datenbanken und Navigation"
@@ -1060,6 +1117,9 @@
   ],
   "Approve release": [
     "Release freigeben"
+  ],
+  "Approve this exact release in Deployments to continue.": [
+    "Gib dieses Release unter Deployments frei, um fortzufahren."
   ],
   "Apps and bots": [
     "Apps und Bots"
@@ -1115,6 +1175,12 @@
   "Ask an owner or admin to set up sending for this tenant.": [
     "Bitte einen Owner oder Admin, den Versand für diesen Mandanten einzurichten."
   ],
+  "Ask your operator to assign a managed sending account.": [
+    "Bitte deinen Betreiber, ein verwaltetes Versandkonto zuzuweisen."
+  ],
+  "Ask your operator to assign hosting before deploying applications.": [
+    "Bitte deinen Betreiber, dem Projekt vor dem Deployment Hosting zuzuweisen."
+  ],
   "Ask your operator to prepare a sending connection.": [
     "Bitte den Betreiber, eine Versandverbindung einzurichten."
   ],
@@ -1136,8 +1202,14 @@
   "Assign customer": [
     "Kunde zuweisen"
   ],
+  "Assign hosting": [
+    "Hosting zuweisen"
+  ],
   "Assign individual plan": [
     "Individuellen Plan zuweisen"
+  ],
+  "Assign managed container hosting before setting up this application.": [
+    "Weise dem Projekt vor der Einrichtung verwaltetes Container-Hosting zu."
   ],
   "Assign plan": [
     "Tarif zuweisen"
@@ -1196,6 +1268,9 @@
   "Authorize access": [
     "Zugriff genehmigen"
   ],
+  "Automatically publish successful builds": [
+    "Erfolgreiche Builds automatisch veröffentlichen"
+  ],
   "Automatically renew access during your working session": [
     "Zugriff während deiner Arbeitssitzung automatisch erneuern"
   ],
@@ -1216,6 +1291,9 @@
   ],
   "Available resources": [
     "Verfügbare Ressourcen"
+  ],
+  "Awaiting first deployment": [
+    "Wartet auf das erste Deployment"
   ],
   "Awaiting payment confirmation": [
     "Zahlungsbestätigung ausstehend"
@@ -1418,6 +1496,12 @@
   "Browse tables and query your project data.": [
     "Tabellen durchsuchen und Projektdaten abfragen."
   ],
+  "Build and deploy from your repository.": [
+    "Aus deinem Repository bauen und bereitstellen."
+  ],
+  "Build application": [
+    "Anwendung bauen"
+  ],
   "Build environment exceeds the allowed size.": [
     "Die Build-Umgebung überschreitet die zulässige Größe."
   ],
@@ -1426,6 +1510,9 @@
   ],
   "Build environment variables": [
     "Build-Umgebungsvariablen"
+  ],
+  "Build failed. Review the build logs before retrying.": [
+    "Der Build ist fehlgeschlagen. Prüfe vor dem nächsten Versuch die Build-Logs."
   ],
   "Build failed. Review the logs and setup requirements.": [
     "Build fehlgeschlagen. Prüfe die Protokolle und Einrichtungsvoraussetzungen."
@@ -1450,6 +1537,9 @@
   ],
   "Build recipe": [
     "Build-Verfahren"
+  ],
+  "Build settings": [
+    "Build-Einstellungen"
   ],
   "Build variables must be explicitly approved and cannot contain provider credentials.": [
     "Build-Variablen müssen ausdrücklich freigegeben sein und dürfen keine Anbieter-Zugangsdaten enthalten."
@@ -1697,6 +1787,9 @@
   "Choose a customer for their infrastructure, Mail, Git deployment connections and measurement sources.": [
     "Wähle einen Kunden, um dessen Infrastruktur, Mail, Git-Deployment-Verbindungen und Messquellen zu verwalten."
   ],
+  "Choose a database": [
+    "Datenbank auswählen"
+  ],
   "Choose a default mail limit from 0 to 1,000,000,000.": [
     "Wähle ein Standard-Mail-Limit zwischen 0 und 1.000.000.000."
   ],
@@ -1715,11 +1808,20 @@
   "Choose a project to order and manage PostgreSQL.": [
     "Wähle ein Projekt, um PostgreSQL zu bestellen und zu verwalten."
   ],
+  "Choose a ready database in the same project and cluster.": [
+    "Wähle eine betriebsbereite Datenbank im selben Projekt und Cluster."
+  ],
   "Choose a repository": [
     "Repository auswählen"
   ],
   "Choose a section…": [
     "Abschnitt auswählen …"
+  ],
+  "Choose a sender domain": [
+    "Absenderdomain auswählen"
+  ],
+  "Choose a separate variable name for the Mail key.": [
+    "Wähle für den Mail-Schlüssel einen eigenen Variablennamen."
   ],
   "Choose a single DNS label such as links.": [
     "Wähle einen einzelnen DNS-Namen, zum Beispiel links."
@@ -1751,6 +1853,9 @@
   "Choose administrator or member.": [
     "Wähle Admin oder Mitglied."
   ],
+  "Choose an account": [
+    "Konto auswählen"
+  ],
   "Choose an active Studio project.": [
     "Wähle ein aktives Studio-Projekt aus."
   ],
@@ -1759,6 +1864,9 @@
   ],
   "Choose an active project.": [
     "Wähle ein aktives Projekt aus."
+  ],
+  "Choose an application and a ready service before connecting.": [
+    "Wähle eine Anwendung und einen betriebsbereiten Dienst aus."
   ],
   "Choose an area": [
     "Bereich wählen"
@@ -1772,8 +1880,14 @@
   "Choose an installation and repository you can access. GitHub consent is completed on GitHub.": [
     "Wähle eine Installation und ein Repository, auf die du Zugriff hast. Die Freigabe erfolgt bei GitHub."
   ],
+  "Choose distinct service variables and remove conflicting manual variables before deploying.": [
+    "Wähle unterschiedliche Dienstvariablen und entferne kollidierende manuelle Variablen vor der Bereitstellung."
+  ],
   "Choose enabled or disabled.": [
     "Wähle aktiviert oder deaktiviert."
+  ],
+  "Choose hosting for this project": [
+    "Hosting für dieses Projekt auswählen"
   ],
   "Choose how you send": [
     "Versandart wählen"
@@ -1793,6 +1907,9 @@
   "Choose repositories from a GitHub App installation and link them to Webdock projects.": [
     "Wähle Repositorys aus einer GitHub-App-Installation und verknüpfe sie mit Webdock-Projekten."
   ],
+  "Choose services now. Webdock will connect them to the application securely.": [
+    "Wähle die benötigten Dienste. Webdock verbindet sie sicher mit der Anwendung."
+  ],
   "Choose state": [
     "Status auswählen"
   ],
@@ -1807,6 +1924,9 @@
   ],
   "Choose which projects Webdock can manage. Vercel continues to bill your own team.": [
     "Wähle die Projekte aus, die Webdock verwalten darf. Vercel rechnet weiterhin mit deinem eigenen Team ab."
+  ],
+  "Choose your source": [
+    "Quelle auswählen"
   ],
   "Choose {label}": [
     "{label} auswählen"
@@ -1943,6 +2063,9 @@
   "Complaint": [
     "Beschwerde"
   ],
+  "Complete": [
+    "Abgeschlossen"
+  ],
   "Complete GitHub authorization first.": [
     "Schließe zuerst die GitHub-Autorisierung ab."
   ],
@@ -1954,6 +2077,12 @@
   ],
   "Complete the GitHub App setup before connecting.": [
     "Schließe die Einrichtung der GitHub-App ab, bevor du sie verbindest."
+  ],
+  "Complete the first deployment before using application controls.": [
+    "Schließe zuerst das erste Deployment ab, bevor du die Anwendung steuerst."
+  ],
+  "Complete these steps first": [
+    "Schließe zuerst diese Schritte ab"
   ],
   "Complete your account security setup before continuing to your workspace.": [
     "Schließe die Sicherheitseinrichtung deines Kontos ab, bevor du zu deinem Arbeitsbereich wechselst."
@@ -1988,17 +2117,26 @@
   "Configure a deployment target before enabling Git deployments.": [
     "Konfiguriere ein Deployment-Ziel, bevor du Git-Deployments aktivierst."
   ],
+  "Configure a sending connection and verify its domain below, then refresh the available services.": [
+    "Richte unten eine Versandverbindung ein und verifiziere ihre Domain. Aktualisiere danach die verfügbaren Dienste."
+  ],
   "Configure an explicitly bound platform Vercel deployment credential.": [
     "Konfiguriere ausdrücklich zugeordnete Zugangsdaten für Vercel-Deployments der Plattform."
   ],
   "Configure build variables in GitHub Actions before using external builds.": [
     "Konfiguriere Build-Variablen in GitHub Actions, bevor du externe Builds verwendest."
   ],
+  "Configure deployment source": [
+    "Deployment-Quelle einrichten"
+  ],
   "Configure deployments": [
     "Deployments einrichten"
   ],
   "Configure sending": [
     "Versand einrichten"
+  ],
+  "Configure source": [
+    "Quelle einrichten"
   ],
   "Configure the GitHub App ID and private key in the private Auth environment.": [
     "Konfiguriere die GitHub-App-ID und den privaten Schlüssel in der privaten Auth-Umgebung."
@@ -2018,8 +2156,17 @@
   "Configure verified artifact and registry storage.": [
     "Konfiguriere überprüften Speicher für Artefakte und die Registry."
   ],
+  "Configure verified build capacity before deploying from Git.": [
+    "Vor Git-Deployments muss geprüfte Build-Kapazität eingerichtet werden."
+  ],
+  "Configure verified native Mail API egress before connecting applications.": [
+    "Vor dem Verbinden muss der geprüfte Netzwerkzugriff auf die native Mail-API eingerichtet werden."
+  ],
   "Configure webhook in Polar": [
     "Webhook in Polar einrichten"
+  ],
+  "Configure your application": [
+    "Anwendung konfigurieren"
   ],
   "Configured resources": [
     "Konfigurierte Ressourcen"
@@ -2072,11 +2219,17 @@
   "Confirm that you want to remove the saved Mail credentials.": [
     "Bestätige, dass du die gespeicherten Mail-Zugangsdaten entfernen möchtest."
   ],
+  "Confirm the monthly price and terms.": [
+    "Bestätige den monatlichen Preis und die Bedingungen."
+  ],
   "Confirm this change first.": [
     "Bestätige zuerst diese Änderung."
   ],
   "Confirm this change.": [
     "Diese Änderung bestätigen."
+  ],
+  "Confirm this setup again before continuing.": [
+    "Bestätige diese Einrichtung erneut, bevor du fortfährst."
   ],
   "Confirm your identity": [
     "Deine Identität bestätigen"
@@ -2129,17 +2282,32 @@
   "Connect a sending account to view Mail activity.": [
     "Verbinde ein Versandkonto, um die Mail-Aktivität anzuzeigen."
   ],
+  "Connect a source, choose services and review everything before deployment.": [
+    "Verbinde eine Quelle, wähle Dienste und prüfe alles vor dem Deployment."
+  ],
   "Connect an MCP client": [
     "MCP-Client verbinden"
   ],
+  "Connect an authorized GitHub repository first.": [
+    "Verbinde zuerst ein freigegebenes GitHub-Repository."
+  ],
   "Connect an existing customer domain, including DNS verification. Domain purchase, transfer and renewal fees are excluded.": [
     "Anschluss einer vorhandenen Kundendomain einschließlich DNS-Prüfung. Kein Domainkauf, Transfer oder Verlängerungspreis enthalten."
+  ],
+  "Connect an existing database": [
+    "Vorhandene Datenbank verbinden"
+  ],
+  "Connect an existing service": [
+    "Vorhandenen Dienst verbinden"
   ],
   "Connect cluster agent": [
     "Cluster-Agent verbinden"
   ],
   "Connect each Blob store or a tenant’s exclusive path prefix. Credentials are saved privately and are never displayed. Production and preview storage are measured separately.": [
     "Verbinde jeden Blob-Speicher oder das exklusive Pfadpräfix eines Mandanten. Zugangsdaten werden vertraulich gespeichert und nie angezeigt. Produktiv- und Vorschau-Speicher werden getrennt erfasst."
+  ],
+  "Connect native Mail sending": [
+    "Nativen Mailversand verbinden"
   ],
   "Connect own cluster": [
     "Eigenes Cluster verbinden"
@@ -2152,6 +2320,15 @@
   ],
   "Connect selected Vercel projects to Webdock Studio with read-only access.": [
     "Verbinde ausgewählte Vercel-Projekte mit Webdock Studio über einen Lesezugriff."
+  ],
+  "Connect service": [
+    "Dienst verbinden"
+  ],
+  "Connect services": [
+    "Dienste verbinden"
+  ],
+  "Connect services to applications. Disconnecting a service keeps its data.": [
+    "Verbinde Dienste mit Anwendungen. Beim Trennen bleiben die Daten des Dienstes erhalten."
   ],
   "Connect storage": [
     "Speicher verbinden"
@@ -2225,6 +2402,9 @@
   "Connected read-only Vercel integration": [
     "Schreibgeschützte Vercel-Integration verbunden"
   ],
+  "Connected services": [
+    "Verbundene Dienste"
+  ],
   "Connecting Vercel is optional; without it, Studio cannot display live Vercel information. You can restrict the projects selected during installation and revoke access at Vercel.": [
     "Die Verbindung mit Vercel ist optional. Ohne sie kann Studio keine aktuellen Vercel-Informationen anzeigen. Du kannst die bei der Installation ausgewählten Projekte einschränken und den Zugriff bei Vercel widerrufen."
   ],
@@ -2233,6 +2413,9 @@
   ],
   "Connecting to mailbox…": [
     "Verbindung zum Postfach wird hergestellt…"
+  ],
+  "Connecting…": [
+    "Verbindung wird hergestellt…"
   ],
   "Connection": [
     "Verbindung"
@@ -2258,6 +2441,9 @@
   "Connection successful. {count} subaccount available.": [
     "Verbindung erfolgreich. {count} Unterkonto verfügbar.",
     "Verbindung erfolgreich. {count} Unterkonten verfügbar."
+  ],
+  "Connection variable": [
+    "Verbindungsvariable"
   ],
   "Connections": [
     "Verbindungen"
@@ -2312,6 +2498,9 @@
   ],
   "Container arguments (JSON array)": [
     "Container-Argumente (JSON-Array)"
+  ],
+  "Container image": [
+    "Container-Image"
   ],
   "Container images are not available for this provider.": [
     "Container-Images sind für diesen Anbieter nicht verfügbar."
@@ -2376,11 +2565,20 @@
   "Continue": [
     "Weiter"
   ],
+  "Continue an existing setup": [
+    "Vorhandene Einrichtung fortsetzen"
+  ],
   "Continue existing payment": [
     "Bestehende Zahlung fortsetzen"
   ],
+  "Continue setup": [
+    "Einrichtung fortsetzen"
+  ],
   "Continue to your workspace": [
     "Weiter zu deinem Arbeitsbereich"
+  ],
+  "Continue with this project’s existing Vercel deployment configuration.": [
+    "Fahre mit der vorhandenen Vercel-Deployment-Konfiguration dieses Projekts fort."
   ],
   "Contract terms": [
     "Vertragsbedingungen"
@@ -2435,6 +2633,9 @@
   ],
   "Corner radius": [
     "Rundung"
+  ],
+  "Correct draft variables": [
+    "Entwurfsvariablen korrigieren"
   ],
   "Could not accept this offer. Please try again.": [
     "Das Angebot konnte nicht angenommen werden. Bitte versuche es erneut."
@@ -2523,6 +2724,9 @@
   "Create a customer": [
     "Kunden erstellen"
   ],
+  "Create a database": [
+    "Datenbank erstellen"
+  ],
   "Create a dedicated Consumer Key and Consumer Secret with API management permission in turboSMTP. Use a separate account for this customer; all sender domains in that account will be visible here.": [
     "Erstelle in turboSMTP einen eigenen Consumer Key und Consumer Secret mit API-Verwaltungsberechtigung. Nutze ein separates Konto für diesen Kunden; alle Versanddomains dieses Kontos werden hier sichtbar."
   ],
@@ -2546,6 +2750,9 @@
   ],
   "Create a sending API key": [
     "API-Key für den Versand erstellen"
+  ],
+  "Create an application first.": [
+    "Erstelle zuerst eine Anwendung."
   ],
   "Create an individual offer": [
     "Individuelles Angebot erstellen"
@@ -2687,6 +2894,9 @@
   ],
   "Custom development – 1 hour": [
     "Individuelle Entwicklung – 1 Stunde"
+  ],
+  "Custom images are not enabled for this project.": [
+    "Eigene Images sind für dieses Projekt nicht freigeschaltet."
   ],
   "Custom offer": [
     "Individuelles Angebot"
@@ -2892,6 +3102,12 @@
   "Database kind": [
     "Datenbankart"
   ],
+  "Database name": [
+    "Datenbankname"
+  ],
+  "Database offer is unavailable.": [
+    "Das Datenbankangebot ist nicht verfügbar."
+  ],
   "Database ownership does not match this website.": [
     "Der Datenbankeigentümer stimmt nicht mit dieser Website überein."
   ],
@@ -2903,6 +3119,9 @@
   ],
   "Database plan saved as disabled.": [
     "Datenbanktarif wurde deaktiviert gespeichert."
+  ],
+  "Database provisioning needs attention before setup can continue.": [
+    "Die Datenbankbereitstellung muss geprüft werden, bevor die Einrichtung fortgesetzt werden kann."
   ],
   "Database schema": [
     "Datenbankschema"
@@ -3042,6 +3261,9 @@
   "Deploy applications and inspect their status and logs.": [
     "Anwendungen bereitstellen sowie Status und Logs prüfen."
   ],
+  "Deploy release": [
+    "Release bereitstellen"
+  ],
   "Deployment settings": [
     "Bereitstellungseinstellungen"
   ],
@@ -3141,6 +3363,9 @@
   "Disconnect from Studio": [
     "Von Studio trennen"
   ],
+  "Disconnect from application": [
+    "Von Anwendung trennen"
+  ],
   "Disconnect in Studio to delete its stored access token. Also uninstall Webdock Studio in your Vercel team’s integration settings to revoke permission at Vercel. Project mappings and audit records remain; contact us if you need them removed.": [
     "Trenne die Verbindung in Studio, um den dort gespeicherten Zugriffstoken zu löschen. Deinstalliere Webdock Studio zusätzlich in den Integrationseinstellungen deines Vercel-Teams, um die Berechtigung bei Vercel zu widerrufen. Projektzuordnungen und Prüfprotokolle bleiben erhalten. Kontaktiere uns, wenn sie entfernt werden sollen."
   ],
@@ -3164,6 +3389,9 @@
   ],
   "Disconnected Vercel from Studio": [
     "Vercel von Studio getrennt"
+  ],
+  "Disconnecting": [
+    "Wird getrennt"
   ],
   "Disconnecting removes Webdock access. Vercel projects and deployments remain intact. Revoke the installation in Vercel to remove its provider permissions too.": [
     "Trennen entfernt den Webdock-Zugriff. Vercel-Projekte und Bereitstellungen bleiben erhalten. Widerrufe die Integration zusätzlich in Vercel, um auch ihre Anbieterberechtigungen zu entfernen."
@@ -3354,6 +3582,9 @@
   "Edit project details": [
     "Projektdaten bearbeiten"
   ],
+  "Edit setup": [
+    "Einrichtung bearbeiten"
+  ],
   "Edit text and images. Saved changes appear immediately on the website.": [
     "Texte und Bilder bearbeiten. Gespeicherte Änderungen sind sofort auf der Website sichtbar."
   ],
@@ -3455,6 +3686,9 @@
   ],
   "Enable sandbox customer": [
     "Sandbox-Kunden aktivieren"
+  ],
+  "Enable the project setup worker before deploying.": [
+    "Aktiviere vor dem Deployment den Worker für die Projekteinrichtung."
   ],
   "Enable webhook": [
     "Webhook aktivieren"
@@ -3579,6 +3813,9 @@
   "Environment": [
     "Umgebung"
   ],
+  "Environment variable": [
+    "Umgebungsvariable"
+  ],
   "Environment variables": [
     "Umgebungsvariablen"
   ],
@@ -3650,6 +3887,9 @@
   ],
   "Existing credentials": [
     "Vorhandene Zugangsdaten"
+  ],
+  "Existing database": [
+    "Vorhandene Datenbank"
   ],
   "Existing endpoint ID": [
     "Vorhandene Endpoint-ID"
@@ -3786,6 +4026,9 @@
   "Find {type}": [
     "{type} suchen"
   ],
+  "Finish or delete an application draft before creating another.": [
+    "Schließe einen Anwendungsentwurf ab oder lösche ihn, bevor du einen weiteren erstellst."
+  ],
   "Finish saving to Sent": [
     "Ablage unter „Gesendet“ abschließen"
   ],
@@ -3803,6 +4046,9 @@
   ],
   "Focus mode": [
     "Fokusmodus"
+  ],
+  "Follow the deployment of your application and its services.": [
+    "Verfolge die Bereitstellung deiner Anwendung und ihrer Dienste."
   ],
   "Font family": [
     "Schriftfamilie"
@@ -3836,6 +4082,9 @@
   ],
   "For managed sending, the relay provider receives the account details needed for provisioning and the data needed to deliver messages. Customer-supplied relay accounts use the selected provider. Domain verification sends the domain name to Cloudflare’s DNS resolver. Configured customer webhooks receive delivery event data. Optional email open and click tracking is controlled by the customer administrator, who is responsible for the required recipient information and legal basis. It is separate from website analytics.": [
     "Beim verwalteten Versand erhält der Relay-Anbieter die zur Einrichtung benötigten Kontodaten und die für die Zustellung erforderlichen Nachrichtendaten. Bei kundeneigenen Relay-Zugängen wird der ausgewählte Anbieter verwendet. Zur Domainprüfung übermitteln wir den Domainnamen an den DNS-Resolver von Cloudflare. Konfigurierte Kunden-Webhooks erhalten Zustellereignisse. Optionales Öffnungs- und Klicktracking für E-Mails steuert der Kundenadministrator und verantwortet die nötigen Empfängerinformationen und Rechtsgrundlagen. Es ist von der Website-Statistik unabhängig."
+  ],
+  "For monorepos, choose the directory containing this application’s Dockerfile.": [
+    "Wähle bei Monorepos das Verzeichnis mit der Dockerfile dieser Anwendung."
   ],
   "For personal customers or the primary contact.": [
     "Für Privatkunden oder die wichtigste Kontaktperson."
@@ -3915,6 +4164,9 @@
   "Git publication authorization changed. Review the release.": [
     "Die Berechtigung zur Git-Veröffentlichung wurde geändert. Prüfe das Release."
   ],
+  "Git repository": [
+    "Git-Repository"
+  ],
   "GitHub": [
     "GitHub"
   ],
@@ -3969,6 +4221,9 @@
   "GitHub connection setup is incomplete.": [
     "Die Einrichtung der GitHub-Verbindung ist unvollständig."
   ],
+  "GitHub connection was not completed. Your draft has been kept.": [
+    "Die GitHub-Verbindung wurde nicht abgeschlossen. Dein Entwurf bleibt erhalten."
+  ],
   "GitHub could not complete this request. Check the current state before retrying.": [
     "GitHub konnte diese Anfrage nicht abschließen. Prüfe den aktuellen Status vor einem erneuten Versuch."
   ],
@@ -3987,8 +4242,14 @@
   "GitHub installation pages": [
     "GitHub-Installationsseiten"
   ],
+  "GitHub is connected. Review your repository and continue.": [
+    "GitHub ist verbunden. Prüfe dein Repository und fahre fort."
+  ],
   "GitHub repository selection exceeds the supported limit.": [
     "Die GitHub-Repository-Auswahl überschreitet die unterstützte Grenze."
+  ],
+  "GitHub source could not be verified. Reconnect or try again.": [
+    "Die GitHub-Quelle konnte nicht geprüft werden. Verbinde sie erneut oder versuche es noch einmal."
   ],
   "GitHub webhooks are not configured yet.": [
     "GitHub-Webhooks sind noch nicht eingerichtet."
@@ -4104,6 +4365,9 @@
   "Hosting API": [
     "Hosting-API"
   ],
+  "Hosting allowance changed. Review the application.": [
+    "Das Hosting-Kontingent hat sich geändert. Prüfe die Anwendung."
+  ],
   "Hosting allowances": [
     "Hosting-Kontingente"
   ],
@@ -4118,6 +4382,9 @@
   ],
   "Hosting awaits verification of its EU operating environment.": [
     "Hosting wartet auf die Prüfung seiner EU-Betriebsumgebung."
+  ],
+  "Hosting capacity could not be verified.": [
+    "Die Hosting-Kapazität konnte nicht geprüft werden."
   ],
   "Hosting execution is not enabled for this runtime region.": [
     "Die Hosting-Ausführung ist für diese Laufzeitregion nicht freigegeben."
@@ -4236,6 +4503,9 @@
   "ISO time with timezone": [
     "ISO-Zeit mit Zeitzone"
   ],
+  "Idempotency key is required.": [
+    "Der Wiederholungsschlüssel fehlt."
+  ],
   "Identity and credentials cannot be changed here.": [
     "Identität und Zugangsdaten können hier nicht geändert werden."
   ],
@@ -4262,6 +4532,9 @@
   ],
   "Image URL": [
     "Bildadresse"
+  ],
+  "Image digest": [
+    "Image-Digest"
   ],
   "Image fit": [
     "Bildfüllung"
@@ -4337,6 +4610,9 @@
   ],
   "Inspect messages and delivery results": [
     "Nachrichten und Zustellergebnisse prüfen"
+  ],
+  "Inspect repository": [
+    "Repository prüfen"
   ],
   "Install and connect": [
     "Installieren und verbinden"
@@ -5091,6 +5367,9 @@
   "Mail is temporarily unavailable. Retry with the same request.": [
     "Mail ist vorübergehend nicht verfügbar. Wiederhole dieselbe Anfrage."
   ],
+  "Mail key variable": [
+    "Variable für den Mail-Schlüssel"
+  ],
   "Mail mappings and domain records remain until removed through the applicable administration process or a deletion request. Removing a local domain entry does not remove DNS records or a provider-side registration; removing stored master credentials does not revoke that key at the provider.": [
     "Mailzuordnungen und Domaineinträge bleiben bestehen, bis sie im vorgesehenen Verwaltungsverfahren oder aufgrund einer Löschanfrage entfernt werden. Das Entfernen eines lokalen Domaineintrags löscht weder DNS-Einträge noch eine Registrierung beim Anbieter. Das Entfernen gespeicherter Hauptzugangsdaten widerruft diesen Schlüssel nicht beim Anbieter."
   ],
@@ -5136,6 +5415,9 @@
   "Mail response could not be read. Check sending status before retrying.": [
     "Die Antwort konnte nicht gelesen werden. Prüfe den Versandstatus vor einem erneuten Versuch."
   ],
+  "Mail sending": [
+    "Mailversand"
+  ],
   "Mail sending credentials are separate from Webdock OAuth access tokens.": [
     "Mail-Versandzugangsdaten sind unabhängig von Webdock-OAuth-Zugriffstoken."
   ],
@@ -5162,6 +5444,9 @@
   ],
   "Mail settings could not be changed. Refresh before trying again.": [
     "Die E-Mail-Einstellungen konnten nicht geändert werden. Lade die Seite vor einem erneuten Versuch neu."
+  ],
+  "Mail setup is currently unavailable. You can continue without Mail and connect it later.": [
+    "Die Mail-Einrichtung ist derzeit nicht verfügbar. Du kannst ohne Mail fortfahren und es später verbinden."
   ],
   "Mail submission acknowledgement is unavailable. Check sending status before retrying.": [
     "Die Versandbestätigung fehlt. Prüfe den Versandstatus vor einem erneuten Versuch."
@@ -5201,6 +5486,9 @@
   ],
   "Mailboxes": [
     "Postfächer"
+  ],
+  "Mailboxes and forwarding": [
+    "Postfächer und Weiterleitungen"
   ],
   "Main navigation": [
     "Hauptnavigation"
@@ -5250,8 +5538,14 @@
   "Manage customer names and addresses. Sign-in and permissions remain protected.": [
     "Kundennamen und Adressen verwalten. Anmeldung und Berechtigungen bleiben geschützt."
   ],
+  "Manage database": [
+    "Datenbank verwalten"
+  ],
   "Manage database access": [
     "Datenbankzugriff verwalten"
+  ],
+  "Manage databases": [
+    "Datenbanken verwalten"
   ],
   "Manage existing applications": [
     "Vorhandene Anwendungen verwalten"
@@ -5304,6 +5598,9 @@
   "Manage sending, domains and mailboxes.": [
     "Versand, Domains und Postfächer verwalten."
   ],
+  "Manage services": [
+    "Dienste verwalten"
+  ],
   "Manage shop": [
     "Shop verwalten"
   ],
@@ -5355,6 +5652,9 @@
   "Managed PostgreSQL billing": [
     "Abrechnung für Managed PostgreSQL"
   ],
+  "Managed application execution requires k3s.": [
+    "Verwaltete Anwendungen benötigen k3s."
+  ],
   "Managed applications": [
     "Verwaltete Anwendungen"
   ],
@@ -5373,11 +5673,17 @@
   "Managed database deletion is not configured.": [
     "Die verwaltete Datenbanklöschung ist nicht eingerichtet."
   ],
+  "Managed databases must use the same cluster as this application.": [
+    "Verwaltete Datenbanken müssen denselben Cluster wie diese Anwendung verwenden."
+  ],
   "Managed deletion requires exactly one isolated CMS connection.": [
     "Die verwaltete Löschung benötigt genau eine isolierte CMS-Verbindung."
   ],
   "Managed resource ownership changed. Operator review is required.": [
     "Die Zuordnung verwalteter Ressourcen wurde geändert. Eine Administratorprüfung ist erforderlich."
+  ],
+  "Managed service variables cannot be edited manually.": [
+    "Verwaltete Dienstvariablen können nicht manuell geändert werden."
   ],
   "Management": [
     "Verwaltung"
@@ -5456,6 +5762,9 @@
   ],
   "Memory": [
     "Arbeitsspeicher"
+  ],
+  "Memory (MiB)": [
+    "Arbeitsspeicher (MiB)"
   ],
   "Menu ": [
     "Menü "
@@ -5594,6 +5903,12 @@
   ],
   "Namespace": [
     "Namespace"
+  ],
+  "Native Mail connection needs attention before deployment.": [
+    "Die native Mail-Verbindung muss vor dem Deployment geprüft werden."
+  ],
+  "Native Mail connection requires authorized management.": [
+    "Für die native Mail-Verbindung sind Verwaltungsrechte erforderlich."
   ],
   "Native Mail is not available yet.": [
     "Webdock Mail ist noch nicht verfügbar."
@@ -5781,6 +6096,9 @@
   "No customers yet": [
     "Noch keine Kunden"
   ],
+  "No database": [
+    "Keine Datenbank"
+  ],
   "No database plans are available yet.": [
     "Derzeit sind keine Datenbanktarife verfügbar."
   ],
@@ -5822,6 +6140,9 @@
   ],
   "No exceptions. Weekly opening hours apply.": [
     "Keine Ausnahmen. Es gelten die wöchentlichen Öffnungszeiten."
+  ],
+  "No expired operation is available for reconciliation.": [
+    "Es gibt keinen abgelaufenen Vorgang zum Abgleichen."
   ],
   "No extras configured.": [
     "Keine Extras hinterlegt."
@@ -5988,6 +6309,9 @@
   "No sender domains yet. Add your domain below to get the DNS records.": [
     "Noch keine Absenderdomains. Füge unten deine Domain hinzu, um die DNS-Einträge zu erhalten."
   ],
+  "No services connected to applications yet.": [
+    "Es sind noch keine Dienste mit Anwendungen verbunden."
+  ],
   "No storage connections yet. Usage is unavailable until a store is connected and measured.": [
     "Noch keine Speicherverbindungen. Der Verbrauch ist erst verfügbar, wenn ein Speicher verbunden und gemessen wurde."
   ],
@@ -5999,6 +6323,9 @@
   ],
   "No unsaved changes": [
     "Keine ungespeicherten Änderungen"
+  ],
+  "No verified hosting cluster is available yet.": [
+    "Es ist noch kein geprüfter Hosting-Cluster verfügbar."
   ],
   "No verified webhook received.": [
     "Noch kein verifizierter Webhook empfangen."
@@ -6150,6 +6477,9 @@
   "One additional CMS editor for an eligible website. Support time is not included.": [
     "Ein zusätzlicher CMS-Bearbeiter für eine berechtigte Website. Keine Betreuungszeit enthalten."
   ],
+  "One argument per line.": [
+    "Ein Argument pro Zeile."
+  ],
   "One workspace. Independent websites.": [
     "Ein Arbeitsbereich. Eigenständige Websites."
   ],
@@ -6167,6 +6497,9 @@
   ],
   "Only an authorized administrator of this tenant can accept an active offer. If the plan has changed, ask your operator for a new offer.": [
     "Nur ein berechtigter Admin dieses Mandanten kann ein aktives Angebot annehmen. Hat sich der Tarif geändert, bitte deinen Betreiber um ein neues Angebot."
+  ],
+  "Only an interrupted confirmed setup can be resumed.": [
+    "Nur eine unterbrochene, bestätigte Einrichtung kann fortgesetzt werden."
   ],
   "Only an unmapped reservation older than 15 minutes can be cancelled. Refresh to reconcile it first.": [
     "Nur eine nicht zugeordnete Reservierung, die älter als 15 Minuten ist, kann aufgehoben werden. Aktualisiere zuerst die Ansicht, um sie abzugleichen."
@@ -6237,11 +6570,17 @@
   "Open deployment ↗": [
     "Deployment öffnen ↗"
   ],
+  "Open deployments": [
+    "Deployments öffnen"
+  ],
   "Open full overview": [
     "Vollständige Übersicht öffnen"
   ],
   "Open hosting": [
     "Hosting öffnen"
+  ],
+  "Open in Tabularis": [
+    "In Tabularis öffnen"
   ],
   "Open jobs": [
     "Offene Aufträge"
@@ -6474,6 +6813,9 @@
   "Ownership verified": [
     "Inhaberschaft bestätigt"
   ],
+  "Package metadata could not be read. Configure the application manually.": [
+    "Die Paketmetadaten konnten nicht gelesen werden. Konfiguriere die Anwendung manuell."
+  ],
   "Page": [
     "Seite"
   ],
@@ -6660,6 +7002,9 @@
   "Persistent storage": [
     "Dauerhafter Speicher"
   ],
+  "Persistent storage (MiB)": [
+    "Persistenter Speicher (MiB)"
+  ],
   "Persistent storage proof does not match the operation.": [
     "Der Speichernachweis passt nicht zum Auftrag."
   ],
@@ -6819,8 +7164,14 @@
   "Prepare adjusted plan allowances and optional commercial terms for the customer to accept. Acceptance assigns these allowances and preserves the extras shown below. This does not collect payment.": [
     "Bereite angepasste Tarifkontingente und optionale Vertragsbedingungen zur Annahme durch den Kunden vor. Die Annahme weist diese Kontingente zu und behält die unten angezeigten Zusatzkontingente bei. Es wird keine Zahlung abgewickelt."
   ],
+  "Prepare application": [
+    "Anwendung vorbereiten"
+  ],
   "Prepare cluster access": [
     "Cluster-Zugriff vorbereiten"
+  ],
+  "Prepare database": [
+    "Datenbank vorbereiten"
   ],
   "Prepare managed sending": [
     "Verwalteten Versand vorbereiten"
@@ -7020,6 +7371,12 @@
   "Project ownership cannot be reassigned here.": [
     "Die Eigentümerschaft des Projekts kann hier nicht neu zugeordnet werden."
   ],
+  "Project resources": [
+    "Projektressourcen"
+  ],
+  "Project setup is unavailable.": [
+    "Die Projekteinrichtung ist nicht verfügbar."
+  ],
   "Project, customer or domain": [
     "Projekt, Kunde oder Domain"
   ],
@@ -7200,6 +7557,9 @@
   "Quarantined": [
     "In Quarantäne"
   ],
+  "Queries saved in this viewer are available only for this session. Copy any SQL you want to keep.": [
+    "In diesem Viewer gespeicherte Abfragen sind nur während dieser Sitzung verfügbar. Kopiere SQL, das du behalten möchtest."
+  ],
   "Question": [
     "Frage"
   ],
@@ -7317,6 +7677,9 @@
   "Reconcile release": [
     "Release-Status abgleichen"
   ],
+  "Reconcile the interrupted Git release in Deployments before retrying setup.": [
+    "Gleiche das unterbrochene Git-Release unter Bereitstellungen ab, bevor du die Einrichtung erneut versuchst."
+  ],
   "Reconnect GitHub": [
     "GitHub erneut verbinden"
   ],
@@ -7380,11 +7743,20 @@
   "Redo (Ctrl/⌘ Shift Z)": [
     "Wiederholen (Strg/⌘ Umschalt Z)"
   ],
+  "Refresh": [
+    "Aktualisieren"
+  ],
   "Refresh Vercel data": [
     "Vercel-Daten aktualisieren"
   ],
   "Refresh account status": [
     "Kontostatus aktualisieren"
+  ],
+  "Refresh available services": [
+    "Verfügbare Dienste aktualisieren"
+  ],
+  "Refresh connection": [
+    "Verbindung aktualisieren"
   ],
   "Refresh inventory": [
     "Ressourcen aktualisieren"
@@ -7400,6 +7772,9 @@
   ],
   "Refresh the cluster inventory before reviewing this operation.": [
     "Aktualisiere die Ressourcenübersicht, bevor du diesen Auftrag prüfst."
+  ],
+  "Refresh the database connection before deployment.": [
+    "Aktualisiere die Datenbankverbindung vor dem Deployment."
   ],
   "Refresh tracking status": [
     "Tracking-Status aktualisieren"
@@ -7461,6 +7836,9 @@
   "Release pages": [
     "Release-Seiten"
   ],
+  "Release publication needs attention. Review Deployments.": [
+    "Die Veröffentlichung muss geprüft werden. Öffne die Deployments."
+  ],
   "Releases": [
     "Releases"
   ],
@@ -7484,6 +7862,9 @@
   ],
   "Remove attachment": [
     "Anhang entfernen"
+  ],
+  "Remove conflicting manual variables, save, then retry setup. Provisioned services are kept.": [
+    "Entferne kollidierende manuelle Variablen, speichere und versuche die Einrichtung erneut. Bereits bereitgestellte Dienste bleiben erhalten."
   ],
   "Remove credentials": [
     "Zugangsdaten entfernen"
@@ -7599,11 +7980,17 @@
   "Repository URL": [
     "Repository-URL"
   ],
+  "Repository inspection exceeded its size limit.": [
+    "Die Repository-Prüfung hat die Größenbegrenzung überschritten."
+  ],
   "Repository pages": [
     "Repository-Seiten"
   ],
   "Repository permissions → Metadata → Read-only": [
     "Repository-Berechtigungen → Metadaten → Nur lesen"
+  ],
+  "Repository suggestions": [
+    "Vorschläge aus dem Repository"
   ],
   "Request ID": [
     "Anfrage-ID"
@@ -7692,6 +8079,9 @@
   "Resolve the existing record conflict before changing DNS. Keep the services and policies you already use.": [
     "Behebe den bestehenden Eintragskonflikt, bevor du DNS änderst. Behalte die bereits genutzten Dienste und Richtlinien bei."
   ],
+  "Resolve the indicated issue, then continue. Already created services and their data are reused.": [
+    "Behebe das angezeigte Problem und fahre fort. Bereits erstellte Dienste und ihre Daten werden weiterverwendet."
+  ],
   "Resource": [
     "Ressource"
   ],
@@ -7776,6 +8166,9 @@
   "Retry Mail operation": [
     "E-Mail-Änderung erneut ausführen"
   ],
+  "Retry setup": [
+    "Einrichtung erneut versuchen"
+  ],
   "Return this record to your active workspace.": [
     "Diesen Datensatz in deinen aktiven Arbeitsbereich zurückholen."
   ],
@@ -7794,8 +8187,14 @@
   "Reveal credentials": [
     "Zugangsdaten anzeigen"
   ],
+  "Review": [
+    "Prüfung"
+  ],
   "Review agreement": [
     "Vereinbarung prüfen"
+  ],
+  "Review and deploy": [
+    "Prüfen und bereitstellen"
   ],
   "Review customer billing": [
     "Kundenabrechnung prüfen"
@@ -7815,11 +8214,17 @@
   "Review paid order": [
     "Kostenpflichtige Bestellung prüfen"
   ],
+  "Review release": [
+    "Release prüfen"
+  ],
   "Review requests": [
     "Anfragen bearbeiten"
   ],
   "Review required": [
     "Prüfung erforderlich"
+  ],
+  "Review setup": [
+    "Einrichtung prüfen"
   ],
   "Review source cleanup": [
     "Löschung der Quelle prüfen"
@@ -7832,6 +8237,9 @@
   ],
   "Review the pending domain registration before replacing this connection.": [
     "Prüfe die ausstehende Domain-Registrierung, bevor du diese Verbindung ersetzt."
+  ],
+  "Review the setup before deploying.": [
+    "Prüfe die Einrichtung vor dem Deployment."
   ],
   "Review this person's website permissions": [
     "Website-Rechte dieser Person prüfen"
@@ -7905,8 +8313,14 @@
   "Root directory": [
     "Stammverzeichnis"
   ],
+  "Rotate Mail key": [
+    "Mail-Schlüssel erneuern"
+  ],
   "Rotate credentials": [
     "Zugangsdaten erneuern"
+  ],
+  "Rotate database credentials from the database settings.": [
+    "Erneuere die Datenbankzugänge in den Datenbankeinstellungen."
   ],
   "Rotate private sending credential": [
     "Privaten Versandzugang rotieren"
@@ -7922,6 +8336,9 @@
   ],
   "Route": [
     "Route"
+  ],
+  "Run the configured GitHub Actions workflow for the reviewed commit.": [
+    "Starte den konfigurierten GitHub-Actions-Workflow für den geprüften Commit."
   ],
   "Run the configured workflow in GitHub Actions. Webdock imports successful builds automatically.": [
     "Starte den konfigurierten Workflow in GitHub Actions. Webdock importiert erfolgreiche Builds automatisch."
@@ -8063,6 +8480,9 @@
   ],
   "Save this secret now. It is shown only once.": [
     "Speichere dieses Geheimnis jetzt. Es wird nur einmal angezeigt."
+  ],
+  "Save variables": [
+    "Variablen speichern"
   ],
   "Save your new credential": [
     "Neue Zugangsdaten sicher speichern"
@@ -8238,6 +8658,12 @@
   "Select a website": [
     "Website auswählen"
   ],
+  "Select an application": [
+    "Anwendung auswählen"
+  ],
+  "Select an application for this Git operation.": [
+    "Wähle eine Anwendung für diesen Git-Vorgang aus."
+  ],
   "Select an entry": [
     "Eintrag auswählen"
   ],
@@ -8285,6 +8711,9 @@
   ],
   "Selected item {id}": [
     "Ausgewählter Eintrag {id}"
+  ],
+  "Selected sender domain": [
+    "Ausgewählte Absenderdomain"
   ],
   "Selfservice": [
     "Selfservice"
@@ -8388,6 +8817,9 @@
   "Sending uses EU endpoints. The separate provider management API is an approved exception without an EU-only guarantee. The Webdock domain allowance is not an email sending or spending limit.": [
     "Für den Versand sind EU-Endpunkte vorgesehen. Die separate Verwaltungs-API des Anbieters ist als Ausnahme ohne EU-only-Garantie zugelassen. Das Webdock-Domainkontingent ist kein Versand- oder Ausgabenlimit."
   ],
+  "Sending uses a domain-restricted API key. Mailboxes and forwarding are activated separately.": [
+    "Der Versand verwendet einen auf die Domain beschränkten API-Schlüssel. Postfächer und Weiterleitungen werden separat aktiviert."
+  ],
   "Sending verification checked:": [
     "Versandprüfung durchgeführt:"
   ],
@@ -8427,6 +8859,15 @@
   "Service access suspended": [
     "Leistungszugriff gesperrt"
   ],
+  "Service certificates exceed the application configuration limit.": [
+    "Die Dienstzertifikate überschreiten die Größenbegrenzung der Anwendungskonfiguration."
+  ],
+  "Service connection changed. Refresh before editing.": [
+    "Die Dienstverbindung hat sich geändert. Aktualisiere sie vor dem Bearbeiten."
+  ],
+  "Service connection is unavailable.": [
+    "Die Dienstverbindung ist nicht verfügbar."
+  ],
   "Services": [
     "Dienste"
   ],
@@ -8460,6 +8901,15 @@
   "Set resources in cores, MB or GB. Existing applications keep their allocation.": [
     "Gib Ressourcen in Kernen, MB oder GB an. Bestehende Anwendungen behalten ihre Zuteilung."
   ],
+  "Set up Mail sending": [
+    "Mailversand einrichten"
+  ],
+  "Set up a Mail connection or sender domain": [
+    "Mail-Verbindung oder Absenderdomain einrichten"
+  ],
+  "Set up application": [
+    "Anwendung einrichten"
+  ],
   "Set up authenticator": [
     "Authenticator einrichten"
   ],
@@ -8481,6 +8931,12 @@
   "Setup": [
     "Einrichtung"
   ],
+  "Setup changed. Review the current configuration.": [
+    "Die Einrichtung hat sich geändert. Prüfe die aktuelle Konfiguration."
+  ],
+  "Setup could not continue. Review its services and retry.": [
+    "Die Einrichtung konnte nicht fortgesetzt werden. Prüfe die Dienste und versuche es erneut."
+  ],
   "Setup from EUR 49 excluding tax with a suitable container image. Migration, code changes and domain/TLS work are billed according to explicitly agreed effort.": [
     "Einrichtung ab 49 EUR netto bei bereits passendem Container-Image. Migration, Codeanpassung sowie Domain/TLS nach ausdrücklich vereinbartem Aufwand."
   ],
@@ -8493,8 +8949,14 @@
   "Setup pending": [
     "Einrichtung ausstehend"
   ],
+  "Setup preview expired. Review it again.": [
+    "Die Vorschau ist abgelaufen. Prüfe die Einrichtung erneut."
+  ],
   "Setup required": [
     "Einrichtung erforderlich"
+  ],
+  "Setups in progress": [
+    "Laufende Einrichtungen"
   ],
   "Share it before you ship it.": [
     "Teilen, bevor es online geht."
@@ -8721,6 +9183,9 @@
   "Start with a simulator recipient; use a stable idempotency key for each message.": [
     "Beginne mit einem Simulator-Empfänger und verwende für jede Nachricht einen festen Idempotenzschlüssel."
   ],
+  "Start with the HTTP healthcheck application.": [
+    "Mit der HTTP-Healthcheck-Anwendung starten."
+  ],
   "Start with the essentials. No CMS will be created automatically.": [
     "Beginne mit den grundlegenden Angaben. Es wird kein CMS automatisch erstellt."
   ],
@@ -8868,6 +9333,9 @@
   "Successful": [
     "Erfolgreich"
   ],
+  "Suggested services": [
+    "Vorgeschlagene Dienste"
+  ],
   "Sunday": [
     "Sonntag"
   ],
@@ -8969,6 +9437,9 @@
   ],
   "Temporary storage": [
     "Temporärer Speicher"
+  ],
+  "Temporary storage (MiB)": [
+    "Temporärer Speicher (MiB)"
   ],
   "Ten builds are already queued or running for this project.": [
     "Für dieses Projekt warten oder laufen bereits zehn Builds."
@@ -9165,6 +9636,9 @@
   "The database filesystem is nearly full. Review capacity before importing more data.": [
     "Das Datenbank-Dateisystem ist nahezu voll. Prüfe die Kapazität vor weiteren Datenimporten."
   ],
+  "The database must be ready before opening Tabularis.": [
+    "Die Datenbank muss bereit sein, bevor Tabularis geöffnet werden kann."
+  ],
   "The database role enforces the selected permission and denies other tenants.": [
     "Die Datenbankrolle erzwingt die gewählte Berechtigung und sperrt andere Mandanten."
   ],
@@ -9188,6 +9662,12 @@
   ],
   "The existing Vercel project ID, starting with prj_.": [
     "Die vorhandene Vercel-Projekt-ID, beginnend mit prj_."
+  ],
+  "The first deployment already exists. Update the application instead.": [
+    "Das erste Deployment existiert bereits. Aktualisiere die Anwendung."
+  ],
+  "The healthcheck template uses port 8080 and /ping. It helps verify the deployment before you add your own application.": [
+    "Die Healthcheck-Vorlage verwendet Port 8080 und /ping. Damit kannst du das Deployment prüfen, bevor du deine eigene Anwendung hinzufügst."
   ],
   "The hosting connection is not supported for deletion.": [
     "Diese Hosting-Verbindung unterstützt keine verwaltete Löschung."
@@ -9330,6 +9810,9 @@
   "The result is unknown. Check Drafts and Sent before composing this message again.": [
     "Das Ergebnis ist unklar. Prüfe Entwürfe und Gesendet, bevor du diese Nachricht erneut verfasst."
   ],
+  "The saved setup operation has different configuration. Review it before retrying.": [
+    "Der gespeicherte Einrichtungsvorgang hat eine andere Konfiguration. Prüfe ihn vor einem erneuten Versuch."
+  ],
   "The selected product or media does not belong to this website or is unavailable.": [
     "Das gewählte Produkt oder Medium gehört nicht zu dieser Website oder ist nicht verfügbar."
   ],
@@ -9405,6 +9888,9 @@
   "The website domain is not assigned to the linked hosting project.": [
     "Die Website-Domain ist dem verknüpften Hosting-Projekt nicht zugeordnet."
   ],
+  "The workflow must already produce the Webdock artifact for the exact commit.": [
+    "Der Workflow muss das Webdock-Artefakt für genau diesen Commit bereits erzeugen können."
+  ],
   "The workspace behind the websites.": [
     "Der Arbeitsbereich hinter den Websites."
   ],
@@ -9471,6 +9957,12 @@
   "This agreement is not currently available for purchase.": [
     "Diese Vereinbarung kann derzeit nicht gebucht werden."
   ],
+  "This application already has sixteen service connections.": [
+    "Diese Anwendung hat bereits sechzehn Dienstverbindungen."
+  ],
+  "This application has not been deployed yet.": [
+    "Diese Anwendung wurde noch nicht bereitgestellt."
+  ],
   "This appointment is no longer available.": [
     "Dieser Termin ist nicht mehr verfügbar."
   ],
@@ -9489,11 +9981,17 @@
   "This browser does not support passkeys. Try a current browser on your phone or computer.": [
     "Dieser Browser unterstützt keine Passkeys. Versuche es mit einem aktuellen Browser auf deinem Smartphone oder Computer."
   ],
+  "This build worker requires Dockerfile in the selected root directory.": [
+    "Dieser Build-Worker benötigt eine Dockerfile im ausgewählten Stammverzeichnis."
+  ],
   "This calendar feature is unavailable.": [
     "Diese Kalenderfunktion ist nicht verfügbar."
   ],
   "This cluster is not customer owned.": [
     "Dies ist kein kundeneigenes Cluster."
+  ],
+  "This configures outgoing Mail only. Receiving mail and mailboxes remain separate.": [
+    "Hier wird nur ausgehende Mail eingerichtet. Empfang und Postfächer bleiben separat."
   ],
   "This connection attempt expired. Start again.": [
     "Dieser Verbindungsversuch ist abgelaufen. Starte ihn erneut."
@@ -9636,11 +10134,17 @@
   "This project is archived. Restore it to manage its CMS connection.": [
     "Dieses Projekt ist archiviert. Stelle es wieder her, um seine CMS-Verbindung zu verwalten."
   ],
+  "This project is being deleted. Setup cannot continue.": [
+    "Dieses Projekt wird gelöscht. Die Einrichtung kann nicht fortgesetzt werden."
+  ],
   "This project is not in the selected workspace.": [
     "Dieses Projekt gehört nicht zum ausgewählten Arbeitsbereich."
   ],
   "This project is not included in the Vercel integration’s selected access.": [
     "Dieses Projekt ist nicht im ausgewählten Zugriff der Vercel-Integration enthalten."
+  ],
+  "This project uses Vercel.": [
+    "Dieses Projekt verwendet Vercel."
   ],
   "This public page address is already in use.": [
     "Diese öffentliche Seitenadresse wird bereits verwendet."
@@ -9885,6 +10389,9 @@
   "Unknown administration action.": [
     "Unbekannte Verwaltungsaktion."
   ],
+  "Unknown application action.": [
+    "Unbekannte Anwendungsaktion."
+  ],
   "Unknown content action.": [
     "Unbekannte Inhaltsaktion."
   ],
@@ -9911,6 +10418,9 @@
   ],
   "Unknown sender-domain action.": [
     "Unbekannte Absenderdomain-Aktion."
+  ],
+  "Unknown setup source operation.": [
+    "Unbekannte Aktion für die Einrichtungsquelle."
   ],
   "Unknown storage action.": [
     "Unbekannte Speicheraktion."
@@ -9999,6 +10509,9 @@
   "Update tenant role": [
     "Mandantenrolle aktualisieren"
   ],
+  "Update the cluster agent before connecting services.": [
+    "Aktualisiere den Cluster-Agenten, bevor du Dienste verbindest."
+  ],
   "Update the cluster agent before using environment variables.": [
     "Aktualisiere den Cluster-Agenten, bevor du Umgebungsvariablen verwendest."
   ],
@@ -10031,6 +10544,9 @@
   ],
   "Usage interval": [
     "Verbrauchszeitraum"
+  ],
+  "Use 0 for no volume, or at least 64 MiB at /data. Persistent data is retained when the application stops.": [
+    "Verwende 0 für kein Volume oder mindestens 64 MiB unter /data. Persistente Daten bleiben beim Stoppen der Anwendung erhalten."
   ],
   "Use Frankfurt": [
     "Frankfurt verwenden"
@@ -10095,6 +10611,18 @@
   "Use an exact HTTPS origin.": [
     "Verwende eine genaue HTTPS-Basisadresse."
   ],
+  "Use an existing immutable image.": [
+    "Ein vorhandenes unveränderliches Image verwenden."
+  ],
+  "Use an image already available on the cluster or in its authorized project registry.": [
+    "Verwende ein Image, das bereits im Cluster oder in seiner freigegebenen Projekt-Registry verfügbar ist."
+  ],
+  "Use an immutable image digest supported by this cluster.": [
+    "Verwende einen unveränderlichen Image-Digest, den dieser Cluster unterstützt."
+  ],
+  "Use application settings for changes after provisioning has started.": [
+    "Verwende nach Beginn der Bereitstellung die Anwendungseinstellungen für Änderungen."
+  ],
   "Use application/json.": [
     "Verwende application/json."
   ],
@@ -10103,6 +10631,9 @@
   ],
   "Use delivered@test.mail.webdock.dev for a simulator message. Real recipients receive a real email.": [
     "Verwende delivered@test.mail.webdock.dev für eine Simulatornachricht. Echte Empfänger erhalten eine echte E-Mail."
+  ],
+  "Use detected port": [
+    "Erkannten Port übernehmen"
   ],
   "Use existing webhook": [
     "Vorhandenen Webhook verwenden"
@@ -10200,6 +10731,9 @@
   "Vercel": [
     "Vercel"
   ],
+  "Vercel application": [
+    "Vercel-Anwendung"
+  ],
   "Vercel connected. Choose a project below.": [
     "Vercel verbunden. Wähle unten ein Projekt aus."
   ],
@@ -10290,6 +10824,9 @@
   "Verified build or artifact publisher capacity is required.": [
     "Überprüfte Build- oder Artefakt-Publisher-Kapazität ist erforderlich."
   ],
+  "Verified database connection details are not available yet.": [
+    "Geprüfte Datenbankzugänge sind noch nicht verfügbar."
+  ],
   "Verified isolated build capacity is required.": [
     "Überprüfte, isolierte Build-Kapazität ist erforderlich."
   ],
@@ -10304,6 +10841,9 @@
   ],
   "Verify DNS": [
     "DNS prüfen"
+  ],
+  "Verify a native Mail connection and sender domain first.": [
+    "Prüfe zuerst eine native Mail-Verbindung und ihre Absenderdomain."
   ],
   "Verify a sender domain first.": [
     "Bestätige zuerst eine Absenderdomain."
@@ -10323,14 +10863,23 @@
   "Verify and save connection": [
     "Verbindung prüfen und speichern"
   ],
+  "Verify domain": [
+    "Domain prüfen"
+  ],
   "Verify domain ownership before configuring sending.": [
     "Bestätige die Domain-Inhaberschaft, bevor du den Versand einrichtest."
   ],
   "Verify domain ownership under Mail & Domains first.": [
     "Bestätige zuerst den Domainbesitz unter E-Mail & Domains."
   ],
+  "Verify readiness": [
+    "Betriebsbereitschaft prüfen"
+  ],
   "Verify sign-in": [
     "Anmeldung bestätigen"
+  ],
+  "Verify the sender domain before connecting native Mail.": [
+    "Verifiziere die Absenderdomain, bevor du native Mail verbindest."
   ],
   "Verify tracking domain": [
     "Tracking-Domain bestätigen"
@@ -10358,6 +10907,9 @@
   ],
   "View": [
     "Ansehen"
+  ],
+  "View DNS records": [
+    "DNS-Einträge anzeigen"
   ],
   "View Mail usage and provider quota": [
     "Mail-Verbrauch und Anbieterlimit ansehen"
@@ -10464,11 +11016,26 @@
   "Wait five minutes before reconciling an uncertain provider request.": [
     "Warte fünf Minuten, bevor du eine unklare Anbieteranfrage abgleichst."
   ],
+  "Wait for confirmed database readiness before connecting the application.": [
+    "Warte auf die bestätigte Betriebsbereitschaft der Datenbank, bevor du die Anwendung verbindest."
+  ],
+  "Wait for the current Mail key rollout before changing this connection.": [
+    "Warte, bis der aktuelle Mail-Schlüssel ausgerollt wurde, bevor du diese Verbindung änderst."
+  ],
   "Wait for the current project operation or reconcile it first.": [
     "Den laufenden Projektauftrag abwarten oder zuerst abgleichen."
   ],
+  "Waiting for database readiness.": [
+    "Wartet auf die Betriebsbereitschaft der Datenbank."
+  ],
   "Waiting for first scan": [
     "Warte auf den ersten Scan"
+  ],
+  "Waiting for observed application and service readiness.": [
+    "Wartet auf die bestätigte Betriebsbereitschaft der Anwendung und ihrer Dienste."
+  ],
+  "Waiting for the build artifact.": [
+    "Wartet auf das Build-Artefakt."
   ],
   "We are the controller for our website, customer relationships, accounts and service administration. When we host or handle personal data for a customer, we act on their instructions under a data-processing agreement (Article 28 GDPR). This notice does not replace that agreement.": [
     "Für unsere Website, Kundenbeziehungen, Konten und die Dienstverwaltung sind wir Verantwortlicher. Hosten oder bearbeiten wir personenbezogene Daten im Auftrag eines Kunden, handeln wir nach dessen Weisungen auf Grundlage einer Vereinbarung zur Auftragsverarbeitung (Art. 28 DSGVO). Diese Erklärung ersetzt diese Vereinbarung nicht."
@@ -10593,6 +11160,12 @@
   "Webdock settings saved.": [
     "Webdock-Einstellungen gespeichert."
   ],
+  "Webdock supplies the application credentials and verified TLS connection.": [
+    "Webdock stellt die Anwendungszugänge und eine geprüfte TLS-Verbindung bereit."
+  ],
+  "Webdock will prepare the selected services, connect their credentials and deploy the application. A failed deployment keeps already provisioned data.": [
+    "Webdock bereitet die ausgewählten Dienste vor, verbindet ihre Zugänge und stellt die Anwendung bereit. Bei einem fehlgeschlagenen Deployment bleiben bereits bereitgestellte Daten erhalten."
+  ],
   "Webdock · Updated {date}": [
     "Webdock · Stand: {date}"
   ],
@@ -10713,6 +11286,9 @@
   "Welcome back.": [
     "Willkommen zurück."
   ],
+  "What does your application need?": [
+    "Was benötigt deine Anwendung?"
+  ],
   "What is Webdock?": [
     "Was ist Webdock?"
   ],
@@ -10784,6 +11360,9 @@
   ],
   "Workspace role: ": [
     "Rolle im Arbeitsbereich: "
+  ],
+  "Workspace services": [
+    "Dienste des Arbeitsbereichs"
   ],
   "Workspace settings": [
     "Arbeitsbereich verwalten"
@@ -10863,6 +11442,9 @@
   "You retain your rights to your content. You grant us only the rights needed to host, process and deliver it for the agreed service. Rights to individually developed work are governed by the project agreement; third-party and open-source licences remain applicable. Keep independent copies of important data and arrange any required backups with us. Your own precautions do not release us from agreed backup obligations or statutory liability.": [
     "Deine Rechte an deinen Inhalten bleiben bei dir. Du räumst uns nur die Rechte ein, die für Speicherung, Verarbeitung und Bereitstellung im vereinbarten Dienst erforderlich sind. Rechte an individuell entwickelten Arbeiten regelt der Projektvertrag; Fremd- und Open-Source-Lizenzen gelten weiterhin. Halte eigene Kopien wichtiger Daten vor und vereinbare benötigte Sicherungen mit uns. Eigene Vorsorge entbindet uns nicht von vereinbarten Sicherungspflichten oder gesetzlicher Haftung."
   ],
+  "You will review and explicitly accept the price before anything is ordered.": [
+    "Du prüfst und bestätigst den Preis ausdrücklich, bevor etwas bestellt wird."
+  ],
   "Your GitHub connection expired. Connect again to choose repositories.": [
     "Deine GitHub-Verbindung ist abgelaufen. Verbinde sie erneut, um Repositorys auszuwählen."
   ],
@@ -10884,6 +11466,9 @@
   "Your administrator manages access to individual projects and websites.": [
     "Dein Admin verwaltet den Zugriff auf einzelne Projekte und Websites."
   ],
+  "Your application and service connections are ready.": [
+    "Deine Anwendung und ihre Dienstverbindungen sind bereit."
+  ],
   "Your authenticator is enabled.": [
     "Deine Authenticator-App ist aktiviert."
   ],
@@ -10902,6 +11487,9 @@
   "Your credential’s Consumer key": [
     "Der Consumer-Key deiner Zugangsdaten"
   ],
+  "Your current hosting allowance applies. Existing services keep their current pricing and limits.": [
+    "Es gilt dein aktuelles Hosting-Kontingent. Vorhandene Dienste behalten ihre Preise und Limits."
+  ],
   "Your current workspace permissions also apply to every tool call.": [
     "Deine aktuellen Berechtigungen im Arbeitsbereich gelten auch für jeden Werkzeugaufruf."
   ],
@@ -10910,6 +11498,9 @@
   ],
   "Your data and ending access": [
     "Deine Daten und das Beenden des Zugriffs"
+  ],
+  "Your draft is saved in this project. You can continue it later.": [
+    "Dein Entwurf ist im Projekt gespeichert. Du kannst ihn später fortsetzen."
   ],
   "Your existing email address and password still work.": [
     "Deine bisherige E-Mail-Adresse und dein Passwort funktionieren weiterhin."

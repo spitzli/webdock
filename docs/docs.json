@@ -33,6 +33,7 @@
             "pages": [
               "guides/websites",
               "guides/applications",
+              "guides/project-setup",
               "guides/storage",
               "guides/databases",
               "guides/mail",

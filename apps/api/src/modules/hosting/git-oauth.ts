@@ -60,6 +60,21 @@ export async function executeGitOAuth(
           { customerID: command.customerID, write: true, tenantAdmin: true },
           db,
         );
+        if (command.setupID) {
+          const setup = (
+            await db.query(
+              "SELECT project_id FROM webdock_auth.hosting_setup WHERE id=$1 AND customer_id=$2",
+              [command.setupID, command.customerID],
+            )
+          ).rows[0];
+          if (!setup)
+            throw new HostingError(404, "Project setup is unavailable.");
+          await authorizeHosting(
+            actor,
+            { projectID: setup.project_id, write: true },
+            db,
+          );
+        }
         const recent = (
           await db.query(
             "SELECT count(*)::int AS count FROM webdock_auth.git_flow WHERE subject=$1 AND expires_at>now()",
@@ -70,8 +85,14 @@ export async function executeGitOAuth(
           throw new HostingError(429, "Wait before connecting GitHub again.");
         const state = randomBytes(32).toString("base64url");
         await db.query(
-          "INSERT INTO webdock_auth.git_flow(state_hash,subject,session_id,customer_id,expires_at) VALUES($1,$2,$3,$4,now()+interval '10 minutes')",
-          [digest(state), actor.subject, actor.sessionID, command.customerID],
+          "INSERT INTO webdock_auth.git_flow(state_hash,subject,session_id,customer_id,expires_at,setup_id) VALUES($1,$2,$3,$4,now()+interval '10 minutes',$5)",
+          [
+            digest(state),
+            actor.subject,
+            actor.sessionID,
+            command.customerID,
+            command.setupID ?? null,
+          ],
         );
         const url = new URL("https://github.com/login/oauth/authorize");
         url.search = new URLSearchParams({
@@ -95,6 +116,25 @@ export async function executeGitOAuth(
         { customerID: flow.customer_id, write: true, tenantAdmin: true },
         db,
       );
+      const setup = flow.setup_id
+        ? (
+            await db.query(
+              "SELECT id,project_id FROM webdock_auth.hosting_setup WHERE id=$1 AND customer_id=$2",
+              [flow.setup_id, flow.customer_id],
+            )
+          ).rows[0]
+        : null;
+      const returnPath = setup
+        ? `/hosting/projects/${setup.project_id}/setup/${setup.id}`
+        : undefined;
+      if (setup)
+        await authorizeHosting(
+          actor,
+          { projectID: setup.project_id, write: true },
+          db,
+        );
+      if (command.action === "git.oauth.return")
+        return { customerID: flow.customer_id, returnPath };
       const provider = runtime ?? createGitHubProvider();
       if (command.action === "git.oauth.exchange") {
         if (flow.user_token_encrypted)
@@ -148,7 +188,19 @@ export async function executeGitOAuth(
         "UPDATE webdock_auth.git_flow SET consumed_at=now(),user_token_encrypted=NULL WHERE state_hash=$1",
         [hash],
       );
-      return { customerID: flow.customer_id, connection };
+      if (setup)
+        await db.query(
+          `UPDATE webdock_auth.hosting_setup SET configuration=jsonb_set(configuration,'{source}',configuration->'source' || $2::jsonb),revision=revision+1,state='draft',preview=NULL,updated_at=now() WHERE id=$1 AND state IN ('draft','awaiting-confirmation') AND resources='{}'::jsonb AND configuration->'source'->>'kind'='git'`,
+          [
+            setup.id,
+            JSON.stringify({
+              connectionID: connection.id,
+              repositoryID: binding.repositoryID,
+              branch: binding.defaultBranch,
+            }),
+          ],
+        );
+      return { customerID: flow.customer_id, connection, returnPath };
     });
   });
 }

@@ -1,0 +1,54 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {Pool} from 'pg';
+import {randomBytes} from 'node:crypto';
+const url = new URL(process.env.DATABASE_URL!);
+if (!['localhost','127.0.0.1'].includes(url.hostname) || url.pathname !== '/webdock_api_test') throw Error('Disposable database required');
+test('migration preserves historical source identity and permits independent publication', async () => {
+  const pool = new Pool({connectionString:url.href,max:1});
+  const db = await pool.connect();
+  const schema = 'git_migration_' + randomBytes(6).toString('hex');
+  try {
+    await db.query('BEGIN');
+    await db.query(`CREATE SCHEMA ${schema};
+      CREATE TABLE ${schema}.git_source(id varchar PRIMARY KEY,customer_id varchar,project_id varchar UNIQUE,target_id varchar,UNIQUE(id,customer_id,project_id));
+      CREATE TABLE ${schema}.git_build(id varchar PRIMARY KEY,source_id varchar);
+      CREATE TABLE ${schema}.git_artifact(id varchar PRIMARY KEY,build_id varchar);
+      CREATE TABLE ${schema}.git_release(id varchar PRIMARY KEY,customer_id varchar,project_id varchar,artifact_id varchar,status text);
+      INSERT INTO ${schema}.git_source VALUES('11','1','2','31');
+      INSERT INTO ${schema}.git_build VALUES('41','11');
+      INSERT INTO ${schema}.git_artifact VALUES('51','41');
+      INSERT INTO ${schema}.git_release VALUES('61','1','2','51','ready');`);
+    const migration = (await readFile(new URL('../../drizzle/0022_git_application_sources.sql',import.meta.url),'utf8')).replaceAll('webdock_auth',schema);
+    const migrator = schema + '_migrator';
+    await db.query(`CREATE ROLE ${migrator} NOLOGIN NOSUPERUSER NOBYPASSRLS;
+      ALTER SCHEMA ${schema} OWNER TO ${migrator};
+      ALTER TABLE ${schema}.git_source OWNER TO ${migrator};
+      ALTER TABLE ${schema}.git_build OWNER TO ${migrator};
+      ALTER TABLE ${schema}.git_artifact OWNER TO ${migrator};
+      ALTER TABLE ${schema}.git_release OWNER TO ${migrator};
+      ALTER TABLE ${schema}.git_build ENABLE ROW LEVEL SECURITY; ALTER TABLE ${schema}.git_build FORCE ROW LEVEL SECURITY;
+      ALTER TABLE ${schema}.git_artifact ENABLE ROW LEVEL SECURITY; ALTER TABLE ${schema}.git_artifact FORCE ROW LEVEL SECURITY;
+      ALTER TABLE ${schema}.git_release ENABLE ROW LEVEL SECURITY; ALTER TABLE ${schema}.git_release FORCE ROW LEVEL SECURITY;
+      SET LOCAL ROLE ${migrator}`);
+    await db.query(migration);
+    await db.query("RESET ROLE");
+    await db.query(migration);
+    assert.equal((await db.query(`SELECT count(*)::int AS n FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=$1 AND c.relforcerowsecurity`,[schema])).rows[0].n,3);
+    assert.equal((await db.query(`SELECT source_id FROM ${schema}.git_release WHERE id='61'`)).rows[0].source_id,'11');
+    await db.query(`INSERT INTO ${schema}.git_source VALUES('12','1','2','32');
+      INSERT INTO ${schema}.git_build VALUES('42','12');
+      INSERT INTO ${schema}.git_artifact VALUES('52','42');
+      UPDATE ${schema}.git_release SET status='deploying' WHERE id='61';
+      INSERT INTO ${schema}.git_release VALUES('62','1','2','52','deploying','12');`);
+    assert.equal((await db.query(`SELECT count(*)::int AS n FROM ${schema}.git_release WHERE status='deploying'`)).rows[0].n,2);
+    await db.query('SAVEPOINT invalid_owner');
+    await assert.rejects(db.query(`INSERT INTO ${schema}.git_release VALUES('63','9','2','52','ready','12')`), {code:'23503'});
+    await db.query('ROLLBACK TO SAVEPOINT invalid_owner');
+  } finally {
+    await db.query('ROLLBACK');
+    db.release();
+    await pool.end();
+  }
+});

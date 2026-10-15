@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-14 16:08+0200\n"
+"POT-Creation-Date: 2026-10-15 09:55+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,28 +18,52 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:20
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:24
+#: apps/admin/src/components/hosting/project-overview.tsx:149
+#: apps/admin/src/lib/workspace-navigation.ts:35
+msgid "Awaiting first deployment"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:25
+msgid "This application has not been deployed yet."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:30
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:133
+#: apps/admin/src/components/hosting/setup-hosting.tsx:21
+msgid "Configure deployments"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:34
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:223
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/delete/page.tsx:22
+msgid "Delete application"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:43
 msgid "Configured resources"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:20
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:67
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:80
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:46
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:146
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:83
 msgid "Replicas"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:20
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:50
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:204
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:73
 #: apps/admin/src/components/hosting/allowances.tsx:13
 #: apps/admin/src/components/hosting/app-spec.tsx:58
+#: apps/admin/src/components/hosting/setup-review.tsx:63
+#: apps/admin/src/components/hosting/setup-wizard.tsx:250
 #: apps/auth/src/components/hosting-allowances.tsx:13
 msgid "CPU cores"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:20
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:60
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:210
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:119
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:122
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:109
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:74
 #: apps/admin/src/components/hosting/allowances.tsx:14
@@ -48,81 +72,81 @@ msgstr ""
 msgid "Memory"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:22
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:70
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:114
 #: apps/admin/src/components/hosting/allowances.tsx:15
 #: apps/admin/src/components/hosting/app-spec.tsx:85
+#: apps/admin/src/components/hosting/setup-review.tsx:110
 #: apps/auth/src/components/hosting-allowances.tsx:15
 msgid "Persistent storage"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:23
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:73
 msgid "Data is stored at /data and remains after application deletion."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:24
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:82
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/storage-delete/page.tsx:26
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/storage-delete/page.tsx:44
 msgid "Permanently delete retained data"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:29
-msgid "Application controls"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:44
-msgid "Start application"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:45
-msgid "Stop"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:46
-msgid "Restart"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:47
-msgid "Rollback"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:53
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:64
-msgid "Scale application"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:82
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:93
-msgid "Update application"
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:99
+msgid "Configure deployment source"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:107
+msgid "Application controls"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:122
+msgid "Start application"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:123
+msgid "Stop"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:124
+msgid "Restart"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:125
+msgid "Rollback"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:132
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:143
+msgid "Scale application"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:163
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:174
+msgid "Update application"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:189
 msgid "Application logs"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:115
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:197
 msgid "Refresh logs"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:118
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:200
 msgid "No logs have been requested yet."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:121
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:203
 msgid "No log output."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:128
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:210
 msgid "Operator recovery"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:135
+#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:217
 msgid "Reconcile operation"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:141
-#: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/delete/page.tsx:22
-msgid "Delete application"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/delete/page.tsx:26
@@ -152,16 +176,18 @@ msgstr ""
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:84
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:125
 #: apps/admin/src/app/(console)/(portal)/hosting/operations/[operationID]/page.tsx:28
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:40
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:22
-#: apps/admin/src/components/console-controls.tsx:79
-#: apps/admin/src/components/hosting/project-applications.tsx:14
-#: apps/admin/src/components/hosting/project-applications.tsx:16
-#: apps/admin/src/components/hosting/project-context.tsx:20
-#: apps/admin/src/components/navigation.tsx:36
-#: apps/admin/src/lib/console-context.ts:50
-#: apps/admin/src/lib/console-context.ts:73
-#: apps/admin/src/lib/console-context.ts:74
-#: apps/admin/src/lib/console-search-server.ts:36
+#: apps/admin/src/components/console-controls.tsx:80
+#: apps/admin/src/components/hosting/project-applications.tsx:38
+#: apps/admin/src/components/hosting/project-applications.tsx:47
+#: apps/admin/src/components/hosting/project-context.tsx:43
+#: apps/admin/src/components/hosting/project-overview.tsx:99
+#: apps/admin/src/components/navigation.tsx:130
+#: apps/admin/src/lib/console-context.ts:85
+#: apps/admin/src/lib/console-context.ts:148
+#: apps/admin/src/lib/console-context.ts:153
+#: apps/admin/src/lib/console-search-server.ts:37
 msgid "Applications"
 msgstr ""
 
@@ -174,7 +200,8 @@ msgid "Retained data has been permanently removed. The storage allowance is avai
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/apps/[appID]/storage-delete/page.tsx:21
-#: apps/admin/src/components/hosting/form.tsx:70
+#: apps/admin/src/components/hosting/form.tsx:85
+#: apps/admin/src/components/hosting/setup-progress.tsx:86
 msgid "Open application"
 msgstr ""
 
@@ -312,22 +339,25 @@ msgstr ""
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:64
 #: apps/admin/src/components/hosting/customer.tsx:139
 #: apps/admin/src/components/hosting/customer.tsx:219
+#: apps/admin/src/components/hosting/setup-hosting.tsx:51
 msgid "Cluster"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:176
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:105
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:108
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:66
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:146
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:456
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:506
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:79
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:164
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:476
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:526
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:80
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:71
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:111
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:159
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:107
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/page.tsx:75
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:37
 #: apps/admin/src/components/hosting/own-infrastructure.tsx:154
+#: apps/admin/src/components/hosting/project-overview.tsx:128
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "Status"
 msgstr ""
@@ -335,11 +365,14 @@ msgstr ""
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:184
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:280
 #: apps/admin/src/components/hosting/app-spec.tsx:63
+#: apps/admin/src/components/hosting/setup-review.tsx:65
+#: apps/admin/src/components/hosting/setup-wizard.tsx:300
 msgid "Instances"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:191
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:351
+#: apps/admin/src/components/hosting/setup-review.tsx:60
 msgid "Resources"
 msgstr ""
 
@@ -356,9 +389,10 @@ msgid "Actual usage"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:233
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:148
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:458
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:508
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:166
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:478
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:528
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:72
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:133
 msgid "Actions"
 msgstr ""
@@ -449,27 +483,32 @@ msgstr ""
 msgid "Reconcile observed state"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:108
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:148
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:161
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:104
+#: apps/admin/src/components/databases/managed-rows.tsx:14
+msgid "Open in Tabularis"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:111
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:151
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:164
 msgid "Unknown or stale"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:113
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:116
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:62
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:100
 #: apps/admin/src/components/hosting/databases.tsx:173
 msgid "Database kind"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:115
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:118
 #: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:31
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:64
 #: apps/admin/src/components/hosting/databases.tsx:175
 msgid "Shared"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:115
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:118
 #: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/layout.tsx:31
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:64
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:104
@@ -477,36 +516,36 @@ msgstr ""
 msgid "Dedicated instance"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:122
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:125
 msgid "Shared resources"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:129
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:132
 msgid "Storage allowance"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:139
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:142
 msgid "Measured logical allowance"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:140
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:143
 msgid "Bounded database filesystem"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:144
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:147
 msgid "Logical data size"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:153
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:156
 msgid "Database filesystem usage"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:166
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:169
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:45
 msgid "Last observation"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:173
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:176
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:121
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:46
 #: apps/admin/src/components/hosting/own-mail.tsx:99
@@ -516,59 +555,61 @@ msgstr ""
 msgid "Unavailable"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:177
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:180
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:67
 msgid "Backups"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:178
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:181
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:67
 msgid "Not configured"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:182
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:185
 #: apps/admin/src/components/hosting/databases.tsx:115
+#: apps/admin/src/components/hosting/setup-review.tsx:142
 msgid "Backups are not configured. No recovery window is included."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:188
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:191
 msgid "Your measured storage allowance is nearly reached."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:197
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:200
 msgid "The database filesystem is nearly full. Review capacity before importing more data."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:203
-#: apps/admin/src/components/hosting/form.tsx:60
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:206
+#: apps/admin/src/components/hosting/form.tsx:75
+#: apps/admin/src/components/hosting/setup-progress.tsx:110
 msgid "View progress"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:209
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:212
 msgid "Cancellation requested. Retained data is deleted separately by an operator."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:221
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:224
 msgid "Database actions"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:224
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:227
 msgid "Pausing interrupts connections and keeps the fixed monthly price. Shared pause affects only your own roles."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:249
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:252
 msgid "Upgrade database plan"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:261
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:264
 msgid "Retained migration sources"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:267
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:270
 msgid "Review source cleanup"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:279
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/database-workspace.tsx:282
 msgid "Review database deletion"
 msgstr ""
 
@@ -634,8 +675,30 @@ msgstr ""
 msgid "Delete retained source"
 msgstr ""
 
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/viewer/page.tsx:14
+msgid "The database must be ready before opening Tabularis."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/viewer/page.tsx:16
+msgid "Queries saved in this viewer are available only for this session. Copy any SQL you want to keep."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/viewer/page.tsx:18
+#: apps/admin/src/components/databases/forms.tsx:25
+#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:51
+#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:31
+#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
+#: apps/auth/src/lib/i18n-labels.ts:6
+msgid "Production"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/databases/[databaseID]/viewer/page.tsx:18
+#: apps/admin/src/components/databases/forms.tsx:36
+msgid "Manage schema"
+msgstr ""
+
 #: apps/admin/src/app/(console)/(portal)/hosting/developer/page.tsx:11
-#: apps/admin/src/lib/console-search-server.ts:31
+#: apps/admin/src/lib/console-search-server.ts:32
 msgid "Developer tools"
 msgstr ""
 
@@ -705,7 +768,8 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:32
 #: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:39
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:167
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:185
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:171
 msgid "Connect GitHub"
 msgstr ""
 
@@ -723,8 +787,9 @@ msgid "Install or update GitHub access"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:56
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:145
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:228
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:163
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:247
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:97
 msgid "GitHub account"
 msgstr ""
 
@@ -737,7 +802,8 @@ msgid "Load repositories"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/git/connect/page.tsx:82
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:270
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:289
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:119
 msgid "Repository"
 msgstr ""
 
@@ -754,7 +820,7 @@ msgid "Connection help"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/git/connection-error/page.tsx:6
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:139
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:157
 msgid "GitHub connection"
 msgstr ""
 
@@ -771,7 +837,7 @@ msgstr ""
 #: apps/admin/src/app/(console)/(portal)/hosting/operations/[operationID]/page.tsx:25
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:57
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:17
-#: apps/admin/src/components/navigation.tsx:19
+#: apps/admin/src/components/navigation.tsx:33
 msgid "Operations"
 msgstr ""
 
@@ -820,17 +886,19 @@ msgid "Name"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:73
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:21
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:23
 msgid "Add database"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:25
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:113
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:55
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:71
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:131
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:54
 msgid "Git deployments"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/builds/[buildID]/page.tsx:26
+#: apps/admin/src/components/hosting/setup-progress.tsx:94
 msgid "Build logs"
 msgstr ""
 
@@ -846,225 +914,385 @@ msgstr ""
 msgid "No build output yet."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:114
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:72
+msgid "Select an application"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:132
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:18
 msgid "Activity"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:114
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:132
 msgid "Configuration"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:115
-msgid "Configure deployments"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:124
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:142
 msgid "Pushes build the configured branch. Production publication requires approval of an exact artifact."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:129
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:147
 msgid "Setup required"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:143
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:161
 msgid "No GitHub connection yet."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:158
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:176
 msgid "Disconnect GitHub"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:174
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:192
 #: apps/admin/src/lib/git-deployment-messages.ts:6
 msgid "Bind Vercel target"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:177
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:195
 #: apps/admin/src/lib/git-deployment-messages.ts:77
 msgid "Select an existing authorized Vercel project. Disable native Git builds and configure Frankfurt Functions before binding."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:187
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:205
 #: apps/admin/src/lib/git-deployment-messages.ts:89
 msgid "Verify and bind target"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:190
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:208
 #: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:295
 #: apps/admin/src/lib/git-deployment-messages.ts:87
 msgid "Vercel project ID"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:206
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:224
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:41
 #: apps/admin/src/components/hosting/own-mail.tsx:78
 msgid "Connection"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:209
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:227
 #: apps/admin/src/lib/git-deployment-messages.ts:25
 msgid "Customer Vercel connection"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:213
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:231
 #: apps/admin/src/lib/git-deployment-messages.ts:62
 msgid "Platform Vercel connection"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:222
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:240
 msgid "Deployment source"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:238
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:257
 msgid "Select connection"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:266
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:285
 msgid "Save deployment source"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:284
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:303
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:142
 msgid "Branch"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:297
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:316
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:153
 msgid "Root directory"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:306
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:325
 msgid "Vercel healthcheck path"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:316
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:335
 msgid "Use a public health endpoint that returns HTTP 200 without a redirect."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:320
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:339
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:186
 msgid "Build provider"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:327
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:346
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:198
 msgid "Isolated Webdock worker"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:332
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:351
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:206
 msgid "GitHub Actions workflow"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:344
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:363
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:216
 msgid "Artifact name prefix"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:354
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:373
 msgid "GitHub builds the artifact. Webdock verifies and publishes it. Artifact names end with the exact commit SHA."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:358
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:377
 msgid "Build recipe"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:368
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:387
 msgid "Deployment target"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:388
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:407
 msgid "Build pushes automatically"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:397
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:416
 msgid "Publish production automatically after checks pass"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:409
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:428
 msgid "Connect a repository to configure Git deployments."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:415
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:434
 msgid "Configure a deployment target before enabling Git deployments."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:423
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:442
 msgid "Builds"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:433
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:453
 msgid "Build latest commit"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:439
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:459
 msgid "Push to the configured branch or start a new workflow in GitHub Actions. Re-running an existing run is not supported."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:446
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:466
 msgid "No builds yet."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:449
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:469
 msgid "Commit"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:467
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:487
 msgid "Cancel build"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:474
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:494
 msgid "Build pages"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:491
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:511
 msgid "Releases"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:494
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:514
 msgid "Rollback reuses a retained artifact. It does not restore a database."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:500
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:520
 msgid "No releases yet."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:503
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:523
 msgid "Artifact"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:539
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:559
 msgid "Reconcile release"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:541
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:561
 msgid "Request rollback"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:543
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:563
 #: apps/admin/src/lib/git-deployment-messages.ts:67
 msgid "Renew approval"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:544
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:564
 msgid "Approve release"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:552
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:572
 msgid "Release pages"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:54
-msgid "Managed applications"
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:46
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/setup/page.tsx:28
+#: apps/admin/src/components/hosting/project-overview.tsx:68
+#: apps/admin/src/components/hosting/project-overview.tsx:117
+msgid "Add application"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:71
-#: apps/admin/src/components/hosting/project-applications.tsx:19
+#: apps/admin/src/components/hosting/project-applications.tsx:75
+#: apps/admin/src/components/hosting/project-overview.tsx:114
 msgid "No applications deployed yet."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:91
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:102
-msgid "Deploy application"
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:36
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:11
+#: apps/admin/src/components/hosting/application-services.tsx:62
+#: apps/admin/src/components/hosting/own-mail.tsx:139
+#: apps/admin/src/components/hosting/project-overview.tsx:41
+#: apps/admin/src/components/hosting/setup-progress.tsx:19
+#: apps/admin/src/components/mail/product-page.tsx:17
+#: apps/admin/src/lib/billing-labels.ts:9 apps/admin/src/lib/ui-labels.ts:6
+#: apps/auth/src/lib/i18n-labels.ts:4
+msgid "Pending"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:105
-msgid "Application name"
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:37
+#: apps/admin/src/components/hosting/application-services.tsx:59
+#: apps/admin/src/components/hosting/own-infrastructure.tsx:216
+#: apps/admin/src/components/hosting/project-overview.tsx:42
+msgid "Connected"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:38
+#: apps/admin/src/components/hosting/application-services.tsx:61
+#: apps/admin/src/components/hosting/project-overview.tsx:43
+#: apps/admin/src/components/hosting/project-overview.tsx:89
+#: apps/admin/src/components/hosting/setup-progress.tsx:21
+msgid "Action required"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:39
+#: apps/admin/src/components/hosting/project-overview.tsx:44
+msgid "Disconnecting"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:40
+#: apps/admin/src/components/hosting/project-overview.tsx:45
+#: apps/admin/src/components/mail/product-page.tsx:17
+msgid "Disconnected"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:52
+#: apps/admin/src/components/hosting/project-context.tsx:45
+#: apps/admin/src/components/hosting/project-overview.tsx:72
+#: apps/admin/src/components/hosting/project-overview.tsx:129
+#: apps/admin/src/components/hosting/setup-wizard.tsx:41
+#: apps/admin/src/components/workspace-sidebar.tsx:73
+#: apps/admin/src/lib/billing-families.ts:10
+#: apps/admin/src/lib/console-context.ts:86
+#: apps/admin/src/lib/console-context.ts:154
+msgid "Services"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:55
+msgid "Connect services to applications. Disconnecting a service keeps its data."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:61
+msgid "Application connections"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:63
+#: apps/admin/src/components/hosting/application-services.tsx:43
+#: apps/admin/src/components/hosting/project-overview.tsx:180
+msgid "No services connected to applications yet."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:69
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:10
+#: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:25
+#: apps/admin/src/components/hosting/project-overview.tsx:126
+#: apps/admin/src/components/hosting/service-bindings.tsx:62
+#: apps/admin/src/components/hosting/setup-review.tsx:40
+#: apps/admin/src/components/hosting/setup-wizard.tsx:40
+#: apps/auth/src/app/consent/page.tsx:33 apps/auth/src/lib/i18n-messages.ts:286
+msgid "Application"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:70
+#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
+#: apps/admin/src/components/hosting/service-bindings.tsx:76
+msgid "Service"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:88
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:186
+#: apps/admin/src/components/hosting/application-services.tsx:54
+#: apps/admin/src/components/hosting/project-overview.tsx:193
+#: apps/admin/src/components/hosting/service-bindings.tsx:88
+#: apps/admin/src/components/hosting/setup-review.tsx:87
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:167
+#: apps/admin/src/components/hosting/setup-wizard.tsx:405
+msgid "Mail sending"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:102
+msgid "Manage connection"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:111
+msgid "Refresh connection"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:122
+msgid "Rotate Mail key"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:133
+msgid "Disconnect from application"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:147
+#: apps/admin/src/components/hosting/application-services.tsx:70
+msgid "Connect an existing service"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:153
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:67
+msgid "Create a database"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:163
+msgid "Set up Mail sending"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:168
+msgid "Project resources"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:174
+#: apps/admin/src/components/hosting/project-overview.tsx:203
+msgid "Manage databases"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:180
+msgid "Mailboxes and forwarding"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/setup/[setupID]/page.tsx:78
+msgid "Set up application"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/setup/[setupID]/page.tsx:84
+msgid "GitHub is connected. Review your repository and continue."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/setup/[setupID]/page.tsx:89
+msgid "GitHub connection was not completed. Your draft has been kept."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/setup/page.tsx:31
+msgid "Connect a source, choose services and review everything before deployment."
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/setup/page.tsx:38
+msgid "Continue an existing setup"
+msgstr ""
+
+#: apps/admin/src/app/(console)/(portal)/hosting/projects/[projectID]/setup/page.tsx:53
+msgid "Application setup requires project management access."
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:34
@@ -1076,11 +1304,11 @@ msgid "Choose which projects Webdock can manage. Vercel continues to bill your o
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:44
-#: apps/admin/src/components/console-controls.tsx:79
-#: apps/admin/src/components/console-controls.tsx:111
-#: apps/admin/src/components/navigation.tsx:19
-#: apps/admin/src/lib/console-context.ts:48
-#: apps/admin/src/lib/console-search-server.ts:43
+#: apps/admin/src/components/console-controls.tsx:80
+#: apps/admin/src/components/console-controls.tsx:112
+#: apps/admin/src/components/navigation.tsx:31
+#: apps/admin/src/lib/console-context.ts:81
+#: apps/admin/src/lib/console-search-server.ts:44
 msgid "Projects"
 msgstr ""
 
@@ -1101,11 +1329,11 @@ msgid "Usage data is not available through this connection. No spending cap is e
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:104
-#: apps/admin/src/components/hosting/project-applications.tsx:20
-#: apps/admin/src/components/hosting/project-context.tsx:21
-#: apps/admin/src/lib/console-context.ts:50
-#: apps/admin/src/lib/console-context.ts:74
-#: apps/admin/src/lib/console-search-server.ts:42
+#: apps/admin/src/components/hosting/project-applications.tsx:94
+#: apps/admin/src/components/hosting/project-context.tsx:44
+#: apps/admin/src/lib/console-context.ts:87
+#: apps/admin/src/lib/console-context.ts:155
+#: apps/admin/src/lib/console-search-server.ts:43
 msgid "Deployments"
 msgstr ""
 
@@ -1243,20 +1471,6 @@ msgstr ""
 msgid "Voucher"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:10
-#: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:25
-#: apps/auth/src/app/consent/page.tsx:33 apps/auth/src/lib/i18n-messages.ts:286
-msgid "Application"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:11
-#: apps/admin/src/components/hosting/own-mail.tsx:139
-#: apps/admin/src/components/mail/product-page.tsx:17
-#: apps/admin/src/lib/billing-labels.ts:9 apps/admin/src/lib/ui-labels.ts:6
-#: apps/auth/src/lib/i18n-labels.ts:4
-msgid "Pending"
-msgstr ""
-
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:11
 #: apps/admin/src/lib/ui-labels.ts:7
 msgid "Reviewed"
@@ -1302,10 +1516,6 @@ msgid "Message"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
-msgid "Service"
-msgstr ""
-
-#: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
 msgid "Amount"
 msgstr ""
 
@@ -1324,8 +1534,8 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:25
-#: apps/admin/src/components/hosting/project-context.tsx:13
-#: apps/admin/src/components/navigation.tsx:19
+#: apps/admin/src/components/hosting/project-context.tsx:26
+#: apps/admin/src/components/navigation.tsx:32
 msgid "Customers"
 msgstr ""
 
@@ -1494,46 +1704,47 @@ msgstr ""
 msgid "Postal code"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:13
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:20
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:37
-#: apps/admin/src/components/console-controls.tsx:79
-#: apps/admin/src/components/hosting/project-context.tsx:22
-#: apps/admin/src/components/navigation.tsx:37
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:14
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:31
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:50
+#: apps/admin/src/components/console-controls.tsx:80
+#: apps/admin/src/components/hosting/project-context.tsx:46
+#: apps/admin/src/components/navigation.tsx:135
 #: apps/admin/src/lib/billing-families.ts:9
-#: apps/admin/src/lib/console-context.ts:50
-#: apps/admin/src/lib/console-context.ts:74
-#: apps/admin/src/lib/console-search-server.ts:36
+#: apps/admin/src/lib/console-context.ts:88
+#: apps/admin/src/lib/console-context.ts:156
+#: apps/admin/src/lib/console-search-server.ts:37
 msgid "Databases"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:13
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:14
 msgid "Browse tables and query your project data."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:15
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:16
 msgid "No databases are available for your account."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:18
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:20
 msgid "No access assigned"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:19
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:21
 #: apps/admin/src/components/hosting/databases.tsx:47
+#: apps/admin/src/components/hosting/setup-progress.tsx:118
 msgid "Open database"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:20
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:22
 msgid "Manage access"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:25
-#: apps/admin/src/components/console-controls.tsx:79
-#: apps/admin/src/components/console-controls.tsx:111
-#: apps/admin/src/components/hosting/project-context.tsx:13
-#: apps/admin/src/components/navigation.tsx:20
-#: apps/admin/src/lib/console-search-server.ts:29
+#: apps/admin/src/components/console-controls.tsx:80
+#: apps/admin/src/components/console-controls.tsx:112
+#: apps/admin/src/components/hosting/project-context.tsx:26
+#: apps/admin/src/components/navigation.tsx:36
+#: apps/admin/src/lib/console-search-server.ts:30
 msgid "Workspaces"
 msgstr ""
 
@@ -1563,7 +1774,7 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/inbox/page.tsx:14
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/page.tsx:8
-#: apps/admin/src/lib/console-search-server.ts:38
+#: apps/admin/src/lib/console-search-server.ts:39
 msgid "Mailboxes"
 msgstr ""
 
@@ -1579,7 +1790,8 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/forms.tsx:11
 #: apps/admin/src/components/databases/forms.tsx:14
-#: apps/admin/src/components/hosting/form.tsx:79
+#: apps/admin/src/components/hosting/form.tsx:94
+#: apps/admin/src/components/hosting/setup-wizard.tsx:466
 #: apps/auth/src/app/admin/form.tsx:43 apps/auth/src/app/admin/form.tsx:57
 #: apps/auth/src/app/admin/plans/form.tsx:12
 #: apps/auth/src/app/people/form.tsx:32 apps/auth/src/app/tenants/form.tsx:15
@@ -1607,15 +1819,15 @@ msgstr ""
 msgid "Dedicated to this sender domain"
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:22
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:35
 msgid "Choose a project to order and manage PostgreSQL."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:27
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:40
 msgid "No active projects."
 msgstr ""
 
-#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:30
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:43
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:27
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:36
 #: apps/admin/src/components/databases/forms.tsx:22
@@ -1771,7 +1983,7 @@ msgid "Public ordering requires a separate product release decision."
 msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/infrastructure/[clusterID]/enroll/[enrollmentID]/page.tsx:11
-#: apps/admin/src/components/hosting/form.tsx:65
+#: apps/admin/src/components/hosting/form.tsx:80
 msgid "Connect cluster agent"
 msgstr ""
 
@@ -1947,7 +2159,7 @@ msgid "Operations areas"
 msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/operations/page.tsx:19
-#: apps/admin/src/components/hosting/project-applications.tsx:14
+#: apps/admin/src/components/hosting/project-applications.tsx:39
 msgid "Hosting status is currently unavailable."
 msgstr ""
 
@@ -2055,6 +2267,7 @@ msgstr ""
 
 #: apps/admin/src/app/(console)/(workspace)/projects/[id]/page.tsx:302
 #: apps/admin/src/components/hosting/app-spec.tsx:24
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:75
 #: apps/admin/src/lib/ui-labels.ts:15
 msgid "Template"
 msgstr ""
@@ -2190,157 +2403,157 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:65
-#: apps/admin/src/lib/console-search-server.ts:48
+#: apps/admin/src/components/console-controls.tsx:66
+#: apps/admin/src/lib/console-search-server.ts:49
 msgid "Search is temporarily unavailable. Please try again."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:79
+#: apps/admin/src/components/console-controls.tsx:80
 msgid "Go to"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:79
+#: apps/admin/src/components/console-controls.tsx:80
 #: apps/admin/src/components/plan-fields.tsx:13
 #: apps/admin/src/lib/billing-families.ts:3
 #: apps/auth/src/lib/i18n-messages.ts:276
 msgid "Websites"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:82
+#: apps/admin/src/components/console-controls.tsx:83
 msgid "Open navigation"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:83
+#: apps/admin/src/components/console-controls.tsx:84
 msgid "Console"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:84
-#: apps/admin/src/components/console-controls.tsx:110
+#: apps/admin/src/components/console-controls.tsx:85
+#: apps/admin/src/components/console-controls.tsx:111
 msgid "Switch workspace or project"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:85
+#: apps/admin/src/components/console-controls.tsx:86
 msgid "Select workspace"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:87
-#: apps/admin/src/components/console-controls.tsx:91
+#: apps/admin/src/components/console-controls.tsx:88
 #: apps/admin/src/components/console-controls.tsx:92
+#: apps/admin/src/components/console-controls.tsx:93
 msgid "Search resources and services"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:91
+#: apps/admin/src/components/console-controls.tsx:92
 msgid "Close search"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:92
+#: apps/admin/src/components/console-controls.tsx:93
 msgid "Name or domain"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:93
+#: apps/admin/src/components/console-controls.tsx:94
 msgid "Search in"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:94
+#: apps/admin/src/components/console-controls.tsx:95
 msgid "Current project"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:94
+#: apps/admin/src/components/console-controls.tsx:95
 msgid "Current workspace"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:94
+#: apps/admin/src/components/console-controls.tsx:95
 msgid "Available resources"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:94
+#: apps/admin/src/components/console-controls.tsx:95
 msgid "All workspaces"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:95
+#: apps/admin/src/components/console-controls.tsx:96
 msgid "Applications, databases and navigation"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:95
+#: apps/admin/src/components/console-controls.tsx:96
 msgid "Projects, websites and navigation"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:95
+#: apps/admin/src/components/console-controls.tsx:96
 msgid "Workspaces, websites and navigation"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:97
+#: apps/admin/src/components/console-controls.tsx:98
 #: packages/search/src/live-form.tsx:150
 msgid "Searching…"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:99
+#: apps/admin/src/components/console-controls.tsx:100
 msgid "No results. Try a different name or change the search scope."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:104
+#: apps/admin/src/components/console-controls.tsx:105
 msgid "Some resources could not be loaded. Try the search again."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:105
-#: apps/admin/src/components/console-controls.tsx:115
+#: apps/admin/src/components/console-controls.tsx:106
+#: apps/admin/src/components/console-controls.tsx:116
 msgid "More results are available. Narrow your search."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:107
+#: apps/admin/src/components/console-controls.tsx:108
 msgid "Type at least two characters to find resources."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:107
+#: apps/admin/src/components/console-controls.tsx:108
 msgid "Navigate"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:107
+#: apps/admin/src/components/console-controls.tsx:108
 msgid "Close"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:110
+#: apps/admin/src/components/console-controls.tsx:111
 msgid "Close workspace selector"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:112
+#: apps/admin/src/components/console-controls.tsx:113
 msgid "Filter by name"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:112
+#: apps/admin/src/components/console-controls.tsx:113
 msgid "Filter workspaces and projects"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:114
 #: apps/admin/src/components/console-controls.tsx:115
+#: apps/admin/src/components/console-controls.tsx:116
 msgid "Selected"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:115
+#: apps/admin/src/components/console-controls.tsx:116
 msgid "Loading projects…"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:115
+#: apps/admin/src/components/console-controls.tsx:116
 msgid "Projects could not be loaded. Please try again."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:115
+#: apps/admin/src/components/console-controls.tsx:116
 msgid "No matching projects in this workspace."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:116
+#: apps/admin/src/components/console-controls.tsx:117
 msgid "No matching workspaces."
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:118
+#: apps/admin/src/components/console-controls.tsx:119
 msgid "Open full overview"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:121
+#: apps/admin/src/components/console-controls.tsx:122
 msgid "Navigation"
 msgstr ""
 
-#: apps/admin/src/components/console-controls.tsx:121
+#: apps/admin/src/components/console-controls.tsx:122
 msgid "Close navigation"
 msgstr ""
 
@@ -2371,14 +2584,6 @@ msgstr ""
 #: apps/admin/src/components/databases/forms.tsx:25
 #: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:51
 msgid "Environment"
-msgstr ""
-
-#: apps/admin/src/components/databases/forms.tsx:25
-#: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:51
-#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:31
-#: apps/auth/src/app/tenants/[customerID]/usage/page.tsx:32
-#: apps/auth/src/lib/i18n-labels.ts:6
-msgid "Production"
 msgstr ""
 
 #: apps/admin/src/components/databases/forms.tsx:25
@@ -2421,10 +2626,6 @@ msgstr ""
 msgid "Edit data"
 msgstr ""
 
-#: apps/admin/src/components/databases/forms.tsx:36
-msgid "Manage schema"
-msgstr ""
-
 #: apps/admin/src/components/databases/forms.tsx:37
 msgid "Runtime origin"
 msgstr ""
@@ -2447,6 +2648,10 @@ msgstr ""
 
 #: apps/admin/src/components/databases/forms.tsx:43
 msgid "Revoke access"
+msgstr ""
+
+#: apps/admin/src/components/databases/managed-rows.tsx:12
+msgid "Manage database"
 msgstr ""
 
 #: apps/admin/src/components/databases/workspace-frame.tsx:51
@@ -2504,10 +2709,12 @@ msgid "Application configuration"
 msgstr ""
 
 #: apps/admin/src/components/hosting/app-spec.tsx:22
+#: apps/admin/src/components/hosting/setup-wizard.tsx:286
 msgid "Advanced settings"
 msgstr ""
 
 #: apps/admin/src/components/hosting/app-spec.tsx:26
+#: apps/admin/src/components/hosting/setup-review.tsx:57
 msgid "HTTP healthcheck"
 msgstr ""
 
@@ -2524,10 +2731,13 @@ msgid "The HTTP healthcheck template fixes the image, arguments, port 8080 and /
 msgstr ""
 
 #: apps/admin/src/components/hosting/app-spec.tsx:74
+#: apps/admin/src/components/hosting/setup-wizard.tsx:236
+#: apps/admin/src/components/hosting/setup-wizard.tsx:394
 msgid "HTTP port"
 msgstr ""
 
 #: apps/admin/src/components/hosting/app-spec.tsx:85
+#: apps/admin/src/lib/setup-messages.ts:56
 msgid "Persistent storage size is fixed at application creation."
 msgstr ""
 
@@ -2536,6 +2746,7 @@ msgid "Optional /data storage: enter 0 to disable or at least 68 MB. One instanc
 msgstr ""
 
 #: apps/admin/src/components/hosting/app-spec.tsx:88
+#: apps/admin/src/components/hosting/setup-wizard.tsx:289
 msgid "Healthcheck path"
 msgstr ""
 
@@ -2543,7 +2754,18 @@ msgstr ""
 msgid "Applications run without root or API tokens, with a read-only filesystem and temporary /tmp storage. Cached images only; no unverified registry pulls."
 msgstr ""
 
+#: apps/admin/src/components/hosting/application-services.tsx:36
+#: apps/admin/src/components/hosting/project-overview.tsx:175
+msgid "Connected services"
+msgstr ""
+
+#: apps/admin/src/components/hosting/application-services.tsx:38
+#: apps/admin/src/components/hosting/project-overview.tsx:176
+msgid "Manage services"
+msgstr ""
+
 #: apps/admin/src/components/hosting/arguments.tsx:11
+#: apps/admin/src/components/hosting/setup-wizard.tsx:352
 msgid "Container arguments"
 msgstr ""
 
@@ -2568,8 +2790,8 @@ msgid "Allocated resources, reservations and measured usage are tracked separate
 msgstr ""
 
 #: apps/admin/src/components/hosting/customer.tsx:107
-#: apps/admin/src/components/navigation.tsx:43
-#: apps/admin/src/lib/console-search-server.ts:37
+#: apps/admin/src/components/navigation.tsx:176
+#: apps/admin/src/lib/console-search-server.ts:38
 msgid "Plan & usage"
 msgstr ""
 
@@ -2663,11 +2885,12 @@ msgid "Allow own container images"
 msgstr ""
 
 #: apps/admin/src/components/hosting/customer.tsx:319
+#: apps/admin/src/components/hosting/setup-hosting.tsx:68
 msgid "Also allow this project's images on a shared cluster (applications share the host kernel)"
 msgstr ""
 
 #: apps/admin/src/components/hosting/database-details.tsx:19
-#: apps/admin/src/lib/console-context.ts:63
+#: apps/admin/src/lib/console-context.ts:128
 msgid "Connection credentials"
 msgstr ""
 
@@ -2684,6 +2907,8 @@ msgid "Host"
 msgstr ""
 
 #: apps/admin/src/components/hosting/database-details.tsx:37
+#: apps/admin/src/components/hosting/service-bindings.tsx:93
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:39
 msgid "Database"
 msgstr ""
 
@@ -2730,11 +2955,14 @@ msgid "Reveal credentials"
 msgstr ""
 
 #: apps/admin/src/components/hosting/databases.tsx:74
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:93
 msgid "Database plan"
 msgstr ""
 
 #: apps/admin/src/components/hosting/databases.tsx:79
 #: apps/admin/src/components/hosting/databases.tsx:97
+#: apps/admin/src/components/hosting/setup-review.tsx:138
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:107
 msgid "net / month"
 msgstr ""
 
@@ -2743,6 +2971,7 @@ msgid "Review paid order"
 msgstr ""
 
 #: apps/admin/src/components/hosting/databases.tsx:89
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:163
 msgid "No database plans are available yet."
 msgstr ""
 
@@ -2759,6 +2988,7 @@ msgid "Billing starts after confirmed provisioning. Pausing does not reduce the 
 msgstr ""
 
 #: apps/admin/src/components/hosting/databases.tsx:132
+#: apps/admin/src/components/hosting/setup-review.tsx:158
 msgid "I accept this monthly price and the displayed terms."
 msgstr ""
 
@@ -2791,6 +3021,7 @@ msgid "Build environment variables"
 msgstr ""
 
 #: apps/admin/src/components/hosting/environment.tsx:49
+#: apps/admin/src/components/hosting/setup-review.tsx:102
 msgid "Environment variables"
 msgstr ""
 
@@ -2854,27 +3085,23 @@ msgstr ""
 msgid "Add variable"
 msgstr ""
 
-#: apps/admin/src/components/hosting/form.tsx:31
-msgid "Leave without saving these changes?"
-msgstr ""
-
-#: apps/admin/src/components/hosting/form.tsx:75
+#: apps/admin/src/components/hosting/form.tsx:90
 msgid "Open cluster enrollment"
 msgstr ""
 
-#: apps/admin/src/components/hosting/form.tsx:94
+#: apps/admin/src/components/hosting/form.tsx:112
 msgid "The token expires after five minutes and can connect exactly one agent. Store agent credentials privately on your node."
 msgstr ""
 
-#: apps/admin/src/components/hosting/form.tsx:101
+#: apps/admin/src/components/hosting/form.tsx:119
 msgid "Save this enrollment token now. It is displayed only once."
 msgstr ""
 
-#: apps/admin/src/components/hosting/form.tsx:107
+#: apps/admin/src/components/hosting/form.tsx:125
 msgid "Expires at"
 msgstr ""
 
-#: apps/admin/src/components/hosting/form.tsx:112
+#: apps/admin/src/components/hosting/form.tsx:130
 msgid "Show enrollment token once"
 msgstr ""
 
@@ -2978,10 +3205,6 @@ msgstr ""
 msgid "Enter your provider location evidence. A declaration is not provider verification."
 msgstr ""
 
-#: apps/admin/src/components/hosting/own-infrastructure.tsx:216
-msgid "Connected"
-msgstr ""
-
 #: apps/admin/src/components/hosting/own-infrastructure.tsx:217
 msgid "Connect your own Vercel team to choose its projects."
 msgstr ""
@@ -3059,6 +3282,7 @@ msgid "The domain allowance for this connection has been reached."
 msgstr ""
 
 #: apps/admin/src/components/hosting/own-mail.tsx:172
+#: apps/admin/src/components/hosting/setup-mail-panel.tsx:81
 msgid "Add sender domain"
 msgstr ""
 
@@ -3139,30 +3363,525 @@ msgstr ""
 msgid "Sending uses EU endpoints. The separate provider management API is an approved exception without an EU-only guarantee. The Webdock domain allowance is not an email sending or spending limit."
 msgstr ""
 
-#: apps/admin/src/components/hosting/project-applications.tsx:14
-#: apps/admin/src/components/hosting/project-applications.tsx:20
+#: apps/admin/src/components/hosting/project-applications.tsx:40
+#: apps/admin/src/components/hosting/project-applications.tsx:88
 msgid "Open hosting"
 msgstr ""
 
-#: apps/admin/src/components/hosting/project-applications.tsx:16
+#: apps/admin/src/components/hosting/project-applications.tsx:49
+#: apps/admin/src/components/hosting/project-overview.tsx:100
 msgid "View all"
 msgstr ""
 
-#: apps/admin/src/components/hosting/project-applications.tsx:17
+#: apps/admin/src/components/hosting/project-applications.tsx:54
+#: apps/admin/src/components/hosting/project-overview.tsx:104
 msgid "Hosting has not been assigned to this project."
 msgstr ""
 
-#: apps/admin/src/components/hosting/project-applications.tsx:17
+#: apps/admin/src/components/hosting/project-applications.tsx:59
+#: apps/admin/src/components/hosting/project-overview.tsx:105
 msgid "Set up hosting"
 msgstr ""
 
-#: apps/admin/src/components/hosting/project-context.tsx:18
+#: apps/admin/src/components/hosting/project-applications.tsx:82
+#: apps/admin/src/components/hosting/project-context.tsx:40
+#: apps/admin/src/components/hosting/setup-progress.tsx:52
+#: apps/admin/src/lib/console-context.ts:84
+#: apps/admin/src/lib/console-context.ts:152
+msgid "Project overview"
+msgstr ""
+
+#: apps/admin/src/components/hosting/project-context.tsx:36
 msgid "Project areas"
 msgstr ""
 
-#: apps/admin/src/components/hosting/project-context.tsx:19
-#: apps/admin/src/lib/console-context.ts:50
-msgid "Project overview"
+#: apps/admin/src/components/hosting/project-context.tsx:51
+#: apps/admin/src/components/navigation.tsx:43
+#: apps/admin/src/lib/console-context.ts:89
+#: apps/admin/src/lib/console-context.ts:111
+#: apps/admin/src/lib/console-context.ts:132
+#: apps/admin/src/lib/console-context.ts:161
+#: apps/admin/src/lib/console-search-server.ts:44
+msgid "Settings"
+msgstr ""
+
+#: apps/admin/src/components/hosting/project-overview.tsx:61
+msgid "Applications, connected services and deployment activity in one place."
+msgstr ""
+
+#: apps/admin/src/components/hosting/project-overview.tsx:78
+msgid "Setups in progress"
+msgstr ""
+
+#: apps/admin/src/components/hosting/project-overview.tsx:87
+#: apps/admin/src/components/hosting/setup-progress.tsx:20
+#: apps/admin/src/lib/ui-labels.ts:4
+msgid "In progress"
+msgstr ""
+
+#: apps/admin/src/components/hosting/project-overview.tsx:90
+#: apps/admin/src/lib/billing-labels.ts:29 apps/admin/src/lib/ui-labels.ts:7
+#: packages/cms-ui/src/client.tsx:857 packages/cms-ui/src/client.tsx:1000
+#: packages/cms-ui/src/client.tsx:1091
+msgid "Draft"
+msgstr ""
+
+#: apps/admin/src/components/hosting/project-overview.tsx:109
+msgid "This project uses Vercel."
+msgstr ""
+
+#: apps/admin/src/components/hosting/project-overview.tsx:110
+msgid "Open deployments"
+msgstr ""
+
+#: apps/admin/src/components/hosting/project-overview.tsx:127
+#: apps/admin/src/components/hosting/setup-review.tsx:42
+#: apps/admin/src/components/hosting/setup-wizard.tsx:39
+#: packages/cms-ui/src/schema.ts:20
+msgid "Source"
+msgstr ""
+
+#: apps/admin/src/components/hosting/project-overview.tsx:151
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:75
+msgid "Container image"
+msgstr ""
+
+#: apps/admin/src/components/hosting/service-bindings.tsx:54
+msgid "Connect service"
+msgstr ""
+
+#: apps/admin/src/components/hosting/service-bindings.tsx:99
+msgid "Choose a database"
+msgstr ""
+
+#: apps/admin/src/components/hosting/service-bindings.tsx:109
+#: apps/admin/src/components/hosting/setup-mail-panel.tsx:83
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:198
+#: apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx:33
+msgid "Sender domain"
+msgstr ""
+
+#: apps/admin/src/components/hosting/service-bindings.tsx:115
+msgid "Choose a sender domain"
+msgstr ""
+
+#: apps/admin/src/components/hosting/service-bindings.tsx:128
+msgid "Environment variable"
+msgstr ""
+
+#: apps/admin/src/components/hosting/service-bindings.tsx:139
+msgid "Choose an application and a ready service before connecting."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-environment-repair.tsx:42
+msgid "Correct draft variables"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-environment-repair.tsx:59
+msgid "Remove conflicting manual variables, save, then retry setup. Provisioned services are kept."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-environment-repair.tsx:64
+#: packages/cms-ui/src/client.tsx:1000
+msgid "Saved"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-environment-repair.tsx:66
+msgid "Save variables"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-hosting.tsx:11
+msgid "Vercel application"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-hosting.tsx:14
+msgid "Continue with this project’s existing Vercel deployment configuration."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-hosting.tsx:27
+msgid "Choose hosting for this project"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-hosting.tsx:31
+msgid "Ask your operator to assign hosting before deploying applications."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-hosting.tsx:35
+msgid "No verified hosting cluster is available yet."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-hosting.tsx:48
+msgid "Assign hosting"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-hosting.tsx:63
+msgid "Allow repository builds and custom container images"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-mail-panel.tsx:20
+msgid "Mail setup is currently unavailable. You can continue without Mail and connect it later."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-mail-panel.tsx:32
+msgid "This configures outgoing Mail only. Receiving mail and mailboxes remain separate."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-mail-panel.tsx:39
+msgid "Prepare managed sending"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-mail-panel.tsx:44
+msgid "Connect your turboSMTP account"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-mail-panel.tsx:48
+msgid "Verify and save account"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-mail-panel.tsx:53
+#: apps/auth/src/app/admin/form.tsx:53
+#: apps/auth/src/app/tenants/[customerID]/mail/keys/form.tsx:22
+#: apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx:23
+msgid "Consumer key"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-mail-panel.tsx:59
+#: apps/auth/src/app/admin/form.tsx:54
+#: apps/auth/src/app/tenants/[customerID]/mail/keys/form.tsx:22
+msgid "Consumer secret"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-mail-panel.tsx:68
+msgid "Ask your operator to assign a managed sending account."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-mail-panel.tsx:74
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:220
+msgid "Managed Mail"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-mail-panel.tsx:75
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:221
+msgid "Own provider"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-mail-panel.tsx:96
+msgid "View DNS records"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-mail-panel.tsx:102
+msgid "Verify domain"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:10
+msgid "Prepare application"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:11
+msgid "Prepare database"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:12
+msgid "Connect services"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:13
+msgid "Configure source"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:14
+msgid "Build application"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:15
+msgid "Deploy release"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:16
+msgid "Verify readiness"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:22
+#: apps/admin/src/components/mail/product-page.tsx:17
+#: apps/admin/src/lib/billing-labels.ts:21 apps/admin/src/lib/ui-labels.ts:9
+#: apps/admin/src/lib/workspace-navigation.ts:35
+#: apps/auth/src/lib/i18n-labels.ts:6
+msgid "Failed"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:23
+msgid "Complete"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:24
+#: apps/admin/src/components/hosting/setup-review.tsx:70
+#: apps/admin/src/components/hosting/setup-review.tsx:95
+#: apps/admin/src/components/hosting/setup-review.tsx:107
+#: apps/admin/src/components/hosting/setup-review.tsx:115
+msgid "Not selected"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:45
+msgid "Your application and service connections are ready."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:47
+msgid "Follow the deployment of your application and its services."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:102
+msgid "Review release"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:128
+msgid "Edit setup"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:137
+msgid "Continue setup"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:140
+msgid "Resolve the indicated issue, then continue. Already created services and their data are reused."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:152
+#: apps/admin/src/components/hosting/setup-wizard.tsx:474
+msgid "Review setup"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-progress.tsx:163
+msgid "Retry setup"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-review.tsx:38
+msgid "Review and deploy"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-review.tsx:46
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:75
+msgid "Git repository"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-review.tsx:82
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:144
+msgid "Connection variable"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-review.tsx:94
+msgid "Selected sender domain"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-review.tsx:98
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:228
+msgid "Mail key variable"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-review.tsx:120
+msgid "Your current hosting allowance applies. Existing services keep their current pricing and limits."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-review.tsx:125
+msgid "Complete these steps first"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-review.tsx:164
+msgid "Webdock will prepare the selected services, connect their credentials and deploy the application. A failed deployment keeps already provisioned data."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:30
+msgid "What does your application need?"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:33
+msgid "Choose services now. Webdock will connect them to the application securely."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:65
+msgid "No database"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:73
+msgid "Connect an existing database"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:80
+msgid "Database name"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:114
+msgid "You will review and explicitly accept the price before anything is ordered."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:121
+msgid "Existing database"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:157
+msgid "Webdock supplies the application credentials and verified TLS connection."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:186
+msgid "Connect native Mail sending"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:191
+msgid "Configure a sending connection and verify its domain below, then refresh the available services."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-service-fields.tsx:244
+msgid "Sending uses a domain-restricted API key. Mailboxes and forwarding are activated separately."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:27
+msgid "Choose your source"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:29
+msgid "Application source"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:83
+msgid "Build and deploy from your repository."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:84
+msgid "Use an existing immutable image."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:85
+msgid "Start with the HTTP healthcheck application."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:110
+msgid "Choose an account"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:133
+msgid "Choose a repository"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:164
+msgid "For monorepos, choose the directory containing this application’s Dockerfile."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:179
+msgid "Inspect repository"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:183
+msgid "Build settings"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:227
+msgid "The workflow must already produce the Webdock artifact for the exact commit."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:243
+msgid "Automatically publish successful builds"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:251
+msgid "Image digest"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:263
+msgid "Use an image already available on the cluster or in its authorized project registry."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-source-fields.tsx:271
+msgid "The healthcheck template uses port 8080 and /ping. It helps verify the deployment before you add your own application."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:42
+msgid "Review"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:147
+msgid "Application setup"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:207
+#: apps/admin/src/components/hosting/setup-wizard.tsx:475
+#: apps/auth/src/components/auth-forms.tsx:516
+msgid "Continue"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:222
+msgid "Configure your application"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:225
+msgid "Application name"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:268
+msgid "Memory (MiB)"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:313
+msgid "Temporary storage (MiB)"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:329
+msgid "Persistent storage (MiB)"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:346
+msgid "Use 0 for no volume, or at least 64 MiB at /data. Persistent data is retained when the application stops."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:363
+msgid "One argument per line."
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:388
+msgid "Repository suggestions"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:400
+msgid "Suggested services"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:419
+msgid "Use detected port"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:436
+msgid "Back"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:445
+msgid "Refresh"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:454
+#: packages/cms-ui/src/client.tsx:944
+msgid "Save draft"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:468
+msgid "Connecting…"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:471
+msgid "Accept order and deploy"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:472
+msgid "Deploy application"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:485
+msgid "Set up a Mail connection or sender domain"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:492
+msgid "Refresh available services"
+msgstr ""
+
+#: apps/admin/src/components/hosting/setup-wizard.tsx:498
+msgid "Your draft is saved in this project. You can continue it later."
 msgstr ""
 
 #: apps/admin/src/components/hosting/tenant-database-navigation.tsx:15
@@ -3170,6 +3889,7 @@ msgid "Database areas"
 msgstr ""
 
 #: apps/admin/src/components/hosting/tenant-database-navigation.tsx:18
+#: apps/admin/src/lib/console-context.ts:125
 msgid "Browse data"
 msgstr ""
 
@@ -3243,13 +3963,6 @@ msgid "Accepted"
 msgstr ""
 
 #: apps/admin/src/components/mail/product-page.tsx:17
-#: apps/admin/src/lib/billing-labels.ts:21 apps/admin/src/lib/ui-labels.ts:9
-#: apps/admin/src/lib/workspace-navigation.ts:35
-#: apps/auth/src/lib/i18n-labels.ts:6
-msgid "Failed"
-msgstr ""
-
-#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Outcome unknown"
 msgstr ""
 
@@ -3287,10 +4000,6 @@ msgid "Needs review"
 msgstr ""
 
 #: apps/admin/src/components/mail/product-page.tsx:17
-msgid "Disconnected"
-msgstr ""
-
-#: apps/admin/src/components/mail/product-page.tsx:17
 msgid "Clicked"
 msgstr ""
 
@@ -3306,55 +4015,48 @@ msgstr ""
 msgid "Loading your workspace…"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:20
-#: apps/admin/src/lib/console-context.ts:38
-#: apps/admin/src/lib/console-search-server.ts:30
+#: apps/admin/src/components/navigation.tsx:37
+#: apps/admin/src/lib/console-context.ts:51
+#: apps/admin/src/lib/console-search-server.ts:31
 #: apps/auth/src/app/tenants/page.tsx:22
 #: apps/auth/src/components/auth-forms.tsx:319
 #: packages/cms-ui/src/client.tsx:779
 msgid "My websites"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:21
-#: apps/admin/src/lib/console-search-server.ts:43
+#: apps/admin/src/components/navigation.tsx:40
+#: apps/admin/src/lib/console-search-server.ts:44
 #: apps/auth/src/app/people/page.tsx:11 apps/auth/src/app/people/page.tsx:29
 #: apps/auth/src/components/auth-forms.tsx:319
 #: packages/cms-ui/src/client.tsx:773
 msgid "People & access"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:21
-#: apps/admin/src/lib/console-search-server.ts:43
+#: apps/admin/src/components/navigation.tsx:41
+#: apps/admin/src/lib/console-search-server.ts:44
 #: apps/auth/src/app/admin/plans/page.tsx:10
 #: apps/auth/src/app/admin/plans/page.tsx:17
 msgid "Plans"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:21
-#: apps/admin/src/lib/console-search-server.ts:43
+#: apps/admin/src/components/navigation.tsx:42
+#: apps/admin/src/lib/console-search-server.ts:44
 msgid "Connections"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:21
-#: apps/admin/src/lib/console-context.ts:58
-#: apps/admin/src/lib/console-context.ts:64
-#: apps/admin/src/lib/console-search-server.ts:43
-msgid "Settings"
-msgstr ""
-
-#: apps/admin/src/components/navigation.tsx:35
-#: apps/admin/src/lib/console-context.ts:39
-#: apps/admin/src/lib/console-context.ts:56
-#: apps/admin/src/lib/console-context.ts:62
-#: apps/admin/src/lib/console-search-server.ts:36
+#: apps/admin/src/components/navigation.tsx:124
+#: apps/admin/src/lib/console-context.ts:53
+#: apps/admin/src/lib/console-context.ts:103
+#: apps/admin/src/lib/console-context.ts:122
+#: apps/admin/src/lib/console-search-server.ts:37
 #: packages/cms-ui/src/client.tsx:698
 msgid "Overview"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:38
-#: apps/admin/src/components/workspace-sidebar.tsx:15
+#: apps/admin/src/components/navigation.tsx:143
+#: apps/admin/src/components/workspace-sidebar.tsx:28
 #: apps/admin/src/lib/billing-families.ts:6
-#: apps/admin/src/lib/console-search-server.ts:38
+#: apps/admin/src/lib/console-search-server.ts:39
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:13
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:24
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:33
@@ -3362,18 +4064,18 @@ msgstr ""
 msgid "Mail"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:42
-#: apps/admin/src/lib/console-search-server.ts:39
+#: apps/admin/src/components/navigation.tsx:160
+#: apps/admin/src/lib/console-search-server.ts:40
 msgid "Team"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:42
-#: apps/admin/src/lib/console-search-server.ts:39
+#: apps/admin/src/components/navigation.tsx:167
+#: apps/admin/src/lib/console-search-server.ts:40
 msgid "Billing"
 msgstr ""
 
-#: apps/admin/src/components/navigation.tsx:44
-#: apps/admin/src/lib/console-search-server.ts:37
+#: apps/admin/src/components/navigation.tsx:181
+#: apps/admin/src/lib/console-search-server.ts:38
 msgid "Profile"
 msgstr ""
 
@@ -3438,13 +4140,12 @@ msgstr ""
 msgid "The linked Vercel project could not be found."
 msgstr ""
 
-#: apps/admin/src/components/workspace-sidebar.tsx:20
+#: apps/admin/src/components/workspace-sidebar.tsx:48
 msgid "Workspace areas"
 msgstr ""
 
-#: apps/admin/src/components/workspace-sidebar.tsx:25
-#: apps/admin/src/lib/billing-families.ts:10
-msgid "Services"
+#: apps/admin/src/components/workspace-sidebar.tsx:59
+msgid "Workspace services"
 msgstr ""
 
 #: apps/admin/src/lib/billing-families.ts:4
@@ -3548,12 +4249,6 @@ msgstr ""
 
 #: apps/admin/src/lib/billing-labels.ts:28
 msgid "Partially refunded"
-msgstr ""
-
-#: apps/admin/src/lib/billing-labels.ts:29 apps/admin/src/lib/ui-labels.ts:7
-#: packages/cms-ui/src/client.tsx:857 packages/cms-ui/src/client.tsx:1000
-#: packages/cms-ui/src/client.tsx:1091
-msgid "Draft"
 msgstr ""
 
 #: apps/admin/src/lib/billing-labels.ts:31
@@ -3727,15 +4422,15 @@ msgstr ""
 msgid "Edit contact details for the demo checkout."
 msgstr ""
 
-#: apps/admin/src/lib/console-context.ts:57
+#: apps/admin/src/lib/console-context.ts:105
 msgid "Logs"
 msgstr ""
 
-#: apps/admin/src/lib/console-search-server.ts:31
+#: apps/admin/src/lib/console-search-server.ts:32
 msgid "API & MCP"
 msgstr ""
 
-#: apps/admin/src/lib/console-search-server.ts:38
+#: apps/admin/src/lib/console-search-server.ts:39
 msgid "Quickstart"
 msgstr ""
 
@@ -3935,6 +4630,7 @@ msgid "Git deployment changed. Review the source and release before reconciliati
 msgstr ""
 
 #: apps/admin/src/lib/git-deployment-messages.ts:35
+#: apps/admin/src/lib/setup-messages.ts:40
 msgid "Git deployment is unavailable."
 msgstr ""
 
@@ -4163,6 +4859,7 @@ msgid "Enroll verified isolated build capacity before requesting a build."
 msgstr ""
 
 #: apps/admin/src/lib/git-deployment-messages.ts:118
+#: apps/admin/src/lib/setup-messages.ts:24
 msgid "Configure verified artifact and registry storage."
 msgstr ""
 
@@ -4466,6 +5163,326 @@ msgstr ""
 msgid "Project deletion is unavailable: the Vercel integration needs project write permission for this team and project."
 msgstr ""
 
+#: apps/admin/src/lib/setup-messages.ts:4
+msgid "Select an application for this Git operation."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:5
+msgid "A connected service needs attention before deployment."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:6
+msgid "A database in the same project and cluster is required."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:7
+msgid "A service connection needs attention before setup can finish."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:8
+msgid "Add a Dockerfile in this directory before deploying from Git."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:9
+msgid "An application already uses this name."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:10
+msgid "An environment variable already uses this name."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:11
+msgid "Application changed. Refresh before editing."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:13
+msgid "Application deployment needs attention. Review its operation and logs."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:15
+msgid "Application is deleted."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:16
+msgid "Application is unavailable."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:17
+msgid "Application project is unavailable."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:18
+msgid "Approve this exact release in Deployments to continue."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:19
+msgid "Assign managed container hosting before setting up this application."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:20
+msgid "Build failed. Review the build logs before retrying."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:21
+msgid "Choose a ready database in the same project and cluster."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:22
+msgid "Choose a separate variable name for the Mail key."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:23
+msgid "Complete the first deployment before using application controls."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:25
+msgid "Configure verified build capacity before deploying from Git."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:27
+msgid "Configure verified native Mail API egress before connecting applications."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:29
+msgid "Confirm the monthly price and terms."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:30
+msgid "Confirm this setup again before continuing."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:31
+msgid "Connect an authorized GitHub repository first."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:32
+msgid "Create an application first."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:33
+msgid "Custom images are not enabled for this project."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:34
+msgid "Database offer is unavailable."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:35
+msgid "Database provisioning needs attention before setup can continue."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:36
+msgid "Delete the application before removing retained storage."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:37
+msgid "Deletion preview changed. Review the current application."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:38
+msgid "Enable the project setup worker before deploying."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:39
+msgid "Finish or delete an application draft before creating another."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:41
+msgid "GitHub source could not be verified. Reconnect or try again."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:42
+msgid "Hosting allowance changed. Review the application."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:43
+msgid "Hosting capacity could not be verified."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:44
+msgid "Idempotency key is required."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:45
+msgid "Managed application execution requires k3s."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:46
+msgid "Managed databases must use the same cluster as this application."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:47
+msgid "Managed service variables cannot be edited manually."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:48
+msgid "Native Mail connection needs attention before deployment."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:49
+msgid "Native Mail connection requires authorized management."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:50
+msgid "No expired operation is available for reconciliation."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:51
+msgid "No previous application revision is available."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:52
+msgid "Only an interrupted confirmed setup can be resumed."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:54
+msgid "Package metadata could not be read. Configure the application manually."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:57
+msgid "Project setup is unavailable."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:58
+msgid "Refresh the database connection before deployment."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:59
+msgid "Release publication needs attention. Review Deployments."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:60
+msgid "Repository inspection exceeded its size limit."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:61
+msgid "Review the setup before deploying."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:62
+msgid "Rotate database credentials from the database settings."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:63
+msgid "Run the configured GitHub Actions workflow for the reviewed commit."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:64
+msgid "Service certificates exceed the application configuration limit."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:65
+msgid "Service connection changed. Refresh before editing."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:66
+msgid "Service connection is unavailable."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:67
+msgid "Setup changed. Review the current configuration."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:68
+msgid "Setup could not continue. Review its services and retry."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:69
+msgid "Setup preview expired. Review it again."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:70
+msgid "The first deployment already exists. Update the application instead."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:72
+msgid "The saved setup operation has different configuration. Review it before retrying."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:74
+msgid "This application already has sixteen service connections."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:76
+msgid "This build worker requires Dockerfile in the selected root directory."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:78
+msgid "This project is being deleted. Setup cannot continue."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:79
+msgid "Unknown application action."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:80
+msgid "Unknown setup source operation."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:81
+msgid "Update the cluster agent before connecting services."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:82
+msgid "Update the cluster agent before using environment variables."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:83
+msgid "Use an immutable image digest supported by this cluster."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:84
+msgid "Use application settings for changes after provisioning has started."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:85
+msgid "Verified database connection details are not available yet."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:86
+msgid "Verified persistent storage is unavailable on this cluster."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:87
+msgid "Verify a native Mail connection and sender domain first."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:88
+msgid "Verify the sender domain before connecting native Mail."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:90
+msgid "Wait for confirmed database readiness before connecting the application."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:93
+msgid "Wait for the current Mail key rollout before changing this connection."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:95
+msgid "Wait for the current project operation or reconcile it first."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:96
+msgid "Waiting for database readiness."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:97
+msgid "Waiting for observed application and service readiness."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:98
+msgid "Waiting for the build artifact."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:100
+msgid "Choose distinct service variables and remove conflicting manual variables before deploying."
+msgstr ""
+
+#: apps/admin/src/lib/setup-messages.ts:103
+msgid "Reconcile the interrupted Git release in Deployments before retrying setup."
+msgstr ""
+
 #: apps/admin/src/lib/tenants.ts:14 apps/auth/src/app/people/page.tsx:51
 #: apps/auth/src/lib/i18n-messages.ts:88 apps/auth/src/lib/tenants.ts:14
 msgid "Customer name"
@@ -4489,10 +5506,6 @@ msgstr ""
 #: apps/admin/src/lib/tenants.ts:17 apps/auth/src/lib/i18n-messages.ts:77
 #: apps/auth/src/lib/tenants.ts:17
 msgid "Country code (two letters)"
-msgstr ""
-
-#: apps/admin/src/lib/ui-labels.ts:4
-msgid "In progress"
 msgstr ""
 
 #: apps/admin/src/lib/ui-labels.ts:4
@@ -4666,6 +5679,10 @@ msgstr ""
 msgid "Linked Vercel hosting project"
 msgstr ""
 
+#: apps/admin/src/lib/use-unsaved-changes.ts:30
+msgid "Leave without saving these changes?"
+msgstr ""
+
 #: apps/admin/src/lib/workspace-navigation.ts:35
 msgid "Running"
 msgstr ""
@@ -4782,17 +5799,6 @@ msgstr ""
 
 #: apps/auth/src/app/admin/form.tsx:50
 msgid "No credentials configured"
-msgstr ""
-
-#: apps/auth/src/app/admin/form.tsx:53
-#: apps/auth/src/app/tenants/[customerID]/mail/keys/form.tsx:22
-#: apps/auth/src/app/tenants/[customerID]/mail/keys/page.tsx:23
-msgid "Consumer key"
-msgstr ""
-
-#: apps/auth/src/app/admin/form.tsx:54
-#: apps/auth/src/app/tenants/[customerID]/mail/keys/form.tsx:22
-msgid "Consumer secret"
 msgstr ""
 
 #: apps/auth/src/app/admin/form.tsx:55
@@ -5869,10 +6875,6 @@ msgid "Create tracking domain"
 msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx:33
-msgid "Sender domain"
-msgstr ""
-
-#: apps/auth/src/app/tenants/[customerID]/mail/tracking/page.tsx:33
 msgid "Subdomain prefix"
 msgstr ""
 
@@ -6544,10 +7546,6 @@ msgstr ""
 
 #: apps/auth/src/components/auth-forms.tsx:497
 msgid "Once your account is ready, continue the sign-in you started or return to Webdock."
-msgstr ""
-
-#: apps/auth/src/components/auth-forms.tsx:516
-msgid "Continue"
 msgstr ""
 
 #: apps/auth/src/components/auth-forms.tsx:552
@@ -9003,10 +10001,6 @@ msgstr ""
 msgid "Saving changes updates the live website."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:944
-msgid "Save draft"
-msgstr ""
-
 #: packages/cms-ui/src/client.tsx:956
 msgid "Publish this content to the website?"
 msgstr ""
@@ -9025,10 +10019,6 @@ msgstr ""
 
 #: packages/cms-ui/src/client.tsx:995
 msgid "Version history"
-msgstr ""
-
-#: packages/cms-ui/src/client.tsx:1000
-msgid "Saved"
 msgstr ""
 
 #: packages/cms-ui/src/client.tsx:1009
@@ -9113,10 +10103,6 @@ msgstr ""
 
 #: packages/cms-ui/src/schema.ts:20
 msgid "Alternative text"
-msgstr ""
-
-#: packages/cms-ui/src/schema.ts:20
-msgid "Source"
 msgstr ""
 
 #: packages/cms-ui/src/schema.ts:139

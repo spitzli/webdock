@@ -11,6 +11,7 @@ BEGIN
  IF scope->>'kind'='system' AND session_user='webdock_worker_runtime' THEN
   IF scope->>'clusterID' IS NOT NULL AND scope->>'clusterID'<>cluster_id THEN RETURN false; END IF;
   -- The authenticated build dispatcher publishes to both platform and BYOK clusters.
+  IF scope->>'purpose'='hosting-setup' THEN RETURN webdock_rls.setup_cluster(cluster_id); END IF;
   IF scope->>'purpose'='git-worker' THEN RETURN true; END IF;
   IF scope->>'purpose'='agent' THEN RETURN coalesce(scope->>'clusterID'=cluster_id,false); END IF;
   IF scope->>'purpose'='database-order' THEN

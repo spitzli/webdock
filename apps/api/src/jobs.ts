@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Pool } from "pg";
 type DB = Pick<Pool, "query">;
 export const jobNames = [
+  "hosting.setup",
   "storage.refresh",
   "mail.dispatch",
   "mail.events",

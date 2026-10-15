@@ -5,8 +5,25 @@ The output includes Kubernetes Secrets: keep input/output outside Git, mode 0600
 SQLite claims must already reference the approved project volume; never copy a live DB.
 """
 import argparse, json, os, pathlib, subprocess, re, ssl, ipaddress
-p=argparse.ArgumentParser(); p.add_argument('--inventory',required=True); p.add_argument('--private-dir',required=True); p.add_argument('--gateway-image',required=True); p.add_argument('--runtime-image',required=True); p.add_argument('--tls-image',required=True); p.add_argument('--runtime-commit',required=True); p.add_argument('--output',required=True); a=p.parse_args()
+from urllib.parse import urlsplit
+p=argparse.ArgumentParser(); p.add_argument('--inventory',required=True); p.add_argument('--private-dir',required=True); p.add_argument('--gateway-image',required=True); p.add_argument('--runtime-image',required=True); p.add_argument('--tls-image',required=True); p.add_argument('--runtime-commit',required=True); p.add_argument('--managed-runtimes-config'); p.add_argument('--output',required=True); a=p.parse_args()
 os.umask(0o077); private=pathlib.Path(a.private_dir); inventory=json.loads(pathlib.Path(a.inventory).read_text()); namespace='webdock-databases'; resources=[]
+managed=None
+if a.managed_runtimes_config:
+ try:
+  managed=json.loads(pathlib.Path(a.managed_runtimes_config).read_text())
+  assert set(managed)=={'authOrigin','capacity','clusters'}
+  assert type(managed['capacity']) is int and 1<=managed['capacity']<=64
+  api=urlsplit(managed['authOrigin'])
+  assert api.scheme=='https' and api.hostname and not api.username and not api.password and not api.query and not api.fragment and api.path==''
+  assert isinstance(managed['clusters'],list) and 1<=len(managed['clusters'])<=16
+  for cluster in managed['clusters']:
+   assert set(cluster)=={'addressIPv4','port','endPort'}
+   address=ipaddress.IPv4Address(cluster['addressIPv4'])
+   assert address.is_global and not address.is_multicast
+   assert type(cluster['port']) is int and type(cluster['endPort']) is int and 32000<=cluster['port']<=cluster['endPort']<=32199
+ except Exception:
+  raise ValueError('Invalid managed database runtime configuration') from None
 database_ingress=[]
 def database_target(row):
  if 'databaseTLSCA' not in row and 'databaseTarget' not in row:return None
@@ -65,7 +82,7 @@ add('ConfigMap','database-runtime-tls',data={'Caddyfile':'{\n admin off\n auto_h
 add('NetworkPolicy','default-deny',{'podSelector':{},'policyTypes':['Ingress','Egress']})
 add('NetworkPolicy','dns',{'podSelector':{},'policyTypes':['Egress'],'egress':[{'to':[{'namespaceSelector':{'matchLabels':{'kubernetes.io/metadata.name':'kube-system'}},'podSelector':{'matchLabels':{'k8s-app':'kube-dns'}}}], 'ports':[{'protocol':p,'port':53} for p in ['UDP','TCP']]}]})
 public={'ipBlock':{'cidr':'0.0.0.0/0','except':['10.0.0.0/8','172.16.0.0/12','192.168.0.0/16','127.0.0.0/8','169.254.0.0/16']}}
-add('NetworkPolicy','gateway-network',{'podSelector':{'matchLabels':{'app':'database-gateway'}},'policyTypes':['Ingress','Egress'],'ingress':[{'from':[{'namespaceSelector':{'matchLabels':{'kubernetes.io/metadata.name':'kube-system'}},'podSelector':{'matchLabels':{'app.kubernetes.io/name':'traefik'}}}], 'ports':[{'port':3137}]}], 'egress':[{'to':[public],'ports':[{'port':443}]},{'to':[{'podSelector':{'matchLabels':{'component':'database-runtime'}}}],'ports':[{'port':8443}]}]})
+add('NetworkPolicy','gateway-network',{'podSelector':{'matchLabels':{'app':'database-gateway'}},'policyTypes':['Ingress','Egress'],'ingress':[{'from':[{'namespaceSelector':{'matchLabels':{'kubernetes.io/metadata.name':'kube-system'}},'podSelector':{'matchLabels':{'app.kubernetes.io/name':'traefik'}}}], 'ports':[{'port':3137}]}], 'egress':[{'to':[public],'ports':[{'port':443}]},{'to':[{'podSelector':{'matchLabels':{'component':'database-runtime'}}}],'ports':[{'port':8443}]},{'to':[{'namespaceSelector':{'matchLabels':{'kubernetes.io/metadata.name':'kube-system'}},'podSelector':{'matchLabels':{'app.kubernetes.io/name':'traefik'}}}],'ports':[{'protocol':'TCP','port':8443}]}]})
 for row,target_config in zip(inventory,targets):
  assert row['namespace']==namespace and re.fullmatch(r'[a-z0-9-]{1,50}',row['slug'])
  name='db-'+row['slug'];host=f'{name}.{namespace}.svc.cluster.local';key=private/(name+'.key');crt=private/(name+'.crt')
@@ -101,7 +118,23 @@ for row,target_config in zip(inventory,targets):
   database_ingress.append({'apiVersion':'networking.k8s.io/v1','kind':'NetworkPolicy','metadata':{'name':name+'-browser','namespace':target['namespace'],'labels':{'app.kubernetes.io/part-of':'webdock-database-browser'}},'spec':{'podSelector':{'matchLabels':target['podLabels']},'policyTypes':['Ingress'],'ingress':[{'from':[{'namespaceSelector':{'matchLabels':{'kubernetes.io/metadata.name':namespace}},'podSelector':{'matchLabels':{'app':name}}}],'ports':[{'protocol':'TCP','port':5432}]}]}})
  add('NetworkPolicy',name,policy)
 add('Secret','database-gateway',type='Opaque',stringData={'WEBDOCK_DATABASE_GATEWAY_SECRET':(private/'gateway-secret').read_text()})
-add('Deployment','database-gateway',{'replicas':1,'strategy':{'type':'Recreate'},'selector':{'matchLabels':{'app':'database-gateway'}},'template':{'metadata':{'labels':{'app':'database-gateway'}},'spec':{'automountServiceAccountToken':False,'securityContext':security,'containers':[{'name':'gateway','image':a.gateway_image,'imagePullPolicy':'Never','securityContext':container_security,'resources':limits('500m','256Mi'),'envFrom':[{'secretRef':{'name':'database-gateway'}}],'env':[{'name':k,'value':v} for k,v in {'WEBDOCK_AUTH_ORIGIN':'https://auth.webdock.dev','WEBDOCK_DATABASE_GATEWAY_ORIGIN':'https://database.webdock.dev','WEBDOCK_DATABASE_BROWSER_ORIGINS':'https://studio.webdock.dev','WEBDOCK_DATABASE_RUNTIME_ORIGINS':','.join(r['runtimeOrigin'] for r in inventory),'TABULARIS_EXPECTED_COMMIT':a.runtime_commit,'NODE_EXTRA_CA_CERTS':'/trust/ca.crt'}.items()],'ports':[{'containerPort':3137}],'readinessProbe':{'httpGet':{'path':'/healthz','port':3137}},'livenessProbe':{'httpGet':{'path':'/healthz','port':3137}},'startupProbe':{'httpGet':{'path':'/healthz','port':3137},'failureThreshold':30,'periodSeconds':5},'volumeMounts':[{'name':'trust','mountPath':'/trust','readOnly':True}]}],'volumes':[{'name':'trust','configMap':{'name':'database-runtime-ca'}}]}}})
+add('Deployment','database-gateway',{'replicas':1,'strategy':{'type':'Recreate'},'selector':{'matchLabels':{'app':'database-gateway'}},'template':{'metadata':{'labels':{'app':'database-gateway'}},'spec':{'automountServiceAccountToken':False,'securityContext':security,'containers':[{'name':'gateway','image':a.gateway_image,'imagePullPolicy':'Never','securityContext':container_security,'resources':limits('500m','256Mi'),'envFrom':[{'secretRef':{'name':'database-gateway'}}],'env':[{'name':k,'value':v} for k,v in {'WEBDOCK_AUTH_ORIGIN':'https://auth.webdock.dev','WEBDOCK_DATABASE_GATEWAY_ORIGIN':'https://database.webdock.dev','WEBDOCK_DATABASE_BROWSER_ORIGINS':'https://studio.webdock.dev,https://console.webdock.dev','WEBDOCK_DATABASE_RUNTIME_ORIGINS':','.join(r['runtimeOrigin'] for r in inventory),'TABULARIS_EXPECTED_COMMIT':a.runtime_commit,'NODE_EXTRA_CA_CERTS':'/trust/ca.crt'}.items()],'ports':[{'containerPort':3137}],'readinessProbe':{'httpGet':{'path':'/healthz','port':3137}},'livenessProbe':{'httpGet':{'path':'/healthz','port':3137}},'startupProbe':{'httpGet':{'path':'/healthz','port':3137},'failureThreshold':30,'periodSeconds':5},'volumeMounts':[{'name':'trust','mountPath':'/trust','readOnly':True}]}],'volumes':[{'name':'trust','configMap':{'name':'database-runtime-ca'}}]}}})
+if managed:
+ gateway=next(item for item in resources if item['kind']=='Deployment' and item['metadata']['name']=='database-gateway')
+ pod=gateway['spec']['template']['spec'];container=pod['containers'][0]
+ for variable in container['env']:
+  if variable['name']=='WEBDOCK_AUTH_ORIGIN':variable['value']=managed['authOrigin']
+ container['env'] += [{'name':'WEBDOCK_DATABASE_MANAGED_RUNTIMES','value':'true'},{'name':'WEBDOCK_DATABASE_RUNTIME_CAPACITY','value':str(managed['capacity'])}]
+ container['volumeMounts'].append({'name':'managed-runtime-state','mountPath':'/tmp'})
+ pod['volumes'].append({'name':'managed-runtime-state','emptyDir':{'medium':'Memory','sizeLimit':str(managed['capacity']*32)+'Mi'}})
+ container['resources']['requests'].update({'cpu':'100m','memory':'128Mi'})
+ container['resources']['limits'].update({'cpu':'2','memory':str(256+managed['capacity']*256)+'Mi'})
+ quota=next(item for item in resources if item['kind']=='ResourceQuota')
+ quota['spec']['hard']['limits.memory']=str(3072+managed['capacity']*256)+'Mi'
+ quota['spec']['hard']['limits.cpu']='6'
+ network=next(item for item in resources if item['kind']=='NetworkPolicy' and item['metadata']['name']=='gateway-network')
+ for cluster in managed['clusters']:
+  network['spec']['egress'].append({'to':[{'ipBlock':{'cidr':cluster['addressIPv4']+'/32'}}], 'ports':[{'protocol':'TCP','port':cluster['port'],'endPort':cluster['endPort']}]})
 add('Service','database-gateway',{'selector':{'app':'database-gateway'},'ports':[{'port':3137,'targetPort':3137}]})
 ing=add('Ingress','database-gateway',{'ingressClassName':'traefik','rules':[{'host':'database.webdock.dev','http':{'paths':[{'path':'/','pathType':'Prefix','backend':{'service':{'name':'database-gateway','port':{'number':3137}}}}]}}],'tls':[{'hosts':['database.webdock.dev']}]});ing['metadata']['annotations']={'traefik.ingress.kubernetes.io/router.entrypoints':'websecure','traefik.ingress.kubernetes.io/router.tls':'true','traefik.ingress.kubernetes.io/router.tls.certresolver':'webdock'}
 pathlib.Path(a.output).write_text(json.dumps({'apiVersion':'v1','kind':'List','items':resources}));print(f'Rendered {len(resources)} resources; secret-bearing output retained locally.')

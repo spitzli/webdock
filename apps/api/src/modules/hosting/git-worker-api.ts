@@ -245,7 +245,7 @@ export async function gitWorkerAPI(request: Request, path: string[]) {
                   `UPDATE webdock_auth.git_artifact a SET retained=false FROM webdock_auth.git_build b
               WHERE a.build_id=b.id AND b.worker_id=$1 AND a.created_at<now()-interval '30 days' AND a.retained
               AND NOT EXISTS(SELECT 1 FROM webdock_auth.git_release r WHERE r.artifact_id=a.id AND (r.status IN ('queued','deploying','needs-reconciliation','awaiting-approval') OR r.id IN (SELECT desired_release_id FROM webdock_auth.git_source)))
-              AND a.id NOT IN (SELECT artifact_id FROM (SELECT artifact_id,row_number() OVER(PARTITION BY project_id ORDER BY created_at DESC) AS position FROM webdock_auth.git_release WHERE status='ready') good WHERE position<=3)`,
+              AND a.id NOT IN (SELECT artifact_id FROM (SELECT artifact_id,row_number() OVER(PARTITION BY source_id ORDER BY created_at DESC) AS position FROM webdock_auth.git_release WHERE status='ready') good WHERE position<=3)`,
                   [worker.id],
                 );
                 const rows = (

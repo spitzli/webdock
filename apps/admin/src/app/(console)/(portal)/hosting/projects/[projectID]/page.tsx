@@ -1,17 +1,13 @@
 import { applicationState } from "@/lib/workspace-navigation";
 import { ListControls, Pagination } from "@/components/list-controls";
-import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { getRequestI18n } from "@webdock/i18n/next";
 import {
-  healthcheckImage,
   type HostingAppView,
   type HostingPage,
 } from "@webdock/hosting-contracts";
 import { hostingPageCall } from "@/lib/hosting-client";
-import { HostingForm } from "@/components/hosting/form";
 import { HostingTable } from "@/components/hosting/table";
-import { AppSpecFields } from "@/components/hosting/app-spec";
 import { HostingRefresh } from "@/components/hosting/refresh";
 export default async function Applications({
   params,
@@ -38,21 +34,25 @@ export default async function Applications({
     { action: "apps.list", projectID, page, limit: 20, search, sort },
     `/hosting/projects/${encodeURIComponent(projectID)}?${new URLSearchParams({ q: search, sort, page: String(page) })}`,
   );
-  const spec = {
-    template: "healthcheck" as const,
-    image: healthcheckImage,
-    args: [],
-    port: 8080,
-    healthPath: "/ping",
-    cpuMillicores: 100,
-    memoryBytes: 67108864,
-    ephemeralBytes: 67108864,
-    replicas: 1,
-  };
   return (
     <>
-      <h1>{t("Managed applications")}</h1>
-      <Link className="button secondary" href={`/hosting/projects/${projectID}/git`}>{t("Git deployments")}</Link>
+      <div className="page-heading">
+        <h1>{t("Applications")}</h1>
+        {data.canManage && (
+          <Link
+            className="button"
+            href={`/hosting/projects/${projectID}/setup`}
+          >
+            {t("Add application")}
+          </Link>
+        )}
+      </div>
+      <Link
+        className="button secondary"
+        href={`/hosting/projects/${projectID}/git`}
+      >
+        {t("Git deployments")}
+      </Link>
       <HostingRefresh active={data.docs.some((a) => a.status === "pending")} />
       <section className="panel">
         <ListControls
@@ -76,7 +76,10 @@ export default async function Applications({
                 <Link href={`/hosting/apps/${a.id}`}>{a.name}</Link>
               ),
             },
-            { label: t("Status"), render: (a) => t(applicationState(a.status)) },
+            {
+              label: t("Status"),
+              render: (a) => t(applicationState(a.status)),
+            },
             { label: t("Replicas"), render: (a) => a.spec.replicas },
           ]}
         />
@@ -86,29 +89,6 @@ export default async function Applications({
           {...data}
         />
       </section>
-      {data.canManage && (
-        <details className="workspace-disclosure">
-          <summary>{t("Deploy application")}</summary>
-          <HostingForm
-            preserveRevision
-            command={{
-              action: "apps.create",
-              projectID,
-              name: "",
-              spec,
-              subscriptionRevision: data.subscriptionRevision,
-              idempotencyKey: randomUUID(),
-            }}
-            label={t("Deploy application")}
-          >
-            <label className="field">
-              {t("Application name")}
-              <input name="name" required maxLength={160} />
-            </label>
-            <AppSpecFields spec={spec} custom={data.ownImages} />
-          </HostingForm>
-        </details>
-      )}
     </>
   );
 }

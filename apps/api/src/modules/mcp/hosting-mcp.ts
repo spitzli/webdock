@@ -1,6 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   commandSchema,
+  serviceCommands,
+  setupCommands,
   byokCommands,
   gitCommands,
   databaseCommands,
@@ -9,6 +11,24 @@ import {
   type HostingCommand,
 } from "@webdock/hosting-contracts";
 export const hostingTools: Record<HostingCommand["action"], string> = {
+  ...(Object.fromEntries(
+    setupCommands.map((s) => [
+      s.shape.action.value,
+      s.shape.action.value.replaceAll(".", "_"),
+    ]),
+  ) as Record<
+    (typeof setupCommands)[number]["shape"]["action"]["value"],
+    string
+  >),
+  ...(Object.fromEntries(
+    serviceCommands.map((s) => [
+      s.shape.action.value,
+      s.shape.action.value.replaceAll(".", "_"),
+    ]),
+  ) as Record<
+    (typeof serviceCommands)[number]["shape"]["action"]["value"],
+    string
+  >),
   ...(Object.fromEntries(
     databaseCommands.map((s) => [
       s.shape.action.value,
@@ -39,6 +59,8 @@ export const hostingTools: Record<HostingCommand["action"], string> = {
   "clusters.activate": "activate_hosting_cluster",
   "apps.list": "list_hosting_apps",
   "apps.get": "get_hosting_app",
+  "apps.prepare": "prepare_hosting_app",
+  "apps.deploy": "deploy_prepared_hosting_app",
   "apps.create": "create_hosting_app",
   "apps.update": "update_hosting_app",
   "apps.scale": "scale_hosting_app",

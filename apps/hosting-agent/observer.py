@@ -70,6 +70,10 @@ def collect_observation():
         databases=database_capability([node['id'] for node in observed['nodes']])
         if databases:observed['capabilities'].update(databases)
     except ImportError:pass
+    try:
+        import service_bindings
+        observed['capabilities']['serviceBindingsVersion']=1
+    except ImportError:pass
     import registry
     if registry.capability(command):observed['capabilities']['registryVersion']=1
     return observed

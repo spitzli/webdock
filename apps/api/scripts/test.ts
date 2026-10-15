@@ -27,6 +27,8 @@ const integration = new Set([
   "server.integration.test.ts",
 ]);
 const rls = new Set([
+  "service-bindings-rls.integration.test.ts",
+  "project-setup-worker.integration.test.ts",
   "jobs.integration.test.ts",
   "registry.integration.test.ts",
   "native-budget-rls.integration.test.ts",

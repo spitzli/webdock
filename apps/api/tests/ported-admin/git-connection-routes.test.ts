@@ -76,3 +76,38 @@ test("Git connect is same-origin POST and leaves authorization to hosting", asyn
   );
   assert.deepEqual(calls, [{ action: "git.oauth.begin", customerID: "123" }]);
 });
+
+test("Git setup return is restricted to a verified project draft path", async () => {
+  const request = () =>
+    new Request(origin + "/select", {
+      method: "POST",
+      headers: {
+        origin,
+        "Content-Type": "application/x-www-form-urlencoded",
+        cookie: `__Host-webdock-git-flow=${state}`,
+      },
+      body: "installationID=9&repositoryID=42",
+    });
+  const returned = await gitConnectionRoute(request(), "select", {
+    origin,
+    call: async () => ({
+      customerID: "123",
+      returnPath: "/hosting/projects/456/setup/789",
+    }),
+  });
+  assert.equal(
+    returned.headers.get("location"),
+    origin + "/hosting/projects/456/setup/789?git=connected",
+  );
+  const bad = await gitConnectionRoute(request(), "select", {
+    origin,
+    call: async () => ({
+      customerID: "123",
+      returnPath: "https://evil.example/",
+    }),
+  });
+  assert.equal(
+    bad.headers.get("location"),
+    origin + "/hosting/git/connection-error",
+  );
+});

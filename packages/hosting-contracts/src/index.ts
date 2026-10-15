@@ -1,3 +1,9 @@
+import { setupCommands } from "./project-setup";
+export * from "./project-setup";
+import { appSpecSchema, preparedAppSpecSchema, type AppSpec } from "./app-spec";
+export * from "./app-spec";
+import { serviceCommands } from "./service-bindings";
+export * from "./service-bindings";
 import {
   resourceID,
   idempotencyKey as key,
@@ -38,6 +44,8 @@ export type HostingActor = {
   subject: string;
   sessionID: string;
   source: "studio" | "oauth" | "git-policy";
+  gitSourceID?: string;
+  gitSourceRevision?: number;
   scopes: readonly string[];
 };
 const quantity = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
@@ -108,57 +116,6 @@ const paging = {
   limit: z.number().int().min(1).max(50).default(20),
   search: z.string().max(160).default(""),
 };
-export const healthcheckImage =
-  "docker.io/rancher/mirrored-library-traefik@sha256:f86a2cab1b5c649070c49f883c743dd32d8485a56e3368c5f93b9e91f1e91259";
-export const appSpecSchema = z
-  .object({
-    template: z.enum(["healthcheck", "custom"]),
-    image: z
-      .string()
-      .max(512)
-      .regex(
-        /^[a-zA-Z0-9.-]+(?::[0-9]+)?\/[a-zA-Z0-9_./-]+@sha256:[a-f0-9]{64}$/,
-      ),
-    args: z.array(z.string().max(512)).max(20),
-    port: z.number().int().min(1024).max(65535),
-    healthPath: z
-      .string()
-      .max(160)
-      .regex(/^\/[a-zA-Z0-9/_-]*$/),
-    cpuMillicores: z.number().int().min(10).max(64000),
-    memoryBytes: z.number().int().min(16777216).max(1099511627776),
-    ephemeralBytes: z.number().int().min(1048576).max(1099511627776),
-    replicas: z.number().int().min(0).max(20),
-    volumeBytes: z
-      .number()
-      .int()
-      .min(0)
-      .max(1099511627776)
-      .refine((v) => v === 0 || v >= 67108864)
-      .optional(),
-  })
-  .strict()
-  .refine(
-    (s) => !s.volumeBytes || s.replicas <= 1,
-    "Persistent storage supports one instance.",
-  );
-export type AppSpec = z.infer<typeof appSpecSchema>;
-export function resolveAppSpec(value: unknown): AppSpec {
-  const spec = appSpecSchema.parse(value);
-  return spec.template === "healthcheck"
-    ? {
-        ...spec,
-        image: healthcheckImage,
-        args: [
-          "--entrypoints.web.address=:8080",
-          "--ping",
-          "--ping.entrypoint=web",
-        ],
-        port: 8080,
-        healthPath: "/ping",
-      }
-    : spec;
-}
 export function appDemand(spec: AppSpec, deleted = false): HostingDemand {
   return {
     apps: deleted ? 0 : 1,
@@ -170,7 +127,7 @@ export function appDemand(spec: AppSpec, deleted = false): HostingDemand {
     concurrentDeployments: 1,
   };
 }
-export const appViewSchema = z.object({
+const appViewFields = {
   environmentNames: z.array(z.string()).optional(),
   id: resourceID,
   name: z.string(),
@@ -178,13 +135,26 @@ export const appViewSchema = z.object({
   revision: z.number(),
   observedRevision: z.number(),
   status: z.string(),
-  spec: appSpecSchema,
   operationID: resourceID.nullable(),
   lastError: z.string().nullable(),
   logs: z.string().nullable(),
-});
+};
+export const appViewSchema = z.discriminatedUnion("lifecycle", [
+  z.object({
+    ...appViewFields,
+    lifecycle: z.literal("draft"),
+    spec: preparedAppSpecSchema,
+  }),
+  z.object({
+    ...appViewFields,
+    lifecycle: z.literal("deployed").default("deployed"),
+    spec: appSpecSchema,
+  }),
+]);
 export type HostingAppView = z.infer<typeof appViewSchema>;
 export const commandSchema = z.discriminatedUnion("action", [
+  ...serviceCommands,
+  ...setupCommands,
   z
     .object({
       action: z.literal("projects.relocate"),
@@ -233,6 +203,28 @@ export const commandSchema = z.discriminatedUnion("action", [
     })
     .strict(),
   z.object({ action: z.literal("apps.get"), appID: resourceID }).strict(),
+  z
+    .object({
+      action: z.literal("apps.prepare"),
+      projectID: resourceID,
+      name,
+      spec: preparedAppSpecSchema,
+      environment: environmentPatchSchema.optional(),
+      subscriptionRevision: revision,
+      idempotencyKey: key,
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal("apps.deploy"),
+      appID: resourceID,
+      spec: appSpecSchema,
+      environment: environmentPatchSchema.optional(),
+      revision,
+      subscriptionRevision: revision,
+      idempotencyKey: key,
+    })
+    .strict(),
   z
     .object({
       action: z.literal("apps.create"),
@@ -424,6 +416,11 @@ export const commandSchema = z.discriminatedUnion("action", [
 ]);
 export type HostingCommand = z.infer<typeof commandSchema>;
 export const readActions = new Set<HostingCommand["action"]>([
+  "services.list",
+  "setup.get",
+  "setup.list",
+  "setup.options",
+  "setup.inspectSource",
   ...databaseReadActions,
   ...gitReadActions,
   "byok.mail.get",
@@ -493,6 +490,7 @@ export const observationSchema = z
         storage: z.boolean(),
         ingress: z.boolean(),
         environment: z.boolean().optional(),
+        serviceBindingsVersion: z.literal(1).optional(),
         storageVersion: z.literal(1).optional(),
         databaseVersion: z.literal(1).optional(),
         databasePools: z

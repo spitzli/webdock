@@ -1,0 +1,25 @@
+-- Row locks require UPDATE USING visibility; WITH CHECK remains false so these grants cannot change metadata.
+CREATE POLICY setup_row_lock ON "webdock_admin"."customers" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("customers"."id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_admin"."projects" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("projects"."customer_id"::text,"projects"."id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."user" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_identity("user"."id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."session" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_identity("session"."userId"::text,"session"."id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."member" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_identity("member"."userId"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."studio_tenant_preview" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_identity("studio_tenant_preview"."actor_id"::text,"studio_tenant_preview"."session_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."hosting_project" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("hosting_project"."customer_id"::text,"hosting_project"."project_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."hosting_database" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("hosting_database"."customer_id"::text,"hosting_database"."project_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."hosting_database_offer" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("hosting_database_offer"."customer_id"::text,"hosting_database_offer"."project_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."hosting_database_order" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("hosting_database_order"."customer_id"::text,"hosting_database_order"."project_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."tenant_customer" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("tenant_customer"."customer_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."tenant_subscription" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("tenant_subscription"."customer_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."hosting_limit" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("hosting_limit"."customer_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."hosting_byok_policy" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("hosting_byok_policy"."customer_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."git_connection" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("git_connection"."customer_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."git_repository" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("git_repository"."customer_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."mail_connection" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("mail_connection"."customer_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."mail_connection_domain" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("mail_connection_domain"."customer_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."mail_sender_domain" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed("mail_sender_domain"."customer_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."hosting_cluster" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_cluster("hosting_cluster"."id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."hosting_agent" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_cluster("hosting_agent"."cluster_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."hosting_database_backend" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_cluster("hosting_database_backend"."cluster_id"::text)) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."platform_settings" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed(webdock_rls.request_scope()->>'customerID')) WITH CHECK(false);
+CREATE POLICY setup_row_lock ON "webdock_auth"."hosting_database_plan" FOR UPDATE TO webdock_worker_runtime USING(webdock_rls.setup_allowed(webdock_rls.request_scope()->>'customerID')) WITH CHECK(false);

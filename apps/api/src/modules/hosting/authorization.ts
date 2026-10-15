@@ -1,3 +1,4 @@
+import { currentDatabaseScope } from "@webdock/database-runtime";
 import type { PoolClient } from "pg";
 import {
   HostingError,
@@ -17,6 +18,27 @@ export async function authorizeHosting(
   },
   db: Connection,
 ) {
+  const scope = currentDatabaseScope();
+  if (scope?.kind === "system" && scope.purpose === "hosting-setup") {
+    const live = (
+      await db.query(
+        "SELECT 1 FROM webdock_auth.hosting_setup WHERE id=$1 AND generation=$2 AND lease_until>now() AND state='running' AND actor->>'subject'=$3 AND actor->>'sessionID'=$4 AND ($5::text IS NULL OR project_id=$5) AND ($6::text IS NULL OR customer_id=$6)",
+        [
+          scope.setupID,
+          scope.generation,
+          actor.subject,
+          actor.sessionID,
+          target.projectID ?? null,
+          target.customerID ?? null,
+        ],
+      )
+    ).rowCount;
+    if (!live)
+      throw new HostingError(
+        409,
+        "Setup authorization changed. Sign in and resume the setup.",
+      );
+  }
   const scopes = actor.scopes;
   const policy = actor.source === "git-policy";
   if (
@@ -24,7 +46,9 @@ export async function authorizeHosting(
     (!target.projectID ||
       target.operator ||
       target.live ||
-      actor.sessionID !== "")
+      actor.sessionID !== "" ||
+      !actor.gitSourceID ||
+      !actor.gitSourceRevision)
   )
     throw new HostingError(403, "Git publication policy is unavailable.");
   if (
@@ -37,12 +61,19 @@ export async function authorizeHosting(
       policy
         ? `SELECT u.id,u.role,u.banned,u."emailVerified",u."mustChangePassword",u."twoFactorEnabled"
  FROM webdock_auth."user" u JOIN webdock_auth.git_source p ON p.policy_subject=u.id
- WHERE u.id=$1 AND p.project_id=$2 AND p.auto_publish AND p.enabled
+ WHERE u.id=$1 AND p.project_id=$2 AND p.id=$3 AND p.revision=$4 AND p.policy_revision=p.revision AND p.auto_publish AND p.enabled
  FOR SHARE OF u,p`
         : `SELECT u.id,u.role,u.banned,u."emailVerified",u."mustChangePassword",u."twoFactorEnabled"
  FROM webdock_auth."user" u JOIN webdock_auth.session s ON s."userId"=u.id
  WHERE u.id=$1 AND s.id=$2 AND s."expiresAt">now() FOR SHARE OF u,s`,
-      [actor.subject, policy ? target.projectID : actor.sessionID],
+      policy
+        ? [
+            actor.subject,
+            target.projectID,
+            actor.gitSourceID,
+            actor.gitSourceRevision,
+          ]
+        : [actor.subject, actor.sessionID],
     )
   ).rows[0];
   if (!row || row.banned || !row.emailVerified || row.mustChangePassword)

@@ -30,6 +30,17 @@ export async function gitConnectionRoute(
         ...(flowCookie ? { "Set-Cookie": flowCookie } : {}),
       },
     });
+  let recoverableState: string | undefined;
+  const setupReturn = (path: unknown, suffix: string) => {
+    if (
+      typeof path !== "string" ||
+      !/^\/hosting\/projects\/[1-9][0-9]{0,18}\/setup\/[1-9][0-9]{0,18}$/.test(
+        path,
+      )
+    )
+      throw Error("Invalid setup return");
+    return redirect(origin + path + "?git=" + suffix, cookie("", 0));
+  };
   try {
     if (
       step !== "callback" &&
@@ -39,10 +50,11 @@ export async function gitConnectionRoute(
     if (step === "callback") {
       if (request.method !== "GET") return new Response(null, { status: 405 });
       const q = new URL(request.url).searchParams;
-      if (q.has("error") || [...q.keys()].some((k) => q.getAll(k).length !== 1))
-        throw Error();
+      if ([...q.keys()].some((k) => q.getAll(k).length !== 1)) throw Error();
       const state = readGitFlowCookie(request.headers, origin);
       if (q.get("state") !== state) throw Error();
+      recoverableState = state;
+      if (q.has("error")) throw Error();
       await deps.call(
         gitOAuthCommandSchema.parse({
           action: "git.oauth.exchange",
@@ -84,6 +96,7 @@ export async function gitConnectionRoute(
         gitOAuthCommandSchema.parse({
           action: "git.oauth.begin",
           customerID: form.get("customerID"),
+          ...(form.get("setupID") ? { setupID: form.get("setupID") } : {}),
         }),
       );
       const url = new URL(String(result.url));
@@ -95,6 +108,7 @@ export async function gitConnectionRoute(
         throw Error();
       return redirect(url.href, cookie(String(result.state), 600));
     }
+    recoverableState = readGitFlowCookie(request.headers, origin);
     const result = await deps.call(
       gitOAuthCommandSchema.parse({
         action: "git.oauth.finish",
@@ -104,11 +118,20 @@ export async function gitConnectionRoute(
       }),
     );
     if (!/^[1-9][0-9]{0,18}$/.test(String(result.customerID))) throw Error();
+    if (result.returnPath) return setupReturn(result.returnPath, "connected");
     return redirect(
       `${origin}/tenants/${result.customerID}/hosting`,
       cookie("", 0),
     );
   } catch {
+    if (recoverableState)
+      try {
+        const result = await deps.call({
+          action: "git.oauth.return",
+          state: recoverableState,
+        });
+        if (result.returnPath) return setupReturn(result.returnPath, "failed");
+      } catch {}
     return redirect(`${origin}/hosting/git/connection-error`, cookie("", 0));
   }
 }

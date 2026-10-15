@@ -128,7 +128,7 @@ export async function verifyWorkerReadiness(pool: Reader, domains: string[]) {
   if (signed.rows[0]?.valid !== true)
     throw Error("Database context signature is invalid");
   const tables: Table[] = [];
-  if (domains.some((domain) => ["mail", "storage"].includes(domain)))
+  if (domains.some((domain) => ["mail", "storage", "hosting"].includes(domain)))
     tables.push({
       schema: "webdock_auth",
       name: "api_job",
@@ -140,6 +140,12 @@ export async function verifyWorkerReadiness(pool: Reader, domains: string[]) {
         "lease_until",
         "available_at",
       ],
+    });
+  if (domains.includes("hosting"))
+    tables.push({
+      schema: "webdock_auth",
+      name: "hosting_setup",
+      columns: ["id", "customer_id", "project_id", "generation", "lease_until"],
     });
   if (domains.includes("storage"))
     tables.push({

@@ -1,0 +1,43 @@
+---
+title: "Set up an application"
+description: "Connect a Git repository or container image, choose services and review your deployment."
+---
+
+<Note>Guided setup requires enabled project setup, assigned container hosting and compatible cluster/build capacity. Missing prerequisites appear in the review. Existing Vercel projects keep their current deployment workflow.</Note>
+
+## Create a saved setup
+
+Open your project and select **Add application**. Saving a draft does not start a container or order a database. You can continue the draft later from the project overview.
+
+1. **Source:** Connect an authorized GitHub repository, enter a supported immutable image reference with `@sha256:`, or choose the HTTP healthcheck template.
+2. **Application:** Set the name, HTTP port, resource limits, healthcheck and environment variables. Saved values are encrypted and hidden; their names remain visible.
+3. **Services:** Connect an existing PostgreSQL database or select an available database offer. Optionally connect native Mail sending with a verified sender domain.
+4. **Review:** Check the source, resources and services. Explicitly accept each new database offer before selecting **Deploy application**.
+
+The review identifies missing permissions, hosting assignments and technical prerequisites. Operators can assign hosting where authorized. Existing services retain their prices and limits; new database offers show price, currency, terms and backup status. Expired offers require a new review and acceptance.
+
+## Connect Git or a container image
+
+Each application has its own repository, branch and root directory. Multiple applications can use different directories of one repository. The build expects a `Dockerfile` in the selected directory. Review pins a specific commit; repository inspection does not run scripts.
+
+Isolated builds require configured build capacity and registry storage. GitHub Actions requires an existing workflow and the displayed artifact contract; Webdock does not install that workflow automatically. Releases requiring approval link to the relevant deployment.
+
+Arbitrary container tags and private registry credentials are not imported automatically. Use an immutable digest supported by the cluster. This setup supports applications with HTTP healthchecks; background-only workers require a separate runtime configuration.
+
+## Connect a database or Mail
+
+PostgreSQL must be ready in the same project and cluster. Webdock supplies application credentials and a mounted CA for a TLS-verified connection, normally through `DATABASE_URL`. Manage this value through the service connection. Choose distinct service variable names and remove conflicting manual values before deployment.
+
+For Mail, select a ready native connection and verified sender domain. Webdock creates a sending-only key restricted to that domain. The default variables are `WEBDOCK_MAIL_API_KEY` and `WEBDOCK_MAIL_API_URL`. The cluster needs a verified network route to the Mail API.
+
+<Warning>Mail sending does not activate incoming email. Enable mailboxes or forwarding separately in the Mail area. Disabling incoming email retains its data; deletion is a separate operation.</Warning>
+
+## Follow progress and recover
+
+Progress separates preparation, service connections, build, release and observed readiness. If a step fails, already-created resources remain available. Resolve the reported issue and select **Retry setup**. An expired session requires signing in again. Uncertain deployment outcomes may require operator reconciliation.
+
+A terminal Git release failure can rebuild the reviewed commit while retaining its application and services. A blocked draft with conflicting manual environment variables offers **Correct draft variables**. Save the correction before retrying.
+
+Use **Services** to inspect connections, rotate Mail keys or disconnect services. Disconnecting does not delete a database. Changes to running applications become connected only after the rollout is observed. After provisioning, use application and service settings for configuration changes.
+
+See [application lifecycle](/guides/applications), [databases](/guides/databases), [Mail](/guides/mail) and [persistent storage](/guides/storage).

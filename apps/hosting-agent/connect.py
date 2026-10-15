@@ -45,6 +45,8 @@ def run(args):
     registry_module=Path(__file__).with_name('registry.py').read_text()
     dependency+="r=types.ModuleType('registry')\nexec(compile("+repr(registry_module)+",'<registry>','exec'),r.__dict__)\nsys.modules['registry']=r\n"
     observer = dependency+Path(__file__).with_name('observer.py').read_text()
+    service_module=Path(__file__).with_name('service_bindings.py').read_text()
+    dependency+="r=types.ModuleType('service_bindings')\nexec(compile("+repr(service_module)+",'<service-bindings>','exec'),r.__dict__)\nsys.modules['service_bindings']=r\n"
     executor = Path(__file__).with_name('executor.py').read_text() if args.manage else None
     with config_path.open('r+') as handle:
         fcntl.flock(handle, fcntl.LOCK_EX)

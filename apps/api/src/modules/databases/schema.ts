@@ -34,6 +34,26 @@ CREATE TABLE IF NOT EXISTS webdock_auth.database_session (
 );
 CREATE INDEX IF NOT EXISTS database_session_expiry ON webdock_auth.database_session(expires_at);
 CREATE INDEX IF NOT EXISTS database_launch_expiry ON webdock_auth.database_launch(expires_at);
+CREATE TABLE IF NOT EXISTS webdock_auth.managed_database_launch (
+ token_hash text PRIMARY KEY,
+ database_id varchar NOT NULL REFERENCES webdock_auth.hosting_database(id),
+ backend_id varchar NOT NULL REFERENCES webdock_auth.hosting_database_backend(id),
+ database_revision integer NOT NULL, credential_revision integer NOT NULL,
+ subject text NOT NULL REFERENCES webdock_auth."user"(id),
+ session_id text NOT NULL REFERENCES webdock_auth.session(id) ON DELETE CASCADE,
+ expires_at timestamptz NOT NULL, consumed_at timestamptz
+);
+CREATE TABLE IF NOT EXISTS webdock_auth.managed_database_session (
+ token_hash text PRIMARY KEY, id varchar NOT NULL UNIQUE DEFAULT webdock_auth.next_snowflake(),
+ database_id varchar NOT NULL REFERENCES webdock_auth.hosting_database(id),
+ backend_id varchar NOT NULL REFERENCES webdock_auth.hosting_database_backend(id),
+ database_revision integer NOT NULL, credential_revision integer NOT NULL,
+ subject text NOT NULL REFERENCES webdock_auth."user"(id),
+ session_id text NOT NULL REFERENCES webdock_auth.session(id) ON DELETE CASCADE,
+ expires_at timestamptz NOT NULL
+);
+CREATE INDEX IF NOT EXISTS managed_database_launch_expiry ON webdock_auth.managed_database_launch(expires_at);
+CREATE INDEX IF NOT EXISTS managed_database_session_expiry ON webdock_auth.managed_database_session(expires_at);
 CREATE TABLE IF NOT EXISTS webdock_auth.database_audit (
  id varchar PRIMARY KEY DEFAULT webdock_auth.next_snowflake(), subject text NOT NULL,
  action text NOT NULL, binding_id varchar NOT NULL REFERENCES webdock_auth.database_binding(id),

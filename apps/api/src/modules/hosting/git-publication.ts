@@ -49,7 +49,7 @@ async function lease(
       `SELECT r.*,a.kind,a.digest,a.storage_key,a.retained,b.id AS build_id,b.source_sha,b.provider_configuration_identity,
     s.target_id,s.recipe,s.repository_id,s.build_environment_encrypted,c.installation_id
     FROM webdock_auth.git_release r JOIN webdock_auth.git_artifact a ON a.id=r.artifact_id
-    JOIN webdock_auth.git_build b ON b.id=a.build_id JOIN webdock_auth.git_source s ON s.project_id=r.project_id
+    JOIN webdock_auth.git_build b ON b.id=a.build_id JOIN webdock_auth.git_source s ON s.id=r.source_id
     JOIN webdock_auth.git_connection c ON c.id=s.connection_id
     WHERE r.id=$1 AND r.generation=$2 AND r.worker_id=$3 AND r.worker_generation=$4 AND r.status='deploying' AND r.lease_until>now()
     AND s.desired_release_id=r.id AND s.enabled AND s.revision=r.source_revision AND c.state='active' AND c.generation=r.connection_generation AND a.retained
@@ -67,6 +67,8 @@ async function lease(
     subject: release.approved_by,
     sessionID: release.approved_session_id,
     source: release.approved_source,
+    gitSourceID: release.source_id,
+    gitSourceRevision: release.source_revision,
     scopes: release.approved_scopes ?? [],
   };
   await authorizeHosting(
@@ -76,8 +78,8 @@ async function lease(
   );
   const source = (
     await db.query(
-      "SELECT * FROM webdock_auth.git_source WHERE project_id=$1",
-      [release.project_id],
+      "SELECT * FROM webdock_auth.git_source WHERE id=$1",
+      [release.source_id],
     )
   ).rows[0];
   if (
@@ -213,7 +215,7 @@ export async function publishGitContainer(
     const result = (await executeAppCommand(
       actor,
       {
-        action: "apps.update",
+        action: app.lifecycle === "draft" ? "apps.deploy" : "apps.update",
         appID: app.id,
         revision: app.revision,
         spec: { ...app.spec, template: "custom", image: input.image },

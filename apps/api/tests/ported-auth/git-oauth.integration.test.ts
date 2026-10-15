@@ -97,13 +97,68 @@ test("Git OAuth flows bind tenant, actor and session and consume code/finish exa
     ],
     listUserRepositories: async () => [binding],
   } as unknown as ReturnType<typeof createGitHubProvider>;
+  const project = (
+    await database.query(
+      "INSERT INTO webdock_admin.projects(id,name,customer_id,status) VALUES(webdock_auth.next_snowflake(),'OAuth setup',$1,'active') RETURNING id",
+      [customer],
+    )
+  ).rows[0].id;
+  const setup = (
+    await database.query(
+      "INSERT INTO webdock_auth.hosting_setup(customer_id,project_id,subject,configuration) VALUES($1,$2,$3,$4) RETURNING id",
+      [
+        customer,
+        project,
+        user,
+        JSON.stringify({
+          name: "web",
+          source: { kind: "git", branch: "main", rootDirectory: "." },
+          spec: {
+            args: [],
+            port: 3000,
+            healthPath: "/",
+            cpuMillicores: 100,
+            memoryBytes: 67108864,
+            ephemeralBytes: 67108864,
+            replicas: 1,
+          },
+          database: { mode: "none" },
+          mail: null,
+          autoPublish: false,
+        }),
+      ],
+    )
+  ).rows[0].id;
+  await assert.rejects(
+    executeGitOAuth(
+      actor,
+      { action: "git.oauth.begin", customerID: customer, setupID: "1" },
+      provider,
+    ),
+  );
   const begin = await executeGitOAuth(
     actor,
-    { action: "git.oauth.begin", customerID: customer },
+    { action: "git.oauth.begin", customerID: customer, setupID: setup },
     provider,
   );
   const state = "state" in begin ? String(begin.state) : "";
   assert.match(state, /^[A-Za-z0-9_-]{43}$/);
+  const context = await executeGitOAuth(
+    actor,
+    { action: "git.oauth.return", state },
+    provider,
+  );
+  assert.equal(
+    context.returnPath,
+    `/hosting/projects/${project}/setup/${setup}`,
+  );
+  await assert.rejects(
+    executeGitOAuth(
+      actorOtherSession,
+      { action: "git.oauth.return", state },
+      provider,
+    ),
+  );
   const exchange = {
     action: "git.oauth.exchange" as const,
     state,
@@ -167,6 +222,25 @@ test("Git OAuth flows bind tenant, actor and session and consume code/finish exa
   assert.equal(connected.customerID, customer);
   assert.ok(connected.connection);
   assert.equal(connected.connection.customerID, customer);
+  assert.equal(
+    connected.returnPath,
+    `/hosting/projects/${project}/setup/${setup}`,
+  );
+  const restored = (
+    await database.query(
+      "SELECT configuration,revision FROM webdock_auth.hosting_setup WHERE id=$1",
+      [setup],
+    )
+  ).rows[0];
+  assert.equal(
+    restored.configuration.source.connectionID,
+    connected.connection.id,
+  );
+  assert.equal(
+    restored.configuration.source.repositoryID,
+    binding.repositoryID,
+  );
+  assert.equal(restored.revision, 2);
   const consumed = (
     await database.query(
       "SELECT consumed_at,user_token_encrypted FROM webdock_auth.git_flow WHERE subject=$1",

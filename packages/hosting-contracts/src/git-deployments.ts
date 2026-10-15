@@ -29,7 +29,12 @@ export const gitBranch = z
       !v.endsWith("/") &&
       !v.endsWith(".lock"),
   );
-export const gitHealthPath = z.string().max(160).regex(/^\/[a-zA-Z0-9/_-]*$/).refine((value) => !value.startsWith("//"));
+export const gitHealthPath = z
+  .string()
+  .max(160)
+  .regex(/^\/[a-zA-Z0-9/_-]*$/)
+  .refine((value) => !value.startsWith("//"));
+const targetID = z.string().regex(/^(?:[1-9][0-9]{0,18}|prj_[A-Za-z0-9]+)$/);
 const page = {
   page: z.number().int().min(1).max(100000).default(1),
   limit: z.number().int().min(1).max(100).default(25),
@@ -61,7 +66,14 @@ export const gitCommands = [
       connectionID: id,
     })
     .strict(),
-  z.object({ action: z.literal("git.source.get"), projectID: id }).strict(),
+  z
+    .object({
+      action: z.literal("git.source.get"),
+      projectID: id,
+      targetID: targetID.optional(),
+    })
+    .strict(),
+  z.object({ action: z.literal("git.sources.list"), projectID: id }).strict(),
   z
     .object({
       action: z.literal("git.source.configure"),
@@ -89,7 +101,12 @@ export const gitCommands = [
     })
     .strict(),
   z
-    .object({ action: z.literal("git.builds.list"), projectID: id, ...page })
+    .object({
+      action: z.literal("git.builds.list"),
+      projectID: id,
+      sourceID: id.optional(),
+      ...page,
+    })
     .strict(),
   z
     .object({ action: z.literal("git.builds.get"), projectID: id, buildID: id })
@@ -98,6 +115,11 @@ export const gitCommands = [
     .object({
       action: z.literal("git.builds.request"),
       projectID: id,
+      targetID: targetID.optional(),
+      sourceSHA: z
+        .string()
+        .regex(/^[a-f0-9]{40}$/)
+        .optional(),
       idempotencyKey: key,
     })
     .strict(),
@@ -109,7 +131,12 @@ export const gitCommands = [
     })
     .strict(),
   z
-    .object({ action: z.literal("git.releases.list"), projectID: id, ...page })
+    .object({
+      action: z.literal("git.releases.list"),
+      projectID: id,
+      sourceID: id.optional(),
+      ...page,
+    })
     .strict(),
   z
     .object({
@@ -144,6 +171,7 @@ export const gitReadActions = [
   "git.connections.list",
   "git.repositories.list",
   "git.source.get",
+  "git.sources.list",
   "git.builds.list",
   "git.builds.get",
   "git.releases.list",

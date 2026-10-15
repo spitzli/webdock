@@ -180,3 +180,47 @@ test("backend OLD guard uses maintenance authority, not fresh backend insertion 
   assert.match(body, /webdock_rls.backend_owned\(OLD\."id"::text,true\)/);
   assert.doesNotMatch(body, /OLD\."state"::text='provisioning'/);
 });
+
+test("managed viewer sessions are gateway-only and launches cannot be rewritten by users", () => {
+  const { sql, unknownTables } = buildDatabaseRls([
+    table("managed_database_launch", [
+      "token_hash",
+      "database_id",
+      "backend_id",
+      "database_revision",
+      "credential_revision",
+      "subject",
+      "session_id",
+      "expires_at",
+      "consumed_at",
+    ]),
+    table("managed_database_session", [
+      "token_hash",
+      "id",
+      "database_id",
+      "backend_id",
+      "database_revision",
+      "credential_revision",
+      "subject",
+      "session_id",
+      "expires_at",
+    ]),
+  ]);
+  assert.deepEqual(unknownTables, []);
+  assert.match(
+    sql,
+    /CREATE POLICY webdock_auth_runtime_insert ON "webdock_auth"\."managed_database_launch"[^;]*customer_allowed\(d.customer_id,true\)/,
+  );
+  assert.match(
+    sql,
+    /CREATE POLICY webdock_auth_runtime_update ON "webdock_auth"\."managed_database_launch"[^;]*WITH CHECK\(false\)/,
+  );
+  assert.match(
+    sql,
+    /CREATE POLICY webdock_auth_runtime_insert ON "webdock_auth"\."managed_database_session"[^;]*WITH CHECK\(false\)/,
+  );
+  assert.match(
+    sql,
+    /CREATE POLICY webdock_worker_runtime_read ON "webdock_auth"\."managed_database_session"[^;]*database-gateway/,
+  );
+});

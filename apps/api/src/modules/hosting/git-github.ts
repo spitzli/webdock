@@ -1,3 +1,4 @@
+import { gitRootDirectory } from "@webdock/hosting-contracts";
 import type { Fetch } from "../shared/http";
 import { createHash, createHmac, sign, timingSafeEqual } from "node:crypto";
 import { HostingError } from "@webdock/hosting-contracts";
@@ -383,6 +384,73 @@ export function createGitHubProvider(
       branch,
     };
   }
+  async function resolveCommit(source: GitSource, commit: string) {
+    const exact = sha(commit),
+      token = await repositoryToken(source.installationID, source.repositoryID);
+    const r = repository(
+      await json("/repositories/" + id(source.repositoryID), token),
+    );
+    if (r.repositoryID !== source.repositoryID) throw denied();
+    const resolved = await json(
+      "/repos/" + r.fullName + "/commits/" + exact,
+      token,
+    );
+    if (sha(resolved.sha) !== exact) throw denied();
+    return {
+      sha: exact,
+      repositoryID: r.repositoryID,
+      repositoryName: r.fullName,
+      branch: branchName(source.branch),
+    };
+  }
+  async function readSourceFile(
+    source: GitSource,
+    commit: string,
+    path: string,
+  ): Promise<string | null> {
+    const exact = sha(commit);
+    gitRootDirectory.parse(path);
+    const token = await repositoryToken(
+      source.installationID,
+      source.repositoryID,
+    );
+    const r = repository(
+      await json("/repositories/" + id(source.repositoryID), token),
+    );
+    if (r.repositoryID !== source.repositoryID) throw denied();
+    const response = await request(
+      "https://api.github.com/repos/" +
+        r.fullName +
+        "/contents/" +
+        path.split("/").map(encodeURIComponent).join("/") +
+        "?ref=" +
+        exact,
+      token,
+    );
+    if (response.status === 404) {
+      await response.body?.cancel();
+      return null;
+    }
+    if (!response.ok) {
+      await response.body?.cancel();
+      throw denied();
+    }
+    const file = JSON.parse((await readBounded(response, 100000)).toString());
+    if (
+      file.type !== "file" ||
+      file.encoding !== "base64" ||
+      !Number.isInteger(file.size) ||
+      file.size < 0 ||
+      file.size > 65536 ||
+      typeof file.content !== "string"
+    )
+      throw unavailable();
+    const encoded = file.content.replace(/\s/g, "");
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded)) throw unavailable();
+    const decoded = Buffer.from(encoded, "base64");
+    if (decoded.length !== file.size) throw unavailable();
+    return decoded.toString("utf8");
+  }
   async function exchangeOAuthCode(code: string, redirectURI: string) {
     if (!config.clientID || !config.clientSecret)
       throw new HostingError(503, "GitHub deployments are not configured yet.");
@@ -751,6 +819,8 @@ export function createGitHubProvider(
     verifyRepository,
     revalidateRepository,
     resolveSource,
+    resolveCommit,
+    readSourceFile,
     exchangeOAuthCode,
     fetchSource,
     prepareSourceDownload,

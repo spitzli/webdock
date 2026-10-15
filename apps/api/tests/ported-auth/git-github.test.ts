@@ -618,3 +618,64 @@ test("repository binding persists granted Actions permission without breaking me
   ).verifyRepository("user-token", "9", "42");
   assert.equal(binding.permissions.actions, "read");
 });
+
+test("setup reads bounded files at the reviewed commit and rejects directories and escapes", async () => {
+  const commit = "b".repeat(40);
+  const f = fake({
+    ["/repos/owner/repo/commits/" + commit]: { sha: commit },
+    "/repos/owner/repo/contents/apps/web/Dockerfile": {
+      type: "file",
+      encoding: "base64",
+      size: 12,
+      content: Buffer.from("EXPOSE 3000\n").toString("base64"),
+    },
+  });
+  const p = createGitHubProvider(config, async (input, init) => {
+    const url = new URL(String(input));
+    if (url.pathname.includes("/contents/"))
+      assert.equal(url.searchParams.get("ref"), commit);
+    return f.fetcher(input, init);
+  });
+  assert.equal(
+    (
+      await p.resolveCommit(
+        { installationID: "9", repositoryID: "42", branch: "main" },
+        commit,
+      )
+    ).sha,
+    commit,
+  );
+  assert.equal(
+    await p.readSourceFile(
+      { installationID: "9", repositoryID: "42", branch: "main" },
+      commit,
+      "apps/web/Dockerfile",
+    ),
+    "EXPOSE 3000\n",
+  );
+  await assert.rejects(
+    p.readSourceFile(
+      { installationID: "9", repositoryID: "42", branch: "main" },
+      commit,
+      "../secret",
+    ),
+  );
+  const bad = createGitHubProvider(
+    config,
+    fake({
+      "/repos/owner/repo/contents/Dockerfile": {
+        type: "symlink",
+        target: "../../secret",
+        size: 12,
+        content: "AAAA",
+      },
+    }).fetcher,
+  );
+  await assert.rejects(
+    bad.readSourceFile(
+      { installationID: "9", repositoryID: "42", branch: "main" },
+      commit,
+      "Dockerfile",
+    ),
+  );
+});

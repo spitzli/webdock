@@ -1,3 +1,5 @@
+import { verifySetupDatabaseFlow } from "../helpers/setup-database-flow";
+import { serviceBindingSchemaSQL } from "../../src/modules/hosting/service-binding-schema";
 import { reportDatabaseObservations } from "../../src/modules/hosting/database-observations";
 import { readFileSync } from "node:fs";
 import { displayDatabaseCredentials } from "../../src/modules/hosting/database-credentials";
@@ -69,6 +71,7 @@ test.after(async () => {
 });
 test("database migration, operator catalog and tenant ordering use real transactions", async (t) => {
   await database.query(databaseSchemaSQL);
+  await database.query(serviceBindingSchemaSQL);
   await database.query(databaseSchemaSQL);
   await t.test(
     "runtime grants permit provisioning but preserve order history and schema ownership",
@@ -444,6 +447,111 @@ test("database migration, operator catalog and tenant ordering use real transact
           displayDatabaseCredentials({ ...a, source: "oauth" }, one.databaseID),
         );
         await assert.rejects(displayDatabaseCredentials(b, one.databaseID));
+        await database.query(
+          "INSERT INTO webdock_auth.hosting_project(project_id,customer_id,provider,mode,cluster_id,namespace) VALUES($1,$2,'k3s','selfservice',$3,$4)",
+          [project, customer, cluster, "wd-" + project],
+        );
+        await database.query(
+          "UPDATE webdock_auth.hosting_agent SET observation=jsonb_set(observation,'{capabilities,serviceBindingsVersion}','1') WHERE cluster_id=$1",
+          [cluster],
+        );
+        const limits = await executeHosting(root, {
+          action: "limits.get",
+          customerID: customer,
+        });
+        const draft = await executeHosting(root, {
+          action: "apps.prepare",
+          projectID: project,
+          name: "Bound application",
+          spec: {
+            args: [],
+            port: 8080,
+            healthPath: "/",
+            cpuMillicores: 100,
+            memoryBytes: 67108864,
+            ephemeralBytes: 67108864,
+            replicas: 1,
+          },
+          subscriptionRevision: limits.subscriptionRevision,
+          idempotencyKey: key(),
+        });
+        const bind = {
+          action: "services.bind",
+          projectID: project,
+          appID: draft.appID,
+          service: {
+            kind: "postgres",
+            databaseID: one.databaseID,
+            variable: "DATABASE_URL",
+          },
+          revision: 0,
+          idempotencyKey: key(),
+        };
+        const bound = await executeHosting(root, bind);
+        assert.equal((await executeHosting(root, bind)).id, bound.id);
+        assert.equal(bound.state, "pending");
+        assert.equal(
+          JSON.stringify(bound).includes(credentials.applicationPassword),
+          false,
+        );
+        const appView = await executeHosting(root, {
+          action: "apps.get",
+          appID: draft.appID,
+        });
+        assert.deepEqual(appView.environmentNames, ["DATABASE_URL"]);
+        await database.query(
+          "UPDATE webdock_auth.hosting_database SET credential_revision=credential_revision+1 WHERE id=$1",
+          [one.databaseID],
+        );
+        const stale = await executeHosting(root, {
+          action: "services.list",
+          projectID: project,
+          appID: draft.appID,
+        });
+        assert.equal(stale[0].state, "blocked");
+        await database.query(
+          "UPDATE webdock_auth.hosting_database SET credential_revision=credential_revision-1 WHERE id=$1",
+          [one.databaseID],
+        );
+        await assert.rejects(executeHosting(b, bind));
+        await assert.rejects(
+          executeHosting(
+            { ...root, scopes: ["hosting:read"] },
+            { ...bind, idempotencyKey: key() },
+          ),
+        );
+        await assert.rejects(
+          executeHosting(root, {
+            action: "services.disconnect",
+            projectID: project,
+            bindingID: bound.id,
+            revision: 0,
+            idempotencyKey: key(),
+          }),
+        );
+        await executeHosting(root, {
+          action: "services.disconnect",
+          projectID: project,
+          bindingID: bound.id,
+          revision: bound.revision,
+          idempotencyKey: key(),
+        });
+        assert.deepEqual(
+          (
+            await executeHosting(root, {
+              action: "apps.get",
+              appID: draft.appID,
+            })
+          ).environmentNames,
+          [],
+        );
+        await verifySetupDatabaseFlow(
+          root,
+          project,
+          one.databaseID,
+          planID,
+          agent,
+        );
         // Dedicated orders reserve a physical installation; upgrades reserve their delta before execution.
         await database.query(
           "UPDATE webdock_auth.hosting_agent SET observation=$2 WHERE cluster_id=$1",

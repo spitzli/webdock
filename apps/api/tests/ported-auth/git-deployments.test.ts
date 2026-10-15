@@ -152,7 +152,9 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
       branch: "main",
     }),
   } as unknown as ReturnType<typeof createGitHubProvider>;
-  const call = (cmd: unknown) => executeGitDeployment(actor, cmd, fake);
+  let activeTarget = target;
+  const call = (cmd: Record<string, unknown>) => executeGitDeployment(actor,
+    ['git.source.get', 'git.builds.request'].includes(cmd.action) ? {targetID: activeTarget, ...cmd} : cmd, fake);
   const configured = await call({
     action: "git.source.configure",
     projectID: project,
@@ -167,6 +169,16 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
   });
   assert.equal(configured.revision, 1);
   assert.equal(configured.healthPath, "/api/health");
+  // Two sources must coexist without changing the first application's release state.
+  const secondTarget = 'prj_second' + key();
+  await database.query('UPDATE webdock_auth.hosting_vercel SET projects=projects || $2::jsonb WHERE customer_id=$1', [customer, JSON.stringify([secondTarget])]);
+  await bindGitTarget(actor, {action:'git.targets.bind',projectID:project,targetID:secondTarget,mode:'byok'}, async () => {});
+  const second = await call({action:'git.source.configure',projectID:project,connectionID:connection.id,repositoryID:binding.repositoryID,branch:'main',rootDirectory:'apps/api',recipe:'vercel',targetID:secondTarget,revision:0,healthPath:'/api/health'});
+  assert.notEqual(second.id, configured.id);
+  assert.equal((await call({action:'git.source.get',projectID:project})).source.rootDirectory, '.');
+  await assert.rejects(executeGitDeployment(actor, {action:'git.builds.request',projectID:project,idempotencyKey:key()}, fake), /Select an application/);
+  const allSources = await call({action:'git.sources.list', projectID:project});
+  assert.equal(allSources.docs.length, 2);
   const idem = key();
   const build = await call({
     action: "git.builds.request",
@@ -399,7 +411,9 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
     1,
   );
   await receiveGitEvent(event);
-  assert.equal((await processGitEvents(fake)).queued, 1);
+  assert.equal((await processGitEvents(fake)).queued, 2);
+  assert.equal((await database.query("SELECT count(DISTINCT source_id)::int AS n FROM webdock_auth.git_build WHERE project_id=$1 AND idempotency_key LIKE $2", [project, 'webhook:' + event.deliveryID + '%'])).rows[0].n, 2);
+  await call({action:'git.source.configure',projectID:project,connectionID:connection.id,repositoryID:binding.repositoryID,branch:'main',rootDirectory:'apps/api',recipe:'vercel',targetID:secondTarget,revision:second.revision,enabled:false});
   assert.equal((await receiveGitEvent(event)).duplicate, true);
   await receiveGitEvent({
     deliveryID: key(),
@@ -596,7 +610,7 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
   );
   for (let i = 0; i < 3; i++)
     await database.query(
-      "INSERT INTO webdock_auth.git_release(customer_id,project_id,artifact_id,status,source_revision,connection_generation,environment_revision,subject,environment_identity) SELECT customer_id,project_id,$2,'ready',source_revision,connection_generation,environment_revision,subject,environment_identity FROM webdock_auth.git_release WHERE id=$1",
+      "INSERT INTO webdock_auth.git_release(customer_id,project_id,artifact_id,status,source_revision,connection_generation,environment_revision,subject,environment_identity,source_id) SELECT customer_id,project_id,$2,'ready',source_revision,connection_generation,environment_revision,subject,environment_identity,source_id FROM webdock_auth.git_release WHERE id=$1",
       [healthy.id, approved.artifactID],
     );
   const blocker = await database.connect();
@@ -720,8 +734,8 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
   assert.equal(
     (
       await database.query(
-        "SELECT count(*)::int n FROM webdock_auth.git_build WHERE project_id=$1 AND failure_code='SOURCE_CHANGED'",
-        [project],
+        "SELECT count(*)::int n FROM webdock_auth.git_build WHERE project_id=$1 AND source_id=$2 AND failure_code='SOURCE_CHANGED'",
+        [project, configured.id],
       )
     ).rows[0].n,
     11,
@@ -745,6 +759,7 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
       (error as { constraint?: string }).constraint ===
       "git_source_project_customer_fk",
   );
+  await call({action:'git.source.configure',projectID:project,connectionID:connection.id,repositoryID:binding.repositoryID,branch:'main',rootDirectory:'.',recipe:'vercel',targetID:target,revision:3,enabled:false});
   // Registry-only writes cannot create an application operation; their failures must be retryable.
   const cluster = (
     await database.query(
@@ -770,8 +785,9 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
     rootDirectory: ".",
     recipe: "dockerfile",
     targetID: app,
-    revision: 3,
+    revision: 0,
   });
+  activeTarget = app;
   const ociBuild = await call({
     action: "git.builds.request",
     projectID: project,
@@ -868,6 +884,7 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
     "UPDATE webdock_auth.git_release SET status='needs-reconciliation',publication_started_at=now() WHERE id=$1",
     [registryFailure.id],
   );
+  await call({action:'git.source.configure',projectID:project,connectionID:connection.id,repositoryID:binding.repositoryID,branch:'main',rootDirectory:'.',recipe:'dockerfile',targetID:app,revision:1,enabled:false});
   const replacementApp = (
     await database.query(
       "INSERT INTO webdock_auth.hosting_app(project_id,name,spec) VALUES($1,'replacement',$2) RETURNING id",
@@ -883,7 +900,7 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
     rootDirectory: ".",
     recipe: "dockerfile",
     targetID: replacementApp,
-    revision: 4,
+    revision: 0,
   });
   const staleRelease = (
     await database.query(
@@ -915,6 +932,7 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
     ).rows[0].n,
     0,
   );
+  activeTarget = replacementApp;
   const replacementBuild = await call({
     action: "git.builds.request",
     projectID: project,
@@ -966,7 +984,7 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
     rootDirectory: ".",
     recipe: "dockerfile",
     targetID: replacementApp,
-    revision: 5,
+    revision: 1,
     buildProvider: "github-actions",
   });
   assert.equal(actionsSource.buildProvider, "github-actions");
@@ -1124,7 +1142,7 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
       rootDirectory: ".",
       recipe: "dockerfile",
       targetID: replacementApp,
-      revision: 6,
+      revision: 2,
       buildProvider: "github-actions",
       buildEnvironment: [{ name: "BUILD_SECRET", value: "no-export" }],
     }),
@@ -1169,8 +1187,8 @@ test("durable Git queue fences stale workers and tenant publication", async (t) 
     assert.equal(
       (
         await database.query(
-          "SELECT latest_build_id FROM webdock_auth.git_source WHERE project_id=$1",
-          [project],
+          "SELECT latest_build_id FROM webdock_auth.git_source WHERE project_id=$1 AND target_id=$2",
+          [project, activeTarget],
         )
       ).rows[0].latest_build_id,
       importJob!.buildID,
