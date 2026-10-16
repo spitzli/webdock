@@ -90,7 +90,7 @@ type VerifiedPluginRelease = {
 };
 ```
 
-`PluginManifest` is the validated Tabularium core plus the spec's `x-webdock` structure. Keep it separate from an installed record. Validate serialized JSON at every trust boundary. Additional internal row/checkpoint types may be defined by their owning task; public naming and semantics above stay stable.
+`PluginManifest` is the validated Tabularium core plus the spec's top-level runtime fields. Keep it separate from an installed record. Validate serialized JSON at every trust boundary. Additional internal row/checkpoint types may be defined by their owning task; public naming and semantics above stay stable.
 
 ## Task 1: Define the v1 contract and lifecycle rules
 

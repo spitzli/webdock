@@ -346,10 +346,10 @@ export const manifestSchema = z
       })
       .optional(),
     min_runtime_version: z.string().max(40).optional(),
-    "x-webdock": extensionSchema,
+    ...extensionSchema.shape,
   })
   .superRefine((m, ctx) => {
-    const x = m["x-webdock"];
+    const x = m;
     const issue = (message: string) =>
       ctx.addIssue({ code: "custom", message });
     if (x.dependencies.some((d) => d.id === m.name)) issue("Self dependency");

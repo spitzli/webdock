@@ -9,7 +9,7 @@ The [Webdock Registry](https://registry.webdock.dev) catalogs extensions for Web
 
 ## Plugin kind
 
-Use **`extension`**. Product areas such as hosting, mail and analytics are categories or tags, not separate runtime kinds. Every manifest requires `x-webdock`, which declares compatibility, an immutable runtime image and the capabilities used by the plugin.
+Use **`extension`**. Product areas such as hosting, mail and analytics are categories or tags, not separate runtime kinds. Kind-specific fields such as `image`, `capabilities` and `actions` live directly at the manifest root. They declare compatibility, an immutable runtime image and the capabilities used by the extension.
 
 The registry is separate from the [customer/project Registry REST API](/developers/registry). Tabularium owns plugin discovery and release metadata; Webdock owns installation, permissions and execution. Executable images live in an OCI registry.
 

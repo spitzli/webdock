@@ -29,7 +29,7 @@ export function checkPluginCompatibility(
   coreVersion: string,
   installed: readonly InstalledPlugin[],
 ): Blocker[] {
-  const x = manifest["x-webdock"];
+  const x = manifest;
   const blockers: Blocker[] = [];
   if (
     !semver.valid(coreVersion) ||

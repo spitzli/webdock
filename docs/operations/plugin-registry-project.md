@@ -75,7 +75,7 @@ End-to-end verified: the GitHub callback linked `NewtTheWolf` to the existing ad
 
 ## Webdock registry configuration — 2026-10-16
 
-- Kind `extension` with the complete generated `x-webdock` schema from `tools/plugins/tabularium-kind.schema.json`. No unrelated driver/theme kinds were added.
+- Kind `extension` with the complete generated runtime field schema from `tools/plugins/tabularium-kind.schema.json`. No unrelated driver/theme kinds were added.
 - Required kind, operator approval, JSON manifest paths `.tabularium` and `tabularium.json`. Registry authoring validation has its own 64 KiB request cap; the SDK host contract is 256 KiB.
 - Webdock name, orange palette, existing light/dark wordmarks and favicon, English/German home copy and About page. The companion-app promotion is disabled because its stock copy falsely promises one-click runtime installation.
 - **External docs URL remains `https://docs.webdock.dev/`**, as explicitly selected by the owner. Header and footer links verified in the browser. Plugin pages and navigation are added under `docs/developers/`; they are not yet published by the connected `main`-branch Mintlify deployment.
@@ -88,6 +88,8 @@ Bun 1.3.14 JIT schema compilation failed in the restricted cluster container (`e
 
 The complete schema is retained without loosening validation or container security. Each validation currently recompiles AJV synchronously and took roughly 3.5–5 seconds in live checks. Back-to-back validation requests can temporarily fail readiness and return 503; the verification cases are deliberately paced by three seconds. This is a remaining Tabularium performance limitation, not evidence of load readiness. A bounded compiled-validator cache in upstream Tabularium is the appropriate follow-up.
 
-The actual validator retained the valid fixture byte-for-byte as a JSON value and rejected missing `x-webdock`, mutable image tags, unknown privileged fields, missing kind and unsupported protocol. See `docs/verification/2026-10-16-plugin-registry-manifests.json`. This is schema round-trip evidence only; no forge release, signed artifact ingestion or host installation was performed.
+The actual validator retained the valid fixture byte-for-byte as a JSON value and rejected missing runtime fields, mutable image tags, unknown privileged fields, missing kind and unsupported protocol. See `docs/verification/2026-10-16-plugin-registry-manifests.json`. This is schema round-trip evidence only; no forge release, signed artifact ingestion or host installation was performed.
 
-The unused kind was renamed from `webdock-plugin` to `extension` at the owner’s request. The catalog was empty (0 plugins). Labels are **Extensions / Erweiterungen**. SDK, fixtures, public docs and registry configuration now require `extension`; the `x-webdock` runtime extension is unchanged.
+The unused kind was renamed from `webdock-plugin` to `extension` at the owner’s request. The catalog was empty (0 plugins). Labels are **Extensions / Erweiterungen**. SDK, fixtures, public docs and registry configuration now require `extension`; the runtime field semantics are unchanged.
+
+The owner subsequently requested the Tabularis registry convention: kind-specific runtime fields now live directly at the manifest root. The `x-webdock` wrapper was removed from the SDK, fixture, generated registry schema and live kind. Tabularis driver/theme schemas were inspected read-only; the other registry was not modified. No published plugins required migration.

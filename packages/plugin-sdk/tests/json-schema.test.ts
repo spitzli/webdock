@@ -17,5 +17,7 @@ test("registry schema has no remote refs and matches generated contract", () => 
     ),
   );
   assert.equal(JSON.stringify(schema).includes('"$ref"'), false);
-  assert.equal((schema["x-webdock"] as { required: boolean }).required, true);
+  assert.equal(Object.hasOwn(schema, "x-webdock"), false);
+  for (const field of ["image", "capabilities", "actions", "configuration"])
+    assert.equal((schema[field] as { required: boolean }).required, true);
 });

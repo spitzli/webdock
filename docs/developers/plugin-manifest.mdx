@@ -1,6 +1,6 @@
 ---
 title: "Plugin manifest reference"
-description: "Required x-webdock fields, capabilities and immutable release descriptors."
+description: "Runtime fields, capabilities and immutable release descriptors."
 ---
 
 Use `kind: "extension"` and JSON syntax. The registry exposes the [kind-specific schema](https://registry.webdock.dev/manifest.schema.json?kind=extension); the SDK's `parsePluginManifest` adds semantic checks that JSON Schema cannot express.
@@ -15,76 +15,74 @@ Use `kind: "extension"` and JSON syntax. The registry exposes the [kind-specific
   "version": "1.0.0",
   "kind": "extension",
   "description": "Scoped project notes",
-  "x-webdock": {
-    "protocolVersion": 1,
-    "sdkVersion": 1,
-    "dataProtocolVersion": 1,
-    "coreVersion": ">=0.1.0 <1.0.0",
-    "image": "registry.example.com/plugins/notes@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "dependencies": [],
-    "capabilities": [
-      "project.read",
-      "plugin.data.read",
-      "plugin.data.write"
-    ],
-    "schemaVersion": 1,
-    "readableSchema": {
-      "min": 1,
-      "max": 1
-    },
-    "migrations": [],
-    "tables": [],
-    "services": {
-      "required": [
-        {
-          "name": "data",
-          "version": 1
-        }
-      ],
-      "optional": []
-    },
-    "configuration": {
-      "type": "object",
-      "properties": {},
-      "additionalProperties": false
-    },
-    "actions": [
+  "protocolVersion": 1,
+  "sdkVersion": 1,
+  "dataProtocolVersion": 1,
+  "coreVersion": ">=0.1.0 <1.0.0",
+  "image": "registry.example.com/plugins/notes@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "dependencies": [],
+  "capabilities": [
+    "project.read",
+    "plugin.data.read",
+    "plugin.data.write"
+  ],
+  "schemaVersion": 1,
+  "readableSchema": {
+    "min": 1,
+    "max": 1
+  },
+  "migrations": [],
+  "tables": [],
+  "services": {
+    "required": [
       {
-        "name": "notes.read",
-        "intent": "read",
-        "capabilities": [
-          "plugin.data.read"
-        ]
-      },
-      {
-        "name": "notes.write",
-        "intent": "write",
-        "capabilities": [
-          "plugin.data.write"
-        ]
+        "name": "data",
+        "version": 1
       }
     ],
-    "jobs": [
-      {
-        "name": "notes.maintenance",
-        "intervalSeconds": 60,
-        "capabilities": [
-          "plugin.data.write"
-        ]
-      }
-    ],
-    "navigation": [],
-    "slots": [],
-    "events": [],
-    "secrets": [],
-    "httpBindings": []
-  }
+    "optional": []
+  },
+  "configuration": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "actions": [
+    {
+      "name": "notes.read",
+      "intent": "read",
+      "capabilities": [
+        "plugin.data.read"
+      ]
+    },
+    {
+      "name": "notes.write",
+      "intent": "write",
+      "capabilities": [
+        "plugin.data.write"
+      ]
+    }
+  ],
+  "jobs": [
+    {
+      "name": "notes.maintenance",
+      "intervalSeconds": 60,
+      "capabilities": [
+        "plugin.data.write"
+      ]
+    }
+  ],
+  "navigation": [],
+  "slots": [],
+  "events": [],
+  "secrets": [],
+  "httpBindings": []
 }
 ```
 
 ## Required runtime fields
 
-All fields below live inside `x-webdock`. Empty arrays are valid where a plugin declares no corresponding feature.
+All fields below live at the manifest root alongside `name`, `version` and `kind`. Empty arrays are valid where a plugin declares no corresponding feature.
 
 | Field | Contract |
 | --- | --- |

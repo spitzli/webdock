@@ -26,7 +26,7 @@ test("rejectsUnknownPrivilegedFields", () => {
     "hostURL",
   ]) {
     const m = fixture();
-    m["x-webdock"][key] = "forbidden";
+    m[key] = "forbidden";
     assert.throws(() => parsePluginManifest(m), key);
   }
 });
@@ -37,7 +37,7 @@ test("rejectsUnpinnedImage", () => {
     "https://example.com/notes@sha256:" + "a".repeat(64),
   ]) {
     const m = fixture();
-    m["x-webdock"].image = image;
+    m.image = image;
     assert.throws(() => parsePluginManifest(m));
   }
 });
@@ -51,14 +51,14 @@ test("rejectsDuplicateAndCyclicDependencies", () => {
     [{ id: "other", version: "^1.0.0" }],
   ]) {
     const m = fixture();
-    m["x-webdock"].dependencies = dependencies;
+    m.dependencies = dependencies;
     assert.throws(() => parsePluginManifest(m));
   }
 });
 test("rejectsUnsupportedProtocolOrDataProtocol", () => {
   for (const key of ["protocolVersion", "sdkVersion", "dataProtocolVersion"]) {
     const m = fixture();
-    m["x-webdock"][key] = 2;
+    m[key] = 2;
     assert.throws(() => parsePluginManifest(m));
   }
 });
@@ -69,7 +69,7 @@ test("rejectsInvalidSchemaCompatibilityRange", () => {
     { min: 2, max: 3 },
   ]) {
     const m = fixture();
-    m["x-webdock"].readableSchema = range;
+    m.readableSchema = range;
     assert.throws(() => parsePluginManifest(m));
   }
 });
@@ -81,15 +81,15 @@ test("rejects unsafe paths, duplicate actions and undeclared or write capabiliti
     "/ui/x?token=secret",
   ]) {
     const m = fixture();
-    m["x-webdock"].navigation = [{ id: "notes", label: "Notes", path }];
+    m.navigation = [{ id: "notes", label: "Notes", path }];
     assert.throws(() => parsePluginManifest(m));
   }
   const m = fixture();
-  m["x-webdock"].actions.push(m["x-webdock"].actions[0]);
+  m.actions.push(m.actions[0]);
   assert.throws(() => parsePluginManifest(m));
   for (const cap of ["plugin.data.write", "plugin.secrets.read"]) {
     const m = fixture();
-    m["x-webdock"].actions[0].capabilities = [cap];
+    m.actions[0].capabilities = [cap];
     assert.throws(() => parsePluginManifest(m));
   }
 });
@@ -117,13 +117,13 @@ test("rejects reserved ids, oversized manifests and unsafe configuration schemas
     { type: "object", patternProperties: { ".*": { type: "string" } } },
   ]) {
     const m = fixture();
-    m["x-webdock"].configuration = schema;
+    m.configuration = schema;
     assert.throws(() => parsePluginManifest(m));
   }
 });
 test("bounds job interval and rejects destructive or unordered migrations", () => {
   const m = fixture();
-  m["x-webdock"].jobs[0].intervalSeconds = 59;
+  m.jobs[0].intervalSeconds = 59;
   assert.throws(() => parsePluginManifest(m));
   for (const migrations of [
     [
@@ -139,7 +139,7 @@ test("bounds job interval and rejects destructive or unordered migrations", () =
     ],
   ]) {
     const m = fixture();
-    m["x-webdock"].migrations = migrations;
+    m.migrations = migrations;
     assert.throws(() => parsePluginManifest(m));
   }
 });
@@ -151,7 +151,7 @@ test("rejects type-mismatched defaults and invalid schema constraints", () => {
     { type: "object", properties: { x: { type: "array" } } },
   ]) {
     const m = fixture();
-    m["x-webdock"].configuration = configuration;
+    m.configuration = configuration;
     assert.throws(() => parsePluginManifest(m));
   }
 });
@@ -168,8 +168,8 @@ test("column defaults match their type and nullability before migration", () => 
       indexes: [],
       foreignKeys: [],
     };
-    m["x-webdock"].tables = [table];
-    m["x-webdock"].migrations = [
+    m.tables = [table];
+    m.migrations = [
       {
         version: 1,
         checksum: "a".repeat(64),
@@ -200,4 +200,13 @@ test("column defaults match their type and nullability before migration", () => 
       parsePluginManifest(sample(type as string, value)),
     );
   assert.doesNotThrow(() => parsePluginManifest(sample("integer", null, true)));
+});
+
+test("requires runtime fields at the manifest root and rejects the retired wrapper", () => {
+  const m = fixture();
+  assert.equal(Object.hasOwn(m, "x-webdock"), false);
+  const { name, version, kind, description, ...runtime } = m;
+  assert.throws(() => parsePluginManifest({ name, version, kind, description, "x-webdock": runtime }));
+  delete m.image;
+  assert.throws(() => parsePluginManifest(m));
 });

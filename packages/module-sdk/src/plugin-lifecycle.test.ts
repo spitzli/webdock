@@ -102,7 +102,7 @@ test("checks core semver, missing dependencies and cycles across installed relea
     ),
   );
   const m = manifest();
-  m["x-webdock"].dependencies = [{ id: "dependent", version: "1.0.0" }];
+  m.dependencies = [{ id: "dependent", version: "1.0.0" }];
   assert.ok(
     checkPluginCompatibility(m, "0.1.0", []).some(
       (b) => b.code === "dependency_unavailable",
