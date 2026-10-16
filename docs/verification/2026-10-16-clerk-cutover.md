@@ -97,3 +97,50 @@ organizations created/linked, existing roles preserved without adding the operat
 to customer teams. No invitations, passwords or legacy sessions were created.
 The schema has no native mailbox grants to convert. Console activation and promotion
 follow final mapping readback and removal of the temporary import credential.
+
+## Public Console promotion
+
+PR #33 merged as `dcd18806350d9e83eda9db4b65d866ed630bf877`. Final importer
+readback reports all four identities and both teams unchanged; the dedicated import
+role is NOLOGIN with no memberships and its HBA entry removed. API and worker run
+with Clerk Console mode enabled. The public website now contains both waitlist links.
+
+Console production deployment `dpl_J6CqWzxarvwhs7Jiy9faihc1PH2C`
+(`webdock-admin-p4qomkl5r-spitzli.vercel.app`) reached Ready. The NGINX configuration
+was validated before changing only the Console upstream; Auth's immutable upstream
+and both protected-deployment credentials were preserved. The proxy rollout passed.
+
+Live navigation exposed one ingress-specific entry issue: `/api/sso/login` is sent
+to the API directly, bypassing Next.js proxy logic. The targeted follow-up redirects
+only Clerk-mode Console GET/HEAD login entries to the fixed `/login` URL, after the
+foreign-origin check. Legacy mode, callbacks and signed API requests remain intact.
+Regression reproduced the old route, then103 API unit tests and TypeScript passed;
+independent review found no blocker. Direct `/login` already renders the production
+Clerk sign-in and waitlist entry. The follow-up API image is promoted separately.
+
+
+## Cutover completed
+
+API now runs `docker.io/library/webdock-api@sha256:8841c32b0865c2d3d395a6d600b2a8cbc683ee80e223f09932720fba7c523a30`
+with the targeted entry redirect. Worker remains on the validated full release
+`docker.io/library/webdock-api@sha256:568a3d4665d953a97f4c90d30e1232d28d3ffc348f98b44834e722cdc82b33f2`;
+the redirect-only change is not used by workers. Deployment manifests pin those
+actual artifacts so applying them cannot restore a pre-Clerk backend.
+
+Live evidence after promotion:
+
+- Console `/api/sso/login` returns307 to `https://console.webdock.dev/login`.
+- The owner completed real Clerk sign-in; Console recognizes the existing operator
+  and renders its25 projects and operator navigation without a legacy login.
+- API readiness and legacy OIDC discovery return200; unauthenticated Console API
+  returns401. API, worker and UI proxy are Ready.
+- `webdock.dev` serves the new registration/waitlist links; Clerk remains in
+  waitlist mode. No public self-registration or invitation mailing was enabled.
+- Both temporary migration/import roles are NOLOGIN, without CREATEROLE or role
+  memberships; their temporary HBA rules are removed. Existing permanent website
+  browser ownership membership is preserved.
+
+Customer isolation/revocation and worker/viewer grant boundaries were exercised by
+the automated suites and development fixtures. Real customer sign-ins were not
+impersonated during this production smoke check. The private production backup is
+retained; no production customer or Mail content was changed for testing.
