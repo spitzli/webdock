@@ -2,10 +2,13 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { createHmac, X509Certificate } from "node:crypto";
 import pg from "pg";
 
+export type ClerkDatabaseIdentity = { issuer: string; userID: string; organizationID: string | null; clerkOrganizationID: string | null; customerID: string | null; role: "admin" | "member" | null; verifiedAt: number; expiresAt: number };
+export type LegacyClerkMemberships={issuer:string;userID:string;verifiedAt:number;expiresAt:number;roles:Array<{organizationID:string;customerID:string;role:string}>};
 export type DatabaseScope =
-  | { kind: "session"; subject: string; sessionID: string }
+  | { kind: "session"; subject: string; sessionID: string; clerk?: ClerkDatabaseIdentity; memberships?:LegacyClerkMemberships }
   | {
       kind: "system";
+      clerk?: ClerkDatabaseIdentity & {subject:string;sessionID:string};
       purpose: string;
       clusterID?: string;
       customerID?: string;
@@ -20,6 +23,12 @@ export type DatabaseScope =
     };
 const scopes = new AsyncLocalStorage<DatabaseScope>();
 export function withDatabaseScope<T>(scope: DatabaseScope, fn: () => T): T {
+  const inherited = scopes.getStore();
+  // Nested service/registry transactions must retain the exact verified provider proof.
+  if (scope.kind === "session" && !scope.clerk && inherited?.kind === "session" && inherited.clerk && scope.subject === inherited.subject && scope.sessionID === inherited.sessionID) {
+    scope = { ...scope, clerk: inherited.clerk };
+  }
+  if(scope.kind==="session" && !scope.memberships && inherited?.kind==="session" && inherited.memberships && scope.subject===inherited.subject && scope.sessionID===inherited.sessionID)scope={...scope,memberships:inherited.memberships};
   return scopes.run(structuredClone(scope), fn);
 }
 export function currentDatabaseScope(): DatabaseScope | undefined {

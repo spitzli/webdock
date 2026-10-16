@@ -139,27 +139,7 @@ export async function hostingBridge(request: Request) {
     if (request.method !== "POST") throw new HostingError(405, "Use POST.");
     const input = bodySchema.parse(await readHostingJSON(request));
     const actor = await hostingIdentity(request, input.accessToken);
-    const settings = vercelSettings();
-    const runtime = settings
-      ? {
-          clientID: settings.clientID,
-          clientSecret: settings.clientSecret,
-          slug: settings.slug,
-          origin: settings.origin,
-          platformTeam: settings.teamID,
-        }
-      : undefined;
-    const data =
-      input.command.action === "databases.credentials.display"
-        ? await displayDatabaseCredentials(actor, input.command.databaseID)
-        : input.command.action === "enrollment.display"
-          ? await issueEnrollment(actor, input.command.enrollmentID)
-          : input.command.action.startsWith("git.oauth.")
-            ? await executeGitOAuth(
-                actor,
-                gitOAuthCommandSchema.parse(input.command),
-              )
-            : await executeHosting(actor, input.command, runtime);
+    const data=await executeStudioHosting(actor,input.command);
     return Response.json(
       { data },
       { headers: { "Cache-Control": "no-store" } },
@@ -171,4 +151,30 @@ export async function hostingBridge(request: Request) {
       { status: safe.status, headers: { "Cache-Control": "no-store" } },
     );
   }
+}
+
+export async function executeStudioHosting(actor:HostingActor, input:unknown){
+ const command=bodySchema.shape.command.parse(input);
+    const settings = vercelSettings();
+    const runtime = settings
+      ? {
+          clientID: settings.clientID,
+          clientSecret: settings.clientSecret,
+          slug: settings.slug,
+          origin: settings.origin,
+          platformTeam: settings.teamID,
+        }
+      : undefined;
+    const data =
+      command.action === "databases.credentials.display"
+        ? await displayDatabaseCredentials(actor, command.databaseID)
+        : command.action === "enrollment.display"
+          ? await issueEnrollment(actor, command.enrollmentID)
+          : command.action.startsWith("git.oauth.")
+            ? await executeGitOAuth(
+                actor,
+                gitOAuthCommandSchema.parse(command),
+              )
+            : await executeHosting(actor, command, runtime);
+ return data;
 }

@@ -33,7 +33,9 @@ export async function TenantWorkspace({
     throw error;
   }
   const { tenant, canManage, operator, sites, members, invitations } = data;
-  const owner = operator || tenant.member_role === "owner";
+  const owner = operator || tenant.member_role === "owner" || (data.team?.provider==="clerk"&&tenant.member_role==="admin");
+  if(view==="team" && data.team && !data.team.ready)return <section className="account-section"><h1>{i18n.t("Team")}</h1><p>{i18n.t("Setup pending")}</p>{operator&&<TenantForm customer={customerID} action="link-team" label={i18n.t("Connect")}/>}</section>;
+  if(view==="team" && data.team && !data.team.canManage)return <section className="account-section"><h1>{i18n.t("Team")}</h1>{members.map(member=><p key={member.id}>{member.name} · {i18n.t(uiLabel(member.role))}</p>)}</section>;
   const bridges = await demoBridges();
   return (
     <div className="access-page">
@@ -153,7 +155,7 @@ export async function TenantWorkspace({
 
           <section className="account-section">
             <h2>{i18n.t("People")}</h2>
-            <p className="muted">{i18n.t("Admins manage members. Owners manage admins and owners. Removing membership immediately removes workspace access.")}</p>
+            <p className="muted">{data.team ? i18n.t("Administrators manage members and invitations. Clerk applies its team rules.") : i18n.t("Admins manage members. Owners manage admins and owners. Removing membership immediately removes workspace access.")}</p>
             <div className="access-grid">
               {members.map((member) => (
                 <article className="access-record" key={member.id}>
@@ -179,7 +181,7 @@ export async function TenantWorkspace({
                         label={i18n.t("Update tenant role")}
                       >
                         <input type="hidden" name="member" value={member.id} />
-                        <TenantRole value={member.role} allowOwner={owner} memberOnly={!owner} />
+                        <TenantRole value={member.role} allowOwner={owner&&!data.team} memberOnly={!owner} />
                       </TenantForm>
                       <TenantForm
                         customer={customerID}
@@ -211,7 +213,7 @@ export async function TenantWorkspace({
               <label className="field">{i18n.t("Email")}<input name="email" type="email" required maxLength={254} />
               </label>
               <TenantRole
-                value={operator && members.length === 0 ? "admin" : "member"}
+                value={!data.team && operator && members.length === 0 ? "admin" : "member"}
               />
             </TenantForm>
           </details>

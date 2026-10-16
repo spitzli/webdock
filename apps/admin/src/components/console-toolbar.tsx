@@ -1,3 +1,5 @@
+import {AccountControls} from "./account-controls";
+import {clerkConsoleEnabled} from "@/lib/console-identity";
 import { getRequestI18n } from '@webdock/i18n/next';
 import { LanguagePicker } from '@webdock/i18n/picker';
 import { getConsoleContext } from '@/lib/console-context';
@@ -18,7 +20,7 @@ export async function ConsoleToolbar({ segments = [] }: { segments?: string[] })
     operator={session.operator}
     preview={!!session.preview}
     navigation={<><Navigation operator={session.operator} preview={!!session.preview} /><WorkspaceSidebar segments={segments} /></>}
-    account={<details className="console-account-menu"><summary aria-label={t('Account & preferences')}><span className="console-avatar" aria-hidden="true">{session.user.name.slice(0,1).toLocaleUpperCase()}</span><span>{session.user.name}</span></summary><div>
+    account={clerkConsoleEnabled()?<AccountControls preview={!!session.preview}/>:<details className="console-account-menu"><summary aria-label={t('Account & preferences')}><span className="console-avatar" aria-hidden="true">{session.user.name.slice(0,1).toLocaleUpperCase()}</span><span>{session.user.name}</span></summary><div>
       <strong>{session.user.name}</strong><small>{session.operator?t('Operator studio'):t('Customer studio')}</small>
       {!session.preview&&<a href={accountURL}>{t('Account & security ↗')}</a>}
       <Appearance /><LanguagePicker className="studio-language-picker" /><Logout ssoEnabled />

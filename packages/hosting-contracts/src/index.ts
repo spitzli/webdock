@@ -41,6 +41,7 @@ export type HostingDemand = Record<HostingDimension, number>;
 export type Enforcement =
   "provider-enforced" | "webdock-enforced" | "observed-only" | "unsupported";
 export type HostingActor = {
+  consoleIdentity?: {issuer:string;userID:string;sessionID:string;organizationID:string|null};
   subject: string;
   sessionID: string;
   source: "studio" | "oauth" | "git-policy";

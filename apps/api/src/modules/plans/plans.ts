@@ -1,3 +1,7 @@
+import {linkedMembershipRole} from "../auth/clerk-provider";
+import {businessOperator} from "../auth/business-identity";
+import {currentConsolePrincipal, consoleMembership} from "../auth/principal";
+import { getBusinessIdentity } from "../auth/business-identity";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import {
   effectiveHostingAllowances,
@@ -147,7 +151,7 @@ async function actor(
   subject?: string,
 ) {
   const subjectID =
-    subject || (await auth.api.getSession({ headers }))?.user.id;
+    subject || (await getBusinessIdentity(headers))?.user.id;
   const user =
     subjectID &&
     (
@@ -156,9 +160,10 @@ async function actor(
         [subjectID],
       )
     ).rows[0];
-  if (!user || user.banned || !user.emailVerified || user.mustChangePassword)
+  if (!user || user.banned || (!currentConsolePrincipal() && (!user.emailVerified || user.mustChangePassword)))
     throw new PlanError("Sign in and complete account setup first.");
-  const operator = user.role === "operator" && user.twoFactorEnabled === true;
+  const principal=currentConsolePrincipal();
+  const operator = !(await businessOperator(user.id)).disabled;
   if (user.role !== "user" && !operator)
     throw new PlanError("Complete operator security setup first.");
   return { id: user.id as string, operator };
@@ -183,12 +188,13 @@ async function tenant(
   ).rows[0];
   if (!row || (row.status !== "active" && !(allowArchived && user.operator)))
     throw new PlanError("Active tenant not found or access unavailable.");
-  const membership = (
+  const linked=currentConsolePrincipal()?undefined:await linkedMembershipRole(user.id,row.organization_id);
+  const membership = consoleMembership(user.id,row.organization_id) ?? (currentConsolePrincipal() ? null : linked!==undefined ? (linked?{role:linked}:null) : (
     await connection.query(
       `SELECT role FROM webdock_auth.member WHERE "organizationId"=$1 AND "userId"=$2${lock ? " FOR SHARE" : ""}`,
       [row.organization_id, user.id],
     )
-  ).rows[0];
+  ).rows[0]);
   if (!user.operator && !membership)
     throw new PlanError("Tenant not found or access unavailable.");
   return {

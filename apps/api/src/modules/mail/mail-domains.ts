@@ -1,7 +1,7 @@
+import { getBusinessIdentity } from "../auth/business-identity";
 import type { Fetch } from "../shared/http";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { randomUUID } from "node:crypto";
-import { auth } from "../auth/auth";
 import { database } from "../../db/runtime";
 import { getTenant } from "../access/tenants";
 import { getPlatformSettings, mailProvider } from "../platform/platform";
@@ -158,7 +158,7 @@ export async function manageTenantSenderDomain(
       fail("Unknown sender-domain action.");
     if (input.action === "unregister" && input.confirm !== "yes")
       fail("Confirm removal of this provider sender domain.");
-    const session = await auth.api.getSession({ headers });
+    const session = await getBusinessIdentity(headers);
     if (!session) fail("Sign in first.");
     const event = (
       await database.query(

@@ -1,0 +1,278 @@
+import { currentDatabaseScope } from "@webdock/database-runtime";
+import { createClerkClient } from "@clerk/backend";
+import { authDatabase } from "../../db/runtime";
+import {
+  type ConsoleIdentityDependencies,
+  ConsoleAuthError,
+  createConsoleVerifier,
+  resolveConsolePrincipal,
+} from "./clerk-identity";
+export function clerkProvider() {
+  const secretKey = process.env.CLERK_SECRET_KEY,
+    publishableKey = process.env.CLERK_PUBLISHABLE_KEY;
+  if (!secretKey || !publishableKey)
+    throw new ConsoleAuthError(503, "Console identity is not configured.");
+  return createClerkClient({
+    secretKey,
+    publishableKey,
+    telemetry: { disabled: true },
+  });
+}
+export async function liveMemberships(userID: string) {
+  const provider = clerkProvider(),
+    members = [];
+  for (let offset = 0; ; offset += 100) {
+    const page = await provider.users.getOrganizationMembershipList({
+      userId: userID,
+      limit: 100,
+      offset,
+    });
+    members.push(...page.data);
+    if (members.length >= page.totalCount || page.data.length === 0)
+      return members;
+    if (offset >= 10000)
+      throw new ConsoleAuthError(
+        503,
+        "Organization access is temporarily unavailable.",
+      );
+  }
+}
+function consoleConfiguration() {
+  const issuer = process.env.CLERK_ISSUER,
+    origin = process.env.WEBDOCK_CONSOLE_ORIGIN,
+    serviceKey = process.env.WEBDOCK_CONSOLE_SERVICE_KEY;
+  if (!issuer || !origin || !serviceKey)
+    throw new ConsoleAuthError(503, "Console identity is not configured.");
+  return { issuer, authorizedParties: [origin], serviceKey };
+}
+function consoleDependencies() {
+  const provider = clerkProvider();
+  return {
+    verify: async (request: Request) => {
+      // Strip cookies: this boundary accepts only the explicitly delegated session token.
+      return authenticateConsole(
+        new Request(request.url, {
+          headers: {
+            authorization: request.headers.get("authorization") || "",
+          },
+        }),
+      );
+    },
+    session: (id: string) => provider.sessions.getSession(id),
+    user: (id: string) => provider.users.getUser(id),
+    memberships: liveMemberships,
+    projectIdentity: async (input: {
+      issuer: string;
+      userID: string;
+      organizationID: string;
+      name: string;
+      email: string;
+    }) => {
+      await provider.users.updateUser(input.userID,{deleteSelfEnabled:false,createOrganizationEnabled:false});
+      try {
+        await authDatabase.query(
+          "SELECT webdock_rls.project_clerk_user($1,$2,$3,$4,$5)",
+          [
+            input.issuer,
+            input.userID,
+            input.organizationID,
+            input.name,
+            input.email,
+          ],
+        );
+      } catch (error) {
+        if ((error as { code?: string }).code === "23505")
+          throw new ConsoleAuthError(
+            403,
+            "This email requires an explicit account mapping.",
+          );
+        throw error;
+      }
+    },
+    identity: async (issuer: string, userID: string) =>
+      (
+        await authDatabase.query(
+          `SELECT u.id,u.name,u.email,u.role,u.banned,u."emailVerified",i.enabled FROM webdock_auth.clerk_identity i JOIN webdock_auth."user" u ON u.id=i.user_id WHERE i.issuer=$1 AND i.clerk_user_id=$2`,
+          [issuer, userID],
+        )
+      ).rows[0] || null,
+    organization: async (issuer: string, organizationID: string) =>
+      (
+        await authDatabase.query(
+          `SELECT o.organization_id AS id,t.customer_id AS "customerID",c.status='active' AS active,o.enabled FROM webdock_auth.clerk_organization o JOIN webdock_auth.tenant_customer t ON t.organization_id=o.organization_id JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE o.issuer=$1 AND o.clerk_organization_id=$2`,
+          [issuer, organizationID],
+        )
+      ).rows[0] || null,
+  };
+}
+export async function requireConsolePrincipal(request: Request) {
+  return createConsoleVerifier(
+    consoleConfiguration(),
+    consoleDependencies(),
+  )(request);
+}
+export type StoredConsoleIdentity = {
+  issuer: string;
+  userID: string;
+  sessionID: string;
+  organizationID: string | null;
+};
+/** Only call with a reference loaded from a private viewer/session/job record. */
+export async function revalidateStoredConsoleIdentity(
+  reference: StoredConsoleIdentity,
+  mappings?: Pick<ConsoleIdentityDependencies, "identity" | "organization">,
+) {
+  const config = consoleConfiguration();
+  if (reference.issuer !== config.issuer)
+    throw new ConsoleAuthError(401, "Identity issuer mismatch.");
+  const dependencies = consoleDependencies();
+  return resolveConsolePrincipal(config, mappings ? { ...dependencies, ...mappings, projectIdentity: undefined } : dependencies, {
+    iss: reference.issuer,
+    sub: reference.userID,
+    sid: reference.sessionID,
+    orgId: reference.organizationID,
+    azp: config.authorizedParties[0],
+    exp: Math.floor(Date.now() / 1000) + 60,
+  });
+}
+
+async function authenticateConsole(request: Request) {
+  const config = consoleConfiguration();
+  const state = await clerkProvider().authenticateRequest(request, {
+    acceptsToken: "session_token",
+    authorizedParties: config.authorizedParties,
+  });
+  const identity = state.toAuth();
+  if (
+    !identity ||
+    identity.tokenType !== "session_token" ||
+    !identity.userId ||
+    !identity.sessionId ||
+    !identity.sessionClaims
+  )
+    throw new ConsoleAuthError(401, "Sign in again.");
+  return {
+    sub: identity.userId,
+    sid: identity.sessionId,
+    iss: identity.sessionClaims.iss,
+    azp: identity.sessionClaims.azp || "",
+    exp: identity.sessionClaims.exp,
+    orgId: identity.orgId,
+  };
+}
+/** Fixed browser callback/form routes only; generic business calls still require the service key. */
+export async function requireConsoleBrowserPrincipal(request: Request) {
+  if (
+    process.env.WEBDOCK_CONSOLE_AUTH_PROVIDER !== "clerk" ||
+    request.headers.has("authorization")
+  )
+    throw new ConsoleAuthError(401, "Sign in again.");
+  const headers = new Headers({ cookie: request.headers.get("cookie") || "" });
+  const claims = await authenticateConsole(
+    new Request(request.url, { headers }),
+  );
+  return resolveConsolePrincipal(
+    consoleConfiguration(),
+    consoleDependencies(),
+    claims,
+  );
+}
+
+/** Live membership authority for linked legacy clients; their own session/MFA checks still run. */
+export async function legacyClerkMemberships(subject: string) {
+  const scope = currentDatabaseScope();
+  if (
+    scope?.kind === "session" &&
+    scope.subject === subject &&
+    scope.memberships &&
+    scope.memberships.expiresAt > Date.now()
+  )
+    return scope.memberships;
+  const issuer = process.env.CLERK_ISSUER;
+  if (!issuer) {
+    if((await authDatabase.query("SELECT to_regclass('webdock_auth.clerk_identity') IS NOT NULL AS present")).rows[0]?.present && (await authDatabase.query('SELECT 1 FROM webdock_auth.clerk_identity WHERE user_id=$1',[subject])).rowCount)throw new ConsoleAuthError(503,"Linked identity verification is not configured.");
+    return undefined;
+  }
+  const link = (
+    await authDatabase.query(
+      "SELECT clerk_user_id,enabled FROM webdock_auth.clerk_identity WHERE issuer=$1 AND user_id=$2",
+      [issuer, subject],
+    )
+  ).rows[0];
+  if (!link) {
+    if ((await authDatabase.query('SELECT 1 FROM webdock_auth.clerk_identity WHERE user_id=$1', [subject])).rowCount)
+      throw new ConsoleAuthError(503, 'Linked identity verification is not configured for this issuer.');
+    return undefined;
+  }
+  if (!link.enabled)
+    throw new ConsoleAuthError(403, "Account access is disabled.");
+  const provider = clerkProvider(),
+    user = await provider.users.getUser(link.clerk_user_id);
+  if (
+    user.banned ||
+    user.locked ||
+    !user.emailAddresses.some(
+      (e) =>
+        e.id === user.primaryEmailAddressId &&
+        e.verification?.status === "verified",
+    )
+  )
+    throw new ConsoleAuthError(403, "Account access is disabled.");
+  const live = await liveMemberships(link.clerk_user_id);
+  const links = (
+    await authDatabase.query(
+      `SELECT o.clerk_organization_id,o.organization_id,t.customer_id FROM webdock_auth.clerk_organization o JOIN webdock_auth.tenant_customer t ON t.organization_id=o.organization_id JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE o.issuer=$1 AND o.enabled AND c.status='active'`,
+      [issuer],
+    )
+  ).rows;
+  const roles = links.flatMap((row) => {
+    const member = live.find(
+      (m) => m.organization.id === row.clerk_organization_id,
+    );
+    return member && ["org:admin", "org:member"].includes(member.role)
+      ? [
+          {
+            organizationID: String(row.organization_id),
+            customerID: String(row.customer_id),
+            role: member.role === "org:admin" ? "admin" : "member",
+          },
+        ]
+      : [];
+  });
+  const now = Date.now();
+  return {
+    issuer,
+    userID: link.clerk_user_id as string,
+    verifiedAt: now,
+    expiresAt: now + 60000,
+    roles,
+  };
+}
+export async function linkedMembershipRole(
+  subject: string,
+  organizationID: string,
+): Promise<string | null | undefined> {
+  const issuer = process.env.CLERK_ISSUER;
+  if (!issuer) {
+    if ((await authDatabase.query("SELECT to_regclass('webdock_auth.clerk_organization') IS NOT NULL AS present")).rows[0]?.present &&
+        (await authDatabase.query('SELECT 1 FROM webdock_auth.clerk_organization WHERE organization_id=$1', [organizationID])).rowCount)
+      throw new ConsoleAuthError(503, 'Linked team verification is not configured.');
+    return undefined;
+  }
+  const link = (
+    await authDatabase.query(
+      "SELECT enabled FROM webdock_auth.clerk_organization WHERE issuer=$1 AND organization_id=$2",
+      [issuer, organizationID],
+    )
+  ).rows[0];
+  if (!link) {
+    if ((await authDatabase.query('SELECT 1 FROM webdock_auth.clerk_organization WHERE organization_id=$1', [organizationID])).rowCount)
+      throw new ConsoleAuthError(503, 'Linked team verification is not configured for this issuer.');
+    return undefined;
+  }
+  if (!link.enabled) return null;
+  const proof = await legacyClerkMemberships(subject);
+  return (
+    proof?.roles.find((r) => r.organizationID === organizationID)?.role ?? null
+  );
+}

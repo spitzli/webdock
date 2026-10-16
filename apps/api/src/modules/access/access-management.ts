@@ -1,9 +1,10 @@
+import { getBusinessIdentity } from "../auth/business-identity";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { searchPage } from "@webdock/search";
 import { randomBytes } from "node:crypto";
 import { auth } from "../auth/auth";
 import { database } from "../../db/runtime";
-import { currentMCPClaims } from "../auth/mcp";
+import { businessOperator } from "../auth/business-identity";
 import { currentClaims } from "../auth/authorization";
 import { sendAuthMail } from "../auth/mail";
 
@@ -30,8 +31,8 @@ const name = (value: string | undefined) => {
 };
 export async function requireAccessOperator(headers: Headers) {
   return withAuthenticatedDatabase(headers, async () => {
-    const session = await auth.api.getSession({ headers });
-    if (!session || (await currentMCPClaims(session.user.id)).disabled)
+    const session = await getBusinessIdentity(headers);
+    if (!session || (await businessOperator(session.user.id)).disabled)
       throw new AccessError(
         "Operator access with completed security setup is required.",
       );
@@ -168,7 +169,7 @@ export async function listAccess(headers: Headers, search: string) {
 }
 export async function accountSites(headers: Headers) {
   return withAuthenticatedDatabase(headers, async () => {
-    const session = await auth.api.getSession({ headers });
+    const session = await getBusinessIdentity(headers);
     if (!session) throw new AccessError("Sign in to view your websites.");
     const rows = (
       await database.query(

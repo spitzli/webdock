@@ -8591,3 +8591,7 @@ msgstr "Name oder Domain"
 
 msgid "Filter by name"
 msgstr "Nach Name filtern"
+
+
+msgid "Administrators manage members and invitations. Clerk applies its team rules."
+msgstr "Administratoren verwalten Mitglieder und Einladungen. Dabei gelten die Teamregeln von Clerk."

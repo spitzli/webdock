@@ -720,6 +720,11 @@ export async function executeGitDeployment(
       if (!r) throw unavailable();
       const s = await source(db, cmd.projectID, { sourceID: r.source_id });
       active(s);
+      // Retention may have committed while this request waited for the source lock.
+      const retained = (await db.query(
+        "SELECT retained FROM webdock_auth.git_artifact WHERE id=$1",
+        [r.artifact_id],
+      )).rows[0]?.retained;
       const prior = (
         await db.query(
           "SELECT * FROM webdock_auth.git_release WHERE project_id=$1 AND idempotency_key=$2",
@@ -741,7 +746,7 @@ export async function executeGitDeployment(
         r.source_revision !== s.revision ||
         r.environment_revision !== s.environment_revision ||
         r.connection_generation !== s.connection_generation ||
-        !r.retained
+        !retained
       )
         throw conflict();
       let result;

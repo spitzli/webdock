@@ -38,6 +38,10 @@ export function createAuthentication(options: {
 }) {
   const baseURL = options.baseURL;
   const authDatabase = options.database;
+  async function legacyLoginAllowed(userID:string){
+    if(!(await authDatabase.query("SELECT to_regclass('webdock_auth.clerk_identity') IS NOT NULL AS present")).rows[0]?.present)return true;
+    return (await authDatabase.query('SELECT NOT EXISTS(SELECT 1 FROM webdock_auth.clerk_identity WHERE user_id=$1 AND NOT legacy_eligible) AS allowed',[userID])).rows[0]?.allowed===true;
+  }
   const auth = lazyAuth(() =>
     betterAuth({
       appName: "Webdock",
@@ -52,6 +56,10 @@ export function createAuthentication(options: {
               schema,
               transaction: true,
             }),
+      databaseHooks:{
+        account:{create:{before:async(account)=>{if(!(await legacyLoginAllowed(account.userId)))throw new APIError("FORBIDDEN",{message:"Use your Console account to sign in."});return {data:account};}}},
+        session:{create:{before:async(session)=>{if(!(await legacyLoginAllowed(session.userId)))throw new APIError("FORBIDDEN",{message:"Use your Console account to sign in."});return {data:session};}}},
+      },
       trustedOrigins: [baseURL],
       disabledPaths: ["/token", "/admin/impersonate-user"],
       advanced: {
@@ -90,8 +98,9 @@ export function createAuthentication(options: {
             [user.id],
           );
         },
-        sendResetPassword: async ({ user, url }) =>
-          sendAuthMail({
+        sendResetPassword: async ({ user, url }) => {
+          if(!(await legacyLoginAllowed(user.id)))return;
+          return sendAuthMail({
             to: user.email,
             subject:
               "mustChangePassword" in user && user.mustChangePassword === true
@@ -101,7 +110,8 @@ export function createAuthentication(options: {
               "mustChangePassword" in user && user.mustChangePassword === true
                 ? `Your Webdock administrator has invited you. Choose your password to set up your account:\n${url}\nIf you were not expecting an invitation, you can ignore this message.`
                 : `Reset your Webdock password using this link:\n${url}\nIf you did not request this, you can ignore this message.`,
-          }),
+          });
+        },
       },
       emailVerification: {
         sendVerificationEmail: async ({ user, url }) =>

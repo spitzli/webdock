@@ -1,3 +1,5 @@
+import {currentConsolePrincipal} from "../auth/principal";
+import { getBusinessIdentity } from "../auth/business-identity";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { randomUUID } from "node:crypto";
 import {
@@ -6,7 +8,6 @@ import {
   type ListCommandOptions,
 } from "@vercel/blob";
 import type { PoolClient } from "pg";
-import { auth } from "../auth/auth";
 import { database } from "../../db/runtime";
 import { getTenant } from "../access/tenants";
 import { encryptMailSecret, decryptMailSecret } from "./platform";
@@ -210,7 +211,7 @@ async function operator(headers: Headers, customerID: string) {
   const access = await getTenant(headers, customerID);
   if (!access.operator || access.tenant.status !== "active")
     fail("Active tenant and platform operator access are required.");
-  const session = await auth.api.getSession({ headers });
+  const session = await getBusinessIdentity(headers);
   if (!session) fail("Sign in first.");
   return session!.user.id;
 }
@@ -224,10 +225,11 @@ async function save(
   const connection = await database.connect();
   try {
     await connection.query("BEGIN");
+    const principal=currentConsolePrincipal();
     const actor = (
       await connection.query(
-        'SELECT id FROM webdock_auth."user" WHERE id=$1 AND role=\'operator\' AND NOT coalesce(banned,false) AND "emailVerified" AND "twoFactorEnabled" AND NOT "mustChangePassword" FOR SHARE',
-        [actorID],
+        `SELECT id FROM webdock_auth."user" WHERE id=$1 AND role='operator' AND NOT coalesce(banned,false) AND ($2 OR ("emailVerified" AND "twoFactorEnabled" AND NOT "mustChangePassword")) FOR SHARE`,
+        [actorID,!!principal?.operator && principal.userID===actorID],
       )
     ).rows[0];
     const tenant = (

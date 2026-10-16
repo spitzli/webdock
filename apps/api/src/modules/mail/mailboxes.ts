@@ -1,3 +1,5 @@
+import { clerkMailAccess, clerkMailPeople } from "./mail-clerk-access";
+import { getBusinessIdentity } from "../auth/business-identity";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { z } from "zod";
 import { MailServiceError } from "@webdock/mail-core";
@@ -106,7 +108,7 @@ export async function executeMailboxes(
     const mailboxes = (
       await db.query(
         `SELECT b.id,b.name,b.local_part||'@'||d.name AS address,b.state,b.enabled,b.quota_bytes AS "quotaBytes",
-      coalesce($6 AND g.enabled AND g.revision=g.applied_revision AND b.enabled AND b.state='ready' AND i.state='ready' AND b.provider_id IS NOT NULL AND i.provider_id IS NOT NULL AND (g.member_id=$4 OR (g.operator_grant AND $5)),false) AS "canOpen"
+      coalesce($6 AND g.enabled AND g.revision=g.applied_revision AND b.enabled AND b.state='ready' AND i.state='ready' AND b.provider_id IS NOT NULL AND i.provider_id IS NOT NULL AND (g.clerk_grant=$7 OR (g.clerk_grant IS NULL AND $7::text IS NULL AND (g.member_id=$4 OR (g.operator_grant AND $5)))),false) AS "canOpen"
       FROM webdock_mail.mailbox b JOIN webdock_mail.domain d ON d.id=b.domain_id AND d.customer_id=b.customer_id
       LEFT JOIN webdock_mail.mailbox_grant g ON g.mailbox_id=b.id AND g.customer_id=b.customer_id AND g.subject=$2
       LEFT JOIN webdock_mail.identity i ON i.customer_id=b.customer_id AND i.subject=$2
@@ -118,6 +120,7 @@ export async function executeMailboxes(
           access.memberID,
           access.operator,
           Boolean(access.service?.ready),
+          access.clerkGrant,
         ],
       )
     ).rows;
@@ -135,15 +138,20 @@ export async function executeMailboxes(
           )
         ).rows
       : [];
-    const people = access.canManage
-      ? (
-          await db.query(
-            `SELECT u.id,u.name,u.email FROM webdock_auth."user" u WHERE NOT coalesce(u.banned,false) AND u."emailVerified" AND NOT u."mustChangePassword" AND
-      (($2 AND u.role='operator' AND u."twoFactorEnabled") OR EXISTS(SELECT 1 FROM webdock_auth.member m JOIN webdock_auth.tenant_customer t ON t.organization_id=m."organizationId" WHERE m."userId"=u.id AND t.customer_id=$1)) ORDER BY u.name LIMIT 128`,
-            [customerID, access.operator],
-          )
-        ).rows
+    const providerPeople = access.canManage
+      ? await clerkMailPeople(db, customerID, access.operator)
       : [];
+    const people =
+      providerPeople ??
+      (access.canManage
+        ? (
+            await db.query(
+              `SELECT u.id,u.name,u.email FROM webdock_auth."user" u WHERE NOT coalesce(u.banned,false) AND u."emailVerified" AND NOT u."mustChangePassword" AND
+      (($2 AND u.role='operator' AND u."twoFactorEnabled") OR EXISTS(SELECT 1 FROM webdock_auth.member m JOIN webdock_auth.tenant_customer t ON t.organization_id=m."organizationId" WHERE m."userId"=u.id AND t.customer_id=$1)) ORDER BY u.name LIMIT 128`,
+              [customerID, access.operator],
+            )
+          ).rows
+        : []);
     const grants = access.canManage
       ? (
           await db.query(
@@ -294,24 +302,30 @@ export async function executeMailboxes(
   if (!mailbox) mailUnavailable();
   const existing = (
     await db.query(
-      "SELECT enabled,member_id,operator_grant FROM webdock_mail.mailbox_grant WHERE customer_id=$1 AND mailbox_id=$2 AND subject=$3 FOR UPDATE",
+      "SELECT enabled,member_id,operator_grant,clerk_grant FROM webdock_mail.mailbox_grant WHERE customer_id=$1 AND mailbox_id=$2 AND subject=$3 FOR UPDATE",
       [customerID, mailbox.id, command.subject],
     )
   ).rows[0];
   if (command.action === "grant") {
-    const user = (
-      await db.query(
-        `SELECT u.id,m.id AS member_id FROM webdock_auth."user" u LEFT JOIN webdock_auth.tenant_customer t ON t.customer_id=$2 LEFT JOIN webdock_auth.member m ON m."organizationId"=t.organization_id AND m."userId"=u.id WHERE u.id=$1 AND NOT coalesce(u.banned,false) AND u."emailVerified" AND NOT u."mustChangePassword" AND
+    const clerk = await clerkMailAccess(db, command.subject, customerID);
+    if (clerk === null || (clerk?.operator && !access.operator))
+      mailUnavailable();
+    const user = clerk
+      ? { id: command.subject, member_id: null }
+      : (
+          await db.query(
+            `SELECT u.id,m.id AS member_id FROM webdock_auth."user" u LEFT JOIN webdock_auth.tenant_customer t ON t.customer_id=$2 LEFT JOIN webdock_auth.member m ON m."organizationId"=t.organization_id AND m."userId"=u.id WHERE u.id=$1 AND NOT coalesce(u.banned,false) AND u."emailVerified" AND NOT u."mustChangePassword" AND
       (($3 AND u.role='operator' AND u."twoFactorEnabled") OR EXISTS(SELECT 1 FROM webdock_auth.member m JOIN webdock_auth.tenant_customer t ON t.organization_id=m."organizationId" WHERE m."userId"=u.id AND t.customer_id=$2)) FOR SHARE OF u`,
-        [command.subject, customerID, access.operator],
-      )
-    ).rows[0];
+            [command.subject, customerID, access.operator],
+          )
+        ).rows[0];
     if (!user) mailUnavailable();
-    const operatorGrant = !user.member_id;
+    const operatorGrant = !clerk && !user.member_id;
     if (
       existing?.enabled &&
       existing.member_id === user.member_id &&
-      existing.operator_grant === operatorGrant
+      existing.operator_grant === operatorGrant &&
+      (existing.clerk_grant ?? null) === (clerk?.clerkGrant ?? null)
     )
       return { ok: true };
     if (
@@ -344,9 +358,16 @@ export async function executeMailboxes(
       [customerID, command.subject],
     );
     await db.query(
-      `INSERT INTO webdock_mail.mailbox_grant(customer_id,mailbox_id,subject,member_id,operator_grant) VALUES($1,$2,$3,$4,$5)
-      ON CONFLICT(mailbox_id,subject) DO UPDATE SET enabled=true,member_id=excluded.member_id,operator_grant=excluded.operator_grant,revision=mailbox_grant.revision+1`,
-      [customerID, mailbox.id, command.subject, user.member_id, operatorGrant],
+      `INSERT INTO webdock_mail.mailbox_grant(customer_id,mailbox_id,subject,member_id,operator_grant,clerk_grant) VALUES($1,$2,$3,$4,$5,$6)
+      ON CONFLICT(mailbox_id,subject) DO UPDATE SET enabled=true,member_id=excluded.member_id,operator_grant=excluded.operator_grant,clerk_grant=excluded.clerk_grant,revision=mailbox_grant.revision+1`,
+      [
+        customerID,
+        mailbox.id,
+        command.subject,
+        user.member_id,
+        operatorGrant,
+        clerk?.clerkGrant ?? null,
+      ],
     );
   } else {
     if (!existing?.enabled) return { ok: true };
@@ -372,12 +393,12 @@ export async function getTenantMailboxes(headers: Headers, customerID: string) {
     if (process.env.WEBDOCK_NATIVE_MAILBOXES_ENABLED !== "true") return null;
     const { auth } = await import("../auth/auth"),
       { transaction } = await import("../hosting/db");
-    const session = await auth.api.getSession({ headers });
+    const session = await getBusinessIdentity(headers);
     if (!session) mailUnavailable();
     return transaction((db) =>
       executeMailboxes(
         db,
-        { subject: session.user.id, sessionID: session.session.id },
+        { subject: session.user.id, sessionID: session.sessionID },
         customerID,
         { action: "list" },
       ),
@@ -394,12 +415,12 @@ export async function manageTenantMailboxes(
       mailUnavailable();
     const { auth } = await import("../auth/auth"),
       { transaction } = await import("../hosting/db");
-    const session = await auth.api.getSession({ headers });
+    const session = await getBusinessIdentity(headers);
     if (!session) mailUnavailable();
     await transaction((db) =>
       executeMailboxes(
         db,
-        { subject: session.user.id, sessionID: session.session.id },
+        { subject: session.user.id, sessionID: session.sessionID },
         customerID,
         input,
       ),

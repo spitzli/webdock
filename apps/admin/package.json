@@ -15,10 +15,14 @@
     "test": "node --import tsx --test --test-concurrency=1 tests/*.test.ts"
   },
   "dependencies": {
+    "@clerk/localizations": "^4.23.0",
+    "@clerk/nextjs": "^7.9.15",
     "@tabularis/web-ui": "file:../../vendor/tabularis-web-ui-fdd6c0a6-editor-routing.tgz",
+    "@webdock/api-client": "*",
     "@webdock/database-contracts": "*",
     "@webdock/hosting-contracts": "*",
     "@webdock/i18n": "*",
+    "@webdock/mail-contracts": "*",
     "@webdock/mail-core": "*",
     "@webdock/page-builder": "*",
     "@webdock/payload-sso": "*",
@@ -28,9 +32,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sharp": "0.35.5",
-    "zod": "4.6.5",
-    "@webdock/mail-contracts": "*",
-    "@webdock/api-client": "*"
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@types/node": "^24",

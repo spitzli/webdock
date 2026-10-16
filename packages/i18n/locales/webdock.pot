@@ -10986,3 +10986,8 @@ msgstr ""
 #: packages/i18n/src/picker.tsx:23
 msgid "Changing language…"
 msgstr ""
+
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/workspace.tsx
+msgid "Administrators manage members and invitations. Clerk applies its team rules."
+msgstr ""

@@ -734,6 +734,9 @@
   "Administrators can edit this profile and invite people. Existing role changes and removals are managed by your Webdock operator.": [
     "Admins können dieses Profil bearbeiten und Personen einladen. Bestehende Rollen ändern und Mitgliedschaften entfernen kann dein Webdock-Betreiber."
   ],
+  "Administrators manage members and invitations. Clerk applies its team rules.": [
+    "Administratoren verwalten Mitglieder und Einladungen. Dabei gelten die Teamregeln von Clerk."
+  ],
   "Administrators manage members. Owners manage administrators and owners. Website permissions are assigned separately.": [
     "Administratoren verwalten Mitglieder. Owner verwalten Administratoren und Owner. Website-Rechte werden separat vergeben."
   ],

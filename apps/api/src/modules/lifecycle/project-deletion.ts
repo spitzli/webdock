@@ -1,6 +1,7 @@
+import {currentConsolePrincipal} from "../auth/principal";
 import { createHash, randomUUID } from "node:crypto";
 import { RegistryError as APIError } from "../registry/service";
-import { lifecycle as identityLifecycle } from "./lifecycle";
+import { lifecycle as identityLifecycle, consoleLifecycle as identityConsoleLifecycle } from "./lifecycle";
 import { z } from "zod";
 import { recordID, type RegistryActor } from "../registry/compat";
 import { vercelSettings } from "../integrations/vercel-settings";
@@ -38,7 +39,8 @@ function operator(actor: RegistryActor) {
       "Only a platform administrator may delete projects.",
       403,
     );
-  if (!actor.accessToken)
+  const principal=currentConsolePrincipal();
+  if (!actor.accessToken && !(principal?.operator && principal.userID===actor.identity.subject && principal.sessionID===actor.identity.sessionID))
     throw new APIError(
       "A current administrator session or write-enabled MCP token is required.",
       403,
@@ -96,9 +98,10 @@ async function identity(
     throw new APIError("Account service is not configured.", 503);
   const client = process.env.WEBDOCK_SSO_CLIENT_ID,
     secret = process.env.WEBDOCK_SSO_CLIENT_SECRET;
-  if (!client || !secret)
+  const principal=currentConsolePrincipal();
+  if ((!client || !secret) && !principal)
     throw new APIError("Account service is not configured.", 503);
-  const response = await identityLifecycle(
+  const response = await (principal?identityConsoleLifecycle:identityLifecycle)(
     new Request(new URL("/api/lifecycle", issuer), {
       method: "POST",
       redirect: "error",
@@ -106,10 +109,9 @@ async function identity(
       signal: AbortSignal.timeout(20000),
       headers: {
         "Content-Type": "application/json",
-        Authorization:
-          "Basic " + Buffer.from(`${client}:${secret}`).toString("base64"),
+        ...(!principal?{Authorization:"Basic " + Buffer.from(`${client}:${secret}`).toString("base64")}:{}),
       },
-      body: JSON.stringify({ ...input, accessToken: actor.accessToken }),
+      body: JSON.stringify(principal?input:{ ...input, accessToken: actor.accessToken }),
     }),
   );
   const text = await response.text();

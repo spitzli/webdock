@@ -48,6 +48,9 @@ test("MCP OAuth: PKCE, consent, resource audience and live authorization/revocat
     logger: { disabled: true },
   });
   t.mock.method(database, "query", async (sql: string, values: unknown[]) => {
+    // This fixture models an unmigrated legacy identity store.
+    if (sql.includes("to_regclass('webdock_auth.clerk_identity')"))
+      return { rows: [{ present: false }] };
     if (sql.includes('FROM webdock_auth."user" WHERE id=$1'))
       return { rows: data.user.filter((user) => user.id === values[0]) };
     if (sql.includes('SELECT metadata FROM webdock_auth."oauthClient"'))

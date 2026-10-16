@@ -16,6 +16,7 @@ import type { AreaLink } from "@/components/area-navigation";
 import type { TenantSummary } from "./studio-contracts";
 
 export const getConsoleContext = cache(async (route: string) => {
+  if(/^(login|sign-up|account|access-pending)(?:\/|$)/.test(route))return null;
   const session = await getStudioSession();
   if (!session) return null;
   if (session.preview?.status === "expired")

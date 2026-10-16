@@ -1,3 +1,4 @@
+import { currentConsolePrincipal } from "../auth/principal";
 import { withDatabaseScope } from "@webdock/database-runtime";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import type { PoolClient } from "pg";
@@ -31,6 +32,13 @@ async function requireActor(
   connection: Connection = database,
   lock = false,
 ) {
+  const principal=currentConsolePrincipal();
+  if(principal){
+    if(principal.userID!==actor.userID || principal.sessionID!==actor.sessionID || !principal.operator)denied();
+    const result=await connection.query(`SELECT id FROM webdock_auth."user" WHERE id=$1 AND role='operator' AND NOT coalesce(banned,false)${lock ? ' FOR SHARE' : ''}`,[actor.userID]);
+    if(!result.rowCount)denied();
+    return;
+  }
   const result = await connection.query(
     `SELECT u.id FROM webdock_auth."user" u JOIN webdock_auth.session s ON s."userId"=u.id WHERE u.id=$1 AND s.id=$2 AND s."expiresAt">now() AND u.role='operator' AND NOT coalesce(u.banned,false) AND u."emailVerified" AND u."twoFactorEnabled" AND NOT u."mustChangePassword"${lock ? " FOR SHARE OF u,s" : ""}`,
     [actor.userID, actor.sessionID],
@@ -67,8 +75,8 @@ export async function startTenantPreview(
           );
         const created = (
           await connection.query(
-            `INSERT INTO webdock_auth.studio_tenant_preview(session_id,actor_id,customer_id,organization_id) VALUES($1,$2,$3,$4) ON CONFLICT(session_id) DO NOTHING RETURNING expires_at`,
-            [actor.sessionID, actor.userID, customerID, tenant.organization_id],
+            currentConsolePrincipal() ? `INSERT INTO webdock_auth.console_tenant_preview(session_id,actor_id,customer_id,organization_id,issuer) VALUES($1,$2,$3,$4,$5) ON CONFLICT(issuer,session_id) DO NOTHING RETURNING expires_at` : `INSERT INTO webdock_auth.studio_tenant_preview(session_id,actor_id,customer_id,organization_id) VALUES($1,$2,$3,$4) ON CONFLICT(session_id) DO NOTHING RETURNING expires_at`,
+            [actor.sessionID, actor.userID, customerID, tenant.organization_id,...(currentConsolePrincipal()?[currentConsolePrincipal()!.issuer]:[])],
           )
         ).rows[0];
         if (!created) denied();
@@ -106,8 +114,8 @@ export async function exitTenantPreview(
         await requireActor(actor, connection, true);
         const previous = (
           await connection.query(
-            "DELETE FROM webdock_auth.studio_tenant_preview WHERE session_id=$1 AND actor_id=$2 RETURNING customer_id",
-            [actor.sessionID, actor.userID],
+            currentConsolePrincipal()?"DELETE FROM webdock_auth.console_tenant_preview WHERE session_id=$1 AND actor_id=$2 AND issuer=$3 RETURNING customer_id":"DELETE FROM webdock_auth.studio_tenant_preview WHERE session_id=$1 AND actor_id=$2 RETURNING customer_id",
+            [actor.sessionID, actor.userID,...(currentConsolePrincipal()?[currentConsolePrincipal()!.issuer]:[])],
           )
         ).rows[0];
         if (previous)
@@ -138,10 +146,10 @@ export async function currentTenantPreview(
       const row = (
         await database.query(
           `SELECT p.*,c.name,c.status AS customer_status,t.organization_id AS current_organization,
- p.expires_at>now() AS unexpired FROM webdock_auth.studio_tenant_preview p
+ p.expires_at>now() AS unexpired FROM ${currentConsolePrincipal()?"webdock_auth.console_tenant_preview":"webdock_auth.studio_tenant_preview"} p
  JOIN webdock_admin.customers c ON c.id=p.customer_id
- LEFT JOIN webdock_auth.tenant_customer t ON t.customer_id=p.customer_id WHERE p.session_id=$1`,
-          [actor.sessionID],
+ LEFT JOIN webdock_auth.tenant_customer t ON t.customer_id=p.customer_id WHERE p.session_id=$1 ${currentConsolePrincipal()?"AND p.issuer=$2":""}`,
+          [actor.sessionID,...(currentConsolePrincipal()?[currentConsolePrincipal()!.issuer]:[])],
         )
       ).rows[0];
       if (!row) return null;
@@ -157,9 +165,9 @@ export async function currentTenantPreview(
         // operator permissions or revive a preview when the customer is reactivated.
         await database.query(
           `WITH expired AS (
-   UPDATE webdock_auth.studio_tenant_preview SET expired_at=now() WHERE session_id=$1 AND actor_id=$2 AND expired_at IS NULL RETURNING customer_id
+   UPDATE ${currentConsolePrincipal()?"webdock_auth.console_tenant_preview":"webdock_auth.studio_tenant_preview"} SET expired_at=now() WHERE session_id=$1 AND actor_id=$2 ${currentConsolePrincipal()?"AND issuer=$3":""} AND expired_at IS NULL RETURNING customer_id
   ) INSERT INTO webdock_auth.access_event(actor_id,action,target_id,outcome) SELECT $2,'tenant-preview-expired',customer_id,'succeeded' FROM expired`,
-          [actor.sessionID, actor.userID],
+          [actor.sessionID, actor.userID,...(currentConsolePrincipal()?[currentConsolePrincipal()!.issuer]:[])],
         );
       }
       return {

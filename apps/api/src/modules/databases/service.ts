@@ -1,3 +1,5 @@
+import {storedConsoleIdentity,withStoredConsolePrincipal} from "../auth/principal";
+import {revalidateStoredConsoleIdentity,type StoredConsoleIdentity} from "../auth/clerk-provider";
 import { createHash, randomBytes } from "node:crypto";
 import {
   databaseCommand,
@@ -226,10 +228,10 @@ export async function executeDatabase(
     const code = token();
     const launch = (
       await db.query(
-        `INSERT INTO webdock_auth.database_launch(token_hash,grant_id,grant_revision,session_id,expires_at)
-      SELECT $1,id,revision,$2,now()+interval '60 seconds' FROM webdock_auth.database_grant
+        `INSERT INTO webdock_auth.database_launch(token_hash,grant_id,grant_revision,session_id,expires_at,clerk_identity)
+      SELECT $1,id,revision,$2,now()+interval '60 seconds',$5::jsonb FROM webdock_auth.database_grant
       WHERE binding_id=$3 AND subject=$4 AND enabled RETURNING expires_at`,
-        [hash(code), actor.sessionID, cmd.bindingID, actor.subject],
+        [hash(code), storedConsoleIdentity()?null:actor.sessionID, cmd.bindingID, actor.subject,storedConsoleIdentity()],
       )
     ).rows[0];
     if (!launch) throw fail();
@@ -250,7 +252,17 @@ async function authorizeGrant(
   grantID: string,
   revision: number,
   sessionID: string,
+  reference?:StoredConsoleIdentity|null,
 ) {
+  if(reference){
+    const principal=await revalidateStoredConsoleIdentity(reference);
+    return withStoredConsolePrincipal(principal,async()=>{
+      const grant=(await db.query(`SELECT g.*,b.project_id FROM webdock_auth.database_grant g JOIN webdock_auth.database_binding b ON b.id=g.binding_id WHERE g.id=$1 AND g.revision=$2 AND g.enabled AND b.enabled AND g.subject=$3 FOR SHARE OF g,b`,[grantID,revision,principal.userID])).rows[0];
+      if(!grant)throw fail();
+      await authorizeHosting({subject:principal.userID,sessionID:principal.sessionID,source:"studio",scopes:["hosting:read"]},{projectID:grant.project_id,live:true},db);
+      return grant;
+    });
+  }
   const grant = (
     await db.query(
       `SELECT g.*,b.project_id FROM webdock_auth.database_grant g
@@ -288,17 +300,19 @@ export async function exchangeLaunch(db: Connection, code: string) {
     launch.grant_id,
     launch.grant_revision,
     launch.session_id,
+    launch.clerk_identity,
   );
   const sessionToken = token();
   const session = (
     await db.query(
-      `INSERT INTO webdock_auth.database_session(token_hash,grant_id,grant_revision,session_id,expires_at)
-    VALUES($1,$2,$3,$4,now()+interval '15 minutes') RETURNING id,expires_at`,
+      `INSERT INTO webdock_auth.database_session(token_hash,grant_id,grant_revision,session_id,expires_at,clerk_identity)
+    VALUES($1,$2,$3,$4,now()+interval '15 minutes',$5::jsonb) RETURNING id,expires_at`,
       [
         hash(sessionToken),
         launch.grant_id,
         launch.grant_revision,
         launch.session_id,
+        launch.clerk_identity,
       ],
     )
   ).rows[0];
@@ -326,6 +340,7 @@ export async function inspectSession(
     session.grant_id,
     session.grant_revision,
     session.session_id,
+    session.clerk_identity,
   );
   return {
     scopeID: session.id,
@@ -388,8 +403,8 @@ async function openManagedDatabase(
   const code = token();
   const launch = (
     await db.query(
-      `INSERT INTO webdock_auth.managed_database_launch(token_hash,database_id,backend_id,database_revision,credential_revision,subject,session_id,expires_at)
-     VALUES($1,$2,$3,$4,$5,$6,$7,now()+interval '60 seconds') RETURNING expires_at`,
+      `INSERT INTO webdock_auth.managed_database_launch(token_hash,database_id,backend_id,database_revision,credential_revision,subject,session_id,expires_at,clerk_identity)
+     VALUES($1,$2,$3,$4,$5,$6,$7,now()+interval '60 seconds',$8::jsonb) RETURNING expires_at`,
       [
         hash(code),
         d.id,
@@ -397,7 +412,8 @@ async function openManagedDatabase(
         d.revision,
         d.confirmed_credential_revision,
         actor.subject,
-        actor.sessionID,
+        storedConsoleIdentity()?null:actor.sessionID,
+        storedConsoleIdentity(),
       ],
     )
   ).rows[0];
@@ -423,12 +439,18 @@ async function authorizeManagedSession(
   session: {
     subject: string;
     session_id: string;
+    clerk_identity?:StoredConsoleIdentity|null;
     database_id: string;
     backend_id: string;
     database_revision: number;
     credential_revision: number;
   },
-) {
+):Promise<Awaited<ReturnType<typeof authorizeManaged>>> {
+  if(session.clerk_identity){
+    const principal=await revalidateStoredConsoleIdentity(session.clerk_identity);
+    if(principal.userID!==session.subject)throw fail();
+    return withStoredConsolePrincipal(principal,()=>authorizeManagedSession(db,{...session,session_id:principal.sessionID,clerk_identity:null}));
+  }
   const d = await authorizeManaged(
     db,
     {
@@ -461,8 +483,8 @@ async function exchangeManagedLaunch(db: Connection, code: string) {
   const sessionToken = token();
   const session = (
     await db.query(
-      `INSERT INTO webdock_auth.managed_database_session(token_hash,database_id,backend_id,database_revision,credential_revision,subject,session_id,expires_at)
-     VALUES($1,$2,$3,$4,$5,$6,$7,now()+interval '15 minutes') RETURNING id,expires_at`,
+      `INSERT INTO webdock_auth.managed_database_session(token_hash,database_id,backend_id,database_revision,credential_revision,subject,session_id,expires_at,clerk_identity)
+     VALUES($1,$2,$3,$4,$5,$6,$7,now()+interval '15 minutes',$8::jsonb) RETURNING id,expires_at`,
       [
         hash(sessionToken),
         launch.database_id,
@@ -471,6 +493,7 @@ async function exchangeManagedLaunch(db: Connection, code: string) {
         launch.credential_revision,
         launch.subject,
         launch.session_id,
+        launch.clerk_identity,
       ],
     )
   ).rows[0];

@@ -1,8 +1,8 @@
+import { getBusinessIdentity } from "../../auth/business-identity";
 import { withAuthenticatedDatabase } from "../../../db/database-context";
 import type { PoolClient } from "pg";
 import { TurboDomainsClient, type SenderDomain } from "../turbo-domains";
 import { createHash } from "node:crypto";
-import { auth } from "../../auth/auth";
 import { mailDatabase as database } from "./store";
 import { getTenant } from "../../access/tenants";
 import { currentTenantPreview } from "../../access/tenant-preview";
@@ -16,13 +16,13 @@ async function tenantIdentity(
   customerID: string,
   manage = false,
 ) {
-  const session = await auth.api.getSession({ headers });
+  const session = await getBusinessIdentity(headers);
   if (!session)
     throw new MailError(401, "session_required", "Sign in to Webdock");
   if (
     await currentTenantPreview({
       userID: session.user.id,
-      sessionID: session.session.id,
+      sessionID: session.sessionID,
     })
   )
     throw new MailError(
@@ -98,7 +98,7 @@ export async function connectByokMail(
         await assertCurrentManager(
           db,
           identity.session.user.id,
-          identity.session.session.id,
+          identity.session.sessionID,
           customerID,
         );
         await db.query(
@@ -279,7 +279,7 @@ export async function configureManagedMail(
       await assertCurrentManager(
         db,
         identity.session.user.id,
-        identity.session.session.id,
+        identity.session.sessionID,
         customerID,
       );
       if (
@@ -344,7 +344,7 @@ export async function configureManagedMail(
       principal: {
         kind: "session",
         userID: identity.session.user.id,
-        sessionID: identity.session.session.id,
+        sessionID: identity.session.sessionID,
       },
     });
     return { id: connection.id };

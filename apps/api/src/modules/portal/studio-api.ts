@@ -1,3 +1,6 @@
+import {currentConsolePrincipal, withConsolePrincipal} from "../auth/principal";
+import {legacyClerkMemberships,requireConsolePrincipal} from "../auth/clerk-provider";
+import {ConsoleAuthError} from "../auth/clerk-identity";
 import {
   billingJobs,
   retryReadJob,
@@ -681,7 +684,9 @@ export function handleStudioRequest(
 export function handleNativeStudioRequest(request: Request): Promise<Response> {
   return handleRequest(request, {}, true);
 }
-async function nativeSession(headers: Headers) {
+async function nativeSession(headers: Headers):Promise<Awaited<ReturnType<typeof delegatedSession>>> {
+  const principal=currentConsolePrincipal();
+  if(principal)return {headers,actor:{userID:principal.userID,sessionID:principal.sessionID},safe:{user:{id:principal.userID,name:principal.name,email:principal.email,role:principal.operator?'operator':'user',emailVerified:true,twoFactorEnabled:false,mustChangePassword:false},operator:principal.operator}};
   const native = await auth.api.getSession({ headers });
   if (
     !native ||
@@ -726,7 +731,7 @@ async function handleRequest(
   const responseHeaders = { "Cache-Control": "no-store", Pragma: "no-cache" };
   try {
     if (
-      native &&
+      native && !currentConsolePrincipal() &&
       request.headers.get("origin") !==
         new URL(process.env.BETTER_AUTH_URL || "http://localhost:3125").origin
     )
@@ -759,8 +764,9 @@ async function handleRequest(
       if (!process.env.WEBDOCK_API_DOMAINS.split(",").includes(domain))
         fail(503, "This service is temporarily unavailable.");
     }
+    const memberships=currentConsolePrincipal()?undefined:await legacyClerkMemberships(actor.userID);
     return await withDatabaseScope(
-      { kind: "session", subject: actor.userID, sessionID: actor.sessionID },
+      { kind: "session", subject: actor.userID, sessionID: actor.sessionID, ...(memberships?{memberships}:{}) },
       async () => {
         // The context comes from the authenticated central session, never a caller hint.
         // An expired context remains present and restrictive until explicit exit.
@@ -831,6 +837,7 @@ async function handleRequest(
       },
     );
   } catch (error) {
+    if(error instanceof ConsoleAuthError)return Response.json({error:{kind:"AccessError",message:error.message}},{status:error.status,headers:responseHeaders});
     if (error instanceof ZodError)
       return Response.json(
         {
@@ -911,4 +918,16 @@ async function handleRequest(
       { status, headers: responseHeaders },
     );
   }
+}
+
+/** Separate transport: no opaque-token or legacy-cookie fallback. */
+export async function handleConsoleRequest(request:Request):Promise<Response>{
+ if(process.env.WEBDOCK_CONSOLE_AUTH_PROVIDER!=="clerk")return Response.json({error:{kind:"AccessError",message:"Clerk Console is not activated."}},{status:503,headers:{"cache-control":"no-store"}});
+ try{
+  const principal=await requireConsolePrincipal(request);
+  return await withConsolePrincipal(principal,()=>handleRequest(request,{},true));
+ }catch(error){
+  const status=error instanceof ConsoleAuthError?error.status:503;
+  return Response.json({error:{kind:"AccessError",message:error instanceof ConsoleAuthError?error.message:"Console is temporarily unavailable."}},{status,headers:{"cache-control":"no-store"}});
+ }
 }

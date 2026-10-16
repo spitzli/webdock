@@ -1,3 +1,5 @@
+import {linkedMembershipRole} from "../auth/clerk-provider";
+import {currentConsolePrincipal, consoleMembership} from "../auth/principal";
 import { currentDatabaseScope } from "@webdock/database-runtime";
 import type { PoolClient } from "pg";
 import {
@@ -56,9 +58,11 @@ export async function authorizeHosting(
     (target.write && !scopes.includes("hosting:write"))
   )
     throw new HostingError(403, "Hosting scope is required.");
+  const principal=currentConsolePrincipal();
+  if(principal && (principal.userID!==actor.subject || principal.sessionID!==actor.sessionID))throw new HostingError(403,"Identity mismatch.");
   const row = (
     await db.query(
-      policy
+      principal ? `SELECT u.id,u.role,u.banned,u."emailVerified",u."mustChangePassword",u."twoFactorEnabled" FROM webdock_auth."user" u WHERE u.id=$1 AND $2::text IS NOT NULL FOR SHARE OF u` : policy
         ? `SELECT u.id,u.role,u.banned,u."emailVerified",u."mustChangePassword",u."twoFactorEnabled"
  FROM webdock_auth."user" u JOIN webdock_auth.git_source p ON p.policy_subject=u.id
  WHERE u.id=$1 AND p.project_id=$2 AND p.id=$3 AND p.revision=$4 AND p.policy_revision=p.revision AND p.auto_publish AND p.enabled
@@ -66,7 +70,7 @@ export async function authorizeHosting(
         : `SELECT u.id,u.role,u.banned,u."emailVerified",u."mustChangePassword",u."twoFactorEnabled"
  FROM webdock_auth."user" u JOIN webdock_auth.session s ON s."userId"=u.id
  WHERE u.id=$1 AND s.id=$2 AND s."expiresAt">now() FOR SHARE OF u,s`,
-      policy
+      !principal && policy
         ? [
             actor.subject,
             target.projectID,
@@ -76,15 +80,15 @@ export async function authorizeHosting(
         : [actor.subject, actor.sessionID],
     )
   ).rows[0];
-  if (!row || row.banned || !row.emailVerified || row.mustChangePassword)
+  if (!row || row.banned || (!principal && (!row.emailVerified || row.mustChangePassword)))
     throw new HostingError(401, "Sign in and complete account setup.");
-  const operator = row.role === "operator" && row.twoFactorEnabled === true;
+  const operator = principal ? principal.operator && row.role === "operator" : row.role === "operator" && row.twoFactorEnabled === true;
   if (!operator && row.role !== "user")
     throw new HostingError(403, "Complete operator security setup.");
   const preview = (
     await db.query(
-      "SELECT customer_id,organization_id,expires_at,expired_at FROM webdock_auth.studio_tenant_preview WHERE session_id=$1 AND actor_id=$2",
-      [actor.sessionID, actor.subject],
+      principal ? "SELECT customer_id,organization_id,expires_at,expired_at FROM webdock_auth.console_tenant_preview WHERE session_id=$1 AND actor_id=$2 AND issuer=$3" : "SELECT customer_id,organization_id,expires_at,expired_at FROM webdock_auth.studio_tenant_preview WHERE session_id=$1 AND actor_id=$2",
+      [actor.sessionID, actor.subject,...(principal?[principal.issuer]:[])],
     )
   ).rows[0];
   if (
@@ -136,7 +140,8 @@ export async function authorizeHosting(
           preview.organization_id !== customer.organization_id))
     )
       throw new HostingError(404, "Hosting target is unavailable.");
-    membership = (
+    const linked=principal?undefined:await linkedMembershipRole(actor.subject,customer.organization_id);
+    membership = principal ? consoleMembership(actor.subject,customer.organization_id) : linked!==undefined ? (linked?{role:linked}:null) : (
       await db.query(
         'SELECT role FROM webdock_auth.member WHERE "organizationId"=$1 AND "userId"=$2 FOR SHARE',
         [customer.organization_id, actor.subject],

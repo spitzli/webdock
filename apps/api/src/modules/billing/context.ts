@@ -1,3 +1,5 @@
+import {legacyClerkMemberships} from "../auth/clerk-provider";
+import {currentConsolePrincipal} from "../auth/principal";
 import { sql } from "drizzle-orm";
 import {
   currentDatabaseScope,
@@ -49,12 +51,13 @@ export async function billingAudit(
     sql`INSERT INTO webdock_auth.access_event(actor_id,action,target_id,outcome) VALUES(${actor.subject},${"billing." + action},${target},'success')`,
   );
 }
-export function customerTransaction<T>(
+export async function customerTransaction<T>(
   actor: BillingActor,
   customerID: string,
   run: (tx: Tx) => Promise<T>,
 ): Promise<T> {
-  return withDatabaseScope({ kind: "session", ...actor }, () =>
+  const memberships=currentConsolePrincipal()?undefined:await legacyClerkMemberships(actor.subject);
+  return withDatabaseScope({ kind: "session", ...actor, ...(memberships?{memberships}:{}) }, () =>
     databasePools.orm.transaction(async (tx) => {
       const check = async () => {
         if (
