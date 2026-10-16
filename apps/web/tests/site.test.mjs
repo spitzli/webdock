@@ -11,6 +11,7 @@ test('Landing page serves English content, matching FAQ data and SEO assets', as
   assert.match(html, /<a[^>]+href="https:\/\/accounts\.webdock\.dev\/waitlist"[^>]*>Waitlist/);
   assert.match(html, /<a[^>]+href="https:\/\/console\.webdock\.dev\/login"[^>]*>Login/);
   assert.doesNotMatch(html, />Register|>Join the waitlist/);
+  assert.doesNotMatch(html, /class="spitzli-section"|Meet Spitzli|A human on your side/);
   assert.match(html, /Access by invitation only\./);
   assert.doesNotMatch(html, /href="https:\/\/accounts\.webdock\.dev\/sign-up"/);
   assert.match(html, /href="mailto:[^"]+"/);
