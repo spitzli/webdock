@@ -5,7 +5,8 @@ import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { RedisClient } from "bun";
-import { connectViewCache } from "../src/cache";
+import { connectViewCache } from "../src/cache-redis";
+import { configureViewCache, readCachedView } from "../src/cache";
 const endpoint =
   process.env.DOCKER_HOST ||
   execFileSync(
@@ -91,21 +92,51 @@ try {
     resourceID: "branding",
     revision: "1",
   };
+  // Initial requests may use different keys before the adapter connects.
+  const coldCounts = new Map<number, number>();
+  const coldRead = (n: number) =>
+    client!.cache.read({ ...key, resourceID: `cold-${n}` }, async () => ({
+      value: coldCounts.set(n, (coldCounts.get(n) ?? 0) + 1).get(n),
+    }));
+  await Promise.all(Array.from({ length: 8 }, (_, n) => coldRead(n)));
+  await Promise.all(Array.from({ length: 8 }, (_, n) => coldRead(n)));
+  if ([...coldCounts.values()].some((count) => count !== 1))
+    throw Error("Concurrent initial cache connections did not produce hits");
   let reads = 0;
   const load = async () => ({ value: ++reads });
   const first = await client.cache.read(key, load),
     second = await client.cache.read(key, load);
   if (first.value !== 1 || second.value !== 1 || reads !== 1)
     throw Error("Cache miss/hit failed");
+  configureViewCache(client.cache, {
+    environment: "fixture-api",
+    defaultTTLSeconds: 60,
+  });
+  const view = {
+    kind: "operations" as const,
+    scope: { subject: "fixture-user", sessionID: "fixture-session" },
+    query: { page: 1 },
+    ttlSeconds: 1,
+  };
+  let revision = "one";
+  const read = () => readCachedView(view, async () => revision, load);
+  if ((await read()).value !== 2 || (await read()).value !== 2)
+    throw Error("Shared view cache hit failed");
+  revision = "two";
+  if ((await read()).value !== 3)
+    throw Error("Shared view revision invalidation failed");
+  await Bun.sleep(1100);
+  if ((await read()).value !== 4) throw Error("Dragonfly TTL did not expire");
   docker(["stop", "-t", "1", name]);
   const start = Date.now();
-  const third = await client.cache.read(key, load);
-  if (third.value !== 2 || Date.now() - start > 500)
+  const third = await read();
+  if (third.value !== 5 || Date.now() - start > 500)
     throw Error("Outage fallback failed");
   console.log(
-    "Dragonfly2.0.2: authentication, non-root/read-only runtime, cache hit and bounded outage fallback passed.",
+    "Dragonfly2.0.2: authentication, non-root/read-only runtime, legacy/shared cache hits, revision invalidation, TTL and bounded outage fallback passed.",
   );
 } finally {
+  configureViewCache(undefined, { environment: "fixture-api" });
   client?.close();
   if (created) docker(["rm", "-f", name]);
   await rm(directory, { recursive: true, force: true });

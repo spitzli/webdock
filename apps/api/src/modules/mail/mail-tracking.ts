@@ -1,8 +1,8 @@
+import { getBusinessIdentity } from "../auth/business-identity";
 import type { Fetch } from "../shared/http";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { productTrackingContext } from "./product/tracking-context";
 import { randomBytes } from "node:crypto";
-import { auth } from "../auth/auth";
 import { database } from "../../db/runtime";
 import { getTenant } from "../access/tenants";
 import {
@@ -163,7 +163,7 @@ export async function manageTenantTracking(
       ].includes(input.action)
     )
       return fail("Unknown tracking action.");
-    const session = await auth.api.getSession({ headers });
+    const session = await getBusinessIdentity(headers);
     if (!session) return fail("Sign in first.");
     const operationToken = randomBytes(24).toString("hex");
     let locked = false;

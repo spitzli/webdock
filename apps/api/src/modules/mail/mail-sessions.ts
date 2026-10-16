@@ -1,3 +1,4 @@
+import { getBusinessIdentity } from "../auth/business-identity";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { createHash, randomBytes } from "node:crypto";
 import { openSecret } from "@webdock/mail-core/secrets";
@@ -240,12 +241,12 @@ export async function launchTenantWebmail(
   return withAuthenticatedDatabase(headers, async () => {
     const { auth } = await import("../auth/auth"),
       { transaction } = await import("../hosting/db");
-    const session = await auth.api.getSession({ headers });
+    const session = await getBusinessIdentity(headers);
     if (!session) mailUnavailable();
     return transaction((db) =>
       launchWebmail(
         db,
-        { subject: session.user.id, sessionID: session.session.id },
+        { subject: session.user.id, sessionID: session.sessionID },
         customerID,
         mailboxID,
       ),

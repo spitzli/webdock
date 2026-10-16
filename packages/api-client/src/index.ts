@@ -40,6 +40,7 @@ export async function requestAPI<T = unknown>(
     path: string;
     body?: unknown;
     method?: string;
+    consoleSession?: {token:string;serviceKey:string};
   },
   fetcher: Fetch = fetch,
 ): Promise<{ status: number; body: T }> {
@@ -53,6 +54,7 @@ export async function requestAPI<T = unknown>(
     url.origin !== origin
   )
     throw Error("Invalid API path");
+  if(input.consoleSession && (input.path!=="/v1/console" || !input.consoleSession.token || input.consoleSession.token.length>16384 || input.consoleSession.serviceKey.length<32))throw Error("Invalid Console transport");
   const response = await fetcher(url, {
     method: input.method || (input.body === undefined ? "GET" : "POST"),
     cache: "no-store",
@@ -61,7 +63,8 @@ export async function requestAPI<T = unknown>(
     headers: {
       "content-type": "application/json",
       origin: uiOrigin,
-      cookie: input.path.startsWith("/v1/public/")
+      ...(input.consoleSession?{authorization:"Bearer "+input.consoleSession.token,"x-webdock-service-key":input.consoleSession.serviceKey}:{}),
+      cookie: input.consoleSession || input.path.startsWith("/v1/public/")
         ? ""
         : sessionCookies(input.cookie)
             .split("; ")

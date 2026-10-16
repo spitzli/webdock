@@ -1,6 +1,6 @@
+import { getBusinessIdentity } from "../auth/business-identity";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { isIP } from "node:net";
-import { auth } from "../auth/auth";
 import { database } from "../../db/runtime";
 import { getTenant } from "../access/tenants";
 import { getPlatformSettings, mailProvider } from "../platform/platform";
@@ -180,7 +180,7 @@ export async function manageTenantMailKeys(
       !/^[\x21-\x7e]+$/.test(input.consumerKey)
     )
       fail("Confirm revocation of this credential.");
-    const session = await auth.api.getSession({ headers });
+    const session = await getBusinessIdentity(headers);
     if (!session) fail("Sign in first.");
     const event = (
       await database.query(

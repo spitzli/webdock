@@ -1,10 +1,16 @@
+import { requireConsoleBrowserPrincipal } from "../modules/auth/clerk-provider";
+import { withConsolePrincipal } from "../modules/auth/principal";
 import { tenantPreview } from "../modules/portal/preview";
 import Elysia from "elysia";
 import type { ApiConfig } from "../config";
 import type { Mount } from "../route-manifest";
 import { createPortalSession } from "../modules/portal/session";
 import { portalRequest } from "../modules/portal/transport";
-import { handleStudioRequest } from "../modules/portal/studio-api";
+import {
+  handleNativeStudioRequest,
+  handleConsoleRequest,
+  handleStudioRequest,
+} from "../modules/portal/studio-api";
 export function portalProtocols(config: ApiConfig): Mount[] {
   if (
     process.env.WEBDOCK_AUTH_ISSUER !== config.authOrigin + "/api/auth" ||
@@ -37,13 +43,18 @@ export function portalProtocols(config: ApiConfig): Mount[] {
         const headers = new Headers(request.headers);
         headers.set("content-type", "application/json");
         headers.delete("content-length");
-        const response = await call(
-          new Request(request.url, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({ operation, args }),
-          }),
-        );
+        const internal = new Request(request.url, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ operation, args }),
+        });
+        const response =
+          process.env.WEBDOCK_CONSOLE_AUTH_PROVIDER === "clerk"
+            ? await withConsolePrincipal(
+                await requireConsoleBrowserPrincipal(request),
+                () => handleNativeStudioRequest(internal),
+              )
+            : await call(internal);
         if (!response.ok) throw Error("Preview unavailable");
         return ((await response.json()) as { data: T }).data;
       },
@@ -52,9 +63,13 @@ export function portalProtocols(config: ApiConfig): Mount[] {
     {
       host: config.apiOrigin,
       category: "delegated",
-      app: new Elysia().post("/v1/studio", ({ request }) => call(request), {
-        parse: "none",
-      }),
+      app: new Elysia()
+        .post("/v1/studio", ({ request }) => call(request), {
+          parse: "none",
+        })
+        .post("/v1/console", ({ request }) => handleConsoleRequest(request), {
+          parse: "none",
+        }),
     },
     {
       host: config.studioOrigin,

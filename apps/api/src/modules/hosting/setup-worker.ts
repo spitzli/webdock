@@ -1,5 +1,9 @@
+import {revalidateStoredConsoleIdentity} from "../auth/clerk-provider";
+import {withStoredConsolePrincipal} from "../auth/principal";
 import { withDatabaseScope } from "@webdock/database-runtime";
 import { HostingError } from "@webdock/hosting-contracts";
+import { workerDatabase } from "../../db/runtime";
+import type { ConsoleIdentityDependencies } from "../auth/clerk-identity";
 import { transaction } from "./db";
 import { executeSetupStep } from "./setup-execution";
 import type { SetupRow } from "./project-setup";
@@ -26,16 +30,38 @@ export async function runSetupBatch({
     if (!row) break;
     processed++;
     try {
-      const result = await withDatabaseScope(
+      const reference = row.actor?.consoleIdentity;
+      const principal = reference ? await withDatabaseScope(
+        { kind: "system", purpose: "hosting-setup-revalidation", customerID: row.customer_id, setupID: row.id, generation: row.generation },
+        async () => {
+          const result = await workerDatabase.query(
+            "SELECT webdock_rls.setup_clerk_revalidation($1,$2,$3,$4) AS mapping",
+            [reference.issuer, reference.userID, reference.sessionID, reference.organizationID],
+          );
+          const mapping = result.rows[0]?.mapping as {
+            identity: Awaited<ReturnType<ConsoleIdentityDependencies["identity"]>>;
+            organization: Awaited<ReturnType<ConsoleIdentityDependencies["organization"]>>;
+          } | null;
+          if (!mapping) throw new HostingError(403, "Confirm this setup again before continuing.");
+          return revalidateStoredConsoleIdentity(reference, {
+            identity: async () => mapping.identity,
+            organization: async () => mapping.organization,
+          });
+        },
+      ) : null;
+      if(principal && (principal.userID!==row.actor?.subject || principal.sessionID!==row.actor?.sessionID))throw new HostingError(403,"Confirm this setup again before continuing.");
+      const execute=()=>withDatabaseScope(
         {
           kind: "system",
           purpose: "hosting-setup",
+          ...(principal?{clerk:{issuer:principal.issuer,userID:principal.clerkUserID,subject:principal.userID,sessionID:principal.sessionID,organizationID:principal.organizationID,clerkOrganizationID:principal.clerkOrganizationID,customerID:principal.customerID,role:principal.role,verifiedAt:principal.verifiedAt,expiresAt:principal.expiresAt}}:{}),
           customerID: row.customer_id,
           setupID: row.id,
           generation: row.generation,
         },
         () => executeSetupStep(row),
       );
+      const result=await (principal?withStoredConsolePrincipal(principal,execute):execute());
       const advanced =
         JSON.stringify(result.steps) !== JSON.stringify(row.steps) ||
         JSON.stringify(result.resources) !== JSON.stringify(row.resources);

@@ -1,8 +1,8 @@
+import { getBusinessIdentity } from "../auth/business-identity";
 import type { Fetch } from "../shared/http";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { randomBytes } from "node:crypto";
 import { domainToASCII } from "node:url";
-import { auth } from "../auth/auth";
 import { database } from "../../db/runtime";
 import { getTenant } from "../access/tenants";
 import {
@@ -270,7 +270,7 @@ export async function manageTenantMail(
       !access.operator
     )
       failure("Platform operator access is required.");
-    const session = await auth.api.getSession({ headers });
+    const session = await getBusinessIdentity(headers);
     if (!session) failure("Sign in first.");
     const event = (
       await database.query(

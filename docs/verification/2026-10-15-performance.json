@@ -1,0 +1,83 @@
+{
+  "measuredAt": "2026-10-15",
+  "method": "Authenticated collaborative browser, single representative samples; resource durations include network and server work. No load/soak test.",
+  "before": {
+    "homeDocumentMs": 3276,
+    "projectNavigationMs": 4302,
+    "viewerRouteMs": 3518,
+    "viewerToSchemaSelectionMs": 13364,
+    "sessionReadMs": [
+      417,
+      751,
+      1133
+    ],
+    "startupRPCMs": [
+      1958,
+      2194,
+      2073,
+      2574,
+      2862,
+      3234,
+      2321,
+      2446,
+      2693,
+      3621,
+      3865,
+      1457,
+      3098
+    ]
+  },
+  "after": {
+    "homeDocumentMs": 2646,
+    "projectNavigationMs": 2441,
+    "sessionReadMs": [
+      376,
+      292,
+      285
+    ],
+    "firstViewerToSchemaSelectionMs": 7083,
+    "finalViewerRouteMs": 2133,
+    "finalDirectLaunchMs": 408,
+    "finalViewerToSavedSchemaMs": 7046,
+    "finalViewerToTableListMs": 7889,
+    "startupRPCMs": [
+      345,
+      324,
+      344,
+      345,
+      325,
+      318,
+      337,
+      318,
+      338,
+      338,
+      338,
+      339,
+      177
+    ],
+    "tableReadMs": 324
+  },
+  "caveats": [
+    "First post-deploy viewer measurement downloaded the new runtime chunk; later measurement reused browser assets and restored saved schema choices.",
+    "Different viewer endpoints (schema selection vs table list) are reported separately.",
+    "Fresh password/MFA login was not repeated; authenticated sessions and relevant automated security tests were verified."
+  ],
+  "deployments": {
+    "console": "https://webdock-admin-ls4ds3h5g-spitzli.vercel.app",
+    "api": "sha256:51df9f64c173d06a3b2d7415f38e78141e9be92c31ee35d2c9b4a6da8df1c233",
+    "gateway": "sha256:63539e113b27704e7c27e4b19b3b2a11e65d5c2df10409c2049e4d8bab81019e",
+    "functionRegions": [
+      "fra1"
+    ]
+  },
+  "cache": {
+    "engine": "Dragonfly",
+    "version": "2.0.2",
+    "deployment": "webdock-platform/views",
+    "connected": true,
+    "ping": "PONG",
+    "hits": 412,
+    "misses": 113,
+    "purpose": "Public branding; authorization is not stored in the view cache."
+  }
+}

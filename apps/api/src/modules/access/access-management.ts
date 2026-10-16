@@ -1,11 +1,16 @@
+import { getBusinessIdentity } from "../auth/business-identity";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { searchPage } from "@webdock/search";
 import { randomBytes } from "node:crypto";
 import { auth } from "../auth/auth";
 import { database } from "../../db/runtime";
-import { currentMCPClaims } from "../auth/mcp";
+import { businessOperator } from "../auth/business-identity";
 import { currentClaims } from "../auth/authorization";
-import { sendAuthMail } from "../auth/mail";
+import {
+  sendAuthMail,
+  withAuthMailDelivery,
+  AuthMailDeliveryError,
+} from "../auth/mail";
 
 export const accessSchemaSQL = `CREATE TABLE IF NOT EXISTS webdock_auth.access_event (
  id text PRIMARY KEY DEFAULT webdock_auth.next_snowflake(), actor_id text NOT NULL,
@@ -30,8 +35,8 @@ const name = (value: string | undefined) => {
 };
 export async function requireAccessOperator(headers: Headers) {
   return withAuthenticatedDatabase(headers, async () => {
-    const session = await auth.api.getSession({ headers });
-    if (!session || (await currentMCPClaims(session.user.id)).disabled)
+    const session = await getBusinessIdentity(headers);
+    if (!session || (await businessOperator(session.user.id)).disabled)
       throw new AccessError(
         "Operator access with completed security setup is required.",
       );
@@ -168,7 +173,7 @@ export async function listAccess(headers: Headers, search: string) {
 }
 export async function accountSites(headers: Headers) {
   return withAuthenticatedDatabase(headers, async () => {
-    const session = await auth.api.getSession({ headers });
+    const session = await getBusinessIdentity(headers);
     if (!session) throw new AccessError("Sign in to view your websites.");
     const rows = (
       await database.query(
@@ -312,15 +317,17 @@ export async function manageAccess(
           });
           target = user.id;
         } else {
-          const invitation = await auth.api.createInvitation({
-            headers,
-            body: {
-              email,
-              role: "member",
-              organizationId: site.organization_id,
-              resend: true,
-            },
-          });
+          const invitation = await withAuthMailDelivery(() =>
+            auth.api.createInvitation({
+              headers,
+              body: {
+                email,
+                role: "member",
+                organizationId: site.organization_id,
+                resend: true,
+              },
+            }),
+          );
           target = invitation.id;
         }
       } else if (
@@ -406,6 +413,8 @@ export async function manageAccess(
         "UPDATE webdock_auth.access_event SET target_id=$2,outcome='failed' WHERE id=$1",
         [event, target],
       );
+      if (error instanceof AuthMailDeliveryError)
+        throw new AccessError(error.message);
       throw error;
     }
   });

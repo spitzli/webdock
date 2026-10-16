@@ -27,10 +27,14 @@ const integration = new Set([
   "server.integration.test.ts",
 ]);
 const rls = new Set([
+  "clerk-rls.integration.test.ts",
+  "clerk-worker.integration.test.ts",
+  "clerk-mail.integration.test.ts",
   "service-bindings-rls.integration.test.ts",
   "project-setup-worker.integration.test.ts",
   "jobs.integration.test.ts",
   "registry.integration.test.ts",
+  "registry-cache.integration.test.ts",
   "native-budget-rls.integration.test.ts",
   "mcp.integration.test.ts",
   "vercel-events.integration.test.ts",

@@ -1,3 +1,6 @@
+import { ConsoleAuthError } from "./clerk-identity";
+import { currentConsolePrincipal, consoleMembership } from "./principal";
+import { legacyClerkMemberships, linkedMembershipRole } from "./clerk-provider";
 import { authDatabase as database } from "../../db/runtime";
 
 export async function currentClaims(
@@ -12,17 +15,28 @@ export async function currentClaims(
       [subject, binding],
     )
   ).rows[0];
+  const principal = currentConsolePrincipal();
+  if (principal && principal.userID !== subject) return { disabled: true };
   if (
     !row ||
     row.banned ||
-    !row.emailVerified ||
-    row.mustChangePassword ||
+    (!principal && (!row.emailVerified || row.mustChangePassword)) ||
     !row.enabled ||
     row.client_disabled
   )
     return { disabled: true };
+  let legacyProof;
+  if (!principal) {
+    try {
+      legacyProof = await legacyClerkMemberships(subject);
+    } catch (error) {
+      if (error instanceof ConsoleAuthError && error.status === 403)
+        return { disabled: true };
+      throw error;
+    }
+  }
   if (row.role === "operator")
-    return row.twoFactorEnabled
+    return principal?.operator || row.twoFactorEnabled
       ? {
           webdock_role: "operator",
           webdock_email: row.email,
@@ -36,12 +50,17 @@ export async function currentClaims(
     row.client_id === process.env.WEBDOCK_STUDIO_CLIENT_ID &&
     !row.organization_id
   ) {
-    const member = (
-      await database.query(
-        `SELECT 1 FROM webdock_auth.member m JOIN webdock_auth.tenant_customer t ON t.organization_id=m."organizationId" JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE m."userId"=$1 AND c.status='active' LIMIT 1`,
-        [subject],
-      )
-    ).rowCount;
+    const proof = legacyProof;
+    const member = principal
+      ? !!principal.customerID
+      : proof
+        ? proof.roles.length > 0
+        : (
+            await database.query(
+              `SELECT 1 FROM webdock_auth.member m JOIN webdock_auth.tenant_customer t ON t.organization_id=m."organizationId" JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE m."userId"=$1 AND c.status='active' LIMIT 1`,
+              [subject],
+            )
+          ).rowCount;
     return member && row.role === "user"
       ? {
           webdock_role: "reader",
@@ -71,10 +90,17 @@ export async function currentClaims(
     return { disabled: true };
   // Only mapped, active customer administrators inherit website access.
   // An explicit revoked or mismatched site grant still fails closed.
+  const mappedRole = principal
+    ? (consoleMembership(subject, row.organization_id)?.role ?? null)
+    : await linkedMembershipRole(subject, row.organization_id);
+  const memberSource =
+    mappedRole === undefined
+      ? "webdock_auth.member"
+      : `(SELECT $1::text AS "userId",$3::text AS "organizationId",$4::text AS role WHERE $4::text IS NOT NULL)`;
   const access = (
     await database.query(
       `SELECT CASE WHEN c.status='active' AND m.role IN ('owner','admin') THEN 'admin' ELSE g.role END AS role
- FROM webdock_auth.member m
+ FROM ${memberSource} m
  LEFT JOIN webdock_auth.tenant_customer t ON t.organization_id=m."organizationId"
  LEFT JOIN webdock_admin.customers c ON c.id=t.customer_id
  LEFT JOIN webdock_auth.project_grant g ON g.user_id=m."userId" AND g.binding_id=$2
@@ -82,7 +108,12 @@ export async function currentClaims(
  AND (t.customer_id IS NULL OR c.status='active')
  AND (g.id IS NULL OR (g.enabled=true AND g.organization_id=$3))
  AND ((c.status='active' AND m.role IN ('owner','admin')) OR g.enabled=true)`,
-      [subject, binding, row.organization_id],
+      [
+        subject,
+        binding,
+        row.organization_id,
+        ...(mappedRole === undefined ? [] : [mappedRole]),
+      ],
     )
   ).rows[0];
   return access

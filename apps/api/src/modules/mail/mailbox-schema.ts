@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS webdock_mail.mailbox_grant (
 ALTER TABLE webdock_mail.mailbox_grant ADD COLUMN IF NOT EXISTS member_id text REFERENCES webdock_auth.member(id) ON DELETE SET NULL;
 ALTER TABLE webdock_mail.mailbox_grant ADD COLUMN IF NOT EXISTS operator_grant boolean NOT NULL DEFAULT false;
 ALTER TABLE webdock_mail.mailbox_grant ADD COLUMN IF NOT EXISTS applied_revision bigint NOT NULL DEFAULT 0;
+ALTER TABLE webdock_mail.mailbox_grant ADD COLUMN IF NOT EXISTS clerk_grant text;
 CREATE TABLE IF NOT EXISTS webdock_mail.configuration (
  customer_id text PRIMARY KEY REFERENCES webdock_mail.service(customer_id),
  revision bigint NOT NULL DEFAULT 1,
@@ -143,10 +144,10 @@ BEGIN
 END $$;
 DROP TRIGGER IF EXISTS mail_member_detached_before ON webdock_mail.mailbox_grant;
 CREATE TRIGGER mail_member_detached_before BEFORE UPDATE OF member_id ON webdock_mail.mailbox_grant
- FOR EACH ROW WHEN (OLD.member_id IS NOT NULL AND NEW.member_id IS NULL) EXECUTE FUNCTION webdock_mail.revoke_detached_member();
+ FOR EACH ROW WHEN (OLD.member_id IS NOT NULL AND NEW.member_id IS NULL AND NEW.clerk_grant IS NULL) EXECUTE FUNCTION webdock_mail.revoke_detached_member();
 DROP TRIGGER IF EXISTS mail_member_detached_after ON webdock_mail.mailbox_grant;
 CREATE TRIGGER mail_member_detached_after AFTER UPDATE OF member_id ON webdock_mail.mailbox_grant
- FOR EACH ROW WHEN (OLD.member_id IS NOT NULL AND NEW.member_id IS NULL) EXECUTE FUNCTION webdock_mail.revoke_detached_member();
+ FOR EACH ROW WHEN (OLD.member_id IS NOT NULL AND NEW.member_id IS NULL AND NEW.clerk_grant IS NULL) EXECUTE FUNCTION webdock_mail.revoke_detached_member();
 `;
 
 export function mailboxGrants(authRole: string) {

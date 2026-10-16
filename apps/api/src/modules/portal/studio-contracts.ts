@@ -55,6 +55,7 @@ export type TenantProfile = {
   member_role: string | null;
 } & Record<TenantProfileField, string | null>;
 export type TenantView = {
+  team?: {provider:"clerk";ready:boolean;canManage:boolean};
   tenant: TenantProfile;
   canManage: boolean;
   operator: boolean;

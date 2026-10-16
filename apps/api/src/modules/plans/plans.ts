@@ -1,4 +1,9 @@
+import {linkedMembershipRole} from "../auth/clerk-provider";
+import {businessOperator} from "../auth/business-identity";
+import {currentConsolePrincipal, consoleMembership} from "../auth/principal";
+import { getBusinessIdentity } from "../auth/business-identity";
 import { withAuthenticatedDatabase } from "../../db/database-context";
+import { readCachedView } from "../../cache";
 import {
   effectiveHostingAllowances,
   parseHostingFields,
@@ -147,7 +152,7 @@ async function actor(
   subject?: string,
 ) {
   const subjectID =
-    subject || (await auth.api.getSession({ headers }))?.user.id;
+    subject || (await getBusinessIdentity(headers))?.user.id;
   const user =
     subjectID &&
     (
@@ -156,9 +161,10 @@ async function actor(
         [subjectID],
       )
     ).rows[0];
-  if (!user || user.banned || !user.emailVerified || user.mustChangePassword)
+  if (!user || user.banned || (!currentConsolePrincipal() && (!user.emailVerified || user.mustChangePassword)))
     throw new PlanError("Sign in and complete account setup first.");
-  const operator = user.role === "operator" && user.twoFactorEnabled === true;
+  const principal=currentConsolePrincipal();
+  const operator = !(await businessOperator(user.id)).disabled;
   if (user.role !== "user" && !operator)
     throw new PlanError("Complete operator security setup first.");
   return { id: user.id as string, operator };
@@ -183,12 +189,13 @@ async function tenant(
   ).rows[0];
   if (!row || (row.status !== "active" && !(allowArchived && user.operator)))
     throw new PlanError("Active tenant not found or access unavailable.");
-  const membership = (
+  const linked=currentConsolePrincipal()?undefined:await linkedMembershipRole(user.id,row.organization_id);
+  const membership = consoleMembership(user.id,row.organization_id) ?? (currentConsolePrincipal() ? null : linked!==undefined ? (linked?{role:linked}:null) : (
     await connection.query(
       `SELECT role FROM webdock_auth.member WHERE "organizationId"=$1 AND "userId"=$2${lock ? " FOR SHARE" : ""}`,
       [row.organization_id, user.id],
     )
-  ).rows[0];
+  ).rows[0]);
   if (!user.operator && !membership)
     throw new PlanError("Tenant not found or access unavailable.");
   return {
@@ -274,12 +281,17 @@ function offerStatus(
 }
 export async function getPlans(headers: Headers): Promise<Plan[]> {
   return withAuthenticatedDatabase(headers, async () => {
-    requireOperator(await actor(headers));
-    return (
-      await database.query(
-        'SELECT id,name,description,allowances,created_at AS "createdAt" FROM webdock_auth.plan_template ORDER BY created_at DESC,id DESC',
-      )
-    ).rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }));
+    const user = await actor(headers);
+    requireOperator(user);
+    return readCachedView(
+      { kind: "catalog", scope: { subject: user.id, operator: true }, query: "plan-templates", ttlSeconds: 60 },
+      async () => (await database.query("SELECT webdock_cache.version($1::text[]) AS version", [["webdock_auth.plan_template"]])).rows[0].version,
+      async () => (
+        await database.query(
+          'SELECT id,name,description,allowances,created_at AS "createdAt" FROM webdock_auth.plan_template ORDER BY created_at DESC,id DESC',
+        )
+      ).rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() })),
+    );
   });
 }
 export async function getTenantPlan(headers: Headers, customerID: string) {

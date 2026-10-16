@@ -702,3 +702,278 @@ test("Studio and hosting introspection outages cannot masquerade as expired brow
     }
   }
 });
+
+test("portal introspects once locally per request and refreshes all authorization on the next request", async (t) => {
+  const { sealData } = await import("iron-session");
+  const { createPortalSession } =
+    await import("../../src/modules/portal/session");
+  const { portalRequest } = await import("../../src/modules/portal/transport");
+  const { hostingIdentity } = await import("../../src/modules/hosting/bridge");
+  const customer = await identity();
+  const config = {
+    origin: "http://localhost:3120",
+    clientID: "portal-scope-fixture",
+    clientSecret: "fixture-secret",
+  };
+  const environment = {
+    WEBDOCK_STUDIO_CLIENT_ID: config.clientID,
+    WEBDOCK_SSO_CLIENT_ID: config.clientID,
+    WEBDOCK_SSO_CLIENT_SECRET: config.clientSecret,
+    WEBDOCK_SSO_COOKIE_SECRET:
+      "portal-fixture-cookie-secret-at-least-32-characters",
+    WEBDOCK_SSO_APP_ORIGIN: config.origin,
+    WEBDOCK_AUTH_ISSUER: origin + "/api/auth",
+    WEBDOCK_SSO_ALLOW_LOCAL_HTTP: "true",
+  };
+  const previous = Object.fromEntries(
+    Object.keys(environment).map((key) => [key, process.env[key]]),
+  );
+  Object.assign(process.env, environment);
+  t.after(() => {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  const expires = Math.floor(Date.now() / 1000) + 300;
+  const validClaims = {
+    active: true,
+    client_id: config.clientID,
+    sub: customer.id,
+    sid: customer.session.id,
+    exp: expires,
+    webdock_role: "reader",
+  };
+  let claims: Record<string, unknown> = { ...validClaims };
+  let count = 0;
+  t.mock.method(auth, "handler", async (incoming: Request) => {
+    count++;
+    assert.equal(incoming.url, origin + "/api/auth/oauth2/introspect");
+    assert.equal(incoming.headers.get("cookie"), null);
+    const body = await incoming.formData();
+    assert.equal(body.get("client_id"), config.clientID);
+    if (body.get("client_secret") !== config.clientSecret)
+      return new Response(null, { status: 401 });
+    return Response.json(claims);
+  });
+  const sso = createPortalSession();
+  const cookie =
+    "webdock-sso=" +
+    (await sealData(
+      {
+        kind: "session",
+        sub: customer.id,
+        exp: expires,
+        accessToken: "fixture-access-token",
+      },
+      { password: environment.WEBDOCK_SSO_COOKIE_SECRET, ttl: 300 },
+    ));
+  const call = () =>
+    portalRequest(
+      new Request(config.origin + "/api/portal/studio", {
+        method: "POST",
+        headers: {
+          origin: config.origin,
+          "content-type": "application/json",
+          cookie,
+        },
+        body: JSON.stringify({ operation: "session", args: [] }),
+      }),
+      config,
+      (headers) => sso.getDelegatedSession(headers),
+      async (internal) => {
+        const response = await handleStudioRequest(internal.clone());
+        if (response.ok)
+          assert.equal(
+            (await hostingIdentity(internal, "fixture-access-token")).subject,
+            customer.id,
+          );
+        return response;
+      },
+    );
+  assert.equal((await call()).status, 200);
+  assert.equal(
+    count,
+    1,
+    "SSO, Studio and hosting share exactly one local introspection",
+  );
+  assert.equal((await call()).status, 200);
+  assert.equal(count, 2, "a fresh request must reauthorize");
+  for (const override of [
+    { active: false },
+    { client_id: "wrong-client" },
+    { sub: "wrong-subject" },
+    { sid: "wrong-session" },
+    { exp: expires - 301 },
+    { disabled: true },
+  ]) {
+    claims = { ...validClaims, ...override };
+    assert.equal((await call()).status, 401);
+  }
+  claims = { ...validClaims };
+  assert.equal((await call()).status, 200);
+  await database.query("DELETE FROM webdock_auth.session WHERE id=$1", [
+    customer.session.id,
+  ]);
+  assert.equal(
+    (await call()).status,
+    401,
+    "native session deletion still fails even if provider claims are active",
+  );
+  assert.equal(count, 10);
+});
+
+test("introspection sharing isolates exact credentials, concurrent requests, failures and scope lifetime", async (t) => {
+  const { introspectToken, withTokenIntrospection } =
+    await import("../../src/modules/auth/introspection");
+  let count = 0;
+  t.mock.method(auth, "handler", async (request: Request) => {
+    count++;
+    const form = await request.formData();
+    if (form.get("token") === "unavailable") throw Error("unavailable");
+    if (form.get("client_secret") === "wrong")
+      return new Response(null, { status: 401 });
+    return Response.json({
+      active: true,
+      client_id: form.get("client_id"),
+      token: form.get("token"),
+    });
+  });
+  await withTokenIntrospection(async () => {
+    const [first, second] = await Promise.all([
+      introspectToken("token", "client", "secret"),
+      introspectToken("token", "client", "secret"),
+    ]);
+    assert.deepEqual(
+      await first.json(),
+      await second.json(),
+      "each consumer owns a response body",
+    );
+    assert.equal(count, 1);
+    await introspectToken("other-token", "client", "secret");
+    await introspectToken("token", "other-client", "secret");
+    assert.equal(
+      (await introspectToken("token", "client", "wrong")).status,
+      401,
+    );
+    assert.equal(
+      count,
+      4,
+      "token, client and secret are all part of the binding",
+    );
+    await introspectToken("token", "client", "wrong");
+    assert.equal(count, 5, "provider failures are not retained");
+    await assert.rejects(introspectToken("unavailable", "client", "secret"));
+    await assert.rejects(introspectToken("unavailable", "client", "secret"));
+    assert.equal(count, 7, "rejected promises are not retained");
+  });
+  await Promise.all(
+    [1, 2].map(() =>
+      withTokenIntrospection(async () => {
+        await introspectToken("token", "client", "secret");
+        await introspectToken("token", "client", "secret");
+      }),
+    ),
+  );
+  assert.equal(
+    count,
+    9,
+    "concurrent incoming requests never share authorization",
+  );
+  await introspectToken("token", "client", "secret");
+  await introspectToken("token", "client", "secret");
+  assert.equal(count, 11, "direct bridge requests remain fresh");
+  let resume!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    resume = resolve;
+  });
+  let detached!: Promise<void>;
+  await withTokenIntrospection(async () => {
+    await introspectToken("token", "client", "secret");
+    detached = gate.then(async () => {
+      await introspectToken("token", "client", "secret");
+      await introspectToken("token", "client", "secret");
+    });
+  });
+  resume();
+  await detached;
+  assert.equal(
+    count,
+    14,
+    "finished request scopes cannot retain authorization for detached work",
+  );
+});
+
+test("Studio uses fresh native user security fields without signing discarded JWTs or rereading the user", async (t) => {
+  const { default: pg } = await import("pg");
+  const operator = await identity(true);
+  const clientID = "native-user-fields-fixture";
+  const previous = process.env.WEBDOCK_STUDIO_CLIENT_ID;
+  process.env.WEBDOCK_STUDIO_CLIENT_ID = clientID;
+  t.after(() => {
+    if (previous === undefined) delete process.env.WEBDOCK_STUDIO_CLIENT_ID;
+    else process.env.WEBDOCK_STUDIO_CLIENT_ID = previous;
+  });
+  const introspect = async () =>
+    Response.json({
+      active: true,
+      client_id: clientID,
+      sub: operator.id,
+      sid: operator.session.id,
+      exp: Math.floor(Date.now() / 1000) + 300,
+    });
+  const sessionResponse = await auth.api.getSession({
+    headers: operator.headers,
+    asResponse: true,
+  });
+  assert.equal(sessionResponse.headers.has("set-auth-jwt"), false);
+  const sql: string[] = [];
+  const query = pg.Client.prototype.query;
+  const tracked = t.mock.method(
+    pg.Client.prototype,
+    "query",
+    function (this: pg.Client, ...args: any[]) {
+      sql.push(typeof args[0] === "string" ? args[0] : args[0].text);
+      return Reflect.apply(query, this, args);
+    },
+  );
+  const response = await handleStudioRequest(request("session"), {
+    introspect,
+  });
+  tracked.mock.restore();
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data.operator, true);
+  assert.equal(
+    sql.filter(statement => !statement.includes("webdock_auth.clerk_identity")).length,
+    4,
+    "token lookup, native session and user, preview plus live Clerk-link check",
+  );
+  for (const [field, value, restore] of [
+    ["banned", true, false],
+    ["emailVerified", false, true],
+    ["mustChangePassword", true, false],
+    ["twoFactorEnabled", false, true],
+    ["role", "admin", "operator"],
+  ] as const) {
+    await database.query(
+      `UPDATE webdock_auth."user" SET "${field}"=$2 WHERE id=$1`,
+      [operator.id, value],
+    );
+    assert.equal(
+      (await handleStudioRequest(request("session"), { introspect })).status,
+      401,
+      field,
+    );
+    await database.query(
+      `UPDATE webdock_auth."user" SET "${field}"=$2 WHERE id=$1`,
+      [operator.id, restore],
+    );
+  }
+  await database.query("DELETE FROM webdock_auth.session WHERE id=$1", [
+    operator.session.id,
+  ]);
+  assert.equal(
+    (await handleStudioRequest(request("session"), { introspect })).status,
+    401,
+  );
+});

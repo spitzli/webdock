@@ -1,3 +1,5 @@
+import {currentConsolePrincipal} from "../../auth/principal";
+import { getBusinessIdentity } from "../../auth/business-identity";
 import { withAuthenticatedDatabase } from "../../../db/database-context";
 import type {
   MailActor,
@@ -6,7 +8,6 @@ import type {
 } from "@webdock/mail-contracts";
 import type { PoolClient } from "pg";
 import { parseID } from "@webdock/mail-contracts/validation";
-import { auth } from "../../auth/auth";
 import { mailDatabase as database } from "./store";
 export class MailError extends Error {
   constructor(
@@ -40,6 +41,12 @@ export async function assertMailAccess(
   if (!connection || connection.customer_status !== "active") mailUnavailable();
   const principal = actor.principal;
   if (principal.kind === "session") {
+    const consolePrincipal=currentConsolePrincipal();
+    if(consolePrincipal){
+      if(consolePrincipal.userID!==principal.userID || consolePrincipal.sessionID!==principal.sessionID)mailUnavailable();
+      if((await db.query("SELECT 1 FROM webdock_auth.console_tenant_preview WHERE issuer=$1 AND session_id=$2",[consolePrincipal.issuer,consolePrincipal.sessionID])).rowCount)mailUnavailable();
+      if(!consolePrincipal.operator && (consolePrincipal.customerID!==actor.customerID || !consolePrincipal.role || capability==="operate" || (capability==="manage" && consolePrincipal.role!=="admin")))mailUnavailable();
+    }else{
     const user = (
       await db.query(
         `SELECT u.role,u."twoFactorEnabled",m.role AS membership,
@@ -70,6 +77,7 @@ export async function assertMailAccess(
           !["admin", "owner"].includes(user.membership))
       )
         mailUnavailable();
+    }
     }
   } else if (principal.kind === "api_key") {
     const key = (
@@ -125,7 +133,7 @@ export async function authorizeMailSession(
   capability: MailCapability,
 ): Promise<MailActor> {
   return withAuthenticatedDatabase(headers, async () => {
-    const session = await auth.api.getSession({ headers });
+    const session = await getBusinessIdentity(headers);
     if (!session) mailUnavailable();
     const actor: MailActor = {
       customerID,
@@ -133,7 +141,7 @@ export async function authorizeMailSession(
       principal: {
         kind: "session",
         userID: session.user.id,
-        sessionID: session.session.id,
+        sessionID: session.sessionID,
       },
     };
     await assertMailAccess(actor, capability);

@@ -1,3 +1,8 @@
+import {withHostingDatabase} from "../../db/database-context";
+import {transaction} from "../hosting/db";
+import {executeDatabase} from "../databases/service";
+import {currentConsolePrincipal,storedConsoleIdentity} from "../auth/principal";
+import {executeStudioHosting} from "../hosting/bridge";
 import { HostingError } from "@webdock/hosting-contracts";
 import { hostingBridge } from "../hosting/bridge";
 import { databaseBridge } from "../databases/http";
@@ -6,6 +11,11 @@ export async function hostingCall(
   command: unknown,
   kind: "hosting" | "database" = "hosting",
 ) {
+  const principal=currentConsolePrincipal();
+  if(principal){
+    const actor={consoleIdentity:storedConsoleIdentity()!,subject:principal.userID,sessionID:principal.sessionID,source:"studio" as const,scopes:["hosting:read","hosting:write"]};
+    return kind==="hosting"?executeStudioHosting(actor,command):withHostingDatabase(actor,()=>transaction(db=>executeDatabase(db,actor,command)));
+  }
   const id = process.env.WEBDOCK_SSO_CLIENT_ID,
     secret = process.env.WEBDOCK_SSO_CLIENT_SECRET;
   if (!id || !secret)

@@ -1,3 +1,5 @@
+import { setupClerkRevalidationSQL } from "./setup-clerk-revalidation";
+import { clerkActorSQL, clerkCustomerSQL, clerkSetupSQL, clerkBillingSQL, clerkMembershipSQL, clerkProjectionSQL } from "./clerk-rls";
 import { setupHelperSQL, setupPolicyFor } from "./database-setup-rls";
 import { billingTables, billingPolicy } from "../modules/billing/rls";
 import { createHash } from "node:crypto";
@@ -157,6 +159,11 @@ const metadata: Record<string, string[]> = {
     "revoked_at",
   ],
 };
+Object.assign(metadata, {
+  "webdock_auth.clerk_identity": ["issuer","clerk_user_id","user_id","enabled"],
+  "webdock_auth.clerk_organization": ["issuer","clerk_organization_id","organization_id","enabled"],
+  "webdock_auth.console_tenant_preview": ["issuer","session_id","actor_id","customer_id","organization_id","expires_at","expired_at"],
+});
 const bootstrapMetadata: Record<string, string[]> = {
   "webdock_admin.customers": ["id", "status"],
   "webdock_auth.tenant_customer": ["customer_id", "organization_id"],
@@ -345,8 +352,16 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
       );
     }
   }
-  sql.push(helperSQL);
-  sql.push(setupHelperSQL);
+  const clerkReady = seen.has("webdock_auth.clerk_identity");
+  let identityHelpers = helperSQL;
+  if (clerkReady) {
+    identityHelpers = identityHelpers.replace(' SELECT u.id,u.email,u.role,u."twoFactorEnabled" INTO actor_row', clerkActorSQL + ' SELECT u.id,u.email,u.role,u."twoFactorEnabled" INTO actor_row');
+    identityHelpers = identityHelpers.replace(' RETURN EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_admin.customers c ON c.id=t.customer_id JOIN webdock_auth.member', clerkCustomerSQL + ' RETURN EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_admin.customers c ON c.id=t.customer_id JOIN webdock_auth.member');
+  }
+  if(clerkReady)identityHelpers=identityHelpers.replace(`JOIN webdock_auth.member m ON m."organizationId"=t.organization_id WHERE t.customer_id=customer AND c.status='active' AND m."userId"=a->>'subject' AND (NOT writing OR m.role IN ('owner','admin'))`, `WHERE t.customer_id=customer AND c.status='active' AND webdock_rls.membership_role(t.organization_id) IS NOT NULL AND (NOT writing OR webdock_rls.membership_role(t.organization_id) IN ('owner','admin'))`);
+  sql.push(identityHelpers);
+  if(clerkReady)sql.push(clerkMembershipSQL,clerkBillingSQL,clerkProjectionSQL,setupClerkRevalidationSQL);
+  sql.push(clerkReady ? setupHelperSQL.replace(" RETURN EXISTS(\n SELECT 1 FROM webdock_auth.hosting_setup s",clerkSetupSQL+" RETURN EXISTS(\n SELECT 1 FROM webdock_auth.hosting_setup s") : setupHelperSQL);
   for (const signature of signatures)
     sql.push(
       `ALTER FUNCTION webdock_rls.${signature} OWNER TO webdock_policy_owner; REVOKE ALL ON FUNCTION webdock_rls.${signature} FROM PUBLIC; GRANT EXECUTE ON FUNCTION webdock_rls.${signature} TO webdock_auth_runtime,webdock_worker_runtime,webdock_registry_runtime,webdock_platform_owner;`,
@@ -465,6 +480,15 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         ]);
         workDelete = "false";
       }
+    } else if (["clerk_identity", "clerk_organization"].includes(t.name)) {
+      policy("webdock_auth_bootstrap", "true", "false");
+      sql.push(`GRANT SELECT ON ${q} TO webdock_auth_bootstrap;`);
+      read = "webdock_rls.operator()";
+      write = t.name==="clerk_organization" ? `webdock_rls.operator() AND ${col("issuer")}=webdock_rls.actor()->'clerk'->>'issuer' AND EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE t.organization_id=${col("organization_id")} AND c.status='active')` : "false";
+      runtimeUpdate=runtimeDelete="false";
+      workRead = t.name === "clerk_identity"
+        ? seen.has("webdock_mail.identity") ? `EXISTS(SELECT 1 FROM webdock_mail.identity i WHERE i.subject=${col("user_id")} AND (${worker(["mail-send-gateway", "mail-webmail-gateway"])} OR webdock_rls.agent_customer(i.customer_id)))` : "false"
+        : seen.has("webdock_mail.service") ? `EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_mail.service s ON s.customer_id=t.customer_id WHERE t.organization_id=${col("organization_id")} AND (${worker(["mail-send-gateway", "mail-webmail-gateway"])} OR webdock_rls.agent_customer(t.customer_id)))` : "false";
     } else if (identity.has(t.name)) {
       policy("webdock_auth_bootstrap", "true", "true");
       if (t.name === "user") read = `webdock_rls.user_visible(${col("id")})`;
@@ -542,6 +566,8 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
           write += ` OR webdock_rls.mail_key(${col("customer_id")},${connection}) OR ${sessionSender}`;
         }
         workRead = workWrite = worker(["mail-cron", "mail-send-gateway"]);
+        if (t.name === "mail_sender_domain")
+          workRead += ` OR webdock_rls.agent_customer(${col("customer_id")})`;
       } else if (t.name.startsWith("git_"))
         workRead = workWrite = worker(
           t.name === "git_connection"
@@ -630,7 +656,8 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
     } else if (
       ["managed_database_launch", "managed_database_session"].includes(t.name)
     ) {
-      const own = `${col("subject")}=webdock_rls.subject() AND ${col("session_id")}=webdock_rls.actor()->>'sessionID' AND webdock_rls.actor()->'preview'='null'::jsonb`;
+      const sessionColumn=t.columns.includes("clerk_identity")?`coalesce(${col("session_id")},(${col("clerk_identity")})::jsonb->>'sessionID')`:col("session_id");
+      const own = `${col("subject")}=webdock_rls.subject() AND ${sessionColumn}=webdock_rls.actor()->>'sessionID' AND webdock_rls.actor()->'preview'='null'::jsonb`;
       const target = `EXISTS(SELECT 1 FROM webdock_auth.hosting_database d WHERE d.id::text=${col("database_id")} AND webdock_rls.customer_allowed(d.customer_id,true))`;
       if (t.name === "managed_database_launch") {
         read = write = `(${own}) AND (${target})`;
@@ -640,6 +667,10 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
       workWrite = t.name === "managed_database_session" ? workRead : "false";
       workUpdate = t.name === "managed_database_launch" ? workRead : "false";
       workDelete = t.name === "managed_database_session" ? workRead : "false";
+      if(t.columns.includes("clerk_identity")) {
+        const reference=`((${col("clerk_identity")} IS NULL AND webdock_rls.actor()->'clerk' IS NULL) OR ((${col("clerk_identity")})::jsonb->>'issuer'=webdock_rls.actor()->'clerk'->>'issuer' AND (${col("clerk_identity")})::jsonb->>'userID'=webdock_rls.actor()->'clerk'->>'userID' AND ((${col("clerk_identity")})::jsonb->>'organizationID') IS NOT DISTINCT FROM (webdock_rls.actor()->'clerk'->>'clerkOrganizationID')))`;
+        write=`(${write}) AND ${reference}`;
+      }
     } else if (t.name === "database_binding") {
       read = `webdock_rls.project_allowed(${col("project_id")})`;
       write = "webdock_rls.operator()";
@@ -667,8 +698,10 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         read = `(${inherited}) AND (${col("subject")}=webdock_rls.subject() OR webdock_rls.operator())`;
         write = t.name === "database_audit" ? read : "webdock_rls.operator()";
       }
-      if (t.name === "database_launch")
-        write = `(${inherited}) AND ${col("session_id")}=webdock_rls.actor()->>'sessionID' AND webdock_rls.actor()->'preview'='null'::jsonb`;
+      if (t.name === "database_launch") {
+        const sessionColumn=t.columns.includes("clerk_identity")?`coalesce(${col("session_id")},(${col("clerk_identity")})::jsonb->>'sessionID')`:col("session_id");
+        write = `(${inherited}) AND ${sessionColumn}=webdock_rls.actor()->>'sessionID' AND webdock_rls.actor()->'preview'='null'::jsonb`;
+      }
       if (t.name === "database_session") write = "false";
       if (t.name.startsWith("database_")) {
         workRead = `(${inherited}) AND ${worker(["database-gateway"])}`;
@@ -687,8 +720,8 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
       else
         workRead =
           workWrite = `(${inherited}) AND ${worker(["agent", "database-order"])}`;
-    } else if (t.name === "studio_tenant_preview") {
-      const own = `${col("session_id")}=webdock_rls.actor()->>'sessionID' AND ${col("actor_id")}=webdock_rls.subject()`;
+    } else if (["studio_tenant_preview", "console_tenant_preview"].includes(t.name)) {
+      const own = `${col("session_id")}=webdock_rls.actor()->>'sessionID' AND ${col("actor_id")}=webdock_rls.subject()` + (t.name === "console_tenant_preview" ? ` AND ${col("issuer")}=webdock_rls.actor()->'clerk'->>'issuer'` : "");
       read = own;
       write = `(${own}) AND coalesce((webdock_rls.actor()->>'root')::boolean,false)`;
       workRead = worker([

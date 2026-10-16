@@ -769,3 +769,15 @@ msgstr "Anbieter- und Kontaktangaben zu Webdock von Spitzli Development."
 
 msgid "Terms"
 msgstr "AGB"
+
+msgid "Register"
+msgstr "Registrieren"
+
+msgid "Join the waitlist"
+msgstr "Auf die Warteliste"
+
+msgid "Access by invitation only."
+msgstr "Zugang nur auf Einladung."
+
+msgid "Join the waitlist. Access by invitation only."
+msgstr "Auf die Warteliste. Zugang nur auf Einladung."

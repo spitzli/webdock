@@ -1,3 +1,6 @@
+import { requireConsoleBrowserPrincipal } from "../modules/auth/clerk-provider";
+import { withConsolePrincipal } from "../modules/auth/principal";
+import { ConsoleAuthError } from "../modules/auth/clerk-identity";
 import { hostingCall } from "../modules/portal/hosting";
 import { gitConnectionRoute } from "../modules/integrations/github/byok-routes";
 import { POST as byokVercelConnect } from "./legacy-studio/hosting/vercel/connect";
@@ -32,6 +35,28 @@ export function integrationProtocols(config: ApiConfig): Mount[] {
     request: Request,
     handler: (request: Request) => Promise<Response>,
   ) => {
+    if (process.env.WEBDOCK_CONSOLE_AUTH_PROVIDER === "clerk") {
+      if (
+        request.method !== "GET" &&
+        request.headers.get("origin") !== config.studioOrigin
+      )
+        return new Response(null, { status: 403 });
+      try {
+        const principal = await requireConsoleBrowserPrincipal(request);
+        return await withConsolePrincipal(principal, () =>
+          withNativeHeaders(
+            request.headers,
+            () => handler(request),
+            request.headers,
+          ),
+        );
+      } catch (error) {
+        return new Response(null, {
+          status: error instanceof ConsoleAuthError ? error.status : 503,
+          headers: { "cache-control": "no-store" },
+        });
+      }
+    }
     let session;
     try {
       session = await sso.getDelegatedSession(request.headers);

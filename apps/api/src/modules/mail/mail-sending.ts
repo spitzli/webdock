@@ -1,15 +1,15 @@
+import { getBusinessIdentity } from "../auth/business-identity";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { queueMailConfiguration } from "./mailboxes";
 import { byokPolicy } from "../hosting/byok";
-import { auth } from "../auth/auth";
 import { transaction } from "../hosting/db";
 import { authorizeMail, mailUnavailable } from "./mail-access";
 import { manageNativeMailKey, requireNativeSending } from "./mail-native-keys";
 import { configureNativeTransport } from "./mail-send-transport";
 async function actor(headers: Headers) {
-  const session = await auth.api.getSession({ headers });
+  const session = await getBusinessIdentity(headers);
   if (!session) mailUnavailable();
-  return { subject: session.user.id, sessionID: session.session.id };
+  return { subject: session.user.id, sessionID: session.sessionID };
 }
 export async function getNativeSending(headers: Headers, customerID: string) {
   return withAuthenticatedDatabase(headers, async () => {
