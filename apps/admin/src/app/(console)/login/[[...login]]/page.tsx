@@ -1,8 +1,11 @@
-import {SignIn} from '@clerk/nextjs';
-import {redirect} from 'next/navigation';
-import {clerkConsoleEnabled} from '@/lib/console-identity';
-export const dynamic='force-dynamic';
-export default function Login(){
- if(!clerkConsoleEnabled())redirect('/api/sso/login');
- return <main id="main" className="auth-panel"><SignIn routing="path" path="/login" signUpUrl="/sign-up" /></main>;
+import { SignIn } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
+import { clerkConsoleEnabled } from "@/lib/console-identity";
+import { ConsoleAuthShell, consoleAuthAppearance } from "@/components/console-auth-shell";
+export const dynamic = "force-dynamic";
+export default function Login() {
+  if (!clerkConsoleEnabled()) redirect("/api/sso/login");
+  return <ConsoleAuthShell showIntro={false} title="Welcome back" description="Sign in to manage your workspaces and projects.">
+    <SignIn routing="path" path="/login" signUpUrl="/waitlist" appearance={consoleAuthAppearance} />
+  </ConsoleAuthShell>;
 }
