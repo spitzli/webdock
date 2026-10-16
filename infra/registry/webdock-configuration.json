@@ -1,0 +1,204 @@
+{
+  "admin_get_kind": {
+    "kind": {
+      "key": "webdock-plugin",
+      "label": "Webdock Plugins",
+      "labelTranslations": {
+        "de": "Webdock-Plugins"
+      },
+      "description": "Runtime extensions for Webdock projects with explicit capabilities and immutable OCI images.",
+      "descriptionTranslations": {
+        "de": "Laufzeiterweiterungen f\u00fcr Webdock-Projekte mit expliziten Berechtigungen und unver\u00e4nderlichen OCI-Images."
+      },
+      "publicPageEnabled": true,
+      "publicPageCopy": {
+        "hero": "Extend your Webdock projects.",
+        "heroTranslations": {
+          "de": "Erweitere deine Webdock-Projekte."
+        },
+        "intro": "Discover operator-reviewed extensions. The registry contract is available; host installation and runtime integration are still in development.",
+        "introTranslations": {
+          "de": "Entdecke vom Betreiber gepr\u00fcfte Erweiterungen. Der Registry-Vertrag steht bereit; Installation und Laufzeitintegration im Host sind noch in Entwicklung."
+        }
+      },
+      "prosePre": "Documentation: https://docs.webdock.dev/developers/plugins\n\nUse `kind: webdock-plugin` and the required `x-webdock` extension. Only JSON manifests are supported by the Webdock v1 contract.",
+      "prosePost": "A registry schema check does not replace Webdock SDK validation, signed release verification, capability approval or host compatibility checks. The example uses a placeholder image digest and is not an installable release.",
+      "customExample": {
+        "json": "{\n  \"name\": \"project-notes\",\n  \"version\": \"1.0.0\",\n  \"kind\": \"webdock-plugin\",\n  \"description\": \"Scoped project notes\",\n  \"x-webdock\": {\n    \"protocolVersion\": 1,\n    \"sdkVersion\": 1,\n    \"dataProtocolVersion\": 1,\n    \"coreVersion\": \">=0.1.0 <1.0.0\",\n    \"image\": \"registry.example.com/plugins/notes@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n    \"dependencies\": [],\n    \"capabilities\": [\n      \"project.read\",\n      \"plugin.data.read\",\n      \"plugin.data.write\"\n    ],\n    \"schemaVersion\": 1,\n    \"readableSchema\": {\n      \"min\": 1,\n      \"max\": 1\n    },\n    \"migrations\": [],\n    \"tables\": [],\n    \"services\": {\n      \"required\": [\n        {\n          \"name\": \"data\",\n          \"version\": 1\n        }\n      ],\n      \"optional\": []\n    },\n    \"configuration\": {\n      \"type\": \"object\",\n      \"properties\": {},\n      \"additionalProperties\": false\n    },\n    \"actions\": [\n      {\n        \"name\": \"notes.read\",\n        \"intent\": \"read\",\n        \"capabilities\": [\n          \"plugin.data.read\"\n        ]\n      },\n      {\n        \"name\": \"notes.write\",\n        \"intent\": \"write\",\n        \"capabilities\": [\n          \"plugin.data.write\"\n        ]\n      }\n    ],\n    \"jobs\": [\n      {\n        \"name\": \"notes.maintenance\",\n        \"intervalSeconds\": 60,\n        \"capabilities\": [\n          \"plugin.data.write\"\n        ]\n      }\n    ],\n    \"navigation\": [],\n    \"slots\": [],\n    \"events\": [],\n    \"secrets\": [],\n    \"httpBindings\": []\n  }\n}"
+      }
+    }
+  },
+  "get_admin_branding": {
+    "current": {
+      "name": "Webdock Registry",
+      "theme": "default",
+      "tagline": "Extensions for your Webdock projects.",
+      "primaryHex": "#B84F18",
+      "accentHex": "#FF9255",
+      "successHex": "#10b981",
+      "logoUrl": "https://docs.webdock.dev/logo/dark.svg",
+      "logoLightUrl": "https://docs.webdock.dev/logo/light.svg",
+      "logoStyle": "wordmark",
+      "faviconUrl": "https://docs.webdock.dev/favicon.svg",
+      "footerText": "The plugin registry for Webdock.",
+      "analyticsScript": null,
+      "allowIndexing": true,
+      "socialLinks": {
+        "github": "https://github.com/spitzli/webdock",
+        "discord": null,
+        "bluesky": null,
+        "x": null,
+        "mastodon": null,
+        "linkedin": null
+      },
+      "companionApp": {
+        "name": null,
+        "url": null,
+        "downloadUrl": null,
+        "videoUrl": null,
+        "videoPosterUrl": null
+      },
+      "taglineTranslations": {
+        "de": "Erweiterungen f\u00fcr deine Webdock-Projekte."
+      },
+      "footerTextTranslations": {
+        "de": "Die Plugin-Registry f\u00fcr Webdock."
+      }
+    },
+    "defaults": {
+      "name": "Tabularium",
+      "theme": "default",
+      "tagline": "Discover, submit, ship plugins.",
+      "primaryHex": "#3b82f6",
+      "accentHex": "#8b5cf6",
+      "successHex": "#10b981",
+      "logoUrl": null,
+      "logoLightUrl": null,
+      "logoStyle": "mark",
+      "faviconUrl": null,
+      "footerText": null,
+      "analyticsScript": null,
+      "allowIndexing": true,
+      "socialLinks": {
+        "github": null,
+        "discord": null,
+        "bluesky": null,
+        "x": null,
+        "mastodon": null,
+        "linkedin": null
+      },
+      "companionApp": {
+        "name": null,
+        "url": null,
+        "downloadUrl": null,
+        "videoUrl": null,
+        "videoPosterUrl": null
+      }
+    },
+    "themePalettes": {
+      "default": {
+        "primaryHex": "#3b82f6",
+        "accentHex": "#8b5cf6",
+        "successHex": "#10b981"
+      },
+      "tabularis": {
+        "primaryHex": "#2563eb",
+        "accentHex": "#35d0c0",
+        "successHex": "#10b981"
+      }
+    }
+  },
+  "admin_get_home_copy": {
+    "eyebrow": {
+      "enabled": true,
+      "text": {
+        "en": "Webdock \u00b7 Plugin Registry",
+        "de": "Webdock \u00b7 Plugin-Registry"
+      }
+    },
+    "features": {
+      "enabled": true,
+      "dropin": {
+        "title": {
+          "en": "A defined plugin contract",
+          "de": "Ein klarer Plugin-Vertrag"
+        },
+        "body": {
+          "en": "Declare runtime compatibility, capabilities and a digest-pinned container image in your manifest.",
+          "de": "Deklariere Laufzeitkompatibilit\u00e4t, Berechtigungen und ein per Digest fixiertes Container-Image im Manifest."
+        }
+      },
+      "providers": {
+        "title": {
+          "en": "Publish from GitHub",
+          "de": "\u00dcber GitHub ver\u00f6ffentlichen"
+        },
+        "body": {
+          "en": "Sign in with GitHub, connect your repository and submit your plugin for operator review.",
+          "de": "Melde dich mit GitHub an, verbinde dein Repository und reiche dein Plugin zur Betreiberpr\u00fcfung ein."
+        }
+      },
+      "release": {
+        "title": {
+          "en": "Versioned releases",
+          "de": "Versionierte Releases"
+        },
+        "body": {
+          "en": "Keep manifest versions, release tags and descriptor assets aligned. Webdock host integration is in development.",
+          "de": "Halte Manifest-Version, Release-Tag und Deskriptor-Datei synchron. Die Webdock-Hostintegration ist in Entwicklung."
+        }
+      }
+    }
+  },
+  "get_instance_settings": {
+    "requireApproval": true,
+    "docsExternalUrl": "https://docs.webdock.dev/",
+    "rateLimits": [
+      {
+        "id": "submit",
+        "limit": 10,
+        "windowSeconds": 3600,
+        "defaultLimit": 10,
+        "defaultWindowSeconds": 3600
+      },
+      {
+        "id": "requests-create",
+        "limit": 5,
+        "windowSeconds": 3600,
+        "defaultLimit": 5,
+        "defaultWindowSeconds": 3600
+      },
+      {
+        "id": "upvote",
+        "limit": 30,
+        "windowSeconds": 60,
+        "defaultLimit": 30,
+        "defaultWindowSeconds": 60
+      }
+    ],
+    "manifest": {
+      "allowedFiles": [
+        ".tabularium",
+        "tabularium.json"
+      ],
+      "defaultFiles": [
+        ".tabularium"
+      ],
+      "schemaUrl": "https://registry.webdock.dev/manifest.schema.json",
+      "filesOverridden": true,
+      "schemaUrlOverridden": false,
+      "requireKind": true,
+      "requireKindAvailable": true,
+      "configuredKindKeys": [
+        "webdock-plugin"
+      ]
+    },
+    "assetSizeCapBytes": 524288000
+  },
+  "admin_get_features": {
+    "submissionsEnabled": true,
+    "requestsEnabled": true
+  },
+  "kindSchemaSource": "tools/plugins/tabularium-kind.schema.json",
+  "kindSchemaSHA256": "b90c0a0c8c82323a4a9eb78cea4292d4830446c0643b064becda3515d1d29e94"
+}

@@ -1,0 +1,55 @@
+---
+title: "Webdock plugins"
+description: "Discover the Webdock plugin registry, its manifest contract and the current integration status."
+---
+
+The [Webdock Registry](https://registry.webdock.dev) catalogs extensions for Webdock projects. Sign in with GitHub through the **Webdock Studio** GitHub App. Publishing requires repository access and operator approval; signing in does not install a plugin in Webdock.
+
+<Info>The registry, GitHub login, plugin kind and manifest contract are configured. Host installation, runtime isolation, capability services, UI integration and the developer CLI are still in development. The examples below describe the v1 contract, not a released installation workflow.</Info>
+
+## Plugin kind
+
+Use **`webdock-plugin`**. Product areas such as hosting, mail and analytics are categories or tags, not separate runtime kinds. Every manifest requires `x-webdock`, which declares compatibility, an immutable runtime image and the capabilities used by the plugin.
+
+The registry is separate from the [customer/project Registry REST API](/developers/registry). Tabularium owns plugin discovery and release metadata; Webdock owns installation, permissions and execution. Executable images live in an OCI registry.
+
+## Author a manifest
+
+Put JSON in `.tabularium` or `tabularium.json` at the repository root. Prefer one file to avoid ambiguous sources. `name` is the stable lowercase plugin identifier in the Webdock v1 contract; do not substitute a display name or rely on Tabularium's optional `id` field. `version` is exact SemVer and must match the release tag after removing an optional `v` prefix.
+
+See [Manifest reference](/developers/plugin-manifest) for required fields and a complete example. The public JSON Schema is available at:
+
+```text
+https://registry.webdock.dev/manifest.schema.json?kind=webdock-plugin
+```
+
+Validate before submitting:
+
+```bash
+jq -n --rawfile text .tabularium \
+  '{kind:"webdock-plugin",text:$text}' | \
+  curl --fail-with-body \
+    -H 'Content-Type: application/json' \
+    --data-binary @- \
+    https://registry.webdock.dev/api/manifest/validate
+```
+
+Check the response's `ok` field: validation errors return HTTP 200 with `ok: false`. This authoring endpoint accepts at most **64 KiB** of manifest text. The Webdock host contract separately caps release manifests/descriptors at **256 KiB**.
+
+## Release layout
+
+1. Build and push the runtime image to an approved OCI registry. Record its actual SHA-256 digest.
+2. Put that immutable image reference and the release version in the manifest.
+3. Attach `<name>-universal.json` to the forge release with the **same manifest bytes**. The descriptor is a JSON asset, not the container image.
+4. Submit the repository through the registry and configure the release webhook shown by Tabularium. Operator approval is required.
+5. Verify release integrity before considering a version installable. Catalog acceptance alone is not proof of image availability, signature trust or host compatibility.
+
+The runtime contract fixes port **8080** and endpoints `/healthz`, `/readyz`, `/webdock/actions` and `/webdock/jobs`. Plugins declare capabilities and named bindings; they receive no platform database credentials or arbitrary Kubernetes/RBAC configuration.
+
+The host installer and `webdock plugin` CLI are not released yet. Do not assume registry publication automatically starts a workload or grants tenant access.
+
+## Connect an MCP client
+
+Use **`https://registry.webdock.dev/mcp`** with OAuth. Consent is bound to your registry account and requested scopes. Administrators can grant read/write scopes; ordinary users do not gain administrator access through the client. Review or revoke connections in your account settings.
+
+This endpoint manages the plugin registry. The [Webdock platform MCP](/developers/mcp) manages platform resources and is a different service.

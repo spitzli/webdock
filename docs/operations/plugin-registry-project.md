@@ -47,7 +47,7 @@ PostgreSQL role/database commands follow the [PostgreSQL 18 role](https://www.po
 - Console: <https://console.webdock.dev/hosting/apps/104651089088876544>.
 - Namespace: `wd-104618288083894272`; Deployment/Service: `app-104651089088876544`.
 - Image: `ghcr.io/tabularisdb/tabularium@sha256:3384ebd98e74f704b31653d921ad872f94936e29ad3fef6c0281519ad9304cf3`, version 0.25.0, source revision `5d1818352f7e4a018f6ace31a7f185d5a6b6f292`.
-- One replica, 500m CPU, 512 MiB RAM, 256 MiB ephemeral storage, 1 GiB retained `/data` volume. Runs as UID 65532 with read-only root.
+- One replica, 1000m CPU, 512 MiB RAM, 256 MiB ephemeral storage, 1 GiB retained `/data` volume. Runs as UID 65532 with read-only root.
 - Operator custom plan `Webdock intern – Registry` supplies this allocation; no additional paid service order was placed. Existing database billing remains separate.
 - Normal readiness/liveness path: `/healthz`. Initial provisioning used `/api/init/status` until database initialization completed.
 - DNS: Vercel team `spitzli`, `registry.webdock.dev A 79.143.177.157`, record `rec_6e6404f3bc8cb9b007c4e1ea`.
@@ -57,7 +57,7 @@ PostgreSQL role/database commands follow the [PostgreSQL 18 role](https://www.po
 - Initial admin: `admin@example.com`; sign in at <https://registry.webdock.dev/login/admin>, then open `/admin`. The password is in the operator-only local file `/home/newt/.cache/webdock-plugin-registry/registry-admin-access.txt` (0600); it is not committed. The normal login was verified after installation and restart. Tabularium disables this recovery login when the admin links an OAuth identity.
 - Signing-key ID: `5d8025c66487bb44`; public endpoint `/.well-known/registry-key.json`. This key has not yet been enrolled in the Webdock plugin trust configuration.
 
-The application is an initialized, empty Tabularium registry. Provider/OAuth configuration, Webdock-specific plugin kind/schema, publishing and installation verification are still outstanding; a successful registry deployment does not establish those capabilities.
+The application is an initialized, empty Tabularium registry. GitHub OAuth and the Webdock-specific plugin kind/schema are configured. Publishing and installation verification remain outstanding; a successful registry deployment does not establish those capabilities.
 
 ## Requested follow-up
 
@@ -72,3 +72,20 @@ Registry provider `github` is enabled with the existing OAuth client credentials
 `infra/registry/github-egress.json` permits this registry app to reach GitHub's published IPv4 `web` and `api` ranges on TCP 443. The ranges were fetched from `https://api.github.com/meta`; refresh them when GitHub changes its published ranges. In-pod HTTPS checks to github.com and api.github.com returned 200. Other external destinations remain denied.
 
 End-to-end verified: the GitHub callback linked `NewtTheWolf` to the existing admin user `01M530P3DTPXCQDFKY9HFWF4RT`. `/auth/me` reports role `admin` and the GitHub identity; provider `lastUsedAt` is populated. Tabularium reports `emailRecoveryAvailable: false`, so the initial email/password login is now disabled. Use **Sign in → GitHub** at the registry.
+
+## Webdock registry configuration — 2026-10-16
+
+- Kind `webdock-plugin` with the complete generated `x-webdock` schema from `tools/plugins/tabularium-kind.schema.json`. No unrelated driver/theme kinds were added.
+- Required kind, operator approval, JSON manifest paths `.tabularium` and `tabularium.json`. Registry authoring validation has its own 64 KiB request cap; the SDK host contract is 256 KiB.
+- Webdock name, orange palette, existing light/dark wordmarks and favicon, English/German home copy and About page. The companion-app promotion is disabled because its stock copy falsely promises one-click runtime installation.
+- **External docs URL remains `https://docs.webdock.dev/`**, as explicitly selected by the owner. Header and footer links verified in the browser. Plugin pages and navigation are added under `docs/developers/`; they are not yet published by the connected `main`-branch Mintlify deployment.
+- Public configuration snapshot: `infra/registry/webdock-configuration.json`; kind schema is referenced rather than duplicated. OAuth secrets and runtime secrets are excluded. Apply through authenticated admin APIs/MCP, preserving unrelated settings.
+- Registry MCP `webdock-registry` is authenticated with all 40 available scopes under the existing admin account; the unrelated `tabularium` connection still targets registry.tabularis.dev.
+
+### Runtime validation finding
+
+Bun 1.3.14 JIT schema compilation failed in the restricted cluster container (`embedder failed to suspend thread`, exit 133 in an isolated compiler probe), while the same pinned image/schema compiled locally. `JSC_useJIT=false` made the isolated cluster probe complete. The native application environment now retains that setting; the internal allowance and app CPU were raised from 500m to 1000m. App revision 4 is healthy with zero restarts after the final sequential checks.
+
+The complete schema is retained without loosening validation or container security. Each validation currently recompiles AJV synchronously and took roughly 3.5–5 seconds in live checks. Back-to-back validation requests can temporarily fail readiness and return 503; the verification cases are deliberately paced by three seconds. This is a remaining Tabularium performance limitation, not evidence of load readiness. A bounded compiled-validator cache in upstream Tabularium is the appropriate follow-up.
+
+The actual validator retained the valid fixture byte-for-byte as a JSON value and rejected missing `x-webdock`, mutable image tags, unknown privileged fields, missing kind and unsupported protocol. See `docs/verification/2026-10-16-plugin-registry-manifests.json`. This is schema round-trip evidence only; no forge release, signed artifact ingestion or host installation was performed.

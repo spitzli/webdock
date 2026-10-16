@@ -3,6 +3,8 @@ title: "Configure installed modules"
 description: "Select the six installed product modules, assign process ownership and drain retained services safely."
 ---
 
+External runtime plugins use a separate [plugin registry and manifest contract](/developers/plugins). Their host installation workflow is still in development.
+
 Webdock registers six product modules: `mail`, `hosting`, `databases`, `cms`, `storage` and `billing`. Configuration controls product availability. It does not grant tenant membership, buy a plan, create provider accounts or provision infrastructure.
 
 The core identity, customer/project registry, memberships, plans and usage surfaces remain separate from optional products. Disabling Billing does not remove core plan administration. See [self-hosting](/developers/self-hosting) for the container and Helm distribution, and [authentication adapters](/developers/auth-adapters) for browser-provider selection.

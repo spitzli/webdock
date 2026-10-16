@@ -72,6 +72,13 @@
             ]
           },
           {
+            "group": "Plugins",
+            "pages": [
+              "developers/plugins",
+              "developers/plugin-manifest"
+            ]
+          },
+          {
             "group": "Mail",
             "pages": [
               "developers/mail-quickstart",

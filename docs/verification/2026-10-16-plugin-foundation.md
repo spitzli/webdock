@@ -59,3 +59,9 @@ Restricted-role tests use a second database connection to observe a waiting excl
 The transaction primitives are **not yet wired into all service ports/routes/workers**. The 151-call-site audit and dynamic route composition remain outstanding, so Core Task 3 and live module control are not complete. No change to existing module availability is claimed from these helpers alone.
 
 Verification for this transaction checkpoint: focused admission RLS regression passed 24 assertions; the complete registered RLS suite passed after the fixes. API unit tests: 151 passed; module tests: 121 passed; database-runtime tests: 11 passed. API build/typecheck passed after correcting the test's optional-ID type. Independent review identified the aborted-COMMIT and falsy nested-failure cases; both received failing-then-passing regressions. Existing service/route integration remains intentionally unclaimed.
+
+## Registry configuration continuation — 2026-10-16
+
+The production registry is now initialized at https://registry.webdock.dev with GitHub OAuth, MCP, Webdock branding and the required `webdock-plugin` / `x-webdock` contract. The generated SDK schema was installed and six live validator cases passed with valid data preserved. This completes the configuration/shape check portion of Core Task 5, not the signed-release adapter, actual publishing or installation checks. See `2026-10-16-plugin-registry-manifests.json` and `docs/operations/plugin-registry-project.md` for evidence and the synchronous-validation throughput limitation.
+
+Public plugin overview and manifest reference were added to the Mintlify navigation; `mint validate` and `mint broken-links` passed using the cached CLI. The initial latest-version CLI download failed (ETARGET), so it was not used for verification. SDK manifest/schema tests: 12 passed; generated-schema drift check passed. The docs remain local to this branch until publication from `main`.
