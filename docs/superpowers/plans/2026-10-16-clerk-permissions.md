@@ -25,7 +25,7 @@
 - [x] SQL/billing: domain-specific permission helpers and policy gates, claimed worker checks, unchanged legacy fallback; actual restricted PostgreSQL tests.
 - [x] Provisioning: inspect endpoints/roles, idempotent dry-run/apply script, additive Admin attachment and Member baseline verification; dev then production readback.
 - [x] UI: server-derived capabilities for relevant navigation/actions; no permission gain from role labels.
-- [ ] Integration: unit/type/build/RLS/legacy suites, independent security review, PR, staged production rollout and live owner smoke. Document limitations without pretending customer impersonation tests ran.
+- [x] Integration: unit/type/build/RLS/legacy suites, independent security review, PR, staged production rollout and live owner smoke. Document limitations without pretending customer impersonation tests ran.
 
 ## Review focus
 
