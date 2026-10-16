@@ -206,3 +206,10 @@ Fresh verification on the release branch:
 
 Production-specific browser acceptance and real identity inventory remain explicit
 rollout gates in the release guide, not claims made by the local suite.
+
+
+The first PR Console preview rejected a stale cached Tabularis package despite the
+correct pinned archive. Console's Vercel install command now runs `npm ci` from the
+repository root to replace cached dependency contents. The checksum guard remains
+unchanged. The vendor-preflight regressions were rerun; preview status is checked
+on the final PR commit.
