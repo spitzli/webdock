@@ -62,3 +62,13 @@ The application is an initialized, empty Tabularium registry. Provider/OAuth con
 ## Requested follow-up
 
 After the registry, deploy Plausible at `moon.webdock.dev` for the Webdock start page. Then offer managed tracking as a mini addon with an optional custom tracking domain. Owner requested this sequence on 2026-10-16; Plausible has not been provisioned by this registry rollout.
+
+## GitHub OAuth — 2026-10-16
+
+The existing **Webdock Studio** GitHub App owned by **spitzli** is reused (App ID `5176593`, Client ID `Iv23liif2SH8rJxcNWRs`). Added the exact callback `https://registry.webdock.dev/auth/github/callback`; retained both Studio callbacks, the existing webhook and all permissions. No new app or secret rotation.
+
+Registry provider `github` is enabled with the existing OAuth client credentials, encrypted by Tabularium. Credentials are shared with the existing Webdock integration; future rotation must update both consumers. GitHub authorization displays **Webdock Studio**.
+
+`infra/registry/github-egress.json` permits this registry app to reach GitHub's published IPv4 `web` and `api` ranges on TCP 443. The ranges were fetched from `https://api.github.com/meta`; refresh them when GitHub changes its published ranges. In-pod HTTPS checks to github.com and api.github.com returned 200. Other external destinations remain denied.
+
+End-to-end verified: the GitHub callback linked `NewtTheWolf` to the existing admin user `01M530P3DTPXCQDFKY9HFWF4RT`. `/auth/me` reports role `admin` and the GitHub identity; provider `lastUsedAt` is populated. Tabularium reports `emailRecoveryAvailable: false`, so the initial email/password login is now disabled. Use **Sign in → GitHub** at the registry.

@@ -1,0 +1,20 @@
+{
+  "verifiedAt": "2026-10-16T18:57:20.356719+00:00",
+  "appID": 5176593,
+  "owner": "spitzli",
+  "appSlug": "webdock-studio",
+  "newAppCreated": false,
+  "callbackAdded": "https://registry.webdock.dev/auth/github/callback",
+  "existingCallbacksPreserved": true,
+  "secretsRotated": false,
+  "providerID": "github",
+  "providerEnabled": true,
+  "encryptedSecretSaved": true,
+  "githubHttpsFromPod": 200,
+  "apiGithubHttpsFromPod": 200,
+  "oauthCallbackSucceeded": true,
+  "linkedGitHubUser": "NewtTheWolf",
+  "existingAdminUserID": "01M530P3DTPXCQDFKY9HFWF4RT",
+  "verifiedRole": "admin",
+  "emailRecoveryAvailable": false
+}
