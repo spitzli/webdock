@@ -43,7 +43,7 @@ export async function ConsoleToolbar({
           <WorkspaceSidebar segments={segments} />
         </>
       }
-      account={browserAuthConfiguration.provider === "clerk" ? <AccountControls preview={!!session.preview} /> :
+      account={browserAuthConfiguration.provider === "clerk" ? <AccountControls preview={!!session.preview} operator={session.operator} /> :
         <details className="console-account-menu">
           <summary aria-label={t("Account & preferences")}>
             <span className="console-avatar" aria-hidden="true">

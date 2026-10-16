@@ -8,7 +8,7 @@ test('Landing page serves English content, matching FAQ data and SEO assets', as
   assert.match(html, /<html[^>]+lang="en"/);
   assert.match(html, /<link rel="canonical" href="https:\/\/webdock.dev"/);
   assert.match(html, /href="https:\/\/spitzli.dev"/);
-  assert.match(html, /<a[^>]+href="https:\/\/accounts\.webdock\.dev\/waitlist"[^>]*>Waitlist/);
+  assert.match(html, /<a[^>]+href="https:\/\/console\.webdock\.dev\/waitlist"[^>]*>Waitlist/);
   assert.match(html, /<a[^>]+href="https:\/\/console\.webdock\.dev\/login"[^>]*>Login/);
   assert.doesNotMatch(html, />Register|>Join the waitlist/);
   assert.doesNotMatch(html, /class="spitzli-section"|Meet Spitzli|A human on your side/);

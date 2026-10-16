@@ -83,7 +83,7 @@ export function ConsoleControls({ scope, workspaces, navigation, account, operat
       <button type="button" className="console-icon-button console-menu-toggle" aria-label={t('Open navigation')} onClick={()=>menuDialog.current?.showModal()}><ConsoleIcon name="menu" /></button>
       <Link className="brand console-brand" href={operator?'/':'/tenants'}>webdock<span>.</span><small>{t('Console')}</small></Link>
       <button type="button" className="console-scope-button" onClick={openPicker} aria-haspopup="dialog" title={t('Switch workspace or project')}>
-        <ConsoleIcon name="apps" /><span><strong>{scope.customerName||t('Select workspace')}</strong>{scope.resourceName&&<small>{scope.resourceName}</small>}</span><ConsoleIcon name="chevron" />
+        <ConsoleIcon name="apps" /><span><strong>{scope.customerName||t(operator?'Operator area':'Select workspace')}</strong>{scope.resourceName&&<small>{scope.resourceName}</small>}</span><ConsoleIcon name="chevron" />
       </button>
       <button type="button" className="console-search-button" aria-label={t('Search resources and services')} onClick={openSearch} aria-haspopup="dialog" aria-keyshortcuts="Control+k Meta+k"><ConsoleIcon name="search" /><span>{t('Search resources and services')}</span><kbd>Ctrl K</kbd></button>
       <div className="console-account">{account}</div>

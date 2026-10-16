@@ -8598,3 +8598,30 @@ msgstr "Administratoren verwalten Mitglieder und Einladungen. Dabei gelten die T
 
 msgid "Current billing management permission is required."
 msgstr "Du benötigst eine gültige Berechtigung zur Verwaltung der Abrechnung."
+
+msgid "Operator area"
+msgstr "Betreiberbereich"
+
+msgid "Account navigation"
+msgstr "Kontonavigation"
+
+msgid "Welcome back"
+msgstr "Willkommen zurück"
+
+msgid "Sign in to manage your workspaces and projects."
+msgstr "Melde dich an, um deine Workspaces und Projekte zu verwalten."
+
+msgid "Get early access"
+msgstr "Frühzeitig Zugang erhalten"
+
+msgid "Webdock is currently invitation-only. Leave your email and we will let you know when access is available."
+msgstr "Webdock ist derzeit nur auf Einladung verfügbar. Hinterlasse deine E-Mail-Adresse – wir melden uns, sobald ein Zugang verfügbar ist."
+
+msgid "You’re on the waitlist"
+msgstr "Du stehst auf der Warteliste"
+
+msgid "Thanks for your interest in Webdock. We will email you when we can invite you."
+msgstr "Danke für dein Interesse an Webdock. Du bekommst eine E-Mail, sobald wir dich einladen können."
+
+msgid "You do not need to sign in yet. Access starts when you receive your invitation."
+msgstr "Du musst dich noch nicht anmelden. Dein Zugang beginnt mit deiner Einladung."
