@@ -1,3 +1,4 @@
+import {pluginTables,pluginPolicy} from "../modules/plugins/rls";
 import { modulePreflightTables } from "./module-preflight-tables";
 import { gitInvalidationSQL } from "./database-git-rls";
 import {
@@ -870,6 +871,10 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         "mail-webmail-gateway",
         "database-gateway",
       ]);
+    } else if ((pluginTables as readonly string[]).includes(t.name)) {
+      const plugin=pluginPolicy(t.name);
+      read=plugin.read;write=plugin.write;workRead=plugin.workerRead;workWrite=plugin.workerWrite;
+      runtimeDelete=workDelete="false";
     } else if ((billingTables as readonly string[]).includes(t.name)) {
       const billing = billingPolicy(t.name);
       read = billing.read;

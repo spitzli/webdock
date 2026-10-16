@@ -7,9 +7,17 @@
     ".": "./src/index.ts",
     "./react": "./src/react.tsx",
     "./selection": "./src/selection.ts",
-    "./installation-json-schema": "./src/installation-json-schema.ts"
+    "./installation-json-schema": "./src/installation-json-schema.ts",
+    "./plugins": "./src/plugin-lifecycle.ts"
   },
   "peerDependencies": {
     "react": "^19"
+  },
+  "dependencies": {
+    "@webdock/plugin-sdk": "*",
+    "semver": "^7.8.5"
+  },
+  "devDependencies": {
+    "@types/semver": "^7.7.1"
   }
 }

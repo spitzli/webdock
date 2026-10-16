@@ -1,0 +1,32 @@
+{
+  "name": "@webdock/plugin-sdk",
+  "version": "0.1.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./contracts": {
+      "types": "./dist/contracts/index.d.ts",
+      "default": "./dist/contracts/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "semver": "^7.8.5",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/semver": "^7.7.1",
+    "typescript": "^5",
+    "tsx": "^4.23.15"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

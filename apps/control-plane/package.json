@@ -64,7 +64,8 @@
     "@webdock/platform-db": "*",
     "@webdock/adapter-billing-polar": "*",
     "@webdock/adapter-hosting-github": "*",
-    "@clerk/backend": "3.24.0"
+    "@clerk/backend": "3.24.0",
+    "@webdock/plugin-sdk": "*"
   },
   "devDependencies": {
     "@types/bun": "1.3.14",

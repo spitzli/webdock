@@ -12,6 +12,7 @@ import {
   mailManifest,
   isMailProvisioning,
 } from "@webdock/module-mail/manifest";
+export const builtinManifests = [mailManifest,hostingManifest,databasesManifest,cmsManifest,storageManifest,billingManifest];
 export function installationRegistry(
   env: Record<string, string | undefined> = process.env,
 ) {
@@ -24,14 +25,7 @@ export function installationRegistry(
     }
   }
   return createRegistry(
-    [
-      mailManifest,
-      hostingManifest,
-      databasesManifest,
-      cmsManifest,
-      storageManifest,
-      billingManifest,
-    ],
+    builtinManifests,
     config,
   );
 }

@@ -28,6 +28,7 @@ const integration = new Set([
   "server.integration.test.ts",
 ]);
 const rls = new Set([
+  "plugins-state-rls.integration.test.ts",
   "clerk-worker-rls.integration.test.ts",
   "module-preflight-rls.integration.test.ts",
   "module-preflight.integration.test.ts",

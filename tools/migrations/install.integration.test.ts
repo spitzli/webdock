@@ -122,6 +122,16 @@ test(
       assert.ok(roleRows.every((r) => !r.rolsuper && !r.rolbypassrls));
       url.username = "webdock_offline_migrate";
       url.password = passwords.webdock_offline_migrate;
+      const initializePlugins = (modules: Record<string, unknown>) => spawnSync(
+        root + "node_modules/.bin/bun",
+        ["--no-env-file", "tools/plugins/bootstrap.ts", target, "fresh"],
+        {cwd:root,encoding:"utf8",env:{...base,DATABASE_URL_UNPOOLED:url.href,WEBDOCK_MODULES:JSON.stringify({configVersion:1,modules})}},
+      );
+      const initialized = initializePlugins({storage:{enabled:true}});
+      assert.equal(initialized.status,0,initialized.stdout+initialized.stderr);
+      const repeated = initializePlugins({});
+      assert.equal(repeated.status,0,repeated.stdout+repeated.stderr);
+      assert.deepEqual((await owner.query("SELECT id FROM webdock_auth.plugin_installation WHERE state='enabled' ORDER BY id")).rows,[{id:"storage"}]);
       // Both processes share the actual advisory lock and immutable journal.
       const concurrentUpgrade = () => new Promise<void>((resolve, reject) => {
         const child = spawn(root + "node_modules/.bin/bun",
