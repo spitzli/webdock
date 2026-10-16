@@ -317,7 +317,7 @@ export const manifestSchema = z
       "Reserved plugin id",
     ),
     version: exactVersion,
-    kind: z.literal("webdock-plugin"),
+    kind: z.literal("extension"),
     description: z.string().max(280).optional(),
     category: z.string().max(40).optional(),
     tags: z.array(z.string().max(30)).max(16).optional(),

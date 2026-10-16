@@ -71,7 +71,7 @@ Callbacks needed to resolve an existing resource are authenticated and admitted 
 
 ## Tabularium contract and trust
 
-Use a dedicated configurable registry URL, not a hardcoded public deployment. Configure kind `webdock-plugin` and a required `x-webdock` extension using Tabularium's per-kind schema support. Unknown extension properties may be stripped by Tabularium, so schema installation and a round-trip check are prerequisites to publishing.
+Use a dedicated configurable registry URL, not a hardcoded public deployment. Configure kind `extension` and a required `x-webdock` extension using Tabularium's per-kind schema support. Unknown extension properties may be stripped by Tabularium, so schema installation and a round-trip check are prerequisites to publishing.
 
 The v1 extension contains `protocolVersion: 1`, `sdkVersion: 1`, a core-version compatibility expression, exact dependency versions, an OCI `image` reference pinned by SHA-256 digest, configuration JSON Schema, capability names, action declarations with `read | write` intent, navigation/typed slot entries with relative UI paths, and optional named jobs with a minimum 60-second interval. The developer amendment adds required/optional service versions, declared tables/events/secret/HTTP binding names, `dataProtocolVersion: 1`, `schemaVersion`, readable-schema range and checksummed declarative migrations. Fix backend port 8080 and endpoints `/healthz`, `/readyz`, `/webdock/actions` and `/webdock/jobs`. Reject unknown privileged fields. The manifest declares no arbitrary host URL, namespace, RBAC, filesystem mount, executable migration, command or raw SQL. Keep the schema within Tabularium's supported extension depth/property limits and verify round-trip retention.
 
@@ -79,7 +79,7 @@ For v1 use JSON manifests, a bounded schema subset and one small release asset n
 
 The actual checked API is:
 
-- `GET /api/plugins?kind=webdock-plugin` for discovery.
+- `GET /api/plugins?kind=extension` for discovery.
 - `GET /api/plugins/:id/releases/:version` for pinned asset resolution.
 - `GET /api/plugins/:id/releases/:version/integrity` for signed JWS, hashed assets and `manifest_raw`.
 - `GET /.well-known/registry-key.json` for registry keys.

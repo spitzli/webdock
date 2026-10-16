@@ -3,7 +3,7 @@ title: "Plugin manifest reference"
 description: "Required x-webdock fields, capabilities and immutable release descriptors."
 ---
 
-Use `kind: "webdock-plugin"` and JSON syntax. The registry exposes the [kind-specific schema](https://registry.webdock.dev/manifest.schema.json?kind=webdock-plugin); the SDK's `parsePluginManifest` adds semantic checks that JSON Schema cannot express.
+Use `kind: "extension"` and JSON syntax. The registry exposes the [kind-specific schema](https://registry.webdock.dev/manifest.schema.json?kind=extension); the SDK's `parsePluginManifest` adds semantic checks that JSON Schema cannot express.
 
 ## Example
 
@@ -13,7 +13,7 @@ Use `kind: "webdock-plugin"` and JSON syntax. The registry exposes the [kind-spe
 {
   "name": "project-notes",
   "version": "1.0.0",
-  "kind": "webdock-plugin",
+  "kind": "extension",
   "description": "Scoped project notes",
   "x-webdock": {
     "protocolVersion": 1,

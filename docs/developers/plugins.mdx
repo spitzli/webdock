@@ -9,7 +9,7 @@ The [Webdock Registry](https://registry.webdock.dev) catalogs extensions for Web
 
 ## Plugin kind
 
-Use **`webdock-plugin`**. Product areas such as hosting, mail and analytics are categories or tags, not separate runtime kinds. Every manifest requires `x-webdock`, which declares compatibility, an immutable runtime image and the capabilities used by the plugin.
+Use **`extension`**. Product areas such as hosting, mail and analytics are categories or tags, not separate runtime kinds. Every manifest requires `x-webdock`, which declares compatibility, an immutable runtime image and the capabilities used by the plugin.
 
 The registry is separate from the [customer/project Registry REST API](/developers/registry). Tabularium owns plugin discovery and release metadata; Webdock owns installation, permissions and execution. Executable images live in an OCI registry.
 
@@ -20,14 +20,14 @@ Put JSON in `.tabularium` or `tabularium.json` at the repository root. Prefer on
 See [Manifest reference](/developers/plugin-manifest) for required fields and a complete example. The public JSON Schema is available at:
 
 ```text
-https://registry.webdock.dev/manifest.schema.json?kind=webdock-plugin
+https://registry.webdock.dev/manifest.schema.json?kind=extension
 ```
 
 Validate before submitting:
 
 ```bash
 jq -n --rawfile text .tabularium \
-  '{kind:"webdock-plugin",text:$text}' | \
+  '{kind:"extension",text:$text}' | \
   curl --fail-with-body \
     -H 'Content-Type: application/json' \
     --data-binary @- \
