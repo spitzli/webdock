@@ -117,7 +117,7 @@
       }
     },
     "features": {
-      "enabled": true,
+      "enabled": false,
       "dropin": {
         "title": {
           "en": "A defined plugin contract",
