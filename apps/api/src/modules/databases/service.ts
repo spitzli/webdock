@@ -33,7 +33,7 @@ async function binding(
   if (!row) throw fail();
   const authorization = await authorizeHosting(
     actor,
-    { projectID: row.projectID, live: true, operator },
+    { permission: "org:databases:manage", projectID: row.projectID, live: true, operator },
     db,
   );
   if (!operator && !row.profile) throw fail();
@@ -62,7 +62,7 @@ export async function executeDatabase(
   if (cmd.action === "list") {
     const auth = await authorizeHosting(
       actor,
-      { customerID: cmd.customerID, live: true },
+      { permission: "org:databases:manage", customerID: cmd.customerID, live: true },
       db,
     );
     const rows = (
@@ -115,7 +115,7 @@ export async function executeDatabase(
   if (cmd.action === "create") {
     await authorizeHosting(
       actor,
-      { projectID: cmd.projectID, operator: true, write: true },
+      { permission: "org:databases:manage", projectID: cmd.projectID, operator: true, write: true },
       db,
     );
     const row = (
@@ -259,7 +259,7 @@ async function authorizeGrant(
     return withStoredConsolePrincipal(principal,async()=>{
       const grant=(await db.query(`SELECT g.*,b.project_id FROM webdock_auth.database_grant g JOIN webdock_auth.database_binding b ON b.id=g.binding_id WHERE g.id=$1 AND g.revision=$2 AND g.enabled AND b.enabled AND g.subject=$3 FOR SHARE OF g,b`,[grantID,revision,principal.userID])).rows[0];
       if(!grant)throw fail();
-      await authorizeHosting({subject:principal.userID,sessionID:principal.sessionID,source:"studio",scopes:["hosting:read"]},{projectID:grant.project_id,live:true},db);
+      await authorizeHosting({subject:principal.userID,sessionID:principal.sessionID,source:"studio",scopes:["hosting:read"]},{ permission: "org:databases:manage", projectID:grant.project_id,live:true},db);
       return grant;
     });
   }
@@ -279,7 +279,7 @@ async function authorizeGrant(
       source: "studio",
       scopes: ["hosting:read"],
     },
-    { projectID: grant.project_id, live: true },
+    { permission: "org:databases:manage", projectID: grant.project_id, live: true },
     db,
   );
   return grant;
@@ -373,7 +373,7 @@ async function authorizeManaged(
   if (!d) throw fail();
   await authorizeHosting(
     actor,
-    { projectID: d.project_id, write: true, tenantAdmin: true, live: true },
+    { permission: "org:databases:manage", projectID: d.project_id, write: true, tenantAdmin: true, live: true },
     db,
   );
   if (

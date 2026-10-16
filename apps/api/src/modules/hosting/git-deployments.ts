@@ -1,3 +1,4 @@
+import { gitActionPermission } from "./permissions";
 import {
   openEnvironment,
   sealEnvironment,
@@ -242,7 +243,7 @@ export async function registerGitConnection(
   const run = async (db: Connection) => {
     await authorizeHosting(
       actor,
-      { customerID, write: true, tenantAdmin: true },
+      { permission: "org:projects:manage", customerID, write: true, tenantAdmin: true },
       db,
     );
     await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [
@@ -292,6 +293,11 @@ async function enqueueGitCheck(
   );
 }
 async function cancelObsoleteGitBuilds(db: Connection) {
+  if (process.env.DATABASE_RLS_SECRET) {
+    await db.query("SELECT webdock_rls.cancel_obsolete_git_builds()");
+    return;
+  }
+  // The isolated legacy owner fixture has no installed RLS helpers.
   const cancelled = (
     await db.query(
       `UPDATE webdock_auth.git_build b SET status='cancelled',generation=b.generation+1,lease_until=NULL,finished_at=now(),failure_code='SOURCE_CHANGED' FROM webdock_auth.git_source s JOIN webdock_auth.git_connection c ON c.id=s.connection_id WHERE b.source_id=s.id AND b.status IN ('queued','running') AND (NOT s.enabled OR c.state<>'active' OR s.revision<>b.source_revision OR c.generation<>b.connection_generation) RETURNING b.id`,
@@ -378,7 +384,7 @@ export async function executeGitDeployment(
     const write = !(gitReadActions as readonly string[]).includes(cmd.action);
     const access = await authorizeHosting(
       actor,
-      {
+      { permission: gitActionPermission(cmd.action),
         ...("projectID" in cmd
           ? { projectID: cmd.projectID }
           : { customerID: cmd.customerID }),
@@ -456,6 +462,8 @@ export async function executeGitDeployment(
       return {
         source: sourceView(s),
         customerID: access.customerID,
+        canDeploy: (await authorizeHosting(actor, { projectID: cmd.projectID, permission: "org:deployments:create" }, db)).canWrite &&
+          (access.operator || access.project?.mode === "selfservice"),
         canManage:
           access.canWrite &&
           (access.operator || access.project?.mode === "selfservice"),
@@ -821,7 +829,7 @@ export async function enrollGitWorker(
   },
 ) {
   return transaction(async (db) => {
-    await authorizeHosting(actor, { operator: true, write: true }, db);
+    await authorizeHosting(actor, { permission: "org:projects:manage", operator: true, write: true }, db);
     if (
       !/^[A-Z]{2}$/.test(input.country) ||
       (input.country === "ZZ" && !/\bunverified\b/i.test(input.evidence)) ||
@@ -1097,7 +1105,7 @@ export async function completeGitBuild(
             gitSourceRevision: s.revision,
             scopes: ["hosting:read", "hosting:write"],
           },
-          { projectID: s.project_id, write: true },
+          { permission: "org:deployments:create", projectID: s.project_id, write: true },
           db,
         );
         authorized = true;

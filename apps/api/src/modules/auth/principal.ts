@@ -25,6 +25,7 @@ export function withConsolePrincipal<T>(
           clerkOrganizationID: principal.clerkOrganizationID,
           customerID: principal.customerID,
           role: principal.role,
+          permissions: principal.permissions ?? [],
           verifiedAt: principal.verifiedAt,
           expiresAt: principal.expiresAt,
         },

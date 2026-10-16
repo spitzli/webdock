@@ -57,7 +57,7 @@ export async function executeGitOAuth(
       if (command.action === "git.oauth.begin") {
         await authorizeHosting(
           actor,
-          { customerID: command.customerID, write: true, tenantAdmin: true },
+          { permission: "org:projects:manage", customerID: command.customerID, write: true, tenantAdmin: true },
           db,
         );
         if (command.setupID) {
@@ -71,7 +71,7 @@ export async function executeGitOAuth(
             throw new HostingError(404, "Project setup is unavailable.");
           await authorizeHosting(
             actor,
-            { projectID: setup.project_id, write: true },
+            { permission: "org:projects:manage", projectID: setup.project_id, write: true },
             db,
           );
         }
@@ -113,7 +113,7 @@ export async function executeGitOAuth(
         throw new HostingError(403, "GitHub connection expired. Start again.");
       await authorizeHosting(
         actor,
-        { customerID: flow.customer_id, write: true, tenantAdmin: true },
+        { permission: "org:projects:manage", customerID: flow.customer_id, write: true, tenantAdmin: true },
         db,
       );
       const setup = flow.setup_id
@@ -130,7 +130,7 @@ export async function executeGitOAuth(
       if (setup)
         await authorizeHosting(
           actor,
-          { projectID: setup.project_id, write: true },
+          { permission: "org:projects:manage", projectID: setup.project_id, write: true },
           db,
         );
       if (command.action === "git.oauth.return")

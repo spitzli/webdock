@@ -97,12 +97,13 @@ export async function executeAppCommand(
   actor: HostingActor,
   cmd: HostingCommand,
   connection?: Connection,
+  permission: "org:projects:manage" | "org:deployments:create" = "org:projects:manage",
 ) {
   const run = async (db: Connection) => {
     if (cmd.action === "apps.list") {
       const access = await authorizeHosting(
         actor,
-        { projectID: cmd.projectID },
+        { permission, projectID: cmd.projectID },
         db,
       );
       const matches = cmd.search.trim()
@@ -179,7 +180,7 @@ export async function executeAppCommand(
     ].includes(action);
     let access = await authorizeHosting(
       actor,
-      {
+      { permission,
         projectID,
         write: !read,
         live: action === "apps.logs",
@@ -220,7 +221,7 @@ export async function executeAppCommand(
     await planLock(db, customerID);
     access = await authorizeHosting(
       actor,
-      {
+      { permission,
         projectID,
         write: !read,
         live: action === "apps.logs",

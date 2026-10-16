@@ -1,4 +1,5 @@
-import {linkedMembershipRole} from "../auth/clerk-provider";
+import {organizationCapabilities} from "../auth/organization-permissions";
+import {legacyClerkMemberships, linkedMembershipRole} from "../auth/clerk-provider";
 import {clerkTeamView, manageClerkTeam, linkedOrganization, linkClerkTeam} from "../auth/clerk-teams";
 import {currentConsolePrincipal, consoleMembership} from "../auth/principal";
 import { getBusinessIdentity } from "../auth/business-identity";
@@ -115,7 +116,7 @@ export async function listTenants(headers: Headers) {
   return withAuthenticatedDatabase(headers, async () => {
     const user = await actor(headers);
     const principal=currentConsolePrincipal();
-    if(principal)return (await database.query(`SELECT c.id,c.name,c.status,$3::text AS role FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id WHERE $1 OR (c.id=$2 AND c.status='active') ORDER BY c.name,c.id`,[user.operator,principal.customerID,principal.role])).rows;
+    if(principal)return (await database.query(`SELECT c.id,c.name,c.status,$3::text AS role FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id WHERE $1 OR (c.id=$2 AND c.status='active') ORDER BY c.name,c.id`,[user.operator,principal.customerID,principal.role])).rows.map(row => ({...row, ...(!user.operator ? {capabilities: organizationCapabilities(principal.permissions)} : {})}));
     const rows = await readCachedView(
       { kind: "navigation", scope: {subject: user.id, sessionID: user.sessionID, operator: user.operator}, query: "tenant-membership-v2", ttlSeconds: 60 },
       async () => (await database.query("SELECT webdock_cache.version($1::text[]) AS version", [["webdock_admin.customers", "webdock_auth.user", "webdock_auth.member", "webdock_auth.tenant_customer"]])).rows[0].version,
@@ -125,7 +126,14 @@ export async function listTenants(headers: Headers) {
       )).rows,
     );
     if(user.operator)return rows.map(({id,name,status,role})=>({id,name,status,role}));
-    const current=await Promise.all(rows.map(async row=>{const role=await linkedMembershipRole(user.id,row.organization_id);return role===null?null:{id:row.id,name:row.name,status:row.status,role:role??row.role};}));
+    const membershipProof = await legacyClerkMemberships(user.id);
+    const current = await Promise.all(rows.map(async row => {
+      const role = await linkedMembershipRole(user.id, row.organization_id);
+      const membership = membershipProof?.roles.find(member => member.organizationID === String(row.organization_id));
+      if (role === null) return null;
+      return {id: row.id, name: row.name, status: row.status, role: role ?? row.role,
+        ...(role !== undefined ? {capabilities: organizationCapabilities(membership?.permissions)} : {})};
+    }));
     return current.filter(row=>row!==null);
   });
 }

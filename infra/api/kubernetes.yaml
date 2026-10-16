@@ -30,7 +30,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: api
-          image: docker.io/library/webdock-api@sha256:8841c32b0865c2d3d395a6d600b2a8cbc683ee80e223f09932720fba7c523a30
+          image: docker.io/library/webdock-api@sha256:05459ef2b7e9ed2bd1aa8afe39f8911141e2b19b1d642e5af5369100af0c20fa
           imagePullPolicy: Never
           env:
             - name: VIEW_CACHE_RELEASE

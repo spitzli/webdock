@@ -1,3 +1,5 @@
+import {normalizeOrganizationPermissions, type OrgPermission} from "./organization-permissions";
+import {currentConsolePrincipal} from "./principal";
 import { currentDatabaseScope } from "@webdock/database-runtime";
 import { createClerkClient } from "@clerk/backend";
 import { authDatabase } from "../../db/runtime";
@@ -181,6 +183,18 @@ export async function requireConsoleBrowserPrincipal(request: Request) {
 /** Live membership authority for linked legacy clients; their own session/MFA checks still run. */
 export async function legacyClerkMemberships(subject: string) {
   const scope = currentDatabaseScope();
+  if (scope?.kind === "system" && scope.purpose === "hosting-setup") {
+    // The claimed-job verifier supplies this proof; SQL independently rejects linked jobs without it.
+    const proof = scope.memberships;
+    if (!proof) return undefined;
+    const now = Date.now();
+    if (proof.subject !== subject || proof.issuer !== process.env.CLERK_ISSUER ||
+        !Number.isFinite(proof.verifiedAt) || !Number.isFinite(proof.expiresAt) ||
+        proof.verifiedAt > now || proof.verifiedAt < now - 60000 ||
+        proof.expiresAt <= now || proof.expiresAt > proof.verifiedAt + 60000)
+      throw new ConsoleAuthError(403, "Setup membership proof is unavailable.");
+    return proof;
+  }
   if (
     scope?.kind === "session" &&
     scope.subject === subject &&
@@ -235,12 +249,14 @@ export async function legacyClerkMemberships(subject: string) {
             organizationID: String(row.organization_id),
             customerID: String(row.customer_id),
             role: member.role === "org:admin" ? "admin" : "member",
+            permissions: normalizeOrganizationPermissions(member.permissions),
           },
         ]
       : [];
   });
   const now = Date.now();
   return {
+    subject,
     issuer,
     userID: link.clerk_user_id as string,
     verifiedAt: now,
@@ -252,6 +268,11 @@ export async function linkedMembershipRole(
   subject: string,
   organizationID: string,
 ): Promise<string | null | undefined> {
+  const scope = currentDatabaseScope();
+  if (scope?.kind === "system" && scope.purpose === "hosting-setup") {
+    const proof = await legacyClerkMemberships(subject);
+    return proof ? proof.roles.find(row => row.organizationID === organizationID)?.role ?? null : undefined;
+  }
   const issuer = process.env.CLERK_ISSUER;
   if (!issuer) {
     if ((await authDatabase.query("SELECT to_regclass('webdock_auth.clerk_organization') IS NOT NULL AS present")).rows[0]?.present &&
@@ -275,4 +296,19 @@ export async function linkedMembershipRole(
   return (
     proof?.roles.find((r) => r.organizationID === organizationID)?.role ?? null
   );
+}
+
+/** undefined means an unmigrated legacy organization; callers retain that legacy policy only. */
+export async function organizationPermission(subject: string, organizationID: string, permission: OrgPermission): Promise<boolean | undefined> {
+  const principal = currentConsolePrincipal();
+  if (principal) {
+    if (principal.userID !== subject) throw new ConsoleAuthError(403, "Console identity mismatch.");
+    return principal.operator || (principal.organizationID === organizationID && normalizeOrganizationPermissions(principal.permissions).includes(permission));
+  }
+  const role = await linkedMembershipRole(subject, organizationID);
+  if (role === undefined) return undefined;
+  if (role === null) return false;
+  const proof = await legacyClerkMemberships(subject);
+  const member = proof?.roles.find(row => row.organizationID === organizationID);
+  return normalizeOrganizationPermissions(member?.permissions).includes(permission);
 }

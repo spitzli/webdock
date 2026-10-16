@@ -8,7 +8,7 @@ import {
   billingSubscription as subscriptions,
   billingOrder as orders,
 } from "../../db/schema/billing";
-import { customerTransaction, type BillingActor } from "./context";
+import { customerReadTransaction, customerTransaction, type BillingActor } from "./context";
 import { BillingError, environmentSchema } from "./types";
 import { recordID } from "../registry/contracts";
 import { createCheckout } from "./checkout";
@@ -23,7 +23,8 @@ const serialize = (value: unknown) =>
   );
 export async function tenantBilling(actor: BillingActor, raw: unknown) {
   const input = inputSchema.parse(raw);
-  return customerTransaction(actor, input.customerID, async (tx) => {
+  return customerReadTransaction(actor, input.customerID, async (tx) => {
+    const canManage = (await tx.execute<{allowed: boolean}>(sql`SELECT webdock_rls.billing_admin(${input.customerID}) AS allowed`)).rows[0].allowed;
     const config = (
       await tx.execute<{ value: { salesEnabled: boolean } | null }>(
         sql`SELECT webdock_rls.billing_sale_config(${input.environment},${input.customerID}) AS value`,
@@ -155,7 +156,8 @@ export async function tenantBilling(actor: BillingActor, raw: unknown) {
       environment: input.environment,
       customerID: input.customerID,
       salesEnabled: config?.salesEnabled === true,
-      canOpenPortal: !!customer?.id,
+      canManage,
+      canOpenPortal: canManage && !!customer?.id,
       catalog,
       sites,
       agreements: effectiveAgreements,

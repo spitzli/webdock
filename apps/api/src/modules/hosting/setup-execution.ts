@@ -1,3 +1,4 @@
+import { authorizeSetupConfiguration, gitActionPermission } from "./permissions";
 import {
   HostingError,
   setupSteps,
@@ -25,7 +26,7 @@ export async function executeSetupStep(row: SetupRow): Promise<{
     config = row.configuration,
     resources = { ...row.resources };
   await transaction((db) =>
-    authorizeHosting(actor, { projectID: row.project_id, write: true }, db),
+    authorizeSetupConfiguration(db, actor, row.project_id, config),
   );
   const steps = row.steps.map((s) => ({ ...s }));
   const step = steps.find((s) => !["succeeded", "skipped"].includes(s.state));
@@ -47,7 +48,7 @@ export async function executeSetupStep(row: SetupRow): Promise<{
       const recovered = await transaction(async (db) => {
         await authorizeHosting(
           actor,
-          { projectID: row.project_id, write: true },
+          { permission: command.action.startsWith("databases.") ? "org:databases:manage" : command.action.startsWith("git.") ? gitActionPermission(command.action) : "org:projects:manage", projectID: row.project_id, write: true },
           db,
         );
         const prior = (

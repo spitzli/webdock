@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
 import { withDatabaseScope } from "@webdock/database-runtime";
-import { withConsolePrincipal } from "../src/modules/auth/principal";
+import { currentConsolePrincipal, withConsolePrincipal } from "../src/modules/auth/principal";
 import { createDatabases } from "../src/db/client";
 const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
 (fixtureFile ? test : test.skip)(
@@ -31,6 +31,8 @@ const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       other = id(),
       issuer = "https://fixture.clerk.accounts.dev";
     const storageID="clerk-storage-"+user;
+    const previousStudioOrigin = process.env.WEBDOCK_STUDIO_ORIGIN;
+    process.env.WEBDOCK_STUDIO_ORIGIN = "https://studio.example.invalid";
     try {
       const constraintClient = await owner.connect();
       try {
@@ -154,6 +156,66 @@ const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
           expiresAt: Date.now() + 59000,
         },
       };
+      const permissions = ["org:projects:manage", "org:deployments:create", "org:databases:manage", "org:billing:manage"];
+      const capability = () => pools.business.query("SELECT webdock_rls.customer_permission($1,'org:projects:manage') AS projects, webdock_rls.customer_permission($1,'org:databases:manage') AS databases, webdock_rls.customer_permission($1,'org:deployments:create') AS deployments, webdock_rls.billing_admin($1) AS billing", [customer]);
+      const denied = { projects: false, databases: false, deployments: false, billing: false };
+      expect((await withDatabaseScope(scope, capability)).rows[0]).toEqual(denied);
+      for (const [index, key] of ["projects", "deployments", "databases", "billing"].entries()) {
+        const granted = { ...scope, clerk: { ...scope.clerk, role: "member" as const, permissions: [permissions[index]] } };
+        expect((await withDatabaseScope(granted, capability)).rows[0]).toEqual({ ...denied, [key]: true });
+        expect((await withDatabaseScope({ ...granted, clerk: { ...granted.clerk, permissions: [] } }, capability)).rows[0]).toEqual(denied);
+      }
+      const connectionID = "permission-" + user;
+      const connectionWrite = () => pools.business.query("INSERT INTO webdock_auth.git_connection(id,customer_id,installation_id,account_id,account_login,permissions) VALUES($1::text,$2,$1::text,$1::text,'fixture','{}')", [connectionID, customer]);
+      await expect(withDatabaseScope({ ...scope, clerk: { ...scope.clerk, permissions: ["org:deployments:create"] } }, connectionWrite)).rejects.toMatchObject({ code: "42501" });
+      await withDatabaseScope({ ...scope, clerk: { ...scope.clerk, role: "member", permissions: ["org:projects:manage"] } }, connectionWrite);
+      const connectionUpdate = () => pools.business.query("UPDATE webdock_auth.git_connection SET revision=revision+1 WHERE id=$1 RETURNING id", [connectionID]);
+      await expect(withDatabaseScope({ ...scope, clerk: { ...scope.clerk, permissions: [] } }, connectionUpdate)).rejects.toMatchObject({ code: "42501" });
+      expect((await withDatabaseScope({ ...scope, clerk: { ...scope.clerk, permissions: ["org:projects:manage"] } }, connectionUpdate)).rowCount).toBe(1);
+      const projectID = id(), sourceID = id(), buildID = id();
+      await owner.query("INSERT INTO webdock_admin.projects(id,name,customer_id,status) VALUES($1,'Permission fixture',$2,'active')", [projectID, customer]);
+      await owner.query("INSERT INTO webdock_auth.hosting_project(project_id,customer_id,provider,mode) VALUES($1,$2,'vercel','selfservice')", [projectID, customer]);
+      await owner.query("INSERT INTO webdock_auth.git_repository(connection_id,customer_id,repository_id,metadata) VALUES($1,$2,'fixture','{}')", [connectionID, customer]);
+      await owner.query("INSERT INTO webdock_auth.git_source(id,customer_id,project_id,connection_id,repository_id,branch,root_directory,recipe,target_id) VALUES($1,$2,$3,$4,'fixture','main','','vercel',$3)", [sourceID, customer, projectID, connectionID]);
+      const projects = { ...scope, clerk: { ...scope.clerk, role: "member" as const, permissions: ["org:projects:manage"] } };
+      const deployments = { ...scope, clerk: { ...scope.clerk, role: "member" as const, permissions: ["org:deployments:create"] } };
+      const insertBuild = () => pools.business.query("INSERT INTO webdock_auth.git_build(id,customer_id,project_id,source_id,source_sha,source_revision,connection_generation,environment_revision,subject,idempotency_key) VALUES($1::text,$2,$3,$4,$5,1,1,1,$6,$1::text)", [buildID, customer, projectID, sourceID, "a".repeat(40), user]);
+      await expect(withDatabaseScope(projects, insertBuild)).rejects.toMatchObject({ code: "42501" });
+      await withDatabaseScope(deployments, insertBuild);
+      expect((await withDatabaseScope(deployments, () => pools.business.query("UPDATE webdock_auth.git_source SET latest_build_id=$2 WHERE id=$1 RETURNING id", [sourceID, buildID]))).rowCount).toBe(1);
+      await expect(withDatabaseScope(deployments, () => pools.business.query("UPDATE webdock_auth.git_source SET branch='other' WHERE id=$1", [sourceID]))).rejects.toMatchObject({ code: "42501" });
+      const invalidate = () => pools.business.query("SELECT webdock_rls.cancel_obsolete_git_builds()");
+      await withDatabaseScope(projects, invalidate);
+      expect((await owner.query("SELECT status FROM webdock_auth.git_build WHERE id=$1", [buildID])).rows[0].status).toBe("queued");
+      await withDatabaseScope(projects, () => pools.business.query("UPDATE webdock_auth.git_source SET revision=revision+1 WHERE id=$1", [sourceID]));
+      await withDatabaseScope({ ...scope, clerk: { ...scope.clerk, permissions: ["org:billing:manage"] } }, invalidate);
+      expect((await owner.query("SELECT status FROM webdock_auth.git_build WHERE id=$1", [buildID])).rows[0].status).toBe("queued");
+      await withDatabaseScope(projects, invalidate);
+      expect((await owner.query("SELECT status,failure_code FROM webdock_auth.git_build WHERE id=$1", [buildID])).rows[0]).toEqual({ status: "cancelled", failure_code: "SOURCE_CHANGED" });
+      await owner.query("DELETE FROM webdock_auth.git_check_outbox WHERE build_id=$1", [buildID]);
+      await owner.query("UPDATE webdock_auth.git_source SET latest_build_id=NULL WHERE id=$1", [sourceID]);
+      await owner.query("DELETE FROM webdock_auth.git_build WHERE id=$1", [buildID]);
+      await owner.query("DELETE FROM webdock_auth.git_source WHERE id=$1", [sourceID]);
+      await owner.query("DELETE FROM webdock_auth.git_repository WHERE connection_id=$1", [connectionID]);
+      const planID = id();
+      await owner.query("INSERT INTO webdock_auth.hosting_database_plan(id,plan,availability) VALUES($1,'{}','public')", [planID]);
+      const databases = { ...scope, clerk: { ...scope.clerk, role: "member" as const, permissions: ["org:databases:manage"] } };
+      const createOffer = () => pools.business.query("INSERT INTO webdock_auth.hosting_database_offer(id,customer_id,project_id,plan_revision_id,name,snapshot) VALUES($1,$2,$3,$4,'Permission offer','{}')", [id(), customer, projectID, planID]);
+      await expect(withDatabaseScope(projects, createOffer)).rejects.toMatchObject({ code: "42501" });
+      await withDatabaseScope(databases, createOffer);
+      await expect(withDatabaseScope({ ...databases, clerk: { ...databases.clerk, permissions: [] } }, createOffer)).rejects.toMatchObject({ code: "42501" });
+      await owner.query("DELETE FROM webdock_auth.hosting_database_offer WHERE project_id=$1", [projectID]);
+      await owner.query("DELETE FROM webdock_auth.hosting_database_plan WHERE id=$1", [planID]);
+      const billing = { ...scope, clerk: { ...scope.clerk, role: "member" as const, permissions: ["org:billing:manage"] } };
+      const createBilling = () => pools.business.query("INSERT INTO webdock_auth.billing_customer(environment,customer_id,billing_email) VALUES('live',$1,'fixture@example.invalid')", [customer]);
+      await expect(withDatabaseScope(projects, createBilling)).rejects.toMatchObject({ code: "42501" });
+      await withDatabaseScope(billing, createBilling);
+      const updateBilling = () => pools.business.query("UPDATE webdock_auth.billing_customer SET billing_email='updated@example.invalid' WHERE customer_id=$1 RETURNING customer_id", [customer]);
+      await expect(withDatabaseScope({ ...scope, clerk: { ...scope.clerk, permissions: [] } }, updateBilling)).rejects.toMatchObject({ code: "42501" });
+      expect((await withDatabaseScope(billing, updateBilling)).rowCount).toBe(1);
+      await owner.query("DELETE FROM webdock_auth.hosting_project WHERE project_id=$1", [projectID]);
+      await owner.query("DELETE FROM webdock_admin.projects WHERE id=$1", [projectID]);
+      await owner.query("DELETE FROM webdock_auth.git_connection WHERE id=$1", [connectionID]);
       const allowed = () =>
         pools.business.query(
           "SELECT webdock_rls.customer_allowed($1,true) AS own,webdock_rls.customer_allowed($2) AS other,webdock_rls.operator() AS operator",
@@ -208,6 +270,11 @@ const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         expiresAt: Date.now() + 59000,
         roles: [{ organizationID: org, customerID: customer, role: "admin" }],
       };
+      expect((await withDatabaseScope({ ...legacy, memberships }, capability)).rows[0]).toEqual(denied);
+      expect((await withDatabaseScope({ ...legacy, memberships: { ...memberships, roles: [{ ...memberships.roles[0], role: "member", permissions: ["org:databases:manage"] }] } }, capability)).rows[0]).toEqual({ ...denied, databases: true });
+      const otherOrg = (await owner.query("SELECT organization_id FROM webdock_auth.tenant_customer WHERE customer_id=$1", [other])).rows[0].organization_id;
+      await owner.query(`INSERT INTO webdock_auth.member("userId","organizationId",role,"createdAt") VALUES($1,$2,'admin',now())`, [user, otherOrg]);
+      expect((await withDatabaseScope(legacy, () => pools.business.query("SELECT webdock_rls.customer_permission($1,'org:databases:manage') AS allowed", [other]))).rows[0].allowed).toBe(true);
       expect((await withDatabaseScope(legacy, allowed)).rows[0].own).toBe(
         false,
       );
@@ -267,9 +334,21 @@ const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
           name: "Fixture",
           email: user + "@example.invalid",
         },
-        () => getTenant(new Headers(), customer),
+        async () => {
+          const { tenantBilling } = await import("../src/modules/billing/view");
+          const { customerTransaction } = await import("../src/modules/billing/context");
+          const actor = { subject: user, sessionID: scope.sessionID };
+          const billingView = await tenantBilling(actor, { environment: "live", customerID: customer });
+          expect(billingView.customerID).toBe(customer);
+          expect(billingView.canManage).toBe(false);
+          const memberBilling = await withConsolePrincipal({ ...currentConsolePrincipal()!, role: "member", permissions: ["org:billing:manage"] }, () => tenantBilling(actor, { environment: "live", customerID: customer }));
+          expect(memberBilling.canManage).toBe(true);
+          await expect(customerTransaction(actor, customer, async () => undefined)).rejects.toMatchObject({ status: 403 });
+          return getTenant(new Headers(), customer);
+        },
       );
       expect(view.tenant.id).toBe(customer);
+      await owner.query("DELETE FROM webdock_auth.billing_customer WHERE environment='live' AND customer_id=$1", [customer]);
       await owner.query(
         "UPDATE webdock_auth.clerk_identity SET enabled=false WHERE user_id=$1",
         [user],
@@ -299,6 +378,7 @@ const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         other: false,
         operator: false,
       });
+      expect((await withDatabaseScope({ ...scope, clerk: { ...scope.clerk, permissions } }, capability)).rows[0]).toEqual(denied);
       expect(
         (
           await owner.query(
@@ -308,6 +388,8 @@ const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         ).rows[0].n,
       ).toBe(0);
     } finally {
+      if (previousStudioOrigin === undefined) delete process.env.WEBDOCK_STUDIO_ORIGIN;
+      else process.env.WEBDOCK_STUDIO_ORIGIN = previousStudioOrigin;
       await owner.query("DELETE FROM webdock_auth.tenant_storage WHERE id=$1 AND label='Clerk fixture' AND encrypted_token='fixture-only'",[storageID]);
       await pools.close();
       await owner.end();

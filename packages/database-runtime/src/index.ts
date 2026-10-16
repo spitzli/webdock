@@ -2,12 +2,13 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { createHmac, X509Certificate } from "node:crypto";
 import pg from "pg";
 
-export type ClerkDatabaseIdentity = { issuer: string; userID: string; organizationID: string | null; clerkOrganizationID: string | null; customerID: string | null; role: "admin" | "member" | null; verifiedAt: number; expiresAt: number };
-export type LegacyClerkMemberships={issuer:string;userID:string;verifiedAt:number;expiresAt:number;roles:Array<{organizationID:string;customerID:string;role:string}>};
+export type ClerkDatabaseIdentity = { issuer: string; userID: string; organizationID: string | null; clerkOrganizationID: string | null; customerID: string | null; role: "admin" | "member" | null; permissions?: readonly string[]; verifiedAt: number; expiresAt: number };
+export type LegacyClerkMemberships={subject?:string;issuer:string;userID:string;verifiedAt:number;expiresAt:number;roles:Array<{organizationID:string;customerID:string;role:string;permissions?:readonly string[]}>};
 export type DatabaseScope =
   | { kind: "session"; subject: string; sessionID: string; clerk?: ClerkDatabaseIdentity; memberships?:LegacyClerkMemberships }
   | {
       kind: "system";
+      memberships?: LegacyClerkMemberships;
       clerk?: ClerkDatabaseIdentity & {subject:string;sessionID:string};
       purpose: string;
       clusterID?: string;

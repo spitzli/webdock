@@ -87,7 +87,7 @@ export async function databaseAccess(
   if (!row) throw new HostingError(404, "Database is unavailable.");
   await authorizeHosting(
     actor,
-    { projectID: row.project_id, write, tenantAdmin: true, operator },
+    { permission: "org:databases:manage", projectID: row.project_id, write, tenantAdmin: true, operator },
     db,
   );
   return row;
@@ -111,7 +111,7 @@ export async function executeDatabaseCommand(
     const admission = await transaction(async (db) => {
       const access = await authorizeHosting(
         actor,
-        { projectID: cmd.projectID, write: true, tenantAdmin: true },
+        { permission: "org:databases:manage", projectID: cmd.projectID, write: true, tenantAdmin: true },
         db,
       );
       if (!access.customerID)
@@ -159,7 +159,7 @@ export async function executeDatabaseCommand(
     )
       return migrationMaintenance(db, actor, cmd);
     if (cmd.action === "databases.projects.list") {
-      await authorizeHosting(actor, { customerID: cmd.customerID }, db);
+      await authorizeHosting(actor, { permission: "org:databases:manage", customerID: cmd.customerID }, db);
       return (
         await db.query(
           "SELECT p.id,p.name,(SELECT count(*)::int FROM webdock_auth.hosting_database d WHERE d.customer_id=$1 AND d.project_id=p.id AND d.state<>'purged') AS count FROM webdock_admin.projects p WHERE p.customer_id=$1 AND p.status='active' ORDER BY p.name,p.id LIMIT 200",
@@ -168,15 +168,15 @@ export async function executeDatabaseCommand(
       ).rows;
     }
     if (cmd.action === "databases.orders.list") {
-      await authorizeHosting(actor, { customerID: cmd.customerID }, db);
+      await authorizeHosting(actor, { permission: "org:databases:manage", customerID: cmd.customerID }, db);
       return databaseBilling(db, cmd.customerID);
     }
     if (cmd.action === "databases.permissions") {
-      const a = await authorizeHosting(actor, { projectID: cmd.projectID }, db);
+      const a = await authorizeHosting(actor, { permission: "org:databases:manage", projectID: cmd.projectID }, db);
       return { canWrite: a.canWrite, operator: a.operator };
     }
     if (cmd.action === "databases.list") {
-      await authorizeHosting(actor, { projectID: cmd.projectID }, db);
+      await authorizeHosting(actor, { permission: "org:databases:manage", projectID: cmd.projectID }, db);
       const rows = (
         await db.query(
           "SELECT id FROM webdock_auth.hosting_database WHERE project_id=$1 ORDER BY created_at,id",
@@ -206,7 +206,7 @@ export async function executeDatabaseCommand(
       cmd.action === "databases.plans.create" ||
       cmd.action === "databases.plans.setAvailability"
     ) {
-      await authorizeHosting(actor, { operator: true, write: true }, db);
+      await authorizeHosting(actor, { permission: "org:databases:manage", operator: true, write: true }, db);
       const prior = await replay(db, actor, cmd.idempotencyKey, cmd);
       if (prior.existing) return prior.existing.result;
       let result;
@@ -252,7 +252,7 @@ export async function executeDatabaseCommand(
     if (cmd.action === "databases.offers.create") {
       const access = await authorizeHosting(
         actor,
-        { projectID: cmd.projectID, write: true, tenantAdmin: true },
+        { permission: "org:databases:manage", projectID: cmd.projectID, write: true, tenantAdmin: true },
         db,
       );
       const prior = await replay(db, actor, cmd.idempotencyKey, cmd);
@@ -347,7 +347,7 @@ export async function executeDatabaseCommand(
     if (cmd.action === "databases.create") {
       const access = await authorizeHosting(
         actor,
-        { projectID: cmd.projectID, write: true, tenantAdmin: true },
+        { permission: "org:databases:manage", projectID: cmd.projectID, write: true, tenantAdmin: true },
         db,
       );
       const prior = await replay(db, actor, cmd.idempotencyKey, cmd);
@@ -420,7 +420,7 @@ export async function executeDatabaseCommand(
       throw new HostingError(409, "Backups and recovery are not configured.");
     }
     if (cmd.action === "databases.pools.register") {
-      await authorizeHosting(actor, { operator: true, write: true }, db);
+      await authorizeHosting(actor, { permission: "org:databases:manage", operator: true, write: true }, db);
       const prior = await replay(db, actor, cmd.idempotencyKey, cmd);
       if (prior.existing) return prior.existing.result;
       await clusterLock(db, cmd.clusterID);
@@ -488,7 +488,7 @@ export async function executeDatabaseCommand(
       return result;
     }
     if (cmd.action === "databases.installations.list") {
-      await authorizeHosting(actor, { operator: true }, db);
+      await authorizeHosting(actor, { permission: "org:databases:manage", operator: true }, db);
       return (
         await db.query(
           'SELECT id,cluster_id AS "clusterID",kind,node,pool_id AS "poolID",revision,observed_revision AS "observedRevision",state,cnpg_uid AS "cnpgUID",demand,max_databases AS "maxDatabases",logical_capacity_bytes::text AS "logicalCapacityBytes",host,direct_port AS "directPort",pooled_port AS "pooledPort",observed_at AS "observedAt" FROM webdock_auth.hosting_database_backend WHERE cluster_id=$1 ORDER BY id',
@@ -497,7 +497,7 @@ export async function executeDatabaseCommand(
       ).rows;
     }
     if (cmd.action === "databases.installations.create") {
-      await authorizeHosting(actor, { operator: true, write: true }, db);
+      await authorizeHosting(actor, { permission: "org:databases:manage", operator: true, write: true }, db);
       const prior = await replay(db, actor, cmd.idempotencyKey, cmd);
       if (prior.existing) return prior.existing.result;
       const backend = await createDatabaseBackend(

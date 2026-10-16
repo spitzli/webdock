@@ -40,7 +40,7 @@ export async function byokAccess(
 ) {
   const access = await authorizeHosting(
     actor,
-    { customerID, write, tenantAdmin: true },
+    { permission: "org:projects:manage", customerID, write, tenantAdmin: true },
     db,
   );
   const policy = await byokPolicy(db, customerID);
@@ -91,7 +91,7 @@ export async function executeByok(
   }
   return transaction(async (db) => {
     if (cmd.action === "byok.reconcile") {
-      await authorizeHosting(actor, { operator: true, write: true }, db);
+      await authorizeHosting(actor, { permission: "org:projects:manage", operator: true, write: true }, db);
       const op = (
         await db.query(
           "SELECT * FROM webdock_auth.hosting_operation WHERE id=$1 AND action='byok.workload' FOR UPDATE",
@@ -133,7 +133,7 @@ export async function executeByok(
     ) {
       const access = await authorizeHosting(
         actor,
-        {
+        { permission: "org:projects:manage",
           customerID: cmd.customerID,
           write:
             cmd.action === "byok.policy.set" || cmd.action === "byok.register",

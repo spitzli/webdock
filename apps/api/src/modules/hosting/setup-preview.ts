@@ -1,3 +1,4 @@
+import { authorizeSetupConfiguration } from "./permissions";
 import {
   applicationCapabilities,
   setupBuildCapabilities,
@@ -56,9 +57,10 @@ export async function previewProjectSetup(
       "Choose distinct service variables and remove conflicting manual variables before deploying.",
     );
   await transaction(async (db) => {
+    await authorizeSetupConfiguration(db, actor, input.projectID, config);
     const access = await authorizeHosting(
       actor,
-      { projectID: input.projectID, write: true },
+      { permission: "org:projects:manage", projectID: input.projectID, write: true },
       db,
     );
     if (

@@ -1,3 +1,4 @@
+import {normalizeOrganizationPermissions, type OrgPermission} from "./organization-permissions";
 import { timingSafeEqual } from "node:crypto";
 export class ConsoleAuthError extends Error {
   readonly isPublic = true;
@@ -19,6 +20,7 @@ export type ConsolePrincipal = Readonly<{
   clerkOrganizationID: string | null;
   customerID: string | null;
   role: "admin" | "member" | null;
+  permissions?: readonly OrgPermission[];
   verifiedAt: number;
   expiresAt: number;
   name: string;
@@ -83,7 +85,7 @@ export type ConsoleIdentityDependencies = {
   } | null>;
   memberships: (
     userID: string,
-  ) => Promise<Array<{ organization: { id: string }; role: string }>>;
+  ) => Promise<Array<{ organization: { id: string }; role: string; permissions?: string[] }>>;
 };
 export type ConsoleVerificationConfig = {
   issuer: string;
@@ -178,6 +180,7 @@ export async function resolveConsolePrincipal(
     let organizationID: string | null = null,
       customerID: string | null = null,
       role: "admin" | "member" | null = null;
+    let permissions: OrgPermission[] = [];
     if (claims.orgId) {
       const [organization, memberships] = await Promise.all([
         deps.organization(config.issuer, claims.orgId),
@@ -196,6 +199,7 @@ export async function resolveConsolePrincipal(
       organizationID = organization.id;
       customerID = organization.customerID;
       role = member.role === "org:admin" ? "admin" : "member";
+      permissions = normalizeOrganizationPermissions(member.permissions);
     }
     if (!local && claims.orgId && organizationID && deps.projectIdentity) {
       const email = user.emailAddresses.find(
@@ -231,6 +235,7 @@ export async function resolveConsolePrincipal(
       clerkOrganizationID: claims.orgId || null,
       customerID,
       role,
+      permissions: Object.freeze(permissions),
       verifiedAt: now,
       expiresAt: Math.min(claims.exp * 1000, session.expireAt, now + 60000),
       name: local.name,

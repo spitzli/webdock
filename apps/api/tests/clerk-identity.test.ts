@@ -37,7 +37,7 @@ function fixture() {
     status: "active",
     expireAt: Date.now() + 60000,
   };
-  const member = { organization: { id: "org_one" }, role: "org:admin" };
+  const member = { organization: { id: "org_one" }, role: "org:admin", permissions: ["org:projects:manage"] };
   const deps: ConsoleIdentityDependencies = {
     verify: async () => state,
     session: async () => session,
@@ -180,4 +180,18 @@ test("projects an invited user only after live verified membership", async () =>
   f.deps.memberships = async () => [f.member];
   expect((await f.verify(f.request())).userID).toBe(f.local.id);
   expect(calls).toBe(1);
+});
+
+test("live permissions override stale token grants even when the role does not change", async () => {
+ const f=fixture();Object.assign(f.state,{permissions:["org:databases:manage"]});
+ expect((await f.verify(f.request())).permissions).toEqual(["org:projects:manage"]);
+ f.member.permissions=[];
+ const next=await f.verify(f.request());expect(next.role).toBe("admin");expect(next.permissions).toEqual([]);
+});
+test("only recognized permissions of the active organization enter the proof", async () => {
+ const f=fixture();f.member.permissions=["org:projects:manage","org:projects:manage","org:sys_memberships:manage","org:operator"];
+ f.deps.memberships=async()=>[{organization:{id:"org_other"},role:"org:admin",permissions:["org:databases:manage"]},f.member];
+ expect((await f.verify(f.request())).permissions).toEqual(["org:projects:manage"]);
+ f.member.permissions=undefined as unknown as string[];
+ expect((await f.verify(f.request())).permissions).toEqual([]);
 });

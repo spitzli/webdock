@@ -73,7 +73,7 @@ async function lease(
   };
   await authorizeHosting(
     actor,
-    { projectID: release.project_id, write: true },
+    { permission: "org:deployments:create", projectID: release.project_id, write: true },
     db,
   );
   const source = (
@@ -224,6 +224,7 @@ export async function publishGitContainer(
         idempotencyKey: `git-release-${r.id}`,
       },
       db,
+      "org:deployments:create",
     )) as { id: string };
     await db.query(
       "UPDATE webdock_auth.git_release SET operation_id=$2 WHERE id=$1",

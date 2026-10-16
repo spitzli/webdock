@@ -30,7 +30,7 @@ export async function migrationMaintenance(
     throw new HostingError(400, "Unknown database migration action.");
   await authorizeHosting(
     actor,
-    { operator: true, write: cmd.action === "databases.purgeMigrationSource" },
+    { permission: "org:databases:manage", operator: true, write: cmd.action === "databases.purgeMigrationSource" },
     db,
   );
   const m = (

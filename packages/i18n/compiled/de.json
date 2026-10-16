@@ -2859,6 +2859,9 @@
   "Currency": [
     "Währung"
   ],
+  "Current billing management permission is required.": [
+    "Du benötigst eine gültige Berechtigung zur Verwaltung der Abrechnung."
+  ],
   "Current design": [
     "Aktuelles Design"
   ],
@@ -8945,6 +8948,9 @@
   ],
   "Setup": [
     "Einrichtung"
+  ],
+  "Setup authorization changed. Sign in and resume the setup.": [
+    "Die Setup-Berechtigung hat sich geändert. Melde dich an und setze die Einrichtung fort."
   ],
   "Setup changed. Review the current configuration.": [
     "Die Einrichtung hat sich geändert. Prüfe die aktuelle Konfiguration."

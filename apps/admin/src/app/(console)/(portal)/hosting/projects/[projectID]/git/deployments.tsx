@@ -84,6 +84,7 @@ export default async function GitDeployments({
     source: Source | null;
     customerID: string;
     canManage: boolean;
+    canDeploy: boolean;
     targets: { id: string; name: string }[];
     candidateTargets: { id: string; name: string; mode: "byok" }[];
     canBindPlatform: boolean;
@@ -441,7 +442,7 @@ export default async function GitDeployments({
       <section className="panel">
         <h2>{t("Builds")}</h2>
         {source?.enabled &&
-          data.canManage &&
+          data.canDeploy &&
           source.buildProvider !== "github-actions" && (
             <HostingForm
               command={{
@@ -477,7 +478,7 @@ export default async function GitDeployments({
             {
               label: t("Actions"),
               render: (b) =>
-                data.canManage && ["queued", "running"].includes(b.status) ? (
+                data.canDeploy && ["queued", "running"].includes(b.status) ? (
                   <HostingForm
                     command={{
                       action: "git.builds.cancel",
@@ -527,7 +528,7 @@ export default async function GitDeployments({
             {
               label: t("Actions"),
               render: (r) =>
-                data.canManage &&
+                data.canDeploy &&
                 [
                   "awaiting-approval",
                   "queued",

@@ -367,7 +367,7 @@ export async function acceptDatabaseOrder(
 ) {
   const access = await authorizeHosting(
     actor,
-    { projectID: cmd.projectID, write: true, tenantAdmin: true },
+    { permission: "org:databases:manage", projectID: cmd.projectID, write: true, tenantAdmin: true },
     db,
   );
   const prior = await replay(db, actor, cmd.idempotencyKey, cmd);
