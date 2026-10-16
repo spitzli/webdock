@@ -97,3 +97,23 @@ organizations created/linked, existing roles preserved without adding the operat
 to customer teams. No invitations, passwords or legacy sessions were created.
 The schema has no native mailbox grants to convert. Console activation and promotion
 follow final mapping readback and removal of the temporary import credential.
+
+## Public Console promotion
+
+PR #33 merged as `dcd18806350d9e83eda9db4b65d866ed630bf877`. Final importer
+readback reports all four identities and both teams unchanged; the dedicated import
+role is NOLOGIN with no memberships and its HBA entry removed. API and worker run
+with Clerk Console mode enabled. The public website now contains both waitlist links.
+
+Console production deployment `dpl_J6CqWzxarvwhs7Jiy9faihc1PH2C`
+(`webdock-admin-p4qomkl5r-spitzli.vercel.app`) reached Ready. The NGINX configuration
+was validated before changing only the Console upstream; Auth's immutable upstream
+and both protected-deployment credentials were preserved. The proxy rollout passed.
+
+Live navigation exposed one ingress-specific entry issue: `/api/sso/login` is sent
+to the API directly, bypassing Next.js proxy logic. The targeted follow-up redirects
+only Clerk-mode Console GET/HEAD login entries to the fixed `/login` URL, after the
+foreign-origin check. Legacy mode, callbacks and signed API requests remain intact.
+Regression reproduced the old route, then103 API unit tests and TypeScript passed;
+independent review found no blocker. Direct `/login` already renders the production
+Clerk sign-in and waitlist entry. The follow-up API image is promoted separately.
