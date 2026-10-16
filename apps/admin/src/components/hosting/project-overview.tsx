@@ -1,41 +1,14 @@
 import Link from "next/link";
 import { getRequestI18n } from "@webdock/i18n/next";
-import type {
-  SetupOptions,
-  SetupView,
-  ServiceBindingView,
-} from "@webdock/hosting-contracts";
-import { hostingPageCall } from "@/lib/hosting-client";
+import type { ServiceBindingView } from "@webdock/hosting-contracts";
+import { getProjectOverview } from "@/lib/project-overview";
 import { applicationState } from "@/lib/workspace-navigation";
 import { HostingRefresh } from "./refresh";
 export async function ProjectOverview({ projectID }: { projectID: string }) {
   const path = `/hosting/projects/${projectID}`,
     { t } = await getRequestI18n();
-  const [options, bindings, setups, sources] = await Promise.all([
-    hostingPageCall<SetupOptions>(
-      { action: "setup.options", projectID },
-      path + "/overview",
-    ),
-    hostingPageCall<ServiceBindingView[]>(
-      { action: "services.list", projectID },
-      path + "/overview",
-    ),
-    hostingPageCall<{ docs: SetupView[] }>(
-      { action: "setup.list", projectID, page: 1, limit: 5 },
-      path + "/overview",
-    ),
-    hostingPageCall<{
-      docs: {
-        id: string;
-        targetID: string;
-        repositoryName: string;
-        branch: string;
-        enabled: boolean;
-      }[];
-    }>({ action: "git.sources.list", projectID }, path + "/overview"),
-  ]);
-  const unfinished = setups.docs.filter((s) => s.state !== "ready"),
-    activeBindings = bindings.filter((b) => b.state !== "disconnected");
+  const options = await getProjectOverview(projectID);
+  const { setups: unfinished, bindings: activeBindings, sources } = options;
   const status = (state: ServiceBindingView["state"]) =>
     ({
       pending: t("Pending"),
@@ -80,7 +53,7 @@ export async function ProjectOverview({ projectID }: { projectID: string }) {
             {unfinished.map((s) => (
               <li key={s.id}>
                 <Link href={path + "/setup/" + s.id}>
-                  {s.configuration.name}
+                  {s.name}
                 </Link>
                 <p className="muted">
                   {s.state === "running"
@@ -131,7 +104,7 @@ export async function ProjectOverview({ projectID }: { projectID: string }) {
               </thead>
               <tbody>
                 {options.applications.slice(0, 8).map((app) => {
-                  const source = sources.docs.find(
+                  const source = sources.find(
                     (s) => s.targetID === app.id,
                   );
                   return (
@@ -198,7 +171,7 @@ export async function ProjectOverview({ projectID }: { projectID: string }) {
             ))}
           </ul>
         )}
-        {options.databases.length > 0 && (
+        {options.databaseCount > 0 && (
           <p>
             <Link href={path + "/databases"}>{t("Manage databases")}</Link>
           </p>

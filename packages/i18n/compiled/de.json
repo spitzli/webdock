@@ -9696,6 +9696,9 @@
   "The integration is provided to authorised Webdock operators to view hosting information for projects they manage. You receive a non-exclusive, non-transferable right to use the integration for that purpose while access is enabled. Only connect a Vercel team and projects you are authorised to manage. Keep your account and authentication devices secure and report suspected misuse promptly.": [
     "Die Integration steht berechtigten Webdock-Betreibern zur Verfügung, um Hostinginformationen für die von ihnen verwalteten Projekte anzusehen. Solange der Zugang freigeschaltet ist, erhältst du ein nicht ausschließliches, nicht übertragbares Recht, die Integration zu diesem Zweck zu nutzen. Verbinde ausschließlich Vercel-Teams und Projekte, zu deren Verwaltung du berechtigt bist. Schütze dein Konto und deine Authentifizierungsgeräte und melde vermuteten Missbrauch umgehend."
   ],
+  "The invitation email could not be sent. The invitation is saved; please resend it after the mail service is available again.": [
+    "Die Einladungsmail konnte nicht versendet werden. Die Einladung ist gespeichert; sende sie erneut, sobald der Maildienst wieder verfügbar ist."
+  ],
   "The isolated schema used by this deployed CMS.": [
     "Das isolierte Schema, das dieses bereitgestellte CMS verwendet."
   ],

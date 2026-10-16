@@ -8,8 +8,14 @@ import { createGateway } from "../src/server";
 import type { ManagedRuntimeManager } from "../src/managed-runtimes";
 
 async function fixture(options: { enabled?: boolean; ttl?: number; incompatible?: boolean } = {}) {
-  let revision = "revision-1", revoked = false, starts = 0, stops = 0;
-  const upstream = createServer((req, res) => {
+  let revision = "revision-1", revoked = false, starts = 0, stops = 0, inspections = 0;
+  let inspectionGate: Promise<void> | undefined;
+  let inspectionStarted: (() => void) | undefined;
+  let rpcGate: { started: () => void; promise: Promise<void> } | undefined;
+  let logoutGate: { started: () => void; promise: Promise<void> } | undefined;
+  const upstream = createServer(async (req, res) => {
+    if (req.url?.startsWith("/api/v1/rpc/") && rpcGate) { rpcGate.started(); await rpcGate.promise; }
+    if (req.url === "/api/v1/logout" && logoutGate) { logoutGate.started(); await logoutGate.promise; }
     res.setHeader("Content-Type", "application/json");
     if (req.url === "/api/v1/session") {
       assert.equal(req.headers.origin, "https://127.0.0.1:12345");
@@ -38,6 +44,7 @@ async function fixture(options: { enabled?: boolean; ttl?: number; incompatible?
   const gateway = createGateway({ publicOrigin: "http://localhost:3137", allowedOrigins: ["http://localhost:3120"], runtimeOrigins: [],
     ...(options.enabled === false ? {} : { managedRuntimes: manager }),
     control: async body => {
+      if (body.action === "inspect") { inspections++; inspectionStarted?.(); await inspectionGate; }
       if (revoked) throw Error("private-password");
       if (body.action === "exchange") return { token: "t".repeat(43), scopeID: "123", expiresAt };
       return access();
@@ -46,12 +53,34 @@ async function fixture(options: { enabled?: boolean; ttl?: number; incompatible?
   gateway.listen(0, "127.0.0.1"); await once(gateway, "listening");
   const address = gateway.address(); assert.ok(address && typeof address !== "string");
   let cookie = "";
-  const call = (path: string, method = "GET", body?: unknown) => fetch(`http://127.0.0.1:${address.port}` + path, { method,
-    headers: { Origin: "http://localhost:3120", Cookie: cookie, "Content-Type": "application/json", "X-Tabularis-Csrf": "csrf" },
+  const call = (path: string, method = "GET", body?: unknown, sessionCookie = cookie) => fetch(`http://127.0.0.1:${address.port}` + path, { method,
+    headers: { Origin: "http://localhost:3120", Cookie: sessionCookie, "Content-Type": "application/json", "X-Tabularis-Csrf": "csrf" },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
   return {
-    call, starts: () => starts, stops: () => stops, rotate: () => { revision = "revision-2"; }, revoke: () => { revoked = true; },
+    call, inspections: () => inspections,
+    holdInspections() {
+      const gate = Promise.withResolvers<void>(), started = Promise.withResolvers<void>();
+      inspectionGate = gate.promise; inspectionStarted = started.resolve;
+      return Object.assign(() => { inspectionGate = undefined; inspectionStarted = undefined; gate.resolve(); }, { started: started.promise });
+    },
+    holdRPCs(count: number) {
+      const gate = Promise.withResolvers<void>(), started = Promise.withResolvers<void>();
+      rpcGate = { started: () => { if (--count === 0) started.resolve(); }, promise: gate.promise };
+      return { started: started.promise, release: () => { rpcGate = undefined; gate.resolve(); } };
+    },
+    holdLogout() {
+      const gate = Promise.withResolvers<void>(), started = Promise.withResolvers<void>();
+      logoutGate = { started: started.resolve, promise: gate.promise };
+      return { started: started.promise, release: () => { logoutGate = undefined; gate.resolve(); } };
+    },
+    receivedRequests(count: number) {
+      return new Promise<void>(resolve => {
+        const receive = () => { if (--count === 0) { gateway.off("request", receive); resolve(); } };
+        gateway.on("request", receive);
+      });
+    },
+    starts: () => starts, stops: () => stops, rotate: () => { revision = "revision-2"; }, revoke: () => { revoked = true; },
     async launch() { const response = await call("/session", "POST", { code: "x".repeat(43) }); cookie = response.headers.get("set-cookie")?.split(";")[0] ?? ""; return response; },
     async openEvents() { const client = new WebSocket(`ws://127.0.0.1:${address.port}/s/123/api/v1/events`, { headers: { Origin: "http://localhost:3120", Cookie: cookie } }); await once(client, "message"); return client; },
     async close() { await gateway.shutdown(); for (const client of events.clients) client.terminate(); events.close(); upstream.closeAllConnections(); await new Promise<void>(resolve => upstream.close(() => resolve())); },
@@ -104,4 +133,106 @@ test("managed runtime is opt-in and incompatible negotiation releases its proces
     assert.equal((await incompatible.launch()).status, 200);
     assert.equal((await incompatible.call("/s/123/api/v1/session")).status, 502); assert.equal(incompatible.stops(), 1);
   } finally { await incompatible.close(); }
+});
+
+
+test("concurrent startup RPCs share only the in-flight inspection and recheck later requests", { timeout: 5000 }, async () => {
+  const f = await fixture();
+  let release = () => {};
+  try {
+    assert.equal((await f.launch()).status, 200);
+    assert.equal((await f.call("/s/123/api/v1/session")).status, 200);
+    const before = f.inspections();
+    release = f.holdInspections();
+    const received = f.receivedRequests(13);
+    const burst = Promise.all(Array.from({ length: 13 }, () => f.call("/s/123/api/v1/rpc/get_connections", "POST", null)));
+    await received;
+    const concurrentInspections = f.inspections() - before;
+    release();
+    assert.ok((await burst).every(response => response.status === 200));
+    assert.equal(concurrentInspections, 1, "A blocked control request must serve the entire startup burst");
+    const after = f.inspections();
+    assert.equal((await f.call("/s/123/api/v1/session")).status, 200);
+    assert.equal(f.inspections(), after + 1, "Settled inspection results must never be cached");
+    f.revoke();
+    assert.equal((await f.call("/s/123/api/v1/session")).status, 401);
+    assert.equal(f.stops(), 1);
+  } finally { release(); await f.close(); }
+});
+
+test("inspection sharing never crosses independent sessions for the same scope", { timeout: 5000 }, async () => {
+  const f = await fixture();
+  let release = () => {};
+  try {
+    const first = await f.launch(); assert.equal(first.status, 200);
+    const firstCookie = first.headers.get("set-cookie")!.split(";")[0];
+    assert.equal((await f.launch()).status, 200);
+    const before = f.inspections();
+    release = f.holdInspections();
+    const received = f.receivedRequests(4);
+    const requests = Promise.all([
+      f.call("/s/123/api/v1/session", "GET", undefined, firstCookie),
+      f.call("/s/123/api/v1/session", "GET", undefined, firstCookie),
+      f.call("/s/123/api/v1/session"), f.call("/s/123/api/v1/session"),
+    ]);
+    await received;
+    const concurrentInspections = f.inspections() - before;
+    release();
+    assert.ok((await requests).every(response => response.status === 200));
+    assert.equal(concurrentInspections, 2, "Each session requires its own control inspection");
+    assert.equal(f.starts(), 2);
+  } finally { release(); await f.close(); }
+});
+
+for (const failure of ["revocation", "identity change", "expiry"] as const) {
+  test(`concurrent inspections fail closed on ${failure} while authorization is pending`, { timeout: 5000 }, async () => {
+    const f = await fixture({ ttl: failure === "expiry" ? 200 : undefined });
+    let release = () => {};
+    try {
+      assert.equal((await f.launch()).status, 200);
+      release = f.holdInspections();
+      const received = f.receivedRequests(3);
+      const requests = Promise.all(Array.from({ length: 3 }, () => f.call("/s/123/api/v1/session")));
+      await received;
+      if (failure === "revocation") f.revoke();
+      if (failure === "identity change") f.rotate();
+      if (failure === "expiry") {
+        for (let attempt = 0; attempt < 100 && f.stops() === 0; attempt++) await new Promise(resolve => setTimeout(resolve, 5));
+        assert.equal(f.stops(), 1, "Expiry must retire the session without waiting for control");
+      }
+      release();
+      assert.deepEqual((await requests).map(response => response.status), [401, 401, 401]);
+      assert.equal(f.starts(), 1, "Failed inspection must not start or retarget a runtime");
+      assert.equal(f.stops(), 1, "Concurrent failure must release the runtime only once");
+      const after = f.inspections();
+      assert.equal((await f.call("/s/123/api/v1/session")).status, 401);
+      assert.equal(f.inspections(), after, "A failed session cannot be revived");
+    } finally { release(); await f.close(); }
+  });
+}
+
+
+test("logout retires a session even when another inspection is still pending", { timeout: 5000 }, async () => {
+  const f = await fixture();
+  let release = () => {}, releaseLogout = () => {}, releaseRPCs = () => {};
+  try {
+    assert.equal((await f.launch()).status, 200);
+    assert.equal((await f.call("/s/123/api/v1/session")).status, 200);
+    const heldRPCs = f.holdRPCs(2); releaseRPCs = heldRPCs.release;
+    const pending = Promise.all(Array.from({ length: 2 }, () => f.call("/s/123/api/v1/rpc/get_connections", "POST", null)));
+    await heldRPCs.started;
+    const heldLogout = f.holdLogout(); releaseLogout = heldLogout.release;
+    const logout = f.call("/s/123/api/v1/logout", "POST");
+    await heldLogout.started;
+    const inspection = f.holdInspections(); release = inspection;
+    releaseRPCs();
+    await inspection.started;
+    releaseLogout();
+    assert.equal((await logout).status, 200);
+    assert.equal(f.stops(), 1, "Logout must release the runtime before pending inspection finishes");
+    release();
+    assert.deepEqual((await pending).map(response => response.status), [401, 401]);
+    assert.equal(f.starts(), 1);
+    assert.equal(f.stops(), 1);
+  } finally { release(); releaseLogout(); releaseRPCs(); await f.close(); }
 });

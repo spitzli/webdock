@@ -23,6 +23,14 @@ export async function migrateClerkMailGrants(input: {
   subjects?: readonly string[];
 }): Promise<GrantReport[]> {
   const { db, issuer, users, teams, provider, dryRun } = input;
+  if (
+    !(
+      await db.query(
+        "SELECT to_regclass('webdock_mail.mailbox_grant') IS NOT NULL AS present",
+      )
+    ).rows[0]?.present
+  )
+    return [];
   const rows = (
     await db.query(
       `SELECT g.*,t.organization_id,u.role,u.banned,c.status,

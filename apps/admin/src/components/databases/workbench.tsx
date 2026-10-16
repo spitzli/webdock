@@ -1,14 +1,12 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { HttpTransport, TabularisClient } from "@tabularis/web-ui";
+import { HttpTransport, TabularisClient, TabularisWorkspace as Workspace, preloadTabularisWorkspace } from "@tabularis/web-ui";
 import "@tabularis/web-ui/workspace.css";
 import { useI18n } from "@webdock/i18n/react";
-import { launchDatabase, launchManagedDatabase } from "@/lib/database-actions";
+import { launchDatabaseWorkspace } from "@/lib/database-launch";
 import { rememberDatabaseSchemas } from "@/lib/database-schema-preferences";
 
-const Workspace = dynamic(() => import("@tabularis/web-ui").then(module => module.TabularisWorkspace), { ssr: false });
 const theme = () => document.documentElement.dataset.theme === "light" ? "light" : document.documentElement.dataset.theme === "dark" ? "dark" : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 const subscribeTheme = (notify: () => void) => {
   const observer = new MutationObserver(notify); observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
@@ -23,8 +21,10 @@ export function DatabaseWorkbench({ bindingID, userID, managed = false }: { bind
   const [error, setError] = useState("");
   useEffect(() => {
     let active = true; let close: (() => void) | undefined;
+    // Rendering retries a failed speculative chunk download through the normal lazy loader.
+    void preloadTabularisWorkspace().catch(() => {});
     void (async () => {
-      const result = await (managed ? launchManagedDatabase(bindingID) : launchDatabase(bindingID));
+      const result = await launchDatabaseWorkspace(bindingID, managed);
       if (!active) return;
       if (!result.launch) throw Error(result.error || "Database access is unavailable.");
       const response = await fetch(result.launch.gatewayOrigin+"/session", { method: "POST", credentials: "include", redirect: "error",

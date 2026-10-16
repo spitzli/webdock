@@ -2,6 +2,8 @@ import {linkedMembershipRole} from "../auth/clerk-provider";
 import {clerkTeamView, manageClerkTeam, linkedOrganization, linkClerkTeam} from "../auth/clerk-teams";
 import {currentConsolePrincipal, consoleMembership} from "../auth/principal";
 import { getBusinessIdentity } from "../auth/business-identity";
+import { readCachedView } from "../../cache";
+import { AuthMailDeliveryError, withAuthMailDelivery } from "../auth/mail";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { randomBytes } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
@@ -74,12 +76,17 @@ async function actor(headers: Headers) {
         [session.user.id],
       )
     ).rows[0];
-  if (!user || user.banned || (!currentConsolePrincipal() && (!user.emailVerified || user.mustChangePassword)))
+  if (!session || !user || user.banned || (!currentConsolePrincipal() && (!user.emailVerified || user.mustChangePassword)))
     throw new AccessError("Sign in and complete account setup first.");
   const operator = !(await businessOperator(user.id)).disabled;
   if (user.role !== "user" && !operator)
     throw new AccessError("Complete operator security setup first.");
-  return { id: user.id as string, email: user.email as string, operator };
+  return {
+    id: user.id as string,
+    sessionID: session.sessionID,
+    email: user.email as string,
+    operator,
+  };
 }
 async function tenantFor(
   user: Awaited<ReturnType<typeof actor>>,
@@ -109,13 +116,15 @@ export async function listTenants(headers: Headers) {
     const user = await actor(headers);
     const principal=currentConsolePrincipal();
     if(principal)return (await database.query(`SELECT c.id,c.name,c.status,$3::text AS role FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id WHERE $1 OR (c.id=$2 AND c.status='active') ORDER BY c.name,c.id`,[user.operator,principal.customerID,principal.role])).rows;
-    const rows = (
-      await database.query(
+    const rows = await readCachedView(
+      { kind: "navigation", scope: {subject: user.id, sessionID: user.sessionID, operator: user.operator}, query: "tenant-membership-v2", ttlSeconds: 60 },
+      async () => (await database.query("SELECT webdock_cache.version($1::text[]) AS version", [["webdock_admin.customers", "webdock_auth.user", "webdock_auth.member", "webdock_auth.tenant_customer"]])).rows[0].version,
+      async () => (await database.query(
         `SELECT c.id,c.name,c.status,m.role,t.organization_id FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id LEFT JOIN webdock_auth.member m ON m."organizationId"=t.organization_id AND m."userId"=$1 WHERE $2 OR (c.status='active' AND m.id IS NOT NULL) ORDER BY c.name,c.id`,
         [user.id, user.operator],
-      )
-    ).rows;
-    if(user.operator)return rows;
+      )).rows,
+    );
+    if(user.operator)return rows.map(({id,name,status,role})=>({id,name,status,role}));
     const current=await Promise.all(rows.map(async row=>{const role=await linkedMembershipRole(user.id,row.organization_id);return role===null?null:{id:row.id,name:row.name,status:row.status,role:role??row.role};}));
     return current.filter(row=>row!==null);
   });
@@ -445,16 +454,18 @@ export async function manageTenant(
         connection.release();
       }
       if (["invite", "resend"].includes(input.action))
-        await tenantInvitationScope.run(tenant.organization_id, () =>
-          auth.api.createInvitation({
-            headers,
-            body: {
-              email,
-              role: invitationRole as "admin" | "member",
-              organizationId: tenant.organization_id,
-              resend: input.action === "resend",
-            },
-          }),
+        await withAuthMailDelivery(() =>
+          tenantInvitationScope.run(tenant.organization_id, () =>
+            auth.api.createInvitation({
+              headers,
+              body: {
+                email,
+                role: invitationRole as "admin" | "member",
+                organizationId: tenant.organization_id,
+                resend: input.action === "resend",
+              },
+            }),
+          ),
         );
       await database.query(
         "UPDATE webdock_auth.access_event SET outcome='succeeded' WHERE id=$1",
@@ -470,6 +481,8 @@ export async function manageTenant(
         "UPDATE webdock_auth.access_event SET outcome='failed' WHERE id=$1",
         [event],
       );
+      if (error instanceof AuthMailDeliveryError)
+        throw new AccessError(error.message);
       throw error;
     }
   });

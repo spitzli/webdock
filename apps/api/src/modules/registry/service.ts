@@ -1,3 +1,4 @@
+import { readCachedView } from "../../cache";
 import { databaseURL } from "../../db/client";
 import { whereQuery } from "./query";
 import {
@@ -26,6 +27,17 @@ import {
   listInput,
   collectionName,
 } from "./contracts";
+const querySources = {
+  customers: ["webdock_admin.customers"],
+  projects: ["webdock_admin.projects", "webdock_admin.customers"],
+  "cms-instances": [
+    "webdock_admin.cms_instances",
+    "webdock_admin.projects",
+    "webdock_admin.customers",
+  ],
+  "audit-events": ["webdock_admin.audit_events", "webdock_admin.users"],
+  users: ["webdock_admin.users"],
+};
 export type RegistryIdentity = { subject: string; sessionID: string };
 export class RegistryError extends Error {
   readonly isPublic = true;
@@ -543,92 +555,27 @@ export async function createRegistry() {
       depth > 2
     )
       throw new RegistryError("Invalid pagination.");
-    return execute(actor, async (tx) => {
-      const table = tables[collection];
-      const columns = { ...getTableColumns(table) };
-      if (collection === "users")
-        for (const key of Object.keys(columns))
-          if (
-            ![
-              "id",
-              "name",
-              "email",
-              "role",
-              "authSubject",
-              "createdAt",
-              "updatedAt",
-            ].includes(key)
-          )
-            delete columns[key as keyof typeof columns];
-      const filter = and(
-        whereQuery(raw.where, columns),
-        mode === "findByID" ? eq(table.id, recordID.parse(raw.id)) : undefined,
-      );
-      if (mode === "count")
-        return {
-          totalDocs: (
-            await tx.select({ n: count() }).from(table).where(filter)
-          )[0].n,
-        };
-      const sorts = Array.isArray(raw.sort)
-        ? raw.sort
-        : [raw.sort || "-updatedAt"];
-      if (sorts.length > 3) throw new RegistryError("Invalid sort.");
-      const order = sorts.map((sort) => {
-        if (typeof sort !== "string") throw new RegistryError("Invalid sort.");
-        const field = sort.replace(/^-/, "");
-        const column = Object.hasOwn(columns, field)
-          ? columns[field as keyof typeof columns]
-          : undefined;
-        if (!column) throw new RegistryError("Invalid sort.");
-        return sort.startsWith("-") ? desc(column) : asc(column);
-      });
-      const allColumns = { ...columns };
-      if (raw.select !== undefined) {
-        if (
-          !raw.select ||
-          typeof raw.select !== "object" ||
-          Array.isArray(raw.select)
-        )
-          throw new RegistryError("Invalid selection.");
-        for (const [field, selected] of Object.entries(raw.select))
-          if (!Object.hasOwn(columns, field) || typeof selected !== "boolean")
-            throw new RegistryError("Invalid selection.");
-        const selection = raw.select as Record<string, boolean>,
-          include = Object.values(selection).some(Boolean);
-        for (const field of Object.keys(allColumns))
-          if (
-            field !== "id" &&
-            (include ? selection[field] !== true : selection[field] === false)
-          )
-            delete allColumns[field as keyof typeof allColumns];
-      }
-      const docs = await tx
-        .select(allColumns)
-        .from(table)
-        .where(filter)
-        .orderBy(...order, asc(table.id))
-        .limit(mode === "findByID" ? 1 : limit)
-        .offset(mode === "findByID" ? 0 : (page - 1) * limit);
-      async function populate(
-        row: Record<string, unknown>,
-        kind: Collection,
-        level: number,
-      ): Promise<Record<string, unknown>> {
-        if (!level) return row;
-        const relation =
-          kind === "projects"
-            ? ["customer", "customers"]
-            : kind === "cms-instances"
-              ? ["project", "projects"]
-              : kind === "audit-events"
-                ? ["actor", "users"]
-                : null;
-        if (relation && typeof row[relation[0]] === "string") {
-          const parentTable = tables[relation[1] as Collection];
-          const safe = { ...getTableColumns(parentTable) };
-          if (relation[1] === "users")
-            for (const key of Object.keys(safe))
+    return execute(actor, async (tx) =>
+      readCachedView(
+        {
+          kind: "registry",
+          scope: actor,
+          query: JSON.parse(
+            JSON.stringify({ ...raw, mode, page, limit, depth }),
+          ),
+          ttlSeconds: 60,
+        },
+        async () =>
+          (
+            await tx.execute<{ version: string }>(
+              sql`SELECT webdock_cache.version(${sql.param(querySources[collection])}::text[]) AS version`,
+            )
+          ).rows[0].version,
+        async () => {
+          const table = tables[collection];
+          const columns = { ...getTableColumns(table) };
+          if (collection === "users")
+            for (const key of Object.keys(columns))
               if (
                 ![
                   "id",
@@ -640,47 +587,138 @@ export async function createRegistry() {
                   "updatedAt",
                 ].includes(key)
               )
-                delete safe[key as keyof typeof safe];
-          const parent = (
-            await tx
-              .select(safe)
-              .from(parentTable)
-              .where(eq(parentTable.id, String(row[relation[0]])))
-          )[0];
-          if (parent)
-            row[relation[0]] = await populate(
-              parent,
-              relation[1] as Collection,
-              level - 1,
-            );
-        }
-        return row;
-      }
-      const result = [];
-      for (const doc of docs)
-        result.push(await populate(doc, collection, depth));
-      const serial = JSON.parse(JSON.stringify(result));
-      if (mode === "findByID") {
-        if (!serial[0] && !raw.disableErrors)
-          throw new RegistryError("Record unavailable.", 404);
-        return serial[0] || null;
-      }
-      const totalDocs = (
-          await tx.select({ n: count() }).from(table).where(filter)
-        )[0].n,
-        totalPages = Math.max(1, Math.ceil(totalDocs / limit));
-      return {
-        docs: serial,
-        totalDocs,
-        totalPages,
-        page,
-        limit,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
-        nextPage: page < totalPages ? page + 1 : null,
-        prevPage: page > 1 ? page - 1 : null,
-      };
-    });
+                delete columns[key as keyof typeof columns];
+          const filter = and(
+            whereQuery(raw.where, columns),
+            mode === "findByID"
+              ? eq(table.id, recordID.parse(raw.id))
+              : undefined,
+          );
+          if (mode === "count")
+            return {
+              totalDocs: (
+                await tx.select({ n: count() }).from(table).where(filter)
+              )[0].n,
+            };
+          const sorts = Array.isArray(raw.sort)
+            ? raw.sort
+            : [raw.sort || "-updatedAt"];
+          if (sorts.length > 3) throw new RegistryError("Invalid sort.");
+          const order = sorts.map((sort) => {
+            if (typeof sort !== "string")
+              throw new RegistryError("Invalid sort.");
+            const field = sort.replace(/^-/, "");
+            const column = Object.hasOwn(columns, field)
+              ? columns[field as keyof typeof columns]
+              : undefined;
+            if (!column) throw new RegistryError("Invalid sort.");
+            return sort.startsWith("-") ? desc(column) : asc(column);
+          });
+          const allColumns = { ...columns };
+          if (raw.select !== undefined) {
+            if (
+              !raw.select ||
+              typeof raw.select !== "object" ||
+              Array.isArray(raw.select)
+            )
+              throw new RegistryError("Invalid selection.");
+            for (const [field, selected] of Object.entries(raw.select))
+              if (
+                !Object.hasOwn(columns, field) ||
+                typeof selected !== "boolean"
+              )
+                throw new RegistryError("Invalid selection.");
+            const selection = raw.select as Record<string, boolean>,
+              include = Object.values(selection).some(Boolean);
+            for (const field of Object.keys(allColumns))
+              if (
+                field !== "id" &&
+                (include
+                  ? selection[field] !== true
+                  : selection[field] === false)
+              )
+                delete allColumns[field as keyof typeof allColumns];
+          }
+          const docs = await tx
+            .select(allColumns)
+            .from(table)
+            .where(filter)
+            .orderBy(...order, asc(table.id))
+            .limit(mode === "findByID" ? 1 : limit)
+            .offset(mode === "findByID" ? 0 : (page - 1) * limit);
+          async function populate(
+            row: Record<string, unknown>,
+            kind: Collection,
+            level: number,
+          ): Promise<Record<string, unknown>> {
+            if (!level) return row;
+            const relation =
+              kind === "projects"
+                ? ["customer", "customers"]
+                : kind === "cms-instances"
+                  ? ["project", "projects"]
+                  : kind === "audit-events"
+                    ? ["actor", "users"]
+                    : null;
+            if (relation && typeof row[relation[0]] === "string") {
+              const parentTable = tables[relation[1] as Collection];
+              const safe = { ...getTableColumns(parentTable) };
+              if (relation[1] === "users")
+                for (const key of Object.keys(safe))
+                  if (
+                    ![
+                      "id",
+                      "name",
+                      "email",
+                      "role",
+                      "authSubject",
+                      "createdAt",
+                      "updatedAt",
+                    ].includes(key)
+                  )
+                    delete safe[key as keyof typeof safe];
+              const parent = (
+                await tx
+                  .select(safe)
+                  .from(parentTable)
+                  .where(eq(parentTable.id, String(row[relation[0]])))
+              )[0];
+              if (parent)
+                row[relation[0]] = await populate(
+                  parent,
+                  relation[1] as Collection,
+                  level - 1,
+                );
+            }
+            return row;
+          }
+          const result = [];
+          for (const doc of docs)
+            result.push(await populate(doc, collection, depth));
+          const serial = JSON.parse(JSON.stringify(result));
+          if (mode === "findByID") {
+            if (!serial[0] && !raw.disableErrors)
+              throw new RegistryError("Record unavailable.", 404);
+            return serial[0] || null;
+          }
+          const totalDocs = (
+              await tx.select({ n: count() }).from(table).where(filter)
+            )[0].n,
+            totalPages = Math.max(1, Math.ceil(totalDocs / limit));
+          return {
+            docs: serial,
+            totalDocs,
+            totalPages,
+            page,
+            limit,
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1,
+            nextPage: page < totalPages ? page + 1 : null,
+            prevPage: page > 1 ? page - 1 : null,
+          };
+        },
+      ),
+    );
   }
   async function patchRepository(
     actor: RegistryIdentity,

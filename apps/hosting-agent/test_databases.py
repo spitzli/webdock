@@ -63,8 +63,11 @@ class PlatformDatabaseTests(TestCase):
         p=packet();p['backend']['kind']='dedicated';p['database']['kind']='dedicated'
         config={'image':'postgres@sha256:'+'a'*64,'poolerImage':'pgbouncer@sha256:'+'b'*64,'issuer':'issuer','apiCIDRs':['10.0.0.2/32'],'podCIDRs':['10.42.0.0/16'],'platformDatabases':{'300':['webdock_auth_runtime']}}
         pooler=next(o for o in backend_manifests(p,config) if o['kind']=='Pooler')
-        self.assertEqual(pooler['spec']['pgbouncer']['parameters']['default_pool_size'],'1')
-        self.assertEqual(pooler['spec']['pgbouncer']['parameters']['max_db_connections'],'10')
+        parameters=pooler['spec']['pgbouncer']['parameters']
+        # Auth, business, worker, registry and browser can each serve concurrent reads.
+        self.assertGreaterEqual(int(parameters['default_pool_size']),2)
+        self.assertLessEqual(5*int(parameters['default_pool_size']),int(parameters['max_db_connections']))
+        self.assertEqual(parameters['max_db_connections'],'10')
     def test_explicit_platform_logins_are_bound_to_one_dedicated_database(self):
         p=packet();p['backend']['kind']='dedicated';p['database']['kind']='dedicated'
         config={'platformDatabases':{'300':['webdock_auth_runtime','webdock_browser_website']}}

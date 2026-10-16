@@ -52,7 +52,7 @@ test("operator must not be silently added to a team", () => {
 import { migrateClerkUsers } from "../scripts/migrate-clerk-users";
 import type { ClerkClient } from "@clerk/backend";
 import type { PoolClient } from "pg";
-function migrationFixture(unsupportedMailGrant = false) {
+function migrationFixture(unsupportedMailGrant = false, nativeMailSchema = true) {
   const locals = accounts.map((a, i) => ({
     id: a.localID,
     name: "Fixture " + i,
@@ -74,6 +74,8 @@ function migrationFixture(unsupportedMailGrant = false) {
     writes = 0;
   const db = {
     query: async (sql: string, args: any[]) => {
+      if (sql.includes("to_regclass('webdock_mail.mailbox_grant')")) return {rows:[{present:nativeMailSchema}]};
+      if (!nativeMailSchema && sql.includes("FROM webdock_mail.mailbox_grant")) throw Error("native mailbox schema absent");
       if (sql.startsWith("SELECT g.mailbox_id FROM webdock_mail.mailbox_grant")) return {rows: unsupportedMailGrant ? [{mailbox_id: "outside-reviewed-team"}] : []};
       if (sql.startsWith("SELECT g.*,t.organization_id,u.role,u.banned,c.status,")) return {rows: []};
       if (sql.includes("SELECT id,name,email,role")) return { rows: locals };
@@ -93,7 +95,7 @@ function migrationFixture(unsupportedMailGrant = false) {
         return {
           rows: manifest.teams
             .find((t) => t.organizationID === args[0])!
-            .members.map((m) => ({ id: m.localID, role: m.role })),
+            .members.map((m) => ({ id: m.localID, role: m.role })).concat({id: "1001", role: "owner"}).filter(m => args[1].includes(m.id)),
         };
       if (sql.includes("SELECT clerk_user_id"))
         return { rows: userLinks.has(args[1]) ? [userLinks.get(args[1])] : [] };
@@ -270,4 +272,10 @@ test("an operator mailbox grant outside reviewed teams blocks import before iden
  const f=migrationFixture(true);
  await expect(migrateClerkUsers(manifest,f.db,f.provider,true)).rejects.toThrow("outside the reviewed teams");
  expect(f.counts()).toEqual({creates:0,orgCreates:0,writes:0});
+});
+
+test("optional uninstalled native mailbox schema does not block identity migration", async () => {
+ const f=migrationFixture(false,false);
+ await migrateClerkUsers(manifest,f.db,f.provider,true);
+ expect(f.counts().creates).toBe(4);
 });

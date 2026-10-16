@@ -28,17 +28,56 @@ for (const domain of config.domains)
       throw Error(`API domain ${domain} requires ${required} ownership`);
 const { databasePools: databases } = await import("./db/runtime");
 let views:
-  | ReturnType<(typeof import("./cache"))["connectViewCache"]>
-  | undefined;
+  ReturnType<(typeof import("./cache-redis"))["connectViewCache"]> | undefined;
 if (process.env.VIEW_CACHE_URL) {
   try {
-    views = (await import("./cache")).connectViewCache(
+    views = (await import("./cache-redis")).connectViewCache(
       process.env.VIEW_CACHE_URL,
     );
   } catch {
     console.warn(JSON.stringify({ event: "view_cache_unavailable" }));
   }
 }
+const { configureViewCache } = await import("./cache");
+let cachePruneTimer: ReturnType<typeof setInterval> | undefined;
+try {
+  const ready =
+    (
+      await databases.authentication.query(
+        "SELECT to_regprocedure('webdock_cache.version(text[])') IS NOT NULL AND to_regprocedure('webdock_cache.prune()') IS NOT NULL AND to_regclass('webdock_cache.events') IS NOT NULL AS ready",
+      )
+    ).rows[0]?.ready === true;
+  if (ready) {
+    let pruning = false;
+    cachePruneTimer = setInterval(async () => {
+      if (pruning) return;
+      pruning = true;
+      try {
+        await databases.authentication.query("SELECT webdock_cache.prune()");
+      } catch {
+        console.warn(JSON.stringify({ event: "view_cache_prune_unavailable" }));
+      } finally {
+        pruning = false;
+      }
+    }, 60_000);
+    cachePruneTimer.unref();
+    if (views && (!config.production || process.env.VIEW_CACHE_RELEASE)) {
+      configureViewCache(views.cache, {
+        environment: `${process.env.VIEW_CACHE_ENVIRONMENT || `${config.production ? "production" : "development"}:${config.apiOrigin}`}:${process.env.VIEW_CACHE_RELEASE || "development"}`,
+        defaultTTLSeconds: Number(process.env.VIEW_CACHE_TTL_SECONDS || 60),
+      });
+    }
+  } else if (views)
+    console.warn(
+      JSON.stringify({ event: "view_cache_revision_schema_unavailable" }),
+    );
+} catch {
+  console.warn(
+    JSON.stringify({ event: "view_cache_configuration_unavailable" }),
+  );
+}
+if (views && config.production && !process.env.VIEW_CACHE_RELEASE)
+  console.warn(JSON.stringify({ event: "view_cache_release_unavailable" }));
 const mounts = await (
   await import("./protocols/legacy-auth")
 ).legacyAuthProtocols(config);
@@ -52,9 +91,7 @@ if (config.domains.includes("auth")) {
   const { authProtocol } = await import("./protocols/auth");
   await auth.$context;
   mounts.push(authProtocol(config, (request) => auth.handler(request)));
-  mounts.push(
-    (await import("./protocols/auth-ui")).authUIProtocol(config, views?.cache),
-  );
+  mounts.push((await import("./protocols/auth-ui")).authUIProtocol(config));
 }
 if (config.domains.includes("portal"))
   mounts.push(...(await import("./protocols/portal")).portalProtocols(config));
@@ -125,19 +162,29 @@ const server = Bun.serve({
       request,
       server.requestIP(request)?.address,
       {
-        origins: [config.apiOrigin, config.authOrigin, config.studioOrigin, ...(config.consoleOrigin ? [config.consoleOrigin] : [])],
+        origins: [
+          config.apiOrigin,
+          config.authOrigin,
+          config.studioOrigin,
+          ...(config.consoleOrigin ? [config.consoleOrigin] : []),
+        ],
         trustedProxies,
         secret: ingressSecret,
         production: config.production,
       },
     );
-    return normalized instanceof Response ? normalized : handleConsoleOrigin(normalized, config, request => app.handle(request));
+    return normalized instanceof Response
+      ? normalized
+      : handleConsoleOrigin(normalized, config, (request) =>
+          app.handle(request),
+        );
   },
 });
 let stopping = false;
 async function stop() {
   if (stopping) return;
   stopping = true;
+  if (cachePruneTimer) clearInterval(cachePruneTimer);
   const deadline = setTimeout(() => process.exit(1), 15_000);
   deadline.unref();
   try {

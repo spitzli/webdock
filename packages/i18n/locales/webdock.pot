@@ -11007,3 +11007,7 @@ msgstr ""
 #: apps/web/src/app/(frontend)/page.tsx
 msgid "Join the waitlist. Access by invitation only."
 msgstr ""
+
+#: apps/api/src/modules/auth/mail.ts
+msgid "The invitation email could not be sent. The invitation is saved; please resend it after the mail service is available again."
+msgstr ""

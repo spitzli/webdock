@@ -16,9 +16,9 @@ export async function verifyRole(db: Reader, expected: string) {
     await db.query(`SELECT current_user AS name,session_user AS session,r.rolsuper AS superuser,r.rolbypassrls AS bypass,
  (EXISTS(SELECT 1 FROM pg_catalog.pg_auth_members m WHERE m.member=r.oid)
  OR EXISTS(SELECT 1 FROM pg_catalog.pg_database d WHERE d.datname=current_database() AND d.datdba=r.oid)
- OR EXISTS(SELECT 1 FROM pg_catalog.pg_namespace n WHERE n.nspname IN ('webdock_auth','webdock_admin','webdock_mail','webdock_rls') AND (n.nspowner=r.oid OR has_schema_privilege(current_user,n.oid,'CREATE')))
- OR EXISTS(SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('webdock_auth','webdock_admin','webdock_mail','webdock_rls') AND c.relowner=r.oid)
- OR EXISTS(SELECT 1 FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname IN ('webdock_auth','webdock_admin','webdock_mail','webdock_rls') AND p.proowner=r.oid)) AS owner
+ OR EXISTS(SELECT 1 FROM pg_catalog.pg_namespace n WHERE n.nspname IN ('webdock_auth','webdock_admin','webdock_mail','webdock_rls','webdock_cache') AND (n.nspowner=r.oid OR has_schema_privilege(current_user,n.oid,'CREATE')))
+ OR EXISTS(SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('webdock_auth','webdock_admin','webdock_mail','webdock_rls','webdock_cache') AND c.relowner=r.oid)
+ OR EXISTS(SELECT 1 FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname IN ('webdock_auth','webdock_admin','webdock_mail','webdock_rls','webdock_cache') AND p.proowner=r.oid)) AS owner
  FROM pg_catalog.pg_roles r WHERE r.rolname=current_user`)
   ).rows[0];
   if (

@@ -381,6 +381,9 @@ export const commandSchema = z.discriminatedUnion("action", [
   z
     .object({ action: z.literal("projects.get"), projectID: resourceID })
     .strict(),
+  z
+    .object({ action: z.literal("projects.overview"), projectID: resourceID })
+    .strict(),
   z.object({ action: z.literal("operations.overview"), ...paging }).strict(),
   z
     .object({
@@ -442,6 +445,7 @@ export const readActions = new Set<HostingCommand["action"]>([
   "usage.get",
   "projects.list",
   "projects.get",
+  "projects.overview",
   "operations.overview",
   "operations.get",
 ]);
@@ -642,4 +646,27 @@ export type HostingPage<T> = {
   totalDocs: number;
   totalPages: number;
   operator?: boolean;
+};
+
+export type ProjectOverview = {
+  project: Pick<
+    import("./project-setup").SetupOptions["project"],
+    "name" | "configured" | "provider" | "canManage"
+  >;
+  applications: import("./project-setup").SetupOptions["applications"];
+  databaseCount: number;
+  bindings: Pick<
+    import("./service-bindings").ServiceBindingView,
+    "id" | "appID" | "service" | "state"
+  >[];
+  setups: {
+    id: string;
+    name: string;
+    state: import("./project-setup").SetupView["state"];
+  }[];
+  sources: {
+    targetID: string;
+    repositoryName: string | null;
+    branch: string;
+  }[];
 };

@@ -1,3 +1,4 @@
+import { introspectToken } from "../auth/introspection";
 import { vercelSettings } from "../integrations/vercel-settings";
 import { displayDatabaseCredentials } from "./database-credentials";
 import { z } from "zod";
@@ -10,7 +11,6 @@ import {
   hostingError,
   type HostingActor,
 } from "@webdock/hosting-contracts";
-import { auth } from "../auth/auth";
 import { authDatabase as database } from "../../db/runtime";
 import { mcpResource, currentHostingMCPClaims } from "../auth/mcp";
 import { executeHosting } from "./service";
@@ -64,21 +64,10 @@ export async function hostingIdentity(
     split = credentials.indexOf(":");
   if (credentials.slice(0, split) !== clientID || !credentials.slice(split + 1))
     throw new HostingError(401, "Studio authentication required.");
-  const origin = new URL(process.env.BETTER_AUTH_URL || "http://localhost:3125")
-    .origin;
-  const response = await auth.handler(
-    new Request(origin + "/api/auth/oauth2/introspect", {
-      method: "POST",
-      headers: {
-        Origin: origin,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        token: accessToken,
-        client_id: clientID,
-        client_secret: credentials.slice(split + 1),
-      }),
-    }),
+  const response = await introspectToken(
+    accessToken,
+    clientID,
+    credentials.slice(split + 1),
   );
   if (!response.ok) {
     if ([400, 401, 403].includes(response.status))

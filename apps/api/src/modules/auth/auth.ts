@@ -261,7 +261,10 @@ export function createAuthentication(options: {
         }),
         passwordTwoFactor(),
         passkeySecurity(baseURL),
-        jwt({ jwks: { keyPairConfig: { alg: "RS256" } } }),
+        jwt({
+          disableSettingJwtHeader: true,
+          jwks: { keyPairConfig: { alg: "RS256" } },
+        }),
         oauthProvider({
           loginPage: "/sign-in",
           consentPage: "/consent",

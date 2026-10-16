@@ -4,11 +4,14 @@
   "baseCommit": "aeb589e6a3fdd091184a3693bb2f8629bff46f96",
   "sourceCommit": "fdd6c0a6f979ede0acb38415fa12b25c04aa9c4e",
   "sourceTree": "09e1c433d458b8469cd8dad9b8b7b7aca263a6c6",
-  "artifact": "tabularis-web-ui-fdd6c0a6-editor-routing.tgz",
-  "sha256": "93d479f9e708b9f78fbc0f4724992798fcc2239c6f019ab88ae6d6edfee25d1f",
-  "packageTreeSHA256": "41b1273987698f9722158529ddaf4eac60850a9110b0d89058f0169800c35aaf",
-  "build": "git apply /path/to/webdock/vendor/tabularis-web-ui-editor-routing.patch && pnpm install --frozen-lockfile && pnpm --filter @tabularis/web-ui pack --pack-destination /tmp",
+  "artifact": "tabularis-web-ui-fdd6c0a6-startup.tgz",
+  "sha256": "ee7ee69a82e3d0088f781bc3056873d1820b80cb000606ae785ba16ded8e09cc",
+  "build": "git apply /path/to/webdock/vendor/tabularis-web-ui-editor-routing.patch /path/to/webdock/vendor/tabularis-web-ui-preload.patch /path/to/webdock/vendor/tabularis-web-ui-waterfall.patch && pnpm install --frozen-lockfile && pnpm --filter @tabularis/web-ui pack --pack-destination /tmp",
   "uiPatches": [
-    "tabularis-web-ui-editor-routing.patch"
-  ]
+    "tabularis-web-ui-editor-routing.patch",
+    "tabularis-web-ui-preload.patch",
+    "tabularis-web-ui-waterfall.patch"
+  ],
+  "patchedSourceTree": "b35b0ccc9add99c90199d1a126f881b83c48bf88",
+  "packageTreeSHA256": "d40d445065e1dff0b40af840a82e30ebf622726fa8239d43232da34d9ca1e20b"
 }

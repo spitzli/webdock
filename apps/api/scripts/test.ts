@@ -34,6 +34,7 @@ const rls = new Set([
   "project-setup-worker.integration.test.ts",
   "jobs.integration.test.ts",
   "registry.integration.test.ts",
+  "registry-cache.integration.test.ts",
   "native-budget-rls.integration.test.ts",
   "mcp.integration.test.ts",
   "vercel-events.integration.test.ts",

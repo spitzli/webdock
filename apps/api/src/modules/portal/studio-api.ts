@@ -1,6 +1,7 @@
 import {currentConsolePrincipal, withConsolePrincipal} from "../auth/principal";
 import {legacyClerkMemberships,requireConsolePrincipal} from "../auth/clerk-provider";
 import {ConsoleAuthError} from "../auth/clerk-identity";
+import { introspectToken } from "../auth/introspection";
 import {
   billingJobs,
   retryReadJob,
@@ -74,7 +75,6 @@ import {
   exitTenantPreview,
   dispatchTenantPreview,
 } from "../access/tenant-preview";
-import { currentMCPClaims } from "../auth/mcp";
 import {
   AccessError,
   accountSites,
@@ -371,24 +371,12 @@ async function delegatedSession(
     unauthorized();
   const origin = new URL(process.env.BETTER_AUTH_URL || "http://localhost:3125")
     .origin;
-  // Only this native endpoint verifies the confidential client credentials and token.
-  // Never forward a caller-controlled URL, cookie, origin or proxy header.
-  const response = await (dependencies.introspect || auth.handler)(
-    new Request(origin + "/api/auth/oauth2/introspect", {
-      method: "POST",
-      headers: {
-        Origin: origin,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      // The registered client uses client_secret_post. Basic is only the private
-      // bridge transport; native OAuth verifies the exact supplied credentials.
-      body: new URLSearchParams({
-        token: accessToken,
-        token_type_hint: "access_token",
-        client_id: clientID!,
-        client_secret: credentials.slice(credentials.indexOf(":") + 1),
-      }),
-    }),
+  // The native provider verifies the supplied confidential client and token.
+  const response = await introspectToken(
+    accessToken,
+    clientID!,
+    credentials.slice(credentials.indexOf(":") + 1),
+    dependencies.introspect,
   );
   if (!response.ok) {
     if ([400, 401, 403].includes(response.status)) unauthorized();
@@ -436,7 +424,8 @@ async function delegatedSession(
     native.user.mustChangePassword
   )
     unauthorized();
-  const operator = !(await currentMCPClaims(native.user.id)).disabled;
+  const operator =
+    native.user.role === "operator" && native.user.twoFactorEnabled === true;
   if (native.user.role !== "user" && !operator) unauthorized();
   const {
     id,
@@ -695,7 +684,8 @@ async function nativeSession(headers: Headers):Promise<Awaited<ReturnType<typeof
     native.user.mustChangePassword
   )
     unauthorized();
-  const operator = !(await currentMCPClaims(native.user.id)).disabled;
+  const operator =
+    native.user.role === "operator" && native.user.twoFactorEnabled === true;
   if (native.user.role !== "user" && !operator) unauthorized();
   const {
     id,

@@ -10,7 +10,7 @@ import {
   type HostingActor,
   type ServiceBindingView,
 } from "@webdock/hosting-contracts";
-import { authorizeHosting } from "./authorization";
+import { authorizeHosting, type Connection } from "./authorization";
 import { transaction, planLock, audit } from "./db";
 import { replay, recordResult } from "./operations";
 import { openEnvironment, sealEnvironment } from "./environment";
@@ -33,6 +33,58 @@ function view(row: Record<string, any>): ServiceBindingView {
     reason: row.reason,
   };
 }
+/** Caller holds the project's live authorization locks in this transaction. */
+export async function readServiceBindings(
+  db: Connection,
+  projectID: string,
+  customerID: string,
+  appID?: string,
+) {
+  const rows = (
+    await db.query(
+      "SELECT * FROM webdock_auth.hosting_service_binding WHERE project_id=$1 AND customer_id=$2 AND ($3::text IS NULL OR app_id=$3) ORDER BY id",
+      [projectID, customerID, appID ?? null],
+    )
+  ).rows;
+  for (const row of rows)
+    if (
+      row.service.kind === "postgres" &&
+      row.secret_encrypted &&
+      !["disconnected", "disconnecting"].includes(row.state)
+    ) {
+      const material = openBinding(row.id, row.secret_encrypted);
+      const current = (
+        await db.query(
+          "SELECT d.state,d.confirmed_credential_revision,d.credential_revision,b.ca_certificate,b.endpoint_ready FROM webdock_auth.hosting_database d JOIN webdock_auth.hosting_database_backend b ON b.id=d.backend_id WHERE d.id=$1 AND d.project_id=$2 AND d.customer_id=$3",
+          [row.service.databaseID, projectID, customerID],
+        )
+      ).rows[0];
+      if (
+        !current ||
+        current.state !== "ready" ||
+        !current.endpoint_ready ||
+        current.credential_revision !== row.credential_revision ||
+        current.confirmed_credential_revision !== row.credential_revision ||
+        current.ca_certificate !==
+          ("caCertificate" in material.runtime
+            ? material.runtime.caCertificate
+            : null)
+      ) {
+        row.state = "blocked";
+        row.reason = "Refresh the database connection before deployment.";
+      }
+    }
+  for (const row of rows)
+    if (
+      row.service.kind === "mail" &&
+      !["disconnected", "disconnecting"].includes(row.state) &&
+      !(await bindingMailReady(db, row.id))
+    ) {
+      row.state = "blocked";
+      row.reason = "Native Mail connection needs attention before deployment.";
+    }
+  return rows.map(view);
+}
 export async function executeServiceBinding(actor: HostingActor, raw: unknown) {
   const cmd = serviceCommandSchema.parse(raw);
   return transaction(async (db) => {
@@ -42,51 +94,12 @@ export async function executeServiceBinding(actor: HostingActor, raw: unknown) {
       db,
     );
     if (cmd.action === "services.list") {
-      const rows = (
-        await db.query(
-          "SELECT * FROM webdock_auth.hosting_service_binding WHERE project_id=$1 AND customer_id=$2 AND ($3::text IS NULL OR app_id=$3) ORDER BY id",
-          [cmd.projectID, access.customerID, cmd.appID ?? null],
-        )
-      ).rows;
-      for (const row of rows)
-        if (
-          row.service.kind === "postgres" &&
-          row.secret_encrypted &&
-          !["disconnected", "disconnecting"].includes(row.state)
-        ) {
-          const material = openBinding(row.id, row.secret_encrypted);
-          const current = (
-            await db.query(
-              "SELECT d.state,d.confirmed_credential_revision,d.credential_revision,b.ca_certificate,b.endpoint_ready FROM webdock_auth.hosting_database d JOIN webdock_auth.hosting_database_backend b ON b.id=d.backend_id WHERE d.id=$1 AND d.project_id=$2 AND d.customer_id=$3",
-              [row.service.databaseID, cmd.projectID, access.customerID],
-            )
-          ).rows[0];
-          if (
-            !current ||
-            current.state !== "ready" ||
-            !current.endpoint_ready ||
-            current.credential_revision !== row.credential_revision ||
-            current.confirmed_credential_revision !== row.credential_revision ||
-            current.ca_certificate !==
-              ("caCertificate" in material.runtime
-                ? material.runtime.caCertificate
-                : null)
-          ) {
-            row.state = "blocked";
-            row.reason = "Refresh the database connection before deployment.";
-          }
-        }
-      for (const row of rows)
-        if (
-          row.service.kind === "mail" &&
-          !["disconnected", "disconnecting"].includes(row.state) &&
-          !(await bindingMailReady(db, row.id))
-        ) {
-          row.state = "blocked";
-          row.reason =
-            "Native Mail connection needs attention before deployment.";
-        }
-      return rows.map(view);
+      return readServiceBindings(
+        db,
+        cmd.projectID,
+        access.customerID!,
+        cmd.appID,
+      );
     }
     await planLock(db, access.customerID!);
     const request = await replay(db, actor, cmd.idempotencyKey, cmd);

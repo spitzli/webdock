@@ -3,6 +3,7 @@ import {businessOperator} from "../auth/business-identity";
 import {currentConsolePrincipal, consoleMembership} from "../auth/principal";
 import { getBusinessIdentity } from "../auth/business-identity";
 import { withAuthenticatedDatabase } from "../../db/database-context";
+import { readCachedView } from "../../cache";
 import {
   effectiveHostingAllowances,
   parseHostingFields,
@@ -280,12 +281,17 @@ function offerStatus(
 }
 export async function getPlans(headers: Headers): Promise<Plan[]> {
   return withAuthenticatedDatabase(headers, async () => {
-    requireOperator(await actor(headers));
-    return (
-      await database.query(
-        'SELECT id,name,description,allowances,created_at AS "createdAt" FROM webdock_auth.plan_template ORDER BY created_at DESC,id DESC',
-      )
-    ).rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }));
+    const user = await actor(headers);
+    requireOperator(user);
+    return readCachedView(
+      { kind: "catalog", scope: { subject: user.id, operator: true }, query: "plan-templates", ttlSeconds: 60 },
+      async () => (await database.query("SELECT webdock_cache.version($1::text[]) AS version", [["webdock_auth.plan_template"]])).rows[0].version,
+      async () => (
+        await database.query(
+          'SELECT id,name,description,allowances,created_at AS "createdAt" FROM webdock_auth.plan_template ORDER BY created_at DESC,id DESC',
+        )
+      ).rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() })),
+    );
   });
 }
 export async function getTenantPlan(headers: Headers, customerID: string) {

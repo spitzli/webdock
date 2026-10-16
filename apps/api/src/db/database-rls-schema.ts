@@ -487,8 +487,8 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
       write = t.name==="clerk_organization" ? `webdock_rls.operator() AND ${col("issuer")}=webdock_rls.actor()->'clerk'->>'issuer' AND EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE t.organization_id=${col("organization_id")} AND c.status='active')` : "false";
       runtimeUpdate=runtimeDelete="false";
       workRead = t.name === "clerk_identity"
-        ? `EXISTS(SELECT 1 FROM webdock_mail.identity i WHERE i.subject=${col("user_id")} AND (${worker(["mail-send-gateway", "mail-webmail-gateway"])} OR webdock_rls.agent_customer(i.customer_id)))`
-        : `EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_mail.service s ON s.customer_id=t.customer_id WHERE t.organization_id=${col("organization_id")} AND (${worker(["mail-send-gateway", "mail-webmail-gateway"])} OR webdock_rls.agent_customer(t.customer_id)))`;
+        ? seen.has("webdock_mail.identity") ? `EXISTS(SELECT 1 FROM webdock_mail.identity i WHERE i.subject=${col("user_id")} AND (${worker(["mail-send-gateway", "mail-webmail-gateway"])} OR webdock_rls.agent_customer(i.customer_id)))` : "false"
+        : seen.has("webdock_mail.service") ? `EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_mail.service s ON s.customer_id=t.customer_id WHERE t.organization_id=${col("organization_id")} AND (${worker(["mail-send-gateway", "mail-webmail-gateway"])} OR webdock_rls.agent_customer(t.customer_id)))` : "false";
     } else if (identity.has(t.name)) {
       policy("webdock_auth_bootstrap", "true", "true");
       if (t.name === "user") read = `webdock_rls.user_visible(${col("id")})`;

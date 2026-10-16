@@ -148,7 +148,7 @@ export async function migrateClerkUsers(
     const members = (
       await db.query(
         'SELECT "userId" AS id,role FROM webdock_auth.member WHERE "organizationId"=$1 AND "userId"=ANY($2::text[])',
-        [team.organizationID, manifest.accounts.map((a) => a.localID)],
+        [team.organizationID, manifest.accounts.filter((a) => a.kind === "customer").map((a) => a.localID)],
       )
     ).rows;
     if (
@@ -171,7 +171,8 @@ export async function migrateClerkUsers(
       );
   }
   // Linking an operator changes mailbox authorization globally, not only in reviewed teams.
-  if ((await db.query(
+  const nativeMailSchema = (await db.query("SELECT to_regclass('webdock_mail.mailbox_grant') IS NOT NULL AS present")).rows[0]?.present;
+  if (nativeMailSchema && (await db.query(
     "SELECT g.mailbox_id FROM webdock_mail.mailbox_grant g WHERE g.subject=ANY($1::text[]) AND g.enabled AND g.clerk_grant IS NULL AND NOT(g.customer_id=ANY($2::text[])) LIMIT 1",
     [manifest.accounts.map(account => account.localID), manifest.teams.map(team => team.customerID)],
   )).rows.length)

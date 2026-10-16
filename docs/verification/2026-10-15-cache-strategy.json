@@ -1,0 +1,221 @@
+{
+  "additional": {
+    "links": [
+      {
+        "href": "/",
+        "name": "Projects"
+      },
+      {
+        "href": "/customers",
+        "name": "Customers"
+      },
+      {
+        "href": "/operations",
+        "name": "Operations"
+      }
+    ],
+    "reads": [
+      {
+        "ms": 356,
+        "name": "navigation",
+        "run": 1,
+        "status": 200
+      },
+      {
+        "ms": 331,
+        "name": "navigation",
+        "run": 2,
+        "status": 200
+      },
+      {
+        "ms": 371,
+        "name": "plans",
+        "run": 1,
+        "status": 200
+      },
+      {
+        "ms": 328,
+        "name": "plans",
+        "run": 2,
+        "status": 200
+      },
+      {
+        "ms": 352,
+        "name": "clusters",
+        "run": 1,
+        "status": 200
+      },
+      {
+        "ms": 297,
+        "name": "clusters",
+        "run": 2,
+        "status": 200
+      },
+      {
+        "ms": 599,
+        "name": "projects",
+        "run": 1,
+        "status": 200
+      },
+      {
+        "ms": 360,
+        "name": "projects",
+        "run": 2,
+        "status": 200
+      }
+    ]
+  },
+  "operationsNavigation": {
+    "errors": false,
+    "headings": [
+      "Operations"
+    ],
+    "navigation": {
+      "done": true,
+      "ms": 996,
+      "path": "/operations"
+    },
+    "path": "/operations",
+    "rows": 31
+  },
+  "customersNavigation": {
+    "errors": false,
+    "headings": [
+      "Customers"
+    ],
+    "navigation": {
+      "done": true,
+      "ms": 1207,
+      "path": "/customers"
+    },
+    "path": "/customers",
+    "rows": 20
+  },
+  "date": "2026-10-15",
+  "deployment": {
+    "pod": "api-5b5779d9cd-52fs4",
+    "image": "docker.io/library/webdock-api@sha256:ed1c4e336ce2b866c0ef233de271d0fae3fb455ed449c08a80501857098d986b",
+    "imageID": "docker.io/library/import-2026-10-15@sha256:57913c1800f4c9f1da1994d7bf3b61bcb8a427a61a3e149fa426d65608a2c0c1",
+    "release": "5b5779d9cd"
+  },
+  "migration": {
+    "name": "0036_authorized_view_cache.sql",
+    "sha256": "5b88d73572557d2256ede98224a6a3a59a5dade26019dbdf9fb968f4cb84b997",
+    "registeredSourceTables": 24,
+    "applied": true
+  },
+  "initialReads": {
+    "customers": {
+      "beforeMs": [
+        624,
+        404
+      ],
+      "afterMs": [
+        483,
+        488,
+        392
+      ],
+      "status": 200,
+      "totalDocs": 25
+    },
+    "operations": {
+      "beforeMs": [
+        361,
+        351
+      ],
+      "afterMs": [
+        397,
+        317,
+        327
+      ],
+      "status": 200,
+      "readAt": [
+        "2026-10-15T12:40:48.526Z",
+        "2026-10-15T12:40:48.526Z",
+        "2026-10-15T12:40:48.526Z"
+      ]
+    }
+  },
+  "redisBefore": {
+    "release": "5b5779d9cd",
+    "ready": 200,
+    "redis": "PONG",
+    "stats": [
+      "keyspace_hits:422",
+      "keyspace_misses:123"
+    ],
+    "keyCount": 2
+  },
+  "redisAfterSixReads": {
+    "stats": [
+      "keyspace_hits:426",
+      "keyspace_misses:125"
+    ],
+    "keys": [
+      {
+        "kind": "projectsummary",
+        "ttl": 36
+      },
+      {
+        "kind": "registry",
+        "ttl": 43
+      },
+      {
+        "kind": "navigation",
+        "ttl": 36
+      }
+    ]
+  },
+  "redisLater": {
+    "stats": [
+      "keyspace_hits:436",
+      "keyspace_misses:132"
+    ],
+    "keys": [
+      {
+        "kind": "projectsummary",
+        "ttl": 24
+      },
+      {
+        "kind": "operations",
+        "ttl": 14
+      },
+      {
+        "kind": "registry",
+        "ttl": 31
+      },
+      {
+        "kind": "navigation",
+        "ttl": 24
+      }
+    ]
+  },
+  "tests": {
+    "unit": {
+      "pass": 71,
+      "fail": 0
+    },
+    "integration": {
+      "pass": 11,
+      "fail": 0
+    },
+    "ported": {
+      "pass": 336,
+      "skip": 4,
+      "fail": 0
+    },
+    "restrictedRegistryCache": "passed separately against restricted-role PostgreSQL fixture",
+    "ledger": "6 passed; included in ported total",
+    "finalLifecycle": "network startup and native Auth UI passed after cleanup timer adjustment",
+    "realDragonfly": "authentication, eight concurrent cold keys, hits, revision invalidation, TTL and bounded outage fallback passed"
+  },
+  "ledgerCleanup": {
+    "eventsAtCheck": 65,
+    "olderThanSixMinutes": 0
+  },
+  "limitations": [
+    "Individual browser samples, not statistically significant performance benchmark",
+    "Authorization and revision SQL remain live on each request",
+    "No Console rebuild or Viewer result cache in this release"
+  ]
+}

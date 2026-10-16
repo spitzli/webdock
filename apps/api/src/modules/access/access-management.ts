@@ -6,7 +6,11 @@ import { auth } from "../auth/auth";
 import { database } from "../../db/runtime";
 import { businessOperator } from "../auth/business-identity";
 import { currentClaims } from "../auth/authorization";
-import { sendAuthMail } from "../auth/mail";
+import {
+  sendAuthMail,
+  withAuthMailDelivery,
+  AuthMailDeliveryError,
+} from "../auth/mail";
 
 export const accessSchemaSQL = `CREATE TABLE IF NOT EXISTS webdock_auth.access_event (
  id text PRIMARY KEY DEFAULT webdock_auth.next_snowflake(), actor_id text NOT NULL,
@@ -313,15 +317,17 @@ export async function manageAccess(
           });
           target = user.id;
         } else {
-          const invitation = await auth.api.createInvitation({
-            headers,
-            body: {
-              email,
-              role: "member",
-              organizationId: site.organization_id,
-              resend: true,
-            },
-          });
+          const invitation = await withAuthMailDelivery(() =>
+            auth.api.createInvitation({
+              headers,
+              body: {
+                email,
+                role: "member",
+                organizationId: site.organization_id,
+                resend: true,
+              },
+            }),
+          );
           target = invitation.id;
         }
       } else if (
@@ -407,6 +413,8 @@ export async function manageAccess(
         "UPDATE webdock_auth.access_event SET target_id=$2,outcome='failed' WHERE id=$1",
         [event, target],
       );
+      if (error instanceof AuthMailDeliveryError)
+        throw new AccessError(error.message);
       throw error;
     }
   });

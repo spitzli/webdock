@@ -49,6 +49,8 @@ export type PayloadSSOOptions = {
   getPayload?: () => Promise<Payload>
   /** API-owned mapping after live introspection; no email-based account linking. */
   lookupUser?: (identity: Identity) => Promise<{ id: string; authSubject: string; role: string; disabled?: boolean; name: string; email: string; createdAt: string; updatedAt: string } | null>
+  /** API hosts may call their local provider directly; return fresh raw introspection claims. */
+  introspect?: (accessToken: string) => Promise<unknown>
   issuer?: string
   clientId?: string
   clientSecret?: string
@@ -135,7 +137,7 @@ export function configurePayloadSSO(options: PayloadSSOOptions) {
     return value?.kind === 'session' && nonempty(value.accessToken) && nonempty(value.sub)
       && (value.idToken === undefined || nonempty(value.idToken)) ? value as Session : null
   }
-  const introspect = async (token: string) => validateIdentity(await oidc.tokenIntrospection(await configuration(), token), clientId)
+  const introspect = async (token: string) => validateIdentity(await (options.introspect ? options.introspect(token) : oidc.tokenIntrospection(await configuration(), token)), clientId)
   const mappedUser = <T extends object>(user: T | null | undefined, identity: Identity) => {
     if (!user) return null
     const fields = user as T & {authSubject?: unknown; role?: unknown; disabled?: unknown}
