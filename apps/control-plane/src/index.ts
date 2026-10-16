@@ -29,6 +29,8 @@ for (const domain of config.domains)
     if (!config.domains.includes(required))
       throw Error(`API domain ${domain} requires ${required} ownership`);
 const { databasePools: databases } = await import("./db/runtime");
+const {verifyPluginStartup}=await import('./modules/plugins/readiness');
+await verifyPluginStartup(databases.worker);
 let views:
   ReturnType<(typeof import("./cache-redis"))["connectViewCache"]> | undefined;
 if (process.env.VIEW_CACHE_URL) {
@@ -137,6 +139,7 @@ if (config.domains.includes("mcp")) {
   mounts.push(...(await import("./protocols/mcp")).mcpProtocol(config));
 }
 const ready = async () => {
+  await verifyPluginStartup(databases.worker);
   if (config.production) {
     const registry = config.domains.includes("registry")
       ? (await (await import("./modules/registry/context")).registryService())

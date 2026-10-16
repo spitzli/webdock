@@ -1,11 +1,18 @@
+import { initializePluginState } from "../src/modules/plugins/bootstrap";
 import { test, expect } from "bun:test";
 import { randomBytes } from "node:crypto";
-import { assertTestDatabase } from "./helpers/database";
-const enabled = process.env.API_TEST_DATABASE_URL;
+import { Pool } from "pg";
+const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
 (enabled ? test : test.skip)(
   "network server preserves Auth host cookies and serves a redacted frontend session",
   async () => {
-    assertTestDatabase(process.env.API_TEST_DATABASE_URL!);
+    const fixtureURL = new URL(process.env.API_TEST_OWNER_URL!);
+    if (
+      fixtureURL.hostname !== "127.0.0.1" ||
+      fixtureURL.pathname !== "/webdock_rls_test"
+    )
+      throw Error("Isolated restricted fixture required");
+    const owner = new Pool({ connectionString: fixtureURL.href, max: 1 });
     const reservation = Bun.serve({
       hostname: "127.0.0.1",
       port: 0,
@@ -16,16 +23,23 @@ const enabled = process.env.API_TEST_DATABASE_URL;
     const apiOrigin = `http://127.0.0.1:${port}`,
       authOrigin = "http://localhost:3125",
       ingressSecret = randomBytes(32).toString("hex");
-    const { createIdentity } = await import("../src/modules/auth/bootstrap");
-    const { database, closeDatabases } = await import("../src/db/runtime");
+    const { hashPassword } = await import("better-auth/crypto");
     const email = "http-" + randomBytes(6).toString("hex") + "@example.invalid",
       password = randomBytes(24).toString("hex");
-    const user = await createIdentity({
-      name: "HTTP fixture",
-      email,
-      password,
-      mustChangePassword: false,
-    });
+    const user = (
+      await owner.query(
+        `INSERT INTO webdock_auth."user"(name,email,"emailVerified",role,"twoFactorEnabled","mustChangePassword") VALUES($1,$2,true,'user',false,false) RETURNING id`,
+        ["HTTP fixture", email],
+      )
+    ).rows[0];
+    await owner.query(
+      `INSERT INTO webdock_auth.account("accountId","providerId","userId",password,"updatedAt") VALUES($1,'credential',$1,$2,now())`,
+      [user.id, await hashPassword(password)],
+    );
+    const hadPluginBootstrap =
+      (await owner.query("SELECT singleton FROM webdock_auth.plugin_bootstrap"))
+        .rows.length > 0;
+    await initializePluginState(owner, undefined, "legacy");
     const child = Bun.spawn(
       [
         process.execPath,
@@ -37,7 +51,10 @@ const enabled = process.env.API_TEST_DATABASE_URL;
           PATH: process.env.PATH,
           HOME: process.env.HOME,
           NODE_ENV: "development",
-          DATABASE_URL: process.env.API_TEST_DATABASE_URL,
+          DATABASE_URL: process.env.DATABASE_URL,
+          AUTH_DATABASE_URL: process.env.AUTH_DATABASE_URL,
+          DATABASE_WORKER_URL: process.env.DATABASE_WORKER_URL,
+          DATABASE_RLS_SECRET: process.env.DATABASE_RLS_SECRET,
           AUTH_TEST_MAIL: "true",
           BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
           BETTER_AUTH_URL: authOrigin,
@@ -101,10 +118,16 @@ const enabled = process.env.API_TEST_DATABASE_URL;
       child.kill("SIGTERM");
       const exit = await child.exited;
       if (exit !== 0) console.error(await new Response(child.stderr).text());
-      await database.query('DELETE FROM webdock_auth."user" WHERE id=$1', [
+      await owner.query('DELETE FROM webdock_auth."user" WHERE id=$1', [
         user.id,
       ]);
-      await closeDatabases();
+      if (!hadPluginBootstrap) {
+        await owner.query(
+          "DELETE FROM webdock_auth.plugin_installation WHERE kind='builtin'",
+        );
+        await owner.query("DELETE FROM webdock_auth.plugin_bootstrap");
+      }
+      await owner.end();
     }
   },
   15_000,

@@ -1,3 +1,4 @@
+import {pluginScopeSQL} from "../modules/plugins/scope-rls";
 import {pluginTables,pluginPolicy} from "../modules/plugins/rls";
 import { modulePreflightTables } from "./module-preflight-tables";
 import { gitInvalidationSQL } from "./database-git-rls";
@@ -449,6 +450,7 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
   sql.push(
     "DO $$ BEGIN IF to_regprocedure('webdock_admin.lock_hosting_project(character varying)') IS NOT NULL THEN GRANT EXECUTE ON FUNCTION webdock_admin.lock_hosting_project(varchar) TO webdock_auth_runtime,webdock_worker_runtime; END IF; END $$;",
   );
+  if(seen.has("webdock_auth.plugin_invocation"))sql.push(pluginScopeSQL);
   const worker = (purposes: string[], cluster?: string) =>
     `webdock_rls.worker(ARRAY[${purposes.map(literal).join(",")}]::text[]${cluster ? "," + cluster : ""})`;
   for (const t of tables) {
@@ -875,6 +877,7 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
       const plugin=pluginPolicy(t.name);
       read=plugin.read;write=plugin.write;workRead=plugin.workerRead;workWrite=plugin.workerWrite;
       runtimeDelete=workDelete="false";
+      if(["plugin_document_receipt","plugin_release"].includes(t.name))runtimeUpdate=workUpdate="false";
     } else if ((billingTables as readonly string[]).includes(t.name)) {
       const billing = billingPolicy(t.name);
       read = billing.read;

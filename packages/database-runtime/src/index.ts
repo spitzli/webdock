@@ -5,12 +5,14 @@ import pg from "pg";
 export type ClerkDatabaseIdentity = { issuer: string; userID: string; organizationID: string | null; clerkOrganizationID: string | null; customerID: string | null; role: "admin" | "member" | null; permissions?: readonly string[]; verifiedAt: number; expiresAt: number };
 export type LegacyClerkMemberships={subject?:string;issuer:string;userID:string;verifiedAt:number;expiresAt:number;roles:Array<{organizationID:string;customerID:string;role:string;permissions?:readonly string[]}>};
 export type DatabaseScope =
-  | { kind: "session"; subject: string; sessionID: string; clerk?: ClerkDatabaseIdentity; memberships?:LegacyClerkMemberships }
+  | { kind: "session"; pluginInvocationID?: string; subject: string; sessionID: string; clerk?: ClerkDatabaseIdentity; memberships?:LegacyClerkMemberships }
   | {
       kind: "system";
       memberships?: LegacyClerkMemberships;
       clerk?: ClerkDatabaseIdentity & {subject:string;sessionID:string};
       purpose: string;
+      pluginInvocationID?: string;
+      participantID?: string;
       clusterID?: string;
       customerID?: string;
       setupID?: string;

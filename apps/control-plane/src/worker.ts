@@ -17,6 +17,7 @@ if (
 validateWorkerModules(selected);
 validateClerkWorkerConfiguration(selected);
 const { databasePools, workerDatabase } = await import("./db/runtime");
+await (await import('./modules/plugins/readiness')).verifyPluginStartup(workerDatabase);
 await (await import("./module-preflight")).verifyModuleShutdown();
 if (process.env.NODE_ENV === "production" || process.env.DATABASE_RLS_SECRET)
   await (

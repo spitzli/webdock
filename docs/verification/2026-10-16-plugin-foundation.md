@@ -10,11 +10,11 @@ Fetched `origin/main` at `53eda53`. Merge `0c1972d` includes it and resolves the
 
 - Public `@webdock/plugin-sdk/contracts` package with compiled ESM/declarations, strict manifest validation, bounded local schema definitions, capability/method metadata and generated registry extension schema. The method catalog is metadata, not working host-service adapters.
 - Pure compatibility/dependency/lifecycle rules in `@webdock/module-sdk/plugins`.
-- Journaled migrations `0041` and `0042` for retained installations, releases, operations, grants and documents. A partial unique index prevents overlapping pending/running/blocked operations for one installation.
+- Journaled migrations `0041`, `0042` and `0043` for retained installations, releases, operations, grants and documents. A partial unique index prevents overlapping pending/running/blocked operations for one installation.
 - Offline, once-only initialization preserves legacy module selection and requires explicit fresh selection. Repeat initialization cannot overwrite operator decisions.
 - Operator state requests use the existing signed database context, live operator checks, transaction/advisory lock, revision CAS, idempotency and audit. Requests only record desired state/operations; no reconciler is implemented.
-- RLS classification denies unauthenticated/forged worker access. Document access is intentionally closed until invocation-bound authorization is implemented.
-- A readiness helper validates schema/policy presence and initialization. It is not wired into API/worker startup yet.
+- RLS classification denies unauthenticated/forged worker access. Document access now requires signed invocation scope with current customer/project, grant, actor/session or job claim/lease, runtime/configuration generation and capability. Write receipts are immutable and operation-bound.
+- API and worker startup now require the schema, policies, invocation helpers and explicit installation bootstrap. API readiness rechecks this state. The operator procedure is documented in `docs/operations/plugin-state-bootstrap.md`.
 
 ## Verification
 
@@ -31,8 +31,17 @@ Fetched `origin/main` at `53eda53`. Merge `0c1972d` includes it and resolves the
 
 ## Remaining required work
 
-Core Task 2 is partial: job/participant/receipt and runtime-candidate/configuration persistence, invocation-scoped document policies, and readiness/startup wiring remain. Core Tasks 3–12 and developer tasks DX1–DX9 are not complete. In particular there is no live built-in admission cutover, plugin controller, verified registry installer, isolated workload runtime, UI bridge, service SDK clients, real plugin DB/cache/object APIs, CLI or generated pilot. Existing admission still uses the prior static configuration. The new state-request service is not exposed as a production operator feature.
+Core Task 2 persistence, invocation-bound document RLS and startup wiring are implemented. Core Tasks 3–12 and developer tasks DX1–DX9 are not complete. In particular there is no live built-in admission cutover, plugin controller, verified registry installer, isolated workload runtime, UI bridge, service SDK clients, real plugin DB/cache/object APIs, CLI or generated pilot. Existing admission still uses the prior static configuration. The new state-request service is not exposed as a production operator feature.
 
 Continue in the dependency order in `docs/superpowers/plans/2026-10-16-plugin-developer-platform.md`. The inventory of 151 admission-related call sites is in the ignored runtime-plan workspace and must be audited before changing synchronous ports to async checks. A database state table alone does not provide distributed admission.
 
 No production deployment, public package publication, customer migration or credential rotation was performed. RTK.md was absent. Local PostgreSQL fixtures belong to this execution only.
+
+## Continuation verification — 2026-10-16
+
+- Migration 0043 adds configuration/secret references, current/candidate/previous runtime generations, participant heartbeats, scoped job executions, invocations and retained mutation receipts.
+- Restricted-role tests: two customers, two projects within one customer, ordinary member writes through explicit plugin grants, read-intent mutation denial, secret-reference isolation, receipt immutability/operation binding, grant/member/generation revocation, job slot uniqueness, claim/lease loss and exact participant heartbeat identity. Future-dated invocation authority is rejected; the regression was observed failing before the fix.
+- Actual process tests prove API startup refusal before explicit bootstrap, normal startup afterward and readiness 503 after bootstrap removal. API cookie/session behavior and a worker storage batch now also run using restricted database credentials.
+- Complete RLS suite passed after integration; the final invocation-time-bound change passed its focused RLS regressions (22 assertions). Module suite: 121 passed. API unit suite: 151 passed. API check/build and fresh-install/retained-upgrade integration passed.
+- The RLS runner now honors explicitly requested registered test files and rejects unknown selections; the full invocation still includes the ported RLS suites.
+- Independent review of the continuation found no concrete issues. There is still no public plugin broker or live built-in admission; database enforcement does not substitute for the remaining endpoint/controller work.

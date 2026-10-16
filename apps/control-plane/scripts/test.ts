@@ -25,10 +25,12 @@ const integration = new Set([
   "database-compat.test.ts",
   "native-ui.integration.test.ts",
   "cms-bridge.integration.test.ts",
-  "server.integration.test.ts",
 ]);
 const rls = new Set([
+  "plugins-startup-rls.integration.test.ts",
+  "plugins-runtime-state-rls.integration.test.ts",
   "plugins-state-rls.integration.test.ts",
+  "server.integration.test.ts",
   "clerk-worker-rls.integration.test.ts",
   "module-preflight-rls.integration.test.ts",
   "module-preflight.integration.test.ts",
@@ -126,7 +128,9 @@ if (mode === "rls") {
     fixture,
     process.env.API_TEST_OWNER_URL || "",
   );
-  for (const name of rls)
+  const selectedRls=requested.length?requested.map(name=>name.replace(/^tests\//,"")):[...rls];
+  if(selectedRls.some(name=>!rls.has(name)))throw Error("Unknown RLS test selection");
+  for (const name of selectedRls)
     run(
       process.execPath,
       [
@@ -138,6 +142,7 @@ if (mode === "rls") {
       ],
       env,
     );
+  if(requested.length)process.exit(0);
   const names = [
     "database-rls-postgres",
     "database-gateway-rls",

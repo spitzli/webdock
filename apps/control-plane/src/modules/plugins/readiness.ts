@@ -1,3 +1,4 @@
+import { withDatabaseScope } from "@webdock/database-runtime";
 import type { Pool } from "pg";
 import { getTableConfig } from "drizzle-orm/pg-core";
 import * as schema from "@webdock/platform-db/schema/plugins";
@@ -33,5 +34,19 @@ export async function verifyPluginState(
           )
         )
           throw Error("Required plugin isolation policies are unavailable");
+  const helpers = (
+    await db.query(
+      "SELECT to_regprocedure('webdock_rls.plugin_context(text)') IS NOT NULL AND to_regprocedure('webdock_rls.plugin_allows(text,text,text,text)') IS NOT NULL AS present",
+    )
+  ).rows[0];
+  if (helpers?.present !== true)
+    throw Error("Required plugin invocation policies are unavailable");
   await readInstalledPlugins(db);
+}
+
+export function verifyPluginStartup(db: Pick<Pool, "query">): Promise<void> {
+  return withDatabaseScope(
+    { kind: "system", purpose: "plugin-public-view" },
+    () => verifyPluginState(db),
+  );
 }

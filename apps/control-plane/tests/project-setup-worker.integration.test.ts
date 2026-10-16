@@ -1,3 +1,4 @@
+import { initializePluginState } from "../src/modules/plugins/bootstrap";
 import { test, expect } from "bun:test";
 import { Pool } from "pg";
 import { randomUUID } from "node:crypto";
@@ -18,6 +19,9 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
     if (url.hostname !== "127.0.0.1" || url.pathname !== "/webdock_rls_test")
       throw Error("Restricted local fixture required");
     const db = new Pool({ connectionString: url.href, max: 1 });
+    const hadPluginBootstrap =
+      (await db.query("SELECT singleton FROM webdock_auth.plugin_bootstrap"))
+        .rows.length > 0;
     const f = await createSetupFixture(db);
     const old = process.env.WEBDOCK_SETUP_ENABLED;
     process.env.WEBDOCK_SETUP_ENABLED = "true";
@@ -109,6 +113,7 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       await expect(
         withDatabaseScope(scope, () => executeSetupStep(row)),
       ).rejects.toThrow();
+      await initializePluginState(db, undefined, "legacy");
       worker = Bun.spawn([process.execPath, "--no-env-file", "src/worker.ts"], {
         cwd: new URL("../", import.meta.url).pathname,
         env: {
@@ -215,6 +220,12 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       if (old === undefined) delete process.env.WEBDOCK_SETUP_ENABLED;
       else process.env.WEBDOCK_SETUP_ENABLED = old;
       await f.cleanup();
+      if (!hadPluginBootstrap) {
+        await db.query(
+          "DELETE FROM webdock_auth.plugin_installation WHERE kind='builtin'",
+        );
+        await db.query("DELETE FROM webdock_auth.plugin_bootstrap");
+      }
       await db.end();
     }
   },

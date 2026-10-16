@@ -1,3 +1,4 @@
+import { initializePluginState } from "../src/modules/plugins/bootstrap";
 import { test, expect } from "bun:test";
 import { Pool } from "pg";
 const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
@@ -20,6 +21,10 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       await db.end();
       throw Error("Worker smoke test requires an empty storage fixture");
     }
+    const hadPluginBootstrap =
+      (await db.query("SELECT singleton FROM webdock_auth.plugin_bootstrap"))
+        .rows.length > 0;
+    await initializePluginState(db, undefined, "legacy");
     const slot = new Date(Math.floor(Date.now() / 3600000) * 3600000);
     const existing = (
       await db.query(
@@ -80,6 +85,12 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         "DELETE FROM webdock_auth.api_job WHERE name='storage.refresh' AND slot=$1",
         [slot],
       );
+      if (!hadPluginBootstrap) {
+        await db.query(
+          "DELETE FROM webdock_auth.plugin_installation WHERE kind='builtin'",
+        );
+        await db.query("DELETE FROM webdock_auth.plugin_bootstrap");
+      }
       await db.end();
     }
   },
