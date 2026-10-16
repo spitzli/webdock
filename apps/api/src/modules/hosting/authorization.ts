@@ -1,4 +1,5 @@
-import {linkedMembershipRole} from "../auth/clerk-provider";
+import type { OrgPermission } from "../auth/organization-permissions";
+import {linkedMembershipRole, organizationPermission} from "../auth/clerk-provider";
 import {currentConsolePrincipal, consoleMembership} from "../auth/principal";
 import { currentDatabaseScope } from "@webdock/database-runtime";
 import type { PoolClient } from "pg";
@@ -17,6 +18,9 @@ export async function authorizeHosting(
     operator?: boolean;
     live?: boolean;
     tenantAdmin?: boolean;
+    permission?: OrgPermission;
+    /** Mail administration retains its existing organization role policy. */
+    legacyRole?: boolean;
   },
   db: Connection,
 ) {
@@ -125,6 +129,7 @@ export async function authorizeHosting(
     customerID = project.customer_id;
   }
   let membership;
+  let canWrite = false;
   if (customerID) {
     const customer = (
       await db.query(
@@ -149,10 +154,16 @@ export async function authorizeHosting(
     ).rows[0];
     if (!operator && !membership)
       throw new HostingError(404, "Hosting target is unavailable.");
+    const permission = target.permission && !operator
+      ? await organizationPermission(actor.subject, customer.organization_id, target.permission)
+      : undefined;
+    canWrite = operator || (target.permission
+      ? permission ?? ["admin", "owner"].includes(membership?.role)
+      : target.legacyRole === true && ["admin", "owner"].includes(membership?.role));
     if (
       target.write &&
       !operator &&
-      (!["admin", "owner"].includes(membership.role) ||
+      (!canWrite ||
         (!target.tenantAdmin && project?.mode !== "selfservice"))
     )
       throw new HostingError(
@@ -167,6 +178,6 @@ export async function authorizeHosting(
     customerID,
     project,
     canWrite:
-      !preview && (operator || ["admin", "owner"].includes(membership?.role)),
+      !preview && (operator || canWrite),
   };
 }

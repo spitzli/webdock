@@ -19,7 +19,7 @@ export function billingPolicy(name: string) {
     throw Error("Unknown billing table");
   const col = (field: string) => '"' + name + '"."' + field + '"';
   const operator = "webdock_rls.operator()",
-    customer = `webdock_rls.customer_allowed(${col("customer_id")}::text,true)`,
+    customer = `webdock_rls.billing_admin(${col("customer_id")}::text)`,
     actor =
       "webdock_rls.actor() IS NOT NULL AND webdock_rls.actor()->'preview'='null'::jsonb";
   const scoped = `webdock_rls.worker(ARRAY['polar:'||${col("environment")}||':customer']) AND webdock_rls.request_scope()->>'customerID'=${col("customer_id")}::text`;
@@ -48,13 +48,13 @@ export function billingPolicy(name: string) {
       "billing_order",
     ].includes(name)
   ) {
-    read = `${operator} OR ((${actor}) AND ${customer})`;
+    read = `${operator} OR ((${actor}) AND (webdock_rls.customer_allowed(${col("customer_id")}::text,true) OR ${customer}))`;
     write = [
       "billing_customer",
       "billing_contract",
       "billing_checkout",
     ].includes(name)
-      ? read
+      ? `${operator} OR ((${actor}) AND ${customer})`
       : "false";
     workerRead = workerWrite = scoped;
   }
@@ -67,12 +67,12 @@ export function billingPolicy(name: string) {
     workerWrite = "false";
   }
   if (name === "billing_change") {
-    read = `${operator} OR webdock_rls.billing_admin(${col("customer_id")}::text)`;
+    read = `${operator} OR ((${actor}) AND (webdock_rls.customer_allowed(${col("customer_id")}::text,true) OR ${customer}))`;
     write = `webdock_rls.billing_admin(${col("customer_id")}::text)`;
     workerRead = workerWrite = scoped;
   }
   if (name === "billing_offer") {
-    read = `${operator} OR webdock_rls.billing_admin(${col("customer_id")}::text)`;
+    read = `${operator} OR ((${actor}) AND (webdock_rls.customer_allowed(${col("customer_id")}::text,true) OR ${customer}))`;
     write = operator;
   }
   if (name === "billing_webhook_event") {

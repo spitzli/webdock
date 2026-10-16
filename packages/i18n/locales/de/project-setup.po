@@ -589,3 +589,6 @@ msgstr "Variablen speichern"
 
 msgid "Remove conflicting manual variables, save, then retry setup. Provisioned services are kept."
 msgstr "Entferne kollidierende manuelle Variablen, speichere und versuche die Einrichtung erneut. Bereits bereitgestellte Dienste bleiben erhalten."
+
+msgid "Setup authorization changed. Sign in and resume the setup."
+msgstr "Die Setup-Berechtigung hat sich geändert. Melde dich an und setze die Einrichtung fort."

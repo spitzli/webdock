@@ -38,7 +38,7 @@ test("tenant and project rows enforce both read and write tenancy and consistent
   );
   assert.match(
     sql,
-    /WITH CHECK\(webdock_rls.customer_allowed\("hosting_database_offer"\."customer_id"::text,true\) AND/,
+    /WITH CHECK\(\(webdock_rls.customer_permission\(\"hosting_database_offer\"\.\"customer_id\"::text,'org:databases:manage'\)\) AND/,
   );
   assert.match(
     sql,
@@ -54,7 +54,7 @@ test("child tables inherit actual parent visibility and require parent write aut
     sql,
     /FROM "webdock_auth"\."hosting_database" parent WHERE parent\."id"::text="hosting_database_preview"\."database_id"::text/,
   );
-  assert.match(sql, /webdock_rls.customer_allowed\(parent.customer_id,true\)/);
+  assert.match(sql, /webdock_rls.customer_permission\(parent.customer_id,'org:databases:manage'\)/);
 });
 
 test("signed context binds caller login, expiry and exact serialized payload", () => {
@@ -209,7 +209,7 @@ test("managed viewer sessions are gateway-only and launches cannot be rewritten 
   assert.deepEqual(unknownTables, []);
   assert.match(
     sql,
-    /CREATE POLICY webdock_auth_runtime_insert ON "webdock_auth"\."managed_database_launch"[^;]*customer_allowed\(d.customer_id,true\)/,
+    /CREATE POLICY webdock_auth_runtime_insert ON "webdock_auth"\."managed_database_launch"[^;]*customer_permission\(d.customer_id,'org:databases:manage'\)/,
   );
   assert.match(
     sql,

@@ -42,21 +42,65 @@ export const clerkSetupSQL = `
    AND webdock_rls.request_scope()->'clerk'->>'issuer'=i.issuer AND webdock_rls.request_scope()->'clerk'->>'userID'=i.clerk_user_id
    AND (webdock_rls.request_scope()->'clerk'->>'expiresAt')::numeric>extract(epoch FROM statement_timestamp())*1000
    AND (webdock_rls.request_scope()->'clerk'->>'verifiedAt')::numeric BETWEEN extract(epoch FROM statement_timestamp())*1000-60000 AND extract(epoch FROM statement_timestamp())*1000
-   AND (u.role='operator' OR (u.role='user' AND h.mode='selfservice' AND webdock_rls.request_scope()->'clerk'->>'role'='admin' AND webdock_rls.request_scope()->'clerk'->>'customerID'=customer
-    AND EXISTS(SELECT 1 FROM webdock_auth.clerk_organization o WHERE o.issuer=i.issuer AND o.organization_id=t.organization_id AND o.enabled AND o.clerk_organization_id=webdock_rls.request_scope()->'clerk'->>'clerkOrganizationID')))
+   AND (webdock_rls.request_scope()->'clerk'->>'expiresAt')::numeric<=(webdock_rls.request_scope()->'clerk'->>'verifiedAt')::numeric+60000
+   AND (u.role='operator' OR (u.role='user' AND h.mode='selfservice' AND webdock_rls.request_scope()->'clerk'->>'role' IN ('admin','member') AND jsonb_typeof(webdock_rls.request_scope()->'clerk'->'permissions')='array' AND webdock_rls.request_scope()->'clerk'->'permissions' ? 'org:projects:manage'
+    AND (coalesce(s.configuration->'database'->>'mode','none')='none' OR webdock_rls.request_scope()->'clerk'->'permissions' ? 'org:databases:manage')
+    AND (coalesce(s.configuration->'source'->>'kind','template')<>'git' OR webdock_rls.request_scope()->'clerk'->'permissions' ? 'org:deployments:create') AND webdock_rls.request_scope()->'clerk'->>'customerID'=customer
+    AND EXISTS(SELECT 1 FROM webdock_auth.clerk_organization o WHERE o.issuer=i.issuer AND o.organization_id=t.organization_id AND o.organization_id=webdock_rls.request_scope()->'clerk'->>'organizationID' AND o.enabled AND o.clerk_organization_id=webdock_rls.request_scope()->'clerk'->>'clerkOrganizationID')))
    AND NOT EXISTS(SELECT 1 FROM webdock_auth.console_tenant_preview preview WHERE preview.issuer=i.issuer AND preview.session_id=s.actor->>'sessionID')
    AND NOT EXISTS(SELECT 1 FROM webdock_admin.project_deletion deletion WHERE deletion.project_id=s.project_id AND deletion.status<>'deleted'));
  END IF;
 `;
+export const clerkPermissionSQL = `
+CREATE OR REPLACE FUNCTION webdock_rls.customer_permission(customer text, permission text, allow_operator boolean DEFAULT true) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
+DECLARE a jsonb; org text; permissions jsonb;
+BEGIN
+ IF permission NOT IN ('org:projects:manage','org:deployments:create','org:databases:manage','org:billing:manage') THEN RETURN false; END IF;
+ a:=webdock_rls.actor(); IF a IS NULL OR a->'preview'<>'null'::jsonb THEN RETURN false; END IF;
+ IF allow_operator AND (a->>'operator')::boolean THEN RETURN true; END IF;
+ SELECT t.organization_id INTO org FROM webdock_auth.tenant_customer t JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE t.customer_id=customer AND c.status='active';
+ IF NOT FOUND OR webdock_rls.membership_role(org) IS NULL THEN RETURN false; END IF;
+ IF a ? 'clerk' THEN
+  IF a->'clerk'->>'customerID' IS DISTINCT FROM customer OR a->'clerk'->>'organizationID' IS DISTINCT FROM org THEN RETURN false; END IF;
+  permissions:=a->'clerk'->'permissions';
+ ELSIF EXISTS(SELECT 1 FROM webdock_auth.clerk_organization WHERE organization_id=org) THEN
+  SELECT r->'permissions' INTO permissions FROM jsonb_array_elements(webdock_rls.request_scope()->'memberships'->'roles') r WHERE r->>'organizationID'=org AND r->>'customerID'=customer;
+ ELSE RETURN webdock_rls.membership_role(org) IN ('owner','admin');
+ END IF;
+ IF jsonb_typeof(permissions) IS DISTINCT FROM 'array' THEN RETURN false; END IF;
+ IF EXISTS(SELECT 1 FROM jsonb_array_elements(permissions) p WHERE jsonb_typeof(p)<>'string' OR p#>>'{}' NOT IN ('org:projects:manage','org:deployments:create','org:databases:manage','org:billing:manage')) THEN RETURN false; END IF;
+ RETURN permissions ? permission;
+EXCEPTION WHEN invalid_text_representation OR numeric_value_out_of_range OR invalid_parameter_value THEN RETURN false;
+END $$;
+ALTER FUNCTION webdock_rls.customer_permission(text,text,boolean) OWNER TO webdock_platform_owner;
+REVOKE ALL ON FUNCTION webdock_rls.customer_permission(text,text,boolean) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION webdock_rls.customer_permission(text,text,boolean) TO webdock_auth_runtime,webdock_worker_runtime,webdock_registry_runtime,webdock_policy_owner;
+`;
 export const clerkBillingSQL = `
 CREATE OR REPLACE FUNCTION webdock_rls.billing_admin(customer text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
- SELECT coalesce(webdock_rls.actor() IS NOT NULL AND webdock_rls.actor()->'preview'='null'::jsonb AND
- CASE WHEN webdock_rls.actor() ? 'clerk' THEN webdock_rls.actor()->'clerk'->>'customerID'=customer AND webdock_rls.actor()->'clerk'->>'role'='admin'
- ELSE EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE t.customer_id=customer AND c.status='active' AND webdock_rls.membership_role(t.organization_id) IN ('owner','admin')) END,false)
+ SELECT webdock_rls.customer_permission(customer,'org:billing:manage',false)
 $$;
 ALTER FUNCTION webdock_rls.billing_admin(text) OWNER TO webdock_platform_owner;
 REVOKE ALL ON FUNCTION webdock_rls.billing_admin(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION webdock_rls.billing_admin(text) TO webdock_auth_runtime;
+`;
+export const clerkBillingReadSQL = `
+CREATE OR REPLACE FUNCTION webdock_rls.billing_reader(customer text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
+ SELECT webdock_rls.billing_admin(customer) OR coalesce(webdock_rls.actor() IS NOT NULL AND webdock_rls.actor()->'preview'='null'::jsonb AND EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE t.customer_id=customer AND c.status='active' AND webdock_rls.membership_role(t.organization_id) IN ('owner','admin')),false)
+$$;
+ALTER FUNCTION webdock_rls.billing_reader(text) OWNER TO webdock_platform_owner;
+REVOKE ALL ON FUNCTION webdock_rls.billing_reader(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION webdock_rls.billing_reader(text) TO webdock_auth_runtime;
+-- These functions only select purchase/catalog information; checkout mutations keep billing_admin.
+DO $readers$ DECLARE signature text; definition text;
+BEGIN
+ FOREACH signature IN ARRAY ARRAY['webdock_rls.billing_sale_config(text,text)','webdock_rls.billing_version(text,text,text,text)','webdock_rls.billing_site(text,text,text,text)','webdock_rls.billing_catalog(text,text)','webdock_rls.billing_sites(text,text)'] LOOP
+  IF to_regprocedure(signature) IS NOT NULL THEN
+   SELECT pg_get_functiondef(to_regprocedure(signature)) INTO definition;
+   EXECUTE replace(definition,'webdock_rls.billing_admin(customer)','webdock_rls.billing_reader(customer)');
+  END IF;
+ END LOOP;
+END $readers$;
 `;
 export const clerkMembershipSQL = `
 CREATE OR REPLACE FUNCTION webdock_rls.membership_role(org text) RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$

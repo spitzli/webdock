@@ -38,14 +38,14 @@ export async function reserveHosting(actor: HostingActor, input: unknown) {
   return transaction(async (db) => {
     let access = await authorizeHosting(
       actor,
-      { projectID: data.projectID, write: true },
+      { permission: "org:projects:manage", projectID: data.projectID, write: true },
       db,
     );
     const customerID = access.customerID!;
     await planLock(db, customerID);
     access = await authorizeHosting(
       actor,
-      { projectID: data.projectID, write: true },
+      { permission: "org:projects:manage", projectID: data.projectID, write: true },
       db,
     );
     const clusterID = access.project?.cluster_id;

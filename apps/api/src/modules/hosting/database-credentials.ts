@@ -15,7 +15,7 @@ export async function displayDatabaseCredentials(
       const d = await databaseAccess(db, actor, databaseID, true);
       await authorizeHosting(
         actor,
-        { projectID: d.project_id, write: true, tenantAdmin: true, live: true },
+        { permission: "org:databases:manage", projectID: d.project_id, write: true, tenantAdmin: true, live: true },
         db,
       );
       if (

@@ -28,7 +28,7 @@ export async function executeSetupSource(actor: HostingActor, raw: unknown) {
         "Connect an authorized GitHub repository first.",
       );
     const connection = await transaction(async (db) => {
-      await authorizeHosting(actor, { projectID: cmd.projectID }, db);
+      await authorizeHosting(actor, { permission: "org:projects:manage", projectID: cmd.projectID }, db);
       return (
         await db.query(
           "SELECT c.installation_id FROM webdock_auth.git_connection c JOIN webdock_auth.git_repository r ON r.connection_id=c.id WHERE c.id=$1 AND c.customer_id=$2 AND r.repository_id=$3 AND c.state='active'",
@@ -65,7 +65,7 @@ export async function executeSetupSource(actor: HostingActor, raw: unknown) {
   const context = await transaction(async (db) => {
     const access = await authorizeHosting(
       actor,
-      { projectID: cmd.projectID },
+      { permission: "org:projects:manage", projectID: cmd.projectID },
       db,
     );
     const project = (

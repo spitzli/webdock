@@ -1,3 +1,4 @@
+import { authorizeSetupConfiguration } from "./permissions";
 import { repairSetupEnvironment, resetGitSetupRetry } from "./setup-recovery";
 import { executeAppCommand } from "./apps";
 import {
@@ -61,7 +62,7 @@ export async function readSetup(
   write = false,
 ): Promise<SetupRow> {
   return transaction(async (db) => {
-    await authorizeHosting(actor, { projectID, write }, db);
+    await authorizeHosting(actor, { permission: "org:projects:manage", projectID, write }, db);
     const row = (
       await db.query(
         "SELECT * FROM webdock_auth.hosting_setup WHERE id=$1 AND project_id=$2",
@@ -80,7 +81,7 @@ export async function executeProjectSetup(actor: HostingActor, raw: unknown) {
     return setupView(await readSetup(actor, cmd.projectID, cmd.setupID));
   if (cmd.action === "setup.list")
     return transaction(async (db) => {
-      await authorizeHosting(actor, { projectID: cmd.projectID }, db);
+      await authorizeHosting(actor, { permission: "org:projects:manage", projectID: cmd.projectID }, db);
       return {
         docs: (
           await db.query(
@@ -105,7 +106,7 @@ export async function executeProjectSetup(actor: HostingActor, raw: unknown) {
       const existing = await transaction(async (db) => {
         await authorizeHosting(
           actor,
-          { projectID: cmd.projectID, write: true },
+          { permission: "org:projects:manage", projectID: cmd.projectID, write: true },
           db,
         );
         return (
@@ -129,7 +130,7 @@ export async function executeProjectSetup(actor: HostingActor, raw: unknown) {
     return transaction(async (db) => {
       await authorizeHosting(
         actor,
-        { projectID: cmd.projectID, write: true },
+        { permission: "org:projects:manage", projectID: cmd.projectID, write: true },
         db,
       );
       const row = (
@@ -154,7 +155,7 @@ export async function executeProjectSetup(actor: HostingActor, raw: unknown) {
   return transaction(async (db) => {
     const access = await authorizeHosting(
       actor,
-      { projectID: cmd.projectID, write: true },
+      { permission: "org:projects:manage", projectID: cmd.projectID, write: true },
       db,
     );
     if (
@@ -187,6 +188,7 @@ export async function executeProjectSetup(actor: HostingActor, raw: unknown) {
         409,
         "Setup changed. Review the current configuration.",
       );
+    await authorizeSetupConfiguration(db, actor, cmd.projectID, cmd.action === "setup.save" ? cmd.configuration : row!.configuration);
     if (cmd.action === "setup.save") {
       if (row && Object.keys(row.resources).length) {
         row = await repairSetupEnvironment(

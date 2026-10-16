@@ -8595,3 +8595,6 @@ msgstr "Nach Name filtern"
 
 msgid "Administrators manage members and invitations. Clerk applies its team rules."
 msgstr "Administratoren verwalten Mitglieder und Einladungen. Dabei gelten die Teamregeln von Clerk."
+
+msgid "Current billing management permission is required."
+msgstr "Du benötigst eine gültige Berechtigung zur Verwaltung der Abrechnung."

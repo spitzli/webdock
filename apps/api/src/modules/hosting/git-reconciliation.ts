@@ -100,7 +100,7 @@ export async function reconcileGitRelease(
   return transaction(async (db) => {
     const access = await authorizeHosting(
       actor,
-      { projectID: cmd.projectID, write: true },
+      { permission: "org:deployments:create", projectID: cmd.projectID, write: true },
       db,
     );
     const r = (

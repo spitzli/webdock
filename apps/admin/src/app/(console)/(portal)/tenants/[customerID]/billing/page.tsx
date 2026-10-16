@@ -37,7 +37,7 @@ export default async function Billing({
   const site = query.site?.split(".");
   try {
     view = await studioCall("billing.tenant", [{ environment, customerID }]);
-    if (query.offer) {
+    if (view.canManage && query.offer) {
       offer = await studioCall<BillingOfferView>("billing.offer", [
         query.offer,
       ]);
@@ -60,7 +60,7 @@ export default async function Billing({
               ),
           )?.id
         : undefined);
-    if (versionID && changeID)
+    if (view.canManage && versionID && changeID)
       changeQuote = await studioCall<SubscriptionChangeQuote>(
         "billing.changeQuote",
         [
@@ -75,6 +75,7 @@ export default async function Billing({
       );
 
     if (
+      view.canManage &&
       !changeID &&
       versionID &&
       site?.length === 2 &&
@@ -175,11 +176,11 @@ export default async function Billing({
             .map((attempt) => (
               <div key={attempt.id}>
                 <p>{i18n.t(billingLabel(attempt.state))}</p>
-                <PaymentLink
+                {view.canManage && <PaymentLink
                   environment={environment}
                   customerID={customerID}
                   attemptID={attempt.id}
-                />
+                />}
               </div>
             ))}
         </section>
@@ -196,7 +197,7 @@ export default async function Billing({
               </>
             )}
           </p>
-          {["changing", "reserved", "needs_review"].includes(change.status) && (
+          {view.canManage && ["changing", "reserved", "needs_review"].includes(change.status) && (
             <ResumeChange
               environment={environment}
               customerID={customerID}
@@ -205,7 +206,7 @@ export default async function Billing({
           )}
         </section>
       ))}
-      {view.salesEnabled &&
+      {view.canManage && view.salesEnabled &&
         view.subscriptions
           .filter(
             (subscription) =>
@@ -305,7 +306,7 @@ export default async function Billing({
           />
         </section>
       )}
-      {!current && (
+      {view.canManage && !current && (
         <section className="panel">
           <h2>{i18n.t(offer ? "Your offer" : "Choose a website plan")}</h2>
           {offer && (

@@ -90,7 +90,7 @@ export async function executeServiceBinding(actor: HostingActor, raw: unknown) {
   return transaction(async (db) => {
     const access = await authorizeHosting(
       actor,
-      { projectID: cmd.projectID, write: cmd.action !== "services.list" },
+      { permission: "org:projects:manage", projectID: cmd.projectID, write: cmd.action !== "services.list" },
       db,
     );
     if (cmd.action === "services.list") {
@@ -138,6 +138,8 @@ export async function executeServiceBinding(actor: HostingActor, raw: unknown) {
       throw new HostingError(404, "Application is unavailable.");
     const environment = openEnvironment(app.id, app.environment_encrypted);
     const service = cmd.action === "services.bind" ? cmd.service : row.service;
+    if (service.kind === "postgres")
+      await authorizeHosting(actor, { projectID: cmd.projectID, write: true, permission: "org:databases:manage" }, db);
     if (cmd.action === "services.rotate" && service.kind !== "mail")
       throw new HostingError(
         409,

@@ -51,10 +51,14 @@ export async function billingAudit(
     sql`INSERT INTO webdock_auth.access_event(actor_id,action,target_id,outcome) VALUES(${actor.subject},${"billing." + action},${target},'success')`,
   );
 }
+export function customerReadTransaction<T>(actor: BillingActor, customerID: string, run: (tx: Tx) => Promise<T>): Promise<T> {
+  return customerTransaction(actor, customerID, run, false);
+}
 export async function customerTransaction<T>(
   actor: BillingActor,
   customerID: string,
   run: (tx: Tx) => Promise<T>,
+  writing = true,
 ): Promise<T> {
   const memberships=currentConsolePrincipal()?undefined:await legacyClerkMemberships(actor.subject);
   return withDatabaseScope({ kind: "session", ...actor, ...(memberships?{memberships}:{}) }, () =>
@@ -63,12 +67,12 @@ export async function customerTransaction<T>(
         if (
           !(
             await tx.execute<{ allowed: boolean }>(
-              sql`SELECT webdock_rls.billing_admin(${customerID}) AS allowed`,
+              writing ? sql`SELECT webdock_rls.billing_admin(${customerID}) AS allowed` : sql`SELECT webdock_rls.billing_reader(${customerID}) AS allowed`,
             )
           ).rows[0].allowed
         )
           throw new BillingError(
-            "Current customer administrator access is required.",
+            "Current billing management permission is required.",
             403,
           );
       };

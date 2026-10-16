@@ -107,6 +107,7 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
           clerkOrganizationID: reference.organizationID,
           customerID: f.customerID,
           role: "admin" as const,
+          permissions: ["org:projects:manage", "org:deployments:create", "org:databases:manage", "org:billing:manage"],
           verifiedAt: Date.now(),
           expiresAt: Date.now() + 59000,
         },
@@ -119,6 +120,16 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       expect((await withDatabaseScope(scope, check)).rows[0].allowed).toBe(
         true,
       );
+      expect((await withDatabaseScope({ ...scope, clerk: { ...scope.clerk, permissions: [] } }, check)).rows[0].allowed).toBe(false);
+      expect((await withDatabaseScope({ ...scope, clerk: { ...scope.clerk, role: "member", permissions: ["org:projects:manage"] } }, check)).rows[0].allowed).toBe(true);
+      expect((await withDatabaseScope({ ...scope, clerk: { ...scope.clerk, permissions: ["org:databases:manage"] } }, check)).rows[0].allowed).toBe(false);
+      await db.query("UPDATE webdock_auth.hosting_setup SET configuration=jsonb_set(configuration,'{database,mode}',to_jsonb('create'::text)) WHERE id=$1", [saved.id]);
+      expect((await withDatabaseScope({ ...scope, clerk: { ...scope.clerk, permissions: ["org:projects:manage"] } }, check)).rows[0].allowed).toBe(false);
+      expect((await withDatabaseScope({ ...scope, clerk: { ...scope.clerk, permissions: ["org:projects:manage", "org:databases:manage"] } }, check)).rows[0].allowed).toBe(true);
+      await db.query("UPDATE webdock_auth.hosting_setup SET configuration=jsonb_set($2::jsonb,'{source,kind}',to_jsonb('git'::text)) WHERE id=$1", [saved.id, row.configuration]);
+      expect((await withDatabaseScope({ ...scope, clerk: { ...scope.clerk, permissions: ["org:projects:manage"] } }, check)).rows[0].allowed).toBe(false);
+      expect((await withDatabaseScope({ ...scope, clerk: { ...scope.clerk, permissions: ["org:projects:manage", "org:deployments:create"] } }, check)).rows[0].allowed).toBe(true);
+      await db.query("UPDATE webdock_auth.hosting_setup SET configuration=$2 WHERE id=$1", [saved.id, row.configuration]);
       expect(
         (
           await withDatabaseScope(
@@ -146,7 +157,7 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       expect((await withDatabaseScope({ ...revalidationScope, generation: row.generation + 1 }, mapping)).rows[0].mapping).toBeNull();
       await db.query("UPDATE webdock_auth.hosting_setup SET lease_until=now()-interval '1 second' WHERE id=$1", [saved.id]);
       expect((await withDatabaseScope(revalidationScope, mapping)).rows[0].mapping).toBeNull();
-      const child = async (status: string, mismatch = false) => {
+      const child = async (status: string, mismatch = false, permissions = ["org:projects:manage", "org:databases:manage", "org:deployments:create"], role = "org:admin") => {
         const env: NodeJS.ProcessEnv = { ...process.env, WEBDOCK_PROCESS_ROLE: "worker", WEBDOCK_SETUP_ENABLED: "true", CLERK_ISSUER: reference.issuer, WEBDOCK_CONSOLE_ORIGIN: "https://console.example.invalid", WEBDOCK_CONSOLE_SERVICE_KEY: "fixture-service-key-32-characters-long", CLERK_SECRET_KEY: "sk_test_fixture", CLERK_PUBLISHABLE_KEY: "pk_test_fixture" };
         for (const key of ["DATABASE_URL", "AUTH_DATABASE_URL", "API_TEST_OWNER_URL", "DATABASE_ADMIN_URL"]) delete env[key];
         const script = `
@@ -155,7 +166,7 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
             sessions: { getSession: async () => ({ id: ${JSON.stringify(reference.sessionID)}, userId: ${JSON.stringify(mismatch ? "user_wrong" : reference.userID)}, status: ${JSON.stringify(status)}, expireAt: Date.now()+60000 }) },
             users: {
               getUser: async () => ({ id: ${JSON.stringify(reference.userID)}, banned: false, locked: false, primaryEmailAddressId: "email", emailAddresses: [{ id: "email", verification: { status: "verified" } }] }),
-              getOrganizationMembershipList: async () => ({ data: [{organization: {id: ${JSON.stringify(reference.organizationID)}}, role: "org:admin"}], totalCount: 1 })
+              getOrganizationMembershipList: async () => ({ data: [{organization: {id: ${JSON.stringify(reference.organizationID)}}, role: ${JSON.stringify(role)}, permissions: ${JSON.stringify(permissions)}}], totalCount: 1 })
             }
           }) }));
           const { runSetupBatch } = await import("./src/modules/hosting/setup-worker");
@@ -177,6 +188,24 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       expect(await child("revoked")).toEqual({processed:1,failed:1});
       await reset();
       expect(await child("active", true)).toEqual({processed:1,failed:1});
+      // A linked legacy session uses the same live provider capability, without bootstrap credentials.
+      await db.query('UPDATE webdock_auth."user" SET "emailVerified"=true,"mustChangePassword"=false WHERE id=$1', [f.actor.subject]);
+      await db.query(`INSERT INTO webdock_auth.session(id,token,"userId","expiresAt","updatedAt") VALUES($1,$1,$2,now()+interval '1 hour',now())`, [f.actor.sessionID, f.actor.subject]);
+      await db.query("UPDATE webdock_auth.hosting_setup SET actor=$2 WHERE id=$1", [saved.id, f.actor]);
+      await db.query(`UPDATE webdock_auth.member SET role='member' WHERE "userId"=$1`, [f.actor.subject]);
+      const legacyClaim = (await db.query("UPDATE webdock_auth.hosting_setup SET state='running',lease_until=now()+interval '60 seconds' WHERE id=$1 RETURNING generation", [saved.id])).rows[0];
+      const memberships = { subject: f.actor.subject, issuer: reference.issuer, userID: reference.userID, verifiedAt: Date.now(), expiresAt: Date.now()+59000, roles: [{ organizationID: org, customerID: f.customerID, role: "member", permissions: ["org:projects:manage"] }] };
+      const legacyScope = { ...scope, generation: legacyClaim.generation, clerk: undefined, memberships };
+      expect((await withDatabaseScope(legacyScope, check)).rows[0].allowed).toBe(true);
+      expect((await withDatabaseScope({ ...legacyScope, memberships: undefined }, check)).rows[0].allowed).toBe(false);
+      expect((await withDatabaseScope({ ...legacyScope, memberships: { ...memberships, expiresAt: 1 } }, check)).rows[0].allowed).toBe(false);
+      expect((await withDatabaseScope({ ...legacyScope, memberships: { ...memberships, subject: "wrong" } }, check)).rows[0].allowed).toBe(false);
+      await reset();
+      expect(await child("active", false, ["org:projects:manage"], "org:member")).toEqual({processed:1,failed:0});
+      await reset();
+      expect(await child("active", false, [], "org:member")).toEqual({processed:1,failed:1});
+      await reset();
+      expect(await child("active", false, ["org:databases:manage"], "org:member")).toEqual({processed:1,failed:1});
       await db.query("UPDATE webdock_auth.clerk_identity SET enabled=false WHERE user_id=$1", [f.actor.subject]);
       await reset();
       expect(await child("active")).toEqual({processed:1,failed:1});

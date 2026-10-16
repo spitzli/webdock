@@ -1,4 +1,5 @@
-import {revalidateStoredConsoleIdentity} from "../auth/clerk-provider";
+import { normalizeOrganizationPermissions } from "../auth/organization-permissions";
+import {clerkProvider, liveMemberships, revalidateStoredConsoleIdentity} from "../auth/clerk-provider";
 import {withStoredConsolePrincipal} from "../auth/principal";
 import { withDatabaseScope } from "@webdock/database-runtime";
 import { HostingError } from "@webdock/hosting-contracts";
@@ -50,11 +51,25 @@ export async function runSetupBatch({
         },
       ) : null;
       if(principal && (principal.userID!==row.actor?.subject || principal.sessionID!==row.actor?.sessionID))throw new HostingError(403,"Confirm this setup again before continuing.");
+      const memberships = !reference && process.env.DATABASE_RLS_SECRET ? await withDatabaseScope(
+        { kind: "system", purpose: "hosting-setup-revalidation", customerID: row.customer_id, setupID: row.id, generation: row.generation },
+        async () => {
+          const mapping = (await workerDatabase.query("SELECT webdock_rls.setup_legacy_revalidation() AS mapping")).rows[0]?.mapping;
+          if (!mapping) return undefined;
+          if (!mapping.enabled || !mapping.userID || mapping.issuer !== process.env.CLERK_ISSUER) throw new HostingError(403, "Setup authorization changed. Sign in and resume the setup.");
+          const user = await clerkProvider().users.getUser(mapping.userID);
+          if (user.id !== mapping.userID || user.banned || user.locked || !user.emailAddresses.some(email => email.id === user.primaryEmailAddressId && email.verification?.status === "verified")) throw new HostingError(403, "Setup authorization changed. Sign in and resume the setup.");
+          const member = (await liveMemberships(mapping.userID)).find(member => member.organization.id === mapping.clerkOrganizationID);
+          const verifiedAt = Date.now();
+          return { subject: row.actor!.subject, issuer: mapping.issuer as string, userID: mapping.userID as string, verifiedAt, expiresAt: verifiedAt + 60000, roles: member && ["org:admin", "org:member"].includes(member.role) ? [{ organizationID: mapping.organizationID as string, customerID: mapping.customerID as string, role: member.role === "org:admin" ? "admin" : "member", permissions: normalizeOrganizationPermissions(member.permissions) }] : [] };
+        },
+      ) : undefined;
       const execute=()=>withDatabaseScope(
         {
           kind: "system",
           purpose: "hosting-setup",
-          ...(principal?{clerk:{issuer:principal.issuer,userID:principal.clerkUserID,subject:principal.userID,sessionID:principal.sessionID,organizationID:principal.organizationID,clerkOrganizationID:principal.clerkOrganizationID,customerID:principal.customerID,role:principal.role,verifiedAt:principal.verifiedAt,expiresAt:principal.expiresAt}}:{}),
+          ...(memberships ? { memberships } : {}),
+          ...(principal?{clerk:{issuer:principal.issuer,userID:principal.clerkUserID,subject:principal.userID,sessionID:principal.sessionID,organizationID:principal.organizationID,clerkOrganizationID:principal.clerkOrganizationID,customerID:principal.customerID,role:principal.role,permissions:principal.permissions,verifiedAt:principal.verifiedAt,expiresAt:principal.expiresAt}}:{}),
           customerID: row.customer_id,
           setupID: row.id,
           generation: row.generation,

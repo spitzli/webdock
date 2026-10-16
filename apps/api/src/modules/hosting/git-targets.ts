@@ -30,7 +30,7 @@ export async function bindGitTarget(
   return transaction(async (db) => {
     const access = await authorizeHosting(
       actor,
-      {
+      { permission: "org:projects:manage",
         projectID: cmd.projectID,
         write: true,
         operator: cmd.mode === "platform",

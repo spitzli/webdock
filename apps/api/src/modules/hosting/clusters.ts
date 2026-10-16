@@ -100,7 +100,7 @@ export async function issueEnrollment(
       ).rows[0];
       if (owned?.ownership === "tenant")
         await byokCluster(db, actor, row.cluster_id, true);
-      else await authorizeHosting(actor, { write: true, operator: true }, db);
+      else await authorizeHosting(actor, { permission: "org:projects:manage", write: true, operator: true }, db);
       const token = randomBytes(32).toString("base64url");
       await db.query(
         "UPDATE webdock_auth.hosting_enrollment SET token_hash=$2,issued_at=now() WHERE id=$1",

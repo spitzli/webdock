@@ -20,7 +20,7 @@ export async function relocateProject(actor: HostingActor, cmd: Relocation) {
   return transaction(async (db) => {
     const access = await authorizeHosting(
       actor,
-      { projectID: cmd.projectID, operator: true, write: true },
+      { permission: "org:projects:manage", projectID: cmd.projectID, operator: true, write: true },
       db,
     );
     await planLock(db, access.customerID!);
@@ -32,7 +32,7 @@ export async function relocateProject(actor: HostingActor, cmd: Relocation) {
     if (prior.existing) return prior.existing.result;
     const current = await authorizeHosting(
       actor,
-      { projectID: cmd.projectID, operator: true, write: true },
+      { permission: "org:projects:manage", projectID: cmd.projectID, operator: true, write: true },
       db,
     );
     if (

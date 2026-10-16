@@ -9,7 +9,7 @@ export async function readProjectOverview(
   projectID: string,
   db: Connection,
 ): Promise<ProjectOverview> {
-  const access = await authorizeHosting(actor, { projectID }, db);
+  const access = await authorizeHosting(actor, { permission: "org:projects:manage", projectID }, db);
   const data = await readHostingView(
     db,
     actor,

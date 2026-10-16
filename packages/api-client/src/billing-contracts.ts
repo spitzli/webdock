@@ -85,6 +85,7 @@ export type BillingOfferView = {
   version: PurchaseVersion;
 };
 export type TenantBillingView = {
+  canManage: boolean;
   changes: SubscriptionChangeView[];
   environment: BillingEnvironment;
   customerID: string;

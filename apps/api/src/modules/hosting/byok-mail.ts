@@ -97,7 +97,7 @@ export async function executeByokMail(
       const write = cmd.action !== "byok.mail.get";
       const access = await authorizeHosting(
         actor,
-        { customerID, write, tenantAdmin: true },
+        { legacyRole: true, customerID, write, tenantAdmin: true },
         db,
       );
       await planLock(db, customerID);
@@ -182,7 +182,7 @@ export async function executeByokMail(
         const domains = await listDomains(credentials);
         await authorizeHosting(
           actor,
-          { customerID, write: true, tenantAdmin: true },
+          { legacyRole: true, customerID, write: true, tenantAdmin: true },
           db,
         );
         const encrypted = encryptMailSecret(

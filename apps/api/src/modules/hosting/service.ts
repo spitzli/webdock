@@ -48,7 +48,7 @@ export async function executeHosting(
       if (cmd.action === "projects.get") {
         const access = await authorizeHosting(
           actor,
-          { projectID: cmd.projectID },
+          { permission: "org:projects:manage", projectID: cmd.projectID },
           db,
         );
         const context = await readHostingView(
@@ -83,7 +83,7 @@ export async function executeHosting(
         };
       }
       if (cmd.action === "operations.overview") {
-        await authorizeHosting(actor, { operator: true }, db);
+        await authorizeHosting(actor, { permission: "org:projects:manage", operator: true }, db);
         return readHostingView(
           db,
           actor,
@@ -131,7 +131,7 @@ export async function executeHosting(
         );
       }
       if (cmd.action === "clusters.activate") {
-        await authorizeHosting(actor, { operator: true, write: true }, db);
+        await authorizeHosting(actor, { permission: "org:projects:manage", operator: true, write: true }, db);
         await clusterLock(db, cmd.clusterID);
         const owned = (
           await db.query(
@@ -211,7 +211,7 @@ export async function executeHosting(
         return clusterView(db, cmd.clusterID);
       }
       if (cmd.action === "clusters.list") {
-        await authorizeHosting(actor, { operator: true }, db);
+        await authorizeHosting(actor, { permission: "org:projects:manage", operator: true }, db);
         return readHostingView(
           db,
           actor,
@@ -274,7 +274,7 @@ export async function executeHosting(
         );
       }
       if (cmd.action === "clusters.get") {
-        await authorizeHosting(actor, { operator: true }, db);
+        await authorizeHosting(actor, { permission: "org:projects:manage", operator: true }, db);
         return readHostingView(
           db,
           actor,
@@ -294,7 +294,7 @@ export async function executeHosting(
       if (cmd.action === "clusters.register") {
         await authorizeHosting(
           actor,
-          { operator: true, write, customerID: cmd.dedicatedCustomerID },
+          { permission: "org:projects:manage", operator: true, write, customerID: cmd.dedicatedCustomerID },
           db,
         );
         const prior = await replay(db, actor, cmd.idempotencyKey, cmd);
@@ -329,7 +329,7 @@ export async function executeHosting(
         cmd.action === "clusters.enrollment" ||
         cmd.action === "clusters.revoke"
       ) {
-        await authorizeHosting(actor, { operator: true, write }, db);
+        await authorizeHosting(actor, { permission: "org:projects:manage", operator: true, write }, db);
         await clusterLock(db, cmd.clusterID);
         const c = await clusterView(db, cmd.clusterID);
         if (cmd.action === "clusters.revoke") {
@@ -379,7 +379,7 @@ export async function executeHosting(
         };
       }
       if (cmd.action === "limits.get" || cmd.action === "usage.get") {
-        await authorizeHosting(actor, { customerID: cmd.customerID }, db);
+        await authorizeHosting(actor, { permission: "org:projects:manage", customerID: cmd.customerID }, db);
         return cmd.action === "limits.get"
           ? limits(db, cmd.customerID)
           : usage(db, cmd.customerID);
@@ -387,7 +387,7 @@ export async function executeHosting(
       if (cmd.action === "limits.set") {
         await authorizeHosting(
           actor,
-          {
+          { permission: "org:projects:manage",
             customerID: cmd.customerID,
             projectID: cmd.projectID,
             operator: true,
@@ -428,7 +428,7 @@ export async function executeHosting(
       if (cmd.action === "projects.list") {
         const access = await authorizeHosting(
           actor,
-          { customerID: cmd.customerID },
+          { permission: "org:projects:manage", customerID: cmd.customerID },
           db,
         );
         const view = await readHostingView(
@@ -502,7 +502,7 @@ export async function executeHosting(
       ) {
         const access = await authorizeHosting(
           actor,
-          { projectID: cmd.projectID, operator: true, write },
+          { permission: "org:projects:manage", projectID: cmd.projectID, operator: true, write },
           db,
         );
         await planLock(db, access.customerID!);
@@ -621,7 +621,7 @@ export async function executeHosting(
         if (!op) throw new HostingError(404, "Operation is unavailable.");
         await authorizeHosting(
           actor,
-          {
+          { permission: "org:projects:manage",
             customerID: op.customer_id ?? undefined,
             projectID: op.project_id ?? undefined,
             operator: !op.customer_id,

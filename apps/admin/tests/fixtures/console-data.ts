@@ -72,8 +72,21 @@ assert(!calls.includes("getTenant"), "navigation must not fetch members, invitat
 listGate.resolve([tenant]);
 const context = await pendingContext;
 assert.equal(context?.customerID, "8");
-assert.deepEqual(context?.tenant, { tenant, canManage: true });
+assert.deepEqual(context?.tenant, { tenant, canManage: true, canManageBilling: true });
 assert.deepEqual(calls, ["session", "projects.get", "listTenants"]);
+
+// Live capability removal wins over an unchanged admin label; grants do not require an admin label.
+for (const [role, manageBilling, preview] of [["admin", false, false], ["member", true, false], ["member", true, true]] as const) {
+  newRequest();
+  handle = async operation => {
+    if (operation === "session") return {...session, operator: false, preview};
+    if (operation === "listTenants") return [{...tenant, role, capabilities: {manageProjects: false, createDeployments: false, manageDatabases: false, manageBilling}}];
+    throw Error(operation);
+  };
+  const result = await getConsoleContext("tenants/8/overview");
+  assert.equal(result?.tenant?.canManageBilling, manageBilling && !preview);
+  assert.equal(result?.tenant?.canManage, role === "admin" && !preview, "team role policy remains separate");
+}
 
 newRequest();
 calls.length = 0;
