@@ -18,6 +18,8 @@ export const migrationManifest = z
             localID: id,
             kind: z.enum(["operator", "customer"]),
             clerkUserID: z.string().startsWith("user_").optional(),
+            firstName: z.string().trim().min(1).max(256).optional(),
+            lastName: z.string().trim().min(1).max(256).optional(),
           })
           .strict(),
       )
@@ -243,7 +245,8 @@ export async function migrateClerkUsers(
         emailAddressIdentificationStatus: [
           local.emailVerified ? "verified" : "reserved",
         ],
-        firstName: local.name,
+        firstName: account.firstName ?? local.name,
+        ...(account.lastName ? { lastName: account.lastName } : {}),
         skipPasswordRequirement: true,
       });
     }

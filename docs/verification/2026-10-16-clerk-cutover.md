@@ -82,3 +82,18 @@ The temporary non-superuser migrator was disabled, its password cleared, all rol
 memberships/database grants removed and its temporary HBA rule removed while that
 decision is pending. Merge, final identity import, Clerk Console activation and UI
 proxy promotion are still outstanding. No invitation emails were sent.
+
+
+## Identity import completed
+
+The owner explicitly approved placeholders for the missing surnames. The private
+manifest supplies `—` for the two incomplete names and explicit first/last names
+for the existing full name. Clerk's required-field configuration remains unchanged.
+The importer accepts only explicitly reviewed name fields; it does not infer surnames.
+Nine importer regressions and API TypeScript passed.
+
+Production import completed:four local identities linked, two Clerk customer
+organizations created/linked, existing roles preserved without adding the operator
+to customer teams. No invitations, passwords or legacy sessions were created.
+The schema has no native mailbox grants to convert. Console activation and promotion
+follow final mapping readback and removal of the temporary import credential.

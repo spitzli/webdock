@@ -154,6 +154,8 @@ function migrationFixture(unsupportedMailGrant = false, nativeMailSchema = true)
         creates++;
         const u = {
           id: "user_" + creates,
+          firstName: input.firstName,
+          lastName: input.lastName,
           externalId: input.externalId,
           emailAddresses: input.emailAddress.map(
             (emailAddress: string, i: number) => ({
@@ -278,4 +280,13 @@ test("optional uninstalled native mailbox schema does not block identity migrati
  const f=migrationFixture(false,false);
  await migrateClerkUsers(manifest,f.db,f.provider,true);
  expect(f.counts().creates).toBe(4);
+});
+
+test("reviewed name fields preserve explicit placeholders without changing identity or roles", async () => {
+ const f=migrationFixture();
+ const reviewed={...manifest,accounts:manifest.accounts.map((a,i)=>({...a,firstName:i===1?"Elias":undefined,lastName:i===1?"—":undefined}))};
+ await migrateClerkUsers(reviewed,f.db,f.provider,true);
+ const user=f.users.find(u=>u.externalId==="1002");
+ expect(user.firstName).toBe("Elias");expect(user.lastName).toBe("—");
+ expect(f.members.find(m=>m.publicUserData.userId===user.id)?.role).toBe("org:admin");
 });

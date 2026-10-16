@@ -108,7 +108,7 @@ Only then run the importer; the later deployment step activates the Console mode
 
 The private importer manifest contains `environment: "production"`, the exact
 `applicationID`, `instanceID`, `issuer`, four `accounts` (`localID`, `kind`, optional
-reviewed `clerkUserID`) and two `teams` (`organizationID`, `customerID`, optional
+reviewed `clerkUserID`, optional explicitly reviewed `firstName`/`lastName`) and two `teams` (`organizationID`, `customerID`, optional
 reviewed `clerkOrganizationID`, `members` with `localID`/`role`). Its Zod schema in
 `apps/api/scripts/migrate-clerk-users.ts` is authoritative. Operator is never a team
 member. Resolve duplicate-email collisions manually; do not merge by email.
