@@ -55,3 +55,30 @@ The backup, manifests, credentials and detailed inventory are private and ignore
 Current API/worker image references, immutable frontend routing and workload
 configuration were captured privately before changes. Actual rollout and smoke
 results are appended after completion; the above is preparation evidence only.
+
+## Backend rollout and remaining identity gate
+
+The guarded production migration and policy installer completed successfully:
+41 migration entries,317 selected tables under FORCE RLS. API and worker now run
+`docker.io/library/webdock-api@sha256:568a3d4665d953a97f4c90d30e1232d28d3ffc348f98b44834e722cdc82b33f2`.
+The imported image also needed its canonical digest name registered in containerd;
+after that correction both workloads reached Ready with no restarts.
+
+Clerk verifier settings and the Console delegation key are provisioned separately
+on API/worker and Vercel Console. API remains in legacy Console mode until identity
+linking completes. API readiness and legacy OIDC discovery return200; anonymous MCP
+remains401. The existing immutable Console proxy target has not been changed.
+
+The real importer dry-run identified exactly four accounts/two teams. Apply stopped
+at the first provider user creation with Clerk422 `form_data_missing`, before any
+new customer user or local Clerk mapping existed. Production now requires both
+first and last name, while two legacy display names contain only one name. The owner
+was asked whether last names should be optional or supplied explicitly. No names
+were invented and no provider field requirement was silently weakened. The CLI now
+reports only bounded provider/database diagnostic codes, never raw secret-bearing
+error details. Runtime and source checks remain green.
+
+The temporary non-superuser migrator was disabled, its password cleared, all role
+memberships/database grants removed and its temporary HBA rule removed while that
+decision is pending. Merge, final identity import, Clerk Console activation and UI
+proxy promotion are still outstanding. No invitation emails were sent.

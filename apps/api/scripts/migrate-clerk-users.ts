@@ -458,6 +458,11 @@ if (import.meta.main) {
       ),
     );
   } catch (error) {
+    // Provider messages can contain identifiers; expose only bounded diagnostic codes.
+    const diagnostic = error as { status?: unknown; code?: unknown; errors?: Array<{ code?: unknown }> };
+    const safeCode = (value: unknown) => typeof value === "string" && /^[a-zA-Z0-9_]{1,80}$/.test(value) ? value : undefined;
+    console.error(JSON.stringify({event: "clerk_import_failed", status: typeof diagnostic.status === "number" ? diagnostic.status : undefined,
+      code: safeCode(diagnostic.code), providerCodes: Array.isArray(diagnostic.errors) ? diagnostic.errors.map(item => safeCode(item.code)).filter(Boolean) : undefined}));
     console.error(
       error instanceof MigrationError
         ? error.message
