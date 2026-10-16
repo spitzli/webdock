@@ -161,7 +161,7 @@ function queryArgs(args: any[]): {
 
 // Read only command keywords; PostgreSQL allows comments between every keyword,
 // including nested block comments. Extended protocol rejects multiple statements.
-function commandWords(sql: string): string[] {
+export function sqlCommandWords(sql: string): string[] {
   const words: string[] = [];
   let offset = 0;
   while (offset < sql.length && words.length < 8) {
@@ -310,7 +310,7 @@ export class ScopedPool extends pg.Pool {
       const identity = JSON.stringify(scope);
       const run = async () => {
         if (poisoned) throw poisoned;
-        const words = commandWords(parsed.config.text);
+        const words = sqlCommandWords(parsed.config.text);
         const begin =
           words[0] === "BEGIN" ||
           (words[0] === "START" && words[1] === "TRANSACTION");

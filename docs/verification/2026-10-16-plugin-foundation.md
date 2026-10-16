@@ -45,3 +45,17 @@ No production deployment, public package publication, customer migration or cred
 - Complete RLS suite passed after integration; the final invocation-time-bound change passed its focused RLS regressions (22 assertions). Module suite: 121 passed. API unit suite: 151 passed. API check/build and fresh-install/retained-upgrade integration passed.
 - The RLS runner now honors explicitly requested registered test files and rejects unknown selections; the full invocation still includes the ported RLS suites.
 - Independent review of the continuation found no concrete issues. There is still no public plugin broker or live built-in admission; database enforcement does not substitute for the remaining endpoint/controller work.
+
+## Registry project and admission transaction checkpoint
+
+The owner authorized creation of a separate registry project. `Webdock Plugin Registry` was created in the Webdock workspace and read back through the Console; see `docs/operations/plugin-registry-project.md`. It has no hosting/application/services yet. No registry deployment is claimed.
+
+Core Task 3 is in progress. `createModuleAdmission`/`withModuleAdmission` now provide an SQL-only transaction boundary sharing an advisory fence with state mutations. Callers must persist their real operation/outbox using the supplied connection and operation ID; this helper is not a second job queue. Nested checks share that connection and cannot change identity, pool or transaction boundaries. Continuations require an existing operation ID and a trusted authorization callback that checks its journal/lease using the same connection. Provider calls belong after the durable transaction commits.
+
+Restricted-role tests use a second database connection to observe a waiting exclusive lock: a drain waits for in-flight admission, then fresh provisioning fails despite a stale enabled snapshot. Tests also cover authorized and denied continuations, read-only mutation denial, rollback, unavailable pools, swallowed nested failures, falsy rejection values, caught SQL errors and early COMMIT attempts. COMMIT must actually report `COMMIT`; PostgreSQL's successful `ROLLBACK` response for an aborted transaction cannot authorize subsequent side effects. The existing SQL command parser is reused for transaction ownership checks.
+
+`readPublicInstallation` reads current persisted public metadata without caching; it is not an authorization check.
+
+The transaction primitives are **not yet wired into all service ports/routes/workers**. The 151-call-site audit and dynamic route composition remain outstanding, so Core Task 3 and live module control are not complete. No change to existing module availability is claimed from these helpers alone.
+
+Verification for this transaction checkpoint: focused admission RLS regression passed 24 assertions; the complete registered RLS suite passed after the fixes. API unit tests: 151 passed; module tests: 121 passed; database-runtime tests: 11 passed. API build/typecheck passed after correcting the test's optional-ID type. Independent review identified the aborted-COMMIT and falsy nested-failure cases; both received failing-then-passing regressions. Existing service/route integration remains intentionally unclaimed.

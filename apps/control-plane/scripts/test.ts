@@ -30,6 +30,7 @@ const rls = new Set([
   "plugins-startup-rls.integration.test.ts",
   "plugins-runtime-state-rls.integration.test.ts",
   "plugins-state-rls.integration.test.ts",
+  "plugins-admission.integration.test.ts",
   "server.integration.test.ts",
   "clerk-worker-rls.integration.test.ts",
   "module-preflight-rls.integration.test.ts",
