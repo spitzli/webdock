@@ -3,18 +3,13 @@ import * as React from "react";
 import type { ComponentProps } from "react";
 import { resourceScope } from "@webdock/console-kit/resource-scope";
 
-import dynamic from "next/dynamic";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { HttpTransport, TabularisClient } from "@tabularis/web-ui";
+import { HttpTransport, TabularisClient, TabularisWorkspace as Workspace, preloadTabularisWorkspace } from "@tabularis/web-ui";
 import "@tabularis/web-ui/workspace.css";
 import { useI18n } from "@webdock/i18n/react";
 import { useDatabaseActions } from "./actions";
 import { rememberDatabaseSchemas } from "./schema-preferences";
 
-const Workspace = dynamic(
-  () => import("@tabularis/web-ui").then((module) => module.TabularisWorkspace),
-  { ssr: false },
-);
 const theme = () =>
   document.documentElement.dataset.theme === "light"
     ? "light"
@@ -56,6 +51,7 @@ function DatabaseWorkbenchState({
   }>();
   const [error, setError] = useState("");
   useEffect(() => {
+    void preloadTabularisWorkspace().catch(() => {});
     let active = true;
     let close: (() => void) | undefined;
     void (async () => {

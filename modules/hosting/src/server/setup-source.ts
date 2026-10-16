@@ -50,7 +50,7 @@ export function createHostingSetupSource(dependencies: Dependencies) {
       const connection = await dependencies.transaction(async (db) => {
         await dependencies.authorizeHosting(
           actor,
-          { projectID: cmd.projectID },
+          { permission: "org:projects:manage", projectID: cmd.projectID },
           db,
         );
         return (
@@ -91,7 +91,7 @@ export function createHostingSetupSource(dependencies: Dependencies) {
     const context = await dependencies.transaction(async (db) => {
       const access = await dependencies.authorizeHosting(
         actor,
-        { projectID: cmd.projectID },
+        { permission: "org:projects:manage", projectID: cmd.projectID },
         db,
       );
       const project = (

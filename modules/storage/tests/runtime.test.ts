@@ -4,6 +4,7 @@ import { createStorageUsage, StorageUsageError } from "../src/server/usage.ts";
 import type { StoragePorts } from "../src/server/ports.ts";
 function ports(overrides: Partial<StoragePorts> = {}): StoragePorts {
   return {
+    currentConsolePrincipal: () => undefined,
     database: {
       query: async () => ({ rows: [], rowCount: 0 }),
       connect: async () => {

@@ -1,11 +1,12 @@
+import { businessOperator, getBusinessIdentity } from "./business-identity";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { auth } from "./auth";
 import { database } from "../../db/runtime";
 import { offlineProvisioning } from "./offline";
 import { currentMCPClaims, mcpResource } from "./mcp";
 async function operator(headers: Headers) {
-  const session = await auth.api.getSession({ headers });
-  if (!session || (await currentMCPClaims(session.user.id)).disabled)
+  const session = await getBusinessIdentity(headers);
+  if (!session || (await businessOperator(session.user.id)).disabled)
     throw Error("Operator access required");
   return session;
 }

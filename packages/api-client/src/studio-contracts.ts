@@ -31,6 +31,12 @@ export type TenantSummary = {
   name: string;
   status: string;
   role: string | null;
+  capabilities?: {
+    manageProjects: boolean;
+    createDeployments: boolean;
+    manageDatabases: boolean;
+    manageBilling: boolean;
+  };
 };
 export type TenantInvitation = { id: string; role: string; name: string };
 export type TenantProfileField =
@@ -55,6 +61,7 @@ export type TenantProfile = {
   member_role: string | null;
 } & Record<TenantProfileField, string | null>;
 export type TenantView = {
+  team?: {provider:"clerk";ready:boolean;canManage:boolean};
   tenant: TenantProfile;
   canManage: boolean;
   operator: boolean;

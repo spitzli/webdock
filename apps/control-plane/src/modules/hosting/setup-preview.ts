@@ -1,3 +1,4 @@
+import { authorizeSetupConfiguration } from "./permissions";
 import { requireDatabases } from "./product-admission";
 import { requireMail } from "../../installation";
 export { assertSetupConfirmation } from "@webdock/module-hosting/server/setup-confirmation";
@@ -13,6 +14,7 @@ import { executeDatabaseCommand } from "./databases";
 import { createGitHubProvider } from "./git-github";
 import { applicationMailRoute } from "./mail-binding";
 export const { previewProjectSetup } = createHostingSetupPreview({
+  authorizeSetupConfiguration,
   requireDatabases,
   requireMail,
   get applicationCapabilities() {

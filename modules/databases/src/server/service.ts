@@ -1,3 +1,6 @@
+type StoredConsoleIdentity = NonNullable<
+  import("@webdock/hosting-contracts").HostingActor["consoleIdentity"]
+>;
 import { createHash, randomBytes } from "node:crypto";
 import {
   databaseCommand,
@@ -9,6 +12,12 @@ import { HostingError, type HostingActor } from "@webdock/hosting-contracts";
 import type { DatabaseReader as Connection } from "@webdock/core/identity";
 
 export interface DatabaseServiceDependencies {
+  storedConsoleIdentity(): StoredConsoleIdentity | null;
+  withStoredIdentity<T>(
+    reference: StoredConsoleIdentity,
+    run: (principal: { userID: string; sessionID: string }) => Promise<T>,
+  ): Promise<T>;
+
   authorizeHosting(
     actor: HostingActor,
     target: {
@@ -18,6 +27,7 @@ export interface DatabaseServiceDependencies {
       operator?: boolean;
       live?: boolean;
       tenantAdmin?: boolean;
+      permission?: string;
     },
     db: Connection,
   ): Promise<{ operator: boolean; canWrite: boolean }>;
@@ -36,6 +46,8 @@ export function createDatabaseService(
   dependencies: DatabaseServiceDependencies,
 ) {
   const {
+    storedConsoleIdentity,
+    withStoredIdentity,
     authorizeHosting,
     hostingAudit,
     encryptMailSecret,
@@ -63,7 +75,12 @@ export function createDatabaseService(
     if (!row) throw fail();
     const authorization = await authorizeHosting(
       actor,
-      { projectID: row.projectID, live: true, operator },
+      {
+        permission: "org:databases:manage",
+        projectID: row.projectID,
+        live: true,
+        operator,
+      },
       db,
     );
     if (!operator && !row.profile) throw fail();
@@ -92,7 +109,11 @@ export function createDatabaseService(
     if (cmd.action === "list") {
       const auth = await authorizeHosting(
         actor,
-        { customerID: cmd.customerID, live: true },
+        {
+          permission: "org:databases:manage",
+          customerID: cmd.customerID,
+          live: true,
+        },
         db,
       );
       const rows = (
@@ -145,7 +166,12 @@ export function createDatabaseService(
     if (cmd.action === "create") {
       await authorizeHosting(
         actor,
-        { projectID: cmd.projectID, operator: true, write: true },
+        {
+          permission: "org:databases:manage",
+          projectID: cmd.projectID,
+          operator: true,
+          write: true,
+        },
         db,
       );
       const row = (
@@ -256,10 +282,16 @@ export function createDatabaseService(
       const code = token();
       const launch = (
         await db.query(
-          `INSERT INTO webdock_auth.database_launch(token_hash,grant_id,grant_revision,session_id,expires_at)
-      SELECT $1,id,revision,$2,now()+interval '60 seconds' FROM webdock_auth.database_grant
+          `INSERT INTO webdock_auth.database_launch(token_hash,grant_id,grant_revision,session_id,expires_at,clerk_identity)
+        SELECT $1,id,revision,$2,now()+interval '60 seconds',$5::jsonb FROM webdock_auth.database_grant
       WHERE binding_id=$3 AND subject=$4 AND enabled RETURNING expires_at`,
-          [hash(code), actor.sessionID, cmd.bindingID, actor.subject],
+          [
+            hash(code),
+            storedConsoleIdentity() ? null : actor.sessionID,
+            cmd.bindingID,
+            actor.subject,
+            storedConsoleIdentity(),
+          ],
         )
       ).rows[0];
       if (!launch) throw fail();
@@ -280,7 +312,34 @@ export function createDatabaseService(
     grantID: string,
     revision: number,
     sessionID: string,
+    reference?: StoredConsoleIdentity | null,
   ) {
+    if (reference) {
+      return withStoredIdentity(reference, async (principal) => {
+        const grant = (
+          await db.query(
+            `SELECT g.*,b.project_id FROM webdock_auth.database_grant g JOIN webdock_auth.database_binding b ON b.id=g.binding_id WHERE g.id=$1 AND g.revision=$2 AND g.enabled AND b.enabled AND g.subject=$3 FOR SHARE OF g,b`,
+            [grantID, revision, principal.userID],
+          )
+        ).rows[0];
+        if (!grant) throw fail();
+        await authorizeHosting(
+          {
+            subject: principal.userID,
+            sessionID: principal.sessionID,
+            source: "studio",
+            scopes: ["hosting:read"],
+          },
+          {
+            permission: "org:databases:manage",
+            projectID: grant.project_id,
+            live: true,
+          },
+          db,
+        );
+        return grant;
+      });
+    }
     const grant = (
       await db.query(
         `SELECT g.*,b.project_id FROM webdock_auth.database_grant g
@@ -297,7 +356,11 @@ export function createDatabaseService(
         source: "studio",
         scopes: ["hosting:read"],
       },
-      { projectID: grant.project_id, live: true },
+      {
+        permission: "org:databases:manage",
+        projectID: grant.project_id,
+        live: true,
+      },
       db,
     );
     return grant;
@@ -318,17 +381,19 @@ export function createDatabaseService(
       launch.grant_id,
       launch.grant_revision,
       launch.session_id,
+      launch.clerk_identity,
     );
     const sessionToken = token();
     const session = (
       await db.query(
-        `INSERT INTO webdock_auth.database_session(token_hash,grant_id,grant_revision,session_id,expires_at)
-    VALUES($1,$2,$3,$4,now()+interval '15 minutes') RETURNING id,expires_at`,
+        `INSERT INTO webdock_auth.database_session(token_hash,grant_id,grant_revision,session_id,expires_at,clerk_identity)
+      VALUES($1,$2,$3,$4,now()+interval '15 minutes',$5::jsonb) RETURNING id,expires_at`,
         [
           hash(sessionToken),
           launch.grant_id,
           launch.grant_revision,
           launch.session_id,
+          launch.clerk_identity,
         ],
       )
     ).rows[0];
@@ -356,6 +421,7 @@ export function createDatabaseService(
       session.grant_id,
       session.grant_revision,
       session.session_id,
+      session.clerk_identity,
     );
     return {
       scopeID: session.id,
@@ -388,7 +454,13 @@ export function createDatabaseService(
     if (!d) throw fail();
     await authorizeHosting(
       actor,
-      { projectID: d.project_id, write: true, tenantAdmin: true, live: true },
+      {
+        permission: "org:databases:manage",
+        projectID: d.project_id,
+        write: true,
+        tenantAdmin: true,
+        live: true,
+      },
       db,
     );
     if (
@@ -416,8 +488,8 @@ export function createDatabaseService(
     const code = token();
     const launch = (
       await db.query(
-        `INSERT INTO webdock_auth.managed_database_launch(token_hash,database_id,backend_id,database_revision,credential_revision,subject,session_id,expires_at)
-     VALUES($1,$2,$3,$4,$5,$6,$7,now()+interval '60 seconds') RETURNING expires_at`,
+        `INSERT INTO webdock_auth.managed_database_launch(token_hash,database_id,backend_id,database_revision,credential_revision,subject,session_id,expires_at,clerk_identity)
+       VALUES($1,$2,$3,$4,$5,$6,$7,now()+interval '60 seconds',$8::jsonb) RETURNING expires_at`,
         [
           hash(code),
           d.id,
@@ -425,7 +497,8 @@ export function createDatabaseService(
           d.revision,
           d.confirmed_credential_revision,
           actor.subject,
-          actor.sessionID,
+          storedConsoleIdentity() ? null : actor.sessionID,
+          storedConsoleIdentity(),
         ],
       )
     ).rows[0];
@@ -451,12 +524,23 @@ export function createDatabaseService(
     session: {
       subject: string;
       session_id: string;
+      clerk_identity?: StoredConsoleIdentity | null;
       database_id: string;
       backend_id: string;
       database_revision: number;
       credential_revision: number;
     },
-  ) {
+  ): Promise<Awaited<ReturnType<typeof authorizeManaged>>> {
+    if (session.clerk_identity) {
+      return withStoredIdentity(session.clerk_identity, async (principal) => {
+        if (principal.userID !== session.subject) throw fail();
+        return authorizeManagedSession(db, {
+          ...session,
+          session_id: principal.sessionID,
+          clerk_identity: null,
+        });
+      });
+    }
     const d = await authorizeManaged(
       db,
       {
@@ -489,8 +573,8 @@ export function createDatabaseService(
     const sessionToken = token();
     const session = (
       await db.query(
-        `INSERT INTO webdock_auth.managed_database_session(token_hash,database_id,backend_id,database_revision,credential_revision,subject,session_id,expires_at)
-     VALUES($1,$2,$3,$4,$5,$6,$7,now()+interval '15 minutes') RETURNING id,expires_at`,
+        `INSERT INTO webdock_auth.managed_database_session(token_hash,database_id,backend_id,database_revision,credential_revision,subject,session_id,expires_at,clerk_identity)
+       VALUES($1,$2,$3,$4,$5,$6,$7,now()+interval '15 minutes',$8::jsonb) RETURNING id,expires_at`,
         [
           hash(sessionToken),
           launch.database_id,
@@ -499,6 +583,7 @@ export function createDatabaseService(
           launch.credential_revision,
           launch.subject,
           launch.session_id,
+          launch.clerk_identity,
         ],
       )
     ).rows[0];

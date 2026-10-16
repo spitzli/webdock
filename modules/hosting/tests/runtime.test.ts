@@ -45,7 +45,7 @@ function fixture() {
       assert.equal(customer, "789");
       assert.equal(options?.lock, true);
       locks.push("membership");
-      return { memberID: member ? "987" : null, role: member ? "admin" : null };
+      return { memberID: null, role: member ? "admin" : null };
     },
   };
   const database = {
@@ -86,6 +86,8 @@ function fixture() {
   } as unknown as DatabaseReader;
   const runtime = createHostingAuthorization({
     identity,
+    currentConsolePrincipal: () => undefined,
+    organizationPermission: async () => undefined,
     currentDatabaseScope: () => undefined,
   });
   return {
@@ -110,7 +112,7 @@ test("Hosting uses local identity ports with locks and rechecks membership revoc
   const f = fixture();
   const authorized = await f.runtime.authorizeHosting(
     actor,
-    { projectID: "246", write: true },
+    { projectID: "246", write: true, permission: "org:projects:manage" },
     f.database,
   );
   assert.equal(authorized.customerID, "789");
@@ -120,7 +122,7 @@ test("Hosting uses local identity ports with locks and rechecks membership revoc
   await assert.rejects(
     f.runtime.authorizeHosting(
       actor,
-      { projectID: "246", write: true },
+      { projectID: "246", write: true, permission: "org:projects:manage" },
       f.database,
     ),
   );
@@ -170,7 +172,7 @@ test("automatic Git policy remains bound to the exact durable source and never b
   };
   await f.runtime.authorizeHosting(
     policyActor,
-    { projectID: "246", write: true },
+    { projectID: "246", write: true, permission: "org:projects:manage" },
     f.database,
   );
   assert.equal(f.locks[0], "subject");
@@ -178,7 +180,7 @@ test("automatic Git policy remains bound to the exact durable source and never b
   await assert.rejects(
     f.runtime.authorizeHosting(
       policyActor,
-      { projectID: "246", write: true },
+      { projectID: "246", write: true, permission: "org:projects:manage" },
       f.database,
     ),
   );

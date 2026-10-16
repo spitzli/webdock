@@ -1,0 +1,299 @@
+diff --git a/packages/web-ui/src/contexts/DatabaseProvider.tsx b/packages/web-ui/src/contexts/DatabaseProvider.tsx
+index 4b658f31..cb74f7bf 100644
+--- a/packages/web-ui/src/contexts/DatabaseProvider.tsx
++++ b/packages/web-ui/src/contexts/DatabaseProvider.tsx
+@@ -702,6 +702,11 @@ export const DatabaseProvider = ({ children }: { children: ReactNode }) => {
+       }
+ 
+       const driver = conn.params.driver;
++      const connectionTest = client.call('test_connection', {
++        request: { params: conn.params, connection_id: connectionId },
++      });
++      // Observe failures immediately while independent driver discovery is pending.
++      void connectionTest.catch(() => {});
+ 
+       // Fetch driver manifest to access capabilities (driver-agnostic feature detection)
+       let driverManifest: PluginManifest | null = null;
+@@ -724,12 +729,7 @@ export const DatabaseProvider = ({ children }: { children: ReactNode }) => {
+       });
+ 
+       try {
+-        await client.call('test_connection', {
+-          request: {
+-            params: conn.params,
+-            connection_id: connectionId,
+-          },
+-        });
++        await connectionTest;
+       } catch (testError) {
+         const errorMsg = toErrorMessage(testError);
+         updateCurrentConnection(connectionId, {
+@@ -876,28 +876,18 @@ export const DatabaseProvider = ({ children }: { children: ReactNode }) => {
+         updateCurrentConnection(connectionId, { isLoadingSchemas: true });
+ 
+         try {
+-          const schemasResult = await client.call('get_schemas', { connectionId });
++          const [schemasResult, savedSelection, savedPreference] = await Promise.all([
++            client.call('get_schemas', { connectionId }),
++            client.call('get_selected_schemas', { connectionId }).catch(() => [] as string[]),
++            client.call('get_schema_preference', { connectionId }).catch(() => null),
++          ]);
++          if (!isCurrentAttempt()) return;
+           updateCurrentConnection(connectionId, { schemas: schemasResult });
+-
+-          let savedSelection: string[] = [];
+-          try {
+-            savedSelection = await client.call('get_selected_schemas', { connectionId });
+-          } catch {
+-            // Ignore - no saved selection exists yet
+-          }
+-
+           const validSelection = savedSelection.filter(s => schemasResult.includes(s));
+ 
+           if (validSelection.length > 0) {
+-            let preferredSchema = validSelection[0];
+-            try {
+-              const saved = await client.call('get_schema_preference', { connectionId });
+-              if (saved && validSelection.includes(saved)) {
+-                preferredSchema = saved;
+-              }
+-            } catch {
+-              // Ignore - no saved preference exists yet
+-            }
++            const preferredSchema = savedPreference && validSelection.includes(savedPreference)
++              ? savedPreference : validSelection[0];
+ 
+             const [tablesResult, viewsResult, materializedViewsResult, routineMetadata, triggersResult] = await Promise.all([
+               client.call('get_tables', { connectionId, schema: preferredSchema }),
+diff --git a/packages/web-ui/src/embed/TabularisWorkspace.tsx b/packages/web-ui/src/embed/TabularisWorkspace.tsx
+index aeadf61c..e2e268b2 100644
+--- a/packages/web-ui/src/embed/TabularisWorkspace.tsx
++++ b/packages/web-ui/src/embed/TabularisWorkspace.tsx
+@@ -4,12 +4,15 @@ import { lazy, Suspense, useState } from "react";
+ import { MemoryRouter } from "react-router-dom";
+ import { buildEditorRoute } from "../routing";
+ import type { TabularisWorkspaceProps } from "./types";
++import { getPreloadedWorkspaceRuntime } from "../utils/preloadWorkspace";
+ 
+-const Runtime = lazy(() => import("./WorkspaceRuntime").then(module => ({ default: module.WorkspaceRuntime })));
++const LazyRuntime = lazy(() => import("./WorkspaceRuntime").then(module => ({ default: module.WorkspaceRuntime })));
+ 
+ /** Host routing and authentication remain outside the embedded workbench. */
+ export function TabularisWorkspace(props: TabularisWorkspaceProps) {
+   const [root, setRoot] = useState<HTMLDivElement | null>(null);
++  // Keep the chosen component identity stable if preloading completes after mount.
++  const [Runtime] = useState(() => getPreloadedWorkspaceRuntime() ?? LazyRuntime);
+   return <div ref={setRoot} className={`tabularis-workspace ${props.className ?? ""}`}>
+     {root && <MemoryRouter key={JSON.stringify([props.scopeId, props.connectionId])}
+       initialEntries={[buildEditorRoute(props.connectionId)]}>
+diff --git a/packages/web-ui/src/utils/preloadWorkspace.ts b/packages/web-ui/src/utils/preloadWorkspace.ts
+index 6cf86933..88224177 100644
+--- a/packages/web-ui/src/utils/preloadWorkspace.ts
++++ b/packages/web-ui/src/utils/preloadWorkspace.ts
+@@ -1,6 +1,12 @@
+ import { ensureMonaco } from "./monaco";
+ 
++let runtime: typeof import("../embed/WorkspaceRuntime")["WorkspaceRuntime"] | undefined;
++export const getPreloadedWorkspaceRuntime = () => runtime;
++
+ /** Download the workspace and local editor while the host negotiates access. */
+ export async function preloadTabularisWorkspace(): Promise<void> {
+-  await Promise.all([import("../embed/WorkspaceRuntime"), ensureMonaco()]);
++  await Promise.all([
++    import("../embed/WorkspaceRuntime").then(module => { runtime = module.WorkspaceRuntime; }),
++    ensureMonaco(),
++  ]);
+ }
+diff --git a/packages/web-ui/tests/contexts/DatabaseProvider.test.tsx b/packages/web-ui/tests/contexts/DatabaseProvider.test.tsx
+index 4e90dfd9..03c7f46a 100644
+--- a/packages/web-ui/tests/contexts/DatabaseProvider.test.tsx
++++ b/packages/web-ui/tests/contexts/DatabaseProvider.test.tsx
+@@ -123,6 +123,136 @@ describe('DatabaseProvider', () => {
+     vi.restoreAllMocks();
+   });
+ 
++  it('loads driver capabilities while testing the saved connection', async () => {
++    let finishManifest!: (value: typeof mockPostgresManifest) => void;
++    let finishTest!: () => void;
++    const manifest = new Promise<typeof mockPostgresManifest>(resolve => { finishManifest = resolve; });
++    const probe = new Promise<void>(resolve => { finishTest = resolve; });
++    vi.mocked(invoke).mockImplementation(async command => {
++      if (command === 'get_connections') return [{ ...mockConnections[0], params: { driver: 'postgres', database: 'testdb' } }];
++      if (command === 'get_driver_manifest') return manifest;
++      if (command === 'test_connection') return probe;
++      return [];
++    });
++    const wrapper = ({ children }: { children: React.ReactNode }) => <DatabaseProvider>{children}</DatabaseProvider>;
++    const { result } = renderHook(() => useDatabase(), { wrapper });
++    let connecting!: Promise<void>;
++    act(() => { connecting = result.current.connect('conn-123'); });
++    try {
++      await waitFor(() => {
++        expect(invoke).toHaveBeenCalledWith('get_driver_manifest', { driverId: 'postgres' });
++        expect(invoke).toHaveBeenCalledWith('test_connection', { request: { params: { driver: 'postgres', database: 'testdb' }, connection_id: 'conn-123' } });
++      });
++      expect(invoke).not.toHaveBeenCalledWith('register_active_connection', expect.anything());
++    } finally {
++      await act(async () => { finishManifest(mockPostgresManifest); finishTest(); await connecting; });
++    }
++    expect(result.current.connectionDataMap['conn-123'].isConnected).toBe(true);
++  });
++
++  it('loads schemas and preferences concurrently but filters selection before fetching objects', async () => {
++    let finishSchemas!: (value: string[]) => void, finishSelection!: (value: string[]) => void, finishPreference!: (value: string) => void;
++    const schemas = new Promise<string[]>(resolve => { finishSchemas = resolve; });
++    const selection = new Promise<string[]>(resolve => { finishSelection = resolve; });
++    const preference = new Promise<string>(resolve => { finishPreference = resolve; });
++    vi.mocked(invoke).mockImplementation(async command => {
++      if (command === 'get_connections') return [{ ...mockConnections[0], params: { driver: 'postgres', database: 'testdb' } }];
++      if (command === 'get_driver_manifest') return mockPostgresManifest;
++      if (command === 'get_schemas') return schemas;
++      if (command === 'get_selected_schemas') return selection;
++      if (command === 'get_schema_preference') return preference;
++      if (command === 'get_tables') return mockTables;
++      return [];
++    });
++    const wrapper = ({ children }: { children: React.ReactNode }) => <DatabaseProvider>{children}</DatabaseProvider>;
++    const { result } = renderHook(() => useDatabase(), { wrapper });
++    let connecting!: Promise<void>;
++    act(() => { connecting = result.current.connect('conn-123'); });
++    try {
++      await waitFor(() => {
++        for (const command of ['get_schemas', 'get_selected_schemas', 'get_schema_preference']) {
++          expect(invoke).toHaveBeenCalledWith(command, { connectionId: 'conn-123' });
++        }
++      });
++      expect(invoke).not.toHaveBeenCalledWith('get_tables', expect.anything());
++    } finally {
++      await act(async () => {
++        finishSchemas(['public', 'reporting']); finishSelection(['deleted', 'public', 'reporting']); finishPreference('reporting'); await connecting;
++      });
++    }
++    expect(result.current.selectedSchemas).toEqual(['public', 'reporting']);
++    expect(result.current.activeSchema).toBe('reporting');
++    expect(result.current.schemaDataMap.reporting.tables).toEqual(mockTables);
++    expect(invoke).toHaveBeenCalledWith('get_tables', { connectionId: 'conn-123', schema: 'reporting' });
++  });
++
++  it('keeps a failed connection probe handled until delayed driver discovery finishes', async () => {
++    let finishManifest!: (value: typeof mockPostgresManifest) => void;
++    const manifest = new Promise<typeof mockPostgresManifest>(resolve => { finishManifest = resolve; });
++    vi.mocked(invoke).mockImplementation(async command => {
++      if (command === 'get_connections') return mockConnections;
++      if (command === 'get_driver_manifest') return manifest;
++      if (command === 'test_connection') throw Error('Access revoked');
++      return [];
++    });
++    const wrapper = ({ children }: { children: React.ReactNode }) => <DatabaseProvider>{children}</DatabaseProvider>;
++    const { result } = renderHook(() => useDatabase(), { wrapper });
++    let connecting!: Promise<void>;
++    act(() => { connecting = result.current.connect('conn-123'); });
++    await waitFor(() => expect(invoke).toHaveBeenCalledWith('test_connection', expect.anything()));
++    await act(async () => {
++      finishManifest(mockPostgresManifest);
++      await expect(connecting).rejects.toThrow('Access revoked');
++    });
++    expect(result.current.openConnectionIds).toEqual([]);
++    expect(invoke).not.toHaveBeenCalledWith('register_active_connection', expect.anything());
++    expect(invoke).not.toHaveBeenCalledWith('get_schemas', expect.anything());
++  });
++
++  it('handles preference failures while schemas are loading without querying an unselected schema', async () => {
++    let finishSchemas!: (value: string[]) => void;
++    const schemas = new Promise<string[]>(resolve => { finishSchemas = resolve; });
++    vi.mocked(invoke).mockImplementation(async command => {
++      if (command === 'get_connections') return mockConnections;
++      if (command === 'get_driver_manifest') return mockPostgresManifest;
++      if (command === 'get_schemas') return schemas;
++      if (command === 'get_selected_schemas' || command === 'get_schema_preference') throw Error('No saved preference');
++      return [];
++    });
++    const wrapper = ({ children }: { children: React.ReactNode }) => <DatabaseProvider>{children}</DatabaseProvider>;
++    const { result } = renderHook(() => useDatabase(), { wrapper });
++    let connecting!: Promise<void>;
++    act(() => { connecting = result.current.connect('conn-123'); });
++    await waitFor(() => expect(invoke).toHaveBeenCalledWith('get_schema_preference', expect.anything()));
++    await act(async () => { finishSchemas(['public']); await connecting; });
++    expect(result.current.needsSchemaSelection).toBe(true);
++    expect(result.current.selectedSchemas).toEqual([]);
++    expect(invoke).not.toHaveBeenCalledWith('get_tables', expect.anything());
++  });
++
++  it('does not fetch schema objects after disconnecting during parallel schema discovery', async () => {
++    let finishSchemas!: (value: string[]) => void;
++    const schemas = new Promise<string[]>(resolve => { finishSchemas = resolve; });
++    vi.mocked(invoke).mockImplementation(async command => {
++      if (command === 'get_connections') return mockConnections;
++      if (command === 'get_driver_manifest') return mockPostgresManifest;
++      if (command === 'get_schemas') return schemas;
++      if (command === 'get_selected_schemas') return ['public'];
++      if (command === 'get_schema_preference') return 'public';
++      return [];
++    });
++    const wrapper = ({ children }: { children: React.ReactNode }) => <DatabaseProvider>{children}</DatabaseProvider>;
++    const { result } = renderHook(() => useDatabase(), { wrapper });
++    let connecting!: Promise<void>;
++    act(() => { connecting = result.current.connect('conn-123'); });
++    await waitFor(() => expect(invoke).toHaveBeenCalledWith('get_schema_preference', expect.anything()));
++    await act(async () => { await result.current.disconnect('conn-123'); });
++    await act(async () => { finishSchemas(['public']); await connecting; });
++    expect(result.current.openConnectionIds).toEqual([]);
++    expect(result.current.connectionDataMap['conn-123']).toBeUndefined();
++    expect(invoke).not.toHaveBeenCalledWith('get_tables', expect.anything());
++  });
++
+   it('does not change the native window title in a browser host', async () => {
+     const wrapper = ({ children }: { children: React.ReactNode }) => React.createElement(DatabaseProvider, null, children);
+     await act(async () => { renderHook(() => useDatabase(), { wrapper }); });
+diff --git a/packages/web-ui/tests/embed/preload.test.tsx b/packages/web-ui/tests/embed/preload.test.tsx
+index 9168cd29..3d770f9d 100644
+--- a/packages/web-ui/tests/embed/preload.test.tsx
++++ b/packages/web-ui/tests/embed/preload.test.tsx
+@@ -39,7 +39,8 @@ describe("workspace preload", () => {
+       chunks.runtimeReady(); chunks.editorReady(); await loading;
+       await api.preloadTabularisWorkspace();
+       render(<api.TabularisWorkspace scopeId="session" connectionId="db" client={{} as TabularisClient} />);
+-      expect(await screen.findByText("Ready workspace")).toBeInTheDocument();
++      expect(screen.getByText("Ready workspace")).toBeInTheDocument();
++      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+     } finally { chunks.runtimeReady(); chunks.editorReady(); vi.unstubAllGlobals(); }
+   });
+ });
+diff --git a/packages/web-ui/tests/embed/preloadMount.test.tsx b/packages/web-ui/tests/embed/preloadMount.test.tsx
+new file mode 100644
+index 00000000..2c4ad917
+--- /dev/null
++++ b/packages/web-ui/tests/embed/preloadMount.test.tsx
+@@ -0,0 +1,32 @@
++import { act, fireEvent, render, screen } from "@testing-library/react";
++import { useState } from "react";
++import { describe, expect, it, vi } from "vitest";
++import type { TabularisClient } from "../../src/api/client";
++import { TabularisWorkspace } from "../../src/embed/TabularisWorkspace";
++import { preloadTabularisWorkspace } from "../../src/utils/preloadWorkspace";
++
++const chunk = vi.hoisted(() => {
++  let ready!: () => void;
++  return { pending: new Promise<void>(resolve => { ready = resolve; }), ready: () => ready() };
++});
++vi.mock("../../src/monacoLoader", () => ({ monaco: {} }));
++vi.mock("../../src/embed/WorkspaceRuntime", async () => {
++  await chunk.pending;
++  return { WorkspaceRuntime: function Draft() {
++    const [draft, setDraft] = useState("");
++    return <input aria-label="SQL draft" value={draft} onChange={event => setDraft(event.target.value)} />;
++  } };
++});
++
++describe("workspace preload during mount", () => {
++  it("keeps the lazy fallback and preserves drafts after a late preload completes", async () => {
++    const loading = preloadTabularisWorkspace();
++    const props = { scopeId: "session", connectionId: "db", client: {} as TabularisClient };
++    const { rerender } = render(<TabularisWorkspace {...props} theme="light" />);
++    expect(screen.getByRole("status")).toHaveTextContent("Loading database");
++    await act(async () => { chunk.ready(); await loading; });
++    fireEvent.change(await screen.findByLabelText("SQL draft"), { target: { value: "select 1" } });
++    rerender(<TabularisWorkspace {...props} theme="dark" />);
++    expect(screen.getByLabelText("SQL draft")).toHaveValue("select 1");
++  });
++});

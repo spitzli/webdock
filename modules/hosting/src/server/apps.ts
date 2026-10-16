@@ -125,12 +125,14 @@ export function createHostingApps(dependencies: Dependencies) {
     actor: HostingActor,
     cmd: HostingCommand,
     connection?: Connection,
+    permission:
+      "org:projects:manage" | "org:deployments:create" = "org:projects:manage",
   ) {
     const run = async (db: Connection) => {
       if (cmd.action === "apps.list") {
         const access = await dependencies.authorizeHosting(
           actor,
-          { projectID: cmd.projectID },
+          { permission, projectID: cmd.projectID },
           db,
         );
         const matches = cmd.search.trim()
@@ -209,6 +211,7 @@ export function createHostingApps(dependencies: Dependencies) {
       let access = await dependencies.authorizeHosting(
         actor,
         {
+          permission,
           projectID,
           write: !read,
           live: action === "apps.logs",
@@ -250,6 +253,7 @@ export function createHostingApps(dependencies: Dependencies) {
       access = await dependencies.authorizeHosting(
         actor,
         {
+          permission,
           projectID,
           write: !read,
           live: action === "apps.logs",

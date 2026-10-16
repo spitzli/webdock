@@ -1,8 +1,10 @@
+import { DatabaseLaunchProvider } from "@/components/databases/action-boundary";
+import { deDE, enUS } from "@clerk/localizations";
 import { ClerkProvider } from "@clerk/nextjs";
 import { browserAuthConfiguration } from "@/lib/browser-auth-config";
 import { connection } from "next/server";
 import { ModuleProvider } from "@webdock/module-sdk/react";
-import { getStudioSession } from "@/lib/studio-client";
+import { getStudioInstallation } from "@/lib/studio-client";
 import { I18nProvider } from "@webdock/i18n/react";
 import { getRequestI18n } from "@webdock/i18n/next";
 import type { Metadata } from "next";
@@ -28,23 +30,24 @@ export default async function Layout({
   navigation: React.ReactNode;
 }) {
   await connection();
-  const installation = (await getStudioSession())?.installation ?? {
-    revision: "unavailable",
-    modules: {},
-  };
+  const installation = await getStudioInstallation();
   const { locale, preference, t } = await getRequestI18n();
   const content = (
     <I18nProvider locale={locale} preference={preference}>
-      <ModuleProvider view={installation}>
-        <div className="console-layout">
-          <a className="skip-link" href="#main">
-            {t("Skip to content")}
-          </a>
-          {toolbar}
-          {navigation}
-          {children}
-        </div>
-      </ModuleProvider>
+      <DatabaseLaunchProvider
+        adapter={browserAuthConfiguration.transport === "adapter"}
+      >
+        <ModuleProvider view={installation}>
+          <div className="console-layout">
+            <a className="skip-link" href="#main">
+              {t("Skip to content")}
+            </a>
+            {toolbar}
+            {navigation}
+            {children}
+          </div>
+        </ModuleProvider>
+      </DatabaseLaunchProvider>
     </I18nProvider>
   );
   return (
@@ -64,7 +67,9 @@ export default async function Layout({
               process.env.CLERK_PUBLISHABLE_KEY ||
               process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
             }
-            signInUrl="/sign-in"
+            localization={locale === "de" ? deDE : enUS}
+            signInUrl="/login"
+            signUpUrl="/sign-up"
             signInFallbackRedirectUrl="/tenants"
           >
             {content}

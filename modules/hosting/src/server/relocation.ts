@@ -39,7 +39,12 @@ export function createHostingRelocation(dependencies: Dependencies) {
     return dependencies.transaction(async (db) => {
       const access = await dependencies.authorizeHosting(
         actor,
-        { projectID: cmd.projectID, operator: true, write: true },
+        {
+          permission: "org:projects:manage",
+          projectID: cmd.projectID,
+          operator: true,
+          write: true,
+        },
         db,
       );
       await dependencies.planLock(db, access.customerID!);
@@ -56,7 +61,12 @@ export function createHostingRelocation(dependencies: Dependencies) {
       if (prior.existing) return prior.existing.result;
       const current = await dependencies.authorizeHosting(
         actor,
-        { projectID: cmd.projectID, operator: true, write: true },
+        {
+          permission: "org:projects:manage",
+          projectID: cmd.projectID,
+          operator: true,
+          write: true,
+        },
         db,
       );
       if (

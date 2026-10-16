@@ -16,6 +16,7 @@ export default async function Home() {
   const {t,locale}=await getRequestI18n();
   const page = await getLanding();
   const faqs = page.faqs;
+  const waitlist = "https://accounts.webdock.dev/waitlist";
   const contact = `mailto:${page.contactEmail}?subject=${encodeURIComponent(t("My project with Webdock"))}`;
   const structuredData = { '@context': 'https://schema.org', '@graph': [
     { '@type': 'Organization', '@id': 'https://spitzli.dev/#organization', name: 'Spitzli Development', url: 'https://spitzli.dev' },
@@ -27,7 +28,7 @@ export default async function Home() {
     <a className="skip-link" href="#content">{t("Skip to content")}</a>
     <header className="site-header wrap flex items-center justify-between">
       <a href="#" className="brand" aria-label={t("Webdock home")}><Mark/>{"webdock"}<span className="brand-period">.</span></a>
-      <nav aria-label={t("Main navigation")} className="flex items-center gap-8"><a className="nav-section" href="#concept">{t("The idea")}</a>{faqs.length > 0 && <a className="nav-section" href="#faq">{t("FAQ")}</a>}<a className="nav-contact" href={contact}>{t("Start a project")} <span aria-hidden="true">↗</span></a></nav>
+      <nav aria-label={t("Main navigation")} className="flex items-center gap-4 sm:gap-8"><a className="nav-section" href="#concept">{t("The idea")}</a>{faqs.length > 0 && <a className="nav-section" href="#faq">{t("FAQ")}</a>}<a href="https://console.webdock.dev/login">{t("Login")}</a><a className="nav-contact" href={waitlist} title={t("Access by invitation only.")}>{t("Waitlist")} <span aria-hidden="true">↗</span></a></nav>
     </header>
     <main id="content">
       <section className="hero wrap">
@@ -36,6 +37,7 @@ export default async function Home() {
           <p className="hero-description">{page.heroDescription}</p>
           <div className="hero-actions flex flex-wrap items-center gap-6"><a className="button" href={contact}>{page.heroButton} <span aria-hidden="true">↗</span></a><a className="text-link" href="#concept">{t("Explore Webdock")} <span aria-hidden="true">↓</span></a></div>
           <p className="hero-note"><span/>{page.heroNote}</p>
+          <p className="hero-note"><a className="text-link" href={waitlist}>{t("Waitlist")}</a> — {t("Access by invitation only.")}</p>
         </div>
         <Dock/>
       </section>
@@ -44,7 +46,6 @@ export default async function Home() {
         <div><h2 className="whitespace-pre-line">{page.conceptTitle}</h2><p className="section-intro">{page.conceptDescription}</p><a className="text-link" href="https://spitzli.dev" target="_blank" rel="noopener noreferrer">{t("Built by Spitzli")} <span aria-hidden="true">↗</span></a></div>
         <div className="use-cases">{page.useCases.map((item, index) => <article key={item.id}><span className="case-icon" aria-hidden="true">{['▧', '⌁', '↗'][index % 3]}</span><div><h3>{item.title}</h3><p>{item.description}</p></div></article>)}</div>
       </section>
-      <section className="spitzli-section"><div className="wrap spitzli-inner"><div className="spitzli-symbol" aria-hidden="true">{"s"}<span>.</span></div><div><p className="subtle-label">{"Webdock × Spitzli Development"}</p><h2 className="whitespace-pre-line">{page.aboutTitle}</h2></div><div className="spitzli-copy"><p>{page.aboutDescription}</p><a className="text-link" href="https://spitzli.dev" target="_blank" rel="noopener noreferrer">{t("Meet Spitzli")} <span aria-hidden="true">↗</span></a></div></div></section>
       {faqs.length > 0 && <section id="faq" className="faq wrap section-space"><div><h2 className="whitespace-pre-line">{page.faqTitle}</h2><p className="section-intro">{t("Something else on your mind?")}<br/><a href={contact}>{t("Just ask.")}</a></p></div><div className="faq-list">{faqs.map(({question, answer}) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></section>}
       <section className="outlook wrap"><span className="outlook-icon" aria-hidden="true">⌘</span><div><h3>{page.outlookTitle}</h3><p>{page.outlookDescription}</p><a className="text-link" href="https://console.webdock.dev">{t("Open Studio")} <span aria-hidden="true">↗</span></a></div><span className="planned">{t("Available")}</span></section>
       <section className="closing wrap"><p>{t("Got something in mind?")}</p><h2 className="whitespace-pre-line">{page.closingTitle}</h2><a className="button" href={contact}>{page.closingButton} <span aria-hidden="true">↗</span></a><span className="closing-mark" aria-hidden="true"><Mark/></span></section>

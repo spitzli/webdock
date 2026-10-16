@@ -96,6 +96,8 @@ type Desired = {
   grants: { mailboxID: string; subject: string; revision: string }[];
 };
 export interface NativeConfigurationDependencies {
+  clerkMailAccess?: NativeMailPorts["clerkMailAccess"];
+
   prepareSubmissionConfiguration: ReturnType<
     typeof createNativeSubmissionConfiguration
   >["prepareSubmissionConfiguration"];
@@ -114,6 +116,7 @@ export function createNativeConfiguration(
   dependencies: NativeConfigurationDependencies,
 ) {
   const {
+    clerkMailAccess = async () => undefined,
     prepareSubmissionConfiguration,
     completeSubmissionConfiguration,
     reconcileSubmissionConfiguration,
@@ -238,7 +241,7 @@ export function createNativeConfiguration(
       ).rows;
       const grants = (
         await db.query(
-          `SELECT g.mailbox_id AS "mailboxID",g.subject,g.revision,g.enabled AND
+          `SELECT g.mailbox_id AS "mailboxID",g.subject,g.revision,g.clerk_grant,g.enabled AS requested_enabled,g.enabled AND
       ((g.operator_grant AND EXISTS(SELECT 1 FROM webdock_auth."user" u WHERE u.id=g.subject AND u.role='operator' AND u."twoFactorEnabled")) OR EXISTS(SELECT 1 FROM webdock_auth.member m JOIN webdock_auth.tenant_customer t ON t.organization_id=m."organizationId" WHERE m.id=g.member_id AND m."userId"=g.subject AND t.customer_id=g.customer_id)) AS enabled
       FROM webdock_mail.mailbox_grant g WHERE g.customer_id=$1 ORDER BY g.mailbox_id,g.subject`,
           [customerID],
@@ -251,6 +254,19 @@ export function createNativeConfiguration(
         grants.filter((g) => g.enabled).length > 256
       )
         unavailable();
+      // Provider references are revalidated at dispatch, never inferred from local credentials.
+      for (const row of rows) {
+        const clerk = await clerkMailAccess(db, row.subject, customerID);
+        if (clerk !== undefined) row.allowed = Boolean(clerk);
+        for (const grant of grants.filter((g) => g.subject === row.subject)) {
+          if (clerk !== undefined || grant.clerk_grant)
+            grant.enabled = Boolean(
+              grant.requested_enabled &&
+              clerk &&
+              grant.clerk_grant === clerk.clerkGrant,
+            );
+        }
+      }
       const identities: Identity[] = [],
         secrets = [];
       for (const row of rows) {

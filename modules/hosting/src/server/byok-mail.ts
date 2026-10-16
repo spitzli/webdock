@@ -120,7 +120,7 @@ export function createHostingByokMail(dependencies: Dependencies) {
         const write = cmd.action !== "byok.mail.get";
         const access = await dependencies.authorizeHosting(
           actor,
-          { customerID, write, tenantAdmin: true },
+          { legacyRole: true, customerID, write, tenantAdmin: true },
           db,
         );
         await dependencies.planLock(db, customerID);
@@ -209,7 +209,7 @@ export function createHostingByokMail(dependencies: Dependencies) {
           const domains = await listDomains(credentials);
           await dependencies.authorizeHosting(
             actor,
-            { customerID, write: true, tenantAdmin: true },
+            { legacyRole: true, customerID, write: true, tenantAdmin: true },
             db,
           );
           const encrypted = dependencies.encryptMailSecret(

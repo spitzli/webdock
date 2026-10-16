@@ -1,3 +1,4 @@
+import { withTokenIntrospection } from "../auth/introspection";
 type PortalTransportConfig = {
   origin: string;
   clientID: string;
@@ -56,26 +57,28 @@ export async function portalRequest(
     !Array.isArray(value.args)
   )
     return failure(400, "Invalid request.");
-  try {
-    const identity = await session(request.headers);
-    if (!identity)
-      return failure(401, "Sign in to Studio again.", "PortalSessionMissing");
-    return await dispatch(
-      new Request(new URL("/api/studio", request.url), {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization:
-            "Basic " +
-            Buffer.from(config.clientID + ":" + config.clientSecret).toString(
-              "base64",
-            ),
-        },
-        body: JSON.stringify({ ...value, accessToken: identity.accessToken }),
-        signal: request.signal,
-      }),
-    );
-  } catch {
-    return failure(503, "Studio is temporarily unavailable.");
-  }
+  return withTokenIntrospection(async () => {
+    try {
+      const identity = await session(request.headers);
+      if (!identity)
+        return failure(401, "Sign in to Studio again.", "PortalSessionMissing");
+      return await dispatch(
+        new Request(new URL("/api/studio", request.url), {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            authorization:
+              "Basic " +
+              Buffer.from(config.clientID + ":" + config.clientSecret).toString(
+                "base64",
+              ),
+          },
+          body: JSON.stringify({ ...value, accessToken: identity.accessToken }),
+          signal: request.signal,
+        }),
+      );
+    } catch {
+      return failure(503, "Studio is temporarily unavailable.");
+    }
+  });
 }

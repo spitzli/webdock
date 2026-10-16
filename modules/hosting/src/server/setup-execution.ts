@@ -1,5 +1,6 @@
 import type { DatabaseServices } from "@webdock/database-contracts/runtime-ports";
 import type { HostingPorts } from "./ports";
+import { gitActionPermission } from "./permissions";
 import {
   HostingError,
   setupSteps,
@@ -9,6 +10,9 @@ import {
 } from "@webdock/hosting-contracts";
 import type { SetupRow } from "./project-setup";
 export type Dependencies = {
+  authorizeSetupConfiguration: ReturnType<
+    typeof import("./permissions").createHostingPermissions
+  >["authorizeSetupConfiguration"];
   transaction: ReturnType<typeof import("./db").createHostingDb>["transaction"];
   replay: ReturnType<
     typeof import("./operations").createHostingOperations
@@ -46,10 +50,11 @@ export function createHostingSetupExecution(dependencies: Dependencies) {
       config = row.configuration,
       resources = { ...row.resources };
     await dependencies.transaction((db) =>
-      dependencies.authorizeHosting(
-        actor,
-        { projectID: row.project_id, write: true },
+      dependencies.authorizeSetupConfiguration(
         db,
+        actor,
+        row.project_id,
+        config,
       ),
     );
     const steps = row.steps.map((s) => ({ ...s }));
@@ -72,7 +77,15 @@ export function createHostingSetupExecution(dependencies: Dependencies) {
         const recovered = await dependencies.transaction(async (db) => {
           await dependencies.authorizeHosting(
             actor,
-            { projectID: row.project_id, write: true },
+            {
+              permission: command.action.startsWith("databases.")
+                ? "org:databases:manage"
+                : command.action.startsWith("git.")
+                  ? gitActionPermission(command.action)
+                  : "org:projects:manage",
+              projectID: row.project_id,
+              write: true,
+            },
             db,
           );
           const prior = (

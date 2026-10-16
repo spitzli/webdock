@@ -1,3 +1,10 @@
+import {organizationCapabilities} from "../auth/organization-permissions";
+import {legacyClerkMemberships, linkedMembershipRole} from "../auth/clerk-provider";
+import {clerkTeamView, manageClerkTeam, linkedOrganization, linkClerkTeam} from "../auth/clerk-teams";
+import {currentConsolePrincipal, consoleMembership} from "../auth/principal";
+import { getBusinessIdentity } from "../auth/business-identity";
+import { readCachedView } from "../../cache";
+import { AuthMailDeliveryError, withAuthMailDelivery } from "../auth/mail";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { randomBytes } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
@@ -6,7 +13,7 @@ import { auth } from "../auth/auth";
 import { database, authDatabase } from "../../db/runtime";
 import { AccessError, websiteURL } from "./access-management";
 import { currentClaims } from "../auth/authorization";
-import { currentMCPClaims } from "../auth/mcp";
+import { businessOperator } from "../auth/business-identity";
 import { tenantInvitationScope } from "../auth/tenant-policy";
 
 export const profileFields = [
@@ -61,7 +68,7 @@ const validID = (value: string) => {
   return value;
 };
 async function actor(headers: Headers) {
-  const session = await auth.api.getSession({ headers });
+  const session = await getBusinessIdentity(headers);
   const user =
     session &&
     (
@@ -70,18 +77,31 @@ async function actor(headers: Headers) {
         [session.user.id],
       )
     ).rows[0];
-  if (!user || user.banned || !user.emailVerified || user.mustChangePassword)
+  if (!session || !user || user.banned || (!currentConsolePrincipal() && (!user.emailVerified || user.mustChangePassword)))
     throw new AccessError("Sign in and complete account setup first.");
-  const operator = !(await currentMCPClaims(user.id)).disabled;
+  const operator = !(await businessOperator(user.id)).disabled;
   if (user.role !== "user" && !operator)
     throw new AccessError("Complete operator security setup first.");
-  return { id: user.id as string, email: user.email as string, operator };
+  return {
+    id: user.id as string,
+    sessionID: session.sessionID,
+    email: user.email as string,
+    operator,
+  };
 }
 async function tenantFor(
   user: Awaited<ReturnType<typeof actor>>,
   customerID: string,
   connection: Pick<PoolClient, "query"> = database,
 ) {
+  const principal=currentConsolePrincipal();
+  if(principal){
+    if(principal.userID!==user.id)throw new AccessError("Identity mismatch.");
+    const row=(await connection.query(`SELECT ${columns},t.organization_id FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id WHERE c.id=$1`,[validID(customerID)])).rows[0];
+    const membership=row&&consoleMembership(user.id,row.organization_id);
+    if(!row || (!user.operator && (row.status!=="active" || !membership)))throw new AccessError("Tenant not found or access unavailable.");
+    return {...row,member_role:membership?.role};
+  }
   const row = (
     await connection.query(
       `SELECT ${columns},t.organization_id,m.role AS member_role FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id LEFT JOIN webdock_auth.member m ON m."organizationId"=t.organization_id AND m."userId"=$2 WHERE c.id=$1 AND ($3 OR (c.status='active' AND m.id IS NOT NULL))`,
@@ -89,17 +109,32 @@ async function tenantFor(
     )
   ).rows[0];
   if (!row) throw new AccessError("Tenant not found or access unavailable.");
+  if(!user.operator){const role=await linkedMembershipRole(user.id,row.organization_id);if(role===null)throw new AccessError("Tenant not found or access unavailable.");if(role!==undefined)row.member_role=role;}
   return row;
 }
 export async function listTenants(headers: Headers) {
   return withAuthenticatedDatabase(headers, async () => {
     const user = await actor(headers);
-    return (
-      await database.query(
-        `SELECT c.id,c.name,c.status,m.role FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id LEFT JOIN webdock_auth.member m ON m."organizationId"=t.organization_id AND m."userId"=$1 WHERE $2 OR (c.status='active' AND m.id IS NOT NULL) ORDER BY c.name,c.id`,
+    const principal=currentConsolePrincipal();
+    if(principal)return (await database.query(`SELECT c.id,c.name,c.status,$3::text AS role FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id WHERE $1 OR (c.id=$2 AND c.status='active') ORDER BY c.name,c.id`,[user.operator,principal.customerID,principal.role])).rows.map(row => ({...row, ...(!user.operator ? {capabilities: organizationCapabilities(principal.permissions)} : {})}));
+    const rows = await readCachedView(
+      { kind: "navigation", scope: {subject: user.id, sessionID: user.sessionID, operator: user.operator}, query: "tenant-membership-v2", ttlSeconds: 60 },
+      async () => (await database.query("SELECT webdock_cache.version($1::text[]) AS version", [["webdock_admin.customers", "webdock_auth.user", "webdock_auth.member", "webdock_auth.tenant_customer"]])).rows[0].version,
+      async () => (await database.query(
+        `SELECT c.id,c.name,c.status,m.role,t.organization_id FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id LEFT JOIN webdock_auth.member m ON m."organizationId"=t.organization_id AND m."userId"=$1 WHERE $2 OR (c.status='active' AND m.id IS NOT NULL) ORDER BY c.name,c.id`,
         [user.id, user.operator],
-      )
-    ).rows;
+      )).rows,
+    );
+    if(user.operator)return rows.map(({id,name,status,role})=>({id,name,status,role}));
+    const membershipProof = await legacyClerkMemberships(user.id);
+    const current = await Promise.all(rows.map(async row => {
+      const role = await linkedMembershipRole(user.id, row.organization_id);
+      const membership = membershipProof?.roles.find(member => member.organizationID === String(row.organization_id));
+      if (role === null) return null;
+      return {id: row.id, name: row.name, status: row.status, role: role ?? row.role,
+        ...(role !== undefined ? {capabilities: organizationCapabilities(membership?.permissions)} : {})};
+    }));
+    return current.filter(row=>row!==null);
   });
 }
 export async function listTenantInvitations(headers: Headers) {
@@ -117,17 +152,18 @@ export async function getTenant(headers: Headers, customerID: string) {
   return withAuthenticatedDatabase(headers, async () => {
     const user = await actor(headers),
       tenant = await tenantFor(user, customerID);
+    const linked=await linkedOrganization(tenant.organization_id);
     const canManage =
       tenant.status === "active" &&
       (user.operator || ["owner", "admin"].includes(tenant.member_role));
     const [members, invitations, bindings] = await Promise.all([
-      canManage
+      canManage && !linked
         ? database.query(
             'SELECT m.id,m.role,u.name,u.email,u.banned,u."emailVerified",u."mustChangePassword" FROM webdock_auth.member m JOIN webdock_auth."user" u ON u.id=m."userId" WHERE m."organizationId"=$1 AND u.role=\'user\' ORDER BY u.name',
             [tenant.organization_id],
           )
         : Promise.resolve({ rows: [] }),
-      canManage
+      canManage && !linked
         ? database.query(
             'SELECT id,email,role,status,"expiresAt" FROM webdock_auth.invitation WHERE "organizationId"=$1 ORDER BY "createdAt" DESC LIMIT 100',
             [tenant.organization_id],
@@ -154,12 +190,14 @@ export async function getTenant(headers: Headers, customerID: string) {
         }),
       )
     ).filter((site) => site !== null);
+    const team=linked && canManage ? await clerkTeamView(tenant.organization_id) : null;
     return {
       tenant,
+      ...((currentConsolePrincipal()||linked)?{team:{provider:"clerk" as const,ready:!!linked?.enabled,canManage:!!currentConsolePrincipal()&&canManage}}:{}),
       canManage,
       operator: user.operator,
-      members: members.rows,
-      invitations: invitations.rows,
+      members: team?.members ?? members.rows,
+      invitations: team?.invitations ?? invitations.rows,
       sites,
     };
   });
@@ -209,6 +247,8 @@ export async function manageTenant(
   return withAuthenticatedDatabase(headers, async () => {
     const user = await actor(headers);
     const tenant = await tenantFor(user, customerID);
+    if(input.action==="link-team")return linkClerkTeam(customerID,tenant.organization_id);
+    if(input.action!=="profile" && (currentConsolePrincipal()||await linkedOrganization(tenant.organization_id)))return manageClerkTeam(customerID,tenant.organization_id,input);
     if (
       tenant.status !== "active" ||
       (!user.operator && !["admin", "owner"].includes(tenant.member_role))
@@ -268,10 +308,9 @@ export async function manageTenant(
         if (
           !currentUser ||
           currentUser.banned ||
-          !currentUser.emailVerified ||
-          currentUser.mustChangePassword ||
+          (!currentConsolePrincipal() && (!currentUser.emailVerified || currentUser.mustChangePassword)) ||
           (user.operator
-            ? currentUser.role !== "operator" || !currentUser.twoFactorEnabled
+            ? currentUser.role !== "operator" || (!currentConsolePrincipal() && !currentUser.twoFactorEnabled)
             : currentUser.role !== "user")
         )
           throw new AccessError("Sign in and complete account setup first.");
@@ -423,16 +462,18 @@ export async function manageTenant(
         connection.release();
       }
       if (["invite", "resend"].includes(input.action))
-        await tenantInvitationScope.run(tenant.organization_id, () =>
-          auth.api.createInvitation({
-            headers,
-            body: {
-              email,
-              role: invitationRole as "admin" | "member",
-              organizationId: tenant.organization_id,
-              resend: input.action === "resend",
-            },
-          }),
+        await withAuthMailDelivery(() =>
+          tenantInvitationScope.run(tenant.organization_id, () =>
+            auth.api.createInvitation({
+              headers,
+              body: {
+                email,
+                role: invitationRole as "admin" | "member",
+                organizationId: tenant.organization_id,
+                resend: input.action === "resend",
+              },
+            }),
+          ),
         );
       await database.query(
         "UPDATE webdock_auth.access_event SET outcome='succeeded' WHERE id=$1",
@@ -448,6 +489,8 @@ export async function manageTenant(
         "UPDATE webdock_auth.access_event SET outcome='failed' WHERE id=$1",
         [event],
       );
+      if (error instanceof AuthMailDeliveryError)
+        throw new AccessError(error.message);
       throw error;
     }
   });

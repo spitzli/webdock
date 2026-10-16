@@ -94,6 +94,7 @@ function fixture(product: "database" | "mail", draining = false) {
     throw Error("Unexpected provider or provisioning call");
   };
   const runtime = createHostingProjectSetup({
+    authorizeSetupConfiguration: async () => {},
     requireDatabases: (intent) => {
       admissions.push("database:" + intent);
       if (product === "database" && (!draining || intent === "provision"))

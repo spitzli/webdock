@@ -14,6 +14,12 @@ import {
 } from "@webdock/hosting-contracts";
 import { limits, usage } from "./allowances";
 export type Dependencies = {
+  readProjectOverview: ReturnType<
+    typeof import("./project-overview").createHostingProjectOverview
+  >["readProjectOverview"];
+  readHostingView: ReturnType<
+    typeof import("./view-cache").createHostingViewCache
+  >["readHostingView"];
   executeProjectSetup: ReturnType<
     typeof import("./project-setup").createHostingProjectSetup
   >["executeProjectSetup"];
@@ -79,19 +85,38 @@ export function createHostingService(dependencies: Dependencies) {
         return dependencies.executeAppCommand(actor, cmd);
       return dependencies.transaction(async (db) => {
         const write = !readActions.has(cmd.action);
+        if (cmd.action === "projects.overview")
+          return dependencies.readProjectOverview(actor, cmd.projectID, db);
         if (cmd.action === "projects.get") {
           const access = await dependencies.authorizeHosting(
             actor,
-            { projectID: cmd.projectID },
+            { permission: "org:projects:manage", projectID: cmd.projectID },
             db,
           );
-          const context = (
-            await db.query(
-              `SELECT p.id AS "projectID",p.name,c.id AS "customerID",c.name AS "customerName"
+          const context = await dependencies.readHostingView(
+            db,
+            actor,
+            {
+              kind: "projectsummary",
+              scope: {
+                customerID: access.customerID!,
+                projectID: cmd.projectID,
+                operator: access.operator,
+                liveReads: access.liveReads,
+              },
+              query: cmd,
+              ttlSeconds: 60,
+              tables: ["webdock_admin.projects", "webdock_admin.customers"],
+            },
+            async () =>
+              (
+                await db.query(
+                  `SELECT p.id AS "projectID",p.name,c.id AS "customerID",c.name AS "customerName"
         FROM webdock_admin.projects p JOIN webdock_admin.customers c ON c.id=p.customer_id WHERE p.id=$1`,
-              [cmd.projectID],
-            )
-          ).rows[0];
+                  [cmd.projectID],
+                )
+              ).rows[0],
+          );
           return {
             ...context,
             operator: access.operator,
@@ -100,39 +125,61 @@ export function createHostingService(dependencies: Dependencies) {
           };
         }
         if (cmd.action === "operations.overview") {
-          await dependencies.authorizeHosting(actor, { operator: true }, db);
-          const search = `%${cmd.search.replace(/[\\%_]/g, "\\$&")}%`;
-          const from = `FROM webdock_auth.hosting_app a JOIN webdock_admin.projects p ON p.id=a.project_id JOIN webdock_admin.customers c ON c.id=p.customer_id
-        WHERE a.status<>'deleted' AND (a.name ILIKE $1 OR p.name ILIKE $1 OR c.name ILIKE $1)`;
-          const totalDocs = (
-            await db.query(`SELECT count(*)::int AS n ${from}`, [search])
-          ).rows[0].n;
-          const docs = (
-            await db.query(
-              `SELECT a.id,a.name,a.status,a.revision,a.observed_revision AS "observedRevision",p.id AS "projectID",p.name AS "projectName",c.id AS "customerID",c.name AS "customerName"
-        ${from} ORDER BY a.name ${cmd.sort === "-name" ? "DESC" : "ASC"},a.id LIMIT $2 OFFSET $3`,
-              [search, cmd.limit, (cmd.page - 1) * cmd.limit],
-            )
-          ).rows;
-          const operations = (
-            await db.query(`SELECT o.id,o.action,o.status,o.created_at AS "createdAt",p.id AS "projectID",p.name AS "projectName",c.name AS "customerName"
-        FROM webdock_auth.hosting_operation o LEFT JOIN webdock_admin.projects p ON p.id=o.project_id LEFT JOIN webdock_admin.customers c ON c.id=o.customer_id
-        ORDER BY CASE WHEN o.status IN ('queued','running','needs-reconciliation') THEN 0 ELSE 1 END,o.created_at DESC,o.id DESC LIMIT 30`)
-          ).rows;
-          return {
-            docs,
-            operations,
-            page: cmd.page,
-            limit: cmd.limit,
-            totalDocs,
-            totalPages: Math.ceil(totalDocs / cmd.limit),
-            readAt: new Date().toISOString(),
-          };
+          await dependencies.authorizeHosting(
+            actor,
+            { permission: "org:projects:manage", operator: true },
+            db,
+          );
+          return dependencies.readHostingView(
+            db,
+            actor,
+            {
+              kind: "operations",
+              scope: { operator: true },
+              query: cmd,
+              ttlSeconds: 15,
+              tables: [
+                "webdock_auth.hosting_app",
+                "webdock_auth.hosting_operation",
+                "webdock_admin.projects",
+                "webdock_admin.customers",
+              ],
+            },
+            async () => {
+              const search = `%${cmd.search.replace(/[\\%_]/g, "\\$&")}%`;
+              const from = `FROM webdock_auth.hosting_app a JOIN webdock_admin.projects p ON p.id=a.project_id JOIN webdock_admin.customers c ON c.id=p.customer_id
+            WHERE a.status<>'deleted' AND (a.name ILIKE $1 OR p.name ILIKE $1 OR c.name ILIKE $1)`;
+              const totalDocs = (
+                await db.query(`SELECT count(*)::int AS n ${from}`, [search])
+              ).rows[0].n;
+              const docs = (
+                await db.query(
+                  `SELECT a.id,a.name,a.status,a.revision,a.observed_revision AS "observedRevision",p.id AS "projectID",p.name AS "projectName",c.id AS "customerID",c.name AS "customerName"
+            ${from} ORDER BY a.name ${cmd.sort === "-name" ? "DESC" : "ASC"},a.id LIMIT $2 OFFSET $3`,
+                  [search, cmd.limit, (cmd.page - 1) * cmd.limit],
+                )
+              ).rows;
+              const operations = (
+                await db.query(`SELECT o.id,o.action,o.status,o.created_at AS "createdAt",p.id AS "projectID",p.name AS "projectName",c.name AS "customerName"
+            FROM webdock_auth.hosting_operation o LEFT JOIN webdock_admin.projects p ON p.id=o.project_id LEFT JOIN webdock_admin.customers c ON c.id=o.customer_id
+            ORDER BY CASE WHEN o.status IN ('queued','running','needs-reconciliation') THEN 0 ELSE 1 END,o.created_at DESC,o.id DESC LIMIT 30`)
+              ).rows;
+              return {
+                docs,
+                operations,
+                page: cmd.page,
+                limit: cmd.limit,
+                totalDocs,
+                totalPages: Math.ceil(totalDocs / cmd.limit),
+                readAt: new Date().toISOString(),
+              };
+            },
+          );
         }
         if (cmd.action === "clusters.activate") {
           await dependencies.authorizeHosting(
             actor,
-            { operator: true, write: true },
+            { permission: "org:projects:manage", operator: true, write: true },
             db,
           );
           await dependencies.clusterLock(db, cmd.clusterID);
@@ -226,62 +273,105 @@ export function createHostingService(dependencies: Dependencies) {
           return dependencies.clusterView(db, cmd.clusterID);
         }
         if (cmd.action === "clusters.list") {
-          await dependencies.authorizeHosting(actor, { operator: true }, db);
-          if (cmd.search.trim()) {
-            const found = await searchPage(
-              async (page) => {
-                const rows = (
-                  await db.query(
-                    `SELECT id,name,provider,region FROM webdock_auth.hosting_cluster ORDER BY name ${cmd.sort === "-name" ? "DESC" : "ASC"},id LIMIT 300 OFFSET $1`,
-                    [(page - 1) * 300],
-                  )
-                ).rows;
-                return { rows, hasMore: rows.length === 300 };
-              },
-              (r) => [r.name, r.provider, r.region].join(" "),
-              cmd.search,
-              cmd.page,
-              cmd.limit,
-            );
-            return {
-              ...found,
-              docs: await Promise.all(
-                found.docs.map((r) => dependencies.clusterView(db, r.id)),
-              ),
-            };
-          }
-          const filter = `name ILIKE $1`;
-          const params = [`%${cmd.search.replace(/[\\%_]/g, "\\$&")}%`];
-          const rows = (
-            await db.query(
-              `SELECT id FROM webdock_auth.hosting_cluster WHERE ${filter} ORDER BY name ${cmd.sort === "-name" ? "DESC" : "ASC"},id LIMIT $2 OFFSET $3`,
-              [...params, cmd.limit, (cmd.page - 1) * cmd.limit],
-            )
-          ).rows;
-          const total = (
-            await db.query(
-              `SELECT count(*)::int AS n FROM webdock_auth.hosting_cluster WHERE ${filter}`,
-              params,
-            )
-          ).rows[0].n;
-          return {
-            docs: await Promise.all(
-              rows.map((r) => dependencies.clusterView(db, r.id)),
-            ),
-            page: cmd.page,
-            totalDocs: total,
-            totalPages: Math.ceil(total / cmd.limit),
-            limit: cmd.limit,
-          };
+          await dependencies.authorizeHosting(
+            actor,
+            { permission: "org:projects:manage", operator: true },
+            db,
+          );
+          return dependencies.readHostingView(
+            db,
+            actor,
+            {
+              kind: "projectsummary",
+              scope: { operator: true },
+              query: cmd,
+              ttlSeconds: 5,
+              tables: [
+                "webdock_auth.hosting_cluster",
+                "webdock_auth.hosting_agent",
+              ],
+            },
+            async () => {
+              if (cmd.search.trim()) {
+                const found = await searchPage(
+                  async (page) => {
+                    const rows = (
+                      await db.query(
+                        `SELECT id,name,provider,region FROM webdock_auth.hosting_cluster ORDER BY name ${cmd.sort === "-name" ? "DESC" : "ASC"},id LIMIT 300 OFFSET $1`,
+                        [(page - 1) * 300],
+                      )
+                    ).rows;
+                    return { rows, hasMore: rows.length === 300 };
+                  },
+                  (r) => [r.name, r.provider, r.region].join(" "),
+                  cmd.search,
+                  cmd.page,
+                  cmd.limit,
+                );
+                return {
+                  ...found,
+                  docs: await Promise.all(
+                    found.docs.map((r) => dependencies.clusterView(db, r.id)),
+                  ),
+                };
+              }
+              const filter = `name ILIKE $1`;
+              const params = [`%${cmd.search.replace(/[\\%_]/g, "\\$&")}%`];
+              const rows = (
+                await db.query(
+                  `SELECT id FROM webdock_auth.hosting_cluster WHERE ${filter} ORDER BY name ${cmd.sort === "-name" ? "DESC" : "ASC"},id LIMIT $2 OFFSET $3`,
+                  [...params, cmd.limit, (cmd.page - 1) * cmd.limit],
+                )
+              ).rows;
+              const total = (
+                await db.query(
+                  `SELECT count(*)::int AS n FROM webdock_auth.hosting_cluster WHERE ${filter}`,
+                  params,
+                )
+              ).rows[0].n;
+              return {
+                docs: await Promise.all(
+                  rows.map((r) => dependencies.clusterView(db, r.id)),
+                ),
+                page: cmd.page,
+                totalDocs: total,
+                totalPages: Math.ceil(total / cmd.limit),
+                limit: cmd.limit,
+              };
+            },
+          );
         }
         if (cmd.action === "clusters.get") {
-          await dependencies.authorizeHosting(actor, { operator: true }, db);
-          return dependencies.clusterView(db, cmd.clusterID);
+          await dependencies.authorizeHosting(
+            actor,
+            { permission: "org:projects:manage", operator: true },
+            db,
+          );
+          return dependencies.readHostingView(
+            db,
+            actor,
+            {
+              kind: "projectsummary",
+              scope: { operator: true },
+              query: cmd,
+              ttlSeconds: 5,
+              tables: [
+                "webdock_auth.hosting_cluster",
+                "webdock_auth.hosting_agent",
+              ],
+            },
+            () => dependencies.clusterView(db, cmd.clusterID),
+          );
         }
         if (cmd.action === "clusters.register") {
           await dependencies.authorizeHosting(
             actor,
-            { operator: true, write, customerID: cmd.dedicatedCustomerID },
+            {
+              permission: "org:projects:manage",
+              operator: true,
+              write,
+              customerID: cmd.dedicatedCustomerID,
+            },
             db,
           );
           const prior = await dependencies.replay(
@@ -323,7 +413,7 @@ export function createHostingService(dependencies: Dependencies) {
         ) {
           await dependencies.authorizeHosting(
             actor,
-            { operator: true, write },
+            { permission: "org:projects:manage", operator: true, write },
             db,
           );
           await dependencies.clusterLock(db, cmd.clusterID);
@@ -377,7 +467,7 @@ export function createHostingService(dependencies: Dependencies) {
         if (cmd.action === "limits.get" || cmd.action === "usage.get") {
           await dependencies.authorizeHosting(
             actor,
-            { customerID: cmd.customerID },
+            { permission: "org:projects:manage", customerID: cmd.customerID },
             db,
           );
           return cmd.action === "limits.get"
@@ -388,6 +478,7 @@ export function createHostingService(dependencies: Dependencies) {
           await dependencies.authorizeHosting(
             actor,
             {
+              permission: "org:projects:manage",
               customerID: cmd.customerID,
               projectID: cmd.projectID,
               operator: true,
@@ -428,52 +519,73 @@ export function createHostingService(dependencies: Dependencies) {
         if (cmd.action === "projects.list") {
           const access = await dependencies.authorizeHosting(
             actor,
-            { customerID: cmd.customerID },
+            { permission: "org:projects:manage", customerID: cmd.customerID },
             db,
           );
-          if (cmd.search.trim()) {
-            const found = await searchPage(
-              async (page) => {
-                const rows = (
-                  await db.query(
-                    `SELECT h.project_id AS "projectID",p.name,h.provider,h.mode,h.own_images AS "ownImages",h.revision,h.cluster_id AS "clusterID",c.name AS "clusterName",c.country,c.region FROM webdock_auth.hosting_project h JOIN webdock_admin.projects p ON p.id=h.project_id LEFT JOIN webdock_auth.hosting_cluster c ON c.id=h.cluster_id WHERE h.customer_id=$1 ORDER BY p.name ${cmd.sort === "-name" ? "DESC" : "ASC"},p.id LIMIT 300 OFFSET $2`,
-                    [cmd.customerID, (page - 1) * 300],
-                  )
-                ).rows;
-                return { rows, hasMore: rows.length === 300 };
+          const view = await dependencies.readHostingView(
+            db,
+            actor,
+            {
+              kind: "projectsummary",
+              scope: {
+                customerID: cmd.customerID,
+                operator: access.operator,
+                liveReads: access.liveReads,
               },
-              (r) => [r.name, r.provider, r.clusterName].join(" "),
-              cmd.search,
-              cmd.page,
-              cmd.limit,
-            );
-            return { ...found, operator: access.operator };
-          }
-          const filter = `h.customer_id=$1 AND p.name ILIKE $2`;
-          const params = [
-            cmd.customerID,
-            `%${cmd.search.replace(/[\\%_]/g, "\\$&")}%`,
-          ];
-          const total = (
-            await db.query(
-              `SELECT count(*)::int AS n FROM webdock_auth.hosting_project h JOIN webdock_admin.projects p ON p.id=h.project_id WHERE ${filter}`,
-              params,
-            )
-          ).rows[0].n;
-          const docs = (
-            await db.query(
-              `SELECT h.project_id AS "projectID",p.name,h.provider,h.mode,h.own_images AS "ownImages",h.revision,h.cluster_id AS "clusterID",c.name AS "clusterName",c.country,c.region FROM webdock_auth.hosting_project h JOIN webdock_admin.projects p ON p.id=h.project_id LEFT JOIN webdock_auth.hosting_cluster c ON c.id=h.cluster_id WHERE ${filter} ORDER BY p.name ${cmd.sort === "-name" ? "DESC" : "ASC"},p.id LIMIT $3 OFFSET $4`,
-              [...params, cmd.limit, (cmd.page - 1) * cmd.limit],
-            )
-          ).rows;
-          return {
-            docs,
-            operator: access.operator,
-            page: cmd.page,
-            totalDocs: total,
-            totalPages: Math.ceil(total / cmd.limit),
-            limit: cmd.limit,
-          };
+              query: cmd,
+              ttlSeconds: 30,
+              tables: [
+                "webdock_auth.hosting_project",
+                "webdock_admin.projects",
+                "webdock_auth.hosting_cluster",
+              ],
+            },
+            async () => {
+              if (cmd.search.trim()) {
+                const found = await searchPage(
+                  async (page) => {
+                    const rows = (
+                      await db.query(
+                        `SELECT h.project_id AS "projectID",p.name,h.provider,h.mode,h.own_images AS "ownImages",h.revision,h.cluster_id AS "clusterID",c.name AS "clusterName",c.country,c.region FROM webdock_auth.hosting_project h JOIN webdock_admin.projects p ON p.id=h.project_id LEFT JOIN webdock_auth.hosting_cluster c ON c.id=h.cluster_id WHERE h.customer_id=$1 ORDER BY p.name ${cmd.sort === "-name" ? "DESC" : "ASC"},p.id LIMIT 300 OFFSET $2`,
+                        [cmd.customerID, (page - 1) * 300],
+                      )
+                    ).rows;
+                    return { rows, hasMore: rows.length === 300 };
+                  },
+                  (r) => [r.name, r.provider, r.clusterName].join(" "),
+                  cmd.search,
+                  cmd.page,
+                  cmd.limit,
+                );
+                return found;
+              }
+              const filter = `h.customer_id=$1 AND p.name ILIKE $2`;
+              const params = [
+                cmd.customerID,
+                `%${cmd.search.replace(/[\\%_]/g, "\\$&")}%`,
+              ];
+              const total = (
+                await db.query(
+                  `SELECT count(*)::int AS n FROM webdock_auth.hosting_project h JOIN webdock_admin.projects p ON p.id=h.project_id WHERE ${filter}`,
+                  params,
+                )
+              ).rows[0].n;
+              const docs = (
+                await db.query(
+                  `SELECT h.project_id AS "projectID",p.name,h.provider,h.mode,h.own_images AS "ownImages",h.revision,h.cluster_id AS "clusterID",c.name AS "clusterName",c.country,c.region FROM webdock_auth.hosting_project h JOIN webdock_admin.projects p ON p.id=h.project_id LEFT JOIN webdock_auth.hosting_cluster c ON c.id=h.cluster_id WHERE ${filter} ORDER BY p.name ${cmd.sort === "-name" ? "DESC" : "ASC"},p.id LIMIT $3 OFFSET $4`,
+                  [...params, cmd.limit, (cmd.page - 1) * cmd.limit],
+                )
+              ).rows;
+              return {
+                docs,
+                page: cmd.page,
+                totalDocs: total,
+                totalPages: Math.ceil(total / cmd.limit),
+                limit: cmd.limit,
+              };
+            },
+          );
+          return { ...view, operator: access.operator };
         }
         if (
           cmd.action === "projects.create" ||
@@ -481,7 +593,12 @@ export function createHostingService(dependencies: Dependencies) {
         ) {
           const access = await dependencies.authorizeHosting(
             actor,
-            { projectID: cmd.projectID, operator: true, write },
+            {
+              permission: "org:projects:manage",
+              projectID: cmd.projectID,
+              operator: true,
+              write,
+            },
             db,
           );
           await dependencies.planLock(db, access.customerID!);
@@ -609,6 +726,7 @@ export function createHostingService(dependencies: Dependencies) {
           await dependencies.authorizeHosting(
             actor,
             {
+              permission: "org:projects:manage",
               customerID: op.customer_id ?? undefined,
               projectID: op.project_id ?? undefined,
               operator: !op.customer_id,

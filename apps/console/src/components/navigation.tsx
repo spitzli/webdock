@@ -109,12 +109,14 @@ export function Navigation({
 export function TenantNavigation({
   customerID,
   canManage = false,
+  canManageBilling = canManage,
   preview = false,
   overviewHref,
   children,
 }: {
   customerID: string;
   canManage?: boolean;
+  canManageBilling?: boolean;
   preview?: boolean;
   overviewHref?: string;
   children?: React.ReactNode;
@@ -163,16 +165,10 @@ export function TenantNavigation({
                     label: msgid("Team"),
                     icon: "team" as const,
                   },
-                  ...(!preview
-                    ? [
-                        {
-                          href: base + "/billing",
-                          label: msgid("Billing"),
-                          icon: "billing" as const,
-                        },
-                      ]
-                    : []),
                 ]
+              : []),
+            ...((canManage || canManageBilling) && !preview
+              ? [{href: base + "/billing", label: msgid("Billing"), icon: "billing" as const}]
               : []),
             {
               href: base + "/usage",

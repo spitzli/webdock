@@ -1,45 +1,18 @@
 import * as React from "react";
 import Link from "next/link";
 import { getRequestI18n } from "@webdock/i18n/next";
-import type {
-  SetupOptions,
-  SetupView,
-  ServiceBindingView,
-} from "@webdock/hosting-contracts";
+import type { ServiceBindingView, ProjectOverview as ProjectOverviewData } from "@webdock/hosting-contracts";
 import { HostingRefresh } from "./refresh";
 import type { HostingUIServices } from "./services";
 export function createProjectOverviewView(
-  services: Pick<HostingUIServices, "hostingPageCall" | "applicationState">,
+  services: Pick<HostingUIServices, "applicationState"> & { getProjectOverview(projectID: string): Promise<ProjectOverviewData> },
 ) {
-  const { hostingPageCall, applicationState } = services;
+  const { getProjectOverview, applicationState } = services;
   async function ProjectOverview({ projectID }: { projectID: string }) {
     const path = `/hosting/projects/${projectID}`,
       { t } = await getRequestI18n();
-    const [options, bindings, setups, sources] = await Promise.all([
-      hostingPageCall<SetupOptions>(
-        { action: "setup.options", projectID },
-        path + "/overview",
-      ),
-      hostingPageCall<ServiceBindingView[]>(
-        { action: "services.list", projectID },
-        path + "/overview",
-      ),
-      hostingPageCall<{ docs: SetupView[] }>(
-        { action: "setup.list", projectID, page: 1, limit: 5 },
-        path + "/overview",
-      ),
-      hostingPageCall<{
-        docs: {
-          id: string;
-          targetID: string;
-          repositoryName: string;
-          branch: string;
-          enabled: boolean;
-        }[];
-      }>({ action: "git.sources.list", projectID }, path + "/overview"),
-    ]);
-    const unfinished = setups.docs.filter((s) => s.state !== "ready"),
-      activeBindings = bindings.filter((b) => b.state !== "disconnected");
+    const options = await getProjectOverview(projectID);
+    const { setups: unfinished, bindings: activeBindings, sources } = options;
     const status = (state: ServiceBindingView["state"]) =>
       ({
         pending: t("Pending"),
@@ -84,7 +57,7 @@ export function createProjectOverviewView(
               {unfinished.map((s) => (
                 <li key={s.id}>
                   <Link href={path + "/setup/" + s.id}>
-                    {s.configuration.name}
+                    {s.name}
                   </Link>
                   <p className="muted">
                     {s.state === "running"
@@ -135,7 +108,7 @@ export function createProjectOverviewView(
                 </thead>
                 <tbody>
                   {options.applications.slice(0, 8).map((app) => {
-                    const source = sources.docs.find(
+                    const source = sources.find(
                       (s) => s.targetID === app.id,
                     );
                     return (
@@ -207,7 +180,7 @@ export function createProjectOverviewView(
               ))}
             </ul>
           )}
-          {options.databases.length > 0 && (
+          {options.databaseCount > 0 && (
             <p>
               <Link href={path + "/databases"}>{t("Manage databases")}</Link>
             </p>

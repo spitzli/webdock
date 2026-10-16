@@ -117,7 +117,7 @@ try {
     .mailProductMigrations)
     await database.query(ddl);
   await database.query(
-    await readFile(new URL("../../drizzle/0036_clerk_identity.sql", import.meta.url), "utf8"),
+    await readFile(new URL("../../drizzle/0040_clerk_identity_mapping.sql", import.meta.url), "utf8"),
   );
   console.log(
     "Complete disposable API baseline initialized; no provider requests.",

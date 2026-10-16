@@ -20,10 +20,10 @@ export interface DatabaseUIActions {
   saveDatabase(previous: FormState, form: FormData): Promise<FormState>;
   launchDatabase(
     id: string,
-  ): Promise<{ launch?: DatabaseLaunch; error?: string }>;
+  ): Promise<{ launch?: Pick<DatabaseLaunch, "code" | "gatewayOrigin">; error?: string }>;
   launchManagedDatabase(
     id: string,
-  ): Promise<{ launch?: DatabaseLaunch; error?: string }>;
+  ): Promise<{ launch?: Pick<DatabaseLaunch, "code" | "gatewayOrigin">; error?: string }>;
 }
 const Actions = createContext<DatabaseUIActions | null>(null);
 export function DatabaseActionsProvider({

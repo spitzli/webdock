@@ -10,8 +10,18 @@ export type BillingActor = { subject: string; sessionID: string };
 /** Explicit composition retains existing operation journals, scopes and provider uncertainty fences. */
 export function createBillingContext(dependencies: {
   databasePools: Pick<PlatformDatabaseRuntime, "orm">;
+  legacyClerkMemberships: (
+    subject: string,
+  ) => Promise<
+    Extract<
+      NonNullable<ReturnType<typeof currentDatabaseScope>>,
+      { kind: "session" }
+    >["memberships"]
+  >;
+  hasConsolePrincipal: () => boolean;
 }) {
-  const { databasePools } = dependencies;
+  const { databasePools, legacyClerkMemberships, hasConsolePrincipal } =
+    dependencies;
 
   type Tx = Parameters<Parameters<typeof databasePools.orm.transaction>[0]>[0];
 
@@ -60,31 +70,46 @@ export function createBillingContext(dependencies: {
     );
   }
 
-  function customerTransaction<T>(
+  function customerReadTransaction<T>(
     actor: BillingActor,
     customerID: string,
     run: (tx: Tx) => Promise<T>,
   ): Promise<T> {
-    return withDatabaseScope({ kind: "session", ...actor }, () =>
-      databasePools.orm.transaction(async (tx) => {
-        const check = async () => {
-          if (
-            !(
-              await tx.execute<{ allowed: boolean }>(
-                sql`SELECT webdock_rls.billing_admin(${customerID}) AS allowed`,
-              )
-            ).rows[0].allowed
-          )
-            throw new BillingError(
-              "Current customer administrator access is required.",
-              403,
-            );
-        };
-        await check();
-        const value = await run(tx);
-        await check();
-        return value;
-      }),
+    return customerTransaction(actor, customerID, run, false);
+  }
+  async function customerTransaction<T>(
+    actor: BillingActor,
+    customerID: string,
+    run: (tx: Tx) => Promise<T>,
+    writing = true,
+  ): Promise<T> {
+    const memberships = hasConsolePrincipal()
+      ? undefined
+      : await legacyClerkMemberships(actor.subject);
+    return withDatabaseScope(
+      { kind: "session", ...actor, ...(memberships ? { memberships } : {}) },
+      () =>
+        databasePools.orm.transaction(async (tx) => {
+          const check = async () => {
+            if (
+              !(
+                await tx.execute<{ allowed: boolean }>(
+                  writing
+                    ? sql`SELECT webdock_rls.billing_admin(${customerID}) AS allowed`
+                    : sql`SELECT webdock_rls.billing_reader(${customerID}) AS allowed`,
+                )
+              ).rows[0].allowed
+            )
+              throw new BillingError(
+                "Current billing management permission is required.",
+                403,
+              );
+          };
+          await check();
+          const value = await run(tx);
+          await check();
+          return value;
+        }),
     );
   }
   return {
@@ -92,5 +117,6 @@ export function createBillingContext(dependencies: {
     operatorTransaction,
     billingAudit,
     customerTransaction,
+    customerReadTransaction,
   };
 }

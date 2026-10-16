@@ -204,3 +204,20 @@ test("onboarding admission rechecks a live manager and never turns tenant admin 
   f.setMembership(null);
   await assert.rejects(policy.assertMailManager(reference, "456", f.db));
 });
+
+test("native Mail uses provider-qualified grants without requiring a legacy membership row", async () => {
+  const f = fixture();
+  f.setMembership({ memberID: null, role: "admin" });
+  const provider = { operator: false, canManage: true, clerkGrant: '["issuer","user","org","membership"]' };
+  let live: typeof provider | null = provider;
+  const auth = createNativeMailAuthorization(f.directory, async () => live);
+  const actor = { subject: "123", sessionID: "session-123" };
+  const access = await auth.authorizeMail(f.db, actor, "456", true);
+  assert.equal(access.clerkGrant, provider.clerkGrant);
+  assert.equal(access.memberID, null);
+  live = null;
+  await assert.rejects(() => auth.authorizeMail(f.db, actor, "456", true));
+  live = provider;
+  f.setMembership({ memberID: null, role: null });
+  await assert.rejects(() => auth.authorizeMail(f.db, actor, "456", true));
+});

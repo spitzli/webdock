@@ -60,6 +60,9 @@ test("lifecycle authenticates, binds its preview, isolates deletion and proves r
     return Response.json(token, { status: introspectionOK ? 200 : 401 });
   });
   t.mock.method(database, "query", async (sql: string) => {
+    // This fixture models an unmigrated legacy identity store.
+    if (sql.includes("to_regclass('webdock_auth.clerk_identity')"))
+      return { rows: [{ present: false }] };
     if (sql.includes("SELECT role,banned"))
       return { rows: [{ role, emailVerified: true, twoFactorEnabled: true }] };
     if (sql.includes("SELECT metadata"))

@@ -10,6 +10,11 @@ import {
   type HostingActor,
 } from "@webdock/hosting-contracts";
 export type Dependencies = {
+  introspectToken(
+    accessToken: string,
+    clientID: string,
+    secret: string,
+  ): Promise<Response>;
   requireHostingCommand: HostingPorts["requireHostingCommand"];
   vercelSettings: HostingPorts["vercelSettings"];
   displayDatabaseCredentials: DatabaseServices["displayDatabaseCredentials"];
@@ -87,22 +92,10 @@ export function createHostingBridge(dependencies: Dependencies) {
       !credentials.slice(split + 1)
     )
       throw new HostingError(401, "Studio authentication required.");
-    const origin = new URL(
-      dependencies.env.BETTER_AUTH_URL || "http://localhost:3125",
-    ).origin;
-    const response = await dependencies.auth.handler(
-      new Request(origin + "/api/auth/oauth2/introspect", {
-        method: "POST",
-        headers: {
-          Origin: origin,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          token: accessToken,
-          client_id: clientID,
-          client_secret: credentials.slice(split + 1),
-        }),
-      }),
+    const response = await dependencies.introspectToken(
+      accessToken,
+      clientID,
+      credentials.slice(split + 1),
     );
     if (!response.ok) {
       if ([400, 401, 403].includes(response.status))
@@ -212,5 +205,6 @@ export function createHostingBridge(dependencies: Dependencies) {
       );
     }
   }
+
   return { hostingIdentity, executeHostingBridgeCommand, hostingBridge };
 }

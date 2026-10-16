@@ -1,3 +1,4 @@
+import { consoleAuthConfiguration } from "./modules/auth/console-configuration";
 import type { ApiConfig } from "./config";
 
 // Provider registrations and MCP audiences keep their existing protocol identity.
@@ -26,6 +27,12 @@ export async function handleConsoleOrigin(
   const origin = headers.get("origin");
   if (origin && origin !== consoleOrigin)
     return new Response("Forbidden origin", {status: 403, headers: {"Cache-Control": "no-store"}});
+  // Production ingress sends /api/* directly here, bypassing the Next.js proxy.
+  if (consoleAuthConfiguration().enabled &&
+      ["GET", "HEAD"].includes(request.method) && url.pathname === "/api/sso/login")
+    return new Response(null, {status: 307, headers: {
+      Location: consoleOrigin + "/login", "Cache-Control": "no-store", "Referrer-Policy": "no-referrer",
+    }});
   if (origin) headers.set("origin", studioOrigin);
   const protocol = new URL(studioOrigin);
   url.protocol = protocol.protocol;

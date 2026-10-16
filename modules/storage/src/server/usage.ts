@@ -114,10 +114,11 @@ export function createStorageUsage(ports: StoragePorts) {
     const connection = await database.connect();
     try {
       await connection.query("BEGIN");
+      const principal = ports.currentConsolePrincipal();
       const actor = (
         await connection.query(
-          'SELECT id FROM webdock_auth."user" WHERE id=$1 AND role=\'operator\' AND NOT coalesce(banned,false) AND "emailVerified" AND "twoFactorEnabled" AND NOT "mustChangePassword" FOR SHARE',
-          [actorID],
+          `SELECT id FROM webdock_auth."user" WHERE id=$1 AND role='operator' AND NOT coalesce(banned,false) AND ($2 OR ("emailVerified" AND "twoFactorEnabled" AND NOT "mustChangePassword")) FOR SHARE`,
+          [actorID, !!principal?.operator && principal.userID === actorID],
         )
       ).rows[0];
       const tenant = (

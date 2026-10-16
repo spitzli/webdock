@@ -9,6 +9,8 @@ export type LocalIdentity = {
   emailVerified: boolean;
   mustChangePassword: boolean;
   twoFactorEnabled: boolean;
+  /** Explicit current provider policy authorization; never a claim of MFA enrollment. */
+  operatorAuthorized?: boolean;
 };
 export type SessionIdentity = LocalIdentity & {
   sessionID: string;
@@ -49,6 +51,8 @@ export function activeIdentity(
     identity.emailVerified === true &&
     identity.mustChangePassword === false &&
     (identity.role === "user" ||
-      (identity.role === "operator" && identity.twoFactorEnabled === true))
+      (identity.role === "operator" &&
+        (identity.twoFactorEnabled === true ||
+          identity.operatorAuthorized === true)))
   );
 }

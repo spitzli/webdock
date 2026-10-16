@@ -11025,3 +11025,28 @@ msgstr ""
 #: packages/i18n/src/picker.tsx:23
 msgid "Changing language…"
 msgstr ""
+
+
+#: apps/admin/src/app/(console)/(portal)/tenants/[customerID]/workspace.tsx
+msgid "Administrators manage members and invitations. Clerk applies its team rules."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/page.tsx
+msgid "Register"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/page.tsx
+msgid "Join the waitlist"
+msgstr ""
+
+#: apps/web/src/app/(frontend)/page.tsx
+msgid "Access by invitation only."
+msgstr ""
+
+#: apps/web/src/app/(frontend)/page.tsx
+msgid "Join the waitlist. Access by invitation only."
+msgstr ""
+
+#: apps/api/src/modules/auth/mail.ts
+msgid "The invitation email could not be sent. The invitation is saved; please resend it after the mail service is available again."
+msgstr ""

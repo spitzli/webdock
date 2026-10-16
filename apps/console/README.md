@@ -1,26 +1,30 @@
-# Webdock operator workspace
+# Webdock Console
 
-This app is part of the public `spitzli/webdock` monorepo. It authenticates through the central Better Auth service. When SSO is configured, local Payload login, recovery and old JWTs are rejected; user records remain as identity/permission projections.
+Next.js frontend for the Webdock API. Business data and authorization live in
+`apps/api`; Console holds no database credentials. Run from the monorepo root after
+`npm ci`, using Node 24:
 
-Customers, projects, existing CMS connections and append-only audit events are implemented. The registry never provisions infrastructure as a side effect of ordinary CRUD. Link an existing deployed CMS using its admin URL and provider references. This does not enable, suspend or delete the external service.
+- `npm run dev -w @webdock/admin` starts on port 3120.
+- `npm test` runs the isolated Console unit tests.
+- `npm run check -w @webdock/admin`, `npm run lint -w @webdock/admin` and
+  `npm run build:admin` check source and production output.
 
-Run commands from the monorepo root with `npm run <command> -w @webdock/admin`, or inside this directory after the root `npm ci`.
+By default, existing deployments retain central Better Auth SSO. Setting
+`WEBDOCK_CONSOLE_AUTH_PROVIDER=clerk` selects Clerk for Console login, account and
+organization controls. API activation and the matching production identity
+configuration must be prepared together. See [.env.example](.env.example) and the
+[release/rollback guide](../../docs/architecture/clerk-console-release.md).
 
-- `npm run dev` starts on port 3120.
-- `npm run check`, `npm run lint` and `npm run build` verify source and build.
-- `npm test` uses `.env.test.local` and requires an isolated localhost `webdock_admin_test` database. The registry test resets its own local tables; never use production credentials.
-- `npm run payload -- migrate` uses `.env.local` and the scoped management schema.
-- `scripts/provision.mjs` is an offline operator tool. It takes an explicit owner env-file path and writes private `.env.instance` credentials. Owner credentials must never be deployed.
-- `scripts/seed.ts` requires an explicitly approved central subject for production, or a password for a disposable local test account. It creates the initial customer/project inventory without deploying any customer infrastructure.
+Clerk session tokens and the server-only delegation key go only to `/v1/console`.
+The API verifies the live identity, mappings, customer state and membership before
+issuing bounded database authority. CMS/OIDC/MCP keep their existing legacy
+protocol; no Clerk session is converted into a Better Auth session.
 
-Initial credentials and MFA enrollment belong to the central auth service. Payload password hashes are never copied into Better Auth. External identity subjects are linked to platform Snowflake projections explicitly.
+Customer teams use native Clerk Admin/Member rules. Local user bans, customer
+archival and explicit resource restrictions remain effective. Ordinary registry
+CRUD does not provision infrastructure. Incoming Mail is activated separately;
+mailbox content still requires an explicit grant, including for the operator.
 
-### Mail product
-
-Tenant Mail adds connection-scoped messages, domain verification, API keys,
-webhooks, suppressions, request logs, analytics, settings, team and quickstart pages.
-All actions use the existing authenticated Studio bridge and current tenant rights.
-HTML previews reuse the isolated native sanitizer, loaded only in the browser.
-Mail product pages are unavailable in tenant preview sessions. Provider/API secrets
-are never part of server page data; newly issued public keys/webhook secrets appear
-only in their one-time action result. See [operations](../../docs/architecture/mail-operations.md).
+The existing `scripts/` provision/migration utilities are historical offline tools,
+not the Console's deployment path. Current schema and identity migration are owned
+by `apps/api/scripts/`; never run an old Payload migration against the live registry.

@@ -65,3 +65,10 @@ test('managed apps require immutable images, positive resources and explicit del
  for(const bad of [{image:'app:latest'},{cpuMillicores:0},{healthPath:'http://host/'},{replicas:-1},{hostNetwork:true}])assert.equal(commandSchema.safeParse({action:'apps.create',projectID:'123',name:'App',spec:{...spec,...bad},idempotencyKey:'create-app-fixture-key',subscriptionRevision:1}).success,false);
  assert.equal(commandSchema.safeParse({action:'apps.delete',appID:'123',revision:1,idempotencyKey:'delete-app-fixture-key'}).success,false);
 });
+
+test("project overview accepts only a bound project read command", () => {
+  assert.deepEqual(commandSchema.parse({ action: "projects.overview", projectID: "123" }), { action: "projects.overview", projectID: "123" });
+  for (const invalid of [{}, { projectID: "foreign" }, { projectID: "123", customerID: "456" }, { projectID: "123", write: true }]) {
+    assert.throws(() => commandSchema.parse({ action: "projects.overview", ...invalid }));
+  }
+});

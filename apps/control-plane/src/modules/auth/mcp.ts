@@ -1,3 +1,14 @@
+import { legacyClerkMemberships } from "./clerk-provider";
+import { ConsoleAuthError } from "./clerk-identity";
+async function linkedUserEnabled(subject: string) {
+  try {
+    await legacyClerkMemberships(subject);
+    return true;
+  } catch (error) {
+    if (error instanceof ConsoleAuthError && error.status === 403) return false;
+    throw error;
+  }
+}
 import { authDatabase as database } from "../../db/runtime";
 export const mcpResource =
   process.env.WEBDOCK_MCP_RESOURCE || "https://studio.webdock.dev/api/mcp";
@@ -5,7 +16,8 @@ export const mcpScopes = ["webdock:read", "webdock:write"] as const;
 
 // Re-evaluate operator authorization on every resource request, including JWTs.
 export async function currentMCPClaims(subject: string | undefined) {
-  if (!subject) return { disabled: true };
+  if (!subject || !(await linkedUserEnabled(subject)))
+    return { disabled: true };
   const { rows } = await database.query(
     `SELECT role,banned,"emailVerified","twoFactorEnabled","mustChangePassword" FROM webdock_auth."user" WHERE id=$1`,
     [subject],
@@ -24,7 +36,8 @@ export async function currentMCPClaims(subject: string | undefined) {
 export const hostingScopes = ["hosting:read", "hosting:write"] as const;
 // Hosting clients never inherit the operator-only registry claims.
 export async function currentHostingMCPClaims(subject: string | undefined) {
-  if (!subject) return { disabled: true };
+  if (!subject || !(await linkedUserEnabled(subject)))
+    return { disabled: true };
   const user = (
     await database.query(
       'SELECT role,banned,"emailVerified","twoFactorEnabled","mustChangePassword" FROM webdock_auth."user" WHERE id=$1',

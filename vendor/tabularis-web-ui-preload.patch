@@ -1,0 +1,130 @@
+diff --git a/packages/web-ui/README.md b/packages/web-ui/README.md
+index 20c88ab5..c6f7206b 100644
+--- a/packages/web-ui/README.md
++++ b/packages/web-ui/README.md
+@@ -15,6 +15,8 @@ const client = new TabularisClient(transport);
+ 
+ Mount in a container with an explicit height. Load this browser-only component lazily with SSR disabled in Next.js. The library externalizes React/React DOM. Its stylesheet uses CSS `@scope`, requiring a browser with support for that feature.
+ 
++To overlap code loading with authentication, call `preloadTabularisWorkspace()` in a browser effect when opening the workspace. It downloads the runtime and local Monaco editor concurrently without mounting providers or issuing database requests. Handle its rejected promise; mounting the workspace still uses the normal lazy loader and can retry a failed speculative download.
++
+ Keep `client` stable across appearance updates. Change `scopeId` whenever the authorized session, database or grant changes. Internal routing does not change the host URL. Workspace preferences and appearance are isolated from document styling and the standalone browser cache. Host navigation and plugin extension loading are omitted. The current embedded locale choices are English and German.
+ 
+ The host owns authentication, transport disposal and backend authorization. UI visibility is not a security boundary. A gateway must constrain every command to authorized connections, prevent arbitrary connection configuration and enforce database privileges with actual database roles. The desktop `database` authorization tier includes writes and is not tenant isolation. Saved queries and editor state require the same backend scope as database execution.
+diff --git a/packages/web-ui/src/embed/index.ts b/packages/web-ui/src/embed/index.ts
+index 9bb1f4fe..322204a6 100644
+--- a/packages/web-ui/src/embed/index.ts
++++ b/packages/web-ui/src/embed/index.ts
+@@ -1,4 +1,5 @@
+ export { TabularisWorkspace } from "./TabularisWorkspace";
++export { preloadTabularisWorkspace } from "../utils/preloadWorkspace";
+ export type { TabularisWorkspaceProps } from "./types";
+ export { TabularisClient } from "../api/client";
+ export type { TabularisTransport } from "../api/client";
+diff --git a/packages/web-ui/src/utils/preloadWorkspace.ts b/packages/web-ui/src/utils/preloadWorkspace.ts
+new file mode 100644
+index 00000000..6cf86933
+--- /dev/null
++++ b/packages/web-ui/src/utils/preloadWorkspace.ts
+@@ -0,0 +1,6 @@
++import { ensureMonaco } from "./monaco";
++
++/** Download the workspace and local editor while the host negotiates access. */
++export async function preloadTabularisWorkspace(): Promise<void> {
++  await Promise.all([import("../embed/WorkspaceRuntime"), ensureMonaco()]);
++}
+diff --git a/packages/web-ui/tests/embed/preload.test.tsx b/packages/web-ui/tests/embed/preload.test.tsx
+new file mode 100644
+index 00000000..9168cd29
+--- /dev/null
++++ b/packages/web-ui/tests/embed/preload.test.tsx
+@@ -0,0 +1,45 @@
++import { render, screen } from "@testing-library/react";
++import { describe, expect, it, vi } from "vitest";
++import type { TabularisClient } from "../../src/api/client";
++
++// Keep chunk downloads pending independently to catch a serial loading waterfall.
++const chunks = vi.hoisted(() => {
++  let runtimeReady!: () => void, editorReady!: () => void;
++  return {
++    runtime: new Promise<void>(resolve => { runtimeReady = resolve; }),
++    editor: new Promise<void>(resolve => { editorReady = resolve; }),
++    runtimeReady: () => runtimeReady(), editorReady: () => editorReady(),
++    runtimeStarted: false, editorStarted: false,
++  };
++});
++vi.mock("../../src/embed/WorkspaceRuntime", async () => {
++  chunks.runtimeStarted = true;
++  await chunks.runtime;
++  return { WorkspaceRuntime: () => <p>Ready workspace</p> };
++});
++vi.mock("../../src/monacoLoader", async () => {
++  chunks.editorStarted = true;
++  await chunks.editor;
++  return { monaco: {} };
++});
++
++describe("workspace preload", () => {
++  it("loads runtime and editor concurrently without mounting the workspace or contacting a server", async () => {
++    const api = await import("../../src/embed/index");
++    expect(api.preloadTabularisWorkspace).toBeTypeOf("function");
++    const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
++    try {
++      const loading = api.preloadTabularisWorkspace();
++      await vi.waitFor(() => {
++        expect(chunks.runtimeStarted).toBe(true);
++        expect(chunks.editorStarted).toBe(true);
++      });
++      expect(screen.queryByText("Ready workspace")).not.toBeInTheDocument();
++      expect(fetch).not.toHaveBeenCalled();
++      chunks.runtimeReady(); chunks.editorReady(); await loading;
++      await api.preloadTabularisWorkspace();
++      render(<api.TabularisWorkspace scopeId="session" connectionId="db" client={{} as TabularisClient} />);
++      expect(await screen.findByText("Ready workspace")).toBeInTheDocument();
++    } finally { chunks.runtimeReady(); chunks.editorReady(); vi.unstubAllGlobals(); }
++  });
++});
+diff --git a/packages/web-ui/tests/embed/preloadRetry.test.ts b/packages/web-ui/tests/embed/preloadRetry.test.ts
+new file mode 100644
+index 00000000..3b03d708
+--- /dev/null
++++ b/packages/web-ui/tests/embed/preloadRetry.test.ts
+@@ -0,0 +1,13 @@
++import { describe, expect, it, vi } from "vitest";
++
++vi.mock("../../src/embed/WorkspaceRuntime", () => ({ WorkspaceRuntime: () => null }));
++
++describe("workspace preload retry", () => {
++  it("reports a failed editor download and allows a later attempt", async () => {
++    vi.doMock("../../src/monacoLoader", () => { throw Error("Editor chunk unavailable"); });
++    const { preloadTabularisWorkspace } = await import("../../src/utils/preloadWorkspace");
++    await expect(preloadTabularisWorkspace()).rejects.toThrow();
++    vi.doMock("../../src/monacoLoader", () => ({ monaco: {} }));
++    await expect(preloadTabularisWorkspace()).resolves.toBeUndefined();
++  });
++});
+diff --git a/packages/web-ui/tests/embed/preloadSafety.test.ts b/packages/web-ui/tests/embed/preloadSafety.test.ts
+new file mode 100644
+index 00000000..d1bc75cf
+--- /dev/null
++++ b/packages/web-ui/tests/embed/preloadSafety.test.ts
+@@ -0,0 +1,19 @@
++import { describe, expect, it, vi } from "vitest";
++
++// Monaco depends on browser workers; the real workspace module is loaded here.
++vi.unmock("lucide-react");
++vi.mock("../../src/monacoLoader", () => ({ monaco: {} }));
++
++describe("workspace preload safety", () => {
++  it("evaluates the workspace without issuing RPCs or changing host routing", async () => {
++    const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
++    const location = window.location.href;
++    try {
++      const { preloadTabularisWorkspace } = await import("../../src/utils/preloadWorkspace");
++      await preloadTabularisWorkspace();
++      expect(fetch).not.toHaveBeenCalled();
++      expect(document.querySelector(".tabularis-workspace")).toBeNull();
++      expect(window.location.href).toBe(location);
++    } finally { vi.unstubAllGlobals(); }
++  });
++});

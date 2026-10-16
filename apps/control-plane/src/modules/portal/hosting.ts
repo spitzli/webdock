@@ -1,5 +1,7 @@
 import {
   currentTrustedBrowserReference,
+  currentConsolePrincipal,
+  storedConsoleIdentity,
   resolveSessionReference,
 } from "../auth/principal";
 import { currentHostingMCPClaims, hostingScopes } from "../auth/mcp";
@@ -15,6 +17,25 @@ export async function hostingCall(
   command: unknown,
   kind: "hosting" | "database" = "hosting",
 ) {
+  requireInstalledOperation(
+    kind === "database" ? "database.command" : "hosting.command",
+    [command],
+  );
+  const principal = currentConsolePrincipal();
+  if (principal) {
+    const actor: HostingActor = {
+      consoleIdentity: storedConsoleIdentity()!,
+      subject: principal.userID,
+      sessionID: principal.sessionID,
+      source: "studio",
+      scopes: hostingScopes,
+    };
+    return kind === "hosting"
+      ? executeHostingBridgeCommand(actor, command)
+      : withHostingDatabase(actor, () =>
+          transaction((db) => executeDatabase(db, actor, command)),
+        );
+  }
   const trusted = currentTrustedBrowserReference();
   if (trusted) {
     const session = await resolveSessionReference(nativeHeaders());

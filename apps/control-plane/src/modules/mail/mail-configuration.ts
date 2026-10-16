@@ -1,3 +1,4 @@
+import { clerkMailAccess } from "./mail-clerk-access";
 import {
   prepareSubmissionConfiguration,
   completeSubmissionConfiguration,
@@ -11,6 +12,7 @@ export const {
   checkpointMailConfiguration,
   completeMailConfiguration,
 } = createNativeConfiguration({
+  clerkMailAccess,
   prepareSubmissionConfiguration,
   completeSubmissionConfiguration,
   reconcileSubmissionConfiguration,

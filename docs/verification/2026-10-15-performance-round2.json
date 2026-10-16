@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-15",
+  "method": "Representative authenticated browser resource timings, not a load test. First viewer run downloaded the new runtime chunk; second reused browser modules. Both restore the saved schema.",
+  "navigationMs": 955,
+  "viewerColdSchemaMs": 4643,
+  "viewerColdTableListMs": 4991,
+  "viewerWarmSchemaMs": 3535,
+  "viewerWarmTableListMs": 3907,
+  "overviewSQL": {
+    "before": 74,
+    "after": 15,
+    "transactionsBefore": 7,
+    "transactionsAfter": 1
+  },
+  "studioSessionQueriesAfterIntrospection": {
+    "before": 6,
+    "after": 4
+  },
+  "consoleDeployment": "https://webdock-admin-jf2xnl237-spitzli.vercel.app",
+  "apiImage": "sha256:26a0ca2066c02655bbc2e1bbde27c0aa8169436578b950ab916e17f15da8ec78",
+  "functionRegions": [
+    "fra1"
+  ],
+  "permissions": "Live native session/MFA/tenant/project checks retained; no cross-request authorization cache."
+}

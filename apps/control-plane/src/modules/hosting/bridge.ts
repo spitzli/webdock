@@ -1,3 +1,4 @@
+import { introspectToken } from "../auth/introspection";
 import { createHostingBridge } from "@webdock/module-hosting/server/bridge";
 import { requireHostingCommand } from "../../installation";
 import { vercelSettings } from "../integrations/vercel-settings";
@@ -11,6 +12,7 @@ import { issueEnrollment } from "./clusters";
 import { readHostingJSON, requireHostingEnvironment } from "./http";
 export const { hostingIdentity, executeHostingBridgeCommand, hostingBridge } =
   createHostingBridge({
+    introspectToken,
     get requireHostingCommand() {
       return requireHostingCommand;
     },
@@ -49,3 +51,5 @@ export const { hostingIdentity, executeHostingBridgeCommand, hostingBridge } =
     },
     env: process.env,
   });
+
+export const executeStudioHosting = executeHostingBridgeCommand;

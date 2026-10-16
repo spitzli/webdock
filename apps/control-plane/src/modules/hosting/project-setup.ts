@@ -1,3 +1,4 @@
+import { authorizeSetupConfiguration } from "./permissions";
 import { requireDatabases } from "./product-admission";
 import { requireMail } from "../../installation";
 import { createHostingProjectSetup } from "@webdock/module-hosting/server/project-setup";
@@ -16,6 +17,7 @@ import { previewProjectSetup, assertSetupConfirmation } from "./setup-preview";
 export type { SetupRow } from "@webdock/module-hosting/server/project-setup";
 export const { setupView, readSetup, executeProjectSetup } =
   createHostingProjectSetup({
+    authorizeSetupConfiguration,
     requireDatabases,
     requireMail,
     get executeSetupSource() {

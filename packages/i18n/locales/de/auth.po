@@ -4720,3 +4720,7 @@ msgstr "Individuellen Plan zuweisen"
 
 msgid "Applies immediately to this customer only and replaces their current plan. It is not added to the reusable plan library. Existing extras are preserved."
 msgstr "Gilt sofort nur für diesen Kunden und ersetzt seinen bisherigen Plan. Er wird nicht in den Katalog wiederverwendbarer Pläne aufgenommen. Bestehende Extras bleiben erhalten."
+
+#: apps/api/src/modules/auth/mail.ts
+msgid "The invitation email could not be sent. The invitation is saved; please resend it after the mail service is available again."
+msgstr "Die Einladungsmail konnte nicht versendet werden. Die Einladung ist gespeichert; sende sie erneut, sobald der Maildienst wieder verfügbar ist."

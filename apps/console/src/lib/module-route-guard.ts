@@ -6,6 +6,7 @@ export async function guardModuleRoute(
     status: number;
     body: { data?: { installation?: ModuleView } };
   }>,
+  clerkSession = false,
 ): Promise<Response | undefined> {
   const url = new URL(request.url),
     module = moduleForPath(url.pathname);
@@ -23,6 +24,8 @@ export async function guardModuleRoute(
             encodeURIComponent(url.pathname + url.search),
         },
       });
+    if (clerkSession && result.status === 403)
+      return new Response(null, { status: 307, headers: { ...headers, location: "/access-pending" } });
     if (result.status !== 200)
       return new Response("Service unavailable", { status: 503, headers });
     if (

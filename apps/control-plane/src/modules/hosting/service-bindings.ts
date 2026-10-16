@@ -13,53 +13,54 @@ import { encryptMailSecret } from "../platform/platform";
 import { databaseBindingMaterial } from "./database-binding";
 import { openBinding } from "./binding-runtime";
 import { executeAppCommand } from "./apps";
-export const { executeServiceBinding } = createHostingServiceBindings({
-  get applicationCapabilities() {
-    return applicationCapabilities;
-  },
-  get mailBindingMaterial() {
-    return mailBindingMaterial;
-  },
-  get revokeBindingMail() {
-    return revokeBindingMail;
-  },
-  get bindingMailReady() {
-    return bindingMailReady;
-  },
-  get authorizeHosting() {
-    return authorizeHosting;
-  },
-  get transaction() {
-    return transaction;
-  },
-  get planLock() {
-    return planLock;
-  },
-  get audit() {
-    return audit;
-  },
-  get replay() {
-    return replay;
-  },
-  get recordResult() {
-    return recordResult;
-  },
-  get openEnvironment() {
-    return openEnvironment;
-  },
-  get sealEnvironment() {
-    return sealEnvironment;
-  },
-  get encryptMailSecret() {
-    return encryptMailSecret;
-  },
-  get databaseBindingMaterial() {
-    return databaseBindingMaterial;
-  },
-  get openBinding() {
-    return openBinding;
-  },
-  get executeAppCommand() {
-    return executeAppCommand;
-  },
-});
+export const { executeServiceBinding, readServiceBindings } =
+  createHostingServiceBindings({
+    get applicationCapabilities() {
+      return applicationCapabilities;
+    },
+    get mailBindingMaterial() {
+      return mailBindingMaterial;
+    },
+    get revokeBindingMail() {
+      return revokeBindingMail;
+    },
+    get bindingMailReady() {
+      return bindingMailReady;
+    },
+    get authorizeHosting() {
+      return authorizeHosting;
+    },
+    get transaction() {
+      return transaction;
+    },
+    get planLock() {
+      return planLock;
+    },
+    get audit() {
+      return audit;
+    },
+    get replay() {
+      return replay;
+    },
+    get recordResult() {
+      return recordResult;
+    },
+    get openEnvironment() {
+      return openEnvironment;
+    },
+    get sealEnvironment() {
+      return sealEnvironment;
+    },
+    get encryptMailSecret() {
+      return encryptMailSecret;
+    },
+    get databaseBindingMaterial() {
+      return databaseBindingMaterial;
+    },
+    get openBinding() {
+      return openBinding;
+    },
+    get executeAppCommand() {
+      return executeAppCommand;
+    },
+  });

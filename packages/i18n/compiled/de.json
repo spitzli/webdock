@@ -491,6 +491,9 @@
   "Access area": [
     "Zugriffsbereich"
   ],
+  "Access by invitation only.": [
+    "Zugang nur auf Einladung."
+  ],
   "Access is by invitation. If you need access or help with your account, contact your Webdock administrator.": [
     "Der Zugang erfolgt auf Einladung. Wende dich an deinen Webdock-Admin, wenn du Zugang oder Hilfe zu deinem Konto benötigst."
   ],
@@ -733,6 +736,9 @@
   ],
   "Administrators can edit this profile and invite people. Existing role changes and removals are managed by your Webdock operator.": [
     "Admins können dieses Profil bearbeiten und Personen einladen. Bestehende Rollen ändern und Mitgliedschaften entfernen kann dein Webdock-Betreiber."
+  ],
+  "Administrators manage members and invitations. Clerk applies its team rules.": [
+    "Administratoren verwalten Mitglieder und Einladungen. Dabei gelten die Teamregeln von Clerk."
   ],
   "Administrators manage members. Owners manage administrators and owners. Website permissions are assigned separately.": [
     "Administratoren verwalten Mitglieder. Owner verwalten Administratoren und Owner. Website-Rechte werden separat vergeben."
@@ -2852,6 +2858,9 @@
   ],
   "Currency": [
     "Währung"
+  ],
+  "Current billing management permission is required.": [
+    "Du benötigst eine gültige Berechtigung zur Verwaltung der Abrechnung."
   ],
   "Current design": [
     "Aktuelles Design"
@@ -4995,6 +5004,12 @@
   "Jobs requiring review": [
     "Aufträge zur Prüfung"
   ],
+  "Join the waitlist": [
+    "Auf die Warteliste"
+  ],
+  "Join the waitlist. Access by invitation only.": [
+    "Auf die Warteliste. Zugang nur auf Einladung."
+  ],
   "Junk": [
     "Spam"
   ],
@@ -5249,6 +5264,9 @@
   ],
   "Logical data size": [
     "Logische Datenmenge"
+  ],
+  "Login": [
+    "Anmelden"
   ],
   "Login and connection cookies maintain sessions and protect authentication flows. Authentication sessions normally expire after eight hours; the Vercel connection cookie lasts up to ten minutes. A language preference explicitly selected by you is stored in a cookie for up to one year; a selected colour theme remains in local storage until removed. These functions use Article 6(1)(b) or (f) GDPR and, where strictly necessary to provide a service you request, Section 25(2)(2) TDDDG. You can remove them through your browser settings; this may sign you out or reset preferences.": [
     "Anmelde- und Verbindungscookies erhalten Sitzungen und sichern Anmeldeabläufe ab. Anmeldesitzungen laufen normalerweise nach acht Stunden ab, das Vercel-Verbindungscookie nach höchstens zehn Minuten. Eine ausdrücklich gewählte Sprache speichern wir bis zu einem Jahr in einem Cookie, ein gewähltes Farbschema bis zum Entfernen im Local Storage. Grundlage sind Art. 6 Abs. 1 lit. b oder f DSGVO und, soweit für einen von dir gewünschten Dienst unbedingt erforderlich, § 25 Abs. 2 Nr. 2 TDDDG. Du kannst die Daten über deine Browsereinstellungen entfernen; dadurch wirst du gegebenenfalls abgemeldet oder Einstellungen werden zurückgesetzt."
@@ -7791,6 +7809,9 @@
   "Region: ": [
     "Region: "
   ],
+  "Register": [
+    "Registrieren"
+  ],
   "Register MCP client": [
     "MCP-Client registrieren"
   ],
@@ -8931,6 +8952,9 @@
   "Setup": [
     "Einrichtung"
   ],
+  "Setup authorization changed. Sign in and resume the setup.": [
+    "Die Setup-Berechtigung hat sich geändert. Melde dich an und setze die Einrichtung fort."
+  ],
   "Setup changed. Review the current configuration.": [
     "Die Einrichtung hat sich geändert. Prüfe die aktuelle Konfiguration."
   ],
@@ -9680,6 +9704,9 @@
   ],
   "The integration is provided to authorised Webdock operators to view hosting information for projects they manage. You receive a non-exclusive, non-transferable right to use the integration for that purpose while access is enabled. Only connect a Vercel team and projects you are authorised to manage. Keep your account and authentication devices secure and report suspected misuse promptly.": [
     "Die Integration steht berechtigten Webdock-Betreibern zur Verfügung, um Hostinginformationen für die von ihnen verwalteten Projekte anzusehen. Solange der Zugang freigeschaltet ist, erhältst du ein nicht ausschließliches, nicht übertragbares Recht, die Integration zu diesem Zweck zu nutzen. Verbinde ausschließlich Vercel-Teams und Projekte, zu deren Verwaltung du berechtigt bist. Schütze dein Konto und deine Authentifizierungsgeräte und melde vermuteten Missbrauch umgehend."
+  ],
+  "The invitation email could not be sent. The invitation is saved; please resend it after the mail service is available again.": [
+    "Die Einladungsmail konnte nicht versendet werden. Die Einladung ist gespeichert; sende sie erneut, sobald der Maildienst wieder verfügbar ist."
   ],
   "The isolated schema used by this deployed CMS.": [
     "Das isolierte Schema, das dieses bereitgestellte CMS verwendet."
@@ -11036,6 +11063,9 @@
   ],
   "Waiting for the build artifact.": [
     "Wartet auf das Build-Artefakt."
+  ],
+  "Waitlist": [
+    "Warteliste"
   ],
   "We are the controller for our website, customer relationships, accounts and service administration. When we host or handle personal data for a customer, we act on their instructions under a data-processing agreement (Article 28 GDPR). This notice does not replace that agreement.": [
     "Für unsere Website, Kundenbeziehungen, Konten und die Dienstverwaltung sind wir Verantwortlicher. Hosten oder bearbeiten wir personenbezogene Daten im Auftrag eines Kunden, handeln wir nach dessen Weisungen auf Grundlage einer Vereinbarung zur Auftragsverarbeitung (Art. 28 DSGVO). Diese Erklärung ersetzt diese Vereinbarung nicht."

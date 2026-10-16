@@ -126,11 +126,11 @@ export function TenantBillingPage({
             .map((attempt) => (
               <div key={attempt.id}>
                 <p>{i18n.t(billingLabel(attempt.state))}</p>
-                <PaymentLink
+                {view.canManage && <PaymentLink
                   environment={environment}
                   customerID={customerID}
                   attemptID={attempt.id}
-                />
+                />}
               </div>
             ))}
         </section>
@@ -147,7 +147,7 @@ export function TenantBillingPage({
               </>
             )}
           </p>
-          {["changing", "reserved", "needs_review"].includes(change.status) && (
+          {view.canManage && ["changing", "reserved", "needs_review"].includes(change.status) && (
             <ResumeChange
               environment={environment}
               customerID={customerID}
@@ -156,7 +156,7 @@ export function TenantBillingPage({
           )}
         </section>
       ))}
-      {view.salesEnabled &&
+      {view.canManage && view.salesEnabled &&
         view.subscriptions
           .filter(
             (subscription) =>
@@ -257,7 +257,7 @@ export function TenantBillingPage({
           />
         </section>
       )}
-      {!current && (
+      {view.canManage && !current && (
         <section className="panel">
           <h2>{i18n.t(offer ? "Your offer" : "Choose a website plan")}</h2>
           {offer && (

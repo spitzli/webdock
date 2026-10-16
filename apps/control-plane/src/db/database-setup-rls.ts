@@ -21,6 +21,19 @@ BEGIN
  AND NOT EXISTS(SELECT 1 FROM webdock_auth.studio_tenant_preview preview WHERE preview.session_id=session.id)
  AND NOT EXISTS(SELECT 1 FROM webdock_admin.project_deletion deletion WHERE deletion.project_id=s.project_id AND deletion.status<>'deleted'));
 END $$;
+CREATE OR REPLACE FUNCTION webdock_rls.setup_permission(customer text,project text,permission text) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
+DECLARE proof jsonb;
+BEGIN
+ IF NOT webdock_rls.setup_allowed(customer,project) THEN RETURN false; END IF;
+ proof:=webdock_rls.request_scope()->'clerk';
+ IF proof IS NULL THEN RETURN true; END IF;
+ IF EXISTS(SELECT 1 FROM webdock_auth."user" u WHERE u.id=proof->>'subject' AND u.role='operator') THEN RETURN true; END IF;
+ IF jsonb_typeof(proof->'permissions') IS DISTINCT FROM 'array' THEN RETURN false; END IF;
+ RETURN coalesce(proof->'permissions' ? permission,false);
+END $$;
+ALTER FUNCTION webdock_rls.setup_permission(text,text,text) OWNER TO webdock_platform_owner;
+REVOKE ALL ON FUNCTION webdock_rls.setup_permission(text,text,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION webdock_rls.setup_permission(text,text,text) TO webdock_worker_runtime,webdock_auth_runtime,webdock_policy_owner;
 CREATE OR REPLACE FUNCTION webdock_rls.setup_identity(subject text,session text DEFAULT NULL) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
 BEGIN
  IF NOT webdock_rls.worker(ARRAY['hosting-setup']) THEN RETURN false; END IF;
@@ -45,6 +58,8 @@ export function setupPolicyFor(t: {
   const col = (name: string) => `"${t.name}"."${name}"::text`;
   const allowed = (customer = "customer_id", project?: string) =>
     `webdock_rls.setup_allowed(${col(customer)}${project ? "," + col(project) : ""})`;
+  const permission = t.name.startsWith("hosting_database") ? "org:databases:manage" : ["git_build", "git_artifact", "git_release", "git_check_outbox"].includes(t.name) ? "org:deployments:create" : "org:projects:manage";
+  const writable = () => `webdock_rls.setup_permission(${col("customer_id")},${col("project_id")},'${permission}')`;
   const read = (value: string) => ({ read: value, write: "false" });
   if (t.schema === "webdock_admin") {
     if (t.name === "customers") return read(allowed("id"));
@@ -98,7 +113,7 @@ export function setupPolicyFor(t: {
   )
     return {
       read: allowed("customer_id", "project_id"),
-      write: allowed("customer_id", "project_id"),
+      write: writable(),
     };
   if (
     [
@@ -124,7 +139,7 @@ export function setupPolicyFor(t: {
     );
   if (t.name === "hosting_app") {
     const value = `EXISTS(SELECT 1 FROM webdock_auth.hosting_project p WHERE p.project_id::text=${col("project_id")} AND webdock_rls.setup_allowed(p.customer_id::text,p.project_id::text))`;
-    return { read: value, write: value };
+    return { read: value, write: value.replace("setup_allowed(p.customer_id::text,p.project_id::text)", "setup_permission(p.customer_id::text,p.project_id::text,'org:projects:manage')").replace("setup_allowed(b.customer_id::text,b.project_id::text)", "setup_permission(b.customer_id::text,b.project_id::text,'org:deployments:create')") };
   }
   if (["platform_settings", "hosting_database_plan"].includes(t.name))
     return read(
@@ -132,7 +147,7 @@ export function setupPolicyFor(t: {
     );
   if (t.name === "git_check_outbox") {
     const value = `EXISTS(SELECT 1 FROM webdock_auth.git_build b WHERE b.id::text=${col("build_id")} AND webdock_rls.setup_allowed(b.customer_id::text,b.project_id::text))`;
-    return { read: value, write: value };
+    return { read: value, write: value.replace("setup_allowed(p.customer_id::text,p.project_id::text)", "setup_permission(p.customer_id::text,p.project_id::text,'org:projects:manage')").replace("setup_allowed(b.customer_id::text,b.project_id::text)", "setup_permission(b.customer_id::text,b.project_id::text,'org:deployments:create')") };
   }
   if (t.name === "mail_api_key")
     return {

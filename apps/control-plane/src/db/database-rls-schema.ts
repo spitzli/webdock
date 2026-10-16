@@ -1,4 +1,19 @@
 import { modulePreflightTables } from "./module-preflight-tables";
+import { gitInvalidationSQL } from "./database-git-rls";
+import {
+  setupClerkRevalidationSQL,
+  setupLegacyRevalidationSQL,
+} from "./setup-clerk-revalidation";
+import {
+  clerkActorSQL,
+  clerkCustomerSQL,
+  clerkSetupSQL,
+  clerkBillingSQL,
+  clerkBillingReadSQL,
+  clerkMembershipSQL,
+  clerkPermissionSQL,
+  clerkProjectionSQL,
+} from "./clerk-rls";
 import { setupHelperSQL, setupPolicyFor } from "./database-setup-rls";
 import { billingTables, billingPolicy } from "../modules/billing/rls";
 import { createHash } from "node:crypto";
@@ -158,6 +173,29 @@ const metadata: Record<string, string[]> = {
     "revoked_at",
   ],
 };
+Object.assign(metadata, {
+  "webdock_auth.clerk_identity": [
+    "issuer",
+    "clerk_user_id",
+    "user_id",
+    "enabled",
+  ],
+  "webdock_auth.clerk_organization": [
+    "issuer",
+    "clerk_organization_id",
+    "organization_id",
+    "enabled",
+  ],
+  "webdock_auth.console_tenant_preview": [
+    "issuer",
+    "session_id",
+    "actor_id",
+    "customer_id",
+    "organization_id",
+    "expires_at",
+    "expired_at",
+  ],
+});
 const bootstrapMetadata: Record<string, string[]> = {
   "webdock_admin.customers": ["id", "status"],
   "webdock_auth.tenant_customer": ["customer_id", "organization_id"],
@@ -240,6 +278,12 @@ BEGIN
  IF a->'preview'<>'null'::jsonb THEN RETURN NOT writing AND coalesce((a->'preview'->>'valid')::boolean,false) AND a->'preview'->>'customer_id'=customer; END IF;
  RETURN EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_admin.customers c ON c.id=t.customer_id JOIN webdock_auth.member m ON m."organizationId"=t.organization_id WHERE t.customer_id=customer AND c.status='active' AND m."userId"=a->>'subject' AND (NOT writing OR m.role IN ('owner','admin')));
 END $$;
+CREATE OR REPLACE FUNCTION webdock_rls.customer_permission(customer text, permission text, allow_operator boolean DEFAULT true) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
+ SELECT webdock_rls.customer_allowed(customer,true)
+$$;
+CREATE OR REPLACE FUNCTION webdock_rls.project_permission(project text, permission text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
+ SELECT EXISTS(SELECT 1 FROM webdock_admin.projects p WHERE p.id=project AND webdock_rls.customer_permission(p.customer_id,permission))
+$$;
 CREATE OR REPLACE FUNCTION webdock_rls.organization_allowed(org text, writing boolean DEFAULT false) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
 DECLARE a jsonb; customer text;
 BEGIN
@@ -257,8 +301,8 @@ CREATE OR REPLACE FUNCTION webdock_rls.agent_project(project text) RETURNS boole
 CREATE OR REPLACE FUNCTION webdock_rls.agent_backend(backend text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$ SELECT EXISTS(SELECT 1 FROM webdock_auth.hosting_database_backend b WHERE b.id=backend AND webdock_rls.worker(ARRAY['agent'],b.cluster_id)) $$;
 CREATE OR REPLACE FUNCTION webdock_rls.backend_owned(backend text, writing boolean DEFAULT false) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
  SELECT EXISTS(SELECT 1 FROM webdock_auth.hosting_database_backend b WHERE b.id=backend AND (NOT writing OR b.kind='dedicated') AND (
- EXISTS(SELECT 1 FROM webdock_auth.hosting_database d WHERE (d.backend_id=b.id OR d.pending_backend_id=b.id) AND webdock_rls.customer_allowed(d.customer_id,writing)) OR
- EXISTS(SELECT 1 FROM webdock_auth.hosting_database_migration m JOIN webdock_auth.hosting_database d ON d.id=m.database_id WHERE (m.source_backend_id=b.id OR m.target_backend_id=b.id) AND webdock_rls.customer_allowed(d.customer_id,writing))))
+ EXISTS(SELECT 1 FROM webdock_auth.hosting_database d WHERE (d.backend_id=b.id OR d.pending_backend_id=b.id) AND (CASE WHEN writing AND NOT webdock_rls.worker(ARRAY['database-order']) THEN webdock_rls.customer_permission(d.customer_id,'org:databases:manage') ELSE webdock_rls.customer_allowed(d.customer_id) END)) OR
+ EXISTS(SELECT 1 FROM webdock_auth.hosting_database_migration m JOIN webdock_auth.hosting_database d ON d.id=m.database_id WHERE (m.source_backend_id=b.id OR m.target_backend_id=b.id) AND (CASE WHEN writing AND NOT webdock_rls.worker(ARRAY['database-order']) THEN webdock_rls.customer_permission(d.customer_id,'org:databases:manage') ELSE webdock_rls.customer_allowed(d.customer_id) END))))
 $$;
 CREATE OR REPLACE FUNCTION webdock_rls.plan_owned(plan text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
  SELECT EXISTS(SELECT 1 FROM webdock_auth.hosting_database_order o WHERE o.plan_revision_id=plan AND webdock_rls.customer_allowed(o.customer_id))
@@ -276,6 +320,8 @@ const signatures = [
   "worker(text[])",
   "worker(text[],text)",
   "customer_allowed(text,boolean)",
+  "customer_permission(text,text,boolean)",
+  "project_permission(text,text)",
   "organization_allowed(text,boolean)",
   "project_allowed(text,boolean)",
   "project_matches(text,text)",
@@ -346,8 +392,54 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
       );
     }
   }
-  sql.push(helperSQL);
-  sql.push(setupHelperSQL);
+  const clerkReady = seen.has("webdock_auth.clerk_identity");
+  let identityHelpers = helperSQL;
+  if (clerkReady) {
+    identityHelpers = identityHelpers.replace(
+      ' SELECT u.id,u.email,u.role,u."twoFactorEnabled" INTO actor_row',
+      clerkActorSQL +
+        ' SELECT u.id,u.email,u.role,u."twoFactorEnabled" INTO actor_row',
+    );
+    identityHelpers = identityHelpers.replace(
+      " RETURN EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_admin.customers c ON c.id=t.customer_id JOIN webdock_auth.member",
+      clerkCustomerSQL +
+        " RETURN EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_admin.customers c ON c.id=t.customer_id JOIN webdock_auth.member",
+    );
+  }
+  if (clerkReady)
+    identityHelpers = identityHelpers.replace(
+      `JOIN webdock_auth.member m ON m."organizationId"=t.organization_id WHERE t.customer_id=customer AND c.status='active' AND m."userId"=a->>'subject' AND (NOT writing OR m.role IN ('owner','admin'))`,
+      `WHERE t.customer_id=customer AND c.status='active' AND webdock_rls.membership_role(t.organization_id) IS NOT NULL AND (NOT writing OR webdock_rls.membership_role(t.organization_id) IN ('owner','admin'))`,
+    );
+  sql.push(identityHelpers, gitInvalidationSQL);
+  if (clerkReady)
+    sql.push(
+      clerkMembershipSQL,
+      clerkPermissionSQL,
+      clerkBillingSQL,
+      clerkBillingReadSQL,
+      clerkProjectionSQL,
+      setupClerkRevalidationSQL,
+      setupLegacyRevalidationSQL,
+    );
+  sql.push(
+    clerkReady
+      ? setupHelperSQL
+          .replace(
+            " RETURN EXISTS(\n SELECT 1 FROM webdock_auth.hosting_setup s",
+            clerkSetupSQL +
+              " RETURN EXISTS(\n SELECT 1 FROM webdock_auth.hosting_setup s",
+          )
+          .replace(
+            "m.role IN ('owner','admin')",
+            "webdock_rls.setup_legacy_permission(customer,'org:projects:manage') AND (coalesce(s.configuration->'database'->>'mode','none')='none' OR webdock_rls.setup_legacy_permission(customer,'org:databases:manage')) AND (coalesce(s.configuration->'source'->>'kind','template')<>'git' OR webdock_rls.setup_legacy_permission(customer,'org:deployments:create'))",
+          )
+          .replace(
+            "IF proof IS NULL THEN RETURN true; END IF;",
+            "IF proof IS NULL THEN RETURN EXISTS(SELECT 1 FROM webdock_auth.hosting_setup s JOIN webdock_auth.\"user\" u ON u.id=s.actor->>'subject' WHERE s.id=webdock_rls.request_scope()->>'setupID' AND u.role='operator') OR webdock_rls.setup_legacy_permission(customer,permission); END IF;",
+          )
+      : setupHelperSQL,
+  );
   for (const signature of signatures)
     sql.push(
       `ALTER FUNCTION webdock_rls.${signature} OWNER TO webdock_policy_owner; REVOKE ALL ON FUNCTION webdock_rls.${signature} FROM PUBLIC; GRANT EXECUTE ON FUNCTION webdock_rls.${signature} TO webdock_auth_runtime,webdock_worker_runtime,webdock_registry_runtime,webdock_platform_owner;`,
@@ -466,6 +558,23 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         ]);
         workDelete = "false";
       }
+    } else if (["clerk_identity", "clerk_organization"].includes(t.name)) {
+      policy("webdock_auth_bootstrap", "true", "false");
+      sql.push(`GRANT SELECT ON ${q} TO webdock_auth_bootstrap;`);
+      read = "webdock_rls.operator()";
+      write =
+        t.name === "clerk_organization"
+          ? `webdock_rls.operator() AND ${col("issuer")}=webdock_rls.actor()->'clerk'->>'issuer' AND EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE t.organization_id=${col("organization_id")} AND c.status='active')`
+          : "false";
+      runtimeUpdate = runtimeDelete = "false";
+      workRead =
+        t.name === "clerk_identity"
+          ? seen.has("webdock_mail.identity")
+            ? `EXISTS(SELECT 1 FROM webdock_mail.identity i WHERE i.subject=${col("user_id")} AND (${worker(["mail-send-gateway", "mail-webmail-gateway"])} OR webdock_rls.agent_customer(i.customer_id)))`
+            : "false"
+          : seen.has("webdock_mail.service")
+            ? `EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_mail.service s ON s.customer_id=t.customer_id WHERE t.organization_id=${col("organization_id")} AND (${worker(["mail-send-gateway", "mail-webmail-gateway"])} OR webdock_rls.agent_customer(t.customer_id)))`
+            : "false";
     } else if (identity.has(t.name)) {
       policy("webdock_auth_bootstrap", "true", "true");
       if (t.name === "user") read = `webdock_rls.user_visible(${col("id")})`;
@@ -517,8 +626,42 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
     } else if (authCustomer.has(t.name)) {
       read = `webdock_rls.customer_allowed(${col("customer_id")})`;
       write = `webdock_rls.customer_allowed(${col("customer_id")},true)`;
+      const domains = t.name.startsWith("hosting_database")
+        ? ["org:databases:manage"]
+        : ["hosting_operation", "hosting_reservation"].includes(t.name)
+          ? [
+              "org:projects:manage",
+              "org:deployments:create",
+              "org:databases:manage",
+            ]
+          : ["git_build", "git_artifact", "git_release"].includes(t.name)
+            ? ["org:deployments:create"]
+            : t.name.startsWith("git_") ||
+                [
+                  "hosting_setup",
+                  "hosting_project",
+                  "hosting_service_binding",
+                  "hosting_vercel",
+                  "hosting_vercel_flow",
+                ].includes(t.name)
+              ? ["org:projects:manage"]
+              : [];
+      if (domains.length)
+        write =
+          "(" +
+          domains
+            .map(
+              (permission) =>
+                `webdock_rls.customer_permission(${col("customer_id")},'${permission}')`,
+            )
+            .join(" OR ") +
+          ")";
       if (t.columns.includes("project_id"))
         write += ` AND (${col("project_id")} IS NULL OR webdock_rls.project_matches(${col("project_id")},${col("customer_id")}))`;
+      if (t.name === "git_source") {
+        runtimeUpdate = `(${write}) OR (webdock_rls.customer_permission(${col("customer_id")},'org:deployments:create') AND webdock_rls.project_matches(${col("project_id")},${col("customer_id")}))`;
+        runtimeDelete = write;
+      }
       if (t.name === "tenant_customer") {
         read += ` OR webdock_rls.actor()->'preview'->>'customer_id'=${col("customer_id")}`;
         write = "webdock_rls.operator()";
@@ -550,6 +693,8 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
           write += ` OR webdock_rls.mail_key(${col("customer_id")},${connection}) OR ${sessionSender}`;
         }
         workRead = workWrite = worker(["mail-cron", "mail-send-gateway"]);
+        if (t.name === "mail_sender_domain")
+          workRead += ` OR webdock_rls.agent_customer(${col("customer_id")})`;
       } else if (t.name.startsWith("git_"))
         workRead = workWrite = worker(
           t.name === "git_connection"
@@ -638,8 +783,11 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
     } else if (
       ["managed_database_launch", "managed_database_session"].includes(t.name)
     ) {
-      const own = `${col("subject")}=webdock_rls.subject() AND ${col("session_id")}=webdock_rls.actor()->>'sessionID' AND webdock_rls.actor()->'preview'='null'::jsonb`;
-      const target = `EXISTS(SELECT 1 FROM webdock_auth.hosting_database d WHERE d.id::text=${col("database_id")} AND webdock_rls.customer_allowed(d.customer_id,true))`;
+      const sessionColumn = t.columns.includes("clerk_identity")
+        ? `coalesce(${col("session_id")},(${col("clerk_identity")})::jsonb->>'sessionID')`
+        : col("session_id");
+      const own = `${col("subject")}=webdock_rls.subject() AND ${sessionColumn}=webdock_rls.actor()->>'sessionID' AND webdock_rls.actor()->'preview'='null'::jsonb`;
+      const target = `EXISTS(SELECT 1 FROM webdock_auth.hosting_database d WHERE d.id::text=${col("database_id")} AND webdock_rls.customer_permission(d.customer_id,'org:databases:manage'))`;
       if (t.name === "managed_database_launch") {
         read = write = `(${own}) AND (${target})`;
         runtimeUpdate = runtimeDelete = "false";
@@ -648,6 +796,10 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
       workWrite = t.name === "managed_database_session" ? workRead : "false";
       workUpdate = t.name === "managed_database_launch" ? workRead : "false";
       workDelete = t.name === "managed_database_session" ? workRead : "false";
+      if (t.columns.includes("clerk_identity")) {
+        const reference = `((${col("clerk_identity")} IS NULL AND webdock_rls.actor()->'clerk' IS NULL) OR ((${col("clerk_identity")})::jsonb->>'issuer'=webdock_rls.actor()->'clerk'->>'issuer' AND (${col("clerk_identity")})::jsonb->>'userID'=webdock_rls.actor()->'clerk'->>'userID' AND ((${col("clerk_identity")})::jsonb->>'organizationID') IS NOT DISTINCT FROM (webdock_rls.actor()->'clerk'->>'clerkOrganizationID')))`;
+        write = `(${write}) AND ${reference}`;
+      }
     } else if (t.name === "database_binding") {
       read = `webdock_rls.project_allowed(${col("project_id")})`;
       write = "webdock_rls.operator()";
@@ -660,12 +812,12 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
       // Parent visibility alone must not authorize a member to mutate children.
       const target =
         relation.parent === "hosting_project"
-          ? `webdock_rls.project_allowed(${col(relation.foreign)},true)`
+          ? `webdock_rls.project_permission(${col(relation.foreign)},'org:projects:manage')`
           : relation.parent === "database_binding"
-            ? `EXISTS(SELECT 1 FROM ${parent} parent WHERE parent.id::text=${col(relation.foreign)} AND webdock_rls.project_allowed(parent.project_id,true))`
+            ? `EXISTS(SELECT 1 FROM ${parent} parent WHERE parent.id::text=${col(relation.foreign)} AND webdock_rls.project_permission(parent.project_id,'org:databases:manage'))`
             : relation.parent === "database_grant"
-              ? `EXISTS(SELECT 1 FROM ${parent} parent JOIN webdock_auth.database_binding b ON b.id=parent.binding_id WHERE parent.id::text=${col(relation.foreign)} AND (parent.subject=webdock_rls.subject() OR webdock_rls.project_allowed(b.project_id,true)))`
-              : `EXISTS(SELECT 1 FROM ${parent} parent WHERE parent.${ident(relation.key)}::text=${col(relation.foreign)} AND webdock_rls.customer_allowed(parent.customer_id,true))`;
+              ? `EXISTS(SELECT 1 FROM ${parent} parent JOIN webdock_auth.database_binding b ON b.id=parent.binding_id WHERE parent.id::text=${col(relation.foreign)} AND (parent.subject=webdock_rls.subject() OR webdock_rls.project_permission(b.project_id,'org:databases:manage')))`
+              : `EXISTS(SELECT 1 FROM ${parent} parent WHERE parent.${ident(relation.key)}::text=${col(relation.foreign)} AND webdock_rls.customer_permission(parent.customer_id,'${t.name.startsWith("hosting_database") ? "org:databases:manage" : "org:deployments:create"}'))`;
       write = target;
       if (
         ["database_grant", "database_runtime_owner", "database_audit"].includes(
@@ -675,8 +827,12 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         read = `(${inherited}) AND (${col("subject")}=webdock_rls.subject() OR webdock_rls.operator())`;
         write = t.name === "database_audit" ? read : "webdock_rls.operator()";
       }
-      if (t.name === "database_launch")
-        write = `(${inherited}) AND ${col("session_id")}=webdock_rls.actor()->>'sessionID' AND webdock_rls.actor()->'preview'='null'::jsonb`;
+      if (t.name === "database_launch") {
+        const sessionColumn = t.columns.includes("clerk_identity")
+          ? `coalesce(${col("session_id")},(${col("clerk_identity")})::jsonb->>'sessionID')`
+          : col("session_id");
+        write = `(${inherited}) AND ${sessionColumn}=webdock_rls.actor()->>'sessionID' AND webdock_rls.actor()->'preview'='null'::jsonb`;
+      }
       if (t.name === "database_session") write = "false";
       if (t.name.startsWith("database_")) {
         workRead = `(${inherited}) AND ${worker(["database-gateway"])}`;
@@ -695,8 +851,14 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
       else
         workRead =
           workWrite = `(${inherited}) AND ${worker(["agent", "database-order"])}`;
-    } else if (t.name === "studio_tenant_preview") {
-      const own = `${col("session_id")}=webdock_rls.actor()->>'sessionID' AND ${col("actor_id")}=webdock_rls.subject()`;
+    } else if (
+      ["studio_tenant_preview", "console_tenant_preview"].includes(t.name)
+    ) {
+      const own =
+        `${col("session_id")}=webdock_rls.actor()->>'sessionID' AND ${col("actor_id")}=webdock_rls.subject()` +
+        (t.name === "console_tenant_preview"
+          ? ` AND ${col("issuer")}=webdock_rls.actor()->'clerk'->>'issuer'`
+          : "");
       read = own;
       write = `(${own}) AND coalesce((webdock_rls.actor()->>'root')::boolean,false)`;
       workRead = worker([
@@ -933,9 +1095,15 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
             `IF pg_has_role(current_user,${literal(role)},'USAGE') THEN IF coalesce((${predicate.replaceAll(ident(t.name) + ".", "OLD.")}),false) THEN RETURN NEW; END IF; END IF;`,
         )
         .join("\n");
+      // Publication pointers belong to deployments; source configuration still requires projects.
+      const domainGuard =
+        t.schema === "webdock_auth" && t.name === "git_source"
+          ? `IF pg_has_role(current_user,'webdock_auth_runtime','USAGE') AND NOT webdock_rls.customer_permission(OLD.customer_id,'org:projects:manage') AND (to_jsonb(NEW)-ARRAY['latest_build_id','environment_identity','desired_release_id']) IS DISTINCT FROM (to_jsonb(OLD)-ARRAY['latest_build_id','environment_identity','desired_release_id']) THEN RAISE EXCEPTION 'Source configuration permission required' USING ERRCODE='42501'; END IF;`
+          : "";
       sql.push(`CREATE OR REPLACE FUNCTION webdock_rls.${guard}() RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog,webdock_rls AS $guard$
 BEGIN
  IF EXISTS(SELECT 1 FROM pg_catalog.pg_roles WHERE rolname=current_user AND rolsuper) THEN RETURN NEW; END IF;
+ ${domainGuard}
  ${checks}
  RAISE EXCEPTION 'row-level security write authorization required for original row' USING ERRCODE='42501';
 END $guard$;

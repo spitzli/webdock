@@ -17,6 +17,7 @@ export type StorageDependencies = {
   list?: (options: StorageInventoryOptions) => Promise<StorageInventoryPage>;
 };
 export type StoragePorts = {
+  currentConsolePrincipal(): { userID: string; operator: boolean } | undefined;
   database: Pick<Pool, "query" | "connect">;
   withAuthenticatedDatabase<T>(
     headers: Headers,

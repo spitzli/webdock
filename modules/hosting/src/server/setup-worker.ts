@@ -2,6 +2,9 @@ import type { HostingPorts } from "./ports";
 import { HostingError } from "@webdock/hosting-contracts";
 import type { SetupRow } from "./project-setup";
 export type Dependencies = {
+  executeAuthorizedSetup: ReturnType<
+    typeof import("./setup-execution").createHostingSetupExecution
+  >["executeSetupStep"];
   withDatabaseScope: HostingPorts["withDatabaseScope"];
   transaction: ReturnType<typeof import("./db").createHostingDb>["transaction"];
   executeSetupStep: ReturnType<
@@ -40,16 +43,7 @@ export function createHostingSetupWorker(dependencies: Dependencies) {
       if (!row) break;
       processed++;
       try {
-        const result = await dependencies.withDatabaseScope(
-          {
-            kind: "system",
-            purpose: "hosting-setup",
-            customerID: row.customer_id,
-            setupID: row.id,
-            generation: row.generation,
-          },
-          () => dependencies.executeSetupStep(row),
-        );
+        const result = await dependencies.executeAuthorizedSetup(row);
         const advanced =
           JSON.stringify(result.steps) !== JSON.stringify(row.steps) ||
           JSON.stringify(result.resources) !== JSON.stringify(row.resources);

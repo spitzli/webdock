@@ -1,3 +1,4 @@
+import { AccountControls } from "./account-controls";
 import { browserAuthConfiguration } from "@/lib/browser-auth-config";
 import { getRequestI18n } from "@webdock/i18n/next";
 import { LanguagePicker } from "@webdock/i18n/picker";
@@ -42,7 +43,7 @@ export async function ConsoleToolbar({
           <WorkspaceSidebar segments={segments} />
         </>
       }
-      account={
+      account={browserAuthConfiguration.provider === "clerk" ? <AccountControls preview={!!session.preview} /> :
         <details className="console-account-menu">
           <summary aria-label={t("Account & preferences")}>
             <span className="console-avatar" aria-hidden="true">
@@ -62,7 +63,6 @@ export async function ConsoleToolbar({
             <LanguagePicker className="studio-language-picker" />
             <Logout
               ssoEnabled
-              clerk={browserAuthConfiguration.provider === "clerk"}
             />
           </div>
         </details>

@@ -12,6 +12,9 @@ import {
   type SetupProgress,
 } from "@webdock/hosting-contracts";
 export type Dependencies = {
+  authorizeSetupConfiguration: ReturnType<
+    typeof import("./permissions").createHostingPermissions
+  >["authorizeSetupConfiguration"];
   requireDatabases: HostingPorts["requireDatabases"];
   requireMail: HostingPorts["requireMail"];
   executeSetupSource: ReturnType<
@@ -99,7 +102,11 @@ export function createHostingProjectSetup(dependencies: Dependencies) {
     write = false,
   ): Promise<SetupRow> {
     return dependencies.transaction(async (db) => {
-      await dependencies.authorizeHosting(actor, { projectID, write }, db);
+      await dependencies.authorizeHosting(
+        actor,
+        { permission: "org:projects:manage", projectID, write },
+        db,
+      );
       const row = (
         await db.query(
           "SELECT * FROM webdock_auth.hosting_setup WHERE id=$1 AND project_id=$2",
@@ -120,7 +127,7 @@ export function createHostingProjectSetup(dependencies: Dependencies) {
       return dependencies.transaction(async (db) => {
         await dependencies.authorizeHosting(
           actor,
-          { projectID: cmd.projectID },
+          { permission: "org:projects:manage", projectID: cmd.projectID },
           db,
         );
         return {
@@ -150,7 +157,11 @@ export function createHostingProjectSetup(dependencies: Dependencies) {
         const existing = await dependencies.transaction(async (db) => {
           await dependencies.authorizeHosting(
             actor,
-            { projectID: cmd.projectID, write: true },
+            {
+              permission: "org:projects:manage",
+              projectID: cmd.projectID,
+              write: true,
+            },
             db,
           );
           return (
@@ -174,7 +185,11 @@ export function createHostingProjectSetup(dependencies: Dependencies) {
       return dependencies.transaction(async (db) => {
         await dependencies.authorizeHosting(
           actor,
-          { projectID: cmd.projectID, write: true },
+          {
+            permission: "org:projects:manage",
+            projectID: cmd.projectID,
+            write: true,
+          },
           db,
         );
         const row = (
@@ -199,7 +214,11 @@ export function createHostingProjectSetup(dependencies: Dependencies) {
     return dependencies.transaction(async (db) => {
       const access = await dependencies.authorizeHosting(
         actor,
-        { projectID: cmd.projectID, write: true },
+        {
+          permission: "org:projects:manage",
+          projectID: cmd.projectID,
+          write: true,
+        },
         db,
       );
       if (
@@ -237,6 +256,12 @@ export function createHostingProjectSetup(dependencies: Dependencies) {
           409,
           "Setup changed. Review the current configuration.",
         );
+      await dependencies.authorizeSetupConfiguration(
+        db,
+        actor,
+        cmd.projectID,
+        cmd.action === "setup.save" ? cmd.configuration : row!.configuration,
+      );
       if (cmd.action === "setup.save") {
         assertSetupProducts(dependencies, cmd.configuration, {
           confirmed: !!row?.confirmed_preview_id,

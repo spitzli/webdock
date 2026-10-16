@@ -388,7 +388,12 @@ export function createHostingDatabaseOrders(dependencies: Dependencies) {
   ) {
     const access = await dependencies.authorizeHosting(
       actor,
-      { projectID: cmd.projectID, write: true, tenantAdmin: true },
+      {
+        permission: "org:databases:manage",
+        projectID: cmd.projectID,
+        write: true,
+        tenantAdmin: true,
+      },
       db,
     );
     const prior = await dependencies.replay(db, actor, cmd.idempotencyKey, cmd);

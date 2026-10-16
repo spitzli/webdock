@@ -120,7 +120,11 @@ export function createHostingGitReconciliation(dependencies: Dependencies) {
     return dependencies.transaction(async (db) => {
       const access = await dependencies.authorizeHosting(
         actor,
-        { projectID: cmd.projectID, write: true },
+        {
+          permission: "org:deployments:create",
+          projectID: cmd.projectID,
+          write: true,
+        },
         db,
       );
       const r = (

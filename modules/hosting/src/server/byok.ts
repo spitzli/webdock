@@ -68,7 +68,12 @@ export function createHostingByok(dependencies: Dependencies) {
   ) {
     const access = await dependencies.authorizeHosting(
       actor,
-      { customerID, write, tenantAdmin: true },
+      {
+        permission: "org:projects:manage",
+        customerID,
+        write,
+        tenantAdmin: true,
+      },
       db,
     );
     const policy = await byokPolicy(db, customerID);
@@ -124,7 +129,7 @@ export function createHostingByok(dependencies: Dependencies) {
       if (cmd.action === "byok.reconcile") {
         await dependencies.authorizeHosting(
           actor,
-          { operator: true, write: true },
+          { permission: "org:projects:manage", operator: true, write: true },
           db,
         );
         const op = (
@@ -174,6 +179,7 @@ export function createHostingByok(dependencies: Dependencies) {
         const access = await dependencies.authorizeHosting(
           actor,
           {
+            permission: "org:projects:manage",
             customerID: cmd.customerID,
             write:
               cmd.action === "byok.policy.set" ||

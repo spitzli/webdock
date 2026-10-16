@@ -20,6 +20,14 @@ export interface HostingPorts extends MailSecrets, MailAgentPorts {
   database: Pick<Pool, "query" | "connect">;
   authDatabase: Pick<Pool, "query">;
   identity: IdentityDirectory;
+  currentConsolePrincipal():
+    | { issuer: string; userID: string; sessionID: string; operator: boolean }
+    | undefined;
+  organizationPermission(
+    subject: string,
+    organizationID: string,
+    permission: string,
+  ): Promise<boolean | undefined>;
   currentDatabaseScope(): DatabaseScope | undefined;
   withDatabaseScope<T>(scope: DatabaseScope, run: () => T): T;
   withHostingDatabase<T>(

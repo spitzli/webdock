@@ -11,6 +11,7 @@ import {
 import { tenantSchemaSQL } from "../../src/modules/access/tenant-schema";
 import {
   accessSchemaSQL,
+  AccessError,
   accountSites,
 } from "../../src/modules/access/access-management";
 import {
@@ -755,4 +756,102 @@ test("Two tenants isolate profiles, membership, invitations, native endpoints an
       }),
       { mode: 0o600 },
     );
+});
+
+test("failed invitation delivery is reported and audited, and the same invitation can be resent", async () => {
+  const operator = await identity("mail-failure-operator", true);
+  const customer = (
+    await database.query(
+      "INSERT INTO webdock_admin.customers(id,name) VALUES(webdock_auth.next_snowflake(),'Mail recovery') RETURNING id",
+    )
+  ).rows[0];
+  const existing = await identity("mail-existing");
+  const newEmail = `mail-new-${randomBytes(6).toString("hex")}@example.invalid`;
+  for (const email of [newEmail, existing.email]) {
+    const previousHost = process.env.SMTP_HOST;
+    try {
+      process.env.AUTH_TEST_MAIL = "false";
+      delete process.env.SMTP_HOST;
+      await assert.rejects(
+        manageTenant(operator.headers, customer.id, {
+          action: "invite",
+          email,
+          name: "Mail recovery",
+          role: "member",
+        }),
+        (error) =>
+          error instanceof AccessError &&
+          /email.*not.*sent/i.test(error.message),
+      );
+    } finally {
+      process.env.AUTH_TEST_MAIL = "true";
+      if (previousHost === undefined) delete process.env.SMTP_HOST;
+      else process.env.SMTP_HOST = previousHost;
+    }
+    const invitation = (
+      await database.query(
+        "SELECT id,status FROM webdock_auth.invitation WHERE email=$1",
+        [email],
+      )
+    ).rows[0];
+    assert.equal(invitation.status, "pending");
+    const { handleNativeStudioRequest } =
+      await import("../../src/modules/portal/studio-api");
+    try {
+      process.env.AUTH_TEST_MAIL = "false";
+      delete process.env.SMTP_HOST;
+      const response = await handleNativeStudioRequest(
+        new Request(origin + "/v1/auth/studio", {
+          method: "POST",
+          headers: new Headers([
+            ...operator.headers,
+            ["content-type", "application/json"],
+          ]),
+          body: JSON.stringify({
+            operation: "manageTenant",
+            args: [
+              customer.id,
+              { action: "resend", invitation: invitation.id },
+            ],
+          }),
+        }),
+      );
+      assert.equal(response.ok, false);
+      const body = await response.json();
+      assert.equal(body.error.kind, "AccessError");
+      assert.match(body.error.message, /email.*not.*sent/i);
+      assert.doesNotMatch(body.error.message, /SMTP|password|transport/i);
+    } finally {
+      process.env.AUTH_TEST_MAIL = "true";
+      if (previousHost === undefined) delete process.env.SMTP_HOST;
+      else process.env.SMTP_HOST = previousHost;
+    }
+    assert.equal(
+      (
+        await database.query(
+          "SELECT outcome FROM webdock_auth.access_event WHERE target_id=$1 AND action='tenant-invite' ORDER BY created_at DESC LIMIT 1",
+          [customer.id],
+        )
+      ).rows[0].outcome,
+      "failed",
+    );
+    const before = testOutbox.filter((mail) => mail.to === email).length;
+    await manageTenant(operator.headers, customer.id, {
+      action: "resend",
+      invitation: invitation.id,
+    });
+    assert.equal(
+      testOutbox.filter((mail) => mail.to === email).length,
+      before + 1,
+    );
+    assert.equal(
+      (
+        await database.query(
+          "SELECT id FROM webdock_auth.invitation WHERE email=$1",
+          [email],
+        )
+      ).rows[0].id,
+      invitation.id,
+    );
+  }
 });

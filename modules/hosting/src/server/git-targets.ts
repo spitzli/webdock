@@ -54,6 +54,7 @@ export function createHostingGitTargets(dependencies: Dependencies) {
       const access = await dependencies.authorizeHosting(
         actor,
         {
+          permission: "org:projects:manage",
           projectID: cmd.projectID,
           write: true,
           operator: cmd.mode === "platform",

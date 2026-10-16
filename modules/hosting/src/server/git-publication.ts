@@ -94,7 +94,11 @@ export function createHostingGitPublication(dependencies: Dependencies) {
     };
     await dependencies.authorizeHosting(
       actor,
-      { projectID: release.project_id, write: true },
+      {
+        permission: "org:deployments:create",
+        projectID: release.project_id,
+        write: true,
+      },
       db,
     );
     const source = (
@@ -252,6 +256,7 @@ export function createHostingGitPublication(dependencies: Dependencies) {
           idempotencyKey: `git-release-${r.id}`,
         },
         db,
+        "org:deployments:create",
       )) as {
         id: string;
       };

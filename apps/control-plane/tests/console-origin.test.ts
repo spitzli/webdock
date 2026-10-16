@@ -71,3 +71,20 @@ describe("public Console origin", () => {
       expect(() => readConfig({...env, WEBDOCK_CONSOLE_ORIGIN: value})).toThrow();
   });
 });
+
+test("Clerk Console login entry never dispatches to the legacy SSO handler", async () => {
+ const prior=process.env.WEBDOCK_CONSOLE_AUTH_PROVIDER;
+ process.env.WEBDOCK_CONSOLE_AUTH_PROVIDER="clerk";
+ try {
+  for (const method of ["GET","HEAD"]) {
+   const response=await handleConsoleOrigin(new Request(`${consoleOrigin}/api/sso/login?returnTo=https://evil.example`,{method}),config,()=>{throw Error("legacy login must not run");});
+   expect(response.status).toBe(307);
+   expect(response.headers.get("location")).toBe(`${consoleOrigin}/login`);
+   expect(response.headers.get("cache-control")).toBe("no-store");
+  }
+  const callback=await handleConsoleOrigin(new Request(`${consoleOrigin}/api/sso/callback?code=legacy`),config,request=>{
+   expect(request.url).toBe(`${studioOrigin}/api/sso/callback?code=legacy`);return new Response("legacy callback preserved");
+  });
+  expect(await callback.text()).toBe("legacy callback preserved");
+ } finally {if(prior===undefined)delete process.env.WEBDOCK_CONSOLE_AUTH_PROVIDER;else process.env.WEBDOCK_CONSOLE_AUTH_PROVIDER=prior;}
+});

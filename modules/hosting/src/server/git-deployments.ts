@@ -1,3 +1,4 @@
+import { gitActionPermission } from "./permissions";
 import type { HostingPorts } from "./ports";
 import { createHash, randomBytes } from "node:crypto";
 import {
@@ -296,7 +297,12 @@ export function createHostingGitDeployments(dependencies: Dependencies) {
     const run = async (db: Connection) => {
       await dependencies.authorizeHosting(
         actor,
-        { customerID, write: true, tenantAdmin: true },
+        {
+          permission: "org:projects:manage",
+          customerID,
+          write: true,
+          tenantAdmin: true,
+        },
         db,
       );
       await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [
@@ -346,6 +352,11 @@ export function createHostingGitDeployments(dependencies: Dependencies) {
     );
   }
   async function cancelObsoleteGitBuilds(db: Connection) {
+    if (dependencies.env.DATABASE_RLS_SECRET) {
+      await db.query("SELECT webdock_rls.cancel_obsolete_git_builds()");
+      return;
+    }
+    // The isolated legacy owner fixture has no installed RLS helpers.
     const cancelled = (
       await db.query(
         `UPDATE webdock_auth.git_build b SET status='cancelled',generation=b.generation+1,lease_until=NULL,finished_at=now(),failure_code='SOURCE_CHANGED' FROM webdock_auth.git_source s JOIN webdock_auth.git_connection c ON c.id=s.connection_id WHERE b.source_id=s.id AND b.status IN ('queued','running') AND (NOT s.enabled OR c.state<>'active' OR s.revision<>b.source_revision OR c.generation<>b.connection_generation) RETURNING b.id`,
@@ -430,6 +441,7 @@ export function createHostingGitDeployments(dependencies: Dependencies) {
       const access = await dependencies.authorizeHosting(
         actor,
         {
+          permission: gitActionPermission(cmd.action),
           ...("projectID" in cmd
             ? { projectID: cmd.projectID }
             : { customerID: cmd.customerID }),
@@ -507,6 +519,18 @@ export function createHostingGitDeployments(dependencies: Dependencies) {
         return {
           source: sourceView(s),
           customerID: access.customerID,
+          canDeploy:
+            (
+              await dependencies.authorizeHosting(
+                actor,
+                {
+                  projectID: cmd.projectID,
+                  permission: "org:deployments:create",
+                },
+                db,
+              )
+            ).canWrite &&
+            (access.operator || access.project?.mode === "selfservice"),
           canManage:
             access.canWrite &&
             (access.operator || access.project?.mode === "selfservice"),
@@ -774,6 +798,13 @@ export function createHostingGitDeployments(dependencies: Dependencies) {
         if (!r) throw unavailable();
         const s = await source(db, cmd.projectID, { sourceID: r.source_id });
         active(s);
+        // Retention may have committed while this request waited for the source lock.
+        const retained = (
+          await db.query(
+            "SELECT retained FROM webdock_auth.git_artifact WHERE id=$1",
+            [r.artifact_id],
+          )
+        ).rows[0]?.retained;
         const prior = (
           await db.query(
             "SELECT * FROM webdock_auth.git_release WHERE project_id=$1 AND idempotency_key=$2",
@@ -795,7 +826,7 @@ export function createHostingGitDeployments(dependencies: Dependencies) {
           r.source_revision !== s.revision ||
           r.environment_revision !== s.environment_revision ||
           r.connection_generation !== s.connection_generation ||
-          !r.retained
+          !retained
         )
           throw conflict();
         let result;
@@ -871,7 +902,7 @@ export function createHostingGitDeployments(dependencies: Dependencies) {
     return dependencies.transaction(async (db) => {
       await dependencies.authorizeHosting(
         actor,
-        { operator: true, write: true },
+        { permission: "org:projects:manage", operator: true, write: true },
         db,
       );
       if (
@@ -1134,7 +1165,11 @@ export function createHostingGitDeployments(dependencies: Dependencies) {
               gitSourceRevision: s.revision,
               scopes: ["hosting:read", "hosting:write"],
             },
-            { projectID: s.project_id, write: true },
+            {
+              permission: "org:deployments:create",
+              projectID: s.project_id,
+              write: true,
+            },
             db,
           );
           authorized = true;

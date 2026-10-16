@@ -54,14 +54,22 @@ export function createHostingReservations(dependencies: Dependencies) {
     return dependencies.transaction(async (db) => {
       let access = await dependencies.authorizeHosting(
         actor,
-        { projectID: data.projectID, write: true },
+        {
+          permission: "org:projects:manage",
+          projectID: data.projectID,
+          write: true,
+        },
         db,
       );
       const customerID = access.customerID!;
       await dependencies.planLock(db, customerID);
       access = await dependencies.authorizeHosting(
         actor,
-        { projectID: data.projectID, write: true },
+        {
+          permission: "org:projects:manage",
+          projectID: data.projectID,
+          write: true,
+        },
         db,
       );
       const clusterID = access.project?.cluster_id;

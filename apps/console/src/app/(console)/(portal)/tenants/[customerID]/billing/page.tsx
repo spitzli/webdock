@@ -37,7 +37,7 @@ export default async function Billing({
   const site = query.site?.split(".");
   try {
     view = await studioCall("billing.tenant", [{ environment, customerID }]);
-    if (query.offer) {
+    if (view.canManage && query.offer) {
       offer = await studioCall<BillingOfferView>("billing.offer", [
         query.offer,
       ]);
@@ -60,7 +60,7 @@ export default async function Billing({
               ),
           )?.id
         : undefined);
-    if (versionID && changeID)
+    if (view.canManage && versionID && changeID)
       changeQuote = await studioCall<SubscriptionChangeQuote>(
         "billing.changeQuote",
         [
@@ -75,6 +75,7 @@ export default async function Billing({
       );
 
     if (
+      view.canManage &&
       !changeID &&
       versionID &&
       site?.length === 2 &&

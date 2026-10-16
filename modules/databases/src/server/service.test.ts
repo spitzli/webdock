@@ -41,6 +41,10 @@ function fixture(rowChanges: Record<string, unknown> = {}) {
     },
   } as unknown as DatabaseReader;
   const dependencies: DatabaseServiceDependencies = {
+    storedConsoleIdentity: () => null,
+    withStoredIdentity: async () => {
+      throw Error("Unexpected provider identity");
+    },
     authorizeHosting: async (_actor, target) => {
       targets.push(target);
       return { operator: false, canWrite: true };
@@ -70,7 +74,13 @@ test("managed launch retains row locks, tenant-admin authorization and credentia
   });
   assert.ok(calls[0].includes("FOR SHARE OF d,b"));
   assert.deepEqual(targets, [
-    { projectID: "234", write: true, tenantAdmin: true, live: true },
+    {
+      permission: "org:databases:manage",
+      projectID: "234",
+      write: true,
+      tenantAdmin: true,
+      live: true,
+    },
   ]);
   assert.equal((launch as { binding: { id: string } }).binding.id, "123");
   assert.equal(JSON.stringify(launch).includes("private-"), false);
@@ -108,9 +118,56 @@ test("non-Studio actors cannot launch or manage bindings", async () => {
   await assert.rejects(
     service.executeDatabase(
       db,
-      { ...actor, source: "api-key" } as HostingActor,
+      { ...actor, source: "oauth" },
       { action: "openManaged", databaseID: "123" },
     ),
   );
   assert.equal(calls.length, 0);
+});
+
+test("stored provider sessions revalidate before reading managed credentials and reject a different subject", async () => {
+  const f = fixture();
+  const reference = {
+    issuer: "https://fixture.clerk.accounts.dev",
+    userID: "user_one",
+    sessionID: "sess_one",
+    organizationID: "org_one",
+  };
+  const session = {
+    subject: actor.subject,
+    session_id: null,
+    clerk_identity: reference,
+    database_id: "123",
+    backend_id: "456",
+    database_revision: 1,
+    credential_revision: 2,
+  };
+  const db = {
+    query: async (sql: string, args?: unknown[]) => {
+      if (sql.includes("FROM webdock_auth.database_session"))
+        return { rows: [] };
+      if (sql.includes("FROM webdock_auth.managed_database_session"))
+        return { rows: [session] };
+      return f.db.query(sql, args);
+    },
+  } as DatabaseReader;
+  let verified = 0;
+  f.dependencies.withStoredIdentity = async (stored, run) => {
+    assert.deepEqual(stored, reference);
+    verified++;
+    return run({ userID: "different-subject", sessionID: "sess_one" });
+  };
+  await assert.rejects(
+    createDatabaseService(f.dependencies).inspectSession(db, "a".repeat(43)),
+  );
+  assert.equal(verified, 1);
+  assert.deepEqual(f.targets, []);
+  f.dependencies.withStoredIdentity = async () => {
+    throw Error("provider-revoked");
+  };
+  await assert.rejects(
+    createDatabaseService(f.dependencies).inspectSession(db, "a".repeat(43)),
+    /provider-revoked/,
+  );
+  assert.deepEqual(f.targets, []);
 });

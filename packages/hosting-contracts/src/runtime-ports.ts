@@ -16,6 +16,8 @@ export type HostingAuthorizationTarget = {
   operator?: boolean;
   live?: boolean;
   tenantAdmin?: boolean;
+  permission?: string;
+  legacyRole?: boolean;
 };
 export type HostingAuthorization = {
   operator: boolean;

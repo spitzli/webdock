@@ -1,4 +1,5 @@
-import type { ViewCache } from "../cache";
+import { readCachedView } from "../cache";
+import { authDatabase } from "../db/runtime";
 import Elysia from "elysia";
 import { verifyOAuthQueryParams } from "@better-auth/oauth-provider";
 import type { ApiConfig } from "../config";
@@ -7,7 +8,7 @@ import { auth } from "../modules/auth/auth";
 import { publicPlatformSettings } from "../modules/platform/platform";
 import { handleNativeStudioRequest } from "../modules/portal/studio-api";
 import { readJSON } from "../plugins/body";
-export function authUIProtocol(config: ApiConfig, cache?: ViewCache): Mount {
+export function authUIProtocol(config: ApiConfig): Mount {
   return {
     host: config.apiOrigin,
     category: "auth_protocol",
@@ -51,18 +52,21 @@ export function authUIProtocol(config: ApiConfig, cache?: ViewCache): Mount {
         });
       })
       .get("/v1/public/branding", async () => ({
-        data: cache
-          ? await cache.read(
-              {
-                kind: "branding",
-                environment: config.production ? "production" : "development",
-                customerID: "public",
-                resourceID: config.authOrigin,
-                revision: "v1",
-              },
-              publicPlatformSettings,
-            )
-          : await publicPlatformSettings(),
+        data: await readCachedView(
+          {
+            kind: "branding",
+            scope: { public: true },
+            query: { origin: config.authOrigin },
+          },
+          async () =>
+            (
+              await authDatabase.query(
+                "SELECT webdock_cache.version($1::text[]) AS version",
+                [["webdock_auth.platform_settings"]],
+              )
+            ).rows[0].version,
+          publicPlatformSettings,
+        ).catch(() => publicPlatformSettings()),
       }))
       .post(
         "/v1/auth/consent",

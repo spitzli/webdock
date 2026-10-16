@@ -61,6 +61,7 @@ export async function WorkspaceSidebar({
           <TenantNavigation
             customerID={customerID!}
             canManage={tenant.canManage}
+            canManageBilling={tenant.canManageBilling}
             preview={!!session.preview}
           />
         </details>
@@ -74,6 +75,7 @@ export async function WorkspaceSidebar({
           <TenantNavigation
             customerID={customerID!}
             canManage={tenant.canManage}
+            canManageBilling={tenant.canManageBilling}
             preview={!!session.preview}
           >
             {resources}

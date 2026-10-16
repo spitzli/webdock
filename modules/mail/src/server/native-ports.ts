@@ -17,6 +17,8 @@ export interface NativeCredentialIssuer {
 }
 /** Composition supplies live authenticated identity, transaction ownership and provider adapters. */
 export interface NativeMailPorts {
+  clerkMailAccess(db: Connection, subject: string, customerID: string): Promise<{ operator: boolean; canManage: boolean; clerkGrant: string } | null | undefined>;
+  clerkMailPeople(db: Connection, customerID: string, operator?: boolean): Promise<Array<{ id: string; name: string; email: string }> | undefined>;
   env: Record<string, string | undefined>;
   database: Pool;
   transaction<T>(run: (db: Connection) => Promise<T>): Promise<T>;

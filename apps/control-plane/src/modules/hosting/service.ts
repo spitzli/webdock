@@ -1,3 +1,5 @@
+import { readProjectOverview } from "./project-overview";
+import { readHostingView } from "./view-cache";
 import { createHostingService } from "@webdock/module-hosting/server/service";
 import { executeProjectSetup } from "./project-setup";
 import { executeServiceBinding } from "./service-bindings";
@@ -12,6 +14,8 @@ import { authorizeHosting } from "./authorization";
 import { clusterView } from "./clusters";
 import { replay, recordResult } from "./operations";
 export const { executeHosting } = createHostingService({
+  readProjectOverview,
+  readHostingView,
   get executeProjectSetup() {
     return executeProjectSetup;
   },

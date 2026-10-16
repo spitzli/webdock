@@ -107,3 +107,30 @@ test("selected Clerk bearer goes only to trusted Studio and never alongside lega
     );
   }
 });
+
+test("delegated Console transport isolates credentials and rejects mixed authentication", async () => {
+  const input = {
+    apiOrigin: "https://api.webdock.dev",
+    uiOrigin: "https://console.webdock.dev",
+    cookie: "webdock-auth.session_token=native; webdock-github-flow=state",
+    path: "/v1/console",
+    consoleSession: { token: "signed.clerk.token", serviceKey: "a".repeat(32) },
+  };
+  let calls = 0;
+  const fetcher = async (_url: string | URL | Request, init?: RequestInit) => {
+    calls++;
+    const headers = new Headers(init?.headers);
+    assert.equal(headers.get("authorization"), "Bearer signed.clerk.token");
+    assert.equal(headers.get("x-webdock-service-key"), "a".repeat(32));
+    assert.equal(headers.get("cookie"), "");
+    return Response.json({ data: null });
+  };
+  await requestAPI(input, fetcher);
+  for (const update of [
+    { path: "/v1/studio" },
+    { bearerToken: "other.token" },
+    { consoleSession: { token: "", serviceKey: "short" } },
+  ])
+    await assert.rejects(requestAPI({ ...input, ...update }, fetcher));
+  assert.equal(calls, 1);
+});

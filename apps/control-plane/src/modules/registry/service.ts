@@ -1,3 +1,4 @@
+import { readCachedView } from "../../cache";
 import { installationRegistry } from "../../installation";
 import { databaseURL } from "../../db/client";
 import {
@@ -42,6 +43,7 @@ export async function createRegistry() {
   return createRegistryService({
     database: drizzle({ client: pool }),
     pool,
+    readCachedView,
     withSessionScope: (actor, run) =>
       withDatabaseScope(
         { kind: "session", subject: actor.subject, sessionID: actor.sessionID },

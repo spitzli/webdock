@@ -174,3 +174,61 @@ test("lease is refreshed before native session update so database clamp permits 
     f.calls.findIndex((c) => c.sql.startsWith("UPDATE webdock_auth.session")),
   );
 });
+
+import { consoleAuthConfiguration } from "../src/modules/auth/console-configuration";
+import { createConsoleVerifier } from "../src/modules/auth/clerk-identity";
+test("JSON enrollment retains mapping authority and revocation cannot switch to the live Console transport", async () => {
+  const options = { mapped: true };
+  const f = fixture(options);
+  const headers = new Headers({ authorization: "Bearer verified.token" });
+  expect((await f.bridge(headers)).actor.userID).toBe("123");
+  expect(
+    f.calls.some(
+      (c) =>
+        c.sql.includes("clerk_identity_mapping") &&
+        c.sql.includes("revoked_at IS NULL"),
+    ),
+  ).toBe(true);
+  expect(f.calls.some((c) => /clerk_identity\s/.test(c.sql))).toBe(false);
+  options.mapped = false;
+  await expect(f.bridge(headers)).rejects.toThrow();
+  for (const activation of [undefined, "clerk"]) {
+    const config = consoleAuthConfiguration({
+      WEBDOCK_AUTH_PROVIDER: JSON.stringify({
+        provider: "clerk",
+        issuer: evidence.external.issuer,
+        authorizedParties: ["https://console.example.test"],
+        audience: "webdock-console",
+      }),
+      WEBDOCK_CONSOLE_AUTH_PROVIDER: activation,
+      WEBDOCK_CONSOLE_SERVICE_KEY: "s".repeat(32),
+    });
+    let providerReads = 0;
+    const forbidden = async () => {
+      providerReads++;
+      throw Error("alternate authority must not be queried");
+    };
+    const verify = createConsoleVerifier(
+      { ...config, issuer: config.issuer!, serviceKey: config.serviceKey! },
+      {
+        verify: forbidden,
+        session: forbidden,
+        user: forbidden,
+        identity: forbidden,
+        organization: forbidden,
+        memberships: forbidden,
+      },
+    );
+    await expect(
+      verify(
+        new Request("https://api.example.test/v1/console", {
+          headers: {
+            authorization: "Bearer valid-main-token",
+            "x-webdock-service-key": "s".repeat(32),
+          },
+        }),
+      ),
+    ).rejects.toThrow();
+    expect(providerReads).toBe(0);
+  }
+});

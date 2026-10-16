@@ -8,6 +8,8 @@ import {
 export type Dependencies = {
   currentDatabaseScope: HostingPorts["currentDatabaseScope"];
   identity: HostingPorts["identity"];
+  currentConsolePrincipal: HostingPorts["currentConsolePrincipal"];
+  organizationPermission: HostingPorts["organizationPermission"];
 };
 export type Connection = Pick<PoolClient, "query">;
 export function createHostingAuthorization(dependencies: Dependencies) {
@@ -20,6 +22,8 @@ export function createHostingAuthorization(dependencies: Dependencies) {
       operator?: boolean;
       live?: boolean;
       tenantAdmin?: boolean;
+      permission?: string;
+      legacyRole?: boolean;
     },
     db: Connection,
   ) {
@@ -44,6 +48,13 @@ export function createHostingAuthorization(dependencies: Dependencies) {
           "Setup authorization changed. Sign in and resume the setup.",
         );
     }
+    const principal = dependencies.currentConsolePrincipal();
+    if (
+      principal &&
+      (principal.userID !== actor.subject ||
+        principal.sessionID !== actor.sessionID)
+    )
+      throw new HostingError(403, "Identity mismatch.");
     const scopes = actor.scopes;
     const policy = actor.source === "git-policy";
     if (
@@ -91,13 +102,21 @@ export function createHostingAuthorization(dependencies: Dependencies) {
       throw new HostingError(401, "Sign in and complete account setup.");
     if (!row || row.banned || !row.emailVerified || row.mustChangePassword)
       throw new HostingError(401, "Sign in and complete account setup.");
-    const operator = row.role === "operator" && row.twoFactorEnabled === true;
+    const operator =
+      row.role === "operator" &&
+      (row.twoFactorEnabled === true || row.operatorAuthorized === true);
     if (!operator && row.role !== "user")
       throw new HostingError(403, "Complete operator security setup.");
     const preview = (
       await db.query(
-        "SELECT customer_id,organization_id,expires_at,expired_at FROM webdock_auth.studio_tenant_preview WHERE session_id=$1 AND actor_id=$2",
-        [actor.sessionID, actor.subject],
+        principal
+          ? "SELECT customer_id,organization_id,expires_at,expired_at FROM webdock_auth.console_tenant_preview WHERE session_id=$1 AND actor_id=$2 AND issuer=$3"
+          : "SELECT customer_id,organization_id,expires_at,expired_at FROM webdock_auth.studio_tenant_preview WHERE session_id=$1 AND actor_id=$2",
+        [
+          actor.sessionID,
+          actor.subject,
+          ...(principal ? [principal.issuer] : []),
+        ],
       )
     ).rows[0];
     if (
@@ -134,6 +153,7 @@ export function createHostingAuthorization(dependencies: Dependencies) {
       customerID = project.customer_id;
     }
     let membership;
+    let canWrite = false;
     if (customerID) {
       const customer = (
         await db.query(
@@ -155,14 +175,27 @@ export function createHostingAuthorization(dependencies: Dependencies) {
         customerID,
         { lock: true },
       );
-      membership = mapped?.memberID ? mapped : undefined;
+      membership = mapped?.role ? mapped : undefined;
       if (!operator && !membership)
         throw new HostingError(404, "Hosting target is unavailable.");
+      const permission =
+        target.permission && !operator
+          ? await dependencies.organizationPermission(
+              actor.subject,
+              customer.organization_id,
+              target.permission,
+            )
+          : undefined;
+      canWrite =
+        operator ||
+        (target.permission
+          ? (permission ?? ["admin", "owner"].includes(membership?.role ?? ""))
+          : target.legacyRole === true &&
+            ["admin", "owner"].includes(membership?.role ?? ""));
       if (
         target.write &&
         !operator &&
-        (!["admin", "owner"].includes(membership?.role ?? "") ||
-          (!target.tenantAdmin && project?.mode !== "selfservice"))
+        (!canWrite || (!target.tenantAdmin && project?.mode !== "selfservice"))
       )
         throw new HostingError(
           403,
@@ -175,9 +208,7 @@ export function createHostingAuthorization(dependencies: Dependencies) {
       liveReads: !preview,
       customerID,
       project,
-      canWrite:
-        !preview &&
-        (operator || ["admin", "owner"].includes(membership?.role ?? "")),
+      canWrite: !preview && (operator || canWrite),
     };
   }
   return { authorizeHosting };

@@ -3,12 +3,15 @@ import { getRequestI18n } from '@webdock/i18n/next';
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { StudioShell } from "@/components/studio-shell";
+import {clerkConsoleEnabled} from "@/lib/console-identity";
+import {auth as clerkAuth} from "@clerk/nextjs/server";
 export const dynamic = "force-dynamic";
 export default async function PortalLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  if (clerkConsoleEnabled()) await clerkAuth.protect();
   const i18n = await getRequestI18n();
 
   const session = await auth.api.getSession({ headers: await headers() });

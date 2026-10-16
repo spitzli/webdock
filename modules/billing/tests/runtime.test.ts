@@ -25,7 +25,11 @@ test("operator transaction rechecks authorization after work and preserves local
         },
       }),
   } as unknown as PlatformDatabaseRuntime["orm"];
-  const context = createBillingContext({ databasePools: { orm } });
+  const context = createBillingContext({
+    databasePools: { orm },
+    legacyClerkMemberships: async () => undefined,
+    hasConsolePrincipal: () => false,
+  });
   await assert.rejects(
     context.operatorTransaction(actor, async () => {
       ran = true;

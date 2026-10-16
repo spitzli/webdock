@@ -14,7 +14,7 @@ export interface GatewayOptions {
   control: (body: Record<string, string>) => Promise<unknown>;
   audit?: (event: { scopeID: string; subject: string; command: string; status: number; durationMs: number }) => void;
 }
-type Session = { id: string; ended?: Promise<void>; managed?: string; sensitive?: string[]; runtime?: ManagedRuntime; expiry?: NodeJS.Timeout; revalidation?: NodeJS.Timeout; cleanup: Set<() => void>; token: string; scopeID: string; expires: number; cookie?: string; csrf?: string; starting?: Promise<Record<string, unknown>>; negotiation?: Record<string, unknown>; active: number; queries: number };
+type Session = { id: string; inspecting?: Promise<RuntimeAccess>; ended?: Promise<void>; managed?: string; sensitive?: string[]; runtime?: ManagedRuntime; expiry?: NodeJS.Timeout; revalidation?: NodeJS.Timeout; cleanup: Set<() => void>; token: string; scopeID: string; expires: number; cookie?: string; csrf?: string; starting?: Promise<Record<string, unknown>>; negotiation?: Record<string, unknown>; active: number; queries: number };
 const COOKIE = "webdock_database";
 const MAX_BODY = 1_048_576, MAX_RESPONSE = 8_388_608;
 
@@ -56,7 +56,7 @@ export function createGateway(options: GatewayOptions) {
     session.ended = options.managedRuntimes?.release(session.id) ?? Promise.resolve();
     return session.ended;
   };
-  const inspect = async (session: Session): Promise<RuntimeAccess> => {
+  const inspectAccess = async (session: Session): Promise<RuntimeAccess> => {
     try {
       if (session.expires <= Date.now()) throw new GatewayError(401, "Database session expired.");
       let access: GatewayAccess;
@@ -80,6 +80,11 @@ export function createGateway(options: GatewayOptions) {
       if (session.managed || !("runtimeOrigin" in access) || !runtimeOrigins.has(access.runtimeOrigin)) throw new GatewayError(403, "Database runtime is not authorized.");
       return access;
     } catch (error) { await retire(session); throw error; }
+  };
+  const inspect = (session: Session): Promise<RuntimeAccess> => {
+    // Share concurrent checks only; the next request must observe revocation afresh.
+    session.inspecting ??= inspectAccess(session).finally(() => { session.inspecting = undefined; });
+    return session.inspecting;
   };
   const upstreamHeaders = (session: Session, access: RuntimeAccess) => ({
     "Content-Type": "application/json", Origin: session.runtime?.authenticationOrigin ?? access.runtimeOrigin,

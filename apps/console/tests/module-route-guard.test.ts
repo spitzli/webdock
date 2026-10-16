@@ -56,3 +56,12 @@ test("draining serves existing pages while stale or unreachable session configur
     503,
   );
 });
+
+test("Clerk users without tenant access reach the pending page instead of an outage", async () => {
+  const denied = async () => ({ status: 403, body: {} });
+  const result = await guardModuleRoute(request("/sites/12"), denied, true);
+  assert.equal(result?.status, 307);
+  assert.equal(result?.headers.get("location"), "/access-pending");
+  assert.equal(result?.headers.get("cache-control"), "no-store");
+  assert.equal((await guardModuleRoute(request("/sites/12"), denied))?.status, 503);
+});

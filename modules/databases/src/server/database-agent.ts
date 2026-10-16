@@ -160,7 +160,12 @@ export function createHostingDatabaseAgent(dependencies: Dependencies) {
               scopes: ["hosting:read", "hosting:write"],
             },
             row.project_id
-              ? { projectID: row.project_id, write: true, tenantAdmin: true }
+              ? {
+                  permission: "org:databases:manage",
+                  projectID: row.project_id,
+                  write: true,
+                  tenantAdmin: true,
+                }
               : { operator: true, write: true },
             db,
           );

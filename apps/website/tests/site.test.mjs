@@ -8,6 +8,12 @@ test('Landing page serves English content, matching FAQ data and SEO assets', as
   assert.match(html, /<html[^>]+lang="en"/);
   assert.match(html, /<link rel="canonical" href="https:\/\/webdock.dev"/);
   assert.match(html, /href="https:\/\/spitzli.dev"/);
+  assert.match(html, /<a[^>]+href="https:\/\/accounts\.webdock\.dev\/waitlist"[^>]*>Waitlist/);
+  assert.match(html, /<a[^>]+href="https:\/\/console\.webdock\.dev\/login"[^>]*>Login/);
+  assert.doesNotMatch(html, />Register|>Join the waitlist/);
+  assert.doesNotMatch(html, /class="spitzli-section"|Meet Spitzli|A human on your side/);
+  assert.match(html, /Access by invitation only\./);
+  assert.doesNotMatch(html, /href="https:\/\/accounts\.webdock\.dev\/sign-up"/);
   assert.match(html, /href="mailto:[^"]+"/);
   assert.equal((html.match(/<h1[ >]/g) || []).length, 1);
   const data = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);

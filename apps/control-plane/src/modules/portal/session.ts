@@ -1,9 +1,18 @@
+import { introspectToken } from "../auth/introspection";
 import { configurePayloadSSO } from "@webdock/payload-sso";
 import { withDatabaseScope } from "@webdock/database-runtime";
 import { database } from "../../db/runtime";
 /** Read the existing mapping under the exact session verified by introspection. */
 export function createPortalSession() {
+  const clientID = process.env.WEBDOCK_SSO_CLIENT_ID!;
+  const clientSecret = process.env.WEBDOCK_SSO_CLIENT_SECRET!;
   return configurePayloadSSO({
+    introspect: async (token) => {
+      const response = await introspectToken(token, clientID, clientSecret);
+      if (!response.ok)
+        throw Error("Central sign-in is temporarily unavailable");
+      return response.json();
+    },
     successPath: "/",
     logoutPath: "/login",
     centralLogout: true,

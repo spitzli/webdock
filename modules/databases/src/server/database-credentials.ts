@@ -29,6 +29,7 @@ export function createHostingDatabaseCredentials(dependencies: Dependencies) {
         await dependencies.authorizeHosting(
           actor,
           {
+            permission: "org:databases:manage",
             projectID: d.project_id,
             write: true,
             tenantAdmin: true,

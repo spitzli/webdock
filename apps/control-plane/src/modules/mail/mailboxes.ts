@@ -1,3 +1,4 @@
+import { clerkMailAccess, clerkMailPeople } from "./mail-clerk-access";
 import { resolveSessionReference } from "../auth/principal";
 import { requireMail } from "../../installation";
 import { withAuthenticatedDatabase } from "../../db/database-context";
@@ -11,6 +12,8 @@ export const {
   getTenantMailboxes,
   manageTenantMailboxes,
 } = createNativeMailboxes({
+  clerkMailAccess,
+  clerkMailPeople,
   resolveSessionReference,
   requireMail,
   withAuthenticatedDatabase,

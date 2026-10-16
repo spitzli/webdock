@@ -1,3 +1,7 @@
+import { consoleAuthConfiguration } from "../modules/auth/console-configuration";
+import { requireConsoleBrowserPrincipal } from "../modules/auth/clerk-provider";
+import { withConsolePrincipal } from "../modules/auth/principal";
+import { ConsoleAuthError } from "../modules/auth/clerk-identity";
 import { createIntegrationCallbackHandoff } from "./integration-callback-handoff";
 import { installationRegistry } from "../installation";
 import {
@@ -52,7 +56,7 @@ export function integrationProtocols(config: ApiConfig): Mount[] {
     "/api/hosting/git/callback": git("callback"),
     "/api/hosting/vercel/callback": byokVercelCallback,
   };
-  const run = createIntegrationBrowserRunner({
+  const runBrowser = createIntegrationBrowserRunner({
     refreshCallback: (request) => handoff?.begin(request) ?? null,
     provider: browserAuthProvider,
     origin: config.studioOrigin,
@@ -106,6 +110,31 @@ export function integrationProtocols(config: ApiConfig): Mount[] {
         : dispatch();
     },
   });
+  const run: typeof runBrowser = async (request, intent, handler, options) => {
+    if (!consoleAuthConfiguration().enabled)
+      return runBrowser(request, intent, handler, options);
+    if (
+      request.method !== "GET" &&
+      request.headers.get("origin") !== config.studioOrigin
+    )
+      return new Response(null, { status: 403 });
+    try {
+      installationRegistry().require("hosting", intent);
+      const principal = await requireConsoleBrowserPrincipal(request);
+      return await withConsolePrincipal(principal, () =>
+        withNativeHeaders(
+          request.headers,
+          () => handler(request),
+          request.headers,
+        ),
+      );
+    } catch (error) {
+      return new Response(null, {
+        status: error instanceof ConsoleAuthError ? error.status : 503,
+        headers: { "cache-control": "no-store" },
+      });
+    }
+  };
   const resume: Mount[] = handoff
     ? [
         {

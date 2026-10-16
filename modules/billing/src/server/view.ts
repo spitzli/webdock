@@ -19,11 +19,18 @@ export function createBillingView(dependencies: {
   customerTransaction: ReturnType<
     typeof createBillingContext
   >["customerTransaction"];
+  customerReadTransaction: ReturnType<
+    typeof createBillingContext
+  >["customerReadTransaction"];
   createCheckout: ReturnType<typeof createBillingCheckout>["createCheckout"];
   studioOriginSetting: () => string | undefined;
 }) {
-  const { customerTransaction, createCheckout, studioOriginSetting } =
-    dependencies;
+  const {
+    customerTransaction,
+    customerReadTransaction,
+    createCheckout,
+    studioOriginSetting,
+  } = dependencies;
 
   const inputSchema = z
     .object({ environment: environmentSchema, customerID: recordID })
@@ -38,7 +45,12 @@ export function createBillingView(dependencies: {
 
   async function tenantBilling(actor: BillingActor, raw: unknown) {
     const input = inputSchema.parse(raw);
-    return customerTransaction(actor, input.customerID, async (tx) => {
+    return customerReadTransaction(actor, input.customerID, async (tx) => {
+      const canManage = (
+        await tx.execute<{ allowed: boolean }>(
+          sql`SELECT webdock_rls.billing_admin(${input.customerID}) AS allowed`,
+        )
+      ).rows[0].allowed;
       const config = (
         await tx.execute<{ value: { salesEnabled: boolean } | null }>(
           sql`SELECT webdock_rls.billing_sale_config(${input.environment},${input.customerID}) AS value`,
@@ -170,7 +182,8 @@ export function createBillingView(dependencies: {
         environment: input.environment,
         customerID: input.customerID,
         salesEnabled: config?.salesEnabled === true,
-        canOpenPortal: !!customer?.id,
+        canManage,
+        canOpenPortal: canManage && !!customer?.id,
         catalog,
         sites,
         agreements: effectiveAgreements,

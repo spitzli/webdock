@@ -1,3 +1,4 @@
+import { consoleAuthConfiguration } from "./console-configuration";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { APIError } from "better-auth/api";
 import { authDatabase as database } from "../../db/runtime";
@@ -27,6 +28,11 @@ export async function guardOrganizationRequest(
     : null;
   if (!user || user.banned || !user.emailVerified || user.mustChangePassword)
     deny();
+  if(consoleAuthConfiguration().issuer){
+    const organizationID=body.organizationId||query.organizationId;
+    if(typeof organizationID==="string"&&(await database.query('SELECT 1 FROM webdock_auth.clerk_organization WHERE organization_id=$1',[organizationID])).rowCount)deny();
+    if(typeof body.invitationId==="string"&&(await database.query('SELECT 1 FROM webdock_auth.invitation i JOIN webdock_auth.clerk_organization o ON o.organization_id=i."organizationId" WHERE i.id=$1',[body.invitationId])).rowCount)deny();
+  }
   const operator = !(await currentMCPClaims(subject)).disabled;
   // Keep organization mutations behind the service's explicit customer-ID checks.
   const allowed = [

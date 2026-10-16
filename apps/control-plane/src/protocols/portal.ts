@@ -1,22 +1,60 @@
+import { consoleBrowserRequest } from "../modules/portal/console-browser";
+import { ConsoleAuthError } from "../modules/auth/clerk-identity";
+import { consoleAuthConfiguration } from "../modules/auth/console-configuration";
 import { browserAuthProvider } from "../modules/auth/clerk-runtime";
 import { handleClerkStudioRequest } from "../modules/portal/studio-api";
+import { requireConsoleBrowserPrincipal } from "../modules/auth/clerk-provider";
+import { withConsolePrincipal } from "../modules/auth/principal";
 import { tenantPreview } from "../modules/portal/preview";
 import Elysia from "elysia";
 import type { ApiConfig } from "../config";
 import type { Mount } from "../route-manifest";
 import { createPortalSession } from "../modules/portal/session";
 import { portalRequest } from "../modules/portal/transport";
-import { handleStudioRequest } from "../modules/portal/studio-api";
+import {
+  handleNativeStudioRequest,
+  handleConsoleRequest,
+  handleStudioRequest,
+} from "../modules/portal/studio-api";
 export function portalProtocols(config: ApiConfig): Mount[] {
+  const browserCall = (request: Request) =>
+    consoleBrowserRequest(request, config.studioOrigin, async () => {
+      try {
+        return await withConsolePrincipal(
+          await requireConsoleBrowserPrincipal(request),
+          () => handleNativeStudioRequest(request),
+        );
+      } catch (error) {
+        return Response.json(
+          {
+            error: {
+              kind: "AccessError",
+              message:
+                error instanceof ConsoleAuthError
+                  ? error.message
+                  : "Console is temporarily unavailable.",
+            },
+          },
+          {
+            status: error instanceof ConsoleAuthError ? error.status : 503,
+            headers: { "cache-control": "no-store" },
+          },
+        );
+      }
+    });
   if (browserAuthProvider === "clerk") {
     const call = (request: Request) => handleClerkStudioRequest(request);
     return [
       {
         host: config.apiOrigin,
         category: "delegated",
-        app: new Elysia().post("/v1/studio", ({ request }) => call(request), {
-          parse: "none",
-        }),
+        app: new Elysia()
+          .post("/v1/studio", ({ request }) => call(request), {
+            parse: "none",
+          })
+          .post("/v1/console", ({ request }) => handleConsoleRequest(request), {
+            parse: "none",
+          }),
       },
       {
         host: config.studioOrigin,
@@ -71,13 +109,17 @@ export function portalProtocols(config: ApiConfig): Mount[] {
         const headers = new Headers(request.headers);
         headers.set("content-type", "application/json");
         headers.delete("content-length");
-        const response = await call(
-          new Request(request.url, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({ operation, args }),
-          }),
-        );
+        const internal = new Request(request.url, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ operation, args }),
+        });
+        const response = consoleAuthConfiguration().enabled
+          ? await withConsolePrincipal(
+              await requireConsoleBrowserPrincipal(request),
+              () => handleNativeStudioRequest(internal),
+            )
+          : await call(internal);
         if (!response.ok) throw Error("Preview unavailable");
         return ((await response.json()) as { data: T }).data;
       },
@@ -86,9 +128,13 @@ export function portalProtocols(config: ApiConfig): Mount[] {
     {
       host: config.apiOrigin,
       category: "delegated",
-      app: new Elysia().post("/v1/studio", ({ request }) => call(request), {
-        parse: "none",
-      }),
+      app: new Elysia()
+        .post("/v1/studio", ({ request }) => call(request), {
+          parse: "none",
+        })
+        .post("/v1/console", ({ request }) => handleConsoleRequest(request), {
+          parse: "none",
+        }),
     },
     {
       host: config.studioOrigin,
@@ -122,9 +168,16 @@ export function portalProtocols(config: ApiConfig): Mount[] {
           ({ request }) => session.refresh(request),
           { parse: "none" },
         )
-        .post("/api/portal/studio", ({ request }) => call(request), {
-          parse: "none",
-        }),
+        .post(
+          "/api/portal/studio",
+          ({ request }) =>
+            consoleAuthConfiguration().enabled
+              ? browserCall(request)
+              : call(request),
+          {
+            parse: "none",
+          },
+        ),
     },
   ];
 }

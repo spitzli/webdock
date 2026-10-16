@@ -377,3 +377,23 @@ test('portal mapping can use the verified central session without a Payload runt
   active = false
   assert.equal(await sso.getDelegatedSession(new Headers({cookie})),null)
 })
+
+
+test('API-local introspection preserves client, subject, expiry and revocation checks on every read', async () => {
+  const { sealData } = await import('iron-session')
+  const expires = Math.floor(Date.now() / 1000) + 300
+  const stored = { kind: 'session', accessToken: 'local-token', sub: 'subject-123', exp: expires }
+  const cookie = '__Host-webdock-sso=' + await sealData(stored, { password: options.cookieSecret, ttl: 300 })
+  let calls = 0
+  let result: unknown = { ...claims, exp: expires, sid: 'native-session', webdock_role: 'reader' }
+  const sso = configurePayloadSSO({ ...options, allowUnmappedPortalUsers: true,
+    introspect: async (token: string) => { assert.equal(token, stored.accessToken); calls++; return result },
+  })
+  const headers = new Headers({ cookie })
+  assert.equal((await sso.getDelegatedSession(headers))?.sessionID, 'native-session')
+  for (const override of [{ active: false }, { client_id: 'another-client' }, { sub: 'another-subject' }, { exp: expires - 301 }, { disabled: true }]) {
+    result = { ...claims, exp: expires, webdock_role: 'reader', ...override }
+    assert.equal(await sso.getDelegatedSession(headers), null)
+  }
+  assert.equal(calls, 6)
+})

@@ -53,6 +53,7 @@ export async function requestAPI<T = unknown>(
     path: string;
     body?: unknown;
     method?: string;
+    consoleSession?: { token: string; serviceKey: string };
   },
   fetcher: Fetch = fetch,
 ): Promise<{ status: number; body: T }> {
@@ -72,6 +73,16 @@ export async function requestAPI<T = unknown>(
       !/^[A-Za-z0-9_.-]{1,16384}$/.test(input.bearerToken))
   )
     throw Error("Browser bearer is restricted to Studio");
+  if (
+    input.consoleSession &&
+    (input.path !== "/v1/console" ||
+      !input.consoleSession.token ||
+      input.consoleSession.token.length > 16384 ||
+      input.consoleSession.serviceKey.length < 32)
+  )
+    throw Error("Invalid Console transport");
+  if (input.bearerToken !== undefined && input.consoleSession)
+    throw Error("Ambiguous browser authentication transport");
   const response = await fetcher(url, {
     method: input.method || (input.body === undefined ? "GET" : "POST"),
     cache: "no-store",
@@ -83,20 +94,28 @@ export async function requestAPI<T = unknown>(
         ? { authorization: "Bearer " + input.bearerToken }
         : {}),
       origin: uiOrigin,
-      cookie: input.bearerToken
-        ? integrationCookies(input.cookie)
-        : input.path.startsWith("/v1/public/")
-          ? ""
-          : sessionCookies(input.cookie)
-              .split("; ")
-              .filter((part) =>
-                input.path.startsWith("/v1/auth/")
-                  ? /^(?:__Host-)?webdock-auth\./.test(part)
-                  : /^(?:__Host-)?webdock-(?:sso|github|github-flow|git-flow|vercel-flow|byok-vercel)=/.test(
-                      part,
-                    ),
-              )
-              .join("; "),
+      ...(input.consoleSession
+        ? {
+            authorization: "Bearer " + input.consoleSession.token,
+            "x-webdock-service-key": input.consoleSession.serviceKey,
+          }
+        : {}),
+      cookie: input.consoleSession
+        ? ""
+        : input.bearerToken
+          ? integrationCookies(input.cookie)
+          : input.path.startsWith("/v1/public/")
+            ? ""
+            : sessionCookies(input.cookie)
+                .split("; ")
+                .filter((part) =>
+                  input.path.startsWith("/v1/auth/")
+                    ? /^(?:__Host-)?webdock-auth\./.test(part)
+                    : /^(?:__Host-)?webdock-(?:sso|github|github-flow|git-flow|vercel-flow|byok-vercel)=/.test(
+                        part,
+                      ),
+                )
+                .join("; "),
     },
     body: input.body === undefined ? undefined : JSON.stringify(input.body),
   });

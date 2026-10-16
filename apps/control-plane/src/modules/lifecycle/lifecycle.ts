@@ -1,3 +1,4 @@
+import {currentConsolePrincipal} from "../auth/principal";
 import { withDatabaseScope } from "@webdock/database-runtime";
 import { createHash } from "node:crypto";
 import { auth } from "../auth/auth";
@@ -28,15 +29,13 @@ type Input = {
   requireWrite?: boolean;
 };
 
-function input(value: unknown): Input {
+function input(value: unknown, consoleRequest=false): Input {
   if (!value || typeof value !== "object" || Array.isArray(value))
     fail(400, "Invalid lifecycle request.");
   const v = value as Input;
   if (
     !["preview", "delete"].includes(v.operation) ||
-    typeof v.accessToken !== "string" ||
-    !v.accessToken ||
-    v.accessToken.length > 16384 ||
+    (!consoleRequest && (typeof v.accessToken !== "string" || !v.accessToken || v.accessToken.length > 16384)) ||
     ![v.bindingID, v.customerID].every(
       (id) => typeof id === "string" && /^[1-9][0-9]{0,18}$/.test(id),
     )
@@ -150,7 +149,9 @@ async function operator(request: Request, value: Input) {
   return { userID: token.sub as string, sessionID: token.sid as string };
 }
 
-export async function lifecycle(request: Request): Promise<Response> {
+export function lifecycle(request:Request):Promise<Response>{return handleLifecycle(request,false);}
+export function consoleLifecycle(request:Request):Promise<Response>{return handleLifecycle(request,true);}
+async function handleLifecycle(request: Request, consoleRequest:boolean): Promise<Response> {
   try {
     const text = await request.text();
     if (text.length > 32768) fail(413, "Request too large.");
@@ -160,26 +161,28 @@ export async function lifecycle(request: Request): Promise<Response> {
     } catch {
       fail(400, "Invalid JSON.");
     }
-    const value = input(raw);
-    const actor = await operator(request, value);
+    const principal=consoleRequest?currentConsolePrincipal():null;
+    if(consoleRequest&&!principal?.operator)fail(403,"Active operator session required.");
+    const value = input(raw,consoleRequest);
+    const actor = principal ? {userID:principal.userID,sessionID:principal.sessionID} : await operator(request, value);
     return await withDatabaseScope(
       { kind: "session", subject: actor.userID, sessionID: actor.sessionID },
       async () => {
         const connection = await database.connect();
         try {
           await connection.query("BEGIN");
-          // Lock the real native session and live operator state against revocation and preview entry.
+          // Serialize destructive work against preview entry and local suspension.
           const live = (
             await connection.query(
-              `SELECT s.id FROM webdock_auth.session s JOIN webdock_auth."user" u ON u.id=s."userId" WHERE s.id=$1 AND u.id=$2 AND s."expiresAt">now() AND u.role='operator' AND NOT coalesce(u.banned,false) AND u."emailVerified" AND u."twoFactorEnabled" AND NOT u."mustChangePassword" FOR UPDATE OF s FOR SHARE OF u`,
+              principal ? `SELECT u.id FROM webdock_auth."user" u WHERE $1::text IS NOT NULL AND u.id=$2 AND u.role='operator' AND NOT coalesce(u.banned,false) FOR UPDATE OF u` : `SELECT s.id FROM webdock_auth.session s JOIN webdock_auth."user" u ON u.id=s."userId" WHERE s.id=$1 AND u.id=$2 AND s."expiresAt">now() AND u.role='operator' AND NOT coalesce(u.banned,false) AND u."emailVerified" AND u."twoFactorEnabled" AND NOT u."mustChangePassword" FOR UPDATE OF s FOR SHARE OF u`,
               [actor.sessionID, actor.userID],
             )
           ).rows[0];
           if (!live) fail(403, "Active operator session required.");
           const preview = (
             await connection.query(
-              "SELECT session_id FROM webdock_auth.studio_tenant_preview WHERE session_id=$1 AND expires_at>now() AND expired_at IS NULL",
-              [actor.sessionID],
+              principal ? "SELECT session_id FROM webdock_auth.console_tenant_preview WHERE session_id=$1 AND issuer=$2" : "SELECT session_id FROM webdock_auth.studio_tenant_preview WHERE session_id=$1 AND expires_at>now() AND expired_at IS NULL",
+              [actor.sessionID,...(principal?[principal.issuer]:[])],
             )
           ).rows[0];
           if (preview)

@@ -45,6 +45,7 @@ export function createHostingDatabaseMigrationMaintenance(
     await dependencies.authorizeHosting(
       actor,
       {
+        permission: "org:databases:manage",
         operator: true,
         write: cmd.action === "databases.purgeMigrationSource",
       },

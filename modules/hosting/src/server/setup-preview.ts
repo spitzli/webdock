@@ -16,6 +16,9 @@ import {
 import { limits } from "./allowances";
 import { appDemand } from "@webdock/hosting-contracts";
 export type Dependencies = {
+  authorizeSetupConfiguration: ReturnType<
+    typeof import("./permissions").createHostingPermissions
+  >["authorizeSetupConfiguration"];
   requireDatabases: HostingPorts["requireDatabases"];
   requireMail: HostingPorts["requireMail"];
   applicationCapabilities: ReturnType<
@@ -78,9 +81,19 @@ export function createHostingSetupPreview(dependencies: Dependencies) {
         "Choose distinct service variables and remove conflicting manual variables before deploying.",
       );
     await dependencies.transaction(async (db) => {
+      await dependencies.authorizeSetupConfiguration(
+        db,
+        actor,
+        input.projectID,
+        config,
+      );
       const access = await dependencies.authorizeHosting(
         actor,
-        { projectID: input.projectID, write: true },
+        {
+          permission: "org:projects:manage",
+          projectID: input.projectID,
+          write: true,
+        },
         db,
       );
       if (

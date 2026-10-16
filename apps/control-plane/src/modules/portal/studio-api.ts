@@ -1,3 +1,4 @@
+import { consoleAuthConfiguration } from "../auth/console-configuration";
 import { studioOperationDomain } from "./operation-domain";
 import {
   browserAuthProvider,
@@ -13,6 +14,16 @@ import {
   publicInstallation,
 } from "../../installation";
 import { ModuleError } from "@webdock/module-sdk";
+import {
+  currentConsolePrincipal,
+  withConsolePrincipal,
+} from "../auth/principal";
+import {
+  legacyClerkMemberships,
+  requireConsolePrincipal,
+} from "../auth/clerk-provider";
+import { ConsoleAuthError } from "../auth/clerk-identity";
+import { introspectToken } from "../auth/introspection";
 import {
   billingJobs,
   retryReadJob,
@@ -86,7 +97,6 @@ import {
   exitTenantPreview,
   dispatchTenantPreview,
 } from "../access/tenant-preview";
-import { currentMCPClaims } from "../auth/mcp";
 import {
   AccessError,
   accountSites,
@@ -383,24 +393,12 @@ async function delegatedSession(
     unauthorized();
   const origin = new URL(process.env.BETTER_AUTH_URL || "http://localhost:3125")
     .origin;
-  // Only this native endpoint verifies the confidential client credentials and token.
-  // Never forward a caller-controlled URL, cookie, origin or proxy header.
-  const response = await (dependencies.introspect || auth.handler)(
-    new Request(origin + "/api/auth/oauth2/introspect", {
-      method: "POST",
-      headers: {
-        Origin: origin,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      // The registered client uses client_secret_post. Basic is only the private
-      // bridge transport; native OAuth verifies the exact supplied credentials.
-      body: new URLSearchParams({
-        token: accessToken,
-        token_type_hint: "access_token",
-        client_id: clientID!,
-        client_secret: credentials.slice(credentials.indexOf(":") + 1),
-      }),
-    }),
+  // The native provider verifies the supplied confidential client and token.
+  const response = await introspectToken(
+    accessToken,
+    clientID!,
+    credentials.slice(credentials.indexOf(":") + 1),
+    dependencies.introspect,
   );
   if (!response.ok) {
     if ([400, 401, 403].includes(response.status)) unauthorized();
@@ -448,7 +446,8 @@ async function delegatedSession(
     native.user.mustChangePassword
   )
     unauthorized();
-  const operator = !(await currentMCPClaims(native.user.id)).disabled;
+  const operator =
+    native.user.role === "operator" && native.user.twoFactorEnabled === true;
   if (native.user.role !== "user" && !operator) unauthorized();
   const {
     id,
@@ -696,7 +695,8 @@ export function handleStudioRequest(
   return handleRequest(request, dependencies, false);
 }
 export function handleNativeStudioRequest(request: Request): Promise<Response> {
-  return browserAuthProvider === "better-auth" ||
+  return currentConsolePrincipal() ||
+    browserAuthProvider === "better-auth" ||
     trustedLocalSessionKind(request.headers) === "clerk"
     ? handleRequest(request, {}, true)
     : Promise.resolve(new Response(null, { status: 404 }));
@@ -706,7 +706,27 @@ export function handleClerkStudioRequest(request: Request): Promise<Response> {
     return Promise.resolve(new Response(null, { status: 404 }));
   return handleRequest(request, {}, true, true);
 }
-async function nativeSession(headers: Headers) {
+async function nativeSession(
+  headers: Headers,
+): Promise<Awaited<ReturnType<typeof delegatedSession>>> {
+  const principal = currentConsolePrincipal();
+  if (principal)
+    return {
+      headers,
+      actor: { userID: principal.userID, sessionID: principal.sessionID },
+      safe: {
+        user: {
+          id: principal.userID,
+          name: principal.name,
+          email: principal.email,
+          role: principal.operator ? "operator" : "user",
+          emailVerified: true,
+          twoFactorEnabled: false,
+          mustChangePassword: false,
+        },
+        operator: principal.operator,
+      },
+    };
   const native = await auth.api.getSession({ headers });
   if (
     !native ||
@@ -715,7 +735,8 @@ async function nativeSession(headers: Headers) {
     native.user.mustChangePassword
   )
     unauthorized();
-  const operator = !(await currentMCPClaims(native.user.id)).disabled;
+  const operator =
+    native.user.role === "operator" && native.user.twoFactorEnabled === true;
   if (native.user.role !== "user" && !operator) unauthorized();
   const {
     id,
@@ -753,6 +774,7 @@ async function handleRequest(
   try {
     if (
       native &&
+      !currentConsolePrincipal() &&
       request.headers.get("origin") !==
         new URL(
           (clerk
@@ -773,6 +795,9 @@ async function handleRequest(
       if (!process.env.WEBDOCK_API_DOMAINS.split(",").includes(domain))
         fail(503, "This service is temporarily unavailable.");
     }
+    const memberships = currentConsolePrincipal()
+      ? undefined
+      : await legacyClerkMemberships(actor.userID);
     return await withTrustedLocalSession(
       headers,
       { subject: actor.userID, sessionID: actor.sessionID },
@@ -783,6 +808,7 @@ async function handleRequest(
             kind: "session",
             subject: actor.userID,
             sessionID: actor.sessionID,
+            ...(memberships ? { memberships } : {}),
           },
           async () => {
             // The context comes from the authenticated central session, never a caller hint.
@@ -885,6 +911,11 @@ async function handleRequest(
         },
         { status: error.status, headers: responseHeaders },
       );
+    if (error instanceof ConsoleAuthError)
+      return Response.json(
+        { error: { kind: "AccessError", message: error.message } },
+        { status: error.status, headers: responseHeaders },
+      );
     if (error instanceof ZodError)
       return Response.json(
         {
@@ -963,6 +994,42 @@ async function handleRequest(
     return Response.json(
       { error: { kind, message } },
       { status, headers: responseHeaders },
+    );
+  }
+}
+
+/** Separate transport: no opaque-token or legacy-cookie fallback. */
+export async function handleConsoleRequest(
+  request: Request,
+): Promise<Response> {
+  if (!consoleAuthConfiguration().enabled)
+    return Response.json(
+      {
+        error: {
+          kind: "AccessError",
+          message: "Clerk Console is not activated.",
+        },
+      },
+      { status: 503, headers: { "cache-control": "no-store" } },
+    );
+  try {
+    const principal = await requireConsolePrincipal(request);
+    return await withConsolePrincipal(principal, () =>
+      handleRequest(request, {}, true),
+    );
+  } catch (error) {
+    const status = error instanceof ConsoleAuthError ? error.status : 503;
+    return Response.json(
+      {
+        error: {
+          kind: "AccessError",
+          message:
+            error instanceof ConsoleAuthError
+              ? error.message
+              : "Console is temporarily unavailable.",
+        },
+      },
+      { status, headers: { "cache-control": "no-store" } },
     );
   }
 }

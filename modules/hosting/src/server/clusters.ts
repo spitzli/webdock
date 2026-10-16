@@ -114,7 +114,7 @@ export function createHostingClusters(dependencies: Dependencies) {
         else
           await dependencies.authorizeHosting(
             actor,
-            { write: true, operator: true },
+            { permission: "org:projects:manage", write: true, operator: true },
             db,
           );
         const token = randomBytes(32).toString("base64url");

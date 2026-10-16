@@ -1,3 +1,4 @@
+import { authorizeSetupConfiguration } from "./permissions";
 import { createHostingSetupExecution } from "@webdock/module-hosting/server/setup-execution";
 import { transaction } from "./db";
 import { replay } from "./operations";
@@ -8,6 +9,7 @@ import { executeServiceBinding } from "./service-bindings";
 import { executeGitDeployment } from "./git-deployments";
 import { openEnvironment } from "./environment";
 export const { executeSetupStep } = createHostingSetupExecution({
+  authorizeSetupConfiguration,
   get transaction() {
     return transaction;
   },

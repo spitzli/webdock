@@ -15,10 +15,14 @@
     "test": "node --import tsx --test --test-concurrency=1 tests/*.test.ts"
   },
   "dependencies": {
-    "@tabularis/web-ui": "file:../../vendor/tabularis-web-ui-fdd6c0a6-editor-routing.tgz",
+    "@clerk/localizations": "^4.23.0",
+    "@clerk/nextjs": "7.9.16",
+    "@tabularis/web-ui": "file:../../vendor/tabularis-web-ui-fdd6c0a6-startup.tgz",
+    "@webdock/api-client": "*",
     "@webdock/database-contracts": "*",
     "@webdock/hosting-contracts": "*",
     "@webdock/i18n": "*",
+    "@webdock/mail-contracts": "*",
     "@webdock/mail-core": "*",
     "@webdock/page-builder": "*",
     "@webdock/payload-sso": "*",
@@ -29,8 +33,6 @@
     "react-dom": "19.2.8",
     "sharp": "0.35.5",
     "zod": "4.6.5",
-    "@webdock/mail-contracts": "*",
-    "@webdock/api-client": "*",
     "@webdock/module-sdk": "*",
     "@webdock/module-mail": "*",
     "@webdock/module-hosting": "*",
@@ -38,7 +40,6 @@
     "@webdock/module-cms": "*",
     "@webdock/module-storage": "*",
     "@webdock/module-billing": "*",
-    "@clerk/nextjs": "7.9.16",
     "@webdock/core": "*",
     "@webdock/console-kit": "*"
   },
