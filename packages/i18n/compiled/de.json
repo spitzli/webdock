@@ -491,6 +491,9 @@
   "Access area": [
     "Zugriffsbereich"
   ],
+  "Access by invitation only.": [
+    "Zugang nur auf Einladung."
+  ],
   "Access is by invitation. If you need access or help with your account, contact your Webdock administrator.": [
     "Der Zugang erfolgt auf Einladung. Wende dich an deinen Webdock-Admin, wenn du Zugang oder Hilfe zu deinem Konto benötigst."
   ],
@@ -4998,6 +5001,12 @@
   "Jobs requiring review": [
     "Aufträge zur Prüfung"
   ],
+  "Join the waitlist": [
+    "Auf die Warteliste"
+  ],
+  "Join the waitlist. Access by invitation only.": [
+    "Auf die Warteliste. Zugang nur auf Einladung."
+  ],
   "Junk": [
     "Spam"
   ],
@@ -7793,6 +7802,9 @@
   ],
   "Region: ": [
     "Region: "
+  ],
+  "Register": [
+    "Registrieren"
   ],
   "Register MCP client": [
     "MCP-Client registrieren"

@@ -16,6 +16,7 @@ export default async function Home() {
   const {t,locale}=await getRequestI18n();
   const page = await getLanding();
   const faqs = page.faqs;
+  const waitlist = "https://accounts.webdock.dev/waitlist";
   const contact = `mailto:${page.contactEmail}?subject=${encodeURIComponent(t("My project with Webdock"))}`;
   const structuredData = { '@context': 'https://schema.org', '@graph': [
     { '@type': 'Organization', '@id': 'https://spitzli.dev/#organization', name: 'Spitzli Development', url: 'https://spitzli.dev' },
@@ -27,7 +28,7 @@ export default async function Home() {
     <a className="skip-link" href="#content">{t("Skip to content")}</a>
     <header className="site-header wrap flex items-center justify-between">
       <a href="#" className="brand" aria-label={t("Webdock home")}><Mark/>{"webdock"}<span className="brand-period">.</span></a>
-      <nav aria-label={t("Main navigation")} className="flex items-center gap-8"><a className="nav-section" href="#concept">{t("The idea")}</a>{faqs.length > 0 && <a className="nav-section" href="#faq">{t("FAQ")}</a>}<a className="nav-contact" href={contact}>{t("Start a project")} <span aria-hidden="true">↗</span></a></nav>
+      <nav aria-label={t("Main navigation")} className="flex items-center gap-8"><a className="nav-section" href="#concept">{t("The idea")}</a>{faqs.length > 0 && <a className="nav-section" href="#faq">{t("FAQ")}</a>}<a className="nav-section" href={contact}>{t("Start a project")}</a><a className="nav-contact" href={waitlist} title={t("Join the waitlist. Access by invitation only.")}>{t("Register")} <span aria-hidden="true">↗</span></a></nav>
     </header>
     <main id="content">
       <section className="hero wrap">
@@ -36,6 +37,7 @@ export default async function Home() {
           <p className="hero-description">{page.heroDescription}</p>
           <div className="hero-actions flex flex-wrap items-center gap-6"><a className="button" href={contact}>{page.heroButton} <span aria-hidden="true">↗</span></a><a className="text-link" href="#concept">{t("Explore Webdock")} <span aria-hidden="true">↓</span></a></div>
           <p className="hero-note"><span/>{page.heroNote}</p>
+          <p className="hero-note"><a className="text-link" href={waitlist}>{t("Join the waitlist")}</a> — {t("Access by invitation only.")}</p>
         </div>
         <Dock/>
       </section>
