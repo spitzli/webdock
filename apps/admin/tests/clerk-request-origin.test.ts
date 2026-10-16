@@ -22,3 +22,8 @@ test("request-supplied forwarded origins cannot choose the handshake destination
   assert.equal(createClerkRequest(canonicalClerkRequest(request, "https://console.webdock.dev")).clerkUrl.origin, "https://console.webdock.dev");
   assert.throws(() => canonicalClerkRequest(request, "http://console.webdock.dev"));
 });
+
+test("network-path references cannot escape the configured origin", () => {
+  const request = new NextRequest("https://deployment.vercel.app//attacker.example/login");
+  assert.throws(() => canonicalClerkRequest(request, "https://console.webdock.dev"), /Ambiguous/);
+});
