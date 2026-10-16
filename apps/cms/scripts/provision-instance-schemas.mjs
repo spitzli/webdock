@@ -4,7 +4,7 @@ import {Pool} from 'pg';
 import {parseEnv} from 'node:util';
 const pool=new Pool({connectionString:process.env.DATABASE_URL_UNPOOLED,max:1});
 const central=parseEnv(fs.readFileSync('.env.local','utf8'));
-const paths={webdock:'../web',spitzli:'../../../spitzli',stall:'/home/newt/Projekte/Personal/spitzli-backup-roelfs-20261002/stall-eichenbruch'};
+const paths={webdock:'../website',spitzli:'../../../spitzli',stall:'/home/newt/Projekte/Personal/spitzli-backup-roelfs-20261002/stall-eichenbruch'};
 try{
  const db=(await pool.query('SELECT current_database() AS name')).rows[0].name;
  await pool.query('REVOKE ALL ON SCHEMA public FROM PUBLIC');

@@ -1,0 +1,263 @@
+import { installationRegistry } from "../../installation";
+import {
+  listProducts,
+  createProductVersion,
+  publishProduct,
+  archiveProduct,
+  productVersionInput,
+} from "../billing/catalog";
+import { BillingError, environmentSchema } from "../billing/types";
+import {
+  previewProjectDeletion,
+  deleteProject,
+  deleteProjectInput,
+} from "../lifecycle/project-deletion";
+import { projectVercelStatus } from "../integrations/vercel/vercel-project";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import { RegistryError as APIError } from "../registry/service";
+import {
+  customerInput,
+  projectInput,
+  instanceInput,
+  listInput,
+  recordID,
+  collectionName,
+  listRecords,
+  getRecord,
+  writeCustomer,
+  writeProject,
+  writeInstance,
+  setArchived,
+  type RegistryActor,
+} from "../registry/compat";
+export const mutationTools = new Set([
+  "create_billing_product_version",
+  "publish_billing_product_version",
+  "archive_billing_product_version",
+  "save_customer",
+  "save_project",
+  "save_cms_connection",
+  "set_archived",
+  "delete_project",
+]);
+export function createRegistryMCP(actor: RegistryActor, canWrite: boolean) {
+  const server = new McpServer({ name: "webdock-studio", version: "1.0.0" });
+  const result = async (
+    run: () => Promise<unknown>,
+    module?: string,
+    provision = false,
+  ) => {
+    try {
+      if (module)
+        installationRegistry().require(
+          module,
+          provision ? "provision" : "access",
+        );
+      const data = await run();
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(data) }],
+      };
+    } catch (error) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text" as const,
+            text:
+              (error instanceof APIError || error instanceof BillingError) &&
+              error.isPublic
+                ? error.message
+                : error instanceof z.ZodError
+                  ? error.issues.map((i) => i.message).join("; ")
+                  : "The operation failed. No change was confirmed.",
+          },
+        ],
+      };
+    }
+  };
+  if (installationRegistry().state("billing") !== "disabled")
+    server.registerTool(
+      "list_billing_product_versions",
+      {
+        description:
+          "List catalog versions and publication/archive state for the explicit sandbox or live environment. Current operator authority is required; no credentials are returned.",
+        inputSchema: { environment: environmentSchema },
+        annotations: { readOnlyHint: true, openWorldHint: false },
+      },
+      (input) =>
+        result(
+          () => listProducts(actor.identity, input.environment),
+          "billing",
+        ),
+    );
+  if (canWrite && installationRegistry().state("billing") !== "disabled") {
+    server.registerTool(
+      "create_billing_product_version",
+      {
+        description:
+          "Create an immutable commercial draft for one managed website. Amount is integer currency minor units (490 means EUR4.90); mediaBytes is a decimal string. This does not publish, charge, assign a customer plan, or change existing subscriptions.",
+        inputSchema: productVersionInput.shape,
+        annotations: {
+          readOnlyHint: false,
+          idempotentHint: false,
+          destructiveHint: false,
+          openWorldHint: false,
+        },
+      },
+      (input) =>
+        result(
+          () => createProductVersion(actor.identity, input),
+          "billing",
+          true,
+        ),
+    );
+    server.registerTool(
+      "publish_billing_product_version",
+      {
+        description:
+          "Explicitly publish an approved catalog version to the selected Polar environment and verify the returned product/price. Requires operator authority and publication enabled in Billing settings. Recover the same version after uncertainty; do not create another draft as a retry.",
+        inputSchema: { environment: environmentSchema, versionID: recordID },
+        annotations: {
+          readOnlyHint: false,
+          idempotentHint: true,
+          destructiveHint: false,
+          openWorldHint: true,
+        },
+      },
+      (input) =>
+        result(() => publishProduct(actor.identity, input), "billing", true),
+    );
+    server.registerTool(
+      "archive_billing_product_version",
+      {
+        description:
+          "Archive the selected published version and block new purchases. Existing subscriptions and financial history remain; no deletion or refund. An uncertain archive is confirmed by readback.",
+        inputSchema: { environment: environmentSchema, versionID: recordID },
+        annotations: {
+          readOnlyHint: false,
+          idempotentHint: true,
+          destructiveHint: true,
+          openWorldHint: true,
+        },
+      },
+      (input) => result(() => archiveProduct(actor.identity, input), "billing"),
+    );
+  }
+  server.registerTool(
+    "list_records",
+    {
+      description:
+        "List Webdock customers, projects, CMS inventory or audit activity. Filter projects by customer, CMS inventory by project, and activity by targetCollection/targetID. Search, sort and paginate; no secrets or user accounts.",
+      inputSchema: listInput.shape,
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    (input) => result(() => listRecords(actor, input)),
+  );
+  server.registerTool(
+    "get_record",
+    {
+      description: "Read one registry record by its string Snowflake ID.",
+      inputSchema: { collection: collectionName, id: recordID },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    ({ collection, id }) => result(() => getRecord(actor, collection, id)),
+  );
+  if (installationRegistry().state("hosting") !== "disabled")
+    server.registerTool(
+      "get_hosting_status",
+      {
+        description:
+          "Read live Vercel deployment and domain information for a Studio project. Never deploys or changes Vercel settings.",
+        inputSchema: { projectID: recordID },
+        annotations: { readOnlyHint: true, openWorldHint: true },
+      },
+      ({ projectID }) =>
+        result(() => projectVercelStatus(actor, projectID), "hosting"),
+    );
+  server.registerTool(
+    "preview_project_deletion",
+    {
+      description:
+        "Preview permanent removal of an isolated managed project: hosting, CMS database and website login. Platform operators only; no mutation.",
+      inputSchema: { projectID: recordID },
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    ({ projectID }) => result(() => previewProjectDeletion(actor, projectID)),
+  );
+  if (canWrite) {
+    server.registerTool(
+      "delete_project",
+      {
+        description:
+          "Permanently remove the exact project, hosting, isolated CMS database and website access shown in preview_project_deletion. Requires its planHash and exact project name. Retains customer/user records and audit history. Repeating the same confirmed plan resumes recorded progress.",
+        inputSchema: { projectID: recordID, ...deleteProjectInput.shape },
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: true,
+          idempotentHint: true,
+          openWorldHint: true,
+        },
+      },
+      ({ projectID, ...input }) =>
+        result(() => deleteProject(actor, projectID, input)),
+    );
+    const annotations = {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    };
+    server.registerTool(
+      "save_customer",
+      {
+        description:
+          "Create or edit a customer. Omit id to create; supply all required fields to edit. Does not create identity accounts.",
+        inputSchema: { id: recordID.optional(), data: customerInput },
+        annotations,
+      },
+      ({ id, data }) => result(() => writeCustomer(actor, id || null, data)),
+    );
+    server.registerTool(
+      "save_project",
+      {
+        description:
+          "Create or edit a project. Never provisions a CMS. Customer ownership cannot be changed.",
+        inputSchema: { id: recordID.optional(), data: projectInput },
+        annotations,
+      },
+      ({ id, data }) => result(() => writeProject(actor, id || null, data)),
+    );
+    server.registerTool(
+      "save_cms_connection",
+      {
+        description:
+          "Record an already deployed CMS connection. Changes inventory only, never infrastructure. Existing project assignment is immutable.",
+        inputSchema: {
+          id: recordID.optional(),
+          data: instanceInput,
+          confirmExisting: z.boolean(),
+        },
+        annotations,
+      },
+      ({ id, data, confirmExisting }) =>
+        result(() => writeInstance(actor, id || null, data, confirmExisting)),
+    );
+    server.registerTool(
+      "set_archived",
+      {
+        description:
+          "Archive or restore a customer/project. Requires linked active projects/CMS to be retired first. Does not delete data.",
+        inputSchema: {
+          collection: z.enum(["customers", "projects"]),
+          id: recordID,
+          archived: z.boolean(),
+        },
+        annotations: { ...annotations, idempotentHint: true },
+      },
+      ({ collection, id, archived }) =>
+        result(() => setArchived(actor, collection, id, archived)),
+    );
+  }
+  return server;
+}

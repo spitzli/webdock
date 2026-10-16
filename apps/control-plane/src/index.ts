@@ -1,0 +1,156 @@
+import { validateBrowserAuthConfiguration } from "./modules/auth/clerk-runtime";
+import { normalizeIngress } from "./ingress";
+import { createApp } from "./app";
+import { readConfig } from "./config";
+const config = readConfig(process.env);
+validateBrowserAuthConfiguration();
+if (config.domains.length && !config.domains.includes("auth"))
+  throw Error("Private API domains require the migrated Auth foundation");
+if (
+  config.domains.some((domain) =>
+    ["portal", "registry", "integrations", "mcp", "billing"].includes(domain),
+  ) &&
+  (process.env.WEBDOCK_AUTH_ISSUER !== config.authOrigin + "/api/auth" ||
+    process.env.WEBDOCK_SSO_APP_ORIGIN !== config.studioOrigin ||
+    process.env.WEBDOCK_SSO_CLIENT_ID !== process.env.WEBDOCK_STUDIO_CLIENT_ID)
+)
+  throw Error(
+    "Studio protocol configuration must match canonical origins and client",
+  );
+const dependencies: Record<string, string[]> = {
+  billing: ["portal"],
+  registry: ["portal"],
+  integrations: ["registry", "portal"],
+  lifecycle: ["registry", "integrations"],
+  mcp: ["registry", "hosting", "lifecycle"],
+};
+for (const domain of config.domains)
+  for (const required of dependencies[domain] || [])
+    if (!config.domains.includes(required))
+      throw Error(`API domain ${domain} requires ${required} ownership`);
+const { databasePools: databases } = await import("./db/runtime");
+let views:
+  | ReturnType<(typeof import("./cache"))["connectViewCache"]>
+  | undefined;
+if (process.env.VIEW_CACHE_URL) {
+  try {
+    views = (await import("./cache")).connectViewCache(
+      process.env.VIEW_CACHE_URL,
+    );
+  } catch {
+    console.warn(JSON.stringify({ event: "view_cache_unavailable" }));
+  }
+}
+await (await import("./module-preflight")).verifyModuleShutdown();
+const mounts = await (
+  await import("./protocols/legacy-auth")
+).legacyAuthProtocols(config);
+if (config.domains.includes("auth")) {
+  if (
+    !process.env.BETTER_AUTH_SECRET ||
+    process.env.BETTER_AUTH_SECRET.length < 32
+  )
+    throw Error("Authentication secret required");
+  const { auth } = await import("./modules/auth/auth");
+  const { authProtocol } = await import("./protocols/auth");
+  await auth.$context;
+  mounts.push(authProtocol(config, (request) => auth.handler(request)));
+  mounts.push(
+    (await import("./protocols/auth-ui")).authUIProtocol(config, views?.cache),
+  );
+}
+if (config.domains.includes("portal"))
+  mounts.push(...(await import("./protocols/portal")).portalProtocols(config));
+if (config.domains.includes("billing") && config.modules?.modules.billing !== "disabled") {
+  mounts.push(
+    (await import("./protocols/billing-return")).billingReturnProtocol(config),
+  );
+  mounts.push(
+    await (
+      await import("./protocols/billing-tenant")
+    ).tenantBillingProtocol(config),
+  );
+  mounts.push(
+    await (await import("./protocols/billing")).billingProtocol(config),
+  );
+  mounts.push(
+    (await import("./protocols/webhooks/polar")).polarWebhooks(config),
+  );
+  if (process.env.POLAR_ACCESS_TOKEN)
+    mounts.push(
+      ...(await import("./protocols/polar-hosted")).hostedPolarProtocols(
+        config,
+      ),
+    );
+}
+if (config.domains.includes("registry"))
+  mounts.push(
+    await (await import("./protocols/registry")).registryProtocol(config),
+  );
+if (config.domains.includes("integrations"))
+  mounts.push(
+    ...(await import("./protocols/integrations")).integrationProtocols(config),
+  );
+if (config.domains.includes("mcp")) {
+  if (process.env.WEBDOCK_MCP_RESOURCE !== config.studioOrigin + "/api/mcp")
+    throw Error("MCP resource must preserve the canonical Studio audience");
+  mounts.push(...(await import("./protocols/mcp")).mcpProtocol(config));
+}
+const ready = async () => {
+  if (config.production) {
+    const registry = config.domains.includes("registry")
+      ? (await (await import("./modules/registry/context")).registryService())
+          .raw
+      : undefined;
+    await (
+      await import("./db/readiness")
+    ).verifyDatabaseReadiness(databases, config.domains, registry);
+  } else await databases.authentication.query("SELECT 1");
+};
+await ready();
+const app = await createApp(config, { mounts, ready });
+const { handleConsoleOrigin } = await import("./console-origin");
+const ingressSecret = process.env.WEBDOCK_INGRESS_SECRET;
+const trustedProxies = (process.env.WEBDOCK_TRUSTED_PROXIES || "")
+  .split(",")
+  .filter(Boolean);
+if (
+  config.production &&
+  (!ingressSecret || ingressSecret.length < 32 || !trustedProxies.length)
+)
+  throw Error("Verified ingress configuration is required");
+const server = Bun.serve({
+  hostname: process.env.BIND_ADDRESS || "127.0.0.1",
+  port: config.port,
+  maxRequestBodySize: 4_000_000,
+  fetch: (request) => {
+    const normalized = normalizeIngress(
+      request,
+      server.requestIP(request)?.address,
+      {
+        origins: [config.apiOrigin, config.authOrigin, config.studioOrigin, ...(config.consoleOrigin ? [config.consoleOrigin] : [])],
+        trustedProxies,
+        secret: ingressSecret,
+        production: config.production,
+      },
+    );
+    return normalized instanceof Response ? normalized : handleConsoleOrigin(normalized, config, request => app.handle(request));
+  },
+});
+let stopping = false;
+async function stop() {
+  if (stopping) return;
+  stopping = true;
+  const deadline = setTimeout(() => process.exit(1), 15_000);
+  deadline.unref();
+  try {
+    await server.stop();
+    views?.close();
+    await databases.close();
+    await (await import("./modules/registry/context")).closeRegistry();
+  } finally {
+    clearTimeout(deadline);
+  }
+}
+process.once("SIGTERM", stop);
+process.once("SIGINT", stop);

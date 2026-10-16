@@ -1,0 +1,18 @@
+{
+  "name": "@webdock/platform-db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./schema/*": "./src/schema/*.ts",
+    "./types": "./src/types.ts",
+    "./ids": "./src/ids.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "1.0.0-rc.4",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/pg": "^8"
+  }
+}

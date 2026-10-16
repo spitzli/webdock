@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "provider": "kubernetes",
+  "executionBoundary": "enrolled-agent",
+  "source": "agents/kubernetes",
+  "managedEntrypoint": "agents/kubernetes/daemon.py",
+  "managedInstaller": "agents/kubernetes/install.py",
+  "byokImage": "deploy/docker/agent.Dockerfile",
+  "byokChart": "deploy/helm/webdock-agent",
+  "protocol": "webdock-hosting-agent-v1",
+  "credentials": "node-local",
+  "mailRuntime": "infra/mail/Dockerfile"
+}

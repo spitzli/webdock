@@ -1,0 +1,13 @@
+{
+  "name": "@webdock/adapter-hosting-vercel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./projects": "./src/projects.ts",
+    "./transport": "./src/transport.ts"
+  },
+  "dependencies": {
+    "@webdock/hosting-provider-contracts": "*"
+  }
+}

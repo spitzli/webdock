@@ -10,6 +10,8 @@ export type DatabaseScope =
       clusterID?: string;
       customerID?: string;
       setupID?: string;
+      subject?: string;
+      sessionID?: string;
       generation?: number;
     }
   | {

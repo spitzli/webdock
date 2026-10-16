@@ -7,16 +7,23 @@
     ".": "./src/index.ts",
     "./react": "./src/resource-field.tsx",
     "./vercel": "./src/vercel-api.ts",
-    "./git-oauth": "./src/git-oauth.ts"
+    "./git-oauth": "./src/git-oauth.ts",
+    "./runtime-ports": "./src/runtime-ports.ts",
+    "./capacity-totals": "./src/capacity-totals.ts"
   },
   "dependencies": {
     "zod": "4.6.5",
-    "@webdock/i18n": "*"
+    "@webdock/i18n": "*",
+    "@webdock/adapter-hosting-vercel": "*",
+    "@webdock/database-runtime": "*"
   },
   "scripts": {
     "test": "node --import tsx --test src/*.test.ts"
   },
   "peerDependencies": {
     "react": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/pg": "^8"
   }
 }

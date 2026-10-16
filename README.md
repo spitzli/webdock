@@ -1,54 +1,83 @@
 # Webdock
 
-Public source monorepo for Webdock, maintained by Spitzli Development. Applications deploy independently; customer websites keep their own repositories and Payload instances.
+Webdock is a modular control plane for customer projects, hosting, databases, Mail, CMS, storage and billing. It is maintained by Spitzli Development. Customer websites keep their own repositories and content stores.
 
-| Workspace | Purpose | Status |
-| --- | --- | --- |
-| `apps/web` (`@webdock/web`) | English landing page and its own Payload CMS | https://webdock.dev |
-| `apps/admin` (`@webdock/admin`) | Operator workspace for customers, projects and CMS inventory | https://studio.webdock.dev |
-| `apps/auth` (`@webdock/auth`) | Better Auth identity, MFA and OIDC provider | https://auth.webdock.dev |
-| `apps/cms` (`@webdock/cms`) | Retired shared-CMS notice and offline migration/verification tools | https://cms.webdock.dev |
-| `packages/instance-kit` | Shared protected operator policy | Used by the Webdock applications |
+## Repository structure
 
-There is one npm lockfile. No build orchestration service is required. Vercel projects use `apps/web`, `apps/admin` and `apps/cms` as their respective root directories. Auth/admin Git deployments are main-only; their production credentials are not configured for previews.
+```text
+apps/          Executable HTTP applications: Console, Control Plane, Auth, website
+modules/       Product behavior: hosting, databases, mail, storage, cms, billing
+adapters/      Product area / provider: hosting/vercel, auth/clerk, mail/turbosmtp, …
+packages/      Shared contracts, identity, registry, database schema and UI primitives
+integrations/  Cross-runtime integrations, including the native Tabularis gateway contract
+agents/        Separately privileged executors, currently Kubernetes
+deploy/       Container, Compose and Helm distribution
+tools/        Installation, migration, release and test tooling
+docs/         Public guides and internal architecture/verification records
+```
+
+The module owns what an operation means; the adapter implements its provider-specific I/O. The Control Plane composes them and supplies server-side credentials. The Console calls the API and never receives provider credentials. Modules are selected per installation and retain tenant/project authorization within that installation. See [adapter layout](adapters/README.md), [module configuration](docs/developers/modules.mdx), [self-hosting](docs/developers/self-hosting.mdx) and [implementation status](docs/architecture/modular-platform-status.md).
+
+## Runtime responsibilities
+
+| Runtime | Responsibility |
+| --- | --- |
+| `apps/console` (`@webdock/admin`) | Operator and customer browser interface |
+| `apps/control-plane` (`@webdock/api`) | Authentication composition, authorization, core registry, product services, protocols and optional workers |
+| `apps/auth` (`@webdock/auth`) | Native account setup and retained authentication frontend |
+| `apps/website` (`@webdock/web`) | Public website and its own CMS |
+| `apps/database-gateway` | Scoped access to isolated native Tabularis runtimes |
+| `agents/kubernetes` | Enrolled execution and reconciliation on authorized clusters |
+| `apps/cms` (`@webdock/cms`) | Historical shared-CMS notice and offline migration tools |
+
+Browser authentication can use Clerk or Better Auth. Local immutable user IDs, current memberships and resource permissions remain authoritative; external identities are explicitly mapped, never automatically linked by email. Legacy OAuth, MCP and service credentials keep their own contracts. See [authentication adapters](docs/developers/auth-adapters.mdx).
+
+Product selection is installation-wide. `enabled` allows authorized operations, `draining` blocks new provisioning while retaining supported management/reconciliation, and `disabled` removes product access after retained-resource checks. Core registry and platform persistence do not depend on customer CMS or Databases being enabled. Enabling a module does not create provider accounts, subscriptions or customer infrastructure.
 
 ## Development
 
-Use Node 24 and install from the repository root:
+Use Node 24, the workspace-pinned Bun runtime and the root npm lockfile:
 
 ```sh
 npm ci
-npm run dev             # website
-npm run dev:admin       # operator workspace, port 3120
-npm run build:web
-npm run build:admin
-npm run lint
+npm run dev                 # public website
+npm run dev:admin           # Console, port 3120
+npm run dev:auth            # native Auth frontend
+npm run dev -w @webdock/api # Control Plane
+npm run test:modules
+npm run test:unit -w @webdock/api
+npm run test -w @webdock/admin
 ```
 
-Each app owns its environment files. See its `.env.example`; never place production credentials in committed files. `.env*`, backups, dependencies and local tooling are excluded from Git and deployment uploads. The management runtime uses a separate restricted `webdock_admin` PostgreSQL schema/login; it cannot read the website schemas.
+Prepare each app's local configuration before starting it. Consult its environment examples and [local development](docs/developers/local-development.mdx). Never commit production credentials or use customer databases for tests. Runtime configuration supplies origins and module selection; provider secrets remain server-side.
 
-The management app uses central Better Auth on Neon. Operators enroll MFA before access. Website CMS logins use enforced central SSO after identity mapping and operator enrollment; local Payload credentials are disabled. See [identity operations](apps/auth/README.md) and [the SSO adapter](packages/payload-sso/README.md).
+## Tests and installation
 
-The management registry supports customers, projects, existing CMS connection records and immutable audit events. New projects do not provision a CMS. Editing a connection record changes inventory only. Automated provisioning, the customer panel, a collection designer and a shared page builder are not implemented.
+API integration and restricted-role tests use owned disposable local PostgreSQL fixtures:
+
+```sh
+npm run test:setup -w @webdock/api
+npm run test:integration -w @webdock/api
+npm run test:ported -w @webdock/api
+npm run test:setup:rls -w @webdock/api
+npm run test:rls -w @webdock/api
+npm run test:teardown -w @webdock/api
+```
+
+Follow [self-hosting](docs/developers/self-hosting.mdx) and [initial operator setup](docs/developers/initial-setup.mdx) for the explicit offline migration and bootstrap flow. Container, Compose and Helm artifacts are under `deploy/`; release validation is under `tools/release/`. Runtime roles are restricted, migration credentials are separate, and schema changes never run implicitly from browser requests. A local successful build is not a production deployment or published release.
 
 ## Identifiers
 
 Platform-owned IDs use **Snowflake**, selected on 2026-10-03: a 2026-01-01 epoch, 41 timestamp bits, node 0 in 10 bits and a 12-bit sequence. PostgreSQL coordinates allocation across serverless instances; IDs remain decimal strings in JavaScript, JSON and Payload fields. Failed business transactions do not reuse allocated IDs. Do not allocate node 0 from another independent database for the same ID namespace. Framework/provider-issued IDs remain provider references.
 
-## Tests and migrations
+## Architecture and operations
 
-The admin tests require a disposable local PostgreSQL database named `webdock_admin_test`; they refuse remote hosts. Supply `apps/admin/.env.test.local`, provision its schema and apply the checked-in migration before `npm test`. Registry tests reset only that disposable management schema. They cover authorization, relationships, optional CMS, transaction rollback, immutable audit records and Snowflake concurrency/clock behavior.
+- [Current modular-platform status](docs/architecture/modular-platform-status.md)
+- [Module lifecycle and boundaries](docs/architecture/module-installation.md)
+- [Provider adapter layout](adapters/README.md)
+- [Verification and operational limits](docs/verification/2026-10-15-platform-completion.md)
+- [Native Mail deployment decision](docs/architecture/mail-deployment-decision.md)
+- [Auth rollout status](docs/architecture/auth-rollout-status.md)
+- [Studio MCP, GitHub and passkeys](docs/architecture/studio-integrations.md)
 
-Run each app's migration command explicitly with its own credentials. Automatic schema push is disabled. `apps/cms/scripts` contains historical offline migration tools; these must never target the management schema. Private source snapshots and original databases are retained outside Git.
-
-## Architecture
-
-- [Control-plane design](docs/architecture/webdock-control-plane.md)
-- [Management implementation plan](docs/superpowers/plans/2026-10-03-webdock-admin.md)
-- [Independent instance cutover](docs/superpowers/plans/2026-10-03-isolated-instances.md)
-
-Spitzli and Stall stay in their own repositories. Their CMS instances are listed here without merging their content or website design into this application; central identities map to protected local Payload projections. Per-site Plausible tracking remains planned.
-
-See [current rollout status](docs/architecture/auth-rollout-status.md) and [requested next changes](TODO.md).
-
-See [Studio MCP, GitHub and passkeys](docs/architecture/studio-integrations.md) for integration setup and access rules.
+Incoming Mail remains explicitly activated per customer and uses an isolated Stalwart Community Edition instance. Outgoing-only Mail does not allocate Stalwart. Suspension retains data; deletion is a separate authorized operation. Existing Studio/OAuth/MCP protocol URLs and local decimal IDs are compatibility contracts, independent of filesystem names.

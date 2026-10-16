@@ -1,0 +1,45 @@
+---
+title: Authentication adapters
+description: Select a browser provider while preserving local Webdock identity and authorization.
+---
+
+Webdock keeps local user IDs, roles, memberships and resource permissions when changing browser authentication. An installation without `WEBDOCK_AUTH_PROVIDER` continues using Better Auth. A configured object with issuer, authorized parties and audience defaults to Clerk when `provider` is omitted; an entirely absent environment variable retains legacy compatibility. New configured installations can select Clerk explicitly:
+
+```json
+{"provider":"clerk","issuer":"https://your-instance.clerk.accounts.dev","authorizedParties":["https://console.example.com"],"audience":"webdock-console"}
+```
+
+Set the same value on the API and Console. Configure Clerk's session token to contain the matching `aud` claim; tokens without that audience fail verification. Keep the configured issuer and Console origin exact. Explicit legacy selection is `{"provider":"better-auth"}`. There is no automatic fallback between providers.
+
+The API needs `CLERK_SECRET_KEY` and may use `CLERK_JWT_KEY`. The Console's server middleware needs `CLERK_SECRET_KEY` and the public `CLERK_PUBLISHABLE_KEY`. The usual `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is also supported, but the server-only public-key setting supports runtime configuration of the same built artifact. Never put a secret in a `NEXT_PUBLIC_` variable or pass it to a client component. Keep `WEBDOCK_API_ORIGIN`, `WEBDOCK_SSO_APP_ORIGIN`, and the existing native Auth origin/secret configured: native Auth still supports local authorization and legacy protocols.
+
+Apply the normal migrations, including `0036_clerk_identity.sql`, before enabling Clerk. The Console supplies sign-in at `/sign-in`, account/security controls at `/account`, and selected-provider sign-out. Existing `/api/sso/login` links route to the selected sign-in experience. Signing in does not grant membership or create a Webdock account.
+
+## Enroll an existing local identity
+
+Create and finish setup for the local Webdock user through the existing bootstrap/account workflow. For operators, complete actual native MFA; then also enroll and verify a second factor in Clerk. Webdock requires both completed local setup and real signed Clerk MFA evidence for operator sessions.
+
+Prepare a mapping with the verified Clerk subject and existing immutable local ID:
+
+```json
+{"issuer":"https://your-instance.clerk.accounts.dev","subject":"user_example","localSubject":"123456789"}
+```
+
+Preview and apply it from the API workspace using the protected bootstrap authentication database connection:
+
+```sh
+bun scripts/clerk-map.ts mapping.json
+bun scripts/clerk-map.ts mapping.json --apply
+```
+
+This operation never matches by email, creates accounts, changes roles or invents MFA enrollment. Existing or revoked mappings cannot be rebound. Review subject IDs before applying; revocation is separate from reassignment. An authenticated Clerk user without a usable local mapping sees an account-setup message instead of gaining access.
+
+## Adapter contract
+
+The core `IdentityDirectory` works with local subjects and sessions. The Clerk adapter verifies external evidence and uses typed mapping/backend ports; Better Auth projects the existing local identity. API composition supplies the selected directory to Mail and Hosting policies; managed Database services use the same Hosting authorization port. Provider tokens do not become database identities or product DTOs.
+
+Console requests send Clerk tokens only to the configured control-plane Studio API or the fixed integration callback-resume endpoint. The API verifies live provider state and creates a short local session projection for existing native services. Its signed local cookie never leaves the API, and its expiry cannot outlive the verified short lease. Current bans, setup flags, tenant membership, preview restrictions and product permissions still apply.
+
+OAuth, MCP, application API keys and legacy Auth setup are separate from this browser-provider choice. Enabling Clerk does not migrate their clients or replace their credentials. Roll out configuration and explicit mappings deliberately; this feature does not migrate production accounts automatically.
+
+Mail and Hosting workers must receive the same provider selection and `CLERK_SECRET_KEY` for live identity checks; do not give them `AUTH_DATABASE_URL`. Startup rejects missing verification credentials when a Clerk-configured worker owns either product. Workers use their restricted database connection. Mail scopes read only identity mappings. Hosting session-mapping reads are limited to an active approved Git release, the exact actor of a live setup lease/generation, or the exact subject/session reference from an authorized database-order admission. Agent, enrollment, scheduler and setup-dispatch scopes gain no general mapping authority; workers cannot alter mappings or read native session tokens.

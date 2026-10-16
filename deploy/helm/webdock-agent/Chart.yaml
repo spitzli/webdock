@@ -1,0 +1,6 @@
+apiVersion: v2
+name: webdock-agent
+version: 0.1.0
+appVersion: '0.1.0'
+description: Opt-in scoped BYOK agent; not the node-local managed hosting executor
+type: application

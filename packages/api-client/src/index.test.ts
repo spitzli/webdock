@@ -72,3 +72,38 @@ test("transport rejects malformed response envelopes before UI callers use them"
     );
   }
 });
+
+test("selected Clerk bearer goes only to trusted Studio and never alongside legacy cookies", async () => {
+  const input = {
+    apiOrigin: "https://api.webdock.dev",
+    uiOrigin: "https://studio.webdock.dev",
+    cookie:
+      "__Host-webdock-sso=old; __session=provider; webdock-auth.session_token=native; __Host-webdock-github=encrypted-session; webdock-github-flow=signed-state; webdock-git-flow=git-state; webdock-vercel-flow=vercel-state; webdock-byok-vercel=byok-state; arbitrary=secret",
+    bearerToken: "signed.clerk.token",
+    path: "/v1/studio",
+    body: { operation: "session", args: [] },
+  };
+  await requestAPI(input, async (url, init) => {
+    assert.equal(String(url), "https://api.webdock.dev/v1/studio");
+    const headers = new Headers(init?.headers);
+    assert.equal(headers.get("authorization"), "Bearer signed.clerk.token");
+    assert.equal(
+      headers.get("cookie"),
+      "__Host-webdock-github=encrypted-session; webdock-github-flow=signed-state; webdock-git-flow=git-state; webdock-vercel-flow=vercel-state; webdock-byok-vercel=byok-state",
+    );
+    assert.equal(init?.redirect, "error");
+    return Response.json({ data: null });
+  });
+  for (const path of [
+    "/v1/auth/session",
+    "/v1/public/config",
+    "https://evil.invalid/",
+    "//evil.invalid",
+  ]) {
+    await assert.rejects(
+      requestAPI({ ...input, path }, async () => {
+        throw Error("must not send");
+      }),
+    );
+  }
+});

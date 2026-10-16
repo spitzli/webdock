@@ -1,0 +1,7 @@
+import {readdirSync} from 'node:fs';
+import {join} from 'node:path';
+import {spawnSync} from 'node:child_process';
+const walk=directory=>readdirSync(directory,{withFileTypes:true}).flatMap(entry=>entry.name==='node_modules'?[]:entry.isDirectory()?walk(join(directory,entry.name)):/\.test\.tsx?$/.test(entry.name)?[join(directory,entry.name)]:[]);
+const files=['packages/module-sdk','packages/core','packages/platform-db','packages/hosting-provider-contracts','packages/console-kit','modules','adapters','integrations'].flatMap(walk).sort();
+const result=spawnSync(process.execPath,['--import','tsx','--import','./apps/control-plane/tests/helpers/no-network.ts','--test',...files],{stdio:'inherit'});
+process.exitCode=result.status??1;

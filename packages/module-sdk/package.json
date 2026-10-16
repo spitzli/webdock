@@ -1,0 +1,15 @@
+{
+  "name": "@webdock/module-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./react": "./src/react.tsx",
+    "./selection": "./src/selection.ts",
+    "./installation-json-schema": "./src/installation-json-schema.ts"
+  },
+  "peerDependencies": {
+    "react": "^19"
+  }
+}

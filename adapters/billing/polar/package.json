@@ -1,0 +1,19 @@
+{
+  "name": "@webdock/adapter-billing-polar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./hosted": "./src/hosted.ts"
+  },
+  "dependencies": {
+    "@polar-sh/sdk": "1.0.2",
+    "@webdock/module-billing": "*",
+    "zod": "4.6.5"
+  },
+  "scripts": {
+    "test": "node --import tsx --test tests/*.test.ts",
+    "check": "tsc --noEmit"
+  }
+}

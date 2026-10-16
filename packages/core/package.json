@@ -1,0 +1,19 @@
+{
+  "name": "@webdock/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./identity": "./src/identity.ts",
+    "./auth-configuration": "./src/auth-configuration.ts",
+    "./registry/*": "./src/registry/*.ts"
+  },
+  "devDependencies": {
+    "@types/pg": "^8"
+  },
+  "dependencies": {
+    "@webdock/platform-db": "*",
+    "drizzle-orm": "1.0.0-rc.4",
+    "zod": "4.6.5"
+  }
+}

@@ -1,0 +1,4 @@
+import path from 'node:path';
+import type {NextConfig} from 'next';
+const config:NextConfig={output:'standalone',outputFileTracingExcludes:{'/*':['./.env*','../../**/.env*','../../.superpowers/**/*']},experimental:{globalNotFound:true,serverActions:{bodySizeLimit:'2mb'}},transpilePackages:['@webdock/console-kit','@webdock/module-hosting','@webdock/module-billing','@webdock/module-cms','@webdock/module-storage','@webdock/module-databases','@webdock/module-sdk','@webdock/module-mail','@webdock/search','@webdock/hosting-contracts','@webdock/i18n','@webdock/payload-sso','@webdock/page-builder'],outputFileTracingRoot:path.resolve(process.cwd(),'../..'),turbopack:{root:path.resolve(process.cwd(),'../..')},async headers(){return[{source:'/:path*',headers:[{key:'X-Robots-Tag',value:'noindex, nofollow'},{key:'Referrer-Policy',value:'same-origin'},{key:'X-Content-Type-Options',value:'nosniff'}]}];}};
+export default config;

@@ -1,0 +1,17 @@
+{
+  "name": "@webdock/adapter-mail-turbosmtp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./accounts": "./src/turbosmtp.ts",
+    "./domains": "./src/turbo-domains.ts",
+    "./tracking": "./src/turbo-tracking.ts",
+    "./send": "./src/turbo-send.ts",
+    "./verification": "./src/provider-account.ts"
+  },
+  "dependencies": {
+    "@webdock/mail-contracts": "*",
+    "@webdock/module-mail": "*"
+  }
+}

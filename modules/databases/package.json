@@ -1,0 +1,30 @@
+{
+  "name": "@webdock/module-databases",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./manifest": "./src/manifest.ts",
+    "./providers": "./src/providers.ts",
+    "./server/service": "./src/server/service.ts",
+    "./server/*": "./src/server/*.ts",
+    "./ui/*": "./src/ui/*.tsx",
+    "./ui/schema-preferences": "./src/ui/schema-preferences.ts",
+    "./ui/services": "./src/ui/services.ts",
+    "./ui-types": "./src/ui-types.ts"
+  },
+  "dependencies": {
+    "@webdock/module-sdk": "*",
+    "@webdock/core": "*",
+    "@webdock/database-contracts": "*",
+    "@webdock/hosting-contracts": "*",
+    "zod": "4.6.5",
+    "@webdock/console-kit": "*",
+    "@webdock/i18n": "*",
+    "@tabularis/web-ui": "file:../../vendor/tabularis-web-ui-fdd6c0a6-editor-routing.tgz"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "next": ">=16"
+  }
+}

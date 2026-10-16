@@ -1,0 +1,20 @@
+{
+  "name": "@webdock/console-kit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*.tsx",
+    "./use-unsaved-changes": "./src/use-unsaved-changes.ts",
+    "./list-query": "./src/list-query.ts",
+    "./resource-scope": "./src/resource-scope.ts"
+  },
+  "dependencies": {
+    "@webdock/i18n": "*",
+    "@webdock/search": "*"
+  },
+  "peerDependencies": {
+    "next": ">=16",
+    "react": "^19"
+  }
+}

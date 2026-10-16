@@ -1,0 +1,141 @@
+---
+title: "Self-host Webdock"
+description: "Build and evaluate the Webdock control plane with external PostgreSQL and scoped runtime credentials."
+---
+
+The repository includes candidate container builds, a Compose definition and Helm charts. These artifacts have not been published or deployed by this change. Prepare an external PostgreSQL database, dedicated runtime roles, verified database TLS, application secrets and HTTPS ingress before starting production processes.
+
+## Build the images
+
+Run builds from the repository root using Docker BuildKit. The root npm lockfile is authoritative. The images use Node 24.15.0 and Bun 1.4.3. Console and Auth use Next.js standalone output with the repository as their tracing root. No provider credentials belong in build arguments or the build context.
+
+```sh
+docker build -f deploy/docker/Dockerfile --target console -t webdock-console:local .
+docker build -f deploy/docker/Dockerfile --target auth -t webdock-auth:local .
+docker build -f deploy/docker/Dockerfile --target api -t webdock-api:local .
+docker build -f deploy/docker/Dockerfile --target worker -t webdock-worker:local .
+docker build -f deploy/docker/Dockerfile --target migrate -t webdock-migrate:local .
+```
+
+The images require no provider credentials or public-origin build arguments. Configure `WEBDOCK_API_ORIGIN`, `BETTER_AUTH_URL`, `WEBDOCK_STUDIO_ORIGIN` and `WEBDOCK_CONSOLE_ORIGIN` at runtime. Preserve the reviewed OAuth issuer, Studio compatibility URLs and MCP audiences; changing those identities requires an explicit migration.
+
+The source paths are `apps/control-plane` for API/worker, `apps/console` for Console and `apps/auth` for Auth. Workspace names `@webdock/api` and `@webdock/admin` remain compatible. `agents/kubernetes`, the native database gateway and customer website/Mail runtimes retain independent execution boundaries; the platform chart does not start them automatically.
+
+## Configure the control plane
+
+For Compose, provide `console.env`, `auth.env`, `api.env`, `worker.env` and `migrator.env` beside `deploy/compose/compose.yaml`, with private file permissions. Set the five `WEBDOCK_*_IMAGE` variables to reviewed image digests and `WEBDOCK_MIGRATION_TARGET` to the exact `host:port/database`. Set one `WEBDOCK_MODULES` value for both API and worker; domain ownership must match enabled modules. See [installation modules](/developers/modules).
+
+Runtime database credentials and offline installer credentials are separate. Do not put an owner URL in API or worker environment files. Retain signing and Mail encryption keys across upgrades. The installer reads `DATABASE_URL_UNPOOLED`, `DATABASE_CONTEXT_SECRET` and `DATABASE_CA_CERT`. First installation into an empty dedicated database additionally requires `WEBDOCK_BOOTSTRAP_EMPTY_DATABASE=true` and `MIGRATION_ROLE_PASSWORDS` containing the reviewed role passwords. Remove bootstrap settings and use the dedicated offline migration role for upgrades. Follow the repository migration configuration contract; never reuse the bootstrap administrator in a running application.
+
+```sh
+docker compose -f deploy/compose/compose.yaml --profile migration run --rm migrate
+docker compose -f deploy/compose/compose.yaml up -d console auth api
+```
+
+Workers are optional. After configuring active modules and matching worker domains, start them with `docker compose -f deploy/compose/compose.yaml --profile workers up -d worker`.
+
+The one-shot migration exits on an incorrect target or migration failure. It journals checksums and applies changes under the installation lock. On a fresh installation, complete [initial operator setup](/developers/initial-setup) and configure its private OAuth output before exposing Console. Start application services only after successful migration and required configuration. Compose binds HTTP ports to loopback; terminate HTTPS using your controlled reverse proxy. There is no bundled production PostgreSQL or automatic role credential generation.
+
+For local database tests, use the existing disposable fixture workflow from the repository root. It verifies a local Docker engine and records fixture ownership; never direct it at customer databases.
+
+```sh
+npm run test:setup -w @webdock/api
+npm run test:integration -w @webdock/api
+npm run test:teardown -w @webdock/api
+```
+
+## Select products and browser authentication
+
+All six modules are available in the source: Mail, Hosting, Databases, CMS, Storage and Billing. Start with an explicit core-only configuration or select the products you have configured; see [installed modules](/developers/modules). Core identity, registry, plans and usage remain independent. Module activation does not create an incoming Mail instance, database, provider account or billing subscription.
+
+An absent browser-provider setting retains Better Auth compatibility. Configured installations may select Clerk after establishing explicit local identity mappings; follow [authentication adapters](/developers/auth-adapters). This browser choice does not replace the native Auth foundation, application OAuth clients or MCP audiences. Do not change existing identities as part of container startup.
+
+## Kubernetes
+
+`deploy/helm/webdock` requires immutable images and one preexisting Secret per component. The chart creates no database, secret, cluster role or hosting agent. Its network policy denies all ingress and egress until you supply explicit rules for ingress, service communication, DNS, PostgreSQL and enabled providers. Services are ClusterIP only.
+
+```sh
+helm template webdock deploy/helm/webdock -f private-values.yaml
+```
+
+Review rendered resources before installation. Run migrations as a separate release step with `migration.enabled`, its own existing Secret, immutable image and exact target. The migration is deliberately not an automatic Helm hook. Keep application deployment disabled until this job succeeds; on an upgrade, quiesce incompatible writers first.
+
+Set `modules` in Helm values as a structured object, not an escaped JSON string. Its generated schema validates exactly the configured runtime manifests. API and worker receive the same serialized JSON. Workers remain disabled by default; enable them only with matching active modules and worker domain ownership.
+
+```yaml
+modules:
+  configVersion: 1
+  modules:
+    mail:
+      enabled: false
+```
+
+Prepare namespace, existing Secrets and reviewed migration egress first. Render only the Job so application Deployments cannot start before migration. Use a unique release name per migration run to avoid reusing a completed Job:
+
+```sh
+helm template webdock-migration-001 deploy/helm/webdock \
+  -f private-values.yaml -f private-migration-values.yaml \
+  --set migration.enabled=true --show-only templates/migration.yaml > migration-job.yaml
+kubectl apply -n webdock -f migration-job.yaml
+kubectl wait -n webdock --for=condition=complete \
+  job/webdock-migration-001-migrate-1 --timeout=600s
+helm upgrade --install webdock deploy/helm/webdock -n webdock \
+  -f private-values.yaml --set migration.enabled=false
+```
+
+`private-migration-values.yaml` supplies the migration image digest, dedicated Secret name and exact `host:port/database`. Inspect Job status/logs on failure and stop; do not continue to Helm rollout. The `--show-only` render omits network policy too, so use an already reviewed namespace migration egress policy. These are operator-run deployment commands, not actions performed by the release workflow. Roll the API before Console when module contracts change. Back up the database and retained storage before an upgrade; schema rollback is not implied by reverting images.
+
+## Hosting and incoming Mail
+
+The separate `webdock-agent` chart is disabled by default. Enabling it requires a pre-enrolled BYOK identity, a persistent state claim and an explicit allowlist of existing application namespaces. It grants read-only cluster inventory and bounded application operations matching the existing BYOK agent. The agent stores its sequence on the persistent claim, uses one replica with a recreate strategy and never receives API database credentials. Re-enrollment requires an explicit private state replacement while stopped.
+
+Managed hosting continues to use the node-local agent installation under `agents/kubernetes`. The BYOK chart does not replace node-local storage services or grant managed provisioning capabilities.
+
+Incoming Mail requires explicit activation for each customer. Its isolated Stalwart Community Edition runtime is built from `infra/mail/Dockerfile`; neither platform chart nor Compose starts Stalwart. Outgoing-only accounts do not allocate an instance. Deactivation retains data; deletion is separate. Public SMTP routing, relay and Webmail require their own verified operational readiness.
+
+## Optional native database gateway
+
+The control plane can authorize database access without embedding database credentials in Console. Deploy the gateway separately only when this capability is selected. Its image includes the existing Tabularis runtime recorded in `vendor/tabularis-web-ui.json`; no new upstream source is assumed.
+
+For a local build with the already verified runtime image:
+
+```sh
+docker build -f deploy/docker/database-gateway.Dockerfile \
+  --build-arg TABULARIS_IMAGE=webdock-tabularis:production-fdd6c0a6 \
+  -t webdock-database-gateway:local .
+```
+
+For a release candidate, supply an immutable runtime image digest matching that vendor record. Set `WEBDOCK_RELEASE_DATABASES=true` and `TABULARIS_IMAGE` before running the release builder. It includes `database-gateway.oci.tar`, `tabularis-runtime.oci.tar` and the `webdock-databases` chart only after the packaged gateway passes the native PostgreSQL/TLS test. A core-only candidate does not contain these optional artifacts.
+
+The optional Compose file uses a separate private `database-gateway.env` and the `databases` profile:
+
+```sh
+docker compose -f deploy/compose/compose.databases.yaml --profile databases up -d
+```
+
+Set `WEBDOCK_DATABASE_GATEWAY_IMAGE` to the verified gateway digest and `TABULARIS_EXPECTED_COMMIT` to the recorded full source commit. The private environment includes the canonical `WEBDOCK_AUTH_ORIGIN`, `WEBDOCK_DATABASE_GATEWAY_ORIGIN`, allowed `WEBDOCK_DATABASE_BROWSER_ORIGINS`, and the server-only `WEBDOCK_DATABASE_GATEWAY_SECRET` shared with the API. The Auth origin must route the existing `/api/databases/gateway` control endpoint to the API. Keep browser and gateway origins same-site for the strict session cookie.
+
+For Kubernetes, render the separate `deploy/helm/webdock-databases` chart. It is disabled by default and requires an existing Secret, immutable image and explicit ingress/egress rules. `managedRuntimes: true` enables the existing per-session process manager; choose a tested `runtimeCapacity`. Registered databases continue using individually provisioned, allowlisted runtime origins. Use `runtimeCAConfigMap` for an existing registered-runtime trust bundle when needed; never disable TLS verification.
+
+Neither deployment creates database servers, roles or grants. Managed processes share a container and UID; their private directories isolate application state, not a compromised process. Existing per-user/per-profile runtime deployments remain available where a stronger process boundary is required. Database credentials stay in the gateway/runtime and never enter public launch data.
+
+## Release candidates
+
+| Target | Candidate verification | Publication status |
+| --- | --- | --- |
+| Linux AMD64 | Core image/package checks and optional real database-gateway PostgreSQL/TLS test checked locally; complete native release gate required | Unpublished |
+| Linux ARM64 | No configured CI runner or local verification; native build and every image check required | Unsupported by current evidence |
+
+
+```sh
+node --test tools/release/manifest.test.mjs
+node --import tsx tools/release/generate-chart-schema.ts --check
+python3 tools/release/check-charts.py
+python3 tools/release/check-compose.py
+tools/release/build.sh 0.1.0 ./release-candidate linux/amd64
+node tools/release/manifest.mjs verify ./release-candidate
+```
+
+Release builds require a clean checkout so the recorded revision matches the source. Candidates require native architecture execution of every selected image before the manifest marks that architecture supported. OCI index and image digests, SDK/protocol versions and the exact tested image identities are included. ARM64 has not been verified locally and has no CI runner configured here. The candidate workflow runs only on manually selected, ephemeral EU self-hosted runners. It produces the seven core OCI image archives, optional verified database artifacts, OCI-compatible chart packages, a source revision manifest, checksums and a Sigstore checksum signature. Publishing is a separate explicit operator action using `tools/release/publish.sh`; it creates a draft GitHub release and pushes OCI artifacts, without deploying them. Verify the expected signing workflow identity and issuer before trusting a candidate.
+
+This distribution completes the existing provider paths. Additional cloud services, including AWS/GCP integrations, are explicitly outside the current scope.

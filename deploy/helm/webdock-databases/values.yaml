@@ -1,0 +1,15 @@
+enabled: false
+image: ''
+existingSecret: ''
+tabularisCommit: fdd6c0a6f979ede0acb38415fa12b25c04aa9c4e
+# Registered runtimes remain explicitly provisioned and allowlisted separately.
+managedRuntimes: false
+runtimeCapacity: 1
+# Optional CA for registered private HTTPS runtimes; existing ConfigMap key ca.crt.
+runtimeCAConfigMap: ''
+resources:
+  requests: {cpu: 100m, memory: 256Mi}
+  limits: {cpu: '1', memory: 1Gi}
+networkPolicy:
+  ingress: []
+  egress: []

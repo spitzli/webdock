@@ -48,7 +48,7 @@ bun docs/scripts/export-mail-openapi.ts
 bun docs/scripts/export-mail-openapi.ts --check
 ```
 
-The exporter calls `mailOpenAPI()` from `apps/api`, adds readable operation titles
+The exporter calls `mailOpenAPI()` from `apps/control-plane`, adds readable operation titles
 and groups, and resolves the relative server URL to `https://api.webdock.dev/api/mail/v1`.
 Paths, authentication, parameters and schemas remain unchanged. Review the JSON change with the source
 contract change. The documentation playground is disabled; no live send is part
@@ -60,7 +60,7 @@ maintenance page when adding pages.
 
 ## Content sources
 
-Public guides were checked against the current `apps/api` services and the
+Public guides were checked against the current `apps/control-plane` services and the
 Console navigation, with these internal records used for rollout boundaries:
 
 - `verification/2026-10-14-console-domain.md`: browser vs. protocol origins.

@@ -59,7 +59,7 @@ docker build --network none -f infra/mail/Dockerfile -t webdock.local/mail-stalw
 ```
 
 Production configuration uses the resulting immutable repository digest, never
-this mutable build tag. See the [Mail agent setup](../../apps/hosting-agent/README.md#native-mail-agent-profile).
+this mutable build tag. See the [Mail agent setup](../../agents/kubernetes/README.md#native-mail-agent-profile).
 
 ## Mail product ticks
 

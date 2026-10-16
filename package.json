@@ -5,7 +5,10 @@
   "type": "module",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "modules/*",
+    "adapters/*/*",
+    "integrations/*"
   ],
   "engines": {
     "node": "24.x"
@@ -24,9 +27,11 @@
     "test:auth": "npm run test -w @webdock/auth",
     "test:sso": "node --experimental-strip-types --test packages/payload-sso/src/index.test.ts",
     "test:cms-ui": "node --import tsx --test packages/cms-ui/src/server.test.ts",
-    "test:cms-integration": "node --env-file=apps/admin/.env.test.local --import tsx --test packages/cms-ui/src/integration.test.ts",
+    "test:cms-integration": "node --env-file=apps/console/.env.test.local --import tsx --test packages/cms-ui/src/integration.test.ts",
     "test:api": "npm run test -w @webdock/api",
-    "build:api": "npm run build -w @webdock/api"
+    "build:api": "npm run build -w @webdock/api",
+    "test:modules": "node tools/tests/modules.mjs",
+    "test:distribution": "node --test tools/release/manifest.test.mjs && python3 tools/release/check-charts.py"
   },
   "overrides": {
     "nodemailer": "10.0.13",

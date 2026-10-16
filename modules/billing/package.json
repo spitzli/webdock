@@ -1,0 +1,30 @@
+{
+  "name": "@webdock/module-billing",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./manifest": "./src/manifest.ts",
+    "./server/*": "./src/server/*.ts",
+    "./ui/*": "./src/ui/*.tsx",
+    "./ui/types": "./src/ui/types.ts",
+    "./ui/state": "./src/ui/state.ts",
+    "./contracts": "./src/contracts.ts"
+  },
+  "dependencies": {
+    "@webdock/module-sdk": "*",
+    "@webdock/platform-db": "*",
+    "@webdock/database-runtime": "*",
+    "@webdock/i18n": "*",
+    "drizzle-orm": "1.0.0-rc.4",
+    "zod": "4.6.5",
+    "@polar-sh/sdk": "1.0.2"
+  },
+  "scripts": {
+    "test": "node --import tsx --test tests/*.test.ts",
+    "check": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.2.8"
+  }
+}

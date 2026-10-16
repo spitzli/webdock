@@ -1,0 +1,28 @@
+{{- if .Values.migration.enabled }}
+# Explicit one-shot release Job, deliberately not an automatic install/upgrade hook.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-migrate-{{ .Release.Revision }}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels: {app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: migrate}
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: migrate
+          image: {{ required "migration.image required" .Values.migration.image | quote }}
+          args: [{{ required "migration.target required" .Values.migration.target | quote }}]
+          envFrom:
+            - secretRef: {name: {{ required "migration.existingSecret required" .Values.migration.existingSecret }}}
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          resources: {{ .Values.resources | toJson }}
+{{- end }}
