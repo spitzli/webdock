@@ -536,6 +536,9 @@
   "Account invitations and security messages are sent through turboSMTP using the recipient’s email address and the message contents, which may include time-limited account-setup links.": [
     "Kontoeinladungen und Sicherheitsnachrichten werden über turboSMTP versendet. Dabei werden die E-Mail-Adresse des Empfängers und der Nachrichteninhalt verwendet; dieser kann zeitlich begrenzte Links zur Kontoeinrichtung enthalten."
   ],
+  "Account navigation": [
+    "Kontonavigation"
+  ],
   "Account service could not confirm deletion.": [
     "Der Kontodienst konnte die Löschung nicht bestätigen."
   ],
@@ -4158,6 +4161,9 @@
   "Germany": [
     "Deutschland"
   ],
+  "Get early access": [
+    "Frühzeitig Zugang erhalten"
+  ],
   "Git deployment changed. Refresh and try again.": [
     "Das Git-Deployment wurde geändert. Lade die Seite neu und versuche es erneut."
   ],
@@ -6699,6 +6705,9 @@
   "Operator account · Repository selection": [
     "Betreiberkonto · Repository-Auswahl"
   ],
+  "Operator area": [
+    "Betreiberbereich"
+  ],
   "Operator connections": [
     "Betreiber-Verbindungen"
   ],
@@ -9069,6 +9078,9 @@
   "Sign in to manage your password and account security.": [
     "Melde dich an, um dein Passwort und deine Kontosicherheit zu verwalten."
   ],
+  "Sign in to manage your workspaces and projects.": [
+    "Melde dich an, um deine Workspaces und Projekte zu verwalten."
+  ],
   "Sign in to open the CMS.": [
     "Melde dich an, um das CMS zu öffnen."
   ],
@@ -9563,6 +9575,9 @@
   ],
   "Texts": [
     "Texte"
+  ],
+  "Thanks for your interest in Webdock. We will email you when we can invite you.": [
+    "Danke für dein Interesse an Webdock. Du bekommst eine E-Mail, sobald wir dich einladen können."
   ],
   "That depends on how each project is configured. A subdomain alone does not restrict access. If a preview needs to stay private, access protection is arranged separately.": [
     "Das hängt von der Konfiguration des jeweiligen Projekts ab. Eine Subdomain allein beschränkt den Zugriff nicht. Soll eine Vorschau privat bleiben, wird der Zugriffsschutz gesondert eingerichtet."
@@ -11172,6 +11187,9 @@
   "Webdock is a service of Spitzli Development. These provider details apply to Webdock’s own website and services. Independently operated customer websites are the responsibility of their respective providers.": [
     "Webdock ist ein Angebot von Spitzli Development. Diese Anbieterangaben gelten für die eigene Webdock-Website und die Webdock-Dienste. Für eigenständig betriebene Kundenwebsites sind deren jeweilige Anbieter verantwortlich."
   ],
+  "Webdock is currently invitation-only. Leave your email and we will let you know when access is available.": [
+    "Webdock ist derzeit nur auf Einladung verfügbar. Hinterlasse deine E-Mail-Adresse – wir melden uns, sobald ein Zugang verfügbar ist."
+  ],
   "Webdock is run by Dominik at Spitzli Development. From the first idea to deployment, you work directly with the person building your project.": [
     "Webdock wird von Dominik bei Spitzli Development betrieben. Von der ersten Idee bis zur Veröffentlichung arbeitest du direkt mit dem Menschen zusammen, der dein Projekt entwickelt."
   ],
@@ -11313,6 +11331,9 @@
   "Weight": [
     "Gewicht"
   ],
+  "Welcome back": [
+    "Willkommen zurück"
+  ],
   "Welcome back.": [
     "Willkommen zurück."
   ],
@@ -11441,6 +11462,9 @@
   ],
   "You do not have permission to perform this page action.": [
     "Keine Berechtigung für diese Seitenaktion."
+  ],
+  "You do not need to sign in yet. Access starts when you receive your invitation.": [
+    "Du musst dich noch nicht anmelden. Dein Zugang beginnt mit deiner Einladung."
   ],
   "You have been invited to join ": [
     "Du wurdest eingeladen, beizutreten: "
@@ -11621,6 +11645,9 @@
   ],
   "Your {name} sign-in and account security.": [
     "Deine Anmeldung und Kontosicherheit bei {name}."
+  ],
+  "You’re on the waitlist": [
+    "Du stehst auf der Warteliste"
   ],
   "Zoom": [
     "Zoom"

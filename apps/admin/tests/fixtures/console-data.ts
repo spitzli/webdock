@@ -53,6 +53,12 @@ const deferred = <T>() => {
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
 newRequest();
+handle = async () => { throw Error("Public access pages must not request workspace data"); };
+for (const route of ["login", "waitlist", "waitlist/confirmed", "sign-up"]) {
+  assert.equal(await getConsoleContext(route), null);
+}
+
+newRequest();
 const projectGate = deferred<unknown>();
 const listGate = deferred<unknown>();
 handle = async operation => {

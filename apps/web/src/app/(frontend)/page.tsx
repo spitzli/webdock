@@ -16,7 +16,7 @@ export default async function Home() {
   const {t,locale}=await getRequestI18n();
   const page = await getLanding();
   const faqs = page.faqs;
-  const waitlist = "https://accounts.webdock.dev/waitlist";
+  const waitlist = "https://console.webdock.dev/waitlist";
   const contact = `mailto:${page.contactEmail}?subject=${encodeURIComponent(t("My project with Webdock"))}`;
   const structuredData = { '@context': 'https://schema.org', '@graph': [
     { '@type': 'Organization', '@id': 'https://spitzli.dev/#organization', name: 'Spitzli Development', url: 'https://spitzli.dev' },
