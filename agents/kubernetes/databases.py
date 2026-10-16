@@ -62,6 +62,25 @@ def validate_packet(p):
     return p
 
 
+def auxiliary_databases(packet,config):
+    mapping=config.get('platformAuxiliaryDatabases',{})
+    if not isinstance(mapping,dict) or len(mapping)>10:raise ValueError('Invalid auxiliary database map')
+    names=set();selected=[]
+    for parent,entries in mapping.items():
+        identifier(parent)
+        if not isinstance(entries,list) or not 1<=len(entries)<=10:raise ValueError('Invalid auxiliary databases')
+        for entry in entries:
+            if not isinstance(entry,dict) or set(entry)!={'name','roles','projectID'}:raise ValueError('Invalid auxiliary database')
+            name=entry['name'];roles=entry['roles'];identifier(entry['projectID'])
+            if not isinstance(name,str) or not re.fullmatch(r'webdock_[a-z][a-z0-9_]{0,53}',name) or name in names:raise ValueError('Invalid auxiliary database name')
+            if not isinstance(roles,list) or not 1<=len(roles)<=10 or any(not isinstance(r,str) or not re.fullmatch(r'webdock_[a-z][a-z0-9_]{0,53}',r) for r in roles) or len(set(roles))!=len(roles):raise ValueError('Invalid auxiliary database roles')
+            names.add(name)
+            if packet and any(m['id']==parent and m['enabled'] for m in packet['members']):
+                if packet['backend']['kind']!='dedicated':raise ValueError('Auxiliary databases require a dedicated installation')
+                selected.append(entry)
+    return selected
+
+
 def hba(p,config=None):
     rows=[]
     platform=(config or {}).get("platformDatabases",{})
@@ -72,6 +91,8 @@ def hba(p,config=None):
             if extra and p['backend']['kind']!='dedicated':raise ValueError('Platform service roles require a dedicated installation')
             users=','.join([migration,app,*extra])
             rows.append(f"hostssl {member['databaseName']} {users} all scram-sha-256")
+    for entry in auxiliary_databases(p,config or {}):
+        rows.append(f"hostssl {entry['name']} {','.join(entry['roles'])} all scram-sha-256")
     return rows+['host all all all reject']
 
 
@@ -84,7 +105,7 @@ def backend_manifests(p,config):
       {'apiVersion':'v1','kind':'Namespace','metadata':{'name':ns,'labels':{**labels,'webdock.dev/workload-class':'database','pod-security.kubernetes.io/enforce':'restricted'}}},
       {'apiVersion':'networking.k8s.io/v1','kind':'NetworkPolicy','metadata':meta('default-deny'),'spec':{'podSelector':{},'policyTypes':['Ingress','Egress']}},
       {'apiVersion':'networking.k8s.io/v1','kind':'NetworkPolicy','metadata':meta('database-infrastructure'),'spec':{'podSelector':{},'policyTypes':['Ingress','Egress'],
-        'ingress':([{'from':[{'namespaceSelector':{'matchLabels':{'webdock.dev/project-id':project}}} for project in sorted({m['projectID'] for m in p['members']})],'ports':[{'protocol':'TCP','port':5432}]}] if p['members'] else []) + [{'from':[{'podSelector':{}}]},{'from':[{'namespaceSelector':{'matchLabels':{'kubernetes.io/metadata.name':'cnpg-system'}}}],'ports':[{'protocol':'TCP','port':8000}]},
+        'ingress':([{'from':[{'namespaceSelector':{'matchLabels':{'webdock.dev/project-id':project}}} for project in sorted({m['projectID'] for m in p['members']}|{e['projectID'] for e in auxiliary_databases(p,config)})],'ports':[{'protocol':'TCP','port':5432}]}] if p['members'] else []) + [{'from':[{'podSelector':{}}]},{'from':[{'namespaceSelector':{'matchLabels':{'kubernetes.io/metadata.name':'cnpg-system'}}}],'ports':[{'protocol':'TCP','port':8000}]},
                    {'from':[{'ipBlock':{'cidr':'0.0.0.0/0','except':config['podCIDRs']}}],'ports':[{'protocol':'TCP','port':5432}]}],
         'egress':[{'to':[{'podSelector':{}}]},{'to':[{'namespaceSelector':{'matchLabels':{'kubernetes.io/metadata.name':'kube-system'}}}],'ports':[{'protocol':'UDP','port':53},{'protocol':'TCP','port':53}]},
                   {'to':[{'ipBlock':{'cidr':cidr}} for cidr in config['apiCIDRs']],'ports':[{'protocol':'TCP','port':443},{'protocol':'TCP','port':6443}]}]}},
@@ -152,7 +173,8 @@ def configuration():
     if path.is_symlink() or info.st_uid!=os.getuid() or info.st_mode&0o077:raise ValueError('Private database configuration required')
     config=json.loads(path.read_text())
     required={'image','poolerImage','issuer','apiCIDRs','podCIDRs','storageSocket','caFile'}
-    if not required<=set(config)<=required|{'platformDatabases'}:raise ValueError('Invalid database configuration')
+    if not required<=set(config)<=required|{'platformDatabases','platformAuxiliaryDatabases'}:raise ValueError('Invalid database configuration')
+    auxiliary_databases(None,config)
     platform=config.get('platformDatabases',{})
     if not isinstance(platform,dict) or len(platform)>10:raise ValueError('Invalid platform database map')
     for identity,roles in platform.items():
@@ -286,7 +308,7 @@ def execute_database(p,checkpoint):
     config=configuration();b=p['backend'];ns=b['namespace'];d=p['database']
     affected={m['id'] for m in p['members']}
     if d:affected.add(d['id'])
-    if affected.intersection(config.get('platformDatabases',{})) and p['action'] in ['pause','restart','resize','delete','purge','rotateCredentials','migrate']:
+    if affected.intersection(set(config.get('platformDatabases',{}))|set(config.get('platformAuxiliaryDatabases',{}))) and p['action'] in ['pause','restart','resize','delete','purge','rotateCredentials','migrate']:
         raise ValueError('Platform database requires reviewed offline maintenance')
     if p['action']=='migrate':
         from database_migrations import execute_migration

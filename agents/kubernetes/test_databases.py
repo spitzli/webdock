@@ -86,3 +86,30 @@ class PlatformDatabaseTests(TestCase):
             with self.subTest(action=action),patch('databases.configuration',return_value={'platformDatabases':{'300':['webdock_auth_runtime']}}),patch('databases.get') as get,patch('databases.purge_installation') as purge:
                 with self.assertRaisesRegex(ValueError,'offline maintenance'):execute_database(p,lambda **kw:None)
                 get.assert_not_called();purge.assert_not_called()
+
+class AuxiliaryDatabaseTests(TestCase):
+    def config(self):
+        return {'image':'postgres@sha256:'+'a'*64,'poolerImage':'pgbouncer@sha256:'+'b'*64,'issuer':'issuer','apiCIDRs':['10.0.0.2/32'],'podCIDRs':['10.42.0.0/16'],'platformAuxiliaryDatabases':{'300':[{'name':'webdock_plugin_registry','roles':['webdock_plugin_registry'],'projectID':'401'}]}}
+    def dedicated(self):
+        p=packet();p['backend']['kind']='dedicated';p['database']['kind']='dedicated';return p
+    def test_auxiliary_database_preserves_main_rule_and_binds_its_project(self):
+        p=self.dedicated();config=self.config();rules=hba(p,config)
+        self.assertEqual(rules,[hba(p)[0],'hostssl webdock_plugin_registry webdock_plugin_registry all scram-sha-256','host all all all reject'])
+        network=next(o for o in backend_manifests(p,config) if o['kind']=='NetworkPolicy' and o['metadata']['name']=='database-infrastructure')
+        projects=[x['namespaceSelector']['matchLabels']['webdock.dev/project-id'] for x in network['spec']['ingress'][0]['from']]
+        self.assertEqual(projects,['400','401'])
+        p['members'][0]['enabled']=False
+        self.assertNotIn('webdock_plugin_registry',' '.join(hba(p,config)))
+    def test_auxiliary_databases_are_operator_pinned_not_packet_controlled(self):
+        with self.assertRaises(ValueError):hba(packet(),self.config())
+        for field,value in [('name','postgres'),('name','webdock_bad all trust'),('roles',['all']),('projectID','evil')]:
+            config=self.config();config['platformAuxiliaryDatabases']['300'][0][field]=value
+            with self.subTest(field=field),self.assertRaises(ValueError):hba(self.dedicated(),config)
+        config=self.config();config['platformAuxiliaryDatabases']['300'][0]['command']='shell'
+        with self.assertRaises(ValueError):hba(self.dedicated(),config)
+    def test_auxiliary_data_blocks_unreviewed_parent_maintenance(self):
+        for action in ['pause','restart','resize','delete','purge','rotateCredentials']:
+            p=self.dedicated();p['action']=action
+            with self.subTest(action=action),patch('databases.configuration',return_value=self.config()),patch('databases.get') as get:
+                with self.assertRaisesRegex(ValueError,'offline maintenance'):execute_database(p,lambda **kwargs:None)
+                get.assert_not_called()
