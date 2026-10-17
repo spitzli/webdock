@@ -75,7 +75,8 @@
             "group": "Plugins",
             "pages": [
               "developers/plugins",
-              "developers/plugin-manifest"
+              "developers/plugin-manifest",
+              "developers/plugin-jobs"
             ]
           },
           {

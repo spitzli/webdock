@@ -5,7 +5,7 @@ description: "Discover the Webdock plugin registry, its manifest contract and th
 
 The [Webdock Registry](https://registry.webdock.dev) catalogs extensions for Webdock projects. Sign in with GitHub through the **Webdock Studio** GitHub App. Publishing requires repository access and operator approval; signing in does not install a plugin in Webdock.
 
-<Info>The registry, GitHub login, plugin kind and manifest contract are configured. Host installation, runtime isolation, capability services, UI integration and the developer CLI are still in development. The examples below describe the v1 contract, not a released installation workflow.</Info>
+<Info>The registry, GitHub login, plugin kind and manifest contract are configured. Host installation, runtime isolation, capability services, UI integration and the complete developer CLI are still in development. The examples below describe the v1 contract, not a released installation workflow.</Info>
 
 ## Plugin kind
 
@@ -46,7 +46,7 @@ Check the response's `ok` field: validation errors return HTTP 200 with `ok: fal
 
 The runtime contract fixes port **8080** and endpoints `/healthz`, `/readyz`, `/webdock/actions` and `/webdock/jobs`. Plugins declare capabilities and named bindings; they receive no platform database credentials or arbitrary Kubernetes/RBAC configuration.
 
-The host installer and `webdock plugin` CLI are not released yet. Do not assume registry publication automatically starts a workload or grants tenant access.
+The host installer is not released yet. A [backend jobs CLI and local BullMQ fixture](/developers/plugin-jobs) now implement create, validate, build and pack; remaining CLI commands are still in development. Do not assume registry publication automatically starts a workload or grants tenant access.
 
 ## Connect an MCP client
 

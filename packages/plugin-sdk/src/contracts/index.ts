@@ -4,3 +4,4 @@ export * from "./manifest.js";
 export * from "./lifecycle.js";
 export * from "./json-schema.js";
 export * from "./methods.js";
+export * from "./jobs.js";

@@ -7,6 +7,7 @@ export const capabilities = [
   "plugin.db.write",
   "plugin.cache.read",
   "plugin.cache.write",
+  "plugin.jobs.read",
   "plugin.jobs.enqueue",
   "plugin.jobs.cancel",
   "plugin.events.emit",
@@ -25,6 +26,7 @@ export const readCapabilities: readonly Capability[] = [
   "plugin.db.read",
   "plugin.cache.read",
   "plugin.storage.read",
+  "plugin.jobs.read",
   "plugin.secrets.read",
 ];
 export const serviceNames = [

@@ -2,6 +2,12 @@ import { validateClerkWorkerConfiguration } from "./modules/auth/clerk-configura
 import { validateWorkerModules } from "./installation";
 import { withDatabaseScope } from "@webdock/database-runtime";
 process.env.WEBDOCK_PROCESS_ROLE = "worker";
+import {
+  readJobQueueConfiguration,
+  startCoreJobWorkers,
+  type JobDomain,
+} from "@webdock/core/jobs";
+const jobQueueConfiguration = readJobQueueConfiguration();
 
 import { claim, complete, fail, renew, schedule, type JobName } from "./jobs";
 const selected = (process.env.WEBDOCK_WORKER_DOMAINS || "")
@@ -17,7 +23,9 @@ if (
 validateWorkerModules(selected);
 validateClerkWorkerConfiguration(selected);
 const { databasePools, workerDatabase } = await import("./db/runtime");
-await (await import('./modules/plugins/readiness')).verifyPluginStartup(workerDatabase);
+await (
+  await import("./modules/plugins/readiness")
+).verifyPluginStartup(workerDatabase);
 await (await import("./module-preflight")).verifyModuleShutdown();
 if (process.env.NODE_ENV === "production" || process.env.DATABASE_RLS_SECRET)
   await (
@@ -61,75 +69,80 @@ if (selected.includes("storage")) {
 const scheduler = <T>(run: () => T) =>
   withDatabaseScope({ kind: "system", purpose: "api-scheduler" }, run);
 let stopping = false;
-let wake: (() => void) | undefined;
+let stop!: () => void;
+const stopped = new Promise<void>((resolve) => {
+  stop = resolve;
+});
 for (const signal of ["SIGTERM", "SIGINT"] as const)
   process.once(signal, () => {
     stopping = true;
-    wake?.();
+    stop();
   });
-try {
-  while (!stopping) {
-    const now = Date.now();
-    for (const name of handlers.keys()) {
-      const interval =
-        name === "hosting.setup"
-          ? 10_000
-          : name === "storage.refresh" || name === "mail.maintenance"
-            ? 3_600_000
-            : 60_000;
-      const offset = name === "mail.maintenance" ? 17 * 60_000 : 0;
-      await scheduler(() =>
-        schedule(
-          workerDatabase,
-          name,
-          new Date(Math.floor((now - offset) / interval) * interval + offset),
-        ),
-      );
-    }
-    for (let n = 0; n < 25 && !stopping && handlers.size > 0; n++) {
-      const job = await scheduler(() =>
-        claim(workerDatabase, [...handlers.keys()]),
-      );
-      if (!job) break;
-      const handler = handlers.get(job.name);
-      // Ownership is per process domain; a mismatched deployment never executes it.
-      if (!handler) {
-        await scheduler(() => fail(workerDatabase, job));
-        break;
-      }
-      let leaseLost = false;
-      const heartbeat = setInterval(() => {
-        void scheduler(() => renew(workerDatabase, job))
-          .then((ok) => {
-            if (!ok) leaseLost = true;
-          })
-          .catch(() => {
-            leaseLost = true;
-          });
-      }, 20_000);
-      try {
-        await handler();
-        if (!leaseLost) await scheduler(() => complete(workerDatabase, job));
-      } catch {
-        if (!leaseLost) await scheduler(() => fail(workerDatabase, job));
-        console.error(
-          JSON.stringify({ event: "job_failed", id: job.id, name: job.name }),
-        );
-      } finally {
-        clearInterval(heartbeat);
-      }
-    }
-    if (billing && !stopping)
-      await billing.runBillingBatch(billingEnvironments, () => stopping);
-    if (!stopping)
-      await new Promise<void>((resolve) => {
-        const timer = setTimeout(resolve, 5000);
-        wake = () => {
-          clearTimeout(timer);
-          resolve();
-        };
-      });
+async function runDomain(domain: JobDomain) {
+  if (stopping) return;
+  if (domain === "billing") {
+    await billing!.runBillingBatch(billingEnvironments, () => stopping);
+    return;
   }
+  const owned = [...handlers.keys()].filter((name) =>
+    name.startsWith(domain + "."),
+  );
+  const now = Date.now();
+  for (const name of owned) {
+    const interval =
+      name === "hosting.setup"
+        ? 10_000
+        : name === "storage.refresh" || name === "mail.maintenance"
+          ? 3_600_000
+          : 60_000;
+    const offset = name === "mail.maintenance" ? 17 * 60_000 : 0;
+    await scheduler(() =>
+      schedule(
+        workerDatabase,
+        name,
+        new Date(Math.floor((now - offset) / interval) * interval + offset),
+      ),
+    );
+  }
+  for (let n = 0; n < 25 && !stopping; n++) {
+    const job = await scheduler(() => claim(workerDatabase, owned));
+    if (!job) break;
+    let leaseLost = false;
+    const heartbeat = setInterval(() => {
+      void scheduler(() => renew(workerDatabase, job)).then(
+        (ok) => {
+          if (!ok) leaseLost = true;
+        },
+        () => {
+          leaseLost = true;
+        },
+      );
+    }, 20_000);
+    try {
+      await handlers.get(job.name)!();
+      if (!leaseLost) await scheduler(() => complete(workerDatabase, job));
+    } catch {
+      if (!leaseLost) await scheduler(() => fail(workerDatabase, job));
+      console.error(
+        JSON.stringify({ event: "job_failed", id: job.id, name: job.name }),
+      );
+    } finally {
+      clearInterval(heartbeat);
+    }
+  }
+}
+let queues: Awaited<ReturnType<typeof startCoreJobWorkers>> | undefined;
+try {
+  queues = await startCoreJobWorkers({
+    ...jobQueueConfiguration,
+    handlers: Object.fromEntries(
+      selected.map((domain) => [domain, () => runDomain(domain as JobDomain)]),
+    ),
+    onError: (event) => console.error(JSON.stringify(event)),
+  });
+  await stopped;
 } finally {
+  stopping = true;
+  await queues?.close();
   await databasePools.close();
 }

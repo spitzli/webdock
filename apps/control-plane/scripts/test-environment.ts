@@ -24,6 +24,12 @@ export function testEnvironment(
       DATABASE_URL_UNPOOLED: source.API_TEST_DATABASE_URL,
     });
   }
+  if (source.WEBDOCK_JOBS_REDIS_URL) {
+    const redis = new URL(source.WEBDOCK_JOBS_REDIS_URL);
+    if (redis.protocol !== "redis:" || !["127.0.0.1", "localhost"].includes(redis.hostname) || redis.search || redis.hash)
+      throw Error("Use a loopback Redis test fixture");
+    env.WEBDOCK_JOBS_REDIS_URL = redis.href;
+  }
   return env;
 }
 

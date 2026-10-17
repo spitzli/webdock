@@ -56,6 +56,8 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
           BETTER_AUTH_URL: "http://localhost:3125",
           AUTH_TEST_MAIL: "true",
           WEBDOCK_WORKER_DOMAINS: "storage",
+          WEBDOCK_JOBS_REDIS_URL: process.env.WEBDOCK_JOBS_REDIS_URL,
+          WEBDOCK_JOBS_PREFIX: "worker-profile-" + Date.now(),
         },
         stdout: "pipe",
         stderr: "pipe",

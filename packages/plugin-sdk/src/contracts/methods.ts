@@ -30,6 +30,7 @@ export const hostMethodCatalog = {
     capability: "plugin.cache.write",
     intent: "write",
   },
+  "jobs.get": { version: 1, capability: "plugin.jobs.read", intent: "read" },
   "jobs.enqueue": {
     version: 1,
     capability: "plugin.jobs.enqueue",

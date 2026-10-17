@@ -35,12 +35,27 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+  jobs-redis:
+    image: redis:7.4-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+    profiles: [workers]
+    restart: unless-stopped
+    command: [redis-server, --appendonly, "yes", --maxmemory-policy, noeviction]
+    volumes: [jobs-redis:/data]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 10
   worker:
     <<: *runtime
     profiles: [workers]
     image: ${WEBDOCK_WORKER_IMAGE:?Set immutable worker image}
+    depends_on:
+      jobs-redis: {condition: service_healthy}
     env_file: [./worker.env]
     environment:
+      WEBDOCK_JOBS_REDIS_URL: redis://jobs-redis:6379/0
+      WEBDOCK_JOBS_PREFIX: webdock
       WEBDOCK_MODULES: ${WEBDOCK_MODULES:?Set reviewed module configuration}
   migrate:
     <<: *runtime
@@ -49,3 +64,6 @@ services:
     profiles: [migration]
     env_file: [./migrator.env]
     command: ['${WEBDOCK_MIGRATION_TARGET:?Set exact host:port/database}']
+
+volumes:
+  jobs-redis:

@@ -200,5 +200,5 @@
     "requestsEnabled": true
   },
   "kindSchemaSource": "tools/plugins/tabularium-kind.schema.json",
-  "kindSchemaSHA256": "885103b53946cf385b51cf6891e95b3d62f018a016e9b77074ad46f3d505acc3"
+  "kindSchemaSHA256": "5aeaa35671de0905c60db0d294b499bb8959d95bc7294e25c79780969d8ce6f0"
 }

@@ -6,7 +6,9 @@
   "exports": {
     "./identity": "./src/identity.ts",
     "./auth-configuration": "./src/auth-configuration.ts",
-    "./registry/*": "./src/registry/*.ts"
+    "./registry/*": "./src/registry/*.ts",
+    "./jobs": "./src/jobs.ts",
+    "./plugin-jobs": "./src/plugin-jobs.ts"
   },
   "devDependencies": {
     "@types/pg": "^8"
@@ -14,6 +16,9 @@
   "dependencies": {
     "@webdock/platform-db": "*",
     "drizzle-orm": "1.0.0-rc.4",
-    "zod": "4.6.5"
+    "zod": "4.6.5",
+    "bullmq": "6.3.16",
+    "ioredis": "6.0.0",
+    "@webdock/plugin-sdk": "*"
   }
 }

@@ -31,7 +31,8 @@
     "test:api": "npm run test -w @webdock/api",
     "build:api": "npm run build -w @webdock/api",
     "test:modules": "node tools/tests/modules.mjs",
-    "test:distribution": "node --test tools/release/manifest.test.mjs && python3 tools/release/check-charts.py"
+    "test:distribution": "node --test tools/release/manifest.test.mjs && python3 tools/release/check-charts.py",
+    "test:plugin-jobs": "node tools/plugins/test-jobs.mjs"
   },
   "overrides": {
     "nodemailer": "10.0.13",
