@@ -75,7 +75,6 @@ export function readConfig(env: Record<string, string | undefined>): ApiConfig {
           "cms",
           "integrations",
           "mcp",
-          "billing",
         ].includes(domain),
     )
   )

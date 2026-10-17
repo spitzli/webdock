@@ -1,3 +1,5 @@
+import { createCmsRegistryExtension } from "@webdock/module-cms/server/registry";
+import { installationRegistry } from "../../installation";
 import {
   createRegistry,
   RegistryError,
@@ -5,7 +7,12 @@ import {
 } from "./service";
 const actors = new WeakMap<Request, RegistryIdentity>();
 let registry: ReturnType<typeof createRegistry> | undefined;
-export const registryService = () => (registry ??= createRegistry());
+export const registryService = () =>
+  (registry ??= createRegistry(
+    createCmsRegistryExtension((product, intent) =>
+      installationRegistry().require(product, intent),
+    ),
+  ));
 export const closeRegistry = async () => {
   if (registry) await (await registry).close();
   registry = undefined;

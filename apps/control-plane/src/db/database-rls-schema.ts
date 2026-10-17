@@ -17,7 +17,7 @@ import {
   clerkProjectionSQL,
 } from "./clerk-rls";
 import { setupHelperSQL, setupPolicyFor } from "./database-setup-rls";
-import { billingTables, billingPolicy } from "../modules/billing/rls";
+import { billingTables, billingPolicy } from "./retained-billing-rls";
 import { createHash } from "node:crypto";
 import { tenantProfileColumns } from "../modules/access/tenant-schema";
 /** Offline-only, catalog-driven RLS installation. Never invoke from a request. */

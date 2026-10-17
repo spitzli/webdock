@@ -6,13 +6,12 @@ import { hostingManifest } from "@webdock/module-hosting/manifest";
 import { databasesManifest } from "@webdock/module-databases/manifest";
 import { cmsManifest } from "@webdock/module-cms/manifest";
 import { storageManifest } from "@webdock/module-storage/manifest";
-import { billingManifest } from "@webdock/module-billing/manifest";
 import { createRegistry, type ModuleView } from "@webdock/module-sdk";
 import {
   mailManifest,
   isMailProvisioning,
 } from "@webdock/module-mail/manifest";
-export const builtinManifests = [mailManifest,hostingManifest,databasesManifest,cmsManifest,storageManifest,billingManifest];
+export const builtinManifests = [mailManifest,hostingManifest,databasesManifest,cmsManifest,storageManifest];
 export function installationRegistry(
   env: Record<string, string | undefined> = process.env,
 ) {
@@ -70,7 +69,6 @@ export function publicInstallation(
       databases: "databases",
       cms: "cms",
       storage: "portal",
-      billing: "billing",
     })) {
       if (!domains.includes(domain)) {
         view.modules[module] = "disabled";
@@ -108,11 +106,5 @@ export function moduleForRequest(path: string) {
   if (/^\/api\/databases(?:\/|$)/.test(path)) return "databases";
   if (/^\/api\/(?:hosting|github|vercel)(?:\/|$)/.test(path)) return "hosting";
   if (/^\/api\/cms(?:\/|$)/.test(path)) return "cms";
-  if (
-    /^\/(?:api\/billing|v1\/(?:tenant|operator)\/billing|api\/webhooks?\/polar|webhooks\/polar|checkout)(?:\/|$)/.test(
-      path,
-    )
-  )
-    return "billing";
   return undefined;
 }

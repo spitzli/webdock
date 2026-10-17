@@ -53,7 +53,7 @@ test("installation configuration fails closed and ownership restricts the public
     publicInstallation({ WEBDOCK_API_DOMAINS: "auth,portal" }).modules.mail,
   ).toBe("disabled");
   expect(
-    publicInstallation({ WEBDOCK_API_DOMAINS: "auth,portal,mail" }).modules
+    publicInstallation({ WEBDOCK_API_DOMAINS: "auth,portal,mail", WEBDOCK_MODULES: JSON.stringify({configVersion: 1, modules: {mail: {enabled: true}}}) }).modules
       .mail,
   ).toBe("enabled");
 });
@@ -91,7 +91,7 @@ test("MCP omits disabled Mail tools and rejects calls from an already-created to
     await import("../src/modules/mcp/hosting-mcp");
   const previous = process.env.WEBDOCK_MODULES;
   try {
-    delete process.env.WEBDOCK_MODULES;
+    process.env.WEBDOCK_MODULES = JSON.stringify({configVersion: 1, modules: {mail: {enabled: true}, hosting: {enabled: true}}});
     const callbacks = new Map<string, Function>();
     let called = false;
     const server = {
@@ -125,7 +125,8 @@ test("MCP omits disabled Mail tools and rejects calls from an already-created to
 test("all product defaults, omitted modules, unknown IDs and worker ownership are strict", () => {
   expect(
     Object.keys(installationRegistry({}).publicView().modules).sort(),
-  ).toEqual(["billing", "cms", "databases", "hosting", "mail", "storage"]);
+  ).toEqual(["cms", "databases", "hosting", "mail", "storage"]);
+  expect(Object.values(installationRegistry({}).publicView().modules).every(state => state === "disabled")).toBe(true);
   const env = {
     WEBDOCK_MODULES: JSON.stringify({
       configVersion: 1,
@@ -157,11 +158,6 @@ test("disabled products reject direct requests before any mounted handler", asyn
     "/api/hosting/bridge",
     "/api/databases/gateway",
     "/api/cms/content",
-    "/v1/tenant/billing/checkout",
-    "/v1/operator/billing/products",
-    "/api/webhook/polar",
-    "/webhooks/polar/sandbox",
-    "/checkout",
   ]) {
     const response = await app.handle(new Request(config.apiOrigin + path));
     expect(response.status).toBe(404);
@@ -226,4 +222,9 @@ test("database MCP tools are independent from customer Hosting and retain call-t
     if (previous === undefined) delete process.env.WEBDOCK_MODULES;
     else process.env.WEBDOCK_MODULES = previous;
   }
+});
+
+test("removed billing configuration and worker ownership are rejected", () => {
+ expect(() => installationRegistry({WEBDOCK_MODULES: JSON.stringify({configVersion: 1, modules: {billing: {enabled: true}}})})).toThrow();
+ expect(() => validateWorkerModules(["billing"], {})).toThrow("disabled");
 });

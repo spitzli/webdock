@@ -11,7 +11,7 @@ test(
     const prefix = "core-test-" + randomUUID();
     const connection = { host: "127.0.0.1", port };
     let hosting = 0,
-      storage = 0;
+      notes = 0;
     const errors: unknown[] = [];
     const first = await startCoreJobWorkers({
       prefix,
@@ -29,17 +29,17 @@ test(
       connection,
       intervalMs: 200,
       handlers: {
-        storage: async () => {
-          storage++;
+        "project-notes": async () => {
+          notes++;
         },
       },
       onError: (e) => errors.push(e),
     });
     const inspect = new Queue("core-hosting", { prefix, connection });
     try {
-      for (let i = 0; i < 50 && (hosting === 0 || storage === 0); i++)
+      for (let i = 0; i < 50 && (hosting === 0 || notes === 0); i++)
         await new Promise((r) => setTimeout(r, 50));
-      assert.ok(hosting > 0 && storage > 0);
+      assert.ok(hosting > 0 && notes > 0);
       assert.equal((await inspect.getJobSchedulers()).length, 1);
       await first.close();
       const count = hosting;

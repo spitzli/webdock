@@ -26,68 +26,25 @@ import {
 } from "../auth/clerk-provider";
 import { ConsoleAuthError } from "../auth/clerk-identity";
 import { introspectToken } from "../auth/introspection";
-import {
-  billingJobs,
-  retryReadJob,
-  enqueueCustomerRead,
-} from "../billing/operations";
-import { releaseToManual, operatorCustomerBilling } from "../billing/manual";
-import {
-  quoteSubscriptionChange,
-  changeSubscription,
-  resumeSubscriptionChange,
-} from "../billing/subscriptions";
-import { quotePurchase, createCheckout } from "../billing/checkout";
-import { tenantBilling, resumeCheckout } from "../billing/view";
-import { createCustomerPortal } from "../billing/portal";
-import {
-  enableSandboxCustomer,
-  createOffer,
-  revokeOffer,
-  getBillingOffer,
-} from "../billing/offers";
 import { ZodError } from "zod";
-import {
-  setProductAvailability,
-  createProductVersion,
-  listProducts,
-  publishProduct,
-} from "../billing/catalog";
-import { setupEndpoint } from "../billing/endpoints";
-import { BillingError } from "../billing/types";
-import { billingActor } from "../billing/context";
-import {
-  connectionStatus,
-  saveConnection,
-  updateSwitches,
-} from "../billing/connection";
 import {
   previewProjectDeletion,
   deleteProject,
 } from "../lifecycle/project-deletion";
-import { vercelView, linkVercelProject } from "../integrations/vercel/view";
-import { projectVercelStatus } from "../integrations/vercel/vercel-project";
 import { currentRegistryActor } from "../integrations/operator";
-import { githubView } from "../integrations/github/view";
-import { hostingCall } from "./hosting";
 import { HostingError } from "@webdock/hosting-contracts";
 import { registryService } from "../registry/context";
 import { RegistryError } from "../registry/service";
 import { currentDatabaseScope } from "@webdock/database-runtime";
-import { cmsShapes, dispatchCMS } from "../cms-bridge/dispatch";
-import { CMSBridgeError } from "../cms-bridge/errors";
+import { cmsShapes } from "@webdock/module-cms/server/dispatch-shapes";
+import {mailOperationShapes} from "../mail/studio-shapes";
+import {loadProductOperation, type ProductOperation} from "./product-operation";
 import { withNativeHeaders } from "./request-context";
 import {
   getConnections,
   registerConnection,
   disableConnection,
 } from "../auth/connections";
-import { mailStudioShapes, dispatchMailStudio } from "../mail/product/studio";
-import { MailError } from "../mail/product/access";
-import { MailValidationError } from "@webdock/mail-contracts/validation";
-import { getNativeSending, manageNativeSending } from "../mail/mail-sending";
-import { getTenantMailboxes, manageTenantMailboxes } from "../mail/mailboxes";
-import { launchTenantWebmail } from "../mail/mail-sessions";
 // Server-only delegation boundary: native cookies never leave this module.
 import { APIError, serializeSignedCookie } from "better-call";
 import { auth } from "../auth/auth";
@@ -121,44 +78,9 @@ import {
   acceptOffer,
 } from "../plans/plans";
 import {
-  TenantMailError,
-  getTenantMail,
-  manageTenantMail,
-} from "../mail/tenant-mail";
-import {
-  MailServiceError,
-  getTenantMailService,
-  manageTenantMailService,
-} from "../mail/mail-service";
-import {
-  MailDomainsError,
-  getTenantSenderDomains,
-  manageTenantSenderDomain,
-} from "../mail/mail-domains";
-import {
-  MailKeysError,
-  getTenantMailKeys,
-  manageTenantMailKeys,
-  type MailKeyInput,
-} from "../mail/mail-keys";
-import {
-  TrackingError,
-  getTenantTracking,
-  manageTenantTracking,
-} from "../mail/mail-tracking";
-import {
-  StorageUsageError,
-  getTenantStorage,
-  manageTenantStorage,
-} from "../platform/storage-usage";
-import {
   PlatformError,
   getPlatformSettings,
-  getMailConnectionStatus,
   savePlatformSettings,
-  saveMailCredentials,
-  clearMailCredentials,
-  testMailConnection,
 } from "../platform/platform";
 
 const bodyLimit = 128 * 1024;
@@ -187,19 +109,10 @@ const isInput = (value: unknown): value is Record<string, string> =>
   isObject(value) &&
   Object.keys(value).length <= 100 &&
   Object.values(value).every(isString);
-const isMailKeyInput = (value: unknown): value is MailKeyInput =>
-  isObject(value) &&
-  isString(value.action) &&
-  Object.entries(value).every(([key, field]) =>
-    ["permissions", "ips"].includes(key)
-      ? Array.isArray(field) && field.length <= 100 && field.every(isString)
-      : ["action", "label", "consumerKey", "confirm"].includes(key) &&
-        isString(field),
-  );
 const shapes: Record<string, ((value: unknown) => boolean)[]> = {
   "plugins.list": [isString],
   "plugins.invoke": [isObject],
-  ...mailStudioShapes,
+  ...mailOperationShapes,
   ...cmsShapes,
   "project.preview": [isString],
   "project.delete": [isString, isObject],
@@ -209,32 +122,6 @@ const shapes: Record<string, ((value: unknown) => boolean)[]> = {
   "integrations.projectStatus": [isString],
   "hosting.command": [isObject],
   "database.command": [isObject],
-  "billing.changeQuote": [isObject],
-  "billing.change": [isObject],
-  "billing.resumeChange": [isObject],
-  "billing.tenant": [isObject],
-  "billing.quote": [isObject],
-  "billing.checkout": [isObject],
-  "billing.resume": [isObject],
-  "billing.portal": [isObject],
-  "billing.offer": [isString],
-  "billing.createOffer": [isObject],
-  "billing.revokeOffer": [isString],
-  "billing.enableSandbox": [isString],
-  "billing.refreshCustomer": [isObject],
-  "billing.jobs": [isString],
-  "billing.retryReadJob": [isString],
-  "billing.manualRelease": [isObject],
-  "billing.operatorCustomer": [isObject],
-  "billing.availability": [isObject],
-  "billing.products": [isString],
-  "billing.createVersion": [isObject],
-  "billing.publish": [isObject],
-  "billing.archive": [isObject],
-  "billing.endpoint": [isObject],
-  "billing.connection": [isString],
-  "billing.saveConnection": [isObject],
-  "billing.switches": [isObject],
   "registry.session": [],
   "registry.query": [isString, isObject],
   "registry.customer": [(value) => value === null || isString(value), isObject],
@@ -268,35 +155,10 @@ const shapes: Record<string, ((value: unknown) => boolean)[]> = {
   managePlans: [isInput],
   getOffer: [isString],
   acceptOffer: [isString],
-  getTenantMail: [isString],
-  manageTenantMail: [isString, isInput],
-  getTenantMailboxes: [isString],
-  manageTenantMailboxes: [isString, isInput],
-  launchTenantWebmail: [isString, isString],
-  getNativeSending: [isString],
-  manageNativeSending: [isString, isInput],
-  getTenantMailService: [isString],
-  manageTenantMailService: [isString, isInput],
-  getTenantSenderDomains: [isString],
-  manageTenantSenderDomain: [
-    isString,
-    (value) =>
-      isInput(value) &&
-      ["register", "refresh", "unregister"].includes(value.action) &&
-      isString(value.domainID),
-  ],
-  getTenantMailKeys: [isString],
-  manageTenantMailKeys: [isString, isMailKeyInput],
-  getTenantTracking: [isString],
-  manageTenantTracking: [isString, isInput],
   getTenantStorage: [isString],
   manageTenantStorage: [isString, isInput],
   getPlatformSettings: [],
-  getMailConnectionStatus: [],
   savePlatformSettings: [isInput],
-  saveMailCredentials: [isString, isString],
-  clearMailCredentials: [],
-  testMailConnection: [],
 };
 
 async function readBody(request: Request, native = false) {
@@ -487,38 +349,15 @@ async function dispatch(
   safe:
     | Awaited<ReturnType<typeof delegatedSession>>["safe"]
     | Awaited<ReturnType<typeof clerkBrowserSession>>["safe"],
+  product?: ProductOperation,
 ) {
+  if (product) return product.dispatch(operation,args,headers,safe.user.id);
   // Shape checks happen before dispatch; every original service still checks live permissions.
   const text = args[0] as string,
     input = args[0] as Record<string, string>,
     tenantInput = args[1] as Record<string, string>;
   if (operation === "plugins.list") return listRuntimePlugins(args[0] as string);
   if (operation === "plugins.invoke") return invokeRuntimePlugin(args[0]);
-  if (operation === "billing.changeQuote")
-    return quoteSubscriptionChange(billingActor(), args[0]);
-  if (operation === "billing.change")
-    return changeSubscription(billingActor(), args[0]);
-  if (operation === "billing.resumeChange")
-    return resumeSubscriptionChange(billingActor(), args[0]);
-  if (operation === "billing.tenant")
-    return tenantBilling(billingActor(), args[0]);
-  if (operation === "billing.quote")
-    return quotePurchase(billingActor(), args[0]);
-  if (operation === "billing.checkout")
-    return createCheckout(billingActor(), args[0]);
-  if (operation === "billing.resume")
-    return resumeCheckout(billingActor(), args[0]);
-  if (operation === "billing.portal")
-    return createCustomerPortal(billingActor(), args[0]);
-  if (operation === "billing.offer")
-    return getBillingOffer(billingActor(), args[0]);
-  if (operation === "hosting.command" || operation === "database.command")
-    return hostingCall(
-      args[0],
-      operation === "hosting.command" ? "hosting" : "database",
-    );
-  if (Object.hasOwn(mailStudioShapes, operation))
-    return dispatchMailStudio(operation, args, headers);
   switch (operation) {
     case "session":
       return safe;
@@ -549,83 +388,10 @@ async function dispatch(
       return getOffer(headers, text);
     case "acceptOffer":
       return acceptOffer(headers, text);
-    case "getTenantMail":
-      return getTenantMail(headers, text);
-    case "getTenantMailboxes":
-      return getTenantMailboxes(headers, text);
-    case "launchTenantWebmail":
-      return launchTenantWebmail(headers, text, args[1] as string);
-    case "manageTenantMailboxes":
-      return manageTenantMailboxes(headers, text, tenantInput);
-    case "getNativeSending":
-      return getNativeSending(headers, text);
-    case "manageNativeSending":
-      return manageNativeSending(headers, text, tenantInput);
-    case "getTenantMailService":
-      return getTenantMailService(headers, text);
-    case "manageTenantMailService":
-      return manageTenantMailService(headers, text, tenantInput);
-    case "manageTenantMail":
-      return manageTenantMail(headers, text, tenantInput);
-    case "getTenantSenderDomains":
-      return getTenantSenderDomains(headers, text);
-    case "manageTenantSenderDomain":
-      return manageTenantSenderDomain(
-        headers,
-        text,
-        args[1] as Parameters<typeof manageTenantSenderDomain>[2],
-      );
-    case "getTenantMailKeys":
-      return getTenantMailKeys(headers, text);
-    case "manageTenantMailKeys":
-      return manageTenantMailKeys(headers, text, args[1] as MailKeyInput);
-    case "getTenantTracking":
-      return getTenantTracking(headers, text);
-    case "manageTenantTracking":
-      return manageTenantTracking(headers, text, tenantInput);
-    case "getTenantStorage":
-      return getTenantStorage(headers, text);
-    case "manageTenantStorage":
-      return manageTenantStorage(headers, text, tenantInput);
+
   }
   // Even platform reads and connection tests require current root authorization.
   await requireAccessOperator(headers);
-  if (operation === "billing.createOffer")
-    return createOffer(billingActor(), args[0]);
-  if (operation === "billing.revokeOffer")
-    return revokeOffer(billingActor(), args[0]);
-  if (operation === "billing.enableSandbox")
-    return enableSandboxCustomer(billingActor(), args[0]);
-  if (operation === "billing.refreshCustomer")
-    return enqueueCustomerRead(billingActor(), args[0]);
-  if (operation === "billing.jobs") return billingJobs(billingActor(), args[0]);
-  if (operation === "billing.retryReadJob")
-    return retryReadJob(billingActor(), args[0]);
-  if (operation === "billing.manualRelease")
-    return releaseToManual(billingActor(), args[0]);
-  if (operation === "billing.operatorCustomer")
-    return operatorCustomerBilling(billingActor(), args[0]);
-  if (operation === "billing.availability")
-    return setProductAvailability(billingActor(), args[0]);
-  if (operation === "billing.products")
-    return listProducts(billingActor(), text as "sandbox" | "live");
-  if (operation === "billing.createVersion")
-    return createProductVersion(billingActor(), args[0]);
-  if (operation === "billing.archive")
-    return (await import("../billing/catalog")).archiveProduct(
-      billingActor(),
-      args[0],
-    );
-  if (operation === "billing.publish")
-    return publishProduct(billingActor(), args[0]);
-  if (operation === "billing.endpoint")
-    return setupEndpoint(billingActor(), args[0]);
-  if (operation === "billing.connection")
-    return connectionStatus(billingActor(), text as "sandbox" | "live");
-  if (operation === "billing.saveConnection")
-    return saveConnection(billingActor(), args[0]);
-  if (operation === "billing.switches")
-    return updateSwitches(billingActor(), args[0]);
   if (operation.startsWith("registry.")) {
     const scope = currentDatabaseScope();
     if (scope?.kind !== "session")
@@ -663,14 +429,6 @@ async function dispatch(
       return previewProjectDeletion(await currentRegistryActor(), text);
     case "project.delete":
       return deleteProject(await currentRegistryActor(), text, args[1]);
-    case "integrations.vercel":
-      return vercelView(text);
-    case "integrations.linkVercel":
-      return linkVercelProject(input);
-    case "integrations.projectStatus":
-      return projectVercelStatus(await currentRegistryActor(), text);
-    case "integrations.github":
-      return githubView(input);
     case "getConnections":
       return getConnections(headers);
     case "registerConnection":
@@ -679,16 +437,8 @@ async function dispatch(
       return disableConnection(headers, text);
     case "getPlatformSettings":
       return getPlatformSettings();
-    case "getMailConnectionStatus":
-      return getMailConnectionStatus();
     case "savePlatformSettings":
       return savePlatformSettings(safe.user.id, input);
-    case "saveMailCredentials":
-      return saveMailCredentials(safe.user.id, text, args[1] as string);
-    case "clearMailCredentials":
-      return clearMailCredentials(safe.user.id);
-    case "testMailConnection":
-      return testMailConnection();
     default:
       invalid();
   }
@@ -777,6 +527,7 @@ async function handleRequest(
   clerk = false,
 ): Promise<Response> {
   const responseHeaders = { "Cache-Control": "no-store", Pragma: "no-cache" };
+  let product: ProductOperation | undefined;
   try {
     if (
       native &&
@@ -801,6 +552,7 @@ async function handleRequest(
       if (!process.env.WEBDOCK_API_DOMAINS.split(",").includes(domain))
         fail(503, "This service is temporarily unavailable.");
     }
+    product = await loadProductOperation(operation,args);
     const memberships = currentConsolePrincipal()
       ? undefined
       : await legacyClerkMemberships(actor.userID);
@@ -824,7 +576,7 @@ async function handleRequest(
             if (Object.hasOwn(cmsShapes, operation))
               data = await withNativeHeaders(
                 headers,
-                () => dispatchCMS(operation, args),
+                () => product!.dispatch(operation, args, headers, safe.user.id),
                 dependencies.browserHeaders || request.headers,
                 accessToken,
               );
@@ -834,7 +586,7 @@ async function handleRequest(
             )
               data = await withNativeHeaders(
                 headers,
-                () => dispatch(operation, args, headers, safe),
+                () => dispatch(operation, args, headers, safe, product),
                 dependencies.browserHeaders || request.headers,
                 accessToken,
               );
@@ -875,7 +627,7 @@ async function handleRequest(
             else
               data = await withNativeHeaders(
                 headers,
-                () => dispatch(operation, args, headers, safe),
+                () => dispatch(operation, args, headers, safe, product),
                 dependencies.browserHeaders || request.headers,
                 accessToken,
               );
@@ -895,6 +647,8 @@ async function handleRequest(
         ),
     );
   } catch (error) {
+    const publicError = product?.publicError(error);
+    if (publicError) return Response.json({error:{kind:publicError.kind,message:publicError.message}},{status:publicError.status,headers:responseHeaders});
     if (error instanceof ClerkSessionUnavailable)
       return Response.json(
         {
@@ -932,11 +686,6 @@ async function handleRequest(
         },
         { status: 400, headers: responseHeaders },
       );
-    if (error instanceof BillingError)
-      return Response.json(
-        { error: { kind: "BillingError", message: error.message } },
-        { status: error.status, headers: responseHeaders },
-      );
     if (error instanceof HostingError)
       return Response.json(
         { error: { kind: "HostingError", message: error.message } },
@@ -948,34 +697,10 @@ async function handleRequest(
         { error: { kind: "RegistryError", message: error.message } },
         { status: error.status, headers: responseHeaders },
       );
-    if (error instanceof CMSBridgeError)
-      return Response.json(
-        {
-          error: {
-            kind: "CMSBridgeError",
-            message: error.message.slice(0, 300),
-          },
-        },
-        { status: 400, headers: responseHeaders },
-      );
-    if (error instanceof MailError || error instanceof MailValidationError)
-      return Response.json(
-        { error: { kind: "MailProductError", message: error.message } },
-        {
-          status: error instanceof MailError ? error.status : 422,
-          headers: responseHeaders,
-        },
-      );
     const known = (
       [
         ["AccessError", AccessError],
         ["PlanError", PlanError],
-        ["TenantMailError", TenantMailError],
-        ["MailServiceError", MailServiceError],
-        ["MailDomainsError", MailDomainsError],
-        ["MailKeysError", MailKeysError],
-        ["TrackingError", TrackingError],
-        ["StorageUsageError", StorageUsageError],
         ["PlatformError", PlatformError],
       ] as const
     ).find(([, type]) => error instanceof type);

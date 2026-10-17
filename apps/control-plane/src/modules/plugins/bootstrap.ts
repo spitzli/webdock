@@ -25,7 +25,7 @@ export async function initializePluginState(
       throw Error("Fresh installation requires an explicit module selection");
     const registry = installationRegistry(
       selection === undefined
-        ? {}
+        ? { WEBDOCK_MODULES: JSON.stringify({configVersion: 1, modules: Object.fromEntries(builtinManifests.map(({id}) => [id, {enabled: true}]))}) }
         : { WEBDOCK_MODULES: JSON.stringify(selection) },
     );
     const modules = registry.publicView().modules;

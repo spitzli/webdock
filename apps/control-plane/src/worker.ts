@@ -15,7 +15,7 @@ const selected = (process.env.WEBDOCK_WORKER_DOMAINS || "")
   .filter(Boolean);
 if (
   selected.some(
-    (name) => !["mail", "storage", "billing", "hosting"].includes(name),
+    (name) => !["mail", "storage", "hosting"].includes(name),
   ) ||
   !selected.length
 )
@@ -31,14 +31,6 @@ if (process.env.NODE_ENV === "production" || process.env.DATABASE_RLS_SECRET)
   await (
     await import("./db/readiness")
   ).verifyWorkerReadiness(workerDatabase, selected);
-const billing = selected.includes("billing")
-  ? await import("./modules/billing/worker")
-  : null;
-const billingEnvironments = billing
-  ? billing.billingWorkerEnvironments(
-      process.env.WEBDOCK_BILLING_WORKER_ENVIRONMENTS,
-    )
-  : [];
 const handlers = new Map<JobName, () => Promise<void>>();
 if (selected.includes("mail")) {
   const { runMailJob, mailJobs } = await import("./modules/mail/product/jobs");
@@ -80,10 +72,6 @@ for (const signal of ["SIGTERM", "SIGINT"] as const)
   });
 async function runDomain(domain: JobDomain) {
   if (stopping) return;
-  if (domain === "billing") {
-    await billing!.runBillingBatch(billingEnvironments, () => stopping);
-    return;
-  }
   const owned = [...handlers.keys()].filter((name) =>
     name.startsWith(domain + "."),
   );

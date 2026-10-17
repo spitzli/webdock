@@ -13,7 +13,6 @@ test("direct routes for all products fail closed independently from core registr
     "/tenants/12/databases",
     "/tenants/12/managed-databases",
     "/sites/12/shop",
-    "/tenants/12/billing",
     "/tenants/12/storage",
   ])
     assert.equal(

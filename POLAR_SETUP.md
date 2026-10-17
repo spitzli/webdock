@@ -1,3 +1,5 @@
+> Historical setup record. Billing and the Polar integration were removed from active composition on 2026-10-17; the instructions below no longer configure a supported feature. Retained database data is unchanged.
+
 # Polar production setup
 
 Organization: **spitzli**, ID `900da77a-d11a-4230-873b-e93fbb89b377`.

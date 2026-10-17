@@ -2,7 +2,7 @@ import type { Pool } from "pg";
 import type {
   ClerkMappings,
   ExternalIdentity,
-} from "@webdock/adapter-auth-clerk";
+} from "@webdock/auth-clerk";
 import type { DatabaseReader } from "@webdock/core/identity";
 
 export function createClerkMappings(database: DatabaseReader): ClerkMappings {

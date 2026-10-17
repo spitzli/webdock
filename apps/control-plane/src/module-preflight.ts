@@ -1,3 +1,4 @@
+import { assertModuleCanDisable } from "./module-preflight-check";
 import { withDatabaseScope } from "@webdock/database-runtime";
 import { assertMailCanDisable } from "@webdock/module-mail/server/lifecycle";
 import { modulePreflightChecks } from "./db/module-preflight-tables";
@@ -23,25 +24,7 @@ export async function verifyModuleShutdown(
     await withDatabaseScope(
       { kind: "system", purpose: "installation-preflight" },
       async () => {
-        for (const [table, predicate] of checks) {
-          const [schema, name] = table.split(".");
-          // A missing rollout of the SELECT policy must never masquerade as an empty installation.
-          const policy = await workerDatabase.query<{ present: boolean }>(
-            "SELECT EXISTS(SELECT 1 FROM pg_policies WHERE schemaname=$1 AND tablename=$2 AND cmd='SELECT' AND 'webdock_worker_runtime'=ANY(roles) AND qual LIKE '%installation-preflight%') AS present",
-            [schema, name],
-          );
-          if (policy.rows[0]?.present !== true)
-            throw Error(
-              `Module ${module} shutdown requires the installation preflight RLS migration`,
-            );
-          const result = await workerDatabase.query<{ retained: boolean }>(
-            `SELECT EXISTS(SELECT 1 FROM ${table} WHERE ${predicate}) AS retained`,
-          );
-          if (result.rows[0]?.retained !== false)
-            throw Error(
-              `Module ${module} retains resources or operations; drain and resolve them before disabling`,
-            );
-        }
+        await assertModuleCanDisable(workerDatabase, module, checks);
       },
     );
   }

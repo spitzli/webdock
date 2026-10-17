@@ -84,7 +84,7 @@ export function createRegistry(
     const value =
       selection && Object.hasOwn(selection, id) ? selection[id] : undefined;
     if (value === undefined) {
-      states[id] = selection ? "disabled" : "enabled";
+      states[id] = "disabled";
       continue;
     }
     if (!object(value) || Object.keys(value).length !== 1) configurationError();

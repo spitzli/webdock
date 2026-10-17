@@ -1,6 +1,6 @@
 # Selectable browser authentication
 
-The browser provider is an installation choice, parsed by `@webdock/core/auth-configuration` from `WEBDOCK_AUTH_PROVIDER`. Absence preserves Better Auth. A configured object with issuer, authorized parties and audience defaults to Clerk when provider is omitted; explicit Clerk configuration selects exactly one browser entrypoint and requires an issuer, authorized-party list and audience. New installation manifests should select Clerk explicitly. This change does not switch existing deployments or enroll their accounts.
+The browser provider is an installation choice, parsed by `@webdock/auth-configuration` from `WEBDOCK_AUTH_PROVIDER`. Absence preserves Better Auth. A configured object with issuer, authorized parties and audience defaults to Clerk when provider is omitted; explicit Clerk configuration selects exactly one browser entrypoint and requires an issuer, authorized-party list and audience. New installation manifests should select Clerk explicitly. This change does not switch existing deployments or enroll their accounts.
 
 ## Trust boundaries
 

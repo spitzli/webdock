@@ -192,8 +192,6 @@ export const getConsoleContext = cache(async (route: string) => {
   const summary = tenants.find((item) => item.id === customerID);
   const tenant = summary ? {
     tenant: summary,
-    canManageBilling: !session.preview && summary.status === "active" &&
-      (session.operator || (summary.capabilities ? summary.capabilities.manageBilling : ["owner", "admin"].includes(summary.role ?? ""))),
     // Navigation only; every page and mutation still enforces its own live access.
     canManage: !session.preview && summary.status === "active" &&
       (session.operator || ["owner", "admin"].includes(summary.role ?? "")),

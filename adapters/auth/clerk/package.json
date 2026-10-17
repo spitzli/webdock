@@ -1,1 +1,0 @@
-{"name":"@webdock/adapter-auth-clerk","version":"0.1.0","private":true,"type":"module","exports":{".":"./src/index.ts","./sdk":"./src/sdk.ts"},"dependencies":{"@clerk/backend":"3.24.0","@webdock/core":"*"}}

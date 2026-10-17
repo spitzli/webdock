@@ -1,16 +1,14 @@
 import {
-  createBetterAuthAuthenticator,
   betterAuthIdentity,
-} from "@webdock/adapter-auth-better-auth";
-import { readAuthProviderConfiguration } from "@webdock/core/auth-configuration";
-const browserAuthProvider = readAuthProviderConfiguration(
-  process.env.WEBDOCK_AUTH_PROVIDER,
-).provider;
+} from "@webdock/auth-better-auth";
+import { createPlugin as createBetterAuthPlugin } from "@webdock/auth-better-auth/plugin";
+import { readAuthProviderConfiguration } from "@webdock/auth-configuration";
+const browserAuthProvider = readAuthProviderConfiguration(process.env.WEBDOCK_AUTH_PROVIDER).provider;
 import { createBrowserPrincipal } from "./browser-principal";
-const local = createBetterAuthAuthenticator(async (headers) => {
+const local = createBetterAuthPlugin(async (headers) => {
   const { auth } = await import("./auth");
   return auth.api.getSession({ headers });
-});
+}).authenticator;
 export const {
   withTrustedLocalSession,
   currentTrustedBrowserReference,
@@ -23,17 +21,11 @@ export const {
   localDirectory: betterAuthIdentity,
   clerkDirectory: () => ({
     session: async (...args) =>
-      (await import("./clerk-runtime"))
-        .getClerkBrowserAdapter()
-        .identity.session(...args),
+      (await (await import("./clerk-runtime")).getClerkBrowserAdapter()).identity.session(...args),
     subject: async (...args) =>
-      (await import("./clerk-runtime"))
-        .getClerkBrowserAdapter()
-        .identity.subject(...args),
+      (await (await import("./clerk-runtime")).getClerkBrowserAdapter()).identity.subject(...args),
     membership: async (...args) =>
-      (await import("./clerk-runtime"))
-        .getClerkBrowserAdapter()
-        .identity.membership(...args),
+      (await (await import("./clerk-runtime")).getClerkBrowserAdapter()).identity.membership(...args),
   }),
 });
 

@@ -17,7 +17,7 @@ test("module and adapters never import application internals; module never impor
   for (const folder of [
     "modules/mail/src",
     "packages/core/src",
-    "adapters/auth/better-auth/src",
+    "packages/auth-better-auth/src",
     "adapters/mail/turbosmtp/src",
   ])
     for (const file of files(resolve(root, folder))) {

@@ -43,8 +43,9 @@ function fixture() {
 describe('Clerk permission provisioning', () => {
   test('default dry run never writes', async () => {
     const f = fixture();
-    expect((await configure(f.provider, target)).actions).toHaveLength(8);
+    expect((await configure(f.provider, target)).actions).toHaveLength(6);
     expect(f.mutations).toEqual([]);
+    expect(PERMISSIONS.some(permission => (permission.key as string) === 'org:billing:manage')).toBe(false);
   });
   test('additive apply retains system/unrelated permissions and repeat is a no-op', async () => {
     const f = fixture();
@@ -52,7 +53,7 @@ describe('Clerk permission provisioning', () => {
     expect(f.roles[0]!.permissions.map(p => p.key)).toEqual(['org:sys_memberships:manage', 'org:mail:manage', ...PERMISSIONS.map(p => p.key)]);
     expect(f.roles[1]!.permissions).toEqual([]);
     expect((await configure(f.provider, target, true)).actions).toEqual([]);
-    expect(f.mutations).toHaveLength(8);
+    expect(f.mutations).toHaveLength(6);
   });
   test('wrong explicit target and live instance fail before writes', async () => {
     const f = fixture();

@@ -3,12 +3,12 @@ import { normalizeIngress } from "./ingress";
 import { createApp } from "./app";
 import { readConfig } from "./config";
 const config = readConfig(process.env);
-validateBrowserAuthConfiguration();
+await validateBrowserAuthConfiguration();
 if (config.domains.length && !config.domains.includes("auth"))
   throw Error("Private API domains require the migrated Auth foundation");
 if (
   config.domains.some((domain) =>
-    ["portal", "registry", "integrations", "mcp", "billing"].includes(domain),
+    ["portal", "registry", "integrations", "mcp"].includes(domain),
   ) &&
   (process.env.WEBDOCK_AUTH_ISSUER !== config.authOrigin + "/api/auth" ||
     process.env.WEBDOCK_SSO_APP_ORIGIN !== config.studioOrigin ||
@@ -18,7 +18,6 @@ if (
     "Studio protocol configuration must match canonical origins and client",
   );
 const dependencies: Record<string, string[]> = {
-  billing: ["portal"],
   registry: ["portal"],
   integrations: ["registry", "portal"],
   lifecycle: ["registry", "integrations"],
@@ -100,31 +99,6 @@ if (config.domains.includes("auth")) {
 }
 if (config.domains.includes("portal"))
   mounts.push(...(await import("./protocols/portal")).portalProtocols(config));
-if (
-  config.domains.includes("billing") &&
-  config.modules?.modules.billing !== "disabled"
-) {
-  mounts.push(
-    (await import("./protocols/billing-return")).billingReturnProtocol(config),
-  );
-  mounts.push(
-    await (
-      await import("./protocols/billing-tenant")
-    ).tenantBillingProtocol(config),
-  );
-  mounts.push(
-    await (await import("./protocols/billing")).billingProtocol(config),
-  );
-  mounts.push(
-    (await import("./protocols/webhooks/polar")).polarWebhooks(config),
-  );
-  if (process.env.POLAR_ACCESS_TOKEN)
-    mounts.push(
-      ...(await import("./protocols/polar-hosted")).hostedPolarProtocols(
-        config,
-      ),
-    );
-}
 if (config.domains.includes("registry")) mounts.push((await import("./protocols/plugins")).pluginProtocol(config));
 if (config.domains.includes("registry"))
   mounts.push(

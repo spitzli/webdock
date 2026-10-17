@@ -1,6 +1,5 @@
 import { ModuleError } from "@webdock/module-sdk";
 import { moduleForRequest } from "./installation";
-import { BillingError } from "./modules/billing/types";
 import { HTTPError } from "./plugins/body";
 import { RegistryError } from "./modules/registry/service";
 import { ZodError } from "zod";
@@ -62,8 +61,7 @@ export async function createApp(
       const status =
         error instanceof ModuleError ||
         error instanceof HTTPError ||
-        error instanceof RegistryError ||
-        error instanceof BillingError
+        error instanceof RegistryError
           ? error.status
           : error instanceof ZodError
             ? 400
@@ -84,8 +82,7 @@ export async function createApp(
           message:
             error instanceof ModuleError ||
             error instanceof HTTPError ||
-            error instanceof RegistryError ||
-            error instanceof BillingError
+            error instanceof RegistryError
               ? error.message
               : status === 500
                 ? "Request failed."

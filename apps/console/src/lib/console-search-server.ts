@@ -37,7 +37,7 @@ export async function searchConsole(input: ConsoleSearchInput): Promise<ConsoleS
             [t('Overview'),base], [t('Applications'),base+'/hosting'], [t('Databases'),base+(preview?'/managed-databases':'/databases')],
             [t('Plan & usage'),base+'/usage'], [t('Profile'),base+'/profile'],
             ...(!preview ? [[t('Mail'),base+'/mail'],[t('Mailboxes'),base+'/mail/mailboxes'],[t('Quickstart'),base+'/mail/quickstart']] : []),
-            ...(canManage ? [[t('Team'),base+'/team'],...(!preview?[[t('Billing'),base+'/billing']]:[])] : []),
+            ...(canManage ? [[t('Team'),base+'/team']] : []),
           ].map(([label,href])=>({id:'nav:'+href,label,href,kind:'navigation' as const})));
         }
         if(projectID) result.push({id:'nav:deployments',kind:'navigation',label:t('Deployments'),href:`/hosting/projects/${projectID}/git`});

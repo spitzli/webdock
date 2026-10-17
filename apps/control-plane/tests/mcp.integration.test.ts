@@ -156,21 +156,20 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
           (tool: { name: string }) =>
             tool.name === "list_billing_product_versions",
         ),
-      ).toBe(true);
+      ).toBe(false);
       expect(
         tools.some(
           (tool: { name: string }) =>
             tool.name === "publish_billing_product_version",
         ),
       ).toBe(false);
-      expect(
-        (
-          await call("tools/call", {
-            name: "publish_billing_product_version",
-            arguments: { environment: "live", versionID: "1" },
-          })
-        ).status,
-      ).toBe(403);
+      const removedTool = await call("tools/call", {
+        name: "publish_billing_product_version",
+        arguments: { environment: "live", versionID: "1" },
+      });
+      expect(removedTool.status).toBe(200);
+      const removedToolBody = await removedTool.json();
+      expect(Boolean(removedToolBody.error || removedToolBody.result?.isError)).toBe(true);
 
       expect(
         tools.some((tool: { name: string }) => tool.name === "list_records"),

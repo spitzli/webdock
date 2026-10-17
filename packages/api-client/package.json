@@ -11,7 +11,6 @@
     "./integrations": "./src/integration-contracts.ts",
     "./registry": "./src/registry-types.ts",
     "./lifecycle": "./src/lifecycle-contracts.ts",
-    "./billing": "./src/billing-contracts.ts",
     "./flow-cookies": "./src/flow-cookies.ts",
     "./integration-callbacks": "./src/integration-callbacks.ts",
     "./integration-resume": "./src/integration-resume.ts"
@@ -24,7 +23,6 @@
     "@webdock/hosting-contracts": "*",
     "@webdock/database-contracts": "*",
     "@webdock/mail-contracts": "*",
-    "@webdock/core": "*",
-    "@webdock/module-billing": "*"
+    "@webdock/core": "*"
   }
 }

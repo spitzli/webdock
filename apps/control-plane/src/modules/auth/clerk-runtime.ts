@@ -1,20 +1,19 @@
-import { readAuthProviderConfiguration } from "@webdock/core/auth-configuration";
-import { createClerkAdapter } from "@webdock/adapter-auth-clerk";
-import { createClerkBackend } from "@webdock/adapter-auth-clerk/sdk";
-import { betterAuthIdentity } from "@webdock/adapter-auth-better-auth";
-import { serializeSignedCookie } from "better-call";
+import { selectAuthPlugin } from "@webdock/auth-configuration/selection";
+import { betterAuthIdentity } from "@webdock/auth-better-auth";
+import { signCompatibilitySession } from "@webdock/auth-better-auth/compatibility";
 import { authDatabase, workerDatabase } from "../../db/runtime";
 import { createClerkMappings } from "./clerk-mappings";
 import { createClerkSessionBridge } from "./clerk-bridge";
 
-const configuration = readAuthProviderConfiguration(
-  process.env.WEBDOCK_AUTH_PROVIDER,
-);
+const selected = selectAuthPlugin(process.env.WEBDOCK_AUTH_PROVIDER);
+const configuration = selected.configuration;
 export const browserAuthProvider = configuration.provider;
-export function getClerkBrowserAdapter() {
+export async function getClerkBrowserAdapter() {
   if (configuration.provider !== "clerk")
     throw Error("Clerk is not the selected browser provider");
-  return createClerkAdapter({
+  const { createPlugin } = await import("@webdock/auth-clerk/plugin");
+  const { createClerkBackend } = await import("@webdock/auth-clerk/sdk");
+  return createPlugin({
     config: configuration,
     backend: createClerkBackend(
       process.env.CLERK_SECRET_KEY ?? "",
@@ -28,7 +27,8 @@ export function getClerkBrowserAdapter() {
     local: betterAuthIdentity,
   });
 }
-export function validateBrowserAuthConfiguration() {
+export async function validateBrowserAuthConfiguration() {
+  await selected.load();
   if (configuration.provider === "clerk") {
     if (!/^sk_(live|test)_/.test(process.env.CLERK_SECRET_KEY ?? ""))
       throw Error("Configured Clerk backend secret required");
@@ -43,22 +43,18 @@ export function validateBrowserAuthConfiguration() {
   return browserAuthProvider;
 }
 export async function clerkBrowserSession(headers: Headers) {
-  const clerk = getClerkBrowserAdapter();
+  const clerk = await getClerkBrowserAdapter();
   return createClerkSessionBridge({
     database: authDatabase,
     verifyExternal: clerk.verifyExternal,
     origin: new URL(process.env.BETTER_AUTH_URL ?? "http://localhost:3125")
       .origin,
     async signSession(token) {
-      const { auth } = await import("./auth");
-      const context = await auth.$context;
-      return (
-        await serializeSignedCookie(
-          context.authCookies.sessionToken.name,
-          token,
-          context.secret,
-        )
-      ).split(";")[0];
+      return signCompatibilitySession(
+        process.env.BETTER_AUTH_URL ?? "http://localhost:3125",
+        process.env.BETTER_AUTH_SECRET ?? "",
+        token,
+      );
     },
   })(headers);
 }

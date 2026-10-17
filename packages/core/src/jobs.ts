@@ -1,5 +1,6 @@
 import { Queue, Worker, type RedisOptions } from "bullmq";
-export type JobDomain = "mail" | "hosting" | "storage" | "billing";
+/** Queue owners are registered by trusted composition, never supplied by requests. */
+export type JobDomain = string;
 export type CoreQueueConfiguration = {
   connection: RedisOptions;
   prefix: string;
@@ -50,6 +51,10 @@ export async function startCoreJobWorkers(
     intervalMs?: number;
   },
 ) {
+  for (const [domain, handler] of Object.entries(options.handlers)) {
+    if (!/^[a-z][a-z0-9-]{0,63}$/.test(domain) || typeof handler !== "function")
+      throw Error("Invalid Core worker ownership");
+  }
   const queues: Queue[] = [];
   const workers: Worker[] = [];
   let closed = false;
@@ -61,11 +66,7 @@ export async function startCoreJobWorkers(
   }
   try {
     for (const [domain, handler] of Object.entries(options.handlers)) {
-      if (
-        !["mail", "hosting", "storage", "billing"].includes(domain) ||
-        typeof handler !== "function"
-      )
-        throw Error("Invalid Core worker ownership");
+      if (!handler) throw Error("Invalid Core worker ownership");
       const name = "core-" + domain;
       const queue = new Queue(name, {
         connection: { ...options.connection, maxRetriesPerRequest: 1 },

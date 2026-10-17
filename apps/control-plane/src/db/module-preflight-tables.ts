@@ -35,18 +35,6 @@ export const modulePreflightChecks = {
   ],
   cms: [["webdock_admin.cms_instances", "true"]],
   storage: [["webdock_auth.tenant_storage", "true"]],
-  billing: [
-    [
-      "webdock_auth.billing_connection",
-      "encrypted_token IS NOT NULL OR endpoint_id IS NOT NULL OR encrypted_webhook_secret IS NOT NULL",
-    ],
-    ["webdock_auth.billing_subscription", "true"],
-    ["webdock_auth.billing_contract", "true"],
-    ["webdock_auth.billing_checkout", "true"],
-    ["webdock_auth.billing_change", "true"],
-    ["webdock_auth.billing_job", "status <> 'succeeded'"],
-    ["webdock_auth.billing_webhook_event", "status <> 'processed'"],
-  ],
 } as const;
 export const modulePreflightTables = new Set<string>(
   Object.values(modulePreflightChecks).flatMap((checks) =>

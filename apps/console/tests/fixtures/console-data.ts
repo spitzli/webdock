@@ -42,7 +42,7 @@ const { getManagedDatabasePage } = await import("../../src/lib/managed-database-
 const { getHostingProject } = await import("../../src/lib/hosting-project");
 const { registryClient } = await import("../../src/lib/registry-client");
 const { studioCall } = await import("../../src/lib/studio-client");
-const session = { user: { id: "1" }, operator: true, installation: { revision: "test", modules: { hosting: "enabled", databases: "enabled", billing: "enabled", mail: "enabled", cms: "enabled" } } };
+const session = { user: { id: "1" }, operator: true, installation: { revision: "test", modules: { hosting: "enabled", databases: "enabled", mail: "enabled", cms: "enabled" } } };
 const project = { projectID: "7", customerID: "8", name: "Project" };
 const tenant = { id: "8", name: "Tenant", status: "active", role: "member" };
 const deferred = <T>() => {
@@ -78,7 +78,7 @@ assert(!calls.includes("getTenant"), "navigation must not fetch members, invitat
 listGate.resolve([tenant]);
 const context = await pendingContext;
 assert.equal(context?.customerID, "8");
-assert.deepEqual(context?.tenant, { tenant, canManage: true, canManageBilling: true });
+assert.deepEqual(context?.tenant, { tenant, canManage: true });
 assert.equal(calls[0], "session");
 assert.deepEqual(calls.slice(1).sort(), ["listTenants", "projects.get"]);
 
@@ -91,7 +91,6 @@ for (const [role, manageBilling, preview] of [["admin", false, false], ["member"
     throw Error(operation);
   };
   const result = await getConsoleContext("tenants/8/overview");
-  assert.equal(result?.tenant?.canManageBilling, manageBilling && !preview);
   assert.equal(result?.tenant?.canManage, role === "admin" && !preview, "team role policy remains separate");
 }
 

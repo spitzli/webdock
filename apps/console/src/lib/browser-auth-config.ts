@@ -1,4 +1,4 @@
-import { readAuthProviderConfiguration } from "@webdock/core/auth-configuration";
+import { readAuthProviderConfiguration } from "@webdock/auth-configuration";
 export function readBrowserAuthConfiguration(
   env: Record<string, string | undefined>,
 ) {

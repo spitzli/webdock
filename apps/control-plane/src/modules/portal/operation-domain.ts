@@ -4,7 +4,7 @@ export function studioOperationDomain(operation: string, args: unknown[]): strin
   if (operation === "hosting.command" || operation === "database.command")
     return moduleForOperation(operation, args)!;
   for (const [prefix, domain] of [
-    ["billing.", "billing"], ["project.", "lifecycle"],
+    ["project.", "lifecycle"],
     ["registry.", "registry"], ["integrations.", "integrations"], ["cms.", "cms"],
   ]) if (operation.startsWith(prefix)) return domain;
   return moduleForOperation(operation, args) === "mail" ? "mail" : "auth";

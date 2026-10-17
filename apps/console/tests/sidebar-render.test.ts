@@ -26,9 +26,9 @@ test('Mail hides administration tools from members without losing inbox and doma
   assert.doesNotMatch(html,/\/api-keys|\/webhooks|\/suppressions|\/settings|\/tracking/);
   assert.match(html,/\/mailboxes/);assert.match(html,/\/domains/);
 });
-test('workspace navigation preserves database, billing and preview access rules', () => {
+test('workspace navigation preserves database and preview access rules', () => {
   const html=render('/tenants/12',h(TenantNavigation,{customerID:'12',canManage:true}));
-  assert.match(html,/\/databases/);assert.match(html,/\/billing/);assert.match(html,/\/team/);
+  assert.match(html,/\/databases/);assert.doesNotMatch(html,/\/billing/);assert.match(html,/\/team/);
   const preview=render('/tenants/12',h(TenantNavigation,{customerID:'12',canManage:false,preview:true}));
   assert.match(preview,/\/managed-databases/);assert.doesNotMatch(preview,/\/mail|\/billing|\/team/);
 });

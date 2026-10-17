@@ -1,7 +1,5 @@
 import {optionalModuleData} from "@/lib/module-data";
 import { AreaNavigation } from "@/components/area-navigation";
-import {hostingPageCall} from "@/lib/hosting-client";
-import type {DatabaseBillingView} from "@webdock/hosting-contracts";
 import {uiLabel} from "@/lib/ui-labels";
 
 import { getRequestI18n } from '@webdock/i18n/next';
@@ -35,15 +33,14 @@ export default async function Usage({
     redirect(
       `/api/sso/login?returnTo=${encodeURIComponent(`/tenants/${customerID}/usage`)}`,
     );
-  let tenantData, data, storage, plans, mail, databases;
+  let tenantData, data, storage, plans, mail;
   try {
-    [tenantData, data, storage, plans, mail, databases] = await Promise.all([
+    [tenantData, data, storage, plans, mail] = await Promise.all([
       getTenant(requestHeaders, customerID),
       getTenantPlan(requestHeaders, customerID),
       optionalModuleData(session.installation,"storage",()=>getTenantStorage(requestHeaders, customerID)),
       session.operator && !session.preview ? getPlans(requestHeaders) : Promise.resolve([]),
       optionalModuleData(session.installation,"mail",()=>getTenantMail(requestHeaders, customerID)),
-      optionalModuleData(session.installation,"databases",()=>hostingPageCall<DatabaseBillingView>({action:'databases.orders.list',customerID},`/tenants/${customerID}/usage`)),
     ]);
   } catch (error) {
     if (
@@ -148,11 +145,6 @@ export default async function Usage({
           </>}
           <p className="muted">{i18n.t("Transfer usage is not currently measured here.")}</p>
         </section>}
-      {databases && <section className="auth-panel"><h2>{i18n.t("Managed PostgreSQL billing")}</h2>
-        <p>{new Intl.NumberFormat(i18n.locale,{style:'currency',currency:'EUR'}).format(databases.activeMonthlyNetCents/100)} {i18n.t("net / month")}</p>
-        <p>{i18n.t("Accepted orders start billing only after confirmed provisioning. Invoice handling remains manual.")}</p>
-        {databases.orders.map(order=><div key={order.id}><p>{order.databaseID?<Link href={`/hosting/databases/${order.databaseID}`}>{order.name}</Link>:order.name} · {new Intl.NumberFormat(i18n.locale,{style:'currency',currency:'EUR'}).format(order.monthlyPriceCents/100)} {i18n.t("net / month")}</p><p>{order.endedAt?i18n.t("Ended"):order.billingStartedAt?i18n.t("Active"):i18n.t("Awaiting provisioning")}{order.billingStartedAt?` · ${i18n.date(order.billingStartedAt)}`:''}</p></div>)}
-      </section>}
       </div>}
       {view === "sources" && storage && <section className="account-section">
         <h2>{i18n.t("Storage measurements")}</h2>

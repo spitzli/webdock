@@ -8,7 +8,6 @@ export const PERMISSIONS = [
   { key: 'org:projects:manage', name: 'Manage projects', description: 'Manage Webdock self-service projects and applications.' },
   { key: 'org:deployments:create', name: 'Create deployments', description: 'Build, publish, retry and roll back Webdock deployments.' },
   { key: 'org:databases:manage', name: 'Manage databases', description: 'Manage Webdock databases and database access.' },
-  { key: 'org:billing:manage', name: 'Manage billing', description: 'Manage Webdock customer billing.' },
 ] as const;
 type Permission = { id: string; key: string };
 type Role = Permission & { permissions: Permission[] };
@@ -51,7 +50,7 @@ function baseline(roles: Role[], sets: RoleSet[]) {
 }
 export async function configure(provider: Provider, target: Target, apply = false) {
   assertTarget(target);
-  if (JSON.stringify(PERMISSIONS.map(p => p.key).sort()) !== JSON.stringify([...ORGANIZATION_PERMISSIONS].sort())) throw new Error('Provisioning catalog differs from application permissions');
+  if (JSON.stringify(PERMISSIONS.map(p => p.key).sort()) !== JSON.stringify(ORGANIZATION_PERMISSIONS.filter(key => key !== 'org:billing:manage').sort())) throw new Error('Provisioning catalog differs from application permissions');
   const app = await provider.request<{ application_id: string; instances: { instance_id: string; environment_type: string }[] }>(`/platform/applications/${target.app}`, { platform: true });
   if (app.application_id !== target.app || !app.instances.some(i => i.instance_id === target.instance && i.environment_type === (target.environment === 'dev' ? 'development' : 'production'))) {
     throw new Error('Live application/instance identity mismatch');

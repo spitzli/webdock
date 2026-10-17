@@ -1,5 +1,4 @@
-import { betterAuth } from "better-auth";
-import { lazyAuth } from "./lazy-auth";
+import { createBetterAuthRuntime } from "@webdock/auth-better-auth/runtime";
 import { admin, organization, jwt } from "better-auth/plugins";
 import { adminAc, userAc } from "better-auth/plugins/admin/access";
 import { oauthProvider } from "@better-auth/oauth-provider";
@@ -42,8 +41,7 @@ export function createAuthentication(options: {
     if(!(await authDatabase.query("SELECT to_regclass('webdock_auth.clerk_identity') IS NOT NULL AS present")).rows[0]?.present)return true;
     return (await authDatabase.query('SELECT NOT EXISTS(SELECT 1 FROM webdock_auth.clerk_identity WHERE user_id=$1 AND NOT legacy_eligible) AS allowed',[userID])).rows[0]?.allowed===true;
   }
-  const auth = lazyAuth(() =>
-    betterAuth({
+  const auth = createBetterAuthRuntime(() => ({
       appName: "Webdock",
       baseURL,
       basePath: "/api/auth",
@@ -404,8 +402,7 @@ export function createAuthentication(options: {
                 : currentClaims(user?.id, metadata?.webdock_binding),
         }),
       ],
-    }),
-  );
+    }));
 
   return auth;
 }

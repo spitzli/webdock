@@ -7,8 +7,6 @@ adapters/
 ├── auth/
 │   ├── better-auth/
 │   └── clerk/
-├── billing/
-│   └── polar/
 ├── databases/
 │   └── postgres/
 ├── hosting/

@@ -1,0 +1,15 @@
+{
+  "name": "@webdock/auth-configuration",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./selection": "./src/selection.ts"
+  },
+  "dependencies": {
+    "@webdock/core": "*",
+    "@webdock/auth-clerk": "*",
+    "@webdock/auth-better-auth": "*"
+  }
+}

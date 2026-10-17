@@ -379,7 +379,7 @@ export async function managePlans(
           ).rows[0].locked
         )
           throw new PlanError(
-            "This base is managed by billing. Use subscription changes or an explicit manual release.",
+            "This allocation is locked by a retained billing agreement. Operator data review is required before changing its ownership.",
           );
         const current = await subscription(customerID, connection),
           revision: number = current?.revision || 0;
@@ -592,7 +592,7 @@ export async function acceptOffer(
         ).rows[0].locked
       )
         throw new PlanError(
-          "This base is managed by billing. Use subscription changes or an explicit manual release.",
+          "This allocation is locked by a retained billing agreement. Operator data review is required before changing its ownership.",
         );
       const current = await subscription(row.customer_id, connection);
       if (offerStatus(row, current?.revision || 0) !== "pending")

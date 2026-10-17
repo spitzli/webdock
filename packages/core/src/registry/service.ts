@@ -19,7 +19,6 @@ import * as schema from "@webdock/platform-db/schema/registry";
 import {
   customerInput,
   projectInput,
-  instanceInput,
   recordID,
   listInput,
   collectionName,
@@ -40,10 +39,14 @@ export function createRegistryService(dependencies: RegistryDependencies) {
     database: db,
     pool,
     withSessionScope,
-    requireProduct,
     close,
     readCachedView = async (_options, _version, load) => load(),
   } = dependencies;
+  const cmsTable = () => {
+    if (!dependencies.cms)
+      throw new RegistryError("CMS registry extension unavailable.", 503);
+    return dependencies.cms.table;
+  };
   type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
   const execute = <T>(
     actor: RegistryIdentity,
@@ -206,48 +209,12 @@ export function createRegistryService(dependencies: RegistryDependencies) {
     input: unknown,
     confirmExisting: boolean,
   ) {
-    requireProduct("cms", key === null ? "provision" : "access");
-    if (key !== null) recordID.parse(key);
-    const data = instanceInput.parse(input);
-    if (!key && !confirmExisting)
-      throw new RegistryError("Confirm that this CMS is already deployed.");
-    return execute(actor, async (tx, localID) => {
-      const old = key
-        ? (
-            await tx
-              .select()
-              .from(schema.cmsInstances)
-              .where(eq(schema.cmsInstances.id, recordID.parse(key)))
-              .for("update")
-          )[0]
-        : undefined;
-      if (key && !old)
-        throw new RegistryError("CMS connection unavailable.", 404);
-      if (old && old.project !== data.project)
-        throw new RegistryError("A CMS instance cannot move between projects.");
-      const parent = (
-        await tx
-          .select()
-          .from(schema.projects)
-          .where(eq(schema.projects.id, data.project))
-          .for("share")
-      )[0];
-      if (!parent || parent.status !== "active")
-        throw new RegistryError("Choose an active project.");
-      const rows = old
-        ? await tx
-            .update(schema.cmsInstances)
-            .set({ ...data, updatedAt: new Date() })
-            .where(eq(schema.cmsInstances.id, old.id))
-            .returning()
-        : await tx
-            .insert(schema.cmsInstances)
-            .values({ ...data, id: await id(tx) })
-            .returning();
-      await audit(tx, localID, "cms-instances", old, rows[0]);
-      return rows[0];
-    });
+    if (!dependencies.cms)
+      throw new RegistryError("CMS registry extension unavailable.", 503);
+    const write = dependencies.cms.prepareWrite(key, input, confirmExisting);
+    return execute(actor, (tx, localID) => write({ tx, localID, id, audit }));
   }
+
   async function archive(
     actor: RegistryIdentity,
     collection: "customers" | "projects",
@@ -281,24 +248,8 @@ export function createRegistryService(dependencies: RegistryDependencies) {
           throw new RegistryError(
             "Archive this customer’s active projects first.",
           );
-        if (
-          collection === "projects" &&
-          (
-            await tx
-              .select({ id: schema.cmsInstances.id })
-              .from(schema.cmsInstances)
-              .where(
-                and(
-                  eq(schema.cmsInstances.project, key),
-                  sql`${schema.cmsInstances.status} <> 'retired'`,
-                ),
-              )
-              .limit(1)
-          ).length
-        )
-          throw new RegistryError(
-            "Retire the linked CMS before archiving this project.",
-          );
+        if (collection === "projects")
+          await dependencies.cms?.beforeArchiveProject(tx, key);
       } else if (collection === "projects") {
         const project = old as typeof schema.projects.$inferSelect;
         const parent = (
@@ -334,7 +285,7 @@ export function createRegistryService(dependencies: RegistryDependencies) {
           : query.collection === "projects"
             ? schema.projects
             : query.collection === "cms-instances"
-              ? schema.cmsInstances
+              ? cmsTable()
               : schema.auditEvents;
       const filters: SQL[] = [];
       if (query.customer) {
@@ -345,7 +296,7 @@ export function createRegistryService(dependencies: RegistryDependencies) {
       if (query.project) {
         if (query.collection !== "cms-instances")
           throw new RegistryError("Invalid project filter.");
-        filters.push(eq(schema.cmsInstances.project, query.project));
+        filters.push(eq(cmsTable().project, query.project));
       }
       if (query.targetID) {
         if (query.collection !== "audit-events")
@@ -369,7 +320,7 @@ export function createRegistryService(dependencies: RegistryDependencies) {
         if (!allowed.includes(query.status))
           throw new RegistryError("Invalid status filter.");
         filters.push(
-          sql`${query.collection === "customers" ? schema.customers.status : query.collection === "projects" ? schema.projects.status : schema.cmsInstances.status} = ${query.status}`,
+          sql`${query.collection === "customers" ? schema.customers.status : query.collection === "projects" ? schema.projects.status : cmsTable().status} = ${query.status}`,
         );
       }
       if (query.search) {
@@ -379,7 +330,7 @@ export function createRegistryService(dependencies: RegistryDependencies) {
             : query.collection === "projects"
               ? schema.projects.name
               : query.collection === "cms-instances"
-                ? schema.cmsInstances.label
+                ? cmsTable().label
                 : schema.auditEvents.summary;
         filters.push(
           ilike(column, "%" + query.search.replace(/[\\%_]/g, "\\$&") + "%"),
@@ -396,7 +347,7 @@ export function createRegistryService(dependencies: RegistryDependencies) {
               : field === "name" && query.collection === "projects"
                 ? schema.projects.name
                 : field === "label" && query.collection === "cms-instances"
-                  ? schema.cmsInstances.label
+                  ? cmsTable().label
                   : null;
       if (!order) throw new RegistryError("Invalid sort.");
       const totalDocs = (
@@ -440,7 +391,7 @@ export function createRegistryService(dependencies: RegistryDependencies) {
           : name === "projects"
             ? schema.projects
             : name === "cms-instances"
-              ? schema.cmsInstances
+              ? cmsTable()
               : schema.auditEvents;
       const row = (await tx.select().from(table).where(eq(table.id, key)))[0];
       if (!row) throw new RegistryError("Record unavailable.", 404);
@@ -450,7 +401,9 @@ export function createRegistryService(dependencies: RegistryDependencies) {
   const tables = {
     customers: schema.customers,
     projects: schema.projects,
-    "cms-instances": schema.cmsInstances,
+    get "cms-instances"() {
+      return cmsTable();
+    },
     "audit-events": schema.auditEvents,
     users: schema.users,
   };

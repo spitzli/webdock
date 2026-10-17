@@ -15,7 +15,7 @@ export interface RegistryDependencies {
     identity: RegistryIdentity,
     run: () => Promise<T>,
   ): Promise<T>;
-  requireProduct(product: "cms", intent: "access" | "provision"): void;
+  cms?: RegistryCmsExtension;
   readCachedView?<T>(
     options: {
       kind: "registry";
@@ -27,4 +27,31 @@ export interface RegistryDependencies {
     load: () => Promise<T>,
   ): Promise<T>;
   close(): Promise<void>;
+}
+
+export type RegistryTransaction = Parameters<
+  Parameters<NodePgDatabase["transaction"]>[0]
+>[0];
+/** Legacy CMS collection compatibility; its runtime behavior belongs to the module. */
+export interface RegistryCmsExtension {
+  table: typeof import("@webdock/platform-db/schema/registry").cmsInstances;
+  prepareWrite(
+    key: string | null,
+    input: unknown,
+    confirmExisting: boolean,
+  ): (context: {
+    tx: RegistryTransaction;
+    localID: string;
+    id(tx: RegistryTransaction): Promise<string>;
+    audit(
+      tx: RegistryTransaction,
+      actor: string,
+      collection: string,
+      before: Record<string, unknown> | undefined,
+      after: Record<string, unknown>,
+    ): Promise<void>;
+  }) => Promise<
+    typeof import("@webdock/platform-db/schema/registry").cmsInstances.$inferSelect
+  >;
+  beforeArchiveProject(tx: RegistryTransaction, key: string): Promise<void>;
 }

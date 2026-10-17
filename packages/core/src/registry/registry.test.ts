@@ -2,12 +2,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import { createRegistryService } from "./service.ts";
+import { createCmsRegistryExtension } from "../../../../modules/cms/src/server/registry.ts";
 import { createRegistryStore } from "./store.ts";
 import { nextRegistryID } from "./snowflake.ts";
 import { recordID } from "./contracts.ts";
 import type { RegistryDependencies, RegistryPool } from "./ports.ts";
 const actor = { subject: "123", sessionID: "session-123" };
-function fixture(allowed: boolean[] = [true, true]) {
+function fixture(allowed: boolean[] = [true, true], cms = true) {
   const scopes: unknown[] = [],
     locks: string[] = [],
     products: unknown[] = [];
@@ -48,10 +49,12 @@ function fixture(allowed: boolean[] = [true, true]) {
       scopes.push(identity);
       return run();
     },
-    requireProduct: (product, intent) => {
-      products.push([product, intent]);
-      throw Error("CMS disabled");
-    },
+    cms: cms
+      ? createCmsRegistryExtension((product, intent) => {
+          products.push([product, intent]);
+          throw Error("CMS disabled");
+        })
+      : undefined,
     close: async () => {},
   });
   return { service, pool, scopes, locks, products, selects: () => selects };
@@ -89,6 +92,27 @@ test("CMS writes require injected product authority before transactions and dist
     ["cms", "access"],
   ]);
   assert.deepEqual(f.scopes, []);
+});
+test("core starts without CMS and fails closed on legacy CMS access", async () => {
+  const f = fixture([true, true, true, true], false);
+  assert.equal((await f.service.operator(actor)).id, "456");
+  await assert.rejects(
+    f.service.writeInstance(actor, null, {}, true),
+    /extension unavailable/,
+  );
+  await assert.rejects(
+    f.service.query(actor, "find", { collection: "cms-instances" }),
+    /extension unavailable/,
+  );
+});
+test("retained CMS instances block project archive even when CMS authority is disabled", async () => {
+  const f = fixture();
+  await assert.rejects(
+    f.service.archive(actor, "projects", "789", true),
+    /Retire the linked CMS/,
+  );
+  assert.deepEqual(f.products, []);
+  assert.deepEqual(f.locks, ["share", "update"]);
 });
 test("registry compatibility facade discards caller-supplied identity and overrideAccess", async () => {
   const calls: unknown[] = [];

@@ -161,6 +161,7 @@ test("an ALL protocol mount cannot silently shadow a method-specific handler", a
 
 test("explicit mail aliases preserve the request and do not expose other hosts or protocols", async () => {
   const cfg = config();
+  cfg.modules = {revision: "mail-test", modules: {mail: "enabled"}};
   const app = await createApp(cfg, {
     mounts: [
       {

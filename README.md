@@ -1,12 +1,12 @@
 # Webdock
 
-Webdock is a modular control plane for customer projects, hosting, databases, Mail, CMS, storage and billing. It is maintained by Spitzli Development. Customer websites keep their own repositories and content stores.
+Webdock is a plugin-based admin platform with a small identity, project registry and capability core. Hosting, databases, Mail, CMS and storage are optional product modules; new installations enable no products by default. Billing is not included. It is maintained by Spitzli Development. Customer websites keep their own repositories and content stores.
 
 ## Repository structure
 
 ```text
 apps/          Executable HTTP applications: Console, Control Plane, Auth, website
-modules/       Product behavior: hosting, databases, mail, storage, cms, billing
+modules/       Product behavior: hosting, databases, mail, storage, cms
 adapters/      Product area / provider: hosting/vercel, auth/clerk, mail/turbosmtp, …
 packages/      Shared contracts, identity, registry, database schema and UI primitives
 integrations/  Cross-runtime integrations, including the native Tabularis gateway contract

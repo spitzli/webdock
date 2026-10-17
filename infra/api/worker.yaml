@@ -51,7 +51,7 @@ spec:
             - bun
             - -e
             - process.env.WEBDOCK_PROCESS_ROLE='worker';const{databasePools,workerDatabase}=await
-              import('./dist/db/runtime.ts');try{await(await import('./dist/db/readiness.ts')).verifyWorkerReadiness(workerDatabase,['billing','storage','hosting']);}finally{await
+              import('./dist/db/runtime.ts');try{await(await import('./dist/db/readiness.ts')).verifyWorkerReadiness(workerDatabase,['storage','hosting']);}finally{await
               databasePools.close();}
           periodSeconds: 10
           timeoutSeconds: 15
@@ -70,7 +70,7 @@ spec:
             - bun
             - -e
             - process.env.WEBDOCK_PROCESS_ROLE='worker';const{databasePools,workerDatabase}=await
-              import('./dist/db/runtime.ts');try{await(await import('./dist/db/readiness.ts')).verifyWorkerReadiness(workerDatabase,['billing','storage','hosting']);}finally{await
+              import('./dist/db/runtime.ts');try{await(await import('./dist/db/readiness.ts')).verifyWorkerReadiness(workerDatabase,['storage','hosting']);}finally{await
               databasePools.close();}
           periodSeconds: 60
           timeoutSeconds: 15
@@ -88,7 +88,7 @@ spec:
         - name: WEBDOCK_APPLICATION_MAIL_EGRESS_CIDRS
           value: 178.104.141.95/32
         - name: WEBDOCK_WORKER_DOMAINS
-          value: billing,storage,hosting
+          value: storage,hosting
         - name: WEBDOCK_GITHUB_APP_ID
           valueFrom:
             secretKeyRef:

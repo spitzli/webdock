@@ -12,7 +12,7 @@ The runtime state foundation now requires an explicitly initialized installation
 bun --no-env-file tools/plugins/bootstrap.ts EXACT_HOST:PORT/DATABASE legacy
 ```
 
-Pass the existing `WEBDOCK_MODULES` value through the offline environment if it was configured. Its absence in legacy mode means six enabled built-ins. Repeat bootstrap preserves existing state; changing the environment does not overwrite it.
+Pass the existing `WEBDOCK_MODULES` value through the offline environment if it was configured. Its absence in the explicit offline legacy import means the five remaining product modules are enabled. This is separate from normal API startup, where absent configuration disables products. Billing is no longer registered; remove billing from the reviewed selection before importing. Repeat bootstrap preserves existing state; changing the environment does not overwrite it.
 
 For a fresh installation use `fresh` instead and explicitly supply `WEBDOCK_MODULES`, including an empty module selection if desired. Fresh initialization without a selection fails.
 

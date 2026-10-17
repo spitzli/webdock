@@ -1117,17 +1117,6 @@ test("database migration, operator catalog and tenant ordering use real transact
             idempotencyKey: key(),
           }),
         );
-        const invoice = await executeHosting(a, {
-          action: "databases.orders.list",
-          customerID: customer,
-        });
-        assert.equal(invoice.activeMonthlyNetCents, 4570);
-        await assert.rejects(
-          executeHosting(b, {
-            action: "databases.orders.list",
-            customerID: customer,
-          }),
-        );
         const history = await executeHosting(root, {
           action: "databases.migrations.list",
           databaseID: moving.databaseID,
@@ -1204,15 +1193,6 @@ test("database migration, operator catalog and tenant ordering use real transact
             })
           ).state,
           "ready",
-        );
-        assert.equal(
-          (
-            await executeHosting(a, {
-              action: "databases.orders.list",
-              customerID: customer,
-            })
-          ).activeMonthlyNetCents,
-          4570,
         );
         assert.equal(
           (

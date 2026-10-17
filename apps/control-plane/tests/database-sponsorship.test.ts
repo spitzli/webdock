@@ -1,49 +1,38 @@
 import { test, expect } from "bun:test";
-import { databaseBilling } from "../src/modules/hosting/database-billing";
-import type { Connection } from "../src/modules/hosting/authorization";
-function fixture(snapshot: Record<string, unknown>): Connection {
-  return {
-    query: async (sql: string) => ({
-      rows: sql.includes("to_regclass")
-        ? [{ relation: "present" }]
-        : sql.includes("sum(")
-          ? [{ cents: String(snapshot.monthlyPriceCents) }]
-          : [
-              {
-                id: "1",
-                snapshot,
-                accepted_at: new Date(),
-                billing_started_at: new Date(),
-              },
-            ],
-    }),
-  } as unknown as Connection;
-}
-test("database billing accepts only customer-bound sponsorships at zero cost", async () => {
-  const terms = {
+import {
+  databasePlanSchema,
+  databasePlanAvailableTo,
+  databaseCommandSchema,
+} from "@webdock/hosting-contracts";
+test("database provisioning sponsorship remains bound to its approved customer", () => {
+  const plan = databasePlanSchema.parse({
+    kind: "dedicated",
+    name: "Sponsored DB",
     monthlyPriceCents: 0,
     currency: "EUR",
+    postgresMajor: 18,
+    cpuMillicores: 1000,
+    memoryBytes: 2147483648,
+    volumeBytes: 21474836480,
+    logicalStorageAllowanceBytes: null,
+    connectionLimit: 20,
+    terms: "Approved customer sponsorship; no dedicated backup guarantee.",
     sponsoredCustomerID: "123",
-  };
+  });
+  expect(databasePlanAvailableTo(plan, "123", "pilot")).toBe(true);
+  expect(databasePlanAvailableTo(plan, "456", "pilot")).toBe(false);
+  expect(databasePlanAvailableTo(plan, "123", "public")).toBe(false);
   expect(
-    (await databaseBilling(fixture(terms), "123")).activeMonthlyNetCents,
-  ).toBe(0);
-  for (const patch of [
-    { sponsoredCustomerID: undefined },
-    { sponsoredCustomerID: "456" },
-    { monthlyPriceCents: 1 },
-    { monthlyPriceCents: -1 },
-  ]) {
-    await expect(
-      databaseBilling(fixture({ ...terms, ...patch }), "123"),
-    ).rejects.toHaveProperty("status", 503);
-  }
+    databasePlanSchema.safeParse({ ...plan, sponsoredCustomerID: undefined })
+      .success,
+  ).toBe(false);
   expect(
-    (
-      await databaseBilling(
-        fixture({ monthlyPriceCents: 1490, currency: "EUR" }),
-        "123",
-      )
-    ).activeMonthlyNetCents,
-  ).toBe(1490);
+    databasePlanSchema.safeParse({ ...plan, monthlyPriceCents: 1 }).success,
+  ).toBe(false);
+  expect(
+    databaseCommandSchema.safeParse({
+      action: "databases.orders.list",
+      customerID: "123",
+    }).success,
+  ).toBe(false);
 });

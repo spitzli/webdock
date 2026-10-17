@@ -435,15 +435,7 @@ test(
           idempotencyKey: key(),
         });
         assert.ok(sponsoredOrder.databaseID);
-        const billing: any = await executeHosting(operatorActor, {
-          action: "databases.orders.list",
-          customerID: customer,
-        });
-        assert.equal(
-          billing.orders.find((o: any) => o.id === sponsoredOrder.orderID)
-            .monthlyPriceCents,
-          0,
-        );
+
       }
     } finally {
       const cleanup = await owner.connect();

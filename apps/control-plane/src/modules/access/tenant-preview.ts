@@ -6,9 +6,6 @@ import { database } from "../../db/runtime";
 import { AccessError, websiteURL } from "./access-management";
 import { getTenant } from "./tenants";
 import { getTenantPlan } from "../plans/plans";
-import { getTenantStorage } from "../platform/storage-usage";
-import { getTenantMail } from "../mail/tenant-mail";
-import { getTenantMailService } from "../mail/mail-service";
 import { getPlatformSettings } from "../platform/platform";
 
 export type PreviewActor = { userID: string; sessionID: string };
@@ -238,7 +235,7 @@ export async function dispatchTenantPreview(
     )
       denied();
     if (operation === "getTenantMailService") {
-      const mail = await getTenantMailService(headers, customerID);
+      const mail = await (await import("../mail/mail-service")).getTenantMailService(headers, customerID);
       return mail
         ? {
             ...mail,
@@ -251,12 +248,12 @@ export async function dispatchTenantPreview(
     if (operation === "getTenantPlan")
       return getTenantPlan(headers, customerID);
     if (operation === "getTenantStorage")
-      return getTenantStorage(headers, customerID);
+      return (await import("../platform/storage-usage")).getTenantStorage(headers, customerID);
     // This read uses stored account/domain snapshots and a configured flag only;
     // credential listing and every provider-token operation remain excluded.
     if (operation === "getTenantMail")
       return {
-        ...(await getTenantMail(headers, customerID)),
+        ...(await (await import("../mail/tenant-mail")).getTenantMail(headers, customerID)),
         operator: false,
         canManage: false,
       };

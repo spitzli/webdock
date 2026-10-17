@@ -46,7 +46,7 @@ npm run test:teardown -w @webdock/api
 
 ## Select products and browser authentication
 
-All six modules are available in the source: Mail, Hosting, Databases, CMS, Storage and Billing. Start with an explicit core-only configuration or select the products you have configured; see [installed modules](/developers/modules). Core identity, registry, plans and usage remain independent. Module activation does not create an incoming Mail instance, database, provider account or billing subscription.
+Five optional product modules are available in the source: Mail, Hosting, Databases, CMS and Storage. Products are disabled by default. Select only the products you have configured; see [installed modules](/developers/modules). Core identity, registry, plans and usage remain independent. Module activation does not create an incoming Mail instance, database, provider account.
 
 An absent browser-provider setting retains Better Auth compatibility. Configured installations may select Clerk after establishing explicit local identity mappings; follow [authentication adapters](/developers/auth-adapters). This browser choice does not replace the native Auth foundation, application OAuth clients or MCP audiences. Do not change existing identities as part of container startup.
 

@@ -1,13 +1,13 @@
 ---
 title: "Configure installed modules"
-description: "Select the six installed product modules, assign process ownership and drain retained services safely."
+description: "Select optional product modules, assign process ownership and drain retained services safely."
 ---
 
-External runtime plugins use a separate [plugin registry and manifest contract](/developers/plugins). Their host installation workflow is still in development.
+External runtime plugins use the [plugin registry and manifest contract](/developers/plugins). The managed analytics pilot uses the signed host installation workflow; lifecycle operations are currently operator-managed.
 
-Webdock registers six product modules: `mail`, `hosting`, `databases`, `cms`, `storage` and `billing`. Configuration controls product availability. It does not grant tenant membership, buy a plan, create provider accounts or provision infrastructure.
+Webdock includes five optional product modules: `mail`, `hosting`, `databases`, `cms` and `storage`. Billing has been removed; there is no replacement billing plugin. Configuration controls product availability. It does not grant tenant membership, buy a plan, create provider accounts or provision infrastructure.
 
-The core identity, customer/project registry, memberships, plans and usage surfaces remain separate from optional products. Disabling Billing does not remove core plan administration. See [self-hosting](/developers/self-hosting) for the container and Helm distribution, and [authentication adapters](/developers/auth-adapters) for browser-provider selection.
+The core identity, customer/project registry, memberships, plans and usage surfaces remain separate from optional products. Existing resource allowance administration remains available; payment checkout, invoices and provider subscription management are not part of the core. See [self-hosting](/developers/self-hosting) for the container and Helm distribution, and [authentication adapters](/developers/auth-adapters) for browser-provider selection.
 
 ## Select modules
 
@@ -21,13 +21,12 @@ Set `WEBDOCK_MODULES` on the API and each worker, with the same configuration ac
     "hosting": { "enabled": true },
     "databases": { "enabled": true },
     "cms": { "enabled": true },
-    "storage": { "enabled": true },
-    "billing": { "enabled": true }
+    "storage": { "enabled": true }
   }
 }
 ```
 
-An absent variable preserves existing installation behavior. An explicit configuration disables omitted modules. For a fresh core-only installation:
+An absent variable starts with all products disabled. Explicit configuration also disables omitted modules. Before upgrading an existing installation, declare every product whose retained resources require management; startup refuses unsafe disablement. Remove obsolete `billing` entries and billing API/worker ownership before upgrading. For a fresh core-only installation:
 
 ```sh
 WEBDOCK_MODULES='{"configVersion":1,"modules":{}}'
@@ -46,7 +45,6 @@ Empty or malformed JSON, unknown module IDs/properties, mixed `enabled` and `sta
 | `databases` | `databases` | None; gateway and agent execution remain separate |
 | `cms` | `cms` | None; website runtimes remain separate |
 | `storage` | `portal` | `storage` |
-| `billing` | `billing` | `billing` |
 
 These are ownership names, not a complete API-domain configuration: enabled routes may also require Auth, Portal, Registry or integration domains. Workers require an explicit supported domain list and reject disabled modules. A core-only installation starts no worker. Enabling a module never supplies provider credentials or grants an agent additional privileges.
 
@@ -64,15 +62,14 @@ Use either `enabled` or `state` per entry.
 {
   "configVersion": 1,
   "modules": {
-    "mail": { "state": "draining" },
-    "billing": { "state": "draining" }
+    "mail": { "state": "draining" }
   }
 }
 ```
 
 This example disables the other four modules because they are omitted. On an existing installation, include every module whose resources still need management.
 
-Draining Billing blocks new checkouts, offers, product versions, publication and subscription upgrades. Existing cancellations, reconciliation and allowed downgrades retain their existing paths. Mail draining blocks new connections, domains, mailboxes and first incoming activation; resuming a retained suspended instance remains allowed. Hosting, database and storage provisioning use their registered operation guards. These settings take effect through restart or rollout, not a distributed live toggle.
+Mail draining blocks new connections, domains, mailboxes and first incoming activation; resuming a retained suspended instance remains allowed. Hosting, database and storage provisioning use their registered operation guards. These settings take effect through restart or rollout, not a distributed live toggle.
 
 ## Disable an existing module safely
 
@@ -109,7 +106,7 @@ Preflight is read-only and does not coordinate old enabled replicas. For Mail, r
 
 Modules do not import applications or discover runtime credentials through ambient configuration. API wrappers supply authorization, persistence, encryption and provider ports. Client entrypoints contain public DTOs and presentation; cookies, database credentials and provider secrets stay server-side. Existing server actions remain authenticated boundaries, and tenant/resource keys reset action results when context changes.
 
-Modules are known at build time; there is no runtime plugin marketplace. Existing compatibility exports, decimal string IDs, OAuth issuer, Studio protocol URLs and MCP audiences remain stable. Better Auth compatibility and explicitly configured Clerk use the same local authorization model; changing browser providers does not migrate identities or entitlements automatically.
+These legacy product modules remain known at build time. New runtime plugins use the separate signed manifest, isolated container and capability API; making a module optional does not make it an isolated runtime plugin. Existing compatibility exports, decimal string IDs, OAuth issuer, Studio protocol URLs and MCP audiences remain stable. Better Auth compatibility and explicitly configured Clerk use the same local authorization model; changing browser providers does not migrate identities or entitlements automatically.
 
 ## Verify a change
 
@@ -128,6 +125,6 @@ Workspace names remain compatible: `@webdock/api` runs in `apps/control-plane`, 
 
 ## Provider directory layout
 
-Adapters are grouped by product area and provider: `adapters/auth/clerk`, `adapters/hosting/vercel`, `adapters/hosting/github`, `adapters/mail/turbosmtp`, `adapters/databases/postgres`, `adapters/storage/vercel` and `adapters/billing/polar`. Better Auth remains in `adapters/auth/better-auth`. Kubernetes runtime metadata is in `adapters/hosting/kubernetes`; its Python executor stays in `agents/kubernetes`.
+Adapters are grouped by product area and provider: `adapters/hosting/vercel`, `adapters/hosting/github`, `adapters/mail/turbosmtp`, `adapters/databases/postgres`, `adapters/storage/vercel`. Trusted authentication plugins live in `packages/auth-better-auth` and `packages/auth-clerk`; provider configuration lives in `packages/auth-configuration`, outside the core. Kubernetes runtime metadata is in `adapters/hosting/kubernetes`; its Python executor stays in `agents/kubernetes`.
 
 The root workspace pattern is `adapters/*/*`. Area directories do not become packages. Import stable package names such as `@webdock/adapter-hosting-vercel/projects`; the filesystem grouping does not rename npm packages or protocol routes. Product policy belongs in `modules`, shared contracts in `packages`, and provider-specific I/O in these adapter leaves.

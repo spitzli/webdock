@@ -5,14 +5,14 @@
   "type": "module",
   "exports": {
     "./identity": "./src/identity.ts",
-    "./auth-configuration": "./src/auth-configuration.ts",
     "./registry/*": "./src/registry/*.ts",
     "./jobs": "./src/jobs.ts",
     "./plugin-jobs": "./src/plugin-jobs.ts",
     "./plugin-data": "./src/plugin-data.ts",
     "./plugin-http": "./src/plugin-http.ts",
     "./plugin-exposure": "./src/plugin-exposure.ts",
-    "./plugin-runtime-policy": "./src/plugin-runtime-policy.ts"
+    "./plugin-runtime-policy": "./src/plugin-runtime-policy.ts",
+    "./auth-plugin": "./src/auth-plugin.ts"
   },
   "devDependencies": {
     "@types/pg": "^8"

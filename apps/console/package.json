@@ -39,9 +39,9 @@
     "@webdock/module-databases": "*",
     "@webdock/module-cms": "*",
     "@webdock/module-storage": "*",
-    "@webdock/module-billing": "*",
     "@webdock/core": "*",
-    "@webdock/console-kit": "*"
+    "@webdock/console-kit": "*",
+    "@webdock/auth-configuration": "*"
   },
   "devDependencies": {
     "@types/node": "^24",

@@ -1,6 +1,6 @@
 /** Product selection only; never replaces identity, entitlements or process ownership. */
 export type ProductModule =
-  "mail" | "hosting" | "databases" | "cms" | "storage" | "billing";
+  "mail" | "hosting" | "databases" | "cms" | "storage";
 export function hostingCommandModule(action: string): ProductModule {
   if (action.startsWith("databases.")) return "databases";
   if (action.startsWith("byok.mail.")) return "mail";
@@ -19,7 +19,6 @@ export function moduleForOperation(
   }
   if (operation.startsWith("integrations.")) return "hosting";
   if (operation.startsWith("cms.")) return "cms";
-  if (operation.startsWith("billing.")) return "billing";
   if (["getTenantStorage", "manageTenantStorage"].includes(operation))
     return "storage";
   if (
@@ -76,12 +75,7 @@ export function isModuleProvisioning(
   if (operation === "manageTenantStorage")
     return (args[1] as { action?: unknown } | undefined)?.action === "add";
   if (operation === "integrations.linkVercel") return true;
-  return [
-    "billing.checkout",
-    "billing.createOffer",
-    "billing.createVersion",
-    "billing.publish",
-  ].includes(operation);
+  return false;
 }
 /** Shared Console path classifier. Internal registry/project pages remain core. */
 export function moduleForPath(path: string): ProductModule | undefined {
@@ -94,7 +88,7 @@ export function moduleForPath(path: string): ProductModule | undefined {
   if (/^\/tenants\/[^/]+\/hosting(?:\/|$)/.test(path)) return "hosting";
   if (/^\/sites(?:\/|$)/.test(path)) return "cms";
   const customer =
-    /^\/customers\/[^/]+\/(hosting|databases|mail|storage|billing)(?:\/|$)/.exec(path);
+    /^\/customers\/[^/]+\/(hosting|databases|mail|storage)(?:\/|$)/.exec(path);
   if (customer) return customer[1] as ProductModule;
 
   if (/^\/(?:mail(?:\/|$)|tenants\/[^/]+\/mail(?:\/|$))/.test(path))
@@ -106,11 +100,6 @@ export function moduleForPath(path: string): ProductModule | undefined {
     return "databases";
   if (/^\/(?:hosting|infrastructure)(?:\/|$)/.test(path)) return "hosting";
   if (/^\/(?:cms|websites)(?:\/|$)/.test(path)) return "cms";
-  if (
-    /^\/(?:billing)(?:\/|$)/.test(path) ||
-    /^\/tenants\/[^/]+\/billing(?:\/|$)/.test(path)
-  )
-    return "billing";
   if (/^\/tenants\/[^/]+\/storage(?:\/|$)/.test(path)) return "storage";
   return undefined;
 }

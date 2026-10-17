@@ -138,9 +138,6 @@ export const databaseCommands = [
   z
     .object({ action: z.literal("databases.projects.list"), customerID: id })
     .strict(),
-  z
-    .object({ action: z.literal("databases.orders.list"), customerID: id })
-    .strict(),
   z.object({ action: z.literal("databases.list"), projectID: id }).strict(),
   z
     .object({ action: z.literal("databases.permissions"), projectID: id })
@@ -283,7 +280,6 @@ export const databaseReadActions = [
   "databases.projects.list",
   "databases.migrations.list",
   "databases.migrationPurgePreview",
-  "databases.orders.list",
   "databases.permissions",
   "databases.list",
   "databases.get",
@@ -326,23 +322,6 @@ export type DatabaseOrderAccept = Extract<
   { action: "databases.acceptOrder" }
 >;
 
-export type DatabaseBillingView = {
-  activeMonthlyNetCents: number;
-  currency: "EUR";
-  orders: Array<{
-    id: string;
-    projectID: string;
-    databaseID: string | null;
-    name: string | null;
-    kind: DatabaseKind;
-    monthlyPriceCents: number;
-    currency: "EUR";
-    acceptedAt: string;
-    billingStartedAt: string | null;
-    endedAt: string | null;
-    cancellationRequestedAt: string | null;
-  }>;
-};
 
 export function databasePlanAvailableTo(
   plan: DatabasePlan,

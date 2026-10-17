@@ -7,14 +7,12 @@ import { hostingManifest } from "../../modules/hosting/src/manifest";
 import { databasesManifest } from "../../modules/databases/src/manifest";
 import { cmsManifest } from "../../modules/cms/src/manifest";
 import { storageManifest } from "../../modules/storage/src/manifest";
-import { billingManifest } from "../../modules/billing/src/manifest";
 const manifests = [
   mailManifest,
   hostingManifest,
   databasesManifest,
   cmsManifest,
   storageManifest,
-  billingManifest,
 ];
 if (
   createRegistry(manifests).publicView().revision !==

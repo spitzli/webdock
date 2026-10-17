@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import type { Pool } from "pg";
-import type { createClerkAdapter } from "@webdock/adapter-auth-clerk";
+import type { createClerkAdapter } from "@webdock/auth-clerk";
 
 export class ClerkSessionUnavailable extends Error {}
 type ExternalEvidence = NonNullable<

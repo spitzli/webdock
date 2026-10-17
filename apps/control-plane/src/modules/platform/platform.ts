@@ -8,7 +8,6 @@ import {
 import { isIP } from "node:net";
 import { database, authDatabase } from "../../db/runtime";
 import { currentMCPClaims } from "../auth/mcp";
-import { TurboSMTPClient } from "../mail/turbosmtp";
 
 export class PlatformError extends Error {}
 export type PlatformSettings = {
@@ -284,6 +283,7 @@ export async function mailProvider(
   }>(row.encrypted_secret, "platform-master");
   if (!credentials.consumerKey || !credentials.consumerSecret)
     throw new PlatformError("Reconnect the mail provider.");
+  const { TurboSMTPClient } = await import("../mail/turbosmtp");
   return new TurboSMTPClient(credentials, fetcher);
 }
 export async function testMailConnection() {

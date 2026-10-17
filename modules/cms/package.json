@@ -11,6 +11,9 @@
   "dependencies": {
     "@webdock/module-sdk": "*",
     "@webdock/i18n": "*",
-    "@webdock/page-builder": "*"
+    "@webdock/page-builder": "*",
+    "@webdock/core": "*",
+    "@webdock/platform-db": "*",
+    "drizzle-orm": "1.0.0-rc.4"
   }
 }

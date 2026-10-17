@@ -1,5 +1,7 @@
-import { readCachedView } from "../../cache";
+import { createCmsRegistryExtension } from "@webdock/module-cms/server/registry";
 import { installationRegistry } from "../../installation";
+import { readCachedView } from "../../cache";
+import type { RegistryCmsExtension } from "@webdock/core/registry/ports";
 import { databaseURL } from "../../db/client";
 import {
   ScopedPool,
@@ -10,7 +12,11 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { createRegistryService } from "@webdock/core/registry/service";
 export { RegistryError } from "@webdock/core/registry/errors";
 export type { RegistryIdentity } from "@webdock/core/registry/ports";
-export async function createRegistry() {
+export async function createRegistry(
+  cms: RegistryCmsExtension = createCmsRegistryExtension((product, intent) =>
+    installationRegistry().require(product, intent),
+  ),
+) {
   const raw = process.env.REGISTRY_DATABASE_URL;
   if (!raw) throw Error("Registry database role is required");
   const url = databaseURL(raw),
@@ -49,8 +55,7 @@ export async function createRegistry() {
         { kind: "session", subject: actor.subject, sessionID: actor.sessionID },
         run,
       ),
-    requireProduct: (product, intent) =>
-      installationRegistry().require(product, intent),
+    cms,
     close: () => pool.end(),
   });
 }

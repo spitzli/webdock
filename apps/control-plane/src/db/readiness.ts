@@ -3,7 +3,6 @@ import { is } from "drizzle-orm";
 import { PgTable, getTableConfig } from "drizzle-orm/pg-core";
 import * as authSchema from "./schema/auth";
 import * as registrySchema from "./schema/registry";
-import * as billingSchema from "./schema/billing";
 type Reader = {
   query: (
     sql: string,
@@ -110,12 +109,6 @@ export async function verifyDatabaseReadiness(
       name: "provider_event_receipt",
       columns: ["provider", "event_id", "body_hash", "result"],
     });
-  if (
-    domains.includes("auth") ||
-    domains.includes("billing") ||
-    domains.includes("lifecycle")
-  )
-    expected.push(...mappedTables(billingSchema));
   if (expected.length) await verifySchema(pools.authentication, expected);
 }
 
@@ -159,6 +152,5 @@ export async function verifyWorkerReadiness(pool: Reader, domains: string[]) {
       name: "mail_message",
       columns: ["id", "customer_id"],
     });
-  if (domains.includes("billing")) tables.push(...mappedTables(billingSchema));
   await verifySchema(pool, tables);
 }

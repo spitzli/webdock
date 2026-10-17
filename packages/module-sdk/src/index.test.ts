@@ -10,8 +10,8 @@ const mail = {
     { slot: "tenant.services", id: "mail", label: "Mail", path: "/mail" },
   ],
 } as const;
-test("legacy configuration preserves installed modules; explicit configuration disables omissions", () => {
-  assert.equal(createRegistry([mail]).state("mail"), "enabled");
+test("products are opt-in with both missing and explicit empty configuration", () => {
+  assert.equal(createRegistry([mail]).state("mail"), "disabled");
   const registry = createRegistry([mail], { configVersion: 1, modules: {} });
   assert.equal(registry.state("mail"), "disabled");
   assert.deepEqual(registry.navigation("tenant.services"), []);
@@ -55,13 +55,13 @@ test("manifest validation catches duplicate IDs, incompatible SDKs, missing depe
   );
 });
 test("revision is deterministic and public views cannot mutate the registry", () => {
-  const registry = createRegistry([mail]);
+  const registry = createRegistry([mail], {configVersion: 1, modules: {mail: {enabled: true}}});
   const view = registry.publicView();
   view.modules.mail = "disabled";
   assert.equal(registry.state("mail"), "enabled");
   assert.equal(
     registry.publicView().revision,
-    createRegistry([mail]).publicView().revision,
+    createRegistry([mail], {configVersion: 1, modules: {mail: {enabled: true}}}).publicView().revision,
   );
   assert.notEqual(
     registry.publicView().revision,

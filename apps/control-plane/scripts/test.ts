@@ -27,6 +27,7 @@ const integration = new Set([
   "cms-bridge.integration.test.ts",
 ]);
 const rls = new Set([
+  "retained-billing-schema.integration.test.ts",
   "plugins-startup-rls.integration.test.ts",
   "plugins-runtime-state-rls.integration.test.ts",
   "plugins-state-rls.integration.test.ts",
@@ -46,18 +47,7 @@ const rls = new Set([
   "native-budget-rls.integration.test.ts",
   "mcp.integration.test.ts",
   "vercel-events.integration.test.ts",
-  "billing-schema.integration.test.ts",
-  "billing-connection.integration.test.ts",
-  "billing-webhooks.integration.test.ts",
-  "billing-jobs.integration.test.ts",
-  "billing-checkout.integration.test.ts",
-  "billing-reconcile.integration.test.ts",
   "worker-profile.integration.test.ts",
-  "billing-portal.integration.test.ts",
-  "billing-offers.integration.test.ts",
-  "billing-provider.integration.test.ts",
-  "billing-mcp.integration.test.ts",
-  "billing-catalog-unconfigured.integration.test.ts",
 ]);
 const requested = process.argv.slice(3);
 if (mode === "unit" || mode === "all")

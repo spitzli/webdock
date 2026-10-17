@@ -335,15 +335,6 @@ const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
           email: user + "@example.invalid",
         },
         async () => {
-          const { tenantBilling } = await import("../src/modules/billing/view");
-          const { customerTransaction } = await import("../src/modules/billing/context");
-          const actor = { subject: user, sessionID: scope.sessionID };
-          const billingView = await tenantBilling(actor, { environment: "live", customerID: customer });
-          expect(billingView.customerID).toBe(customer);
-          expect(billingView.canManage).toBe(false);
-          const memberBilling = await withConsolePrincipal({ ...currentConsolePrincipal()!, role: "member", permissions: ["org:billing:manage"] }, () => tenantBilling(actor, { environment: "live", customerID: customer }));
-          expect(memberBilling.canManage).toBe(true);
-          await expect(customerTransaction(actor, customer, async () => undefined)).rejects.toMatchObject({ status: 403 });
           return getTenant(new Headers(), customer);
         },
       );

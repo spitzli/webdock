@@ -7,7 +7,6 @@ import type {
   ManagedDatabasePlanEntry,
 } from "@webdock/database-contracts/runtime-ports";
 import type { DatabaseRuntimePorts } from "./ports";
-import { databaseBilling } from "./database-billing";
 import {
   resourceID,
   databaseCommandSchema,
@@ -242,14 +241,6 @@ export function createHostingDatabases(dependencies: Dependencies) {
             [cmd.customerID],
           )
         ).rows;
-      }
-      if (cmd.action === "databases.orders.list") {
-        await dependencies.authorizeHosting(
-          actor,
-          { permission: "org:databases:manage", customerID: cmd.customerID },
-          db,
-        );
-        return databaseBilling(db, cmd.customerID);
       }
       if (cmd.action === "databases.permissions") {
         const a = await dependencies.authorizeHosting(

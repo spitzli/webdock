@@ -44,7 +44,6 @@ export default async function Administration() {
         <Link className="button secondary" href="/admin/plans">{i18n.t("Plans and allowances")}</Link>
       </p>
       <p><Link className="button secondary" href="/admin/registry-users">{i18n.t("Studio accounts")}</Link></p>
-      <p><Link className="button secondary" href="/admin/billing">{i18n.t("Billing")}</Link></p>
       <AdminForms settings={settings} connection={connection} />
       <p className="muted">{i18n.t("Only platform operators can change these settings. Tenant administrators manage their own tenant. Account registration remains invitation-only.")}</p>
     </div>
