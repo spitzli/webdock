@@ -46,6 +46,7 @@ export function createProjectContextView(
               { href: base, label: t("Applications"), exact: true },
               { href: base + "/git", label: t("Deployments") },
               { href: base + "/services", label: t("Services") },
+              { href: `/plugins/${projectID}`, label: t("Extensions") },
               { href: base + "/databases", label: t("Databases") },
               ...(data.operator
                 ? [

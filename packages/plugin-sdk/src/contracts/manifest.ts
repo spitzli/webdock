@@ -304,6 +304,35 @@ export const extensionSchema = z.strictObject({
     .refine(uniqueNames),
   secrets: z.array(name).max(32).refine(unique),
   httpBindings: z.array(name).max(32).refine(unique),
+  // Paths are local to /v1/plugins/:pluginID/projects/:projectID/api.
+  // Exact routes only: parameters belong to the action input schema.
+  api: z
+    .array(
+      z.strictObject({
+        method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]),
+        path: z
+          .string()
+          .max(160)
+          .regex(/^\/(?:[a-z][a-z0-9-]*\/)*[a-z][a-z0-9-]*$/),
+        action: name,
+      }),
+    )
+    .max(64)
+    .optional(),
+  // Host prefixes names with the plugin ID; plugins cannot replace core tools.
+  mcp: z
+    .array(
+      z.strictObject({
+        name: z
+          .string()
+          .max(64)
+          .regex(/^[a-z][a-z0-9_]*$/),
+        description: z.string().min(1).max(1000),
+        action: name,
+      }),
+    )
+    .max(64)
+    .optional(),
 });
 const displayURL = z
   .string()
@@ -403,6 +432,18 @@ export const manifestSchema = z
     for (const slot of x.slots)
       if (slot.action && !x.actions.some((a) => a.name === slot.action))
         issue("Unknown slot action");
+    if (!unique((x.api ?? []).map((r) => `${r.method} ${r.path}`)))
+      issue("Duplicate API route");
+    if (!unique((x.mcp ?? []).map((t) => t.name))) issue("Duplicate MCP tool");
+    for (const route of x.api ?? []) {
+      const action = x.actions.find((a) => a.name === route.action);
+      if (!action) issue("Unknown API action");
+      if (route.method === "GET" && action?.intent !== "read")
+        issue("GET requires a read action");
+    }
+    for (const tool of x.mcp ?? [])
+      if (!x.actions.some((a) => a.name === tool.action))
+        issue("Unknown MCP action");
     for (const t of x.tables)
       for (const fk of t.foreignKeys) {
         const target = x.tables.find((t) => t.name === fk.references.table);

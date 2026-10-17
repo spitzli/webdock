@@ -1,3 +1,5 @@
+import {PluginError} from '@webdock/plugin-sdk/contracts';
+import {listRuntimePlugins,invokeRuntimePlugin} from '../plugins/runtime';
 import { consoleAuthConfiguration } from "../auth/console-configuration";
 import { studioOperationDomain } from "./operation-domain";
 import {
@@ -195,6 +197,8 @@ const isMailKeyInput = (value: unknown): value is MailKeyInput =>
         isString(field),
   );
 const shapes: Record<string, ((value: unknown) => boolean)[]> = {
+  "plugins.list": [isString],
+  "plugins.invoke": [isObject],
   ...mailStudioShapes,
   ...cmsShapes,
   "project.preview": [isString],
@@ -488,6 +492,8 @@ async function dispatch(
   const text = args[0] as string,
     input = args[0] as Record<string, string>,
     tenantInput = args[1] as Record<string, string>;
+  if (operation === "plugins.list") return listRuntimePlugins(args[0] as string);
+  if (operation === "plugins.invoke") return invokeRuntimePlugin(args[0]);
   if (operation === "billing.changeQuote")
     return quoteSubscriptionChange(billingActor(), args[0]);
   if (operation === "billing.change")
@@ -936,6 +942,7 @@ async function handleRequest(
         { error: { kind: "HostingError", message: error.message } },
         { status: error.status, headers: responseHeaders },
       );
+    if (error instanceof PluginError) return Response.json({error:{kind:"PluginError",message:error.message}},{status:error.code==="permission_denied"?403:error.code==="invalid_input"?400:503});
     if (error instanceof RegistryError)
       return Response.json(
         { error: { kind: "RegistryError", message: error.message } },

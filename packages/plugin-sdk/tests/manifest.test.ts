@@ -206,7 +206,54 @@ test("requires runtime fields at the manifest root and rejects the retired wrapp
   const m = fixture();
   assert.equal(Object.hasOwn(m, "x-webdock"), false);
   const { name, version, kind, description, ...runtime } = m;
-  assert.throws(() => parsePluginManifest({ name, version, kind, description, "x-webdock": runtime }));
+  assert.throws(() =>
+    parsePluginManifest({
+      name,
+      version,
+      kind,
+      description,
+      "x-webdock": runtime,
+    }),
+  );
   delete m.image;
   assert.throws(() => parsePluginManifest(m));
+});
+
+test("accepts namespaced API routes and MCP tools referencing declared actions", () => {
+  const m = fixture();
+  m.api = [{ method: "GET", path: "/notes", action: m.actions[0].name }];
+  m.mcp = [
+    {
+      name: "list_notes",
+      description: "List project notes",
+      action: m.actions[0].name,
+    },
+  ];
+  assert.deepEqual(parsePluginManifest(m), m);
+});
+test("rejects route collisions, ambiguous paths and unknown action references", () => {
+  for (const api of [
+    [{ method: "GET", path: "/../admin", action: "notes.list" }],
+    [{ method: "GET", path: "/notes", action: "missing" }],
+    [
+      { method: "GET", path: "/notes", action: "notes.list" },
+      { method: "GET", path: "/notes", action: "notes.list" },
+    ],
+    [{ method: "GET", path: "/notes/:id", action: "notes.list" }],
+  ]) {
+    const m = fixture();
+    m.api = api;
+    assert.throws(() => parsePluginManifest(m));
+  }
+});
+test("read HTTP methods cannot invoke write actions and MCP names are local", () => {
+  const m = fixture();
+  const write = m.actions.find((a: any) => a.intent === "write");
+  m.api = [{ method: "GET", path: "/save", action: write.name }];
+  assert.throws(() => parsePluginManifest(m));
+  delete m.api;
+  for (const name of ["other/tool", "../admin", "a".repeat(65)]) {
+    m.mcp = [{ name, description: "test", action: m.actions[0].name }];
+    assert.throws(() => parsePluginManifest(m));
+  }
 });

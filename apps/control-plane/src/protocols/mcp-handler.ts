@@ -1,3 +1,4 @@
+import {registerPluginTools} from '../modules/plugins/exposure';
 import { withDatabaseScope } from "@webdock/database-runtime";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
@@ -97,6 +98,7 @@ export async function POST(request: Request) {
             ),
           hosting.scopes.has("hosting:write"),
         );
+      if (access) await registerPluginTools(server, canWrite);
       const transport = new WebStandardStreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
         enableJsonResponse: true,

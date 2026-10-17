@@ -269,8 +269,8 @@
   "45 minutes per month for content or minor configuration work. Defined scope; no new development or unlimited support.": [
     "45 Minuten pro Monat für Inhalte oder kleine Konfigurationsarbeiten. Abgegrenzter Umfang, keine Neuentwicklung oder allgemeine Support-Flatrate."
   ],
-  "5. Cookies, preferences and planned analytics": [
-    "5. Cookies, Einstellungen und geplante Statistik"
+  "5. Cookies, preferences and website analytics": [
+    "5. Cookies, Einstellungen und Website-Statistiken"
   ],
   "5. Privacy and data processing": [
     "5. Datenschutz und Auftragsverarbeitung"
@@ -7137,9 +7137,6 @@
   "Platform · Project hosting": [
     "Plattform · Projekt-Hosting"
   ],
-  "Plausible Analytics is planned for the public website but is not currently integrated. The intended setup measures website use without analytics cookies, advertising profiles or cross-site tracking. Before activation, we will update this notice with the actual hosting setup, recipients, data collected, retention and applicable legal basis, and obtain consent where required.": [
-    "Plausible Analytics ist für die öffentliche Website geplant, derzeit aber noch nicht eingebunden. Vorgesehen ist eine Nutzungsstatistik ohne Analyse-Cookies, Werbeprofile oder websiteübergreifendes Tracking. Vor der Aktivierung ergänzen wir diese Erklärung um die tatsächliche Betriebsform, Empfänger, erfasste Daten, Speicherdauer und anwendbare Rechtsgrundlage und holen eine Einwilligung ein, soweit erforderlich."
-  ],
   "Please check the page properties.": [
     "Bitte die Seiteneigenschaften prüfen."
   ],
@@ -11126,6 +11123,9 @@
   ],
   "We use Vercel for web application hosting, Contabo for managed server, database and incoming-mail infrastructure, turboSMTP for email delivery, and Cloudflare for DNS services. GitHub and other customer-selected providers are involved when their integrations are enabled. Neon was the previous platform database provider; retained migration copies remain subject to the retention rules below until deleted. Providers receive only the data needed for their role. We also disclose data where legally required, for example to tax advisers or competent authorities.": [
     "Wir nutzen Vercel für das Hosting der Webanwendungen, Contabo für verwaltete Server-, Datenbank- und Empfangsmail-Infrastruktur, turboSMTP für den E-Mail-Versand und Cloudflare für DNS-Dienste. GitHub und weitere vom Kunden ausgewählte Anbieter kommen bei aktivierten Anbindungen hinzu. Neon war der bisherige Anbieter der Plattformdatenbank; verbliebene Migrationskopien unterliegen bis zur Löschung den unten beschriebenen Aufbewahrungsregeln. Dienstleister erhalten die für ihre Aufgabe benötigten Daten. Daneben geben wir Daten weiter, soweit dies rechtlich erforderlich ist, etwa an Steuerberater oder zuständige Behörden."
+  ],
+  "We use self-hosted Umami at moon.webdock.dev to measure page views, referral sources and aggregated device and country statistics. The tracker does not use cookies or identify signed-in accounts. Query strings and URL fragments are excluded, and the browser’s Do Not Track preference is respected. Session replay and heatmaps are not enabled for this website.": [
+    "Wir verwenden selbst gehostetes Umami unter moon.webdock.dev, um Seitenaufrufe, Zugriffsquellen sowie zusammengefasste Geräte- und Länderstatistiken zu erfassen. Der Tracker verwendet keine Cookies und identifiziert keine angemeldeten Konten. URL-Parameter und URL-Fragmente werden ausgeschlossen; die Do-Not-Track-Einstellung des Browsers wird berücksichtigt. Sitzungsaufzeichnungen und Heatmaps sind für diese Website nicht aktiviert."
   ],
   "Webdock API key revoked.": [
     "Webdock-API-Schlüssel widerrufen."

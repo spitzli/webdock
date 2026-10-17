@@ -1,0 +1,57 @@
+---
+title: "Plugin API and MCP tools"
+description: "Expose external plugin actions through authenticated HTTP routes and MCP tools."
+---
+
+External plugins can declare API routes and MCP tools alongside their actions. The same host admission checks apply to Console, HTTP and MCP calls: the current session, project membership, explicit project grant, approved capabilities and runtime generation.
+
+<Note>
+This is an operator-managed pilot. The general registry installation UI, automated lifecycle controller and all SDK services are not yet available. Declaring an interface does not install or authorize a plugin.
+</Note>
+
+## Declare the interfaces
+
+```json
+{
+  "api": [
+    { "method": "GET", "path": "/configuration", "action": "analytics.configuration" },
+    { "method": "POST", "path": "/site", "action": "analytics.provision" }
+  ],
+  "mcp": [
+    { "name": "configuration", "description": "Get project tracking configuration", "action": "analytics.configuration" },
+    { "name": "provision", "description": "Enable analytics for a project", "action": "analytics.provision" }
+  ]
+}
+```
+
+Each reference must name a declared action. Routes are exact local paths; dynamic path parameters are not supported in this pilot. GET routes must reference read actions. The host owns the prefix:
+
+```text
+/v1/plugins/{pluginID}/projects/{projectID}/api/{local-path}
+```
+
+GET inputs use an `input` JSON query parameter. Other methods accept JSON bodies. Write actions require an `Idempotency-Key` header. Current external HTTP access uses the existing operator API bearer authentication; this does not imply customer API-key provisioning is available.
+
+MCP names are prefixed, for example `plugin__managed_analytics__configuration`. Arguments include `projectID` and the action's schema-validated `input`. Write tools additionally require an idempotency key. Read-only credentials do not receive write tools and cannot invoke write actions, including while plugin metadata changes. Tools are rediscovered on each MCP request; disabled or unhealthy plugins do not expose new work.
+
+## Elysia runtime
+
+A plugin may run its own ElysiaJS server outside the Control Plane. The host calls the action handler over private HTTPS with a generation-specific workload credential and a signed invocation valid for at most 60 seconds. The SDK verifier checks the host signature, plugin, generation, action identity and expiry. The runtime must also match the requested action to the signed action.
+
+The Managed Analytics example uses an Elysia backend and a separately exposed static UI listener. Backend handlers are not served through the public UI listener.
+
+## Named HTTP access
+
+`ctx.http.request()` selects an operator-configured binding by name. The host controls the origin, pinned addresses, allowed exact paths and query keys, HTTP methods and provider credentials. Bindings are scoped per plugin and project. Plugins cannot supply headers or arbitrary destinations. Redirects are refused, responses are bounded to 1 MiB and requests have a 10-second deadline.
+
+```typescript
+const response = await ctx.http.request({
+  binding: "analytics",
+  method: "GET",
+  path: "/api/websites/PROJECT_OWNED_ID/stats?startAt=0&endAt=1000",
+});
+```
+
+GET requires `plugin.http.read`; mutations require `plugin.http.request` and a write invocation. Grant/session/runtime checks run before and after the provider request. A completed remote effect cannot be undone by a later revocation, so plugin provisioning must remain retry-safe.
+
+See [the manifest contract](/developers/plugin-manifest) and [plugin development](/developers/plugins).

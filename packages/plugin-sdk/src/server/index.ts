@@ -1,4 +1,6 @@
 import {
+  httpRequestSchema,
+  type PluginHTTP,
   documentKeySchema,
   documentWriteSchema,
   type PluginData,
@@ -12,7 +14,8 @@ export function createPluginContext(options: {
   hostURL: string;
   token: () => string | Promise<string>;
   fetch?: typeof fetch;
-}): { jobs: PluginJobs; data: PluginData } {
+  runtimeCredential?: string;
+}): { jobs: PluginJobs; data: PluginData; http: PluginHTTP } {
   const base = new URL(options.hostURL);
   if (
     base.username ||
@@ -36,6 +39,9 @@ export function createPluginContext(options: {
       headers: {
         Authorization: `Bearer ${await options.token()}`,
         "Content-Type": "application/json",
+        ...(options.runtimeCredential
+          ? { "x-plugin-runtime": options.runtimeCredential }
+          : {}),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
       redirect: "error",
@@ -56,6 +62,10 @@ export function createPluginContext(options: {
     return value;
   };
   return {
+    http: {
+      request: (input) =>
+        call("/v1/plugin/http", "POST", httpRequestSchema.parse(input)),
+    },
     data: {
       read: (key) =>
         call(
@@ -73,3 +83,8 @@ export function createPluginContext(options: {
     },
   };
 }
+export {
+  verifyInvocation,
+  invocationClaimsSchema,
+  type InvocationClaims,
+} from "./invocation.js";

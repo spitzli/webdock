@@ -1,3 +1,5 @@
+import Script from 'next/script';
+import analytics from '@/lib/managed-analytics.json';
 import {I18nProvider} from '@webdock/i18n/react';
 import {getRequestI18n} from '@webdock/i18n/next';
 import type { Metadata } from 'next';
@@ -17,5 +19,5 @@ export async function generateMetadata():Promise<Metadata>{const {t,locale}=awai
 };}
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const {locale,preference}=await getRequestI18n();
-  return <html lang={locale} className={space.variable} suppressHydrationWarning><head><script dangerouslySetInnerHTML={{ __html: themeScript }}/></head><body><I18nProvider locale={locale} preference={preference}>{children}</I18nProvider></body></html>;
+  return <html lang={locale} className={space.variable} suppressHydrationWarning><head><script dangerouslySetInnerHTML={{ __html: themeScript }}/></head><body><I18nProvider locale={locale} preference={preference}>{children}</I18nProvider>{process.env.VERCEL_ENV === "production" && <Script id="managed-analytics" src={analytics.scriptURL} strategy="afterInteractive" data-website-id={analytics.websiteID} data-domains={analytics.domains.join(",")} data-exclude-search="true" data-exclude-hash="true" data-do-not-track="true"/>}</body></html>;
 }

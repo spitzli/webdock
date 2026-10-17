@@ -15,12 +15,14 @@ export const capabilities = [
   "plugin.storage.read",
   "plugin.storage.write",
   "plugin.secrets.read",
+  "plugin.http.read",
   "plugin.http.request",
   "plugin.audit.emit",
 ] as const;
 export const capabilitySchema = z.enum(capabilities);
 export type Capability = z.infer<typeof capabilitySchema>;
 export const readCapabilities: readonly Capability[] = [
+  "plugin.http.read",
   "project.read",
   "plugin.data.read",
   "plugin.db.read",

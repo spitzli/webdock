@@ -125,6 +125,7 @@ if (
       ),
     );
 }
+if (config.domains.includes("registry")) mounts.push((await import("./protocols/plugins")).pluginProtocol(config));
 if (config.domains.includes("registry"))
   mounts.push(
     await (await import("./protocols/registry")).registryProtocol(config),

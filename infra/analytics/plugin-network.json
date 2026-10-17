@@ -1,0 +1,211 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "managed-analytics-g3",
+        "namespace": "webdock-plugins"
+      },
+      "spec": {
+        "selector": {
+          "webdock.dev/plugin": "managed-analytics",
+          "webdock.dev/generation": "3"
+        },
+        "ports": [
+          {
+            "name": "runtime",
+            "port": 3443,
+            "targetPort": 3443
+          },
+          {
+            "name": "ui",
+            "port": 3444,
+            "targetPort": 3444
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "managed-analytics-runtime",
+        "namespace": "webdock-plugins"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "webdock.dev/plugin": "managed-analytics",
+            "webdock.dev/generation": "3"
+          }
+        },
+        "policyTypes": [
+          "Ingress",
+          "Egress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "namespaceSelector": {
+                  "matchLabels": {
+                    "kubernetes.io/metadata.name": "webdock-platform"
+                  }
+                },
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "webdock-api"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 3443
+              }
+            ]
+          },
+          {
+            "from": [
+              {
+                "namespaceSelector": {
+                  "matchLabels": {
+                    "kubernetes.io/metadata.name": "kube-system"
+                  }
+                },
+                "podSelector": {
+                  "matchLabels": {
+                    "app.kubernetes.io/name": "traefik"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 3444
+              }
+            ]
+          }
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "namespaceSelector": {
+                  "matchLabels": {
+                    "kubernetes.io/metadata.name": "kube-system"
+                  }
+                },
+                "podSelector": {
+                  "matchLabels": {
+                    "k8s-app": "kube-dns"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "UDP",
+                "port": 53
+              },
+              {
+                "protocol": "TCP",
+                "port": 53
+              }
+            ]
+          },
+          {
+            "to": [
+              {
+                "ipBlock": {
+                  "cidr": "178.104.141.95/32"
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 443
+              }
+            ]
+          },
+          {
+            "to": [
+              {
+                "namespaceSelector": {
+                  "matchLabels": {
+                    "kubernetes.io/metadata.name": "kube-system"
+                  }
+                },
+                "podSelector": {
+                  "matchLabels": {
+                    "app.kubernetes.io/name": "traefik"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 443
+              },
+              {
+                "protocol": "TCP",
+                "port": 8443
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "Ingress",
+      "metadata": {
+        "name": "managed-analytics-ui",
+        "namespace": "webdock-plugins",
+        "annotations": {
+          "traefik.ingress.kubernetes.io/router.entrypoints": "websecure",
+          "traefik.ingress.kubernetes.io/router.tls": "true",
+          "traefik.ingress.kubernetes.io/router.tls.certresolver": "webdock"
+        }
+      },
+      "spec": {
+        "ingressClassName": "traefik",
+        "tls": [
+          {
+            "hosts": [
+              "analytics.plugins.spitzli.dev"
+            ]
+          }
+        ],
+        "rules": [
+          {
+            "host": "analytics.plugins.spitzli.dev",
+            "http": {
+              "paths": [
+                {
+                  "path": "/ui/",
+                  "pathType": "Prefix",
+                  "backend": {
+                    "service": {
+                      "name": "managed-analytics-g3",
+                      "port": {
+                        "number": 3444
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

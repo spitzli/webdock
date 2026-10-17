@@ -178,6 +178,8 @@ export const pluginJobExecution = auth.table(
   ],
 );
 export const pluginInvocation = auth.table("plugin_invocation", {
+  sessionContext: jsonb("session_context").notNull().default({}),
+  requestHash: text("request_hash"),
   id: uuid().primaryKey(),
   pluginID: text("plugin_id")
     .notNull()

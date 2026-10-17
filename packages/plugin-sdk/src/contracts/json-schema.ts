@@ -16,7 +16,7 @@ export function tabulariumKindSchema(): Record<string, unknown> {
         // required arrays inside allOf so object requirements remain intact.
         ...(typeof property === "object" && property.type ? { type: property.type } : {}),
         allOf: [property],
-        required: required.has(name),
+        ...(required.has(name) ? { required: true } : {}),
       },
     ]),
   );

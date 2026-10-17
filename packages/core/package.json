@@ -9,7 +9,10 @@
     "./registry/*": "./src/registry/*.ts",
     "./jobs": "./src/jobs.ts",
     "./plugin-jobs": "./src/plugin-jobs.ts",
-    "./plugin-data": "./src/plugin-data.ts"
+    "./plugin-data": "./src/plugin-data.ts",
+    "./plugin-http": "./src/plugin-http.ts",
+    "./plugin-exposure": "./src/plugin-exposure.ts",
+    "./plugin-runtime-policy": "./src/plugin-runtime-policy.ts"
   },
   "devDependencies": {
     "@types/pg": "^8"
