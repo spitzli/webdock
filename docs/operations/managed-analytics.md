@@ -20,7 +20,7 @@ Operator-managed pilot, live on 2026-10-17. The owner selected Umami instead of 
 
 ## Image preparation
 
-The hosting agent intentionally sets `imagePullPolicy: Never` for arbitrary images. Initial placement on wd-eu-03 failed because the reviewed Umami image was absent. Three transient, unprivileged operator preload pods pulled the exact digest on wd-eu-01/02/03. The application subsequently became healthy; the initial failed hosting operation still needs reconciliation. Do not weaken the agent image policy.
+The hosting agent intentionally sets `imagePullPolicy: Never` for arbitrary images. Initial placement on wd-eu-03 failed because the reviewed Umami image was absent. Three transient, unprivileged operator preload pods pulled the exact digest on wd-eu-01/02/03. The application subsequently became healthy. Native hosting start operation `105012931137114112` succeeded at 20:45:35 UTC, reconciling the application at revision 2. The replacement pod is ready with zero restarts, and all three preload pods have been removed. Do not weaken the agent image policy.
 
 ## Plugin delivery boundary
 

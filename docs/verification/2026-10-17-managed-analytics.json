@@ -56,5 +56,14 @@
     "sha256": "482a8ef4eb247a30827bfcee3a4bde4b4e05d268ebe0e152214d59afee43241e",
     "english": true,
     "stage": "initial project configuration before the first pageview"
-  }
+  },
+  "providerHostingOperation": {
+    "id": "105012931137114112",
+    "outcome": "succeeded",
+    "revision": 2,
+    "readyReplicas": 1,
+    "restarts": 0
+  },
+  "providerHTTPStatus": 200,
+  "temporaryImagePreloadPodsRemoved": true
 }
