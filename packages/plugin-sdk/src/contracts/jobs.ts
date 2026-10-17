@@ -6,29 +6,39 @@ export const jobNameSchema = z
   .max(64)
   .regex(/^[a-z][a-z0-9_.-]*$/);
 export const jobIDSchema = z.string().regex(/^job-[a-f0-9]{64}$/);
-export const enqueueJobSchema = z.strictObject({
-  name: jobNameSchema,
-  payload: z
-    .json()
-    .refine(
-      (value) =>
-        new TextEncoder().encode(JSON.stringify(value)).byteLength <=
-        pluginLimits.jobPayloadBytes,
-      "Job payload exceeds 32 KiB",
-    ),
-  idempotencyKey: z
-    .string()
-    .min(8)
-    .max(128)
-    .regex(/^[A-Za-z0-9_.-]+$/),
-  delaySeconds: z
-    .number()
-    .int()
-    .min(0)
-    .max(pluginLimits.jobDelaySeconds)
-    .default(0),
-  attempts: z.number().int().min(1).max(5).default(3),
-});
+export const enqueueJobSchema = z
+  .strictObject({
+    name: jobNameSchema,
+    payload: z
+      .json()
+      .refine(
+        (value) =>
+          new TextEncoder().encode(JSON.stringify(value)).byteLength <=
+          pluginLimits.jobPayloadBytes,
+        "Job payload exceeds 32 KiB",
+      ),
+    idempotencyKey: z
+      .string()
+      .min(8)
+      .max(128)
+      .regex(/^[A-Za-z0-9_.-]+$/),
+    delaySeconds: z
+      .number()
+      .int()
+      .min(0)
+      .max(pluginLimits.jobDelaySeconds)
+      .default(0),
+    runAt: z.iso.datetime({ offset: true }).optional(),
+    attempts: z.number().int().min(1).max(5).default(3),
+  })
+  .refine(
+    (input) =>
+      !input.runAt ||
+      (input.delaySeconds === 0 &&
+        Date.parse(input.runAt) <=
+          Date.now() + pluginLimits.jobDelaySeconds * 1000),
+    "Use runAt within seven days or delaySeconds, not both",
+  );
 export type EnqueueJob = z.input<typeof enqueueJobSchema>;
 export type JobStatus = {
   id: string;

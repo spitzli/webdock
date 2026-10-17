@@ -56,6 +56,7 @@ try {
         "packages/core/tests/jobs/jobs.test.ts",
         "packages/core/tests/jobs/integration.test.ts",
         "packages/core/tests/jobs/core.integration.test.ts",
+        "packages/core/tests/jobs/schedules.integration.test.ts",
       ],
       { env },
     ),

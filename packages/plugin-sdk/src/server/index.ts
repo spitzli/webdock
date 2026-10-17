@@ -1,4 +1,7 @@
 import {
+  documentKeySchema,
+  documentWriteSchema,
+  type PluginData,
   enqueueJobSchema,
   jobIDSchema,
   PluginError,
@@ -9,7 +12,7 @@ export function createPluginContext(options: {
   hostURL: string;
   token: () => string | Promise<string>;
   fetch?: typeof fetch;
-}): { jobs: PluginJobs } {
+}): { jobs: PluginJobs; data: PluginData } {
   const base = new URL(options.hostURL);
   if (
     base.username ||
@@ -42,7 +45,7 @@ export function createPluginContext(options: {
     if (!response.ok)
       throw new PluginError(
         result?.error?.code ?? "unavailable",
-        result?.error?.message ?? "Plugin job request failed",
+        result?.error?.message ?? "Plugin service request failed",
         response.status >= 500,
       );
     return result;
@@ -53,6 +56,15 @@ export function createPluginContext(options: {
     return value;
   };
   return {
+    data: {
+      read: (key) =>
+        call(
+          "/v1/plugin/data/" + encodeURIComponent(documentKeySchema.parse(key)),
+          "GET",
+        ),
+      write: (input) =>
+        call("/v1/plugin/data", "PUT", documentWriteSchema.parse(input)),
+    },
     jobs: {
       enqueue: (input) =>
         call("/v1/plugin/jobs", "POST", enqueueJobSchema.parse(input)),

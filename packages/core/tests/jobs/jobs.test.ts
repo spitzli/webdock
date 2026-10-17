@@ -44,3 +44,24 @@ test("queue contract forbids caller-selected scope, oversized payloads and delay
       false,
     );
 });
+
+test("absolute scheduling supports stable retries and rejects mixed/out-of-range delay", () => {
+  const base = {
+    name: "demo.process",
+    payload: {},
+    idempotencyKey: "reminder-key",
+    runAt: new Date(Date.now() + 60000).toISOString(),
+  };
+  assert.equal(enqueueJobSchema.safeParse(base).success, true);
+  assert.equal(
+    enqueueJobSchema.safeParse({ ...base, delaySeconds: 5 }).success,
+    false,
+  );
+  assert.equal(
+    enqueueJobSchema.safeParse({
+      ...base,
+      runAt: new Date(Date.now() + 8 * 86400000).toISOString(),
+    }).success,
+    false,
+  );
+});

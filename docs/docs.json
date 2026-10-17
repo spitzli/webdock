@@ -76,7 +76,8 @@
             "pages": [
               "developers/plugins",
               "developers/plugin-manifest",
-              "developers/plugin-jobs"
+              "developers/plugin-jobs",
+              "developers/project-notes"
             ]
           },
           {

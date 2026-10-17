@@ -138,7 +138,9 @@ export function createPluginJobs(options: {
       },
       {
         jobId: id,
-        delay: input.delaySeconds * 1000,
+        delay: input.runAt
+          ? Math.max(0, Date.parse(input.runAt) - Date.now())
+          : input.delaySeconds * 1000,
         attempts: input.attempts,
         backoff: { type: "exponential", delay: 1000 },
         removeOnComplete: false,
@@ -194,6 +196,43 @@ export function createPluginJobs(options: {
     // Retain both record and tombstone: deleting a job would allow an idempotent retry to execute again.
     await (await queue.backend.client).set(cancelledKey(id), "1");
     return { id, cancelRequested: true as const };
+  }
+  async function schedule(
+    scope: JobScope,
+    name: string,
+    intervalSeconds: number,
+  ) {
+    if (
+      !Number.isSafeInteger(intervalSeconds) ||
+      intervalSeconds < 60 ||
+      intervalSeconds > 604800 ||
+      !(await options.authority.canRun(scope, name))
+    )
+      throw new PluginError(
+        "permission_denied",
+        "Invalid or unauthorized schedule",
+      );
+    await ready();
+    return queue.upsertJobScheduler(
+      "schedule-" + hash([partition(scope), name]),
+      { every: intervalSeconds * 1000 },
+      {
+        name,
+        data: {
+          scope,
+          name,
+          payload: {},
+          fingerprint: hash([scope, name, intervalSeconds]),
+        },
+        opts: {
+          attempts: 3,
+          backoff: { type: "exponential", delay: 1000 },
+          // Count-based cleanup also evicts other jobs in this queue, breaking their idempotency.
+          removeOnComplete: false,
+          removeOnFail: false,
+        },
+      },
+    );
   }
   function startWorker() {
     const worker = new Worker<Envelope>(
@@ -341,6 +380,7 @@ export function createPluginJobs(options: {
     cancel,
     handle,
     startWorker,
+    schedule,
     close: () => queue.close(),
   };
 }

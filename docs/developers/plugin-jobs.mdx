@@ -50,7 +50,7 @@ The HTTP adapter exposes `POST /v1/plugin/jobs`, `GET /v1/plugin/jobs/:id` and `
 | Option | Limit |
 | --- | --- |
 | Payload and result | 32 KiB each |
-| Delay | 0–604800 seconds (7 days) |
+| Delay | 0–604800 seconds (7 days); alternatively `runAt` is an absolute ISO timestamp within seven days |
 | Attempts | 1–5; default 3 |
 | Idempotency key | 8–128 letters, digits, dots, underscores or hyphens |
 | Execution deadline | 60 seconds; handlers must cooperate with cancellation |

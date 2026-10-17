@@ -8,7 +8,8 @@
     "./auth-configuration": "./src/auth-configuration.ts",
     "./registry/*": "./src/registry/*.ts",
     "./jobs": "./src/jobs.ts",
-    "./plugin-jobs": "./src/plugin-jobs.ts"
+    "./plugin-jobs": "./src/plugin-jobs.ts",
+    "./plugin-data": "./src/plugin-data.ts"
   },
   "devDependencies": {
     "@types/pg": "^8"
