@@ -93,3 +93,11 @@ The actual validator retained the valid fixture byte-for-byte as a JSON value an
 The unused kind was renamed from `webdock-plugin` to `extension` at the owner’s request. The catalog was empty (0 plugins). Labels are **Extensions / Erweiterungen**. SDK, fixtures, public docs and registry configuration now require `extension`; the runtime field semantics are unchanged.
 
 The owner subsequently requested the Tabularis registry convention: kind-specific runtime fields now live directly at the manifest root. The `x-webdock` wrapper was removed from the SDK, fixture, generated registry schema and live kind. Tabularis driver/theme schemas were inspected read-only; the other registry was not modified. No published plugins required migration.
+
+## First public developer alpha — 2026-10-17
+
+Project Notes `0.1.0-alpha.2` is published and approved as a **prerelease**, without a verified badge. Source and GHCR container are public; production Console installation is still unavailable. The descriptor matches the tagged manifest bytes and its JWS was verified against the previously established Ed25519 key. Two real English screenshots are included and displayed by the registry.
+
+GitHub asset egress is narrowly allowed by `infra/registry/github-assets-egress.json` for the currently resolved raw/release/object asset addresses on 443. Refresh these addresses if GitHub changes them. The GitHub release webhook was installed with the existing registry secret using the operator account because the shared GitHub App returned 403 for hook creation. No webhook secret was rotated or committed.
+
+Release uploads must include both `tabularium.json` (strict manifest ingestion) and `<id>-universal.json` (platform descriptor), with identical bytes. A burst of release events hit the known validation/readiness limitation and one callback returned 503; targeted GitHub redelivery and the registry asset recheck completed ingestion. Final signature verification passed. GitHub ping events are rejected with 400 by this release-only endpoint; actual release deliveries returned 200.

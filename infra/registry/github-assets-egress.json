@@ -1,0 +1,54 @@
+{
+  "apiVersion": "networking.k8s.io/v1",
+  "kind": "NetworkPolicy",
+  "metadata": {
+    "name": "registry-github-assets",
+    "namespace": "wd-104618288083894272",
+    "annotations": {
+      "webdock.dev/egress-hosts": "raw.githubusercontent.com,release-assets.githubusercontent.com,objects.githubusercontent.com",
+      "webdock.dev/verified-at": "2026-10-17"
+    }
+  },
+  "spec": {
+    "podSelector": {
+      "matchLabels": {
+        "webdock.dev/app-id": "104651089088876544"
+      }
+    },
+    "policyTypes": [
+      "Egress"
+    ],
+    "egress": [
+      {
+        "to": [
+          {
+            "ipBlock": {
+              "cidr": "185.199.108.133/32"
+            }
+          },
+          {
+            "ipBlock": {
+              "cidr": "185.199.109.133/32"
+            }
+          },
+          {
+            "ipBlock": {
+              "cidr": "185.199.110.133/32"
+            }
+          },
+          {
+            "ipBlock": {
+              "cidr": "185.199.111.133/32"
+            }
+          }
+        ],
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 443
+          }
+        ]
+      }
+    ]
+  }
+}

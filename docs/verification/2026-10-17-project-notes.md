@@ -23,3 +23,9 @@ This authoring host inserts explicit fixture installation/release/grant metadata
 The local preview and its owned PostgreSQL/Redis fixtures are intentionally retained for the user to try. Stop the host before running the fixture teardown; do not remove unrelated local containers.
 
 Final review rechecked all three reported issues: no remaining important defects in that scope; all 5 plugin tests passed. The shared-queue periodic retention bug was separately reproduced (count cleanup could evict completed regular job IDs), fixed by retaining scheduled records as well, and covered by a real Redis regression. Full Core/jobs packed-package suite: 7 passed, none skipped. API check and Mintlify validate/broken-links passed. Private plugin source commit: be0d93f.
+
+## Explicit alpha publication requested by owner
+
+The owner subsequently requested public source and a registry release with English screenshots. Public prerelease `0.1.0-alpha.1` is available at https://registry.webdock.dev/plugins/project-notes and https://github.com/spitzli/webdock-extension-project-notes/releases/tag/v0.1.0-alpha.1. This supersedes the earlier no-publication status, not the production installer limitation. The GitHub organization public-package permission was enabled only after explicit owner approval; only this container package was switched to public. Exact signature/asset/image evidence is in `2026-10-17-project-notes-release.json`.
+
+The final current preview is `0.1.0-alpha.2`; alpha.1 remains available with its original artifact bytes. Alpha.2 has a sharp English reminder screenshot and versioned absolute README image links. Strict webhook ingestion additionally requires `tabularium.json` as a release asset; it is byte-identical to the universal descriptor. Signed payload and both screenshot hashes were verified, and a release webhook delivery returned HTTP 200.
