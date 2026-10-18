@@ -40,11 +40,11 @@ Check the response's `ok` field: validation errors return HTTP 200 with `ok: fal
 
 1. Build and push the runtime image to an approved OCI registry. Record its actual SHA-256 digest.
 2. Put that immutable image reference and the release version in the manifest.
-3. Attach `<name>-universal.json` to the forge release with the **same manifest bytes**. The descriptor is a JSON asset, not the container image.
+3. Attach both `tabularium.json` and `<name>-universal.json` to the forge release with **identical manifest bytes**. Tabularium ingests the manifest asset; the host verifies the universal JSON descriptor separately from the container image.
 4. Submit the repository through the registry and configure the release webhook shown by Tabularium. Operator approval is required.
 5. Verify release integrity before considering a version installable. Catalog acceptance alone is not proof of image availability, signature trust or host compatibility.
 
-The runtime contract fixes port **8080** and endpoints `/healthz`, `/readyz`, `/webdock/actions` and `/webdock/jobs`. Plugins declare capabilities and named bindings; they receive no platform database credentials or arbitrary Kubernetes/RBAC configuration.
+Runtime networking depends on the host adapter. The operator-managed Elysia plugins use a private TLS action listener on port **3443** and a separate public UI listener on **3444**. Follow the specific plugin README for its endpoints and health checks. Plugins declare capabilities and named bindings; they receive no platform database credentials or arbitrary Kubernetes/RBAC configuration.
 
 The host installer is not released yet. A [backend jobs CLI and local BullMQ fixture](/developers/plugin-jobs) now implement create, validate, build and pack; remaining CLI commands are still in development. Do not assume registry publication automatically starts a workload or grants tenant access.
 
@@ -56,7 +56,7 @@ This endpoint manages the plugin registry. The [Webdock platform MCP](/developer
 
 ## First functional extension
 
-[Project Notes](/developers/project-notes) implements project-scoped notes, an isolated panel and BullMQ reminders. Its local integration is verified; registry publication remains gated on the production installer and host acceptance.
+[Project Notes](/developers/project-notes) implements project-scoped notes, an isolated panel and BullMQ reminders. Its developer alpha is published in the registry. Local integration is verified; production Console installation remains unavailable.
 
 ## Managed Analytics pilot
 

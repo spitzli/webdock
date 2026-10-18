@@ -22,7 +22,7 @@ The plugin receives no PostgreSQL or Redis credentials. The Core data API uses t
 
 A project can hold 100 notes, with 100 characters per title and 5000 per body, within a **24 KiB total document**. The smaller document bound keeps UI responses below the 32 KiB frame-message cap. Reminder dates are limited to seven days ahead.
 
-Deleting removes a note from the active document. Host idempotency receipts remain retained; final retention/purge policy belongs to the production host and must be completed before publication.
+Deleting removes a note from the active document. Host idempotency receipts remain retained; final retention/purge policy belongs to the production host and must be completed before production rollout.
 
 ## Local verification
 

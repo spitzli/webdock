@@ -3,9 +3,9 @@ title: "Background jobs with BullMQ"
 description: "Use the Core-owned job API from an extension, and run the local integration fixture."
 ---
 
-BullMQ is part of Webdock Core. Platform workers use persistent domain queues for Mail, Hosting, Storage and Billing dispatch. PostgreSQL continues to own business-operation state, leases and authorization. Redis holds scheduling/delivery state; plugins never receive its connection credentials.
+BullMQ is part of Webdock Core. Platform workers use persistent domain queues for enabled product dispatch. PostgreSQL continues to own business-operation state, leases and authorization. Redis holds scheduling/delivery state; plugins never receive its connection credentials.
 
-<Info>The Core worker wiring, plugin-job service and SDK are implemented in this branch and tested locally. They are not yet deployed to the production platform. The plugin service requires the host's authentication, live authorization and isolated runtime-dispatch ports; it does not supply the unfinished production plugin installer.</Info>
+<Info>The Core worker wiring, plugin-job service and SDK are implemented and tested locally in development work that is not yet included in the published main branch. They are not yet deployed to the production platform. The plugin service requires the host's authentication, live authorization and isolated runtime-dispatch ports; it does not supply the unfinished production plugin installer.</Info>
 
 ## Declare job capabilities
 

@@ -120,7 +120,7 @@ UI slots: `project.overview.panel`, `project.actions`, `operator.plugin.settings
 | Events | `plugin.events.emit`, `plugin.events.subscribe` |
 | Objects | `plugin.storage.read`, `plugin.storage.write` |
 | Secret bindings | `plugin.secrets.read` |
-| HTTP bindings | `plugin.http.request` |
+| HTTP bindings | `plugin.http.read`, `plugin.http.request` |
 | Audit | `plugin.audit.emit` |
 
 An action, job or UI slot may request only capabilities declared by its plugin. Read actions cannot request mutation capabilities. Capabilities in a manifest are requests, not grants; host authorization still depends on the installation, actor and customer/project scope.

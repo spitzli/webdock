@@ -3,6 +3,8 @@ title: "Create the first operator"
 description: "Provision a fresh installation's initial operator and Console OAuth client, then complete real password and MFA setup."
 ---
 
+<Note>Implementation preview: these instructions describe locally verified development work that is not yet included in a published Webdock core release. Use them only with the matching implementation; the currently published main branch does not include all commands and paths below.</Note>
+
 Run this once after the [offline database installation](/developers/self-hosting). The command creates a local operator, its explicit Console identity mapping and a confidential OAuth client. It creates no login session, authenticator secret, backup codes, customer, provider account or Mail instance.
 
 This procedure initializes the native Auth foundation in `apps/control-plane`, served through `apps/auth`, and the Console client used by `apps/console`. It also precedes a configured Clerk installation: finish local setup first, then follow [authentication adapters](/developers/auth-adapters) for explicit external-subject mappings. This command never links accounts by email or replaces existing identities.
@@ -98,7 +100,7 @@ The private output uses `status: "verify-command-result"`: only the command's su
 3. Enable the authenticator using that password, scan the displayed QR code in your authenticator, save the recovery codes privately and verify a current code.
 4. Open the Console origin. Its normal login flow uses the registered Studio protocol callback. Operator authorization remains unavailable until password setup and MFA enrollment are complete.
 
-No SQL edit to `twoFactorEnabled`, manual session insertion or synthetic cookie is part of this flow. Existing authorization rechecks the current native user, session and binding. Configure a working system-authentication email transport for password recovery; customer Mail installation is independent of that transport. You can complete setup with all six optional product modules disabled. Enabling a product later does not grant its permissions or provision resources.
+No SQL edit to `twoFactorEnabled`, manual session insertion or synthetic cookie is part of this flow. Existing authorization rechecks the current native user, session and binding. Configure a working system-authentication email transport for password recovery; customer Mail installation is independent of that transport. You can complete setup with all optional product modules disabled. Enabling a product later does not grant its permissions or provision resources.
 
 ## Verification boundary
 
