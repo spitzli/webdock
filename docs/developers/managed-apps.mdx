@@ -6,7 +6,7 @@ description: "Operate a dedicated application while configuring its features in 
 Managed Apps operates dedicated applications assigned to a Webdock project. **Tabularium is an app in Managed Apps**, not a separate registry-management plugin. Each customer gets their own Tabularium instance and manages its registry through that instance.
 
 <Note>
-The initial Managed Apps integration operates existing applications provisioned through Hosting. It does not yet provision a new instance, database or domain from the plugin. The host adapter and plugin must be installed together; catalog publication alone does not activate them. The developer alpha is locally verified and published. Its required host adapter and database policy have not been rolled out to the production Console.
+The initial Managed Apps integration operates existing applications provisioned through Hosting. It does not yet provision a new instance, database or domain from the plugin. The host adapter and plugin must be installed together; catalog publication alone does not activate them. On 18 October 2026, the production host adapter, database policy and developer alpha were deployed together, and the existing Webdock Tabularium app was assigned to its existing project. Other projects still require an explicit installation grant and app binding.
 </Note>
 
 ## Operate the app in Webdock
@@ -17,6 +17,12 @@ The initial Managed Apps integration operates existing applications provisioned 
 - Open the customer's dedicated Tabularium instance.
 
 Stopping an application uses Hosting's existing lifecycle and retains its data. Start, stop and restart require current application and subscription revisions and a write-capable project session. The plugin cannot select another customer's project, pass arbitrary hosting commands or obtain database, cluster or registry credentials.
+
+## Production Console
+
+The production Console shows the existing Tabularium app and its trusted app/Hosting links. The signed read action was verified with an authenticated operator session; the same app read from a different project was denied. No stop or restart was performed on the live registry during verification.
+
+![Production Console with the existing Tabularium app ready in Managed Apps](/images/managed-apps/managed-apps-production.png)
 
 ## Panel preview
 
@@ -60,4 +66,4 @@ The former `managed-registry` version `0.1.0-alpha.1` is withdrawn and must not 
 - [Developer alpha 0.1.0-alpha.1](https://github.com/spitzli/webdock-extension-managed-apps/releases/tag/v0.1.0-alpha.1)
 - [Registry entry](https://registry.webdock.dev/plugins/managed-apps)
 
-The public container can be pulled anonymously by the manifest's immutable digest. The release descriptor matches the registry's signed manifest. These checks establish release integrity, not a production installation.
+The public container can be pulled anonymously by the manifest's immutable digest. The release descriptor matches the registry's signed manifest. Production activation additionally verified the private runtime's TLS certificate, plugin identity, version and generation. The public plugin endpoint exposes only the UI; application actions pass through the authenticated Webdock host.

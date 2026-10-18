@@ -19,7 +19,9 @@ Final product-free Core build, API/Console typechecks, 185 API unit tests, 16 Cl
 
 The offline helper is now setup_legacy_revalidation(issuer text), and signed scopes include the chosen authProvider. Coordinate worker/API/SQL versions; do not roll out a partial mix. Local Better Auth management endpoints are disabled under Clerk even if OAuth compatibility is enabled. Global Clerk operator assignment remains deliberate administrator metadata configuration before the switch.
 
-Owned development Clerk resources and temporary keys were removed. The owned PostgreSQL fixture was returned to its original stopped state. Core/auth changes remain in the existing working tree; no production auth switch, role grants or database migration were executed.
+Owned development Clerk resources and temporary keys were removed. The owned PostgreSQL fixture was returned to its original stopped state.
+
+The 18 October production rollout deployed the matched full API/worker, Console, Auth and RLS changes. It preserves global Better Auth, native Clerk Console and Better Auth OAuth. The existing operator's exact native identity mapping and verified primary email were checked before assigning only that account's Clerk private operator metadata; MFA settings were unchanged. Full global Clerk conversion remains deferred. Temporary offline migration admission and role memberships were removed after rollout. See verification/2026-10-18-core-managed-apps-rollout.json for artifact identities and verification limits.
 
 
 ## Documentation signing checkpoint
@@ -30,3 +32,5 @@ The updated public auth-adapters page is staged in /tmp/webdock-registry-docs-re
 ## Documentation publication completed
 
 After the authorized full 1Password restart, one controlled signing attempt succeeded. Signed docs commit 46c58b204499d886e739e7b278aa329491bba405 was pushed; GitHub verified its signature. PR https://github.com/spitzli/webdock/pull/41 merged as c7dfe43848abb78ba2172055cb638b57797c86ef. The live auth-adapters page contains the new role-authority section and retains the explicit implementation-preview boundary. Core/auth code remains locally implemented/tested; no production auth provider, roles or RLS were changed by this publication.
+
+The first authenticated browser run also exposed a reverse-proxy Server Actions origin mismatch: Clerk completed verification, but Next rejected the completion POST against the internal Vercel host. Console and Auth now explicitly allow only their configured public origin hosts. Public-origin POST acceptance and untrusted-origin rejection were checked; the existing session then loaded operator workspaces and the live Managed Apps panel successfully.
