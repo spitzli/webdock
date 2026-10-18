@@ -96,6 +96,11 @@ try {
       throw Error("Loaded image architecture mismatch");
   }
   run("api", "bun", ["test", "/app/packages/module-sdk/src/index.test.ts"]);
+  run("api-core", "bun", ["-e", "const fs=require('node:fs');if(JSON.stringify(fs.readdirSync('/app'))!==JSON.stringify(['core.js']))throw Error('Unexpected files in Core API runtime');if(fs.statSync('/app/core.js').size===0)throw Error('Empty Core API bundle');"]);
+  run("console-core", "node", ["-e", `const fs=require('node:fs');function walk(path){for(const entry of fs.readdirSync(path,{withFileTypes:true})){const child=path+'/'+entry.name;if(/\\/(modules|adapters)\\//.test(child)||/\\/@webdock\\/module-(mail|hosting|databases|storage|cms|billing)(\\/|$)/.test(child))throw Error('Product file in Core Console: '+child);if(entry.isDirectory())walk(child);}}walk('/app');if(!fs.existsSync('/app/.core-build/console/server.js'))throw Error('Missing Core Console entry');`]);
+  checks.push({ name: "core-product-boundary", passed: true });
+  execFileSync(process.execPath, ["tools/release/smoke-core-images.mjs", ...["api-core", "console-core", "auth", "migrate"].map(name => `${prefix}:${name}`)], { stdio: "inherit", timeout: 300000 });
+  checks.push({ name: "core-images-fresh-installation", passed: true });
   checks.push({ name: "api-module-tests", passed: true });
   run("api", "bun", [
     "-e",

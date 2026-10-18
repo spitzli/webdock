@@ -57,7 +57,7 @@ CMD ["node", "apps/auth/server.js"]
 FROM dependencies AS core-api-build
 RUN npm run build:core -w @webdock/api
 
-FROM oven/bun:1.4.3 AS api-core
+FROM oven/bun:1.4.3-slim@sha256:14a223fa35747ec728bce300ef85888bc5f7958164d15bbba6a54b22b52a3288 AS api-core
 WORKDIR /app
 COPY --from=core-api-build --chown=bun:bun /app/apps/control-plane/dist-core/core.js ./core.js
 ENV NODE_ENV=production BIND_ADDRESS=0.0.0.0 PORT=3130
