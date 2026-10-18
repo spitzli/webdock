@@ -113,6 +113,8 @@ If no browser UI is needed, omit `uiBaseDomain` and both TLS options. Supplying 
 
 The worker creates a non-root workload with a read-only root filesystem, restricted network policy, private TLS credentials and image digest verification. It updates the runtime binding before API health verification and activation. Provision and test the worker, registry, secret mounting and network permissions for your installation; the Console setup indicator alone does not prove that infrastructure is ready.
 
+Workloads include startup, readiness and liveness probes. On clusters enforcing Webdock's application safety admission policy, verify Restricted Pod Security, the namespace quota and default-deny ingress/egress policy before setting `security.webdock.dev/ready=true` on the plugin namespace.
+
 Use the checked-in [example configuration](https://github.com/spitzli/webdock/blob/main/apps/build-worker/plugin-installer.example.json)
 and [systemd service](https://github.com/spitzli/webdock/blob/main/apps/build-worker/webdock-plugin-installer.service).
 Install the [private workflow template](https://github.com/spitzli/webdock/tree/main/tools/plugins/github-actions)

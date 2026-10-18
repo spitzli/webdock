@@ -101,6 +101,7 @@ class InstallerTests(unittest.TestCase):
         self.assertTrue(container['securityContext']['readOnlyRootFilesystem'])
         self.assertFalse(container['securityContext']['allowPrivilegeEscalation'])
         self.assertEqual(container['securityContext']['capabilities'], {'drop': ['ALL']})
+        self.assertEqual(container['livenessProbe'], {'tcpSocket': {'port': 3443}, 'periodSeconds': 10, 'failureThreshold': 3})
         self.assertNotIn('hostPath', json.dumps(resources))
         self.assertNotIn('private-runtime-token', json.dumps(deployment))
         self.assertTrue(all(item['metadata']['labels']['webdock.dev/source-import'] == '123' for item in resources))

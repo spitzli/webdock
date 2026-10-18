@@ -118,6 +118,7 @@ def runtime_resources(config, job, token, public_key, certificate, key):
                                          'limits': {'cpu': '500m', 'memory': '256Mi', 'ephemeral-storage': '64Mi'}},
                            'volumeMounts': [{'name': 'tls', 'mountPath': '/runtime-tls', 'readOnly': True}, {'name': 'tmp', 'mountPath': '/tmp'}],
                            'readinessProbe': {'tcpSocket': {'port': 3443}, 'periodSeconds': 5},
+                           'livenessProbe': {'tcpSocket': {'port': 3443}, 'periodSeconds': 10, 'failureThreshold': 3},
                            'startupProbe': {'tcpSocket': {'port': 3443}, 'periodSeconds': 5, 'failureThreshold': 60}}],
            'volumes': [{'name': 'tls', 'secret': {'secretName': name + '-tls', 'defaultMode': 0o440}},
                        {'name': 'tmp', 'emptyDir': {'sizeLimit': '32Mi'}}]}
@@ -172,6 +173,16 @@ class Kubernetes:
         return exact_json(self.call(['get', kind, name, '-n', namespace or self.runtime['namespace'], '-o', 'json']))
 
 
+def generate_runtime_tls(dns):
+    with tempfile.TemporaryDirectory(prefix='wd-plugin-tls-') as directory:
+        root = Path(directory)
+        # RSA transport certificates interoperate with Bun's Node-compatible HTTPS client.
+        worker.run_bounded(['/usr/bin/openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-sha256', '-noenc', '-days', '365', '-subj', '/CN=' + dns,
+                            '-addext', 'subjectAltName=DNS:' + dns, '-addext', 'basicConstraints=critical,CA:FALSE',
+                            '-addext', 'extendedKeyUsage=serverAuth', '-keyout', str(root / 'tls.key'), '-out', str(root / 'tls.crt')], timeout=10)
+        return (root / 'tls.crt').read_text(), (root / 'tls.key').read_text()
+
+
 def deploy_runtime(config, control, job):
     runtime = config['runtime']
     manifest = exact_json(job['manifestRaw'])
@@ -189,14 +200,9 @@ def deploy_runtime(config, control, job):
     public = subprocess.run(['/usr/bin/openssl', 'pkey', '-pubout'], input=settings['privateKey'].encode(), capture_output=True, timeout=10, check=True).stdout.decode()
     name = 'pi-' + job['id']
     token = secrets.token_urlsafe(48)
-    with tempfile.TemporaryDirectory(prefix='wd-plugin-tls-') as directory:
-        root = Path(directory)
-        dns = name + '.' + runtime['namespace'] + '.svc.cluster.local'
-        worker.run_bounded(['/usr/bin/openssl', 'req', '-x509', '-newkey', 'ed25519', '-noenc', '-days', '365', '-subj', '/CN=' + dns,
-                            '-addext', 'subjectAltName=DNS:' + dns, '-addext', 'basicConstraints=critical,CA:FALSE',
-                            '-addext', 'extendedKeyUsage=serverAuth', '-keyout', str(root / 'tls.key'), '-out', str(root / 'tls.crt')], timeout=10)
-        cert, key = (root / 'tls.crt').read_text(), (root / 'tls.key').read_text()
-        resources = runtime_resources(config, job, token, public, cert, key)
+    dns = name + '.' + runtime['namespace'] + '.svc.cluster.local'
+    cert, key = generate_runtime_tls(dns)
+    resources = runtime_resources(config, job, token, public, cert, key)
     fence(control, job)
     # create, never apply: an existing workload or ambiguous retry cannot be overwritten.
     for resource in resources:
