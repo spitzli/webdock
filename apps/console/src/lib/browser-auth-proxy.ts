@@ -7,6 +7,7 @@ import {
 } from "next/server";
 import {
   browserAuthConfiguration,
+  browserAuthPageURL,
   safeBrowserReturn,
 } from "./browser-auth-config";
 type Credentials = {
@@ -61,8 +62,8 @@ export function createBrowserProxy(
         process.env.CLERK_PUBLISHABLE_KEY ||
         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
       // The static secret comes from Clerk's server environment, not dynamic-key propagation.
-      signInUrl: "/login",
-      signUpUrl: "/sign-up",
+      signInUrl: browserAuthPageURL("/login"),
+      signUpUrl: browserAuthPageURL("/sign-up"),
       authorizedParties: configured.authorizedParties,
       audience: configured.audience,
     },

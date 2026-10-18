@@ -1,7 +1,7 @@
 import { ProductProvider } from "@distribution/providers";
 import { deDE, enUS } from "@clerk/localizations";
 import { ClerkProvider } from "@clerk/nextjs";
-import { browserAuthConfiguration } from "@/lib/browser-auth-config";
+import { browserAuthConfiguration, browserAuthPageURL } from "@/lib/browser-auth-config";
 import { connection } from "next/server";
 import { ModuleProvider } from "@webdock/module-sdk/react";
 import { getStudioInstallation } from "@/lib/studio-client";
@@ -66,8 +66,8 @@ export default async function Layout({
               process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
             }
             localization={locale === "de" ? deDE : enUS}
-            signInUrl="/login"
-            signUpUrl="/sign-up"
+            signInUrl={browserAuthPageURL("/login")}
+            signUpUrl={browserAuthPageURL("/sign-up")}
             signInFallbackRedirectUrl="/tenants"
           >
             {content}
