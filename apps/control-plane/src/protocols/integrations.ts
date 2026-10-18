@@ -1,206 +1,51 @@
-import { consoleAuthConfiguration } from "../modules/auth/console-configuration";
-import { requireConsoleBrowserPrincipal } from "../modules/auth/clerk-provider";
-import { withConsolePrincipal } from "../modules/auth/principal";
-import { ConsoleAuthError } from "../modules/auth/clerk-identity";
-import { createIntegrationCallbackHandoff } from "./integration-callback-handoff";
+import Elysia from "elysia";
+import type { ApiConfig } from "../config";
+import type { Mount } from "../route-manifest";
 import { installationRegistry } from "../installation";
-import {
-  browserAuthProvider,
-  clerkBrowserSession,
-} from "../modules/auth/clerk-runtime";
-import { ClerkSessionUnavailable } from "../modules/auth/clerk-bridge";
-import { withTrustedLocalSession } from "../modules/auth/principal";
-import { createIntegrationBrowserRunner } from "./integration-browser";
 import { hostingCall } from "../modules/portal/hosting";
 import { gitConnectionRoute } from "../modules/integrations/github/byok-routes";
+import { githubSelect } from "../modules/integrations/github/routes";
 import { POST as byokVercelConnect } from "./legacy-studio/hosting/vercel/connect";
+import { GET as byokVercelCallback } from "./legacy-studio/hosting/vercel/callback";
 import { vercelRegionEvent } from "../modules/integrations/vercel/events";
 import {
   vercelConnect,
   vercelCallback,
   vercelDisconnect,
 } from "../modules/integrations/vercel/vercel-routes";
-import { GET as byokVercelCallback } from "./legacy-studio/hosting/vercel/callback";
-import Elysia from "elysia";
-import { withDatabaseScope } from "@webdock/database-runtime";
-import type { ApiConfig } from "../config";
-import type { Mount } from "../route-manifest";
-import { createPortalSession } from "../modules/portal/session";
-import { withNativeHeaders } from "../modules/portal/request-context";
-import {
-  githubConnect,
-  githubCallback,
-  githubDisconnect,
-  githubSelect,
-} from "../modules/integrations/github/routes";
+import { createIntegrationBrowserRuntime } from "./integration-browser-runtime";
+import { configureProductIntegrationCallbacks } from "./integration-resume";
+
 export function integrationProtocols(config: ApiConfig): Mount[] {
-  const sso =
-    browserAuthProvider === "better-auth" ? createPortalSession() : null;
   const git = (step: "connect" | "callback" | "select") => (request: Request) =>
     gitConnectionRoute(request, step, {
       origin: config.studioOrigin,
       call: async (command) =>
         (await hostingCall(command)) as Record<string, unknown>,
     });
-  const handoff =
-    browserAuthProvider === "clerk"
-      ? createIntegrationCallbackHandoff({
-          origin: config.studioOrigin,
-          consoleOrigin: config.consoleOrigin ?? config.studioOrigin,
-          secret: process.env.BETTER_AUTH_SECRET ?? "",
-        })
-      : null;
-  const callbacks: Record<string, (request: Request) => Promise<Response>> = {
-    "/api/github/callback": githubCallback,
+  const { run } = createIntegrationBrowserRuntime(config, (intent) =>
+    installationRegistry().require("hosting", intent),
+  );
+  const callbacks = {
     "/api/vercel/callback": vercelCallback,
     "/api/hosting/git/callback": git("callback"),
     "/api/hosting/vercel/callback": byokVercelCallback,
   };
-  const runBrowser = createIntegrationBrowserRunner({
-    refreshCallback: (request) => handoff?.begin(request) ?? null,
-    provider: browserAuthProvider,
-    origin: config.studioOrigin,
-    requireHosting: (intent) =>
-      installationRegistry().require("hosting", intent),
-    async clerk(headers) {
-      try {
-        const session = await clerkBrowserSession(headers);
-        return {
-          headers: session.headers,
-          reference: {
-            subject: session.actor.userID,
-            sessionID: session.actor.sessionID,
-          },
-        };
-      } catch (error) {
-        if (error instanceof ClerkSessionUnavailable) return null;
-        throw error;
-      }
-    },
-    async legacy(headers) {
-      const session = await sso!.getDelegatedSession(headers);
-      return session?.sessionID
-        ? {
-            headers,
-            reference: {
-              subject: session.subject,
-              sessionID: session.sessionID,
-            },
-            accessToken: session.accessToken,
-          }
-        : null;
-    },
-    withIdentity(identity, browser, kind, handler) {
-      const dispatch = () =>
-        withDatabaseScope({ kind: "session", ...identity.reference }, () =>
-          withNativeHeaders(
-            identity.headers,
-            handler,
-            browser,
-            identity.accessToken,
-          ),
-        );
-      return kind === "clerk"
-        ? withTrustedLocalSession(
-            identity.headers,
-            identity.reference,
-            kind,
-            dispatch,
-          )
-        : dispatch();
-    },
-  });
-  const run: typeof runBrowser = async (request, intent, handler, options) => {
-    if (!consoleAuthConfiguration().enabled)
-      return runBrowser(request, intent, handler, options);
-    if (
-      request.method !== "GET" &&
-      request.headers.get("origin") !== config.studioOrigin
-    )
-      return new Response(null, { status: 403 });
-    try {
-      installationRegistry().require("hosting", intent);
-      const principal = await requireConsoleBrowserPrincipal(request);
-      return await withConsolePrincipal(principal, () =>
-        withNativeHeaders(
-          request.headers,
-          () => handler(request),
-          request.headers,
-        ),
-      );
-    } catch (error) {
-      return new Response(null, {
-        status: error instanceof ConsoleAuthError ? error.status : 503,
-        headers: { "cache-control": "no-store" },
-      });
-    }
-  };
-  const resume: Mount[] = handoff
-    ? [
-        {
-          host: config.apiOrigin,
-          category: "delegated",
-          app: new Elysia().post(
-            "/v1/integrations/resume",
-            async ({ request }) => {
-              let response: Response;
-              if (request.headers.get("origin") !== config.studioOrigin)
-                response = new Response(null, { status: 403 });
-              else if (
-                !/^Bearer [A-Za-z0-9_.-]{1,16384}$/i.test(
-                  request.headers.get("authorization") ?? "",
-                )
-              )
-                response = new Response(null, { status: 401 });
-              else {
-                const target = handoff.read(request.headers);
-                if (!target) response = new Response(null, { status: 400 });
-                else {
-                  const url = new URL(target, config.studioOrigin),
-                    handler = callbacks[url.pathname];
-                  response = handler
-                    ? await run(
-                        new Request(url, { headers: request.headers }),
-                        "provision",
-                        handler,
-                        { refreshed: true },
-                      )
-                    : new Response(null, { status: 400 });
-                }
-              }
-              const headers = new Headers(response.headers);
-              headers.append("set-cookie", handoff.clear());
-              headers.set("cache-control", "no-store");
-              headers.set("referrer-policy", "no-referrer");
-              return new Response(response.body, {
-                status: response.status,
-                headers,
-              });
-            },
-            { parse: "none" },
-          ),
-        },
-      ]
-    : [];
+  configureProductIntegrationCallbacks(
+    config.studioOrigin,
+    Object.fromEntries(
+      Object.entries(callbacks).map(([path, handler]) => [
+        path,
+        (request: Request, options: { refreshed: true }) =>
+          run(request, "provision", handler, options),
+      ]),
+    ),
+  );
   return [
-    ...resume,
     {
       host: config.studioOrigin,
       category: "auth_protocol",
       app: new Elysia()
-        .post(
-          "/api/github/connect",
-          ({ request }) => run(request, "provision", githubConnect),
-          { parse: "none" },
-        )
-        .get("/api/github/callback", ({ request }) =>
-          run(request, "provision", githubCallback),
-        )
-        .post(
-          "/api/github/disconnect",
-          ({ request }) => run(request, "access", githubDisconnect),
-          { parse: "none" },
-        )
         .post(
           "/api/github/select",
           ({ request }) => run(request, "provision", githubSelect),

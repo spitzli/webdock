@@ -28,7 +28,7 @@ const print = (x) =>
         : JSON.stringify(x, null, 2),
   );
 const help =
-  "webdock plugin create <name> --template backend --services jobs --dir <empty-dir>\nwebdock plugin validate [--dir <dir>] [--json]\nwebdock plugin build [--dir <dir>]\nwebdock plugin pack --image <repository@sha256:digest> [--dir <dir>] [--json]\nAll commands are local. No publish/install/dev command is implemented yet.";
+  "webdock plugin create <name> --template actions --dir <empty-dir>\nwebdock plugin create <name> --template backend --services jobs --dir <empty-dir>\nwebdock plugin validate [--dir <dir>] [--json]\nwebdock plugin build [--dir <dir>]\nwebdock plugin pack --image <repository@sha256:digest> [--dir <dir>] [--json]\nAll commands are local. No publish/install/dev command is implemented yet.";
 try {
   if (args.includes("--help") || args.length === 0) {
     print(help);
@@ -42,11 +42,11 @@ try {
     const name = args[2];
     if (!/^[a-z][a-z0-9-]{0,63}$/.test(name ?? ""))
       throw Error("Use a lowercase extension name");
-    if (
-      (option("--template") ?? "backend") !== "backend" ||
-      (option("--services") ?? "jobs") !== "jobs"
-    )
-      throw Error("This first template supports backend + jobs only");
+    const templateName = option("--template") ?? "backend";
+    if (!["backend", "actions"].includes(templateName) ||
+        (templateName === "backend" && (option("--services") ?? "jobs") !== "jobs") ||
+        (templateName === "actions" && option("--services")))
+      throw Error("Choose actions without services, or backend with jobs");
     if (!option("--dir")) throw Error("create requires --dir");
     let exists = false;
     try {
@@ -101,10 +101,17 @@ try {
       secrets: [],
       httpBindings: [],
     };
+    if (templateName === "actions") {
+      manifest.description = "Stateless action plugin";
+      manifest.capabilities = [];
+      manifest.services = { required: [], optional: [] };
+      manifest.actions = [{ name: "demo.echo", intent: "read", capabilities: [] }];
+      manifest.jobs = [];
+    }
     parsePluginManifest(manifest);
     if (!exists) await mkdir(dir, { recursive: true });
     const template = fileURLToPath(
-      new URL("../templates/backend/", import.meta.url),
+      new URL(`../templates/${templateName}/`, import.meta.url),
     );
     for (const entry of await readdir(template))
       await cp(join(template, entry), join(dir, entry), {
@@ -121,6 +128,22 @@ try {
       dependencies: { "@webdock/plugin-sdk": "0.1.0" },
       devDependencies: { typescript: "^5", "@types/node": "^24" },
     };
+    if (templateName === "actions") {
+      const sdkRoot = resolve(dirname(fileURLToPath(import.meta.resolve("@webdock/plugin-sdk/contracts"))), "../..");
+      const vendor = join(dir, "vendor/plugin-sdk");
+      await mkdir(vendor, { recursive: true });
+      await cp(join(sdkRoot, "dist"), join(vendor, "dist"), { recursive: true });
+      const sdkPackage = JSON.parse(await readFile(join(sdkRoot, "package.json"), "utf8"));
+      // The vendored distribution is already compiled; local-file installs can run prepare even with ignore-scripts.
+      delete sdkPackage.scripts;
+      delete sdkPackage.devDependencies;
+      await writeFile(join(vendor, "package.json"), JSON.stringify(sdkPackage, null, 2) + "\n");
+      for (const entry of await readdir(sdkRoot)) {
+        if (/^(?:license|notice|copying)(?:[.-].*)?$/i.test(entry))
+          await cp(join(sdkRoot, entry), join(vendor, entry));
+      }
+      pkg.dependencies["@webdock/plugin-sdk"] = "file:vendor/plugin-sdk";
+    }
     await writeFile(
       join(dir, "package.json"),
       JSON.stringify(pkg, null, 2) + "\n",
@@ -154,7 +177,7 @@ try {
       readme,
       (await readFile(readme, "utf8")).replaceAll("__NAME__", name),
     );
-    await writeFile(join(dir, ".gitignore"), "node_modules/\ndist/\n.env*\n", {
+    await writeFile(join(dir, ".gitignore"), (templateName === "actions" ? "node_modules/\n/dist/\n.env*\n" : "node_modules/\ndist/\n.env*\n"), {
       flag: "wx",
     });
     await writeFile(

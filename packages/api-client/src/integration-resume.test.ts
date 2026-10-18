@@ -6,6 +6,7 @@ const input = {
   uiOrigin: "https://studio.example.test",
   consoleOrigin: "https://console.example.test",
   bearerToken: "fresh.signed.token",
+  serviceKey: "test-console-service-key",
   cookie:
     "__Host-webdock-integration-resume=encrypted-handoff; __Host-webdock-github-flow=signed-state; __session=expired.token; webdock-sso=legacy; webdock-auth.session_token=private",
 };
@@ -21,6 +22,10 @@ test("Console resumes only through fixed API endpoint with fresh proof and allow
       assert.equal(options?.redirect, "manual");
       const headers = new Headers(options?.headers);
       assert.equal(headers.get("authorization"), "Bearer fresh.signed.token");
+      assert.equal(
+        headers.get("x-webdock-service-key"),
+        "test-console-service-key",
+      );
       assert.equal(
         headers.get("cookie"),
         "__Host-webdock-github-flow=signed-state; __Host-webdock-integration-resume=encrypted-handoff",

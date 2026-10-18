@@ -10,8 +10,58 @@ import {
   uuid,
   primaryKey,
   unique,
+  customType,
 } from "drizzle-orm/pg-core";
 const auth = pgSchema("webdock_auth");
+const sourceBytes = customType<{ data: Buffer }>({ dataType: () => "bytea" });
+export const pluginSourceImport = auth.table(
+  "plugin_source_import",
+  {
+    id: text().primaryKey(),
+    actorID: text("actor_id").notNull(),
+    actorScope: jsonb("actor_scope").notNull(),
+    projectID: text("project_id").notNull(),
+    customerID: text("customer_id").notNull(),
+    sourceKind: text("source_kind").notNull(),
+    sourceLabel: text("source_label").notNull(),
+    sourceURL: text("source_url"),
+    sourceRef: text("source_ref"),
+    sourceCommit: text("source_commit"),
+    sourceSHA256: text("source_sha256"),
+    secretCipher: text("secret_cipher"),
+    runtimeCipher: text("runtime_cipher"),
+    clusterID: text("cluster_id"),
+    expectedBytes: integer("expected_bytes").notNull(),
+    uploadedBytes: integer("uploaded_bytes").notNull(),
+    mode: text().notNull(),
+    status: text().notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    requestSHA256: text("request_sha256").notNull(),
+    pluginID: text("plugin_id"),
+    manifestRaw: text("manifest_raw"),
+    manifestSHA256: text("manifest_sha256"),
+    configuration: jsonb().notNull(),
+    approvedCapabilities: jsonb("approved_capabilities").notNull(),
+    claimToken: uuid("claim_token"),
+    leaseUntil: timestamp("lease_until", { withTimezone: true }),
+    errorCode: text("error_code"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [unique().on(t.actorID, t.idempotencyKey)],
+);
+export const pluginSourceChunk = auth.table(
+  "plugin_source_chunk",
+  {
+    importID: text("import_id")
+      .notNull()
+      .references(() => pluginSourceImport.id),
+    offsetBytes: integer("offset_bytes").notNull(),
+    data: sourceBytes().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.importID, t.offsetBytes] })],
+);
 export const pluginBootstrap = auth.table("plugin_bootstrap", {
   singleton: boolean().primaryKey(),
   mode: text().notNull(),

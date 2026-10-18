@@ -219,8 +219,8 @@ export default async function Integrations({
                 <a href="https://github.com/settings/apps/new">{i18n.t("Register a GitHub App")}</a>{" "}{i18n.t("with the callback URL")}{" "}
                 <code style={{ overflowWrap: "anywhere" }}>{callback}</code>.
               </li>
-              <li>{i18n.t("Grant only")}{" "}
-                <strong>{i18n.t("Repository permissions → Metadata → Read-only")}</strong>{i18n.t(". Leave other permissions and webhook events off. Keep user access token expiration enabled.")}</li>
+              <li>{i18n.t("Source import requires")}{" "}
+                <strong>{i18n.t("Repository permissions → Metadata → Read-only; Contents → Read-only")}</strong>{i18n.t(". Source import only reads repositories. Existing Hosting Actions → Read-only and Checks → Write permissions may remain. Keep user access token expiration enabled.")}</li>
               <li>{i18n.t("Set ")}<code>WEBDOCK_GITHUB_CLIENT_ID</code>,{" "}
                 <code>WEBDOCK_GITHUB_CLIENT_SECRET</code>{i18n.t(", and")}{" "}
                 <code>WEBDOCK_GITHUB_APP_SLUG</code>{i18n.t(" in Studio’s server environment. Studio uses its existing SSO cookie secret to encrypt the connection.")}</li>

@@ -1,0 +1,38 @@
+{
+  "controlURL": "https://api.example.com/v1/plugin-installer",
+  "credentialFile": "/etc/webdock-plugin-installer/credential",
+  "country": "DE",
+  "locationEvidence": "Operator-verified location record",
+  "storageEvidence": "Operator-verified storage record",
+  "isolation": "qemu-kvm",
+  "isolationEvidence": "Real hostile-build acceptance record",
+  "image": "/var/lib/webdock-build-worker/base.raw",
+  "imageSHA256": "REPLACE_WITH_VERIFIED_SHA256",
+  "artifactRoot": "/var/lib/webdock-plugin-installer/artifacts",
+  "egress": "loopback-connect-proxy",
+  "egressEvidence": "Verified package/base-image host allowlist",
+  "registry": {
+    "repository": "registry.example.com/webdock/plugins",
+    "authFile": "/etc/webdock-plugin-installer/registry.json"
+  },
+  "runtime": {
+    "namespace": "webdock-source-plugins",
+    "clusterID": "operator-cluster-1",
+    "kubeconfigFile": "/etc/webdock-plugin-installer/kubeconfig",
+    "hostOrigin": "https://api.example.com",
+    "apiNamespace": "webdock-platform",
+    "apiPodLabels": { "app": "webdock-api" },
+    "apiAddresses": ["REPLACE_WITH_API_IP"],
+    "imagePullSecret": "plugins-pull",
+    "configSecret": {
+      "namespace": "webdock-platform",
+      "name": "plugin-runtime-config",
+      "key": "runtime.json"
+    },
+    "uiBaseDomain": "plugins.example.net",
+    "uiTLSSecret": "plugin-ui-wildcard",
+    "ingressClass": "traefik",
+    "ingressNamespace": "kube-system",
+    "ingressPodLabels": { "app.kubernetes.io/name": "traefik" }
+  }
+}

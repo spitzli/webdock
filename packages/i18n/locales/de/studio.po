@@ -8625,3 +8625,15 @@ msgstr "Danke für dein Interesse an Webdock. Du bekommst eine E-Mail, sobald wi
 
 msgid "You do not need to sign in yet. Access starts when you receive your invitation."
 msgstr "Du musst dich noch nicht anmelden. Dein Zugang beginnt mit deiner Einladung."
+
+
+msgid "Source import requires"
+msgstr "Für den Quellimport erforderlich:"
+
+
+msgid "Repository permissions → Metadata → Read-only; Contents → Read-only"
+msgstr "Repository-Berechtigungen → Metadaten → Nur lesen; Inhalte → Nur lesen"
+
+
+msgid ". Source import only reads repositories. Existing Hosting Actions → Read-only and Checks → Write permissions may remain. Keep user access token expiration enabled."
+msgstr ". Der Quellimport liest ausschließlich Repositories. Bestehende Hosting-Berechtigungen für Actions → Nur lesen und Checks → Schreiben können bestehen bleiben. Lass den Ablauf von Benutzerzugriffstokens aktiviert."

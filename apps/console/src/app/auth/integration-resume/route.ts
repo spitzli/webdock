@@ -18,5 +18,6 @@ export async function GET(request: Request): Promise<Response> {
       "https://studio.webdock.dev",
     cookie: request.headers.get("cookie") ?? "",
     bearerToken: token,
+    serviceKey: process.env.WEBDOCK_CONSOLE_SERVICE_KEY,
   });
 }

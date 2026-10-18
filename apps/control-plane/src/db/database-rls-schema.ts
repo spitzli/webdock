@@ -885,6 +885,7 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
       const plugin=pluginPolicy(t.name);
       read=plugin.read;write=plugin.write;workRead=plugin.workerRead;workWrite=plugin.workerWrite;
       runtimeDelete=workDelete="false";
+      if(t.name==="plugin_source_chunk"){runtimeDelete=write;workDelete=workWrite;}
       if(["plugin_document_receipt","plugin_release"].includes(t.name))runtimeUpdate=workUpdate="false";
     } else if ((billingTables as readonly string[]).includes(t.name)) {
       const billing = billingPolicy(t.name);

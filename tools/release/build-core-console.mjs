@@ -15,7 +15,7 @@ export function coreConsolePath(path) {
   if (['projects','customers'].includes(area)) return directories.length <= 2;
   if (area === 'tenants') return directories.length <= 2 || (directories.length === 3 && ['profile','team'].includes(section));
   if (area === 'admin') return directories.length === 1 || directories[1] === 'registry-users';
-  return ['activity','plugins','people','account','login','sign-in','sign-up','access-pending','waitlist'].includes(area) || directories.join('/') === 'console/search' || directories.join('/') === 'api/locale';
+  return ['activity','plugins','people','account','login','sign-in','sign-up','access-pending','waitlist'].includes(area) || directories.join('/') === 'console/search' || directories.join('/') === 'api/locale' || directories.join('/') === 'auth/integration-resume';
 }
 async function files(directory) {
   const result = [];

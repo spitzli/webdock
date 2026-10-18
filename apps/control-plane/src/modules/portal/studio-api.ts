@@ -1,6 +1,9 @@
 import { PlatformError, getPlatformSettings, savePlatformSettings } from "../platform/platform-settings";
 import { PluginError } from "@webdock/plugin-sdk/contracts";
 import { listRuntimePlugins, invokeRuntimePlugin } from "../plugins/runtime";
+import { pluginSources } from "../plugins/sources";
+import { PluginSourceError } from "../plugins/sources-policy";
+import { githubView } from "../integrations/github/view";
 import { consoleAuthConfiguration } from "../auth/console-configuration";
 import { studioOperationDomain } from "./operation-domain";
 import {
@@ -100,6 +103,8 @@ const isInput = (value: unknown): value is Record<string, string> =>
 const shapes: Record<string, ((value: unknown) => boolean)[]> = {
   "plugins.list": [isString],
   "plugins.invoke": [isObject],
+  "plugins.sources": [isObject],
+  "plugins.github": [isInput],
 
 
 
@@ -347,6 +352,8 @@ async function dispatch(
   if (operation === "plugins.list")
     return listRuntimePlugins(args[0] as string);
   if (operation === "plugins.invoke") return invokeRuntimePlugin(args[0]);
+  if (operation === "plugins.sources") return pluginSources(args[0]);
+  if (operation === "plugins.github") return githubView(input);
   switch (operation) {
     case "session":
       return safe;
@@ -609,6 +616,7 @@ async function handleRequest(
         ),
     );
   } catch (error) {
+    if(error instanceof PluginSourceError)return Response.json({error:{kind:"PluginSourceError",code:error.code,message:error.message}},{status:error.status,headers:responseHeaders});
     const publicError = product?.publicError(error) ?? contribution?.publicError(error);
     if (publicError)
       return Response.json(

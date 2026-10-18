@@ -84,7 +84,10 @@ export async function startServer(extension: ServerExtension = {}) {
   mounts.push(...await createAuthProtocolMounts(config, authSelection));
   if (config.domains.includes("portal"))
     mounts.push(...(await import("./protocols/portal")).portalProtocols(config));
+  if (config.domains.includes("portal"))
+    mounts.push(...(await import("./protocols/github")).githubProtocols(config));
   if (config.domains.includes("registry")) mounts.push((await import("./protocols/plugins")).pluginProtocol(config));
+  if (config.domains.includes("registry")) mounts.push((await import("./protocols/plugin-installer")).pluginInstallerProtocol(config));
   if (config.domains.includes("registry"))
     mounts.push(
       await (await import("./protocols/registry")).registryProtocol(config),
