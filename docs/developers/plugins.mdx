@@ -1,0 +1,67 @@
+---
+title: "Webdock plugins"
+description: "Discover the Webdock plugin registry, its manifest contract and the current integration status."
+---
+
+The [Webdock Registry](https://registry.webdock.dev) catalogs extensions for Webdock projects. Sign in with GitHub through the **Webdock Studio** GitHub App. Publishing requires repository access and operator approval; signing in does not install a plugin in Webdock.
+
+<Info>The registry, GitHub login, plugin kind and manifest contract are configured. Host installation, runtime isolation, capability services, UI integration and the complete developer CLI are still in development. The examples below describe the v1 contract, not a released installation workflow.</Info>
+
+## Plugin kind
+
+Use **`extension`**. Product areas such as hosting, mail and analytics are categories or tags, not separate runtime kinds. Kind-specific fields such as `image`, `capabilities` and `actions` live directly at the manifest root. They declare compatibility, an immutable runtime image and the capabilities used by the extension.
+
+The registry is separate from the [customer/project Registry REST API](/developers/registry). Tabularium owns plugin discovery and release metadata; Webdock owns installation, permissions and execution. Executable images live in an OCI registry.
+
+## Author a manifest
+
+Put JSON in `.tabularium` or `tabularium.json` at the repository root. Prefer one file to avoid ambiguous sources. `name` is the stable lowercase plugin identifier in the Webdock v1 contract; do not substitute a display name or rely on Tabularium's optional `id` field. `version` is exact SemVer and must match the release tag after removing an optional `v` prefix.
+
+See [Manifest reference](/developers/plugin-manifest) for required fields and a complete example. The public JSON Schema is available at:
+
+```text
+https://registry.webdock.dev/manifest.schema.json?kind=extension
+```
+
+Validate before submitting:
+
+```bash
+jq -n --rawfile text .tabularium \
+  '{kind:"extension",text:$text}' | \
+  curl --fail-with-body \
+    -H 'Content-Type: application/json' \
+    --data-binary @- \
+    https://registry.webdock.dev/api/manifest/validate
+```
+
+Check the response's `ok` field: validation errors return HTTP 200 with `ok: false`. This authoring endpoint accepts at most **64 KiB** of manifest text. The Webdock host contract separately caps release manifests/descriptors at **256 KiB**.
+
+## Release layout
+
+1. Build and push the runtime image to an approved OCI registry. Record its actual SHA-256 digest.
+2. Put that immutable image reference and the release version in the manifest.
+3. Attach both `tabularium.json` and `<name>-universal.json` to the forge release with **identical manifest bytes**. Tabularium ingests the manifest asset; the host verifies the universal JSON descriptor separately from the container image.
+4. Submit the repository through the registry and configure the release webhook shown by Tabularium. Operator approval is required.
+5. Verify release integrity before considering a version installable. Catalog acceptance alone is not proof of image availability, signature trust or host compatibility.
+
+Runtime networking depends on the host adapter. The operator-managed Elysia plugins use a private TLS action listener on port **3443** and a separate public UI listener on **3444**. Follow the specific plugin README for its endpoints and health checks. Plugins declare capabilities and named bindings; they receive no platform database credentials or arbitrary Kubernetes/RBAC configuration.
+
+The host installer is not released yet. A [backend jobs CLI and local BullMQ fixture](/developers/plugin-jobs) now implement create, validate, build and pack; remaining CLI commands are still in development. Do not assume registry publication automatically starts a workload or grants tenant access.
+
+## Connect an MCP client
+
+Use **`https://registry.webdock.dev/mcp`** with OAuth. Consent is bound to your registry account and requested scopes. Administrators can grant read/write scopes; ordinary users do not gain administrator access through the client. Review or revoke connections in your account settings.
+
+This endpoint manages the plugin registry. The [Webdock platform MCP](/developers/mcp) manages platform resources and is a different service.
+
+## First functional extension
+
+[Project Notes](/developers/project-notes) implements project-scoped notes, an isolated panel and BullMQ reminders. Its developer alpha is published in the registry. Local integration is verified; production Console installation remains unavailable.
+
+## Managed Analytics pilot
+
+[Managed Analytics](/developers/managed-analytics) runs as a separate ElysiaJS container and is used by the public Webdock homepage. The operator-managed host supports scoped document storage and named HTTP bindings, plus declared [API routes and MCP tools](/developers/plugin-api-mcp). This does not complete the automated installation controller or every declared SDK service.
+
+## Managed Apps
+
+[Managed Apps](/developers/managed-apps) operates dedicated customer applications. Tabularium runs as its own app; registry configuration stays in its native administration. Shared Umami tracking remains in Managed Analytics. The former standalone registry-admin alpha is withdrawn.
