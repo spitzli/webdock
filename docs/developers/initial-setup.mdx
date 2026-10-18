@@ -7,7 +7,28 @@ Run this once after the [offline database installation](/developers/self-hosting
 
 This procedure initializes the native Auth foundation in `apps/control-plane`, served through `apps/auth`, and the Console client used by `apps/console`. It also precedes a configured Clerk installation: finish local setup first, then follow [authentication adapters](/developers/auth-adapters) for explicit external-subject mappings. This command never links accounts by email or replaces existing identities.
 
-## Prepare the private input
+## Open the private browser setup
+
+Use the dedicated `webdock_offline_migrate` database login created by the installer, through `DATABASE_URL_UNPOOLED`. Keep this credential offline. Remote connections require `DATABASE_CA_CERT`. Set the exact canonical `BETTER_AUTH_URL`, `WEBDOCK_STUDIO_ORIGIN` and `WEBDOCK_CONSOLE_ORIGIN` in this command's environment before starting. These three origins must be distinct; use HTTPS except for explicit loopback development with a loopback database.
+
+Run the command on the same machine as your browser. Pass the exact `host:port/database` and a new private output filename:
+
+```sh
+umask 077
+bun run setup:admin db.example.com:5432/webdock /private/initial-operator-secrets.json
+```
+
+Open the private `http://127.0.0.1:…/#…` link printed in the terminal. Treat the entire link as a setup credential. The random capability stays in the URL fragment, is removed from the address bar when the page loads, and authorizes only this temporary local session. The command always binds to `127.0.0.1`; there is no public setup route or configurable public bind address. The session expires after ten minutes. An optional final argument sets an expiry of 60–900 seconds.
+
+The form shows the configured origins without allowing changes. Enter your name, email and a unique temporary password of 16–128 characters, and confirm that you have verified ownership of the address. Provisioning marks that address verified without sending a verification email. Unset `WEBDOCK_INITIAL_OPERATOR_PASSWORD` when using the browser form.
+
+The server accepts one submission at a time and stops after success or an uncertain commit. Client credentials never appear in the browser response: they go exclusively to the selected output file, created with mode `0600` without overwriting an existing file or following a symlink. The terminal reports only record IDs and a metadata checksum. After success, continue with application service configuration and real security setup below. If a connection closes during submission, check the terminal and private output before retrying.
+
+The following capture shows a successful local test with example origins. Account fields are cleared after creation; credentials remain in the private output file.
+
+![Local setup confirmation showing Operator created and instructions to configure services, change the password and enable an authenticator](/images/initial-setup/operator-created.png)
+
+## Use private JSON input instead
 
 Use the dedicated `webdock_offline_migrate` database login created by the installer, through `DATABASE_URL_UNPOOLED`. Keep this credential offline. Remote connections require `DATABASE_CA_CERT`. The command takes the exact `host:port/database` separately and refuses a different target or a runtime/superuser login.
 

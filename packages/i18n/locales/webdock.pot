@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-17 23:00+0200\n"
+"POT-Creation-Date: 2026-10-18 13:56+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -209,8 +209,8 @@ msgstr ""
 
 #: apps/auth/src/app/admin/plans/page.tsx:10
 #: apps/auth/src/app/admin/plans/page.tsx:17
-#: apps/console/src/components/navigation.tsx:49
-#: apps/console/src/lib/console-search-server.ts:44
+#: apps/console/src/components/navigation.tsx:51
+#: apps/console/src/lib/console-search-server.ts:47
 msgid "Plans"
 msgstr ""
 
@@ -380,7 +380,6 @@ msgstr ""
 
 #: apps/auth/src/app/consent/page.tsx:33 apps/auth/src/lib/i18n-messages.ts:286
 #: apps/console/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:69
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:10
 #: apps/console/src/app/(console)/(workspace)/operations/page.tsx:25
 #: modules/hosting/src/ui/project-overview.tsx:103
 #: modules/hosting/src/ui/service-bindings.tsx:65
@@ -443,7 +442,7 @@ msgstr ""
 msgid "Webdock Account"
 msgstr ""
 
-#: apps/auth/src/app/layout.tsx:31 apps/console/src/app/(console)/layout.tsx:43
+#: apps/auth/src/app/layout.tsx:31 apps/console/src/app/(console)/layout.tsx:41
 #: apps/website/src/app/(frontend)/(legal)/layout.tsx:9
 #: apps/website/src/app/(frontend)/page.tsx:28
 #: packages/cms-ui/src/client.tsx:725
@@ -614,8 +613,8 @@ msgstr ""
 
 #: apps/auth/src/app/people/page.tsx:11 apps/auth/src/app/people/page.tsx:29
 #: apps/auth/src/components/auth-forms.tsx:319
-#: apps/console/src/components/navigation.tsx:48
-#: apps/console/src/lib/console-search-server.ts:44
+#: apps/console/src/components/navigation.tsx:50
+#: apps/console/src/lib/console-search-server.ts:47
 #: packages/cms-ui/src/client.tsx:773
 msgid "People & access"
 msgstr ""
@@ -666,7 +665,7 @@ msgstr ""
 #: apps/auth/src/app/people/page.tsx:73 apps/auth/src/app/people/page.tsx:105
 #: apps/console/src/app/(console)/(workspace)/operations/page.tsx:26
 #: apps/console/src/app/(console)/(workspace)/operations/page.tsx:35
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:162
+#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:141
 #: apps/console/src/app/(console)/(workspace)/projects/new/page.tsx:44
 #: apps/console/src/lib/ui-labels.ts:10 apps/console/src/lib/ui-labels.ts:15
 #: modules/hosting/src/ui/customer.tsx:250
@@ -881,7 +880,6 @@ msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/mail/keys/form.tsx:13
 #: apps/auth/src/app/tenants/[customerID]/usage/form.tsx:50
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:106
 #: apps/console/src/lib/ui-labels.ts:15
 msgid "Label"
 msgstr ""
@@ -1051,8 +1049,8 @@ msgstr ""
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:24
 #: apps/auth/src/app/tenants/[customerID]/mail/page.tsx:33
 #: apps/auth/src/app/tenants/[customerID]/page.tsx:21
-#: apps/console/src/components/workspace-sidebar.tsx:28
-#: apps/console/src/lib/console-search-server.ts:39
+#: apps/console/src/components/workspace-sidebar.tsx:27
+#: apps/console/src/lib/console-search-server.ts:42
 msgid "Mail"
 msgstr ""
 
@@ -1634,7 +1632,6 @@ msgstr ""
 #: apps/auth/src/components/plan-fields.tsx:29
 #: apps/console/src/app/(console)/(portal)/hosting/projects/[projectID]/databases/page.tsx:56
 #: apps/console/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:74
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
 #: apps/console/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:70
 #: apps/console/src/app/(console)/(workspace)/infrastructure/page.tsx:112
 #: apps/console/src/lib/ui-labels.ts:15
@@ -1647,12 +1644,10 @@ msgid "Name"
 msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/page.tsx:34
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
 msgid "Email"
 msgstr ""
 
 #: apps/auth/src/app/tenants/[customerID]/page.tsx:36
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
 msgid "People"
 msgstr ""
 
@@ -2005,7 +2000,6 @@ msgid "Tenant role: "
 msgstr ""
 
 #: apps/auth/src/app/tenants/page.tsx:20 apps/auth/src/lib/i18n-labels.ts:4
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:11
 #: apps/console/src/lib/ui-labels.ts:6 apps/console/src/lib/ui-labels.ts:10
 msgid "Archived"
 msgstr ""
@@ -2016,9 +2010,6 @@ msgstr ""
 
 #: apps/auth/src/app/tenants/page.tsx:22
 #: apps/auth/src/components/auth-forms.tsx:319
-#: apps/console/src/components/navigation.tsx:45
-#: apps/console/src/lib/console-context.ts:53
-#: apps/console/src/lib/console-search-server.ts:31
 #: packages/cms-ui/src/client.tsx:779
 msgid "My websites"
 msgstr ""
@@ -2569,7 +2560,6 @@ msgstr ""
 
 #: apps/auth/src/lib/i18n-labels.ts:4
 #: apps/console/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:36
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:11
 #: apps/console/src/lib/ui-labels.ts:6
 #: modules/hosting/src/ui/application-services.tsx:67
 #: modules/hosting/src/ui/own-mail.tsx:161
@@ -2826,8 +2816,6 @@ msgid "Choose the permitted sending access for this credential."
 msgstr ""
 
 #: apps/auth/src/lib/i18n-messages.ts:44 apps/auth/src/lib/tenants.ts:17
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:106
 #: apps/console/src/lib/customer-fields.ts:19
 #: apps/console/src/lib/tenants.ts:17 apps/console/src/lib/ui-labels.ts:16
 msgid "City"
@@ -3258,8 +3246,6 @@ msgid "Pending offer not found."
 msgstr ""
 
 #: apps/auth/src/lib/i18n-messages.ts:153 apps/auth/src/lib/tenants.ts:16
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
 #: apps/console/src/lib/customer-fields.ts:15
 #: apps/console/src/lib/tenants.ts:16 apps/console/src/lib/ui-labels.ts:16
 #: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:22
@@ -3284,7 +3270,6 @@ msgid "Platform operator accounts are protected."
 msgstr ""
 
 #: apps/auth/src/lib/i18n-messages.ts:158 apps/auth/src/lib/tenants.ts:17
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:106
 #: apps/console/src/lib/customer-fields.ts:18
 #: apps/console/src/lib/tenants.ts:17 apps/console/src/lib/ui-labels.ts:16
 msgid "Postal code"
@@ -4166,11 +4151,11 @@ msgstr ""
 #: apps/console/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:40
 #: apps/console/src/app/(console)/(workspace)/operations/page.tsx:22
 #: apps/console/src/components/console-controls.tsx:80
-#: apps/console/src/components/navigation.tsx:139
-#: apps/console/src/lib/console-context.ts:87
-#: apps/console/src/lib/console-context.ts:150
-#: apps/console/src/lib/console-context.ts:155
-#: apps/console/src/lib/console-search-server.ts:37
+#: apps/console/src/components/navigation.tsx:142
+#: apps/console/src/distribution/full/context.ts:61
+#: apps/console/src/distribution/full/context.ts:66
+#: apps/console/src/lib/console-context.ts:62
+#: apps/console/src/lib/console-search-server.ts:40
 #: modules/hosting/src/ui/project-applications.tsx:41
 #: modules/hosting/src/ui/project-applications.tsx:52
 #: modules/hosting/src/ui/project-context.tsx:46
@@ -4655,7 +4640,7 @@ msgid "Manage schema"
 msgstr ""
 
 #: apps/console/src/app/(console)/(portal)/hosting/developer/page.tsx:11
-#: apps/console/src/lib/console-search-server.ts:32
+#: apps/console/src/lib/console-search-server.ts:35
 msgid "Developer tools"
 msgstr ""
 
@@ -4794,7 +4779,7 @@ msgstr ""
 #: apps/console/src/app/(console)/(portal)/hosting/operations/[operationID]/page.tsx:25
 #: apps/console/src/app/(console)/(workspace)/infrastructure/[clusterID]/databases/page.tsx:57
 #: apps/console/src/app/(console)/(workspace)/operations/page.tsx:17
-#: apps/console/src/components/navigation.tsx:41
+#: apps/console/src/components/navigation.tsx:44
 msgid "Operations"
 msgstr ""
 
@@ -4900,7 +4885,6 @@ msgid "Verify and bind target"
 msgstr ""
 
 #: apps/console/src/app/(console)/(portal)/hosting/projects/[projectID]/git/deployments.tsx:209
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:295
 #: apps/console/src/lib/git-deployment-messages.ts:87
 msgid "Vercel project ID"
 msgstr ""
@@ -5104,9 +5088,9 @@ msgid "Disconnected"
 msgstr ""
 
 #: apps/console/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:52
-#: apps/console/src/components/workspace-sidebar.tsx:73
-#: apps/console/src/lib/console-context.ts:88
-#: apps/console/src/lib/console-context.ts:156
+#: apps/console/src/components/workspace-sidebar.tsx:72
+#: apps/console/src/distribution/full/context.ts:67
+#: apps/console/src/lib/console-context.ts:63
 #: modules/hosting/src/ui/project-context.tsx:48
 #: modules/hosting/src/ui/project-overview.tsx:49
 #: modules/hosting/src/ui/project-overview.tsx:106
@@ -5129,7 +5113,6 @@ msgid "No services connected to applications yet."
 msgstr ""
 
 #: apps/console/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:70
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
 #: modules/hosting/src/ui/service-bindings.tsx:79
 msgid "Service"
 msgstr ""
@@ -5223,9 +5206,9 @@ msgstr ""
 #: apps/console/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:44
 #: apps/console/src/components/console-controls.tsx:80
 #: apps/console/src/components/console-controls.tsx:112
-#: apps/console/src/components/navigation.tsx:39
-#: apps/console/src/lib/console-context.ts:83
-#: apps/console/src/lib/console-search-server.ts:44
+#: apps/console/src/components/navigation.tsx:42
+#: apps/console/src/lib/console-context.ts:58
+#: apps/console/src/lib/console-search-server.ts:47
 msgid "Projects"
 msgstr ""
 
@@ -5246,9 +5229,9 @@ msgid "Usage data is not available through this connection. No spending cap is e
 msgstr ""
 
 #: apps/console/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:104
-#: apps/console/src/lib/console-context.ts:89
-#: apps/console/src/lib/console-context.ts:157
-#: apps/console/src/lib/console-search-server.ts:43
+#: apps/console/src/distribution/full/context.ts:68
+#: apps/console/src/lib/console-context.ts:64
+#: apps/console/src/lib/console-search-server.ts:46
 #: modules/hosting/src/ui/project-applications.tsx:99
 #: modules/hosting/src/ui/project-context.tsx:47
 msgid "Deployments"
@@ -5299,259 +5282,14 @@ msgstr ""
 msgid "Disconnect Vercel"
 msgstr ""
 
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/calendar/calendar-editor.tsx:9
-msgid "Sunday"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/calendar/calendar-editor.tsx:9
-msgid "Monday"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/calendar/calendar-editor.tsx:9
-msgid "Tuesday"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/calendar/calendar-editor.tsx:9
-msgid "Wednesday"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/calendar/calendar-editor.tsx:9
-msgid "Thursday"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/calendar/calendar-editor.tsx:9
-msgid "Friday"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/calendar/calendar-editor.tsx:9
-msgid "Saturday"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/content/content-editor.tsx:95
-msgid "All"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/content/content-editor.tsx:95
-msgid "Texts"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/content/content-editor.tsx:95
-msgid "Images"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:10
-msgid "Appointment"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:10
-msgid "Reservation"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:10
-msgid "Event"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:10
-msgid "Preorder"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:10
-msgid "Voucher"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:11
-#: apps/console/src/lib/ui-labels.ts:7
-msgid "Reviewed"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
-msgid "Date"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
-msgid "Time"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
-msgid "Message"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/requests/request-list.tsx:12
-msgid "Amount"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
-#: modules/cms/src/ui.ts:91
-msgid "Products"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
-msgid "Page content"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
-msgid "Demo orders"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
-#: apps/console/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:25
-#: apps/console/src/components/navigation.tsx:40
-#: modules/hosting/src/ui/project-context.tsx:29
-msgid "Customers"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:14
-#: modules/cms/src/ui.ts:114
-msgid "Media"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:15
-msgid "Find products, adjust prices and manage availability."
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:15
-msgid "Edit the homepage and shop information."
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:15
-msgid "View simulated orders. No real delivery or payment."
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:15
-msgid "Manage names and saved addresses."
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/page.tsx:15
-msgid "View existing images. Assign them to a product or the homepage."
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:14
-msgid "Pizza"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:14
-msgid "Burger"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:14
-msgid "Sides"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:14
-msgid "Drinks"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:14
-msgid "Dessert"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:15
-msgid "Vegetarian"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:15
-msgid "Vegan"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:15
-msgid "Spicy"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:15
-msgid "Favourite"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
-msgid "Homepage"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
-msgid "Business & contact"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:16
-msgid "Daily promotion"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-msgid "Headline"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-msgid "Introduction"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-msgid "Featured products heading"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-msgid "Featured products text"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-msgid "Business name"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-msgid "Street"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-msgid "Opening hours"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-msgid "Notice"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-msgid "Promotion title"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-msgid "Valid from"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-msgid "Valid until"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-msgid "Homepage image"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:17
-#: modules/cms/src/ui.ts:38
-msgid "Featured products"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:83
-msgid "Text, hero image and featured products"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:83
-msgid "Address, contact details and opening hours"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:83
-msgid "Dates and offer in the demo cart"
-msgstr ""
-
-#: apps/console/src/app/(console)/(portal)/sites/[bindingID]/shop/shop-forms.tsx:106
-#: apps/console/src/lib/customer-fields.ts:16
-#: apps/console/src/lib/ui-labels.ts:16
-msgid "Street and number"
-msgstr ""
-
 #: apps/console/src/app/(console)/(portal)/tenants/[customerID]/databases/page.tsx:14
 #: apps/console/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:31
 #: apps/console/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:50
 #: apps/console/src/components/console-controls.tsx:80
-#: apps/console/src/components/navigation.tsx:144
-#: apps/console/src/lib/console-context.ts:90
-#: apps/console/src/lib/console-context.ts:158
-#: apps/console/src/lib/console-search-server.ts:37
+#: apps/console/src/components/navigation.tsx:147
+#: apps/console/src/distribution/full/context.ts:69
+#: apps/console/src/lib/console-context.ts:65
+#: apps/console/src/lib/console-search-server.ts:40
 #: modules/hosting/src/ui/project-context.tsx:50
 msgid "Databases"
 msgstr ""
@@ -5579,12 +5317,18 @@ msgid "Manage access"
 msgstr ""
 
 #: apps/console/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:25
+#: apps/console/src/components/navigation.tsx:43
+#: modules/hosting/src/ui/project-context.tsx:29
+msgid "Customers"
+msgstr ""
+
+#: apps/console/src/app/(console)/(portal)/tenants/[customerID]/layout.tsx:25
 #: apps/console/src/app/(console)/access-pending/page.tsx:10
 #: apps/console/src/components/account-controls.tsx:13
 #: apps/console/src/components/console-controls.tsx:80
 #: apps/console/src/components/console-controls.tsx:112
-#: apps/console/src/components/navigation.tsx:44
-#: apps/console/src/lib/console-search-server.ts:30
+#: apps/console/src/components/navigation.tsx:47
+#: apps/console/src/lib/console-search-server.ts:34
 #: modules/hosting/src/ui/project-context.tsx:29
 msgid "Workspaces"
 msgstr ""
@@ -5615,7 +5359,7 @@ msgstr ""
 
 #: apps/console/src/app/(console)/(portal)/tenants/[customerID]/mail/inbox/page.tsx:14
 #: apps/console/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/page.tsx:8
-#: apps/console/src/lib/console-search-server.ts:39
+#: apps/console/src/lib/console-search-server.ts:42
 msgid "Mailboxes"
 msgstr ""
 
@@ -5865,31 +5609,31 @@ msgstr ""
 msgid "Shared platform cluster"
 msgstr ""
 
-#: apps/console/src/app/(console)/(workspace)/integrations/page.tsx:15
+#: apps/console/src/app/(console)/(workspace)/integrations/page.tsx:17
 msgid "GitHub connected. Choose an installation and a repository below."
 msgstr ""
 
-#: apps/console/src/app/(console)/(workspace)/integrations/page.tsx:17
+#: apps/console/src/app/(console)/(workspace)/integrations/page.tsx:19
 msgid "GitHub disconnected from this browser. Existing project links are unchanged."
 msgstr ""
 
-#: apps/console/src/app/(console)/(workspace)/integrations/page.tsx:18
+#: apps/console/src/app/(console)/(workspace)/integrations/page.tsx:20
 msgid "GitHub authorization did not complete. Start Connect GitHub again."
 msgstr ""
 
-#: apps/console/src/app/(console)/(workspace)/integrations/page.tsx:20
+#: apps/console/src/app/(console)/(workspace)/integrations/page.tsx:22
 msgid "Your GitHub connection expired. Connect again to choose repositories."
 msgstr ""
 
-#: apps/console/src/app/(console)/(workspace)/integrations/page.tsx:22
+#: apps/console/src/app/(console)/(workspace)/integrations/page.tsx:24
 msgid "The repository could not be linked. Refresh the list and check that the project and GitHub installation are still accessible."
 msgstr ""
 
-#: apps/console/src/app/(console)/(workspace)/integrations/page.tsx:23
+#: apps/console/src/app/(console)/(workspace)/integrations/page.tsx:25
 msgid "Complete the GitHub App setup before connecting."
 msgstr ""
 
-#: apps/console/src/app/(console)/(workspace)/integrations/page.tsx:39
+#: apps/console/src/app/(console)/(workspace)/integrations/page.tsx:42
 msgid "GitHub access could not be checked. Reconnect or review the app’s installation and read-only metadata permission."
 msgstr ""
 
@@ -5938,87 +5682,27 @@ msgstr ""
 msgid "Operation"
 msgstr ""
 
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/delete/page.tsx:16
-#: apps/console/src/lib/project-deletion-messages.ts:6
-msgid "Permanently delete project"
-msgstr ""
-
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/delete/page.tsx:16
-#: apps/console/src/lib/project-deletion-messages.ts:7
-msgid "Type the exact project name"
-msgstr ""
-
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/delete/page.tsx:16
-#: apps/console/src/lib/project-deletion-messages.ts:8
-msgid "I confirm permanent deletion of this project and its website data."
-msgstr ""
-
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:156
+#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:135
 #: apps/console/src/app/(console)/(workspace)/projects/new/page.tsx:41
 msgid "Project name"
 msgstr ""
 
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:176
+#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:155
 #: apps/console/src/app/(console)/(workspace)/projects/new/page.tsx:56
 #: apps/console/src/lib/ui-labels.ts:15
 msgid "Website URL"
 msgstr ""
 
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:182
+#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:161
 #: apps/console/src/app/(console)/(workspace)/projects/new/page.tsx:57
 #: apps/console/src/lib/ui-labels.ts:15
 msgid "Repository URL"
 msgstr ""
 
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:188
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:331
+#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:167
 #: apps/console/src/app/(console)/(workspace)/projects/new/page.tsx:58
 #: apps/console/src/lib/ui-labels.ts:15
 msgid "Notes"
-msgstr ""
-
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:275
-msgid "CMS name"
-msgstr ""
-
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:281
-msgid "Admin URL"
-msgstr ""
-
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:288
-#: apps/console/src/lib/ui-labels.ts:15
-msgid "Database schema"
-msgstr ""
-
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:291
-msgid "The isolated schema used by this deployed CMS."
-msgstr ""
-
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:298
-msgid "The existing Vercel project ID, starting with prj_."
-msgstr ""
-
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:302
-#: apps/console/src/lib/ui-labels.ts:15 modules/hosting/src/ui/app-spec.tsx:26
-#: modules/hosting/src/ui/setup-source-fields.tsx:76
-msgid "Template"
-msgstr ""
-
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:315
-#: apps/console/src/lib/ui-labels.ts:15
-msgid "CMS engine version"
-msgstr ""
-
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:320
-msgid "Recorded status"
-msgstr ""
-
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:321
-msgid "Inventory only. Changing this does not change the running CMS."
-msgstr ""
-
-#: apps/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:339
-msgid "This CMS is already deployed"
 msgstr ""
 
 #: apps/console/src/app/(console)/(workspace)/projects/new/page.tsx:49
@@ -6040,79 +5724,6 @@ msgstr ""
 #: apps/console/src/components/account-controls.tsx:25
 #: apps/console/src/components/console-toolbar.tsx:48
 msgid "Account & preferences"
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:17
-msgid "Desktop"
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:17
-msgid "Tablet"
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:17
-msgid "Mobile"
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:18
-msgid "Text"
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:18
-#: packages/cms-ui/src/client.tsx:874 packages/cms-ui/src/client.tsx:1093
-msgid "Image"
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:18
-msgid "Box"
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:18
-msgid "Button"
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:64
-msgid "Local changes from this tab restored."
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:79
-msgid "Please wait until the current action is complete."
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:130
-msgid "Could not save the change. Your draft is preserved."
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:137
-msgid "Enter a page title and an address using lowercase letters, digits or hyphens."
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:143
-msgid "Please check the page properties."
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:145
-msgid "Draft saved. The published page is unchanged."
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:150
-msgid "Page published."
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:155
-msgid "Page unpublished."
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:160
-msgid "The original website is the homepage again."
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:160
-msgid "This page is now the homepage."
-msgstr ""
-
-#: apps/console/src/components/canvas/editor.tsx:177
-msgid "Local changes discarded."
 msgstr ""
 
 #: apps/console/src/components/code-example.tsx:11
@@ -6146,7 +5757,7 @@ msgid "Waitlist"
 msgstr ""
 
 #: apps/console/src/components/console-controls.tsx:66
-#: apps/console/src/lib/console-search-server.ts:49
+#: apps/console/src/lib/console-search-server.ts:52
 msgid "Search is temporarily unavailable. Please try again."
 msgstr ""
 
@@ -6321,42 +5932,46 @@ msgid "Mail is temporarily unavailable. Retry with the same request."
 msgstr ""
 
 #: apps/console/src/components/navigation.tsx:50
-#: apps/console/src/lib/console-search-server.ts:44
+#: apps/console/src/lib/console-search-server.ts:47
+msgid "Studio accounts"
+msgstr ""
+
+#: apps/console/src/components/navigation.tsx:52
+#: apps/console/src/lib/console-search-server.ts:47
 msgid "Connections"
 msgstr ""
 
-#: apps/console/src/components/navigation.tsx:51
-#: apps/console/src/lib/console-context.ts:91
-#: apps/console/src/lib/console-context.ts:113
-#: apps/console/src/lib/console-context.ts:134
-#: apps/console/src/lib/console-context.ts:163
-#: apps/console/src/lib/console-search-server.ts:44
+#: apps/console/src/components/navigation.tsx:53
+#: apps/console/src/distribution/full/context.ts:24
+#: apps/console/src/distribution/full/context.ts:45
+#: apps/console/src/distribution/full/context.ts:74
+#: apps/console/src/lib/console-context.ts:66
+#: apps/console/src/lib/console-search-server.ts:47
 #: modules/hosting/src/ui/project-context.tsx:55
 msgid "Settings"
 msgstr ""
 
-#: apps/console/src/components/navigation.tsx:133
-#: apps/console/src/lib/console-context.ts:55
-#: apps/console/src/lib/console-context.ts:105
-#: apps/console/src/lib/console-context.ts:124
-#: apps/console/src/lib/console-search-server.ts:37
+#: apps/console/src/components/navigation.tsx:136
+#: apps/console/src/distribution/full/context.ts:16
+#: apps/console/src/distribution/full/context.ts:35
+#: apps/console/src/lib/console-search-server.ts:40
 #: packages/cms-ui/src/client.tsx:698
 msgid "Overview"
 msgstr ""
 
-#: apps/console/src/components/navigation.tsx:163
-#: apps/console/src/lib/console-search-server.ts:40
+#: apps/console/src/components/navigation.tsx:166
+#: apps/console/src/lib/console-search-server.ts:43
 msgid "Team"
 msgstr ""
 
-#: apps/console/src/components/navigation.tsx:170
-#: apps/console/src/lib/console-search-server.ts:38
+#: apps/console/src/components/navigation.tsx:171
+#: apps/console/src/lib/console-search-server.ts:41
 #: modules/hosting/src/ui/customer.tsx:96
 msgid "Plan & usage"
 msgstr ""
 
-#: apps/console/src/components/navigation.tsx:175
-#: apps/console/src/lib/console-search-server.ts:38
+#: apps/console/src/components/navigation.tsx:174
+#: apps/console/src/lib/console-search-server.ts:41
 msgid "Profile"
 msgstr ""
 
@@ -6400,41 +6015,45 @@ msgstr ""
 msgid "The linked Vercel project could not be found."
 msgstr ""
 
-#: apps/console/src/components/workspace-sidebar.tsx:48
+#: apps/console/src/components/workspace-sidebar.tsx:47
 msgid "Workspace areas"
 msgstr ""
 
-#: apps/console/src/components/workspace-sidebar.tsx:59
+#: apps/console/src/components/workspace-sidebar.tsx:58
 msgid "Workspace services"
 msgstr ""
 
-#: apps/console/src/lib/console-context.ts:86
-#: apps/console/src/lib/console-context.ts:154
+#: apps/console/src/distribution/full/context.ts:18
+msgid "Logs"
+msgstr ""
+
+#: apps/console/src/distribution/full/context.ts:38
+#: modules/databases/src/ui/tenant-database-navigation.tsx:21
+msgid "Browse data"
+msgstr ""
+
+#: apps/console/src/distribution/full/context.ts:41
+#: modules/databases/src/ui/database-details.tsx:18
+msgid "Connection credentials"
+msgstr ""
+
+#: apps/console/src/distribution/full/context.ts:65
+#: apps/console/src/lib/console-context.ts:61
 #: modules/hosting/src/ui/project-applications.tsx:87
 #: modules/hosting/src/ui/project-context.tsx:43
 #: modules/hosting/src/ui/setup-progress.tsx:53
 msgid "Project overview"
 msgstr ""
 
-#: apps/console/src/lib/console-context.ts:107
-msgid "Logs"
+#: apps/console/src/lib/console-context.ts:67
+msgid "Project extensions"
 msgstr ""
 
-#: apps/console/src/lib/console-context.ts:127
-#: modules/databases/src/ui/tenant-database-navigation.tsx:21
-msgid "Browse data"
-msgstr ""
-
-#: apps/console/src/lib/console-context.ts:130
-#: modules/databases/src/ui/database-details.tsx:18
-msgid "Connection credentials"
-msgstr ""
-
-#: apps/console/src/lib/console-search-server.ts:32
+#: apps/console/src/lib/console-search-server.ts:35
 msgid "API & MCP"
 msgstr ""
 
-#: apps/console/src/lib/console-search-server.ts:39
+#: apps/console/src/lib/console-search-server.ts:42
 msgid "Quickstart"
 msgstr ""
 
@@ -6477,6 +6096,11 @@ msgstr ""
 
 #: apps/console/src/lib/customer-fields.ts:14
 msgid "A contact address does not grant access. Invite members from Tenant & invitations after saving."
+msgstr ""
+
+#: apps/console/src/lib/customer-fields.ts:16
+#: apps/console/src/lib/ui-labels.ts:16
+msgid "Street and number"
 msgstr ""
 
 #: apps/console/src/lib/customer-fields.ts:16
@@ -6890,6 +6514,18 @@ msgstr ""
 
 #: apps/console/src/lib/project-deletion-messages.ts:5
 msgid "Delete project"
+msgstr ""
+
+#: apps/console/src/lib/project-deletion-messages.ts:6
+msgid "Permanently delete project"
+msgstr ""
+
+#: apps/console/src/lib/project-deletion-messages.ts:7
+msgid "Type the exact project name"
+msgstr ""
+
+#: apps/console/src/lib/project-deletion-messages.ts:8
+msgid "I confirm permanent deletion of this project and its website data."
 msgstr ""
 
 #: apps/console/src/lib/project-deletion-messages.ts:9
@@ -7513,6 +7149,10 @@ msgstr ""
 msgid "Published"
 msgstr ""
 
+#: apps/console/src/lib/ui-labels.ts:7
+msgid "Reviewed"
+msgstr ""
+
 #: apps/console/src/lib/ui-labels.ts:8 modules/cms/src/ui.ts:149
 msgid "Superadmin"
 msgstr ""
@@ -7550,11 +7190,24 @@ msgid "CMS URL"
 msgstr ""
 
 #: apps/console/src/lib/ui-labels.ts:15
+msgid "Database schema"
+msgstr ""
+
+#: apps/console/src/lib/ui-labels.ts:15
 msgid "Hosting project ID"
 msgstr ""
 
 #: apps/console/src/lib/ui-labels.ts:15
 msgid "Hosting provider"
+msgstr ""
+
+#: apps/console/src/lib/ui-labels.ts:15 modules/hosting/src/ui/app-spec.tsx:26
+#: modules/hosting/src/ui/setup-source-fields.tsx:76
+msgid "Template"
+msgstr ""
+
+#: apps/console/src/lib/ui-labels.ts:15
+msgid "CMS engine version"
 msgstr ""
 
 #: apps/console/src/lib/ui-labels.ts:15
@@ -8412,6 +8065,10 @@ msgstr ""
 msgid "Select existing images for products and the homepage."
 msgstr ""
 
+#: modules/cms/src/ui.ts:38
+msgid "Featured products"
+msgstr ""
+
 #: modules/cms/src/ui.ts:39
 msgid "Select the featured products on the homepage."
 msgstr ""
@@ -8456,6 +8113,10 @@ msgstr ""
 msgid "Manage opening hours, availability and appointments."
 msgstr ""
 
+#: modules/cms/src/ui.ts:91
+msgid "Products"
+msgstr ""
+
 #: modules/cms/src/ui.ts:93
 msgid "Manage existing products, variants, extras, prices and availability."
 msgstr ""
@@ -8466,6 +8127,10 @@ msgstr ""
 
 #: modules/cms/src/ui.ts:102
 msgid "Edit the homepage and business information."
+msgstr ""
+
+#: modules/cms/src/ui.ts:114
+msgid "Media"
 msgstr ""
 
 #: modules/cms/src/ui.ts:115
@@ -9919,6 +9584,10 @@ msgstr ""
 
 #: packages/cms-ui/src/client.tsx:862
 msgid "You have read-only access. Contact your administrator to request editing rights."
+msgstr ""
+
+#: packages/cms-ui/src/client.tsx:874 packages/cms-ui/src/client.tsx:1093
+msgid "Image"
 msgstr ""
 
 #: packages/cms-ui/src/client.tsx:883 packages/cms-ui/src/client.tsx:1056

@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-18",
+  "scope": "local implementation and owned development verification; no production provider/role changes",
+  "authority": {
+    "default": "better-auth local roles",
+    "clerkGlobalRole": "live Backend User.privateMetadata.webdockRole exact operator",
+    "clerkWorkspaces": "live organization membership and explicit permissions; custom roles supported",
+    "localRecords": "identity/resource mapping and deny-only bans/enrollment controls",
+    "compatibility": "Clerk role authority also governs optional Better Auth OAuth transport; local admin/org management endpoints disabled"
+  },
+  "checks": {
+    "apiUnitTests": 185,
+    "apiAssertions": 1325,
+    "clerkAdapterTests": 16,
+    "consoleTests": 84,
+    "coreRegistryTests": 9,
+    "coreBuild": {
+      "passed": true,
+      "productImportsDenied": true,
+      "sizeBytes": 8175804,
+      "sha256": "698ac54db6368b03179bb9127dc99c74703f255d99c8141aaf1f9eb3c0dc496c"
+    },
+    "typechecks": [
+      "API",
+      "Console"
+    ],
+    "gettext": "12 catalogs / 3962 messages validated",
+    "realPostgres": [
+      "native/legacy authority and proof forgery/revocation",
+      "worker leased identity",
+      "mail grant/activation roles",
+      "tenant list/access without local membership",
+      "preview entry/exit with Clerk roles",
+      "custom billing permission offer acceptance",
+      "direct OAuth registry boundary and authoritative returned role",
+      "Better Auth/OIDC regression"
+    ],
+    "independentReview": "no remaining important findings after complete follow-up"
+  },
+  "liveClerk": {
+    "development": true,
+    "localIdentityMappingFixture": true,
+    "serverOwnedSessionReference": true,
+    "browserLoginTested": false,
+    "checks": [
+      "local operator, public metadata and unsafe metadata cannot grant",
+      "fresh private Clerk role grants despite local user role",
+      "same-session Clerk downgrade removes operator",
+      "live organization role update",
+      "membership removal denies workspace",
+      "revoked provider session denied"
+    ],
+    "passed": true,
+    "cleanedUp": true
+  },
+  "cleanup": {
+    "remoteDevelopmentUserAndOrganizationDeleted": true,
+    "temporaryDevelopmentKeysRemoved": true,
+    "ownedPostgresFixture": "restored to exited"
+  },
+  "knownUnrelatedSuiteFailures": [
+    "full RLS startup test expects empty plugin_bootstrap but retained fixture is initialized",
+    "full registry integration expects removed CMS registration behavior"
+  ],
+  "rollout": "Requires coordinated API/worker/Console and offline RLS update; not deployed; production roles are not automatically copied or migrated",
+  "documentationPublication": {
+    "status": "published",
+    "commit": "46c58b204499d886e739e7b278aa329491bba405",
+    "signatureVerified": true,
+    "pr": "https://github.com/spitzli/webdock/pull/41",
+    "mergeCommit": "c7dfe43848abb78ba2172055cb638b57797c86ef",
+    "url": "https://docs.webdock.dev/developers/auth-adapters",
+    "liveContentVerified": true,
+    "previewBoundaryVerified": true
+  }
+}

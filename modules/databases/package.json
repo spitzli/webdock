@@ -21,7 +21,8 @@
     "zod": "4.6.5",
     "@webdock/console-kit": "*",
     "@webdock/i18n": "*",
-    "@tabularis/web-ui": "file:../../vendor/tabularis-web-ui-fdd6c0a6-startup.tgz"
+    "@tabularis/web-ui": "file:../../vendor/tabularis-web-ui-fdd6c0a6-startup.tgz",
+    "@webdock/database-runtime": "*"
   },
   "peerDependencies": {
     "react": "^19",

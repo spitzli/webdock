@@ -1,34 +1,37 @@
+import {browserAuthConfiguration} from "./browser-auth-config";
+import {moduleForPath} from "@webdock/module-sdk/selection";
+import {hasProductModules} from "./module-data";
+import {relatedID} from "./presentation";
 import 'server-only';
 import { filterRows } from '@webdock/search';
 import { headers } from 'next/headers';
 import { getRequestI18n } from '@webdock/i18n/next';
 import { getStudioSession } from './studio-client';
 import { getTenant, listTenants } from './tenants';
-import { accountSites } from './access-management';
-import { demoBridges } from './demo-bridges';
-import { hostingCall } from './hosting-client';
+import { productSearch } from "@distribution/search";
 import { registryClient } from './registry-client';
 import { queryConsole, type ConsoleSearchInput, type ConsoleSearchResponse, type ConsoleResult } from './console-search';
-import type { HostingAppView, HostingProjectContext, HostingPage, DatabaseView } from '@webdock/hosting-contracts';
+
 
 export async function searchConsole(input: ConsoleSearchInput): Promise<ConsoleSearchResponse> {
   const requestHeaders = await headers(), { t } = await getRequestI18n();
   try {
+    const session = await getStudioSession();
+    const available=(id:string)=>["enabled","draining"].includes(session?.installation?.modules[id] ?? "");
     const result = await queryConsole(input, {
       session: getStudioSession,
       tenant: id => getTenant(requestHeaders, id),
       workspaces: () => listTenants(requestHeaders),
-      sites: () => accountSites(requestHeaders),
-      bridges: demoBridges,
-      project: projectID => hostingCall<HostingProjectContext>({action:'projects.get',projectID}),
+      sites: () => Promise.resolve([]),
+      bridges: () => Promise.resolve({}),
+      project: async projectID => session?.operator ? {customerID:relatedID((await registryClient.findByID({collection:'projects',id:projectID,depth:0})).customer)} : (productSearch.project ? productSearch.project(projectID) : Promise.reject(Error("Project catalog unavailable"))),
       projects: searchWorkspaceProjects,
       allProjects: query => registryClient.find({collection:'projects',where:{and:[{status:{equals:'active'}},{name:{contains:query}}]},limit:20,depth:0,sort:'name'}),
-      apps: (projectID, search) => hostingCall<HostingPage<HostingAppView>>({action:'apps.list',projectID,search,page:1,limit:20,sort:'name'}),
-      databases: projectID => hostingCall<DatabaseView[]>({action:'databases.list',projectID}),
+      apps: (projectID, search) => available('hosting') && productSearch.apps ? productSearch.apps(projectID,search) : Promise.resolve({docs:[],totalDocs:0}),
+      databases: projectID => available('databases') && productSearch.databases ? productSearch.databases(projectID) : Promise.resolve([]),
       navigation: ({customerID,projectID}, canManage, operator, preview) => {
         const result: ConsoleResult[] = [
           {id:'nav:workspaces',kind:'navigation',label:t('Workspaces'),href:'/tenants?choose=1'},
-          {id:'nav:websites',kind:'navigation',label:t('My websites'),href:'/sites'},
           ...(!preview ? [{id:'nav:developer',kind:'navigation' as const,label:t('Developer tools'),description:t('API & MCP'),href:'/hosting/developer'}] : []),
         ];
         if (customerID) {
@@ -41,8 +44,8 @@ export async function searchConsole(input: ConsoleSearchInput): Promise<ConsoleS
           ].map(([label,href])=>({id:'nav:'+href,label,href,kind:'navigation' as const})));
         }
         if(projectID) result.push({id:'nav:deployments',kind:'navigation',label:t('Deployments'),href:`/hosting/projects/${projectID}/git`});
-        if(operator) result.push(...[[t('Projects'),'/'],[t('People & access'),'/people'],[t('Plans'),'/admin/plans'],[t('Connections'),'/integrations'],[t('Settings'),'/admin']].map(([label,href])=>({id:'nav:'+href,label,href,kind:'navigation' as const})));
-        return result;
+        if(operator) result.push(...[[t('Projects'),'/'],...(browserAuthConfiguration.provider==='clerk'?[[t('Studio accounts'),'/admin/registry-users']]:[[t('People & access'),'/people']]),[t('Plans'),'/admin/plans'],[t('Connections'),'/integrations'],[t('Settings'),'/admin']].map(([label,href])=>({id:'nav:'+href,label,href,kind:'navigation' as const})));
+        return result.filter(item=>{const module=moduleForPath(item.href);return (!module || available(module)) && (hasProductModules(session?.installation) || !/\/(usage|plans)$/.test(item.href));});
       },
     });
     return {...result, error:result.error ? t(result.error) : undefined};
@@ -60,7 +63,9 @@ export async function findConsoleProjects(customerID: string, query: string) {
 
 /** The workspace catalog includes projects without a container-hosting assignment. */
 async function searchWorkspaceProjects(customerID: string, query: string) {
-  const rows = await hostingCall<Array<{id:string;name:string}>>({action:'databases.projects.list',customerID});
-  const matches = filterRows(rows,query,project=>`${project.name} ${project.id}`);
-  return {docs:matches.slice(0,20).map(project=>({projectID:project.id,name:project.name})),totalDocs:matches.length};
+  if ((await getStudioSession())?.operator) {
+    const page=await registryClient.find({collection:'projects',where:{and:[{customer:{equals:customerID}},{status:{equals:'active'}},{name:{contains:query}}]},limit:20,depth:0,sort:'name'});
+    return {docs:page.docs.map(p=>({projectID:String(p.id),name:p.name})),totalDocs:page.totalDocs};
+  }
+  return productSearch.projects ? productSearch.projects(customerID,query) : {docs:[],totalDocs:0};
 }

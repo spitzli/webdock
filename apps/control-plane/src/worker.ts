@@ -1,3 +1,5 @@
+import { configureFullInstallation } from "./full-installation";
+configureFullInstallation();
 import { validateClerkWorkerConfiguration } from "./modules/auth/clerk-configuration";
 import { validateWorkerModules } from "./installation";
 import { withDatabaseScope } from "@webdock/database-runtime";
@@ -26,7 +28,7 @@ const { databasePools, workerDatabase } = await import("./db/runtime");
 await (
   await import("./modules/plugins/readiness")
 ).verifyPluginStartup(workerDatabase);
-await (await import("./module-preflight")).verifyModuleShutdown();
+await (await import("./full-module-preflight")).verifyModuleShutdown();
 if (process.env.NODE_ENV === "production" || process.env.DATABASE_RLS_SECRET)
   await (
     await import("./db/readiness")

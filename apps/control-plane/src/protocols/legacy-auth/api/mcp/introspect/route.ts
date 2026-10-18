@@ -1,4 +1,4 @@
-import { auth } from "../../../../../modules/auth/auth";
+import { requireOAuthCapability } from "@webdock/auth-configuration/protocols";
 import {
   currentMCPClaims,
   currentHostingMCPClaims,
@@ -7,6 +7,8 @@ import {
 import { authDatabase as database } from "../../../../../db/runtime";
 
 export async function POST(request: Request) {
+  requireOAuthCapability();
+  const { auth } = await import("../../../../../modules/auth/auth");
   // Native OAuth introspection authenticates the resource-server client and
   // verifies token signature, audience linkage, expiration and session revocation.
   const result = await auth.handler(

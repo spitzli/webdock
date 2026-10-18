@@ -60,7 +60,7 @@ export function readConfig(env: Record<string, string | undefined>): ApiConfig {
   const port = Number(env.PORT || 3130);
   if (!Number.isInteger(port) || port < 1 || port > 65535)
     throw Error("Invalid port");
-  const domains = (env.WEBDOCK_API_DOMAINS || "").split(",").filter(Boolean);
+  const domains = (env.WEBDOCK_API_DOMAINS ?? "auth,portal,registry").split(",").filter(Boolean);
   if (
     domains.some(
       (domain) =>
@@ -72,7 +72,6 @@ export function readConfig(env: Record<string, string | undefined>): ApiConfig {
           "portal",
           "lifecycle",
           "registry",
-          "cms",
           "integrations",
           "mcp",
         ].includes(domain),

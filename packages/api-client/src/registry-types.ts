@@ -3,7 +3,7 @@ export type {
   User,
   Customer,
   Project,
-  CmsInstance,
   AuditEvent,
   RegistryWhere,
 } from "@webdock/core/registry/types";
+export type { CmsInstance } from "@webdock/module-cms/server/registry-types";

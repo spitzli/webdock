@@ -11,8 +11,8 @@ import {
   mcpIssuer,
 } from "../modules/mcp/mcp-auth";
 import { handleRegistryRequest } from "../modules/mcp/registry-api";
-import { handleHostingRequest } from "../modules/mcp/hosting-api";
-import { hostingTokenCall } from "../modules/mcp/hosting-client";
+
+
 function pathSegments(request: Request, prefix: string) {
   const path = new URL(request.url).pathname
     .slice(prefix.length)
@@ -40,8 +40,6 @@ export function mcpProtocol(config: ApiConfig): Mount[] {
       scopes_supported: [
         "webdock:read",
         "webdock:write",
-        "hosting:read",
-        "hosting:write",
       ],
       bearer_methods_supported: ["header"],
     }));
@@ -69,17 +67,7 @@ export function mcpProtocol(config: ApiConfig): Mount[] {
         },
         { parse: "none" },
       );
-    for (const path of ["/api/hosting", "/api/hosting/*"])
-      app.route(
-        method,
-        path,
-        ({ request }) =>
-          handleHostingRequest(request, pathSegments(request, "/api/hosting"), {
-            origin: config.studioOrigin,
-            call: hostingTokenCall,
-          }),
-        { parse: "none" },
-      );
+
   }
   return [{ app, host: config.studioOrigin, category: "mcp" }];
 }

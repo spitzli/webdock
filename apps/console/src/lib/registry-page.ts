@@ -8,11 +8,11 @@ import type {User} from '../payload-types';
 export const requireRegistryOperator=cache(async()=>{
  try{
   const user=await studioCall<User>('registry.session');
-  if(user?.collection!=='users'||user.role!=='operator')redirect('/sites');
+  if(user?.collection!=='users'||user.role!=='operator')redirect('/tenants');
   return{payload:registryClient,user};
  }catch(error){
   if(error instanceof AccessError&&error.status===401)redirect('/api/sso/login');
-  if(error instanceof StudioError&&error.status===403)redirect('/sites');
+  if(error instanceof StudioError&&error.status===403)redirect('/tenants');
   throw error;
  }
 });

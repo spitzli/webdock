@@ -21,7 +21,6 @@ export type Dependencies = {
   executeGitOAuth: ReturnType<
     typeof import("./git-oauth").createHostingGitOauth
   >["executeGitOAuth"];
-  auth: HostingPorts["auth"];
   database: HostingPorts["database"];
   mcpResource: HostingPorts["mcpResource"];
   currentHostingMCPClaims: HostingPorts["currentHostingMCPClaims"];

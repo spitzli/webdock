@@ -37,3 +37,10 @@ test("minimal dashboard never contacts disabled products and does not report una
     /provider down/,
   );
 });
+
+test('allowances have no entry in an empty installation', async () => {
+ const {hasProductModules}=await import('../src/lib/module-data');
+ assert.equal(hasProductModules(undefined),false);
+ assert.equal(hasProductModules({revision:'core',modules:{}}),false);
+ assert.equal(hasProductModules({revision:'cms',modules:{cms:'draining'}}),true);
+});

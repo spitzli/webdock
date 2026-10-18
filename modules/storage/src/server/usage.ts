@@ -1,3 +1,4 @@
+import { activeIdentity } from "@webdock/core/identity";
 import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import type { StoragePorts, StorageDependencies } from "./ports";
@@ -102,7 +103,7 @@ export function createStorageUsage(ports: StoragePorts) {
       fail("Active tenant and platform operator access are required.");
     const session = await resolveSessionReference(headers);
     if (!session) fail("Sign in first.");
-    return session!.subject;
+    return session!;
   }
   async function save(
     headers: Headers,
@@ -110,29 +111,23 @@ export function createStorageUsage(ports: StoragePorts) {
     action: string,
     work: (connection: PoolClient) => Promise<void>,
   ) {
-    const actorID = await operator(headers, customerID);
+    const reference = await operator(headers, customerID);
     const connection = await database.connect();
     try {
       await connection.query("BEGIN");
-      const principal = ports.currentConsolePrincipal();
-      const actor = (
-        await connection.query(
-          `SELECT id FROM webdock_auth."user" WHERE id=$1 AND role='operator' AND NOT coalesce(banned,false) AND ($2 OR ("emailVerified" AND "twoFactorEnabled" AND NOT "mustChangePassword")) FOR SHARE`,
-          [actorID, !!principal?.operator && principal.userID === actorID],
-        )
-      ).rows[0];
+      const actor = await ports.identity.session(connection, reference, { lock: true });
       const tenant = (
         await connection.query(
           "SELECT id FROM webdock_admin.customers WHERE id=$1 AND status='active' FOR SHARE",
           [customerID],
         )
       ).rows[0];
-      if (!actor || !tenant)
+      if (!activeIdentity(actor) || actor.role !== "operator" || actor.preview || !tenant)
         fail("Active tenant and platform operator access are required.");
       await work(connection);
       await connection.query(
         "INSERT INTO webdock_auth.access_event(actor_id,action,target_id,outcome) VALUES($1,$2,$3,'succeeded')",
-        [actorID, `storage-${action}`, customerID],
+        [reference.subject, `storage-${action}`, customerID],
       );
       await connection.query("COMMIT");
     } catch (error) {

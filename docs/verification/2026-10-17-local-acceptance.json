@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-17",
+  "scope": "local acceptance only; production unchanged",
+  "betterAuth": {
+    "realHTTP": {
+      "realHTTP": true,
+      "realPasswordChange": true,
+      "realTOTP": true,
+      "realPKCE": true,
+      "authenticatedConsoleSSR": true,
+      "customerID": "105058532897849344",
+      "projectID": "105058533002706944",
+      "pluginPanelSSR": true,
+      "allProductsDisabled": true,
+      "removedCMSAndBilling404": true,
+      "crossOriginWriteDenied": true,
+      "logoutRevokesConsoleSession": true
+    },
+    "nativeBrowser": {
+      "passwordSignIn": true,
+      "totpSignIn": true,
+      "pkceToConsole": true,
+      "createProjectViaUI": true,
+      "projectID": "105058883537469440",
+      "extensionsEmptyState": true,
+      "logout": true,
+      "projectRequiresLoginAfterLogout": true,
+      "screenshot": "/home/newt/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvcxfg20-9bec1a6b.png"
+    }
+  },
+  "clerk": {
+    "localSDKRealRSAVerification": true,
+    "providerAndSQLMatrix": "fixtures, not external Clerk account",
+    "bunFocusedPassed": 32,
+    "nodeAdapterSDKPassed": 10,
+    "checks": [
+      "operator downgrade and restore",
+      "session revocation",
+      "issuer/audience/authorized-party rejection",
+      "missing or disabled identity and organization mappings",
+      "foreign project rejected before controller access",
+      "no Better Auth fallback"
+    ]
+  },
+  "plugins": {
+    "realTLSAndPostgresRLS": true,
+    "apiAndMCPInvocation": true,
+    "crossProjectDenied": true,
+    "revokedGrantDenied": true,
+    "readonlyMembershipDenied": true,
+    "idempotencyConflictDenied": true,
+    "bullmqRedisTestsPassed": 7,
+    "packedSDKCLISeparatePluginProcess": true,
+    "browserInstalledPluginInteraction": false
+  },
+  "regression": {
+    "apiUnitPassed": 151,
+    "consolePassed": 80,
+    "harnessSafetyTestsPassed": 3
+  },
+  "architecture": {
+    "coreExportBuildAndImportPassed": 16,
+    "productResolverNegativeControl": true,
+    "coreFixtureUsesAllowedDependencySymlinks": true,
+    "wholeControlPlaneProductFree": false,
+    "remainingProductImportEdges": 124,
+    "remainingProductPackages": 12,
+    "genericDatabaseInfrastructureExcluded": true
+  },
+  "testHarnessFixes": [
+    "Raw HTTP/WebSocket proxy preserves Next client hydration and correct compression headers",
+    "Next dotenv loading blocked with forced-reload sentinel test",
+    "Label-checked idempotent cleanup on failure/signals with real fresh-fixture teardown"
+  ],
+  "limitations": [
+    "No external Clerk browser login",
+    "No installed plugin UI interaction in this browser fixture; API/MCP use separate real runtime fixtures",
+    "Control-plane distribution still imports product packages"
+  ],
+  "resourcesCleaned": true,
+  "hardenedFixtureSmoke": {
+    "authHTTP": 200,
+    "consoleAnonymousHTTP": 307,
+    "readyHTTP": 200,
+    "signalRemovesContainer": true
+  }
+}

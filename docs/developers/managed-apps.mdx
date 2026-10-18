@@ -1,0 +1,63 @@
+---
+title: "Managed Apps"
+description: "Operate a dedicated application while configuring its features in the application's own administration."
+---
+
+Managed Apps operates dedicated applications assigned to a Webdock project. **Tabularium is an app in Managed Apps**, not a separate registry-management plugin. Each customer gets their own Tabularium instance and manages its registry through that instance.
+
+<Note>
+The initial Managed Apps integration operates existing applications provisioned through Hosting. It does not yet provision a new instance, database or domain from the plugin. The host adapter and plugin must be installed together; catalog publication alone does not activate them. The developer alpha is locally verified and published. Its required host adapter and database policy have not been rolled out to the production Console.
+</Note>
+
+## Operate the app in Webdock
+
+- See the assigned application, deployment status and current operation.
+- Start, stop or restart the existing application through Hosting.
+- Open its Hosting detail page for infrastructure administration.
+- Open the customer's dedicated Tabularium instance.
+
+Stopping an application uses Hosting's existing lifecycle and retains its data. Start, stop and restart require current application and subscription revisions and a write-capable project session. The plugin cannot select another customer's project, pass arbitrary hosting commands or obtain database, cluster or registry credentials.
+
+## Panel preview
+
+These captures show a fictional Harbor project in the local UI fixture. Start and stop are simulated here; the images are not evidence of a production installation. The production Console supplies trusted app and Hosting links above the panel.
+
+![Managed Apps panel showing a dedicated Tabularium app in the running state](/images/managed-apps/managed-apps-running.png)
+
+![The same dedicated app shown as stopped after refreshing its status](/images/managed-apps/managed-apps-stopped.png)
+
+## Configure the registry in Tabularium
+
+Use the dedicated Tabularium administration for registry branding, kinds, manifest fields, submissions, providers and users. Webdock does not duplicate those screens or request a Tabularium administrator token for Managed Apps.
+
+The operator binds each managed app to its actual project and verified HTTPS origin. A plugin installation does not grant access to unassigned apps. Existing registry data and settings stay in place when an already deployed Tabularium app is connected.
+
+## Tracking is a separate product
+
+[Managed Analytics](/developers/managed-analytics) uses a shared Umami instance and gives each customer project scoped tracking resources. Customers do not receive their own Umami installation. Its integrated tracking controls therefore remain in the analytics plugin.
+
+## API and MCP
+
+The Managed Apps plugin exposes application list/detail and start/stop/restart actions through the same host authorization used by its panel.
+
+| Action | Intent |
+| --- | --- |
+| `apps.list` | List the apps assigned to this project |
+| `apps.get` | Read one assigned app's operational state |
+| `apps.start` | Start the existing app |
+| `apps.stop` | Stop the app, retaining its data |
+| `apps.restart` | Restart the existing app |
+
+Mutations carry `app_id`, `revision` and `subscription_revision`; the host derives the project and idempotency scope from the verified invocation. A stale revision is rejected. App links are rendered by the Console from trusted Hosting metadata, outside the sandboxed plugin panel. Registry branding, kinds, manifest fields and provider settings are not plugin actions. See [plugin API and MCP](/developers/plugin-api-mcp) for the common transport rules.
+
+## Withdrawn registry-admin alpha
+
+The former `managed-registry` version `0.1.0-alpha.1` is withdrawn and must not be installed. It mirrored registry administration into Webdock, which is not the Managed Apps product boundary. Its source and immutable release artifacts are retained for traceability; it was not installed in production.
+
+## Source and release
+
+- [Managed Apps source](https://github.com/spitzli/webdock-extension-managed-apps)
+- [Developer alpha 0.1.0-alpha.1](https://github.com/spitzli/webdock-extension-managed-apps/releases/tag/v0.1.0-alpha.1)
+- [Registry entry](https://registry.webdock.dev/plugins/managed-apps)
+
+The public container can be pulled anonymously by the manifest's immutable digest. The release descriptor matches the registry's signed manifest. These checks establish release integrity, not a production installation.

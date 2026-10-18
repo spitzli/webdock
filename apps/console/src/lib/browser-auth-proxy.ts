@@ -1,5 +1,5 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
-import { canonicalClerkRequest } from "./clerk-request-origin";
+import { canonicalClerkRequest, resumeClerkRequest } from "./clerk-request-origin";
 import {
   NextResponse,
   type NextRequest,
@@ -52,9 +52,7 @@ export function createBrowserProxy(
       return run(request, {
         cookie: "",
         ...(token
-          ? configured.transport === "adapter"
-            ? { bearerToken: token }
-            : { consoleSession: { token, serviceKey: serviceKey! } }
+          ? { consoleSession: { token, serviceKey: serviceKey! } }
           : {}),
       });
     },
@@ -62,24 +60,20 @@ export function createBrowserProxy(
       publishableKey:
         process.env.CLERK_PUBLISHABLE_KEY ||
         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-      secretKey: process.env.CLERK_SECRET_KEY,
+      // The static secret comes from Clerk's server environment, not dynamic-key propagation.
       signInUrl: "/login",
       signUpUrl: "/sign-up",
       authorizedParties: configured.authorizedParties,
       audience: configured.audience,
     },
   );
-  return (request: NextRequest, event: NextFetchEvent) => {
-    if (
-      (
-        process.env.CLERK_PUBLISHABLE_KEY ||
-        process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-      )?.startsWith("pk_live_")
-    )
-      request = canonicalClerkRequest(
-        request,
-        process.env.NEXT_PUBLIC_SERVER_URL!,
-      );
-    return clerk(request, event);
+  return async (request: NextRequest, event: NextFetchEvent) => {
+    const canonicalOrigin = process.env.NEXT_PUBLIC_SERVER_URL || process.env.WEBDOCK_CONSOLE_ORIGIN;
+    if (canonicalOrigin) request = canonicalClerkRequest(request, canonicalOrigin, {
+      allowLocalHTTP: "allowLocalHTTP" in configured && configured.allowLocalHTTP === true,
+      environment: process.env.NODE_ENV,
+    });
+    const response = await clerk(request, event);
+    return response instanceof Response ? resumeClerkRequest(request.url, response) : response;
   };
 }

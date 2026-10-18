@@ -85,7 +85,6 @@ export default async function Customer({
             <div className="customer-tenant-actions">
             <Link className="button" href={`/tenants/${id}/team`}>{i18n.t("Team & invitations")}</Link>
             {available("hosting") && <Link className="button secondary" href={`/tenants/${id}/hosting`}>{i18n.t("Hosting")}</Link>}
-            <Link className="button secondary" href={`/tenants/${id}/usage`}>{i18n.t("Plan & usage")}</Link>
             {available("mail") && <Link className="button secondary" href={`/tenants/${id}/mail`}>{i18n.t("Mail & domains")}</Link>}
             </div>
           </section>

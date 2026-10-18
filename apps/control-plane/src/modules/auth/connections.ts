@@ -1,6 +1,7 @@
+import { requireOAuthCapability } from "@webdock/auth-configuration/protocols";
 import { businessOperator, getBusinessIdentity } from "./business-identity";
 import { withAuthenticatedDatabase } from "../../db/database-context";
-import { auth } from "./auth";
+
 import { database } from "../../db/runtime";
 import { offlineProvisioning } from "./offline";
 import { currentMCPClaims, mcpResource } from "./mcp";
@@ -13,6 +14,7 @@ async function operator(headers: Headers) {
 export async function getConnections(headers: Headers) {
   return withAuthenticatedDatabase(headers, async () => {
     await operator(headers);
+    requireOAuthCapability();
     return (
       await database.query(
         `SELECT "clientId",name,disabled,scopes FROM webdock_auth."oauthClient" WHERE (metadata::jsonb->>'webdock_mcp'='true' OR metadata::jsonb->>'webdock_hosting'='true') ORDER BY "createdAt" DESC LIMIT 100`,
@@ -26,6 +28,7 @@ export async function registerConnection(
 ) {
   return withAuthenticatedDatabase(headers, async () => {
     await operator(headers);
+    requireOAuthCapability();
     const name = (input.name || "").trim(),
       uri = new URL(input.redirectURI || "");
     const loopback =
@@ -51,6 +54,7 @@ export async function registerConnection(
       (input.write === "yes"
         ? `${prefix}:read ${prefix}:write`
         : `${prefix}:read`) + (offline ? " offline_access" : "");
+    const { auth } = await import("./auth");
     const client = await offlineProvisioning.run({ clientID: id }, () =>
       auth.api.adminCreateOAuthClient({
         headers,
@@ -90,6 +94,7 @@ export async function registerConnection(
 export async function disableConnection(headers: Headers, id: string) {
   return withAuthenticatedDatabase(headers, async () => {
     await operator(headers);
+    requireOAuthCapability();
     if (!/^[1-9][0-9]{0,18}$/.test(id)) throw Error("Invalid client");
     await database.query(
       `UPDATE webdock_auth."oauthClient" SET disabled=true WHERE "clientId"=$1 AND (metadata::jsonb->>'webdock_mcp'='true' OR metadata::jsonb->>'webdock_hosting'='true')`,

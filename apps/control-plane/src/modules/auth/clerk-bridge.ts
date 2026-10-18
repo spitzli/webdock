@@ -22,12 +22,10 @@ export function allowedClerkProjection(
 ): boolean {
   return (
     !user.banned &&
-    user.emailVerified &&
     evidence.user.emailVerified &&
     !user.mustChangePassword &&
-    (user.role === "user" ||
-      (user.role === "operator" &&
-        user.twoFactorEnabled &&
+    (evidence.user.role === "user" ||
+      (evidence.user.role === "operator" &&
         evidence.user.twoFactorEnabled &&
         evidence.factorVerificationAge !== null &&
         evidence.factorVerificationAge[1] >= 0))
@@ -110,15 +108,8 @@ export function createClerkSessionBridge(dependencies: {
         );
       const cookie = await dependencies.signSession(session.token);
       await db.query("COMMIT");
-      const {
-        id,
-        name,
-        email,
-        role,
-        emailVerified,
-        twoFactorEnabled,
-        mustChangePassword,
-      } = user;
+      const { id, name, email, mustChangePassword } = user;
+      const { role, emailVerified, twoFactorEnabled } = evidence.user;
       return {
         headers: new Headers({ Origin: dependencies.origin, Cookie: cookie }),
         actor: { userID: id, sessionID: session.id },

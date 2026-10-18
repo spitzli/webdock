@@ -6567,6 +6567,9 @@
   "Open CMS ↗": [
     "CMS öffnen ↗"
   ],
+  "Open Clerk administration": [
+    "Clerk-Verwaltung öffnen"
+  ],
   "Open Studio": [
     "Studio öffnen"
   ],
@@ -7379,6 +7382,9 @@
   ],
   "Project details": [
     "Projektdetails"
+  ],
+  "Project extensions": [
+    "Projekterweiterungen"
   ],
   "Project mappings are preserved. To revoke Vercel’s permission completely, remove this integration in Vercel.": [
     "Projektzuordnungen bleiben erhalten. Entferne diese Integration in Vercel, um die Berechtigung dort vollständig zu widerrufen."
@@ -8318,6 +8324,9 @@
   ],
   "Role": [
     "Rolle"
+  ],
+  "Roles and memberships are managed in Clerk. Local records only link identities to Webdock resources.": [
+    "Rollen und Mitgliedschaften werden in Clerk verwaltet. Lokale Einträge ordnen Identitäten lediglich den Webdock-Ressourcen zu."
   ],
   "Rollback": [
     "Vorherige Version wiederherstellen"

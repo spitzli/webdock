@@ -1,6 +1,8 @@
+import { configureFullInstallation } from "../src/full-installation";
+configureFullInstallation();
 import { test, expect } from "bun:test";
 import { readFile } from "node:fs/promises";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { Pool } from "pg";
 import { withDatabaseScope } from "@webdock/database-runtime";
 import { currentConsolePrincipal, withConsolePrincipal } from "../src/modules/auth/principal";
@@ -102,10 +104,10 @@ const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       const originalIssuer = process.env.CLERK_ISSUER;
       try {
         process.env.CLERK_ISSUER = 'https://wrong-instance.clerk.accounts.dev';
-        await expect(legacyClerkMemberships(user)).rejects.toThrow('not configured');
-        await expect(linkedMembershipRole(user, org)).rejects.toThrow('not configured');
+        expect(await legacyClerkMemberships(user)).toBeUndefined();
+        expect(await linkedMembershipRole(user, org)).toBeUndefined();
         delete process.env.CLERK_ISSUER;
-        await expect(linkedMembershipRole(user, org)).rejects.toThrow('not configured');
+        expect(await linkedMembershipRole(user, org)).toBeUndefined();
       } finally {
         if (originalIssuer === undefined) delete process.env.CLERK_ISSUER;
         else process.env.CLERK_ISSUER = originalIssuer;
@@ -148,6 +150,7 @@ const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         clerk: {
           issuer,
           userID: "user_" + user,
+          operator: false,
           organizationID: org,
           clerkOrganizationID: "org_" + org,
           customerID: customer,
@@ -261,11 +264,16 @@ const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       const legacy = {
         kind: "session" as const,
         subject: user,
+        authProvider: "clerk" as const,
         sessionID: legacyID,
       };
       const memberships = {
         issuer,
         userID: "user_" + user,
+        operator: false,
+        twoFactorEnabled: false,
+        subject: user,
+        sessionID: legacyID,
         verifiedAt: Date.now(),
         expiresAt: Date.now() + 59000,
         roles: [{ organizationID: org, customerID: customer, role: "admin" }],
@@ -274,7 +282,7 @@ const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       expect((await withDatabaseScope({ ...legacy, memberships: { ...memberships, roles: [{ ...memberships.roles[0], role: "member", permissions: ["org:databases:manage"] }] } }, capability)).rows[0]).toEqual({ ...denied, databases: true });
       const otherOrg = (await owner.query("SELECT organization_id FROM webdock_auth.tenant_customer WHERE customer_id=$1", [other])).rows[0].organization_id;
       await owner.query(`INSERT INTO webdock_auth.member("userId","organizationId",role,"createdAt") VALUES($1,$2,'admin',now())`, [user, otherOrg]);
-      expect((await withDatabaseScope(legacy, () => pools.business.query("SELECT webdock_rls.customer_permission($1,'org:databases:manage') AS allowed", [other]))).rows[0].allowed).toBe(true);
+      expect((await withDatabaseScope({ ...legacy, authProvider: "better-auth" }, () => pools.business.query("SELECT webdock_rls.customer_permission($1,'org:databases:manage') AS allowed", [other]))).rows[0].allowed).toBe(true);
       expect((await withDatabaseScope(legacy, allowed)).rows[0].own).toBe(
         false,
       );
@@ -306,6 +314,66 @@ const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
           )
         ).rows[0].own,
       ).toBe(false);
+      // Provider authority remains independent of local role and MFA projections.
+      const legacyOperator = { ...legacy, memberships: { ...memberships, operator: true, twoFactorEnabled: true, roles: [] } };
+      expect((await withDatabaseScope(legacyOperator, allowed)).rows[0].operator).toBe(true);
+      for (const patch of [
+        { operator: false }, { twoFactorEnabled: false }, { expiresAt: 1 },
+        { issuer: "https://wrong.test" }, { userID: "other" }, { subject: "other" }, { sessionID: "other" },
+      ]) expect((await withDatabaseScope({ ...legacyOperator, memberships: { ...legacyOperator.memberships, ...patch } }, allowed)).rows[0].operator).toBe(false);
+      await owner.query(`UPDATE webdock_auth."user" SET role='operator',"twoFactorEnabled"=true WHERE id=$1`, [user]);
+      expect((await withDatabaseScope({ ...legacy, memberships }, allowed)).rows[0].operator).toBe(false);
+      expect((await withDatabaseScope(legacy, allowed)).rows[0].operator).toBe(false);
+      const { signedDatabaseScope } = await import("../src/db/signed-scope");
+      const signedPools = createDatabases({environment:"test",businessURL:fixture.roles.webdock_auth_runtime,authURL:fixture.roles.webdock_auth_bootstrap,workerURL:fixture.roles.webdock_worker_runtime,signingSecret:fixture.contextSecret,max:1,scope:signedDatabaseScope});
+      const previousProvider = process.env.WEBDOCK_AUTH_PROVIDER;
+      try {
+        process.env.WEBDOCK_AUTH_PROVIDER = JSON.stringify({provider:"clerk",issuer,authorizedParties:["https://console.example.invalid"],tokenMode:"session"});
+        const direct = {kind:"session" as const,subject:user,sessionID:legacyID,authProvider:"better-auth" as const};
+        expect((await withDatabaseScope(direct,()=>signedPools.business.query("SELECT webdock_rls.operator() AS operator"))).rows[0].operator).toBe(false);
+        expect((await withDatabaseScope({...direct,memberships:{...memberships,operator:true,twoFactorEnabled:true}},()=>signedPools.business.query("SELECT webdock_rls.operator() AS operator"))).rows[0].operator).toBe(true);
+      } finally {
+        if(previousProvider === undefined) delete process.env.WEBDOCK_AUTH_PROVIDER; else process.env.WEBDOCK_AUTH_PROVIDER = previousProvider;
+        await signedPools.close();
+      }
+      expect((await withDatabaseScope({ ...legacy, authProvider: "better-auth" }, allowed)).rows[0].operator).toBe(true);
+      expect((await withDatabaseScope({ ...legacy, memberships }, () => pools.business.query("SELECT webdock_rls.customer_permission($1,'org:databases:manage') AS allowed", [other]))).rows[0].allowed).toBe(false);
+      await owner.query('DELETE FROM webdock_auth.member WHERE "userId"=$1', [user]);
+      const compatibility = Bun.spawnSync([process.execPath, "--no-env-file", "-e", `
+        import { mock } from "bun:test";
+        import assert from "node:assert/strict";
+        import { withDatabaseScope } from "@webdock/database-runtime";
+        import { betterAuthIdentity } from "@webdock/auth-better-auth";
+        const subject = ${JSON.stringify(user)}, sessionID = ${JSON.stringify(legacyID)}, customerID = ${JSON.stringify(customer)};
+        const principal = await import("./src/modules/auth/principal");
+        mock.module("./src/modules/auth/principal", () => ({ ...principal, selectedIdentityDirectory: {
+          ...principal.selectedIdentityDirectory,
+          session: async (db, reference, options) => {
+            const local = await betterAuthIdentity.session(db, reference, options);
+            return local ? { ...local, role: "user", emailVerified: true, mustChangePassword: false, twoFactorEnabled: false } : null;
+          },
+        } }));
+        mock.module("./src/modules/auth/business-identity", () => ({
+          getBusinessIdentity: async () => ({ provider: "clerk", sessionID, user: { id: subject, email: "fixture@example.invalid" } }),
+          businessOperator: async () => ({ disabled: true }),
+        }));
+        const { getTenant, listTenants } = await import("./src/modules/access/tenants");
+        const { closeDatabases } = await import("./src/db/runtime");
+        let proof = ${JSON.stringify({ ...memberships, roles: [{ organizationID: org, customerID: customer, role: "member", permissions: ["org:projects:manage"] }] })};
+        const run = work => withDatabaseScope({ kind: "session", authProvider: "clerk", subject, sessionID, memberships: proof }, work);
+        try {
+          assert.equal((await run(() => getTenant(new Headers(), customerID))).tenant.id, customerID);
+          assert.deepEqual((await run(() => listTenants(new Headers()))).map(row => row.id), [customerID]);
+          proof = { ...proof, roles: [] };
+          await assert.rejects(run(() => getTenant(new Headers(), customerID)));
+          assert.deepEqual(await run(() => listTenants(new Headers())), []);
+        } finally { await closeDatabases(); }
+      `], { cwd: import.meta.dir + "/..", env: { ...process.env,
+        WEBDOCK_AUTH_PROVIDER: JSON.stringify({ provider: "clerk", issuer, authorizedParties: ["https://console.example.invalid"], tokenMode: "session" }),
+        CLERK_ISSUER: issuer,
+      } });
+      expect(compatibility.exitCode, compatibility.stderr.toString()).toBe(0);
+      await owner.query(`UPDATE webdock_auth."user" SET role='user',"twoFactorEnabled"=false WHERE id=$1`, [user]);
       await owner.query("DELETE FROM webdock_auth.session WHERE id=$1", [
         legacyID,
       ]);
@@ -349,17 +417,62 @@ const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         "UPDATE webdock_auth.clerk_identity SET enabled=true WHERE user_id=$1",
         [user],
       );
-      await owner.query(
-        `UPDATE webdock_auth."user" SET role='operator' WHERE id=$1`,
-        [user],
-      );
-      expect((await withDatabaseScope(scope, allowed)).rows[0].operator).toBe(
-        true,
-      );
+      const operatorScope = { ...scope, clerk: { ...scope.clerk, operator: true } };
+      for (const patch of [{ operator: undefined }, { operator: "true" }, { expiresAt: 1 }, { issuer: "https://wrong.test" }, { userID: "other" }]) {
+        expect((await withDatabaseScope({ ...operatorScope, clerk: { ...operatorScope.clerk, ...patch } } as typeof scope, allowed)).rows[0].operator).toBe(false);
+      }
+      // Raw context tampering cannot create a signed authority proof.
+      expect((await pools.business.query("SELECT set_config('webdock.rls_context',$1,false),webdock_rls.operator() AS operator", [JSON.stringify({ scope: operatorScope })])).rows[0].operator).toBe(false);
+      expect((await withDatabaseScope(operatorScope, allowed)).rows[0].operator).toBe(true);
       await owner.query("INSERT INTO webdock_auth.tenant_storage(id,customer_id,label,environment,store_id,prefix,encrypted_token) VALUES($1,$2,'Clerk fixture','production',$3,'','fixture-only')",[storageID,customer,"store-"+user]);
       const {manageTenantStorage}=await import('../src/modules/platform/storage-usage');
       await withConsolePrincipal({provider:'clerk',issuer,userID:user,clerkUserID:'user_'+user,sessionID:scope.sessionID,operator:true,organizationID:null,clerkOrganizationID:null,customerID:null,role:null,verifiedAt:Date.now(),expiresAt:Date.now()+59000,name:'Operator fixture',email:user+'@example.invalid'},()=>manageTenantStorage(new Headers(),customer,{action:'remove',storageID}));
       expect((await owner.query('SELECT count(*)::int AS n FROM webdock_auth.tenant_storage WHERE id=$1',[storageID])).rows[0].n).toBe(0);
+      const { startTenantPreview, currentTenantPreview, exitTenantPreview } = await import("../src/modules/access/tenant-preview");
+      const previewActor = { userID: user, sessionID: scope.sessionID };
+      const previewPrincipal = {
+        provider: "clerk" as const, issuer, userID: user, clerkUserID: "user_" + user,
+        sessionID: scope.sessionID, operator: true, organizationID: null,
+        clerkOrganizationID: null, customerID: null, role: null,
+        verifiedAt: Date.now(), expiresAt: Date.now() + 59000,
+        name: "Operator fixture", email: user + "@example.invalid",
+      };
+      const preview = await withConsolePrincipal(previewPrincipal, () => startTenantPreview(previewActor, customer));
+      expect(preview.customerID).toBe(customer);
+      expect((await withConsolePrincipal(previewPrincipal, () => currentTenantPreview(previewActor)))?.preview.status).toBe("active");
+      await expect(withConsolePrincipal(previewPrincipal, () => exitTenantPreview({ ...previewActor, sessionID: "spoofed" }))).rejects.toThrow();
+      expect((await withConsolePrincipal(previewPrincipal, () => exitTenantPreview(previewActor))).customerID).toBe(customer);
+      await owner.query(
+        `UPDATE webdock_auth."user" SET role='operator' WHERE id=$1`,
+        [user],
+      );
+      const memberPrincipal = { ...previewPrincipal, operator: false, organizationID: org, clerkOrganizationID: "org_" + org, customerID: customer, role: "member" as const };
+      const { listTenants } = await import("../src/modules/access/tenants");
+      const { getTenantPlan } = await import("../src/modules/plans/plans");
+      expect((await withConsolePrincipal(memberPrincipal, () => getTenant(new Headers(), customer))).tenant.id).toBe(customer);
+      expect((await withConsolePrincipal(memberPrincipal, () => listTenants(new Headers()))).map(row => row.id)).toEqual([customer]);
+      expect(await withConsolePrincipal(memberPrincipal, () => getTenantPlan(new Headers(), customer))).toHaveProperty("offers");
+      const { getOffer, acceptOffer } = await import("../src/modules/plans/plans");
+      const offerToken = randomBytes(32).toString("base64url"), offerID = id();
+      const allowance = { storageBytes: 0, mailMessages: 0, transferBytes: 0, websites: 0, editors: 0 };
+      await owner.query("INSERT INTO webdock_auth.plan_offer(id,customer_id,token_hash,name,description,terms,base,offered_extras,expected_revision,expires_at,created_by) VALUES($1,$2,$3,'Clerk billing fixture','','',$4,$4,0,now()+interval '1 day',$5)", [offerID, customer, createHash("sha256").update(offerToken).digest("hex"), allowance, user]);
+      try {
+        expect((await withConsolePrincipal(memberPrincipal, () => getOffer(new Headers(), offerToken))).canAccept).toBe(false);
+        const billingPrincipal = { ...memberPrincipal, permissions: ["org:billing:manage" as const] };
+        expect((await withConsolePrincipal(billingPrincipal, () => getOffer(new Headers(), offerToken))).canAccept).toBe(true);
+        await expect(withConsolePrincipal(memberPrincipal, () => acceptOffer(new Headers(), offerToken))).rejects.toThrow();
+        expect((await withConsolePrincipal(billingPrincipal, () => acceptOffer(new Headers(), offerToken))).customerID).toBe(customer);
+      } finally {
+        await owner.query("DELETE FROM webdock_auth.plan_offer WHERE id=$1", [offerID]);
+        await owner.query("DELETE FROM webdock_auth.subscription_history WHERE customer_id=$1", [customer]);
+        await owner.query("DELETE FROM webdock_auth.tenant_subscription WHERE customer_id=$1", [customer]);
+      }
+      await expect(withConsolePrincipal({ ...previewPrincipal, operator: false }, () => startTenantPreview(previewActor, customer))).rejects.toThrow();
+      expect((await owner.query("SELECT count(*)::int AS n FROM webdock_auth.console_tenant_preview WHERE issuer=$1 AND session_id=$2", [issuer, scope.sessionID])).rows[0].n).toBe(0);
+
+      expect((await withDatabaseScope(scope, allowed)).rows[0].operator).toBe(
+        false,
+      );
       await owner.query(
         "INSERT INTO webdock_auth.console_tenant_preview(issuer,session_id,actor_id,customer_id,organization_id,expires_at) VALUES($1,$2,$3,$4,$5,now()-interval '1 minute')",
         [issuer, scope.sessionID, user, customer, org],

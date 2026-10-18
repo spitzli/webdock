@@ -10,7 +10,7 @@ export function testEnvironment(
   Object.assign(env, {
     NODE_ENV: "development",
     AUTH_TEST_MAIL: "true",
-    WEBDOCK_MODULES: JSON.stringify({configVersion: 1, modules: Object.fromEntries(["mail", "hosting", "databases", "cms", "storage"].map(id => [id, {enabled: true}]))}),
+    WEBDOCK_MODULES: JSON.stringify({configVersion: 1, modules: Object.fromEntries(["mail", "hosting", "databases", "storage"].map(id => [id, {enabled: true}]))}),
     BETTER_AUTH_URL: "http://localhost:3125",
     BETTER_AUTH_SECRET: randomBytes(32).toString("hex"),
     PAYLOAD_SECRET: randomBytes(32).toString("hex"),

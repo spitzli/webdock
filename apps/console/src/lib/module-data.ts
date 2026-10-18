@@ -9,3 +9,7 @@ export function optionalModuleData<T>(
     ? load()
     : Promise.resolve(null);
 }
+
+export function hasProductModules(view: ModuleView | undefined): boolean {
+  return ["mail", "hosting", "databases", "cms", "storage"].some(id => ["enabled", "draining"].includes(view?.modules[id] ?? ""));
+}

@@ -1,6 +1,11 @@
-import { auth } from "./auth";
+import { readAuthProviderConfiguration } from "@webdock/auth-configuration";
+
 import { currentMCPClaims } from "./mcp";
-import { resolveSessionReference, currentConsolePrincipal } from "./principal";
+import {
+  resolveSessionReference,
+  currentConsolePrincipal,
+  selectedIdentityDirectory,
+} from "./principal";
 export async function getBusinessIdentity(headers: Headers) {
   const principal = currentConsolePrincipal();
   if (principal)
@@ -20,8 +25,36 @@ export async function getBusinessIdentity(headers: Headers) {
     };
   const reference = await resolveSessionReference(headers);
   if (!reference) return null;
+  const { auth } = await import("./auth");
   const session = await auth.api.getSession({ headers });
-  if (session?.user.id !== reference.subject || session.session.id !== reference.sessionID) return null;
+  if (
+    session?.user.id !== reference.subject ||
+    session.session.id !== reference.sessionID
+  )
+    return null;
+  if (
+    readAuthProviderConfiguration(process.env.WEBDOCK_AUTH_PROVIDER)
+      .provider === "clerk"
+  ) {
+    const { authDatabase } = await import("../../db/runtime");
+    const identity = await selectedIdentityDirectory.session(
+      authDatabase,
+      reference,
+    );
+    if (!identity) return null;
+    return {
+      provider: "clerk" as const,
+      sessionID: reference.sessionID,
+      user: {
+        ...session.user,
+        role: identity.role,
+        banned: identity.banned,
+        emailVerified: identity.emailVerified,
+        twoFactorEnabled: identity.twoFactorEnabled,
+        mustChangePassword: identity.mustChangePassword,
+      },
+    };
+  }
   return session
     ? {
         provider: "legacy" as const,

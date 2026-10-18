@@ -8,7 +8,6 @@ const params = t.Object({
   collection: t.Union([
     t.Literal("customers"),
     t.Literal("projects"),
-    t.Literal("cms-instances"),
     t.Literal("audit-events"),
   ]),
 });
@@ -40,15 +39,6 @@ export default new Elysia()
         return service.writeCustomer(actor, null, body);
       if (params.collection === "projects")
         return service.writeProject(actor, null, body);
-      if (params.collection === "cms-instances") {
-        const value = body as { data?: unknown; confirmExisting?: boolean };
-        return service.writeInstance(
-          actor,
-          null,
-          value?.data,
-          value?.confirmExisting === true,
-        );
-      }
       return new Response(null, { status: 405 });
     },
     { params, parse: "none" },

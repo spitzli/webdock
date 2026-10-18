@@ -25,24 +25,7 @@ export async function projectVercelStatus(
     settings.cookieSecret,
   );
   if (!credential) return { state: "disconnected" as const };
-  let linked = await loadVercelLink(actor, project.id, settings.teamID);
-  if (!linked) {
-    const instances = await actor.payload.find({
-      collection: "cms-instances",
-      where: {
-        and: [
-          { project: { equals: project.id } },
-          { provider: { equals: "vercel" } },
-        ],
-      },
-      limit: 1,
-      depth: 0,
-      user: actor.user,
-      overrideAccess: false,
-    });
-    const fallback = instances.docs[0]?.providerProjectID;
-    if (fallback && /^prj_[A-Za-z0-9]+$/.test(fallback)) linked = fallback;
-  }
+  const linked = await loadVercelLink(actor, project.id, settings.teamID);
   if (!linked) return { state: "unlinked" as const };
   try {
     return {

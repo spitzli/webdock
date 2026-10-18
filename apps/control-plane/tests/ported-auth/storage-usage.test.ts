@@ -1,3 +1,4 @@
+import { configureFullInstallation } from "../../src/full-installation";
 import test, { mock } from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
@@ -30,6 +31,7 @@ test.after(async () => {
   await auth.$context;
   await database.end();
 });
+configureFullInstallation();
 const token = "vercel_blob_rw_teststore_testsecret";
 function blob(pathname: string, size: number) {
   return {

@@ -12,6 +12,11 @@ import { HostingError, type HostingActor } from "@webdock/hosting-contracts";
 import type { DatabaseReader as Connection } from "@webdock/core/identity";
 
 export interface DatabaseServiceDependencies {
+  /** Provider authority validates grants; the local user row supplies only identity and bans. */
+  recipientAuthority?: {
+    isExternal(): boolean;
+    allowed(subject: string, customerID: string): Promise<boolean>;
+  };
   storedConsoleIdentity(): StoredConsoleIdentity | null;
   withStoredIdentity<T>(
     reference: StoredConsoleIdentity,
@@ -134,7 +139,9 @@ export function createDatabaseService(
       const people = auth.operator
         ? (
             await db.query(
-              `SELECT u.id,u.name,u.email FROM webdock_auth."user" u WHERE NOT COALESCE(u.banned,false) AND
+              dependencies.recipientAuthority?.isExternal()
+                ? `SELECT u.id,u.name,u.email FROM webdock_auth."user" u WHERE NOT COALESCE(u.banned,false) AND $1::text IS NOT NULL ORDER BY u.name LIMIT 200`
+                : `SELECT u.id,u.name,u.email FROM webdock_auth."user" u WHERE NOT COALESCE(u.banned,false) AND
       (u.role='operator' OR EXISTS(SELECT 1 FROM webdock_auth.member m JOIN webdock_auth.tenant_customer t ON t.organization_id=m."organizationId"
        WHERE m."userId"=u.id AND t.customer_id=$1)) ORDER BY u.name LIMIT 200`,
               [cmd.customerID],
@@ -189,9 +196,13 @@ export function createDatabaseService(
     const { row } = await binding(db, actor, cmd.bindingID, management);
     if (cmd.action === "get") return publicBinding.parse(row);
     if (cmd.action === "grant") {
+      const external = dependencies.recipientAuthority?.isExternal() === true;
+      if (external && !await dependencies.recipientAuthority!.allowed(cmd.subject, row.customerID)) throw fail();
       const user = (
         await db.query(
-          `SELECT u.id FROM webdock_auth."user" u
+          external
+            ? `SELECT u.id FROM webdock_auth."user" u WHERE u.id=$1 AND NOT COALESCE(u.banned,false) AND $2::text IS NOT NULL`
+            : `SELECT u.id FROM webdock_auth."user" u
       WHERE u.id=$1 AND NOT COALESCE(u.banned,false) AND (u.role='operator' OR EXISTS(
        SELECT 1 FROM webdock_auth.member m JOIN webdock_auth.tenant_customer t ON t.organization_id=m."organizationId"
        WHERE m."userId"=u.id AND t.customer_id=$2))`,

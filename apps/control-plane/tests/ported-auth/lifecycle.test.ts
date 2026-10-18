@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { auth } from "../../src/modules/auth/auth";
 import { database } from "../../src/db/runtime";
-import { lifecycle } from "../../src/modules/lifecycle/lifecycle";
+import { lifecycle, consoleLifecycle } from "../../src/modules/lifecycle/lifecycle";
 import { randomBytes } from "node:crypto";
 import {
   createIdentity,
@@ -73,6 +73,8 @@ test("lifecycle authenticates, binds its preview, isolates deletion and proves r
     release() {},
     async query(sql: string, values: unknown[] = []) {
       statements.push(sql);
+      if (sql.startsWith("SELECT u.id,u.role"))
+        return { rows: activeSession ? [{ id: "operator", role, emailVerified: true, twoFactorEnabled: true }] : [] };
       if (sql.startsWith("SELECT s.id"))
         return { rows: activeSession ? [{ id: "session" }] : [] };
       if (sql.startsWith("SELECT session_id"))
@@ -406,4 +408,46 @@ test("lifecycle deletes only a bound website in the disposable PostgreSQL databa
     (await (await call("delete", plan.planHash)).json()).alreadyRemoved,
     true,
   );
+});
+
+
+test("native lifecycle operator uses Clerk authority while local suspension still denies", async (t) => {
+  const { withConsolePrincipal } = await import("../../src/modules/auth/principal");
+  const { id: userID } = await createIdentity({
+    email: `lifecycle-clerk-${randomBytes(8).toString("hex")}@example.invalid`,
+    name: "Clerk lifecycle fixture", password: randomBytes(24).toString("base64url"),
+    operator: false, mustChangePassword: false,
+  });
+  const { Pool } = await import("pg");
+  const fixturePool = new Pool({ connectionString: process.env.DATABASE_URL });
+  t.after(() => fixturePool.end());
+  const connect = fixturePool.connect.bind(fixturePool);
+  t.mock.method(database, "connect", async () => {
+    const connection = await connect();
+    const query = connection.query.bind(connection);
+    // The legacy fixture lacks Console preview tables; actor locks and authorization use real SQL.
+    connection.query = ((...args: unknown[]) =>
+      typeof args[0] === "string" && args[0].includes("FROM webdock_auth.console_tenant_preview")
+        ? Promise.resolve({ rows: [], rowCount: 0 })
+        : Reflect.apply(query, connection, args)) as typeof connection.query;
+    return connection;
+  });
+  const principal = {
+    provider: "clerk" as const, issuer: "https://fixture.clerk.accounts.dev",
+    userID, clerkUserID: "user_" + userID, sessionID: "sess_" + userID,
+    operator: true, organizationID: null, clerkOrganizationID: null,
+    customerID: null, role: null, verifiedAt: Date.now(), expiresAt: Date.now() + 60000,
+    name: "Fixture", email: "fixture@example.invalid",
+  };
+  const call = (operator = true) => withConsolePrincipal({ ...principal, operator }, () => consoleLifecycle(new Request("https://api.example.invalid/lifecycle", {
+    method: "POST", body: JSON.stringify({ operation: "preview", bindingID: "999999999999999999", customerID: "999999999999999999", origin: "https://missing.example.invalid" }),
+  })));
+  try {
+    assert.equal((await call()).status, 404, "verified Clerk operator reaches binding lookup despite local user role");
+    assert.equal((await call(false)).status, 403);
+    await fixturePool.query('UPDATE webdock_auth."user" SET banned=true WHERE id=$1', [userID]);
+    assert.equal((await call()).status, 403);
+  } finally {
+    await fixturePool.query('DELETE FROM webdock_auth."user" WHERE id=$1', [userID]);
+  }
 });

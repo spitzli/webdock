@@ -35,4 +35,6 @@ export function applicationState(status: string) {
   return ({ draft: msgid('Awaiting first deployment'), running: msgid('Running'), ready: msgid('Ready'), stopped: msgid('Stopped'), pending: msgid('Change in progress'), failed: msgid('Failed'), error: msgid('Error'), deleted: msgid('Deleted'), 'needs-reconciliation': msgid('Review required') } as Record<string, string>)[status] ?? msgid('Unknown');
 }
 
-export { mailSendingPaths } from "@webdock/module-mail/navigation";
+
+
+export { mailSendingPaths } from "@distribution/navigation";

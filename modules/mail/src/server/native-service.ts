@@ -1,3 +1,4 @@
+import type { IdentityDirectory } from "@webdock/core/identity";
 import {
   getMailService,
   requestMailService,
@@ -6,6 +7,7 @@ import {
 import type { NativeMailPorts } from "./native-ports";
 export { MailServiceError };
 export interface NativeServiceDependencies {
+  identity: Pick<IdentityDirectory, "subject">;
   requireMail: NativeMailPorts["requireMail"];
   withAuthenticatedDatabase: NativeMailPorts["withAuthenticatedDatabase"];
   database: NativeMailPorts["database"];
@@ -92,14 +94,18 @@ export function createNativeService(dependencies: NativeServiceDependencies) {
         input.action === "reconcile"
           ? (await getMailService(database, customerID)).enabled
           : input.action === "activate";
-      const result = await requestMailService(database, {
-        customerID,
-        enabled,
-        reconcile: input.action === "reconcile",
-        actorID: session.user.id,
-        expectedRevision: input.revision,
-        hostID,
-      });
+      const result = await requestMailService(
+        database,
+        {
+          customerID,
+          enabled,
+          reconcile: input.action === "reconcile",
+          actorID: session.user.id,
+          expectedRevision: input.revision,
+          hostID,
+        },
+        dependencies.identity,
+      );
       return {
         message:
           result.state === "needs_review"

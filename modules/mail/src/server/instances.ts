@@ -1,3 +1,4 @@
+import { activeIdentity, type IdentityDirectory } from "@webdock/core/identity";
 import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { reserveMailCapacity, completeMailCapacity, MailCapacityError } from "./capacity.ts";
@@ -36,14 +37,20 @@ export async function getMailService(pool: Pool, id: string): Promise<MailServic
 }
 
 /** Explicit incoming Mail activation only; outgoing-only never calls this provisioner. */
-export async function requestMailService(pool: Pool, input: { customerID: string; enabled: boolean; actorID: string; expectedRevision: string; hostID: string; reconcile?: boolean }): Promise<MailService> {
+export async function requestMailService(pool: Pool, input: { customerID: string; enabled: boolean; actorID: string; expectedRevision: string; hostID: string; reconcile?: boolean }, identity?: Pick<IdentityDirectory, "subject">): Promise<MailService> {
   const id = customerID(input.customerID), host = hostID(input.hostID);
   if ((input.reconcile !== undefined && typeof input.reconcile !== "boolean") || typeof input.enabled !== "boolean" || !/^(0|[1-9][0-9]{0,18})$/.test(input.expectedRevision || "")) fail("Invalid mail activation request.");
   return transaction(pool, async client => {
     // Lock authorization and ownership before changing desired state; revocation cannot race this write.
-    const actor = await client.query(`SELECT id FROM webdock_auth."user" WHERE id=$1 AND role='operator'
-      AND NOT coalesce(banned,false) AND "emailVerified" AND "twoFactorEnabled" AND NOT "mustChangePassword" FOR SHARE`, [input.actorID]);
-    if (!actor.rowCount) fail("Current platform operator access is required.");
+    if (identity) {
+      const actor = await identity.subject(client, input.actorID, { lock: true });
+      if (!activeIdentity(actor) || actor.subject !== input.actorID || actor.role !== "operator")
+        fail("Current platform operator access is required.");
+    } else {
+      const actor = await client.query(`SELECT id FROM webdock_auth."user" WHERE id=$1 AND role='operator'
+        AND NOT coalesce(banned,false) AND "emailVerified" AND "twoFactorEnabled" AND NOT "mustChangePassword" FOR SHARE`, [input.actorID]);
+      if (!actor.rowCount) fail("Current platform operator access is required.");
+    }
     const customer = (await client.query(`SELECT c.status FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id
       WHERE c.id=$1 FOR UPDATE OF c`, [id])).rows[0];
     if (!customer) fail("Customer not found.");

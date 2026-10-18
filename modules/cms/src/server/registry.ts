@@ -1,20 +1,30 @@
 import { and, eq, sql } from "drizzle-orm";
 import * as schema from "@webdock/platform-db/schema/registry";
-import { instanceInput, recordID } from "@webdock/core/registry/contracts";
+import { recordID } from "@webdock/core/registry/contracts";
+import { instanceInput } from "./registry-contracts";
 import { RegistryError } from "@webdock/core/registry/errors";
-import type { RegistryCmsExtension } from "@webdock/core/registry/ports";
+import type { RegistryCollectionExtension } from "@webdock/core/registry/ports";
 
 /** Composed even when CMS is disabled: retained instances still block archiving. */
 export function createCmsRegistryExtension(
   requireProduct: (product: "cms", intent: "access" | "provision") => void,
-): RegistryCmsExtension {
+): RegistryCollectionExtension {
   return {
     table: schema.cmsInstances,
+    sources: [
+      "webdock_admin.cms_instances",
+      "webdock_admin.projects",
+      "webdock_admin.customers",
+    ],
+    relation: ["project", "projects"],
+    searchField: "label",
+    statuses: ["active", "suspended", "retired"],
+    filters: { project: "project" },
     prepareWrite(key, input, confirmExisting) {
       requireProduct("cms", key === null ? "provision" : "access");
       if (key !== null) recordID.parse(key);
       const data = instanceInput.parse(input);
-      if (!key && !confirmExisting)
+      if (!key && confirmExisting !== true)
         throw new RegistryError("Confirm that this CMS is already deployed.");
       return async ({ tx, localID, id, audit }) => {
         const old = key
@@ -55,21 +65,33 @@ export function createCmsRegistryExtension(
         return rows[0];
       };
     },
-    async beforeArchiveProject(tx, key) {
-      const linked = await tx
-        .select({ id: schema.cmsInstances.id })
-        .from(schema.cmsInstances)
-        .where(
-          and(
-            eq(schema.cmsInstances.project, key),
-            sql`${schema.cmsInstances.status} <> 'retired'`,
-          ),
-        )
-        .limit(1);
-      if (linked.length)
-        throw new RegistryError(
-          "Retire the linked CMS before archiving this project.",
-        );
-    },
   };
+}
+
+/** Retention is independent of whether the product is enabled. */
+export async function beforeArchiveCmsProject(
+  tx: import("@webdock/core/registry/ports").RegistryTransaction,
+  collection: string,
+  key: string,
+) {
+  if (collection !== "projects") return;
+  const present = await tx.execute<{ present: boolean }>(
+    sql`SELECT to_regclass('webdock_admin.cms_instances') IS NOT NULL AS present`,
+  );
+  if (!present.rows[0]?.present) return;
+
+  const linked = await tx
+    .select({ id: schema.cmsInstances.id })
+    .from(schema.cmsInstances)
+    .where(
+      and(
+        eq(schema.cmsInstances.project, key),
+        sql`${schema.cmsInstances.status} <> 'retired'`,
+      ),
+    )
+    .limit(1);
+  if (linked.length)
+    throw new RegistryError(
+      "Retire the linked CMS before archiving this project.",
+    );
 }

@@ -1,5 +1,5 @@
 import type { Pool } from "pg";
-import type { SessionReference } from "@webdock/core/identity";
+import type { IdentityDirectory, SessionReference } from "@webdock/core/identity";
 export type StorageInventoryOptions = {
   token: string;
   prefix: string;
@@ -17,7 +17,7 @@ export type StorageDependencies = {
   list?: (options: StorageInventoryOptions) => Promise<StorageInventoryPage>;
 };
 export type StoragePorts = {
-  currentConsolePrincipal(): { userID: string; operator: boolean } | undefined;
+  identity: IdentityDirectory;
   database: Pick<Pool, "query" | "connect">;
   withAuthenticatedDatabase<T>(
     headers: Headers,

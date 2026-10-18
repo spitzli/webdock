@@ -13,7 +13,8 @@ if (mode === "adapter") {
     authorizedParties: ["https://console.example.test"],
     audience: "webdock",
   });
-  // Explicit adapter configuration wins even if a legacy deployment flag remains.
+  process.env.WEBDOCK_CONSOLE_SERVICE_KEY = "s".repeat(32);
+  // Explicit selected Clerk uses the authenticated Console boundary.
   process.env.WEBDOCK_CONSOLE_AUTH_PROVIDER = "clerk";
 } else if (mode === "console") {
   process.env.WEBDOCK_CONSOLE_AUTH_PROVIDER = "clerk";
@@ -52,21 +53,19 @@ await studioCall("session");
 await studioCall("session");
 assert.equal(sent.length, 2);
 for (const [index, request] of sent.entries()) {
-  assert.equal(request.path, mode === "console" ? "/v1/console" : "/v1/studio");
+  assert.equal(request.path, mode !== "legacy" ? "/v1/console" : "/v1/studio");
   assert.equal(
     request.headers.get("authorization"),
     mode === "legacy" ? null : `Bearer fresh-token-${index + 1}`,
   );
   assert.equal(
     request.headers.get("x-webdock-service-key"),
-    mode === "console" ? "s".repeat(32) : null,
+    mode !== "legacy" ? "s".repeat(32) : null,
   );
   assert.equal(
     request.headers.get("cookie"),
-    mode === "console"
+    mode !== "legacy"
       ? ""
-      : mode === "adapter"
-        ? "webdock-github=integration"
-        : "webdock-sso=stale; webdock-github=integration",
+      : "webdock-sso=stale; webdock-github=integration",
   );
 }

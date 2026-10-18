@@ -27,7 +27,7 @@ BEGIN
  IF NOT webdock_rls.setup_allowed(customer,project) THEN RETURN false; END IF;
  proof:=webdock_rls.request_scope()->'clerk';
  IF proof IS NULL THEN RETURN true; END IF;
- IF EXISTS(SELECT 1 FROM webdock_auth."user" u WHERE u.id=proof->>'subject' AND u.role='operator') THEN RETURN true; END IF;
+ IF proof->'operator'='true'::jsonb THEN RETURN true; END IF;
  IF jsonb_typeof(proof->'permissions') IS DISTINCT FROM 'array' THEN RETURN false; END IF;
  RETURN coalesce(proof->'permissions' ? permission,false);
 END $$;

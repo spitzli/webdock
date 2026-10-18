@@ -95,7 +95,7 @@ export async function verifyDatabaseReadiness(
   if (domains.includes("registry")) {
     if (!registry) throw Error("Registry role required");
     await verifyRole(registry, "webdock_registry_runtime");
-    expected.push(...mappedTables(registrySchema));
+    expected.push(...mappedTables({users: registrySchema.users, customers: registrySchema.customers, projects: registrySchema.projects, auditEvents: registrySchema.auditEvents}));
   }
   if (domains.includes("lifecycle"))
     expected.push({

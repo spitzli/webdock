@@ -2,7 +2,6 @@ import { ConsoleIcon } from "@/components/console-icon";
 import {uiLabel} from "@/lib/ui-labels";
 
 import { getRequestI18n } from '@webdock/i18n/next';
-import { demoBridges } from "@/lib/demo-bridges";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -32,12 +31,11 @@ export async function TenantWorkspace({
     if (error instanceof AccessError) notFound();
     throw error;
   }
-  const { tenant, canManage, operator, sites, members, invitations } = data;
+  const { tenant, canManage, operator, members, invitations } = data;
   const owner = operator || tenant.member_role === "owner" || (data.team?.provider==="clerk"&&tenant.member_role==="admin");
   if(view==="team" && data.team && !data.team.ready)return <section className="account-section"><h1>{i18n.t("Team")}</h1><p>{i18n.t("Setup pending")}</p>{operator&&<TenantForm customer={customerID} action="link-team" label={i18n.t("Connect")}/>}</section>;
   if(view==="team" && data.team && !data.team.canManage)return <section className="account-section"><h1>{i18n.t("Team")}</h1>{members.map(member=><p key={member.id}>{member.name} · {i18n.t(uiLabel(member.role))}</p>)}</section>;
   const available = (module:string) => ["enabled", "draining"].includes(session.installation?.modules[module] ?? "");
-  const bridges = available("cms") ? await demoBridges() : {};
   return (
     <div className="access-page">
       <header className="account-heading">
@@ -137,13 +135,7 @@ export async function TenantWorkspace({
         </section>
       </div>}
       {view === "overview" && <>
-        {available("cms") && <section aria-labelledby="workspace-websites"><h2 id="workspace-websites">{i18n.t("Your websites")}</h2>
-          {sites.length>0&&<div className="console-directory"><table>
-            <thead><tr><th scope="col">{i18n.t("Website")}</th><th scope="col">{i18n.t("Access")}</th><th scope="col">{i18n.t("Actions")}</th></tr></thead>
-            <tbody>{sites.map(site=><tr key={site.id}><td>{bridges[site.id]?<Link href={`/sites/${site.id}`}>{site.name}</Link>:<strong>{site.name}</strong>}<small className="console-resource-domain">{new URL(site.url).hostname}</small></td><td>{i18n.t(uiLabel(site.role))}</td><td>{bridges[site.id]?<Link className="button secondary" href={`/sites/${site.id}`}>{i18n.t("Open website workspace")}</Link>:session.preview?<span>{i18n.t("No integrated preview")}</span>:<a className="button secondary" href={site.url}>{i18n.t("Open CMS ↗")}</a>}</td></tr>)}</tbody>
-          </table></div>}
-          {!sites.length && <p className="muted">{i18n.t("No websites are currently authorized for your account in this tenant.")}</p>}
-        </section>}
+
         <section className="account-section"><h2>{i18n.t("Services")}</h2><div className="console-services">
           {available("hosting") && <Link href={`/tenants/${customerID}/hosting`}><ConsoleIcon name="apps"/><strong>{i18n.t("Applications")}</strong><small>{i18n.t("Deploy applications and inspect their status and logs.")}</small><span aria-hidden="true">›</span></Link>}
           {available("databases") && <Link href={`/tenants/${customerID}/${session.preview?'managed-databases':'databases'}`}><ConsoleIcon name="database"/><strong>{i18n.t("Databases")}</strong><small>{i18n.t("Browse project data and manage database connections.")}</small><span aria-hidden="true">›</span></Link>}
@@ -172,7 +164,6 @@ export async function TenantWorkspace({
                         : i18n.t("Active")}
                   </p>
                   <p className="muted">{["admin","owner"].includes(member.role) ? i18n.t("Website administrator rights come from this workspace role. Explicitly revoked website access still blocks access.") : i18n.t("Website permissions are assigned individually. Workspace membership alone does not grant editing rights.")}</p>
-                  {operator && <p><Link href={"/people?"+new URLSearchParams({view:"permissions",q:member.email})}>{i18n.t("Review this person's website permissions")}</Link></p>}
                   {(owner || member.role === "member") && (
                     <details>
                       <summary>{i18n.t("Manage membership")}</summary>

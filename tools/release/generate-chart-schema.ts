@@ -1,24 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { installationJSONSchema } from "../../packages/module-sdk/src/installation-json-schema";
-import { createRegistry } from "../../packages/module-sdk/src/index";
-import { installationRegistry } from "../../apps/control-plane/src/installation";
-import { mailManifest } from "../../modules/mail/src/manifest";
-import { hostingManifest } from "../../modules/hosting/src/manifest";
-import { databasesManifest } from "../../modules/databases/src/manifest";
-import { cmsManifest } from "../../modules/cms/src/manifest";
-import { storageManifest } from "../../modules/storage/src/manifest";
-const manifests = [
-  mailManifest,
-  hostingManifest,
-  databasesManifest,
-  cmsManifest,
-  storageManifest,
-];
-if (
-  createRegistry(manifests).publicView().revision !==
-  installationRegistry({}).publicView().revision
-)
-  throw Error("Release and API manifest inventories differ");
+import { fullManifests as manifests } from "../../apps/control-plane/src/full-installation";
 const path = new URL(
   "../../deploy/helm/webdock/values.schema.json",
   import.meta.url,

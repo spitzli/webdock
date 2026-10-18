@@ -1,12 +1,17 @@
-import { currentConsolePrincipal } from "../auth/principal";
+import { activeIdentity } from "@webdock/core/identity";
+import { currentConsolePrincipal, selectedIdentityDirectory } from "../auth/principal";
 import { withDatabaseScope } from "@webdock/database-runtime";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import type { PoolClient } from "pg";
 import { database } from "../../db/runtime";
 import { AccessError, websiteURL } from "./access-management";
 import { getTenant } from "./tenants";
-import { getTenantPlan } from "../plans/plans";
-import { getPlatformSettings } from "../platform/platform";
+import { getPlatformSettings } from "../platform/platform-settings";
+
+export type PreviewProductReader = (operation: string, headers: Headers, customerID: string) => Promise<unknown>;
+let readProduct: PreviewProductReader | undefined;
+/** Trusted distribution composition; the read-only preview admission remains below. */
+export function configurePreviewProducts(reader: PreviewProductReader | undefined) { readProduct = reader; }
 
 export type PreviewActor = { userID: string; sessionID: string };
 export type TenantPreview = {
@@ -29,18 +34,10 @@ async function requireActor(
   connection: Connection = database,
   lock = false,
 ) {
-  const principal=currentConsolePrincipal();
-  if(principal){
-    if(principal.userID!==actor.userID || principal.sessionID!==actor.sessionID || !principal.operator)denied();
-    const result=await connection.query(`SELECT id FROM webdock_auth."user" WHERE id=$1 AND role='operator' AND NOT coalesce(banned,false)${lock ? ' FOR SHARE' : ''}`,[actor.userID]);
-    if(!result.rowCount)denied();
-    return;
-  }
-  const result = await connection.query(
-    `SELECT u.id FROM webdock_auth."user" u JOIN webdock_auth.session s ON s."userId"=u.id WHERE u.id=$1 AND s.id=$2 AND s."expiresAt">now() AND u.role='operator' AND NOT coalesce(u.banned,false) AND u."emailVerified" AND u."twoFactorEnabled" AND NOT u."mustChangePassword"${lock ? " FOR SHARE OF u,s" : ""}`,
-    [actor.userID, actor.sessionID],
+  const identity = await selectedIdentityDirectory.session(
+    connection, { subject: actor.userID, sessionID: actor.sessionID }, { lock },
   );
-  if (!result.rowCount)
+  if (!activeIdentity(identity) || identity.role !== "operator")
     throw new AccessError(
       "Eine aktive Betreiber-Sitzung mit vollständiger Sicherheitskonfiguration ist erforderlich.",
     );
@@ -234,29 +231,10 @@ export async function dispatchTenantPreview(
       args[0] !== customerID
     )
       denied();
-    if (operation === "getTenantMailService") {
-      const mail = await (await import("../mail/mail-service")).getTenantMailService(headers, customerID);
-      return mail
-        ? {
-            ...mail,
-            canActivate: false,
-            canSuspend: false,
-            canReconcile: false,
-          }
-        : null;
+    if (operation !== "getTenant") {
+      if (!readProduct) denied();
+      return readProduct!(operation, headers, customerID);
     }
-    if (operation === "getTenantPlan")
-      return getTenantPlan(headers, customerID);
-    if (operation === "getTenantStorage")
-      return (await import("../platform/storage-usage")).getTenantStorage(headers, customerID);
-    // This read uses stored account/domain snapshots and a configured flag only;
-    // credential listing and every provider-token operation remain excluded.
-    if (operation === "getTenantMail")
-      return {
-        ...(await (await import("../mail/tenant-mail")).getTenantMail(headers, customerID)),
-        operator: false,
-        canManage: false,
-      };
     const view = await getTenant(headers, customerID);
     return {
       ...view,

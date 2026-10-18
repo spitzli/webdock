@@ -1,3 +1,5 @@
+import { configureFullProducts } from "../../src/full-products";
+configureFullProducts();
 import assert from "node:assert/strict";
 import test from "node:test";
 import {

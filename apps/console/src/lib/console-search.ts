@@ -46,7 +46,7 @@ export async function queryConsole(input: ConsoleSearchInput, sources: ConsoleSe
     if (!['https:', 'http:'].includes(url.protocol) || (session.preview && !bridges[site.id])) return [];
     return [{ id: `website:${site.id}`, label: site.name, description: url.hostname, href: bridges[site.id] ? `/sites/${site.id}` : site.url, external: !bridges[site.id], kind: 'website' as const }];
   }) })));
-  if (customerID && !input.projectID) tasks.push(sources.projects(customerID, query).then(page => ({ results: page.docs.map(project => ({ id: `project:${project.projectID}`, label: project.name, href: `/hosting/projects/${project.projectID}`, kind: 'project' as const })), more: page.totalDocs > page.docs.length })));
+  if (customerID && !input.projectID) tasks.push(sources.projects(customerID, query).then(page => ({ results: page.docs.map(project => ({ id: `project:${project.projectID}`, label: project.name, href: session.operator ? `/projects/${project.projectID}` : `/hosting/projects/${project.projectID}`, kind: 'project' as const })), more: page.totalDocs > page.docs.length })));
   else if (!customerID && session.operator) tasks.push(sources.allProjects(query).then(page => ({ results: page.docs.map(project => ({ id: `project:${project.id}`, label: project.name, href: `/projects/${project.id}`, kind: 'project' as const })), more: page.totalDocs > page.docs.length })));
   if (input.projectID) {
     tasks.push(sources.apps(input.projectID, query).then(page => ({ results: page.docs.map(app => ({ id: `app:${app.id}`, label: app.name, href: `/hosting/apps/${app.id}`, kind: 'application' as const })), more: page.totalDocs > page.docs.length })));

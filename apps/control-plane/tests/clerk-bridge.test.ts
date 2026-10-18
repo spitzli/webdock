@@ -15,6 +15,7 @@ const evidence: ClerkExternalEvidence = {
   },
   user: {
     id: "user_example",
+    role: "operator",
     banned: false,
     locked: false,
     twoFactorEnabled: true,
@@ -109,7 +110,7 @@ test("Clerk bridge fails closed before database access for invalid or absent ext
     expect(f.connections).toBe(0);
   }
 });
-test("real external MFA never substitutes for incomplete local setup or an unverified second factor", () => {
+test("live Clerk MFA still requires completed local setup and a verified second factor", () => {
   expect(allowedClerkProjection(user, evidence)).toBe(true);
   for (const proof of [
     { ...evidence, factorVerificationAge: null },
@@ -118,10 +119,8 @@ test("real external MFA never substitutes for incomplete local setup or an unver
   ])
     expect(allowedClerkProjection(user, proof)).toBe(false);
   for (const local of [
-    { ...user, twoFactorEnabled: false },
     { ...user, mustChangePassword: true },
     { ...user, banned: true },
-    { ...user, emailVerified: false },
   ])
     expect(allowedClerkProjection(local, evidence)).toBe(false);
 });
@@ -177,7 +176,7 @@ test("lease is refreshed before native session update so database clamp permits 
 
 import { consoleAuthConfiguration } from "../src/modules/auth/console-configuration";
 import { createConsoleVerifier } from "../src/modules/auth/clerk-identity";
-test("JSON enrollment retains mapping authority and revocation cannot switch to the live Console transport", async () => {
+test("compatibility and selected Clerk delegation each require explicit mappings and honor revocation", async () => {
   const options = { mapped: true };
   const f = fixture(options);
   const headers = new Headers({ authorization: "Bearer verified.token" });
@@ -203,32 +202,107 @@ test("JSON enrollment retains mapping authority and revocation cannot switch to 
       WEBDOCK_CONSOLE_AUTH_PROVIDER: activation,
       WEBDOCK_CONSOLE_SERVICE_KEY: "s".repeat(32),
     });
+    expect(config.enabled).toBe(true);
+    expect(config.requireExistingMapping).toBe(true);
     let providerReads = 0;
-    const forbidden = async () => {
-      providerReads++;
-      throw Error("alternate authority must not be queried");
-    };
+    let local: {
+      id: string;
+      name: string;
+      email: string;
+      role: string;
+      banned: boolean;
+      enabled: boolean;
+      emailVerified: boolean;
+    } | null = null;
+    let sessionActive = true;
     const verify = createConsoleVerifier(
       { ...config, issuer: config.issuer!, serviceKey: config.serviceKey! },
       {
-        verify: forbidden,
-        session: forbidden,
-        user: forbidden,
-        identity: forbidden,
-        organization: forbidden,
-        memberships: forbidden,
+        verify: async () => {
+          providerReads++;
+          return {
+            iss: evidence.external.issuer,
+            sub: evidence.external.subject,
+            sid: evidence.external.sessionID,
+            azp: config.authorizedParties[0]!,
+            aud: config.audience,
+            exp: Math.floor(Date.now() / 1000) + 60,
+          };
+        },
+        session: async () => ({
+          id: evidence.external.sessionID,
+          userId: evidence.external.subject,
+          status: sessionActive ? "active" : "revoked",
+          expireAt: Date.now() + 60_000,
+        }),
+        user: async () => ({
+          id: evidence.external.subject,
+          banned: false,
+          locked: false,
+          primaryEmailAddressId: "email",
+          emailAddresses: [
+            {
+              id: "email",
+              emailAddress: user.email,
+              verification: { status: "verified" },
+            },
+          ],
+        }),
+        identity: async (issuer, subject) => {
+          expect(issuer).toBe(evidence.external.issuer);
+          expect(subject).toBe(evidence.external.subject);
+          return local;
+        },
+        organization: async () => null,
+        memberships: async () => [],
       },
     );
-    await expect(
-      verify(
-        new Request("https://api.example.test/v1/console", {
-          headers: {
-            authorization: "Bearer valid-main-token",
-            "x-webdock-service-key": "s".repeat(32),
-          },
-        }),
-      ),
-    ).rejects.toThrow();
+    const request = (service = true) =>
+      new Request("https://api.example.test/v1/console", {
+        headers: {
+          authorization: "Bearer valid-main-token",
+          ...(service ? { "x-webdock-service-key": "s".repeat(32) } : {}),
+        },
+      });
+    await expect(verify(request(false))).rejects.toThrow();
     expect(providerReads).toBe(0);
+    // A valid external identity with the same email cannot create or recover a mapping.
+    await expect(verify(request())).rejects.toThrow(
+      "provision your Clerk identity mapping",
+    );
+    local = { ...user, enabled: true };
+    expect((await verify(request())).userID).toBe(user.id);
+    local.enabled = false;
+    await expect(verify(request())).rejects.toThrow();
+    local.enabled = true;
+    sessionActive = false;
+    await expect(verify(request())).rejects.toThrow();
+    // Deleting the delegated mapping never falls back to the compatibility mapping above.
+    sessionActive = true;
+    local = null;
+    await expect(verify(request())).rejects.toThrow(
+      "provision your Clerk identity mapping",
+    );
+  }
+});
+
+test("bridge safe role and security flags follow live Clerk without local operator grants", async () => {
+  for (const [localRole, providerRole] of [
+    ["operator", "user"],
+    ["user", "operator"],
+  ] as const) {
+    const projected = await fixture({
+      local: {
+        ...user,
+        role: localRole,
+        emailVerified: false,
+        twoFactorEnabled: false,
+      },
+      external: { ...evidence, user: { ...evidence.user, role: providerRole } },
+    }).bridge(new Headers({ authorization: "Bearer verified.token" }));
+    expect(projected.safe.user.role).toBe(providerRole);
+    expect(projected.safe.operator).toBe(providerRole === "operator");
+    expect(projected.safe.user.emailVerified).toBe(true);
+    expect(projected.safe.user.twoFactorEnabled).toBe(true);
   }
 });

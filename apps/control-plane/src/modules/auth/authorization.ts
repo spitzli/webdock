@@ -20,7 +20,7 @@ export async function currentClaims(
   if (
     !row ||
     row.banned ||
-    (!principal && (!row.emailVerified || row.mustChangePassword)) ||
+    (!principal && row.mustChangePassword) ||
     !row.enabled ||
     row.client_disabled
   )
@@ -35,8 +35,16 @@ export async function currentClaims(
       throw error;
     }
   }
-  if (row.role === "operator")
-    return principal?.operator || row.twoFactorEnabled
+  if (!principal && !legacyProof && !row.emailVerified)
+    return { disabled: true };
+  const operator = principal
+    ? principal.operator
+    : legacyProof
+      ? legacyProof.operator
+      : row.role === "operator";
+  if (operator)
+    return principal?.operator ||
+      (legacyProof ? legacyProof.twoFactorEnabled : row.twoFactorEnabled)
       ? {
           webdock_role: "operator",
           webdock_email: row.email,
@@ -61,7 +69,8 @@ export async function currentClaims(
               [subject],
             )
           ).rowCount;
-    return member && row.role === "user"
+    return member &&
+      (principal || legacyProof ? !operator : row.role === "user")
       ? {
           webdock_role: "reader",
           webdock_email: row.email,

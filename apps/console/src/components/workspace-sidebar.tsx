@@ -3,8 +3,7 @@ import { getRequestI18n } from "@webdock/i18n/next";
 import { getConsoleContext } from "@/lib/console-context";
 import { AreaNavigation } from "./area-navigation";
 import { TenantNavigation } from "./navigation";
-import { MailNavigation } from "./mail/mail-navigation";
-import { TenantDatabaseNavigation } from "./hosting/tenant-database-navigation";
+import { MailNavigation, TenantDatabaseNavigation } from "@distribution/sidebar";
 
 export async function WorkspaceSidebar({
   segments = [],
@@ -23,7 +22,7 @@ export async function WorkspaceSidebar({
     context;
   const resources = (
     <>
-      {mail && session.installation?.modules.mail && session.installation.modules.mail !== "disabled" && (
+      {MailNavigation && mail && session.installation?.modules.mail && session.installation.modules.mail !== "disabled" && (
         <div className="sidebar-resource">
           <p className="sidebar-context-name">{t("Mail")}</p>
           <MailNavigation
@@ -32,7 +31,7 @@ export async function WorkspaceSidebar({
           />
         </div>
       )}
-      {databases && (
+      {TenantDatabaseNavigation && databases && (
         <div className="sidebar-resource">
           <TenantDatabaseNavigation customerID={customerID!} />
         </div>

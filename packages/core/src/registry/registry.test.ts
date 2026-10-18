@@ -1,8 +1,12 @@
+import { getTableName } from "drizzle-orm";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import { createRegistryService } from "./service.ts";
-import { createCmsRegistryExtension } from "../../../../modules/cms/src/server/registry.ts";
+import {
+  beforeArchiveCmsProject,
+  createCmsRegistryExtension,
+} from "../../../../modules/cms/src/server/registry.ts";
 import { createRegistryStore } from "./store.ts";
 import { nextRegistryID } from "./snowflake.ts";
 import { recordID } from "./contracts.ts";
@@ -11,7 +15,8 @@ const actor = { subject: "123", sessionID: "session-123" };
 function fixture(allowed: boolean[] = [true, true], cms = true) {
   const scopes: unknown[] = [],
     locks: string[] = [],
-    products: unknown[] = [];
+    products: unknown[] = [],
+    tables: string[] = [];
   let selects = 0;
   const row = {
     id: "456",
@@ -21,9 +26,14 @@ function fixture(allowed: boolean[] = [true, true], cms = true) {
     authSubject: "123",
   };
   const builder = {
-    from: () => builder,
+    from: (table: Parameters<typeof getTableName>[0]) => {
+      tables.push(getTableName(table));
+      return builder;
+    },
     where: () => builder,
     limit: () => builder,
+    orderBy: () => builder,
+    offset: () => builder,
     for: async (mode: string) => {
       locks.push(mode);
       return [row];
@@ -31,7 +41,11 @@ function fixture(allowed: boolean[] = [true, true], cms = true) {
     then: (resolve: (rows: (typeof row)[]) => unknown) => resolve([row]),
   };
   const transaction = {
-    execute: async () => ({ rows: [{ allowed: allowed.shift() ?? false }] }),
+    execute: async (statement: unknown) => {
+      const text = JSON.stringify(statement);
+      if (text.includes("to_regclass")) return { rows: [{ present: true }] };
+      return { rows: [{ allowed: allowed.shift() ?? false }] };
+    },
     select: () => {
       selects++;
       return builder;
@@ -49,15 +63,26 @@ function fixture(allowed: boolean[] = [true, true], cms = true) {
       scopes.push(identity);
       return run();
     },
-    cms: cms
-      ? createCmsRegistryExtension((product, intent) => {
-          products.push([product, intent]);
-          throw Error("CMS disabled");
-        })
+    beforeArchive: cms ? beforeArchiveCmsProject : undefined,
+    collections: cms
+      ? {
+          "cms-instances": createCmsRegistryExtension((product, intent) => {
+            products.push([product, intent]);
+            throw Error("CMS disabled");
+          }),
+        }
       : undefined,
     close: async () => {},
   });
-  return { service, pool, scopes, locks, products, selects: () => selects };
+  return {
+    service,
+    pool,
+    scopes,
+    locks,
+    products,
+    tables,
+    selects: () => selects,
+  };
 }
 test("core registry operator reads preserve session scope, mapped-row lock and post-read revocation independently from CMS", async () => {
   const f = fixture();
@@ -80,11 +105,11 @@ test("core registry operator reads preserve session scope, mapped-row lock and p
 test("CMS writes require injected product authority before transactions and distinguish create from existing management", async () => {
   const f = fixture();
   await assert.rejects(
-    f.service.writeInstance(actor, null, {}, true),
+    f.service.writeCollection(actor, "cms-instances", null, {}, true),
     /CMS disabled/,
   );
   await assert.rejects(
-    f.service.writeInstance(actor, "789", {}, true),
+    f.service.writeCollection(actor, "cms-instances", "789", {}, true),
     /CMS disabled/,
   );
   assert.deepEqual(f.products, [
@@ -97,12 +122,12 @@ test("core starts without CMS and fails closed on legacy CMS access", async () =
   const f = fixture([true, true, true, true], false);
   assert.equal((await f.service.operator(actor)).id, "456");
   await assert.rejects(
-    f.service.writeInstance(actor, null, {}, true),
-    /extension unavailable/,
+    f.service.writeCollection(actor, "cms-instances", null, {}, true),
+    /collection unavailable/,
   );
   await assert.rejects(
     f.service.query(actor, "find", { collection: "cms-instances" }),
-    /extension unavailable/,
+    /Invalid registry operation/,
   );
 });
 test("retained CMS instances block project archive even when CMS authority is disabled", async () => {
@@ -176,4 +201,36 @@ test("core registry contains no application/product/provider imports and DTO exp
       /drizzle|node-postgres|from ["']pg|from ["']\.\/service/,
     );
   }
+});
+
+test("core-only customer, project and audit reads need no CMS collection", async () => {
+  for (const collection of ["customers", "projects", "audit-events"]) {
+    for (const read of [
+      (service: ReturnType<typeof createRegistryService>) =>
+        service.getRecord(actor, collection, "456"),
+      (service: ReturnType<typeof createRegistryService>) =>
+        service.listRecords(actor, { collection }),
+      (service: ReturnType<typeof createRegistryService>) =>
+        service.query(actor, "find", { collection }),
+    ]) {
+      const f = fixture([true, true], false);
+      await read(f.service);
+      assert.ok(f.tables.includes(collection.replaceAll("-", "_")));
+      assert.ok(!f.tables.includes("cms_instances"));
+      assert.deepEqual(f.products, []);
+      assert.deepEqual(f.scopes, [actor]);
+    }
+  }
+});
+test("generic list/get endpoints cannot expose native user secrets", async () => {
+  const f = fixture([true, true], false);
+  await assert.rejects(
+    f.service.listRecords(actor, { collection: "users" }),
+    /Invalid collection/,
+  );
+  await assert.rejects(
+    f.service.getRecord(actor, "users", "456"),
+    /Invalid collection/,
+  );
+  assert.deepEqual(f.scopes, []);
 });

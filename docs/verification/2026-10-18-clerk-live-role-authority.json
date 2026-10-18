@@ -1,0 +1,16 @@
+{
+  "development": true,
+  "localIdentityMappingFixture": true,
+  "serverOwnedSessionReference": true,
+  "browserLoginTested": false,
+  "checks": [
+    "local operator, public metadata and unsafe metadata cannot grant",
+    "fresh private Clerk role grants despite local user role",
+    "same-session Clerk downgrade removes operator",
+    "live organization role update",
+    "membership removal denies workspace",
+    "revoked provider session denied"
+  ],
+  "passed": true,
+  "cleanedUp": true
+}

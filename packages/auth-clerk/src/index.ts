@@ -34,19 +34,37 @@ export type ClerkSession = {
 };
 export type ClerkUser = {
   id: string;
+  /** Sanitized exclusively from the live Backend User.privateMetadata.webdockRole. */
+  role: "operator" | "user";
   banned: boolean;
   locked: boolean;
   twoFactorEnabled: boolean;
   emailVerified: boolean;
+};
+export type ClerkMembership = {
+  id: string;
+  organizationID: string;
+  subject: string;
+  role: string;
+  permissions: string[];
 };
 /** No provider SDK objects or tokens cross this port. Each call must read current provider state. */
 export interface ClerkBackend {
   verifyToken(token: string, config: ClerkConfiguration): Promise<ClerkClaims>;
   session(sessionID: string): Promise<ClerkSession>;
   user(subject: string): Promise<ClerkUser>;
+  membership(
+    organizationID: string,
+    subject: string,
+  ): Promise<ClerkMembership | null>;
 }
 /** Durable, issuer-scoped mappings created by an explicit enrollment workflow; never email auto-linking. */
 export interface ClerkMappings {
+  externalOrganization(
+    db: DatabaseReader,
+    customerID: string,
+    options?: IdentityReadOptions,
+  ): Promise<{ issuer: string; organizationID: string } | null>;
   localSubject(external: ExternalIdentity): Promise<string | null>;
   localSession(external: ExternalSession): Promise<SessionReference | null>;
   externalSubject(
@@ -93,8 +111,10 @@ function providerIdentity(
     return null;
   return {
     ...local,
-    emailVerified: local.emailVerified && user.emailVerified,
-    twoFactorEnabled: local.twoFactorEnabled && user.twoFactorEnabled,
+    role: user.role === "operator" ? "operator" : "user",
+    operatorAuthorized: false,
+    emailVerified: user.emailVerified,
+    twoFactorEnabled: user.twoFactorEnabled,
   };
 }
 export function createClerkAdapter(dependencies: {
@@ -126,7 +146,8 @@ export function createClerkAdapter(dependencies: {
         return null;
       const audiences = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
       if (
-        !audiences.includes(config.audience) ||
+        (config.tokenMode !== "session" &&
+          !audiences.includes(config.audience)) ||
         typeof claims.exp !== "number" ||
         !Number.isFinite(claims.exp) ||
         claims.exp * 1000 <= current ||
@@ -251,8 +272,47 @@ export function createClerkAdapter(dependencies: {
         ? providerIdentity(projected, user, external)
         : null;
     },
-    membership: (db, subject, customerID, options) =>
-      local.membership(db, subject, customerID, options),
+    async membership(db, subject, customerID, options) {
+      try {
+        const external = await mappings.externalSubject(db, subject, options);
+        const organization = await mappings.externalOrganization(
+          db,
+          customerID,
+          options,
+        );
+        if (
+          !external ||
+          external.issuer !== config.issuer ||
+          !organization ||
+          organization.issuer !== config.issuer ||
+          (await mappings.localSubject(external)) !== subject
+        )
+          return null;
+        const member = await backend.membership(
+          organization.organizationID,
+          external.subject,
+        );
+        if (
+          !member ||
+          !member.id ||
+          member.subject !== external.subject ||
+          member.organizationID !== organization.organizationID ||
+          !/^org:[a-z0-9_]+$/.test(member.role)
+        )
+          return { memberID: null, role: null, permissions: [] };
+        return {
+          memberID: member.id,
+          role: member.role === "org:admin" ? "admin" : "member",
+          permissions: Array.isArray(member.permissions)
+            ? member.permissions.filter(
+                (permission) => typeof permission === "string",
+              )
+            : [],
+        };
+      } catch {
+        return null;
+      }
+    },
   };
   return { verifyExternal, verify, authenticator, identity };
 }

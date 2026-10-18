@@ -220,3 +220,53 @@ integration(
     }
   },
 );
+
+integration("setup RLS uses fresh Clerk operator authority and rejects revoked or mismatched proof", async () => {
+  const { owner, pools } = fixturePools();
+  const f = await createSetupFixture(owner);
+  const issuer = "https://fixture.clerk.accounts.dev";
+  const userID = "user_" + f.actor.subject;
+  const org = (await owner.query("SELECT organization_id FROM webdock_auth.tenant_customer WHERE customer_id=$1", [f.customerID])).rows[0].organization_id;
+  try {
+    await owner.query("INSERT INTO webdock_auth.clerk_identity(issuer,clerk_user_id,user_id) VALUES($1,$2,$3)", [issuer, userID, f.actor.subject]);
+    await owner.query("INSERT INTO webdock_auth.clerk_organization(issuer,clerk_organization_id,organization_id) VALUES($1,$2,$3)", [issuer, "org_" + org, org]);
+    const setupID = (await owner.query(`INSERT INTO webdock_auth.hosting_setup(customer_id,project_id,subject,actor,configuration,state,confirmed_preview_id,generation,lease_until) VALUES($1,$2,$3,$4,'{}','running',$5,1,now()+interval '1 minute') RETURNING id`, [f.customerID, f.projectID, f.actor.subject, JSON.stringify(f.actor), randomUUID()])).rows[0].id;
+    const scope: DatabaseScope = {kind:"system",purpose:"hosting-setup",authProvider:"clerk",setupID,generation:1,customerID:f.customerID};
+    const common = { issuer, userID, subject:f.actor.subject, sessionID:f.actor.sessionID, operator:true, verifiedAt:Date.now(),expiresAt:Date.now()+59000 };
+    const memberships = {...common,twoFactorEnabled:true,roles:[]};
+    const clerk = {...common,organizationID:org,clerkOrganizationID:"org_"+org,customerID:f.customerID,role:"member" as const,permissions:[]};
+    const flags = (s:DatabaseScope) => withDatabaseScope(s, () => pools.worker.query("SELECT webdock_rls.setup_allowed($1,$2) AS allowed, webdock_rls.setup_permission($1,$2,'org:databases:manage') AS databases,webdock_rls.setup_allowed($1,'foreign') AS other",[f.customerID,f.projectID])).then(r=>r.rows[0]);
+    const yes = {allowed:true,databases:true,other:false};
+    const no = {allowed:false,databases:false,other:false};
+    expect(await flags({...scope,memberships})).toEqual(yes);
+    await owner.query("DELETE FROM webdock_auth.clerk_organization WHERE organization_id=$1",[org]);
+    const revalidation = await withDatabaseScope({...scope,purpose:"hosting-setup-revalidation"},()=>pools.worker.query("SELECT webdock_rls.setup_legacy_revalidation($1) AS mapping",[issuer]));
+    expect(revalidation.rows[0].mapping?.userID).toBe(userID);
+    expect(await flags({...scope,memberships})).toEqual(yes);
+    await owner.query("INSERT INTO webdock_auth.clerk_organization(issuer,clerk_organization_id,organization_id) VALUES($1,$2,$3)",[issuer,"org_"+org,org]);
+    for(const patch of [{operator:false},{twoFactorEnabled:false},{expiresAt:1},{issuer:"wrong"},{userID:"wrong"},{subject:"wrong"},{sessionID:"wrong"}]) {
+      expect(await flags({...scope,memberships:{...memberships,...patch}})).toEqual(no);
+    }
+    await owner.query(`UPDATE webdock_auth."user" SET role='operator',"twoFactorEnabled"=true WHERE id=$1`,[f.actor.subject]);
+    expect(await flags(scope)).toEqual(no);
+    expect(await flags({...scope,memberships:{...memberships,operator:false}})).toEqual(no);
+    expect(await flags({...scope,authProvider:"better-auth"})).toEqual(yes);
+    const permissions = ["org:projects:manage","org:databases:manage"];
+    expect(await flags({...scope,memberships:{...memberships,operator:false,twoFactorEnabled:false,roles:[{organizationID:org,customerID:f.customerID,role:"member",permissions}]}})).toEqual(yes);
+    await owner.query("UPDATE webdock_auth.hosting_setup SET actor=$2 WHERE id=$1",[setupID,JSON.stringify({...f.actor,consoleIdentity:{issuer,userID,sessionID:f.actor.sessionID,organizationID:"org_"+org}})]);
+    await owner.query(`UPDATE webdock_auth."user" SET role='user',"twoFactorEnabled"=false WHERE id=$1`,[f.actor.subject]);
+    expect(await flags({...scope,clerk})).toEqual(yes);
+    for(const patch of [{operator:false},{expiresAt:1},{issuer:"wrong"},{userID:"wrong"},{subject:"wrong"},{sessionID:"wrong"}]) {
+      expect(await flags({...scope,clerk:{...clerk,...patch}})).toEqual(no);
+    }
+    expect(await flags({...scope,clerk:{...clerk,operator:false,permissions}})).toEqual(yes);
+    await owner.query(`UPDATE webdock_auth."user" SET role='operator' WHERE id=$1`,[f.actor.subject]);
+    expect(await flags({...scope,clerk:{...clerk,operator:false}})).toEqual(no);
+    await owner.query("UPDATE webdock_auth.clerk_identity SET enabled=false WHERE user_id=$1",[f.actor.subject]);
+    expect(await flags({...scope,clerk})).toEqual(no);
+  } finally {
+    await owner.query("DELETE FROM webdock_auth.clerk_identity WHERE user_id=$1",[f.actor.subject]);
+    await owner.query("DELETE FROM webdock_auth.clerk_organization WHERE organization_id=$1",[org]);
+    await f.cleanup(); await owner.end(); await pools.close();
+  }
+});

@@ -1,5 +1,6 @@
 import {
   normalizeOrganizationPermissions,
+  isClerkOrganizationRole,
   type OrgPermission,
 } from "./organization-permissions";
 import { timingSafeEqual } from "node:crypto";
@@ -50,6 +51,7 @@ export type ConsoleIdentityDependencies = {
     id: string;
     banned: boolean;
     locked: boolean;
+    privateMetadata?: { webdockRole?: unknown } | null;
     primaryEmailAddressId: string | null;
     firstName?: string | null;
     lastName?: string | null;
@@ -180,9 +182,7 @@ export async function resolveConsolePrincipal(
     if (user.id !== claims.sub) denied();
     if (
       (local &&
-        (!local.enabled ||
-          local.banned ||
-          !["operator", "user"].includes(local.role))) ||
+        (!local.enabled || local.banned)) ||
       user.banned ||
       user.locked ||
       !user.emailAddresses.some(
@@ -208,7 +208,7 @@ export async function resolveConsolePrincipal(
         !organization?.enabled ||
         !organization.active ||
         !member ||
-        !["org:admin", "org:member"].includes(member.role)
+        !isClerkOrganizationRole(member.role)
       )
         denied(403);
       organizationID = organization.id;
@@ -232,11 +232,10 @@ export async function resolveConsolePrincipal(
       });
       local = await deps.identity(config.issuer, claims.sub);
     }
+    if (!local)
+      throw new ConsoleAuthError(403, "Ask an administrator to provision your Clerk identity mapping for this installation.");
     if (
-      !local ||
-      !local.enabled ||
-      local.banned ||
-      !["operator", "user"].includes(local.role)
+      !local.enabled || local.banned
     )
       denied(403);
     return Object.freeze({
@@ -245,7 +244,7 @@ export async function resolveConsolePrincipal(
       userID: local.id,
       clerkUserID: claims.sub,
       sessionID: claims.sid,
-      operator: local.role === "operator",
+      operator: user.privateMetadata?.webdockRole === "operator",
       organizationID,
       clerkOrganizationID: claims.orgId || null,
       customerID,

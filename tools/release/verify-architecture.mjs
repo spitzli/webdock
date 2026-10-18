@@ -100,6 +100,8 @@ try {
   run("api", "bun", [
     "-e",
     `import {readConfig} from '/app/apps/control-plane/dist/config.ts';
+const {configureFullInstallation}=await import('/app/apps/control-plane/dist/full-installation.ts');
+configureFullInstallation();
 const inputs=[{name:'one',domains:'auth,mail',modules:{mail:{enabled:true}}},{name:'two',domains:'auth,hosting,databases',modules:{hosting:{enabled:true},databases:{enabled:true}}}];
 const values=inputs.map(input=>readConfig({NODE_ENV:'production',WEBDOCK_API_ORIGIN:'https://api.'+input.name+'.example',BETTER_AUTH_URL:'https://auth.'+input.name+'.example',WEBDOCK_STUDIO_ORIGIN:'https://studio.'+input.name+'.example',WEBDOCK_CONSOLE_ORIGIN:'https://console.'+input.name+'.example',WEBDOCK_API_DOMAINS:input.domains,WEBDOCK_MODULES:JSON.stringify({configVersion:1,modules:input.modules})}));
 if(values[0].apiOrigin===values[1].apiOrigin||values[0].modules.modules.mail!=='enabled'||values[1].modules.modules.mail!=='disabled'||values[1].modules.modules.databases!=='enabled')throw Error('Runtime configuration was retained across installations');`,

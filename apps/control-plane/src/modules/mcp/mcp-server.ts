@@ -1,17 +1,11 @@
+import { projectHostingStatus } from "./product-contributions";
 import { installationRegistry } from "../../installation";
-import {
-  previewProjectDeletion,
-  deleteProject,
-  deleteProjectInput,
-} from "../lifecycle/project-deletion";
-import { projectVercelStatus } from "../integrations/vercel/vercel-project";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { RegistryError as APIError } from "../registry/service";
 import {
   customerInput,
   projectInput,
-  instanceInput,
   listInput,
   recordID,
   collectionName,
@@ -19,16 +13,13 @@ import {
   getRecord,
   writeCustomer,
   writeProject,
-  writeInstance,
   setArchived,
   type RegistryActor,
 } from "../registry/compat";
 export const mutationTools = new Set([
   "save_customer",
   "save_project",
-  "save_cms_connection",
   "set_archived",
-  "delete_project",
 ]);
 export function createRegistryMCP(actor: RegistryActor, canWrite: boolean) {
   const server = new McpServer({ name: "webdock-studio", version: "1.0.0" });
@@ -84,7 +75,7 @@ export function createRegistryMCP(actor: RegistryActor, canWrite: boolean) {
     },
     ({ collection, id }) => result(() => getRecord(actor, collection, id)),
   );
-  if (installationRegistry().state("hosting") !== "disabled")
+  if (projectHostingStatus && installationRegistry().state("hosting") !== "disabled")
     server.registerTool(
       "get_hosting_status",
       {
@@ -94,35 +85,9 @@ export function createRegistryMCP(actor: RegistryActor, canWrite: boolean) {
         annotations: { readOnlyHint: true, openWorldHint: true },
       },
       ({ projectID }) =>
-        result(() => projectVercelStatus(actor, projectID), "hosting"),
+        result(async () => projectHostingStatus!(actor, projectID), "hosting"),
     );
-  server.registerTool(
-    "preview_project_deletion",
-    {
-      description:
-        "Preview permanent removal of an isolated managed project: hosting, CMS database and website login. Platform operators only; no mutation.",
-      inputSchema: { projectID: recordID },
-      annotations: { readOnlyHint: true, openWorldHint: true },
-    },
-    ({ projectID }) => result(() => previewProjectDeletion(actor, projectID)),
-  );
   if (canWrite) {
-    server.registerTool(
-      "delete_project",
-      {
-        description:
-          "Permanently remove the exact project, hosting, isolated CMS database and website access shown in preview_project_deletion. Requires its planHash and exact project name. Retains customer/user records and audit history. Repeating the same confirmed plan resumes recorded progress.",
-        inputSchema: { projectID: recordID, ...deleteProjectInput.shape },
-        annotations: {
-          readOnlyHint: false,
-          destructiveHint: true,
-          idempotentHint: true,
-          openWorldHint: true,
-        },
-      },
-      ({ projectID, ...input }) =>
-        result(() => deleteProject(actor, projectID, input)),
-    );
     const annotations = {
       readOnlyHint: false,
       destructiveHint: false,
@@ -148,21 +113,6 @@ export function createRegistryMCP(actor: RegistryActor, canWrite: boolean) {
         annotations,
       },
       ({ id, data }) => result(() => writeProject(actor, id || null, data)),
-    );
-    server.registerTool(
-      "save_cms_connection",
-      {
-        description:
-          "Record an already deployed CMS connection. Changes inventory only, never infrastructure. Existing project assignment is immutable.",
-        inputSchema: {
-          id: recordID.optional(),
-          data: instanceInput,
-          confirmExisting: z.boolean(),
-        },
-        annotations,
-      },
-      ({ id, data, confirmExisting }) =>
-        result(() => writeInstance(actor, id || null, data, confirmExisting)),
     );
     server.registerTool(
       "set_archived",

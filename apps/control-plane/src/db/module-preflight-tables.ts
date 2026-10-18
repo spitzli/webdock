@@ -1,3 +1,4 @@
+import { retainedMailChecks } from "@webdock/database-runtime";
 /** Only these tables receive installation-wide SELECT for the signed preflight scope. */
 export const modulePreflightChecks = {
   hosting: [
@@ -33,11 +34,30 @@ export const modulePreflightChecks = {
     ["webdock_auth.database_binding", "true"],
     ["webdock_auth.database_grant", "true"],
   ],
-  cms: [["webdock_admin.cms_instances", "true"]],
   storage: [["webdock_auth.tenant_storage", "true"]],
 } as const;
+/** Core must not hide resources retained by an earlier full installation. */
+export const coreLegacyRetentionChecks = {
+  builtin: [["webdock_auth.plugin_installation", "kind='builtin' AND (state <> 'disabled' OR desired_state <> 'disabled')"]],
+  mail: [...retainedMailChecks,
+    ["webdock_mail.domain", "true"],
+    ["webdock_mail.mailbox", "true"],
+    ["webdock_mail.send_transport", "true"],
+    ["webdock_auth.mail_connection_secret", "true"],
+  ],
+  hosting: [...modulePreflightChecks.hosting,
+    ["webdock_auth.hosting_cluster", "true"],
+    ["webdock_auth.hosting_agent", "NOT revoked"],
+    ["webdock_auth.hosting_project", "true"],
+    ["webdock_auth.hosting_service_binding", "state <> 'disconnected' OR secret_encrypted IS NOT NULL"],
+  ],
+  databases: [...modulePreflightChecks.databases,
+    ["webdock_auth.database_runtime_owner", "true"],
+  ],
+  storage: modulePreflightChecks.storage,
+} as const;
 export const modulePreflightTables = new Set<string>(
-  Object.values(modulePreflightChecks).flatMap((checks) =>
+  [...Object.values(modulePreflightChecks), ...Object.values(coreLegacyRetentionChecks)].flatMap((checks) =>
     checks.map(([table]) => table),
   ),
 );

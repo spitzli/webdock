@@ -14,7 +14,8 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       throw Error("Local fixture required");
     const db = new Pool({ connectionString: url.href, max: 1 }),
       f = await createSetupFixture(db),
-      old = process.env.WEBDOCK_SETUP_ENABLED;
+      old = process.env.WEBDOCK_SETUP_ENABLED,
+      oldProvider = process.env.WEBDOCK_AUTH_PROVIDER;
     let savedID: string | undefined;
     process.env.WEBDOCK_SETUP_ENABLED = "true";
     try {
@@ -103,6 +104,7 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         clerk: {
           issuer: reference.issuer,
           userID: reference.userID,
+          operator: false,
           subject: f.actor.subject,
           sessionID: reference.sessionID,
           organizationID: org,
@@ -375,6 +377,7 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       await reset();
       expect(await child("active", true)).toEqual({ processed: 1, failed: 1 });
       // A linked legacy session uses the same live provider capability, without bootstrap credentials.
+      process.env.WEBDOCK_AUTH_PROVIDER = JSON.stringify({provider:"clerk",issuer:reference.issuer,authorizedParties:["https://console.example.invalid"],tokenMode:"session"});
       await db.query(
         'UPDATE webdock_auth."user" SET "emailVerified"=true,"mustChangePassword"=false WHERE id=$1',
         [f.actor.subject],
@@ -398,6 +401,9 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         )
       ).rows[0];
       const memberships = {
+        operator: false,
+        twoFactorEnabled: false,
+        sessionID: f.actor.sessionID,
         subject: f.actor.subject,
         issuer: reference.issuer,
         userID: reference.userID,
@@ -414,6 +420,7 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       };
       const legacyScope = {
         ...scope,
+        authProvider: "clerk" as const,
         generation: legacyClaim.generation,
         clerk: undefined,
         memberships,
@@ -468,6 +475,7 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       await reset();
       expect(await child("active")).toEqual({ processed: 1, failed: 1 });
     } finally {
+      if (oldProvider === undefined) delete process.env.WEBDOCK_AUTH_PROVIDER; else process.env.WEBDOCK_AUTH_PROVIDER = oldProvider;
       if (old === undefined) delete process.env.WEBDOCK_SETUP_ENABLED;
       else process.env.WEBDOCK_SETUP_ENABLED = old;
       try {

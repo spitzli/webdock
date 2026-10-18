@@ -16,21 +16,10 @@ import {
   getTableColumns,
 } from "drizzle-orm";
 import * as schema from "@webdock/platform-db/schema/registry";
-import {
-  customerInput,
-  projectInput,
-  recordID,
-  listInput,
-  collectionName,
-} from "./contracts";
+import { customerInput, projectInput, recordID, listInput } from "./contracts";
 const querySources = {
   customers: ["webdock_admin.customers"],
   projects: ["webdock_admin.projects", "webdock_admin.customers"],
-  "cms-instances": [
-    "webdock_admin.cms_instances",
-    "webdock_admin.projects",
-    "webdock_admin.customers",
-  ],
   "audit-events": ["webdock_admin.audit_events", "webdock_admin.users"],
   users: ["webdock_admin.users"],
 };
@@ -42,11 +31,28 @@ export function createRegistryService(dependencies: RegistryDependencies) {
     close,
     readCachedView = async (_options, _version, load) => load(),
   } = dependencies;
-  const cmsTable = () => {
-    if (!dependencies.cms)
-      throw new RegistryError("CMS registry extension unavailable.", 503);
-    return dependencies.cms.table;
+  const extensions = dependencies.collections ?? {};
+  const tables: Record<
+    string,
+    import("./ports").RegistryCollectionExtension["table"]
+  > = {
+    customers: schema.customers,
+    projects: schema.projects,
+    "audit-events": schema.auditEvents,
+    users: schema.users,
   };
+  const sources: Record<string, string[]> = { ...querySources };
+  for (const [name, extension] of Object.entries(extensions)) {
+    if (Object.hasOwn(tables, name))
+      throw new RegistryError("Duplicate registry collection.");
+    tables[name] = extension.table;
+    sources[name] = extension.sources;
+  }
+  function tableFor(name: string) {
+    if (!Object.hasOwn(tables, name))
+      throw new RegistryError("Registry collection unavailable.", 404);
+    return tables[name];
+  }
   type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
   const execute = <T>(
     actor: RegistryIdentity,
@@ -68,7 +74,7 @@ export function createRegistryService(dependencies: RegistryDependencies) {
           .where(
             and(
               eq(schema.users.authSubject, actor.subject),
-              eq(schema.users.role, "operator"),
+              eq(schema.users.id, sql`webdock_rls.portal_user()->>'id'`),
             ),
           )
           .limit(2)
@@ -203,15 +209,19 @@ export function createRegistryService(dependencies: RegistryDependencies) {
       return rows[0];
     });
   }
-  async function writeInstance(
+  async function writeCollection(
     actor: RegistryIdentity,
+    collection: string,
     key: string | null,
     input: unknown,
-    confirmExisting: boolean,
+    options?: unknown,
   ) {
-    if (!dependencies.cms)
-      throw new RegistryError("CMS registry extension unavailable.", 503);
-    const write = dependencies.cms.prepareWrite(key, input, confirmExisting);
+    const extension = Object.hasOwn(extensions, collection)
+      ? extensions[collection]
+      : undefined;
+    if (!extension)
+      throw new RegistryError("Registry collection unavailable.", 404);
+    const write = extension.prepareWrite(key, input, options);
     return execute(actor, (tx, localID) => write({ tx, localID, id, audit }));
   }
 
@@ -249,7 +259,7 @@ export function createRegistryService(dependencies: RegistryDependencies) {
             "Archive this customer’s active projects first.",
           );
         if (collection === "projects")
-          await dependencies.cms?.beforeArchiveProject(tx, key);
+          await dependencies.beforeArchive?.(tx, collection, key);
       } else if (collection === "projects") {
         const project = old as typeof schema.projects.$inferSelect;
         const parent = (
@@ -277,78 +287,76 @@ export function createRegistryService(dependencies: RegistryDependencies) {
     });
   }
   async function listRecords(actor: RegistryIdentity, input: unknown) {
-    const query = listInput.parse(input);
+    const name =
+      typeof input === "object" && input !== null && "collection" in input
+        ? String(input.collection)
+        : "";
+    if (name === "users") throw new RegistryError("Invalid collection.");
+    tableFor(name);
+    const extraFilters = Object.fromEntries(
+      Object.keys(extensions[name]?.filters ?? {}).map((key) => [
+        key,
+        recordID.optional(),
+      ]),
+    );
+    const query = listInput
+      .extend(extraFilters)
+      .parse(input) as import("zod").infer<typeof listInput> &
+      Record<string, unknown>;
     return execute(actor, async (tx) => {
-      const table =
-        query.collection === "customers"
-          ? schema.customers
-          : query.collection === "projects"
-            ? schema.projects
-            : query.collection === "cms-instances"
-              ? cmsTable()
-              : schema.auditEvents;
+      const table = tableFor(query.collection);
+      const columns = getTableColumns(table) as Record<
+        string,
+        import("drizzle-orm/pg-core").AnyPgColumn
+      >;
+      const extension = extensions[query.collection];
       const filters: SQL[] = [];
-      if (query.customer) {
-        if (query.collection !== "projects")
-          throw new RegistryError("Invalid customer filter.");
-        filters.push(eq(schema.projects.customer, query.customer));
-      }
-      if (query.project) {
-        if (query.collection !== "cms-instances")
-          throw new RegistryError("Invalid project filter.");
-        filters.push(eq(cmsTable().project, query.project));
-      }
-      if (query.targetID) {
-        if (query.collection !== "audit-events")
-          throw new RegistryError("Invalid audit filter.");
-        filters.push(eq(schema.auditEvents.targetID, query.targetID));
-      }
-      if (query.targetCollection) {
-        if (query.collection !== "audit-events")
-          throw new RegistryError("Invalid audit filter.");
-        filters.push(
-          eq(schema.auditEvents.targetCollection, query.targetCollection),
-        );
+      const filterFields: Record<string, string> =
+        query.collection === "projects"
+          ? { customer: "customer" }
+          : query.collection === "audit-events"
+            ? { targetID: "targetID", targetCollection: "targetCollection" }
+            : (extension?.filters ?? {});
+      for (const key of new Set([
+        "customer",
+        "targetID",
+        "targetCollection",
+        ...Object.keys(filterFields),
+      ])) {
+        if (query[key] !== undefined) {
+          const field = filterFields[key];
+          if (!field || !columns[field])
+            throw new RegistryError("Invalid collection filter.");
+          filters.push(eq(columns[field], query[key] as string));
+        }
       }
       if (query.status) {
-        if (query.collection === "audit-events")
-          throw new RegistryError("Invalid status filter.");
         const allowed =
-          query.collection === "cms-instances"
-            ? ["active", "suspended", "retired"]
-            : ["active", "archived"];
-        if (!allowed.includes(query.status))
+          extension?.statuses ??
+          (query.collection === "audit-events" ? [] : ["active", "archived"]);
+        if (!allowed.includes(query.status) || !columns.status)
           throw new RegistryError("Invalid status filter.");
-        filters.push(
-          sql`${query.collection === "customers" ? schema.customers.status : query.collection === "projects" ? schema.projects.status : cmsTable().status} = ${query.status}`,
-        );
+        filters.push(eq(columns.status, query.status));
       }
       if (query.search) {
-        const column =
-          query.collection === "customers"
-            ? schema.customers.name
-            : query.collection === "projects"
-              ? schema.projects.name
-              : query.collection === "cms-instances"
-                ? cmsTable().label
-                : schema.auditEvents.summary;
+        const field =
+          extension?.searchField ??
+          (query.collection === "audit-events" ? "summary" : "name");
         filters.push(
-          ilike(column, "%" + query.search.replace(/[\\%_]/g, "\\$&") + "%"),
+          ilike(
+            columns[field],
+            "%" + query.search.replace(/[\\%_]/g, "\\$&") + "%",
+          ),
         );
       }
       const field = query.sort.replace(/^-/, "");
-      const order =
-        field === "createdAt"
-          ? table.createdAt
-          : field === "updatedAt"
-            ? table.updatedAt
-            : field === "name" && query.collection === "customers"
-              ? schema.customers.name
-              : field === "name" && query.collection === "projects"
-                ? schema.projects.name
-                : field === "label" && query.collection === "cms-instances"
-                  ? cmsTable().label
-                  : null;
+      const order = [
+        "createdAt",
+        "updatedAt",
+        extension?.searchField ?? "name",
+      ].includes(field)
+        ? columns[field]
+        : undefined;
       if (!order) throw new RegistryError("Invalid sort.");
       const totalDocs = (
         await tx
@@ -382,32 +390,19 @@ export function createRegistryService(dependencies: RegistryDependencies) {
     collection: unknown,
     key: string,
   ) {
-    const name = collectionName.parse(collection);
+    if (typeof collection !== "string")
+      throw new RegistryError("Invalid collection.");
+    const name = collection;
+    if (name === "users") throw new RegistryError("Invalid collection.");
     recordID.parse(key);
     return execute(actor, async (tx) => {
-      const table =
-        name === "customers"
-          ? schema.customers
-          : name === "projects"
-            ? schema.projects
-            : name === "cms-instances"
-              ? cmsTable()
-              : schema.auditEvents;
+      const table = tableFor(name);
       const row = (await tx.select().from(table).where(eq(table.id, key)))[0];
       if (!row) throw new RegistryError("Record unavailable.", 404);
       return row;
     });
   }
-  const tables = {
-    customers: schema.customers,
-    projects: schema.projects,
-    get "cms-instances"() {
-      return cmsTable();
-    },
-    "audit-events": schema.auditEvents,
-    users: schema.users,
-  };
-  type Collection = keyof typeof tables;
+  type Collection = string;
   async function operator(actor: RegistryIdentity) {
     return execute(actor, async (tx, localID) => {
       const row = (
@@ -416,7 +411,6 @@ export function createRegistryService(dependencies: RegistryDependencies) {
             id: schema.users.id,
             name: schema.users.name,
             email: schema.users.email,
-            role: schema.users.role,
             authSubject: schema.users.authSubject,
             createdAt: schema.users.createdAt,
             updatedAt: schema.users.updatedAt,
@@ -424,7 +418,7 @@ export function createRegistryService(dependencies: RegistryDependencies) {
           .from(schema.users)
           .where(eq(schema.users.id, localID))
       )[0];
-      return JSON.parse(JSON.stringify({ ...row, collection: "users" }));
+      return JSON.parse(JSON.stringify({ ...row, role: "operator", collection: "users" }));
     });
   }
   async function query(
@@ -482,7 +476,7 @@ export function createRegistryService(dependencies: RegistryDependencies) {
         async () =>
           (
             await tx.execute<{ version: string }>(
-              sql`SELECT webdock_cache.version(${sql.param(querySources[collection])}::text[]) AS version`,
+              sql`SELECT webdock_cache.version(${sql.param(sources[collection])}::text[]) AS version`,
             )
           ).rows[0].version,
         async () => {
@@ -569,11 +563,9 @@ export function createRegistryService(dependencies: RegistryDependencies) {
             const relation =
               kind === "projects"
                 ? ["customer", "customers"]
-                : kind === "cms-instances"
-                  ? ["project", "projects"]
-                  : kind === "audit-events"
-                    ? ["actor", "users"]
-                    : null;
+                : kind === "audit-events"
+                  ? ["actor", "users"]
+                  : (extensions[kind]?.relation ?? null);
             if (relation && typeof row[relation[0]] === "string") {
               const parentTable = tables[relation[1] as Collection];
               const safe = { ...getTableColumns(parentTable) };
@@ -669,7 +661,7 @@ export function createRegistryService(dependencies: RegistryDependencies) {
   return {
     writeCustomer,
     writeProject,
-    writeInstance,
+    writeCollection,
     archive,
     listRecords,
     getRecord,

@@ -5,7 +5,7 @@ description: "Select optional product modules, assign process ownership and drai
 
 External runtime plugins use the [plugin registry and manifest contract](/developers/plugins). The managed analytics pilot uses the signed host installation workflow; lifecycle operations are currently operator-managed.
 
-Webdock includes five optional product modules: `mail`, `hosting`, `databases`, `cms` and `storage`. Billing has been removed; there is no replacement billing plugin. Configuration controls product availability. It does not grant tenant membership, buy a plan, create provider accounts or provision infrastructure.
+Webdock includes four optional product modules: `mail`, `hosting`, `databases` and `storage`. Billing has been removed; there is no replacement billing plugin. Configuration controls product availability. It does not grant tenant membership, buy a plan, create provider accounts or provision infrastructure.
 
 The core identity, customer/project registry, memberships, plans and usage surfaces remain separate from optional products. Existing resource allowance administration remains available; payment checkout, invoices and provider subscription management are not part of the core. See [self-hosting](/developers/self-hosting) for the container and Helm distribution, and [authentication adapters](/developers/auth-adapters) for browser-provider selection.
 
@@ -20,13 +20,12 @@ Set `WEBDOCK_MODULES` on the API and each worker, with the same configuration ac
     "mail": { "enabled": true },
     "hosting": { "enabled": true },
     "databases": { "enabled": true },
-    "cms": { "enabled": true },
     "storage": { "enabled": true }
   }
 }
 ```
 
-An absent variable starts with all products disabled. Explicit configuration also disables omitted modules. Before upgrading an existing installation, declare every product whose retained resources require management; startup refuses unsafe disablement. Remove obsolete `billing` entries and billing API/worker ownership before upgrading. For a fresh core-only installation:
+An absent variable starts with all products disabled. Explicit configuration also disables omitted modules. Before upgrading an existing installation, declare every product whose retained resources require management; startup refuses unsafe disablement. Remove obsolete `billing` and `cms` entries and their API/worker ownership before upgrading. For a fresh core-only installation:
 
 ```sh
 WEBDOCK_MODULES='{"configVersion":1,"modules":{}}'
@@ -43,7 +42,6 @@ Empty or malformed JSON, unknown module IDs/properties, mixed `enabled` and `sta
 | `mail` | `mail` | `mail` |
 | `hosting` | `hosting` | `hosting` |
 | `databases` | `databases` | None; gateway and agent execution remain separate |
-| `cms` | `cms` | None; website runtimes remain separate |
 | `storage` | `portal` | `storage` |
 
 These are ownership names, not a complete API-domain configuration: enabled routes may also require Auth, Portal, Registry or integration domains. Workers require an explicit supported domain list and reject disabled modules. A core-only installation starts no worker. Enabling a module never supplies provider credentials or grants an agent additional privileges.
@@ -67,7 +65,7 @@ Use either `enabled` or `state` per entry.
 }
 ```
 
-This example disables the other four modules because they are omitted. On an existing installation, include every module whose resources still need management.
+This example disables the other three modules because they are omitted. On an existing installation, include every module whose resources still need management.
 
 Mail draining blocks new connections, domains, mailboxes and first incoming activation; resuming a retained suspended instance remains allowed. Hosting, database and storage provisioning use their registered operation guards. These settings take effect through restart or rollout, not a distributed live toggle.
 

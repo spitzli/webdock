@@ -1,12 +1,12 @@
 # Selectable browser authentication
 
-The browser provider is an installation choice, parsed by `@webdock/auth-configuration` from `WEBDOCK_AUTH_PROVIDER`. Absence preserves Better Auth. A configured object with issuer, authorized parties and audience defaults to Clerk when provider is omitted; explicit Clerk configuration selects exactly one browser entrypoint and requires an issuer, authorized-party list and audience. New installation manifests should select Clerk explicitly. This change does not switch existing deployments or enroll their accounts.
+The browser provider is an installation choice, parsed by `@webdock/auth-configuration` from `WEBDOCK_AUTH_PROVIDER`. Absence preserves Better Auth. A configured object with issuer, authorized parties and audience defaults to Clerk when provider is omitted; explicit Clerk configuration selects exactly one browser entrypoint and requires an issuer and authorized-party list. Existing configurations require an audience; explicit `tokenMode: "session"` accepts native Clerk session tokens without an audience and rejects a simultaneous audience setting. New installation manifests should select Clerk explicitly. This change does not switch existing deployments or enroll their accounts.
 
 ## Trust boundaries
 
 The Console runs the official Clerk Next.js middleware only in Clerk mode. Its server-only middleware uses `CLERK_SECRET_KEY`; this is a narrow, documented exception to the frontend credential prohibition. The key is never supplied to `ClerkProvider` or a client component. The public key is supplied by the server (`CLERK_PUBLISHABLE_KEY`, with the usual `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` fallback), so an artifact built in legacy mode can be configured at runtime. The middleware establishes SDK request context, and server components/actions call `auth().getToken()`. Browser tokens go only to the fixed configured API `/v1/studio` origin, with redirects disabled and no legacy session cookie alongside them.
 
-The API verifies the signed token with the official Clerk backend SDK and independently checks exact issuer, audience, authorized party, validity times and absence of impersonation. It also reads the live provider user and session. Unavailable verification fails closed. The API then requires an explicit `(issuer, external subject) → local user ID` mapping. Email addresses never establish identity. This mapping can be enrolled offline but cannot be reassigned or revived by the enrollment tool.
+The API verifies the signed token with the official Clerk backend SDK and independently checks exact issuer, configured audience (unless native session mode is explicitly selected), authorized party, validity times and absence of impersonation. It also reads the live provider user and session. Unavailable verification fails closed. The API then requires an explicit `(issuer, external subject) → local user ID` mapping. Email addresses never establish identity. This mapping can be enrolled offline but cannot be reassigned or revived by the enrollment tool.
 
 For native services that still authorize through local sessions, the API creates a local session projection, bound to the verified external session, with a lease no longer than 60 seconds or the external proof expiry. The signed native cookie remains inside the API. A request-local context allows native policies and existing PostgreSQL RLS checks to consume it. A database trigger caps native session refresh to the verified lease, preventing Better Auth's normal refresh from extending external authority. The bridge never sets a browser cookie or returns the native token in its safe DTO.
 
@@ -39,3 +39,31 @@ Mail queued authorization still uses the subject lookup and local grant checks w
 Registered GitHub/Vercel callback URLs remain unchanged. If a selected-Clerk GET callback has no currently valid identity proof, the API seals its exact allowlisted callback path and query into a three-minute encrypted, host-only HttpOnly cookie and redirects to the query-free Console `/auth/integration-resume` route. OAuth codes and state do not appear in the Clerk handshake URL. The Console's official middleware refreshes the Clerk session; its route sends the fresh bearer and allowlisted integration cookies to the fixed API `/v1/integrations/resume` endpoint. The API checks origin, bearer, authenticated ciphertext, expiry, module admission and live identity before running the original callback handler. The handler still validates its existing signed flow state.
 
 The resume dispatch disables further refresh and clears the handoff cookie on success or failure. Missing mappings and revoked sessions therefore stop after one application refresh attempt. The Console only forwards a successful redirect to its configured local origin and strips authentication cookies from callback responses. Responses use `no-store` and `no-referrer`. Tests cover exact callback allowlists, ciphertext tampering/expiry, deferred provider side effects, fresh-proof transport, external redirect rejection and loop prevention. Real provider/Clerk handshake execution remains unverified without operator-supplied live keys; no external account or provider call was made during these tests.
+
+## Core-only protocol selection
+
+`WEBDOCK_AUTH_PROVIDER` selects browser identity. With Clerk selected,
+`WEBDOCK_OAUTH_PROVIDER` defaults to `disabled`: core Console requests use verified
+Clerk principals and local membership/RLS validation without constructing Better
+Auth or requiring `BETTER_AUTH_SECRET`. The older `/v1/studio` compatibility bridge,
+OAuth client management, and OAuth introspection require the OAuth capability.
+
+Existing Better Auth installations keep their bundled browser and OAuth runtime.
+To retain the existing issuer, audience, opaque-token introspection, revocation,
+and MCP clients during a Clerk rollout, explicitly set
+`WEBDOCK_OAUTH_PROVIDER=better-auth`. This compatibility mode still requires the
+Better Auth secret and existing OAuth provisioning; it is not a second independent
+Clerk OAuth implementation. MCP startup fails if OAuth is disabled. Clerk JWTs
+are never treated as the existing OAuth tokens. Supporting direct Clerk MCP later
+requires an explicit audience/scope and current membership/revocation contract.
+
+The delegated `/v1/operator/registry` and OAuth-protected exposed plugin HTTP APIs
+return 404 when OAuth is disabled. Native Console registry/plugin operations and
+isolated plugin data transports retain their own authorization boundaries.
+
+Selected Clerk Console traffic uses `/v1/console` with a server-only
+`WEBDOCK_CONSOLE_SERVICE_KEY`, the configured Clerk audience and authorized
+parties, and live session/membership verification. Provision the existing
+`webdock_auth.clerk_identity` and `clerk_organization` mappings before cutover.
+Older adapter mapping tables are not automatically reinterpreted or migrated;
+unmapped authenticated users receive a provisioning instruction and no access.

@@ -29,13 +29,13 @@ export function createNativeMailAuthorization(identity: IdentityDirectory, clerk
         [customerID],
       )
     ).rows[0];
-    const operator = user.role === "operator";
     if (!tenant || tenant.status !== "active") mailUnavailable();
-    const member = await identity.membership(db, user.subject, customerID, {
-      lock: true,
-    });
     const clerk = await clerkMailAccess(db, user.subject, customerID);
-    if (clerk === null || (!operator && (!member?.role || (!clerk && !member.memberID)))) mailUnavailable();
+    const member = clerk === undefined ? await identity.membership(db, user.subject, customerID, {
+      lock: true,
+    }) : null;
+    const operator = clerk ? clerk.operator : user.role === "operator";
+    if (clerk === null || (!clerk && !operator && (!member?.role || !member.memberID))) mailUnavailable();
     const canManage = clerk ? clerk.canManage : operator || ["owner", "admin"].includes(member?.role ?? "");
     if (manage && !canManage) mailUnavailable();
     const service = (

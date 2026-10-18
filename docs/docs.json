@@ -78,8 +78,10 @@
               "developers/plugin-manifest",
               "developers/plugin-api-mcp",
               "developers/managed-analytics",
+              "developers/managed-apps",
               "developers/plugin-jobs",
-              "developers/project-notes"
+              "developers/project-notes",
+              "developers/managed-registry"
             ]
           },
           {
@@ -94,6 +96,7 @@
             "group": "Operate Webdock",
             "pages": [
               "developers/self-hosting",
+              "developers/core-distribution",
               "developers/initial-setup",
               "developers/modules",
               "developers/auth-adapters"

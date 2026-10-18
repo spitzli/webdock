@@ -11,7 +11,7 @@ export async function assertModuleCanDisable(db: Reader, module: string, checks:
     if (relation.relation === null) continue;
     const [schema, name] = table.split(".");
     const policy = await db.query(
-      "SELECT EXISTS(SELECT 1 FROM pg_policies WHERE schemaname=$1 AND tablename=$2 AND cmd='SELECT' AND 'webdock_worker_runtime'=ANY(roles) AND qual LIKE '%installation-preflight%') AS present",
+      "SELECT has_table_privilege(session_user,format('%I.%I',$1::text,$2::text),'SELECT') AND EXISTS(SELECT 1 FROM pg_policies WHERE schemaname=$1 AND tablename=$2 AND cmd='SELECT' AND 'webdock_worker_runtime'=ANY(roles) AND qual LIKE '%installation-preflight%') AS present",
       [schema, name],
     );
     if (policy.rows[0]?.present !== true)

@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./selection": "./src/selection.ts"
+    "./selection": "./src/selection.ts",
+    "./protocols": "./src/protocols.ts"
   },
   "dependencies": {
     "@webdock/core": "*",

@@ -17,7 +17,11 @@ export type SessionIdentity = LocalIdentity & {
   preview: boolean;
 };
 /** null means no local tenant mapping; a null member means a mapped tenant without membership. */
-export type TenantMembership = { memberID: string | null; role: string | null };
+export type TenantMembership = {
+  memberID: string | null;
+  role: string | null;
+  permissions?: string[];
+};
 export type IdentityReadOptions = { lock?: boolean };
 /** Trusted server composition supplies this directory. Authorization must re-read, not cache, results. */
 export interface IdentityDirectory {

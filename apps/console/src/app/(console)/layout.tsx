@@ -1,4 +1,4 @@
-import { DatabaseLaunchProvider } from "@/components/databases/action-boundary";
+import { ProductProvider } from "@distribution/providers";
 import { deDE, enUS } from "@clerk/localizations";
 import { ClerkProvider } from "@clerk/nextjs";
 import { browserAuthConfiguration } from "@/lib/browser-auth-config";
@@ -34,9 +34,7 @@ export default async function Layout({
   const { locale, preference, t } = await getRequestI18n();
   const content = (
     <I18nProvider locale={locale} preference={preference}>
-      <DatabaseLaunchProvider
-        adapter={browserAuthConfiguration.transport === "adapter"}
-      >
+      <ProductProvider>
         <ModuleProvider view={installation}>
           <div className="console-layout">
             <a className="skip-link" href="#main">
@@ -47,7 +45,7 @@ export default async function Layout({
             {children}
           </div>
         </ModuleProvider>
-      </DatabaseLaunchProvider>
+      </ProductProvider>
     </I18nProvider>
   );
   return (

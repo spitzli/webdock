@@ -31,3 +31,14 @@ not. Local IDs, session rows, RLS and live provider revalidation remain authorit
 ## Delivered boundary and remaining extraction
 
 CMS writes and retained-instance archive protection are supplied by the CMS module through host injection; core keeps operator transactions, audit and revocation checks. Legacy CMS DTO/input/query aliases remain compatibility contracts in core. The existing shared platform schema and product policy hooks still need subsequent extraction before the application can be distributed without legacy product packages. Optional modules and trusted auth plugins are distinct from isolated project runtime plugins.
+
+## Owner update: CMS removed, Stall independent
+
+2026-10-17: CMS is removed from active Webdock module selection, Console routes, registry collections and API/MCP mutations. The shared CMS app is archived outside workspace builds. Historical records remain; archived CMS inventory still prevents unsafe project archival. Stall Eichenbruch is a separate Payload repository, deployment, schema and local user store. Its public site must remain live, and its login is being detached from mandatory Webdock SSO. This supersedes the earlier optional CMS extension plan.
+
+Core transports default to auth, portal and registry. MCP no longer requires hosting or lifecycle. Clerk's native Console transport is independent of Better Auth; legacy OAuth APIs/MCP are an explicitly selected compatibility capability. Shared historical database migrations are still retained, not a claim of a completely product-free SQL distribution.
+
+
+## Role authority correction — 2026-10-18
+
+The selected authentication provider now owns role and membership authority. Better Auth uses local roles; selected Clerk uses fresh Backend user privateMetadata.webdockRole for the global operator role and live organization memberships/permissions for workspace rights. Local identities remain stable resource mappings and deny-only bans/enrollment controls. Earlier text describing local roles as authoritative under Clerk is superseded. No runtime hot-swap or production role migration is implied; switching provider remains coordinated startup configuration.

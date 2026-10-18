@@ -1,0 +1,14 @@
+{
+  "name": "@webdock/oauth-session",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./return-to": "./src/return-to.ts"
+  },
+  "dependencies": {
+    "openid-client": "6.8.8",
+    "iron-session": "^8.0.4"
+  }
+}

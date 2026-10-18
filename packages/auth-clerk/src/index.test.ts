@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   createClerkAdapter,
+  type ClerkConfiguration,
   type ClerkBackend,
   type ClerkClaims,
   type ClerkMappings,
@@ -42,6 +43,7 @@ const localIdentity = {
 };
 function fixture(
   overrides: {
+    config?: ClerkConfiguration;
     claims?: ClerkClaims;
     backend?: Partial<ClerkBackend>;
     mappings?: Partial<ClerkMappings>;
@@ -59,10 +61,18 @@ function fixture(
     }),
     user: async () => ({
       id: external.subject,
+      role: "user",
       banned: false,
       locked: false,
       twoFactorEnabled: true,
       emailVerified: true,
+    }),
+    membership: async () => ({
+      id: "clerk-member",
+      organizationID: "org_one",
+      subject: external.subject,
+      role: "org:admin",
+      permissions: ["org:hosting:read"],
     }),
     ...overrides.backend,
   };
@@ -71,6 +81,10 @@ function fixture(
     localSession: async () => reference,
     externalSubject: async () => external,
     externalSession: async () => external,
+    externalOrganization: async () => ({
+      issuer: config.issuer,
+      organizationID: "org_one",
+    }),
     ...overrides.mappings,
   };
   const local: IdentityDirectory = {
@@ -84,7 +98,7 @@ function fixture(
     ...overrides.local,
   };
   return createClerkAdapter({
-    config,
+    config: overrides.config ?? config,
     backend,
     mappings,
     local,
@@ -256,16 +270,17 @@ test("rechecks revocation each call and retains local bans, setup and preview po
   assert.equal(first?.banned, true);
   assert.equal(first?.mustChangePassword, true);
   assert.equal(first?.preview, true);
-  assert.equal(first?.twoFactorEnabled, false); // Provider enrollment cannot restore a revoked local security flag.
+  assert.equal(first?.twoFactorEnabled, true); // Clerk owns security enrollment when selected.
   revoked = true;
   assert.equal(await adapter.identity.session(db, reference), null);
 });
-test("queued subject rechecks provider ban and local memberships remain authoritative", async () => {
+test("queued subject rechecks provider ban and memberships come from Clerk", async () => {
   assert.equal(
     await fixture({
       backend: {
         user: async () => ({
           id: external.subject,
+          role: "user",
           banned: true,
           locked: false,
           twoFactorEnabled: false,
@@ -277,7 +292,11 @@ test("queued subject rechecks provider ban and local memberships remain authorit
   );
   assert.deepEqual(
     await fixture().identity.membership(db, reference.subject, "customer"),
-    { memberID: "member-1", role: "owner" },
+    {
+      memberID: "clerk-member",
+      role: "admin",
+      permissions: ["org:hosting:read"],
+    },
   );
 });
 test("verified external evidence supports explicit enrollment without auto-linking", async () => {
@@ -294,8 +313,239 @@ test("verified external evidence supports explicit enrollment without auto-linki
   assert.equal(await adapter.verify("token"), null);
 });
 
-test("configured installations default to Clerk while an absent setting preserves legacy",()=>{
- const {provider,...settings}=config;
- assert.equal(readAuthProviderConfiguration(JSON.stringify(settings)).provider,"clerk");
- assert.equal(readAuthProviderConfiguration(undefined).provider,"better-auth");
+test("configured installations default to Clerk while an absent setting preserves legacy", () => {
+  const { provider, ...settings } = config;
+  assert.equal(
+    readAuthProviderConfiguration(JSON.stringify(settings)).provider,
+    "clerk",
+  );
+  assert.equal(
+    readAuthProviderConfiguration(undefined).provider,
+    "better-auth",
+  );
+});
+
+test("native session mode is explicit and keeps issuer, party and live session checks", async () => {
+  const { audience, ...base } = config;
+  const native = { ...base, tokenMode: "session" as const };
+  assert.deepEqual(
+    readAuthProviderConfiguration(JSON.stringify(native)),
+    native,
+  );
+  assert.throws(
+    () => readAuthProviderConfiguration(JSON.stringify(base)),
+    /audience/,
+  );
+  for (const invalid of [
+    { ...config, tokenMode: "session" },
+    { ...base, tokenMode: "unknown" },
+  ])
+    assert.throws(() => readAuthProviderConfiguration(JSON.stringify(invalid)));
+  assert.equal(
+    await fixture({ claims: { aud: undefined } }).verify("token"),
+    null,
+  );
+  assert.deepEqual(
+    (
+      await fixture({ config: native, claims: { aud: undefined } }).verify(
+        "token",
+      )
+    )?.reference,
+    reference,
+  );
+  for (const bad of [
+    { iss: "https://other.example" },
+    { azp: "https://evil.example" },
+    { azp: undefined },
+    { exp: 1999 },
+    { sub: "m2m_test" },
+    { sid: undefined },
+  ])
+    assert.equal(
+      await fixture({
+        config: native,
+        claims: { aud: undefined, ...bad },
+      }).verify("token"),
+      null,
+    );
+  for (const status of ["revoked", "expired"])
+    assert.equal(
+      await fixture({
+        config: native,
+        claims: { aud: undefined },
+        backend: {
+          session: async () => ({
+            id: external.sessionID,
+            userId: external.subject,
+            status,
+            expireAt: now + 1,
+            actor: null,
+          }),
+        },
+      }).verify("token"),
+      null,
+    );
+  assert.equal(
+    await fixture({
+      config: native,
+      claims: { aud: undefined },
+      mappings: { localSubject: async () => null },
+    }).verify("token"),
+    null,
+  );
+});
+
+// Local persisted roles are never authority in a selected Clerk installation.
+test("session and queued subject roles follow current Clerk grants and revocations", async () => {
+  let role: "operator" | "user" = "user";
+  const adapter = fixture({
+    backend: {
+      user: async () => ({
+        id: external.subject,
+        role,
+        banned: false,
+        locked: false,
+        emailVerified: true,
+        twoFactorEnabled: true,
+      }),
+    },
+    local: {
+      subject: async () => ({
+        ...localIdentity,
+        role: "operator",
+        operatorAuthorized: true,
+        emailVerified: false,
+      }),
+      session: async () => ({
+        ...localIdentity,
+        role: "operator",
+        operatorAuthorized: true,
+        sessionID: reference.sessionID,
+        preview: false,
+      }),
+    },
+  });
+  for (const current of ["user", "operator", "user"] as const) {
+    role = current;
+    for (const actual of [
+      await adapter.identity.subject(db, reference.subject),
+      await adapter.identity.session(db, reference),
+    ]) {
+      assert.equal(actual?.role, current);
+      assert.equal(actual?.operatorAuthorized, false);
+      assert.equal(actual?.emailVerified, true);
+    }
+  }
+  assert.equal(
+    (
+      await fixture({
+        backend: {
+          user: async () => ({
+            id: external.subject,
+            role: "operator",
+            banned: false,
+            locked: false,
+            emailVerified: true,
+            twoFactorEnabled: true,
+          }),
+        },
+      }).identity.subject(db, reference.subject)
+    )?.role,
+    "operator",
+  );
+});
+test("Clerk membership requires the exact enabled issuer mapping and live explicit permissions", async () => {
+  for (const mappings of [
+    { externalOrganization: async () => null },
+    {
+      externalOrganization: async () => ({
+        issuer: "https://other.example",
+        organizationID: "org_one",
+      }),
+    },
+    { externalSubject: async () => null },
+    { localSubject: async () => "other" },
+  ])
+    assert.equal(
+      await fixture({ mappings }).identity.membership(
+        db,
+        reference.subject,
+        "customer",
+      ),
+      null,
+    );
+  for (const member of [
+    null,
+    {
+      id: "member",
+      organizationID: "org_other",
+      subject: external.subject,
+      role: "org:admin",
+      permissions: [],
+    },
+    {
+      id: "member",
+      organizationID: "org_one",
+      subject: "user_other",
+      role: "org:admin",
+      permissions: [],
+    },
+    {
+      id: "member",
+      organizationID: "org_one",
+      subject: external.subject,
+      role: "operator",
+      permissions: [],
+    },
+  ])
+    assert.deepEqual(
+      await fixture({
+        backend: { membership: async () => member },
+      }).identity.membership(db, reference.subject, "customer"),
+      { memberID: null, role: null, permissions: [] },
+    );
+  const custom = fixture({
+    backend: {
+      membership: async () => ({
+        id: "member",
+        organizationID: "org_one",
+        subject: external.subject,
+        role: "org:deployer",
+        permissions: ["org:hosting:create"],
+      }),
+    },
+  });
+  assert.deepEqual(
+    await custom.identity.membership(db, reference.subject, "customer"),
+    { memberID: "member", role: "member", permissions: ["org:hosting:create"] },
+  );
+  assert.equal(
+    await fixture({
+      backend: {
+        membership: async () => {
+          throw Error("outage");
+        },
+      },
+    }).identity.membership(db, reference.subject, "customer"),
+    null,
+  );
+});
+
+test("missing provider permissions never re-enable legacy role-derived rights", async () => {
+  const adapter = fixture({
+    backend: {
+      membership: async () => ({
+        id: "member",
+        organizationID: "org_one",
+        subject: external.subject,
+        role: "org:admin",
+        permissions: undefined as unknown as string[],
+      }),
+    },
+  });
+  assert.deepEqual(
+    (await adapter.identity.membership(db, reference.subject, "customer"))
+      ?.permissions,
+    [],
+  );
 });

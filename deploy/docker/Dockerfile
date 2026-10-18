@@ -52,3 +52,29 @@ COPY --from=auth-build --chown=node:node /app/apps/auth/public ./apps/auth/publi
 USER node
 EXPOSE 3125
 CMD ["node", "apps/auth/server.js"]
+
+# Core distribution: no product packages or source tree in the runtime image.
+FROM dependencies AS core-api-build
+RUN npm run build:core -w @webdock/api
+
+FROM oven/bun:1.4.3 AS api-core
+WORKDIR /app
+COPY --from=core-api-build --chown=bun:bun /app/apps/control-plane/dist-core/core.js ./core.js
+ENV NODE_ENV=production BIND_ADDRESS=0.0.0.0 PORT=3130
+USER bun
+EXPOSE 3130
+CMD ["bun", "core.js"]
+
+FROM dependencies AS core-console-build
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN node tools/release/build-core-console.mjs
+
+FROM node:24.15.0-bookworm-slim AS console-core
+WORKDIR /app
+ENV NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3120 NEXT_TELEMETRY_DISABLED=1
+COPY --from=core-console-build --chown=node:node /app/.core-build/console/.next/standalone ./
+COPY --from=core-console-build --chown=node:node /app/.core-build/console/.next/static ./.core-build/console/.next/static
+COPY --from=core-console-build --chown=node:node /app/.core-build/console/public ./.core-build/console/public
+USER node
+EXPOSE 3120
+CMD ["node", ".core-build/console/server.js"]

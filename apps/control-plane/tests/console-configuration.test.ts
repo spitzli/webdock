@@ -7,7 +7,7 @@ const configuration = {
   authorizedParties: ["https://console.example.test"],
   audience: "webdock-console",
 };
-test("JSON Clerk retains its separate adapter authority even with a stale Console activation flag", () => {
+test("JSON Clerk delegation requires an explicit service key and preserves provider boundaries", () => {
   expect(consoleAuthConfiguration({}).enabled).toBe(false);
   expect(
     consoleAuthConfiguration({ WEBDOCK_CONSOLE_AUTH_PROVIDER: "clerk" })
@@ -23,6 +23,10 @@ test("JSON Clerk retains its separate adapter authority even with a stale Consol
       WEBDOCK_CONSOLE_AUTH_PROVIDER: "clerk",
     }).enabled,
   ).toBe(false);
+  expect(consoleAuthConfiguration({
+    WEBDOCK_AUTH_PROVIDER: JSON.stringify(configuration),
+    WEBDOCK_CONSOLE_SERVICE_KEY: "s".repeat(32),
+  }).enabled).toBe(true);
   expect(selected.audience).toBe("webdock-console");
   expect(selected.requireExistingMapping).toBe(true);
   expect(() =>

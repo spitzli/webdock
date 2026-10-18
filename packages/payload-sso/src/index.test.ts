@@ -1,3 +1,4 @@
+import { configureOAuthSession } from '@webdock/oauth-session'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { adminSSORedirect, safeAdminReturnTo, configurePayloadSSO, intersectRoles, validateIdentity } from './index.ts'
@@ -386,7 +387,7 @@ test('API-local introspection preserves client, subject, expiry and revocation c
   const cookie = '__Host-webdock-sso=' + await sealData(stored, { password: options.cookieSecret, ttl: 300 })
   let calls = 0
   let result: unknown = { ...claims, exp: expires, sid: 'native-session', webdock_role: 'reader' }
-  const sso = configurePayloadSSO({ ...options, allowUnmappedPortalUsers: true,
+  const sso = configureOAuthSession({ ...options, lookupUser: async () => null, allowUnmappedPortalUsers: true,
     introspect: async (token: string) => { assert.equal(token, stored.accessToken); calls++; return result },
   })
   const headers = new Headers({ cookie })

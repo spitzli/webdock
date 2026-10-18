@@ -2,16 +2,14 @@ import {
   moduleForOperation,
   isModuleProvisioning,
 } from "@webdock/module-sdk/selection";
-import { hostingManifest } from "@webdock/module-hosting/manifest";
-import { databasesManifest } from "@webdock/module-databases/manifest";
-import { cmsManifest } from "@webdock/module-cms/manifest";
-import { storageManifest } from "@webdock/module-storage/manifest";
-import { createRegistry, type ModuleView } from "@webdock/module-sdk";
-import {
-  mailManifest,
-  isMailProvisioning,
-} from "@webdock/module-mail/manifest";
-export const builtinManifests = [mailManifest,hostingManifest,databasesManifest,cmsManifest,storageManifest];
+import { createRegistry, type ModuleView, type ModuleManifest } from "@webdock/module-sdk";
+export let builtinManifests: readonly ModuleManifest[] = [];
+let mailProvisioning = isModuleProvisioning;
+/** Trusted distribution composition, called before serving requests. */
+export function configureInstallation(manifests: readonly ModuleManifest[], provisioning = isModuleProvisioning) {
+  builtinManifests = manifests;
+  mailProvisioning = provisioning;
+}
 export function installationRegistry(
   env: Record<string, string | undefined> = process.env,
 ) {
@@ -50,7 +48,7 @@ export function requireInstalledOperation(operation: string, args: unknown[]) {
       module,
       (
         module === "mail"
-          ? isMailProvisioning(operation, args)
+          ? mailProvisioning(operation, args)
           : isModuleProvisioning(operation, args)
       )
         ? "provision"
@@ -67,10 +65,9 @@ export function publicInstallation(
       mail: "mail",
       hosting: "hosting",
       databases: "databases",
-      cms: "cms",
       storage: "portal",
     })) {
-      if (!domains.includes(domain)) {
+      if (Object.hasOwn(view.modules, module) && !domains.includes(domain)) {
         view.modules[module] = "disabled";
         view.revision += `:${module}-unowned`;
       }

@@ -110,6 +110,64 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         "INSERT INTO webdock_auth.plugin_invocation(id,plugin_id,customer_id,project_id,runtime_generation,grant_revision,kind,name,intent,actor_id,session_id,operation_id,capabilities,expires_at) VALUES($1,$2,$3,$4,1,0,'action','notes.write','write',$5,$6,$7,'[\"plugin.data.read\",\"plugin.data.write\"]',now()+interval '50 seconds')",
         [invocation, plugin, id(0), id(3), id(1), id(2), id(4)],
       );
+      // The apps service uses the same live invocation policy as document access.
+      await owner.query(
+        'UPDATE webdock_auth.plugin_configuration SET approved_capabilities=approved_capabilities || \'["plugin.apps.read","plugin.apps.manage"]\'::jsonb WHERE plugin_id=$1',
+        [plugin],
+      );
+      await owner.query(
+        'UPDATE webdock_auth.plugin_grant SET capabilities=capabilities || \'["plugin.apps.read","plugin.apps.manage"]\'::jsonb WHERE plugin_id=$1 AND project_id=$2',
+        [plugin, id(3)],
+      );
+      await owner.query(
+        "UPDATE webdock_auth.plugin_invocation SET intent='read',capabilities=capabilities || '[\"plugin.apps.read\",\"plugin.apps.manage\"]'::jsonb WHERE id=$1",
+        [invocation],
+      );
+      const appScope = (actor: number, capability: string) =>
+        scope(
+          actor,
+          async () =>
+            (
+              await api.query(
+                "SELECT webdock_rls.plugin_context($1) AS scope",
+                [capability],
+              )
+            ).rows[0].scope,
+        );
+      expect(await appScope(0, "plugin.apps.read")).toMatchObject({
+        pluginID: plugin,
+        projectID: id(3),
+        operationID: id(4),
+      });
+      expect(await appScope(0, "plugin.apps.manage")).toBeNull();
+      expect(await appScope(10, "plugin.apps.read")).toBeNull();
+      expect(
+        (
+          await scope(0, () =>
+            api.query(
+              "SELECT webdock_rls.plugin_allows($1,$2,$3,'plugin.apps.read') AS allowed",
+              [plugin, id(0), id(6)],
+            ),
+          )
+        ).rows[0].allowed,
+      ).toBe(false);
+      await owner.query(
+        "UPDATE webdock_auth.plugin_invocation SET intent='write' WHERE id=$1",
+        [invocation],
+      );
+      expect(await appScope(0, "plugin.apps.manage")).toMatchObject({
+        projectID: id(3),
+      });
+      await owner.query(
+        "UPDATE webdock_auth.plugin_grant SET capabilities=capabilities - 'plugin.apps.manage' WHERE plugin_id=$1 AND project_id=$2",
+        [plugin, id(3)],
+      );
+      expect(await appScope(0, "plugin.apps.manage")).toBeNull();
+      await owner.query(
+        "UPDATE webdock_auth.plugin_configuration SET approved_capabilities=approved_capabilities - 'plugin.apps.read' WHERE plugin_id=$1",
+        [plugin],
+      );
+      expect(await appScope(0, "plugin.apps.read")).toBeNull();
       expect(
         (
           await scope(0, () =>

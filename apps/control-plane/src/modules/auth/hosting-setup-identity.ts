@@ -2,7 +2,7 @@ import { consoleAuthConfiguration } from "./console-configuration";
 import { HostingError } from "@webdock/hosting-contracts";
 import { workerDatabase } from "../../db/runtime";
 import type { ConsoleIdentityDependencies } from "../auth/clerk-identity";
-import { normalizeOrganizationPermissions } from "../auth/organization-permissions";
+import { isClerkOrganizationRole, normalizeOrganizationPermissions } from "../auth/organization-permissions";
 import {
   clerkProvider,
   liveMemberships,
@@ -60,7 +60,7 @@ export async function executeAuthorizedSetup(row: SetupRow) {
   )
     throw new HostingError(403, "Confirm this setup again before continuing.");
   const memberships =
-    !reference && process.env.DATABASE_RLS_SECRET
+    !reference && consoleAuthConfiguration().requireExistingMapping && process.env.DATABASE_RLS_SECRET
       ? await withDatabaseScope(
           {
             kind: "system",
@@ -72,7 +72,8 @@ export async function executeAuthorizedSetup(row: SetupRow) {
           async () => {
             const mapping = (
               await workerDatabase.query(
-                "SELECT webdock_rls.setup_legacy_revalidation() AS mapping",
+                "SELECT webdock_rls.setup_legacy_revalidation($1) AS mapping",
+                [consoleAuthConfiguration().issuer],
               )
             ).rows[0]?.mapping;
             if (!mapping) return undefined;
@@ -107,12 +108,15 @@ export async function executeAuthorizedSetup(row: SetupRow) {
             const verifiedAt = Date.now();
             return {
               subject: row.actor!.subject,
+              sessionID: row.actor!.sessionID,
+              operator: user.privateMetadata?.webdockRole === "operator",
+              twoFactorEnabled: user.twoFactorEnabled === true,
               issuer: mapping.issuer as string,
               userID: mapping.userID as string,
               verifiedAt,
               expiresAt: verifiedAt + 60000,
               roles:
-                member && ["org:admin", "org:member"].includes(member.role)
+                member && isClerkOrganizationRole(member.role)
                   ? [
                       {
                         organizationID: mapping.organizationID as string,
@@ -133,11 +137,13 @@ export async function executeAuthorizedSetup(row: SetupRow) {
       {
         kind: "system",
         purpose: "hosting-setup",
+        authProvider: principal || consoleAuthConfiguration().requireExistingMapping ? "clerk" : "better-auth",
         ...(memberships ? { memberships } : {}),
         ...(principal
           ? {
               clerk: {
                 issuer: principal.issuer,
+                operator: principal.operator,
                 userID: principal.clerkUserID,
                 subject: principal.userID,
                 sessionID: principal.sessionID,

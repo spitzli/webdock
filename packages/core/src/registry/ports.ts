@@ -15,7 +15,12 @@ export interface RegistryDependencies {
     identity: RegistryIdentity,
     run: () => Promise<T>,
   ): Promise<T>;
-  cms?: RegistryCmsExtension;
+  collections?: Record<string, RegistryCollectionExtension>;
+  beforeArchive?: (
+    tx: RegistryTransaction,
+    collection: string,
+    key: string,
+  ) => Promise<void>;
   readCachedView?<T>(
     options: {
       kind: "registry";
@@ -32,13 +37,22 @@ export interface RegistryDependencies {
 export type RegistryTransaction = Parameters<
   Parameters<NodePgDatabase["transaction"]>[0]
 >[0];
-/** Legacy CMS collection compatibility; its runtime behavior belongs to the module. */
-export interface RegistryCmsExtension {
-  table: typeof import("@webdock/platform-db/schema/registry").cmsInstances;
+/** Trusted host contributions execute inside core's operator transaction. */
+export interface RegistryCollectionExtension {
+  table: import("drizzle-orm/pg-core").PgTable & {
+    id: import("drizzle-orm/pg-core").AnyPgColumn;
+    createdAt: import("drizzle-orm/pg-core").AnyPgColumn;
+    updatedAt: import("drizzle-orm/pg-core").AnyPgColumn;
+  };
+  sources: string[];
+  relation?: [field: string, collection: string];
+  searchField: string;
+  statuses: string[];
+  filters?: Record<string, string>;
   prepareWrite(
     key: string | null,
     input: unknown,
-    confirmExisting: boolean,
+    options: unknown,
   ): (context: {
     tx: RegistryTransaction;
     localID: string;
@@ -50,8 +64,5 @@ export interface RegistryCmsExtension {
       before: Record<string, unknown> | undefined,
       after: Record<string, unknown>,
     ): Promise<void>;
-  }) => Promise<
-    typeof import("@webdock/platform-db/schema/registry").cmsInstances.$inferSelect
-  >;
-  beforeArchiveProject(tx: RegistryTransaction, key: string): Promise<void>;
+  }) => Promise<Record<string, unknown>>;
 }

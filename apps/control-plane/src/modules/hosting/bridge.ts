@@ -4,7 +4,6 @@ import { requireHostingCommand } from "../../installation";
 import { vercelSettings } from "../integrations/vercel-settings";
 import { displayDatabaseCredentials } from "./database-credentials";
 import { executeGitOAuth } from "./git-oauth";
-import { auth } from "../auth/auth";
 import { authDatabase as database } from "../../db/runtime";
 import { mcpResource, currentHostingMCPClaims } from "../auth/mcp";
 import { executeHosting } from "./service";
@@ -24,9 +23,6 @@ export const { hostingIdentity, executeHostingBridgeCommand, hostingBridge } =
     },
     get executeGitOAuth() {
       return executeGitOAuth;
-    },
-    get auth() {
-      return auth;
     },
     get database() {
       return database;

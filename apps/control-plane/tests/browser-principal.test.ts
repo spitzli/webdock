@@ -71,7 +71,7 @@ test("trusted native headers recheck exact identity and cannot carry context int
   expect(f.principal.currentTrustedBrowserReference()).toBeNull();
   expect(f.principal.trustedLocalSessionKind(headers)).toBeUndefined();
 });
-test("legacy delegated protocol scope remains separate from selected Clerk identity checks", async () => {
+test("legacy delegated transport still uses the selected Clerk identity authority", async () => {
   const f = fixture(),
     db = {} as DatabaseReader,
     headers = new Headers({ cookie: "native=internal" });
@@ -86,7 +86,7 @@ test("legacy delegated protocol scope remains separate from selected Clerk ident
     },
   );
   await f.principal.selectedIdentityDirectory.subject(db, "123");
-  expect(f.reads).toEqual(["clerk", "legacy", "clerk"]);
+  expect(f.reads).toEqual(["clerk", "clerk", "clerk"]);
 });
 
 import { validateClerkWorkerConfiguration } from "../src/modules/auth/clerk-configuration";

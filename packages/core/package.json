@@ -12,7 +12,8 @@
     "./plugin-http": "./src/plugin-http.ts",
     "./plugin-exposure": "./src/plugin-exposure.ts",
     "./plugin-runtime-policy": "./src/plugin-runtime-policy.ts",
-    "./auth-plugin": "./src/auth-plugin.ts"
+    "./auth-plugin": "./src/auth-plugin.ts",
+    "./plugin-apps": "./src/plugin-apps.ts"
   },
   "devDependencies": {
     "@types/pg": "^8"

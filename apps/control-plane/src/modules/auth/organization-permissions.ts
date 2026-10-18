@@ -20,3 +20,8 @@ export function organizationCapabilities(permissions: readonly string[] | undefi
     manageBilling: allowed.includes("org:billing:manage"),
   };
 }
+
+/** Clerk role keys are organization-scoped; custom keys never imply global privileges. */
+export function isClerkOrganizationRole(value: unknown): value is string {
+  return typeof value === "string" && /^org:[a-z0-9_]+$/.test(value);
+}

@@ -1,12 +1,13 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {invokePlugin} from './actions';
+import {pluginPanelURL} from '@/lib/plugin-panel';
 type Action={name:string;intent:'read'|'write';destructive?:boolean};
-export function PluginFrame({pluginID,projectID,url,actions,label}:{pluginID:string;projectID:string;url:string;actions:Action[];label:string}){
+export function PluginFrame({pluginID,projectID,url,actions,label,allowLocalHTTP=false}:{pluginID:string;projectID:string;url:string;actions:Action[];label:string;allowLocalHTTP?:boolean}){
  const container=useRef<HTMLDivElement>(null);const [error,setError]=useState('');
  useEffect(()=>{
   if(!container.current)return;
-  const origin=new URL(url);if(origin.protocol!=='https:'){setError('Plugin UI requires HTTPS.');return;}
+  const origin=new URL(url);if(!pluginPanelURL(origin.origin,origin.pathname+origin.search,{allowLocalHTTP})){setError('Plugin UI requires HTTPS.');return;}
   const iframe=document.createElement('iframe');iframe.title=label;iframe.setAttribute('sandbox','allow-scripts');iframe.referrerPolicy='no-referrer';iframe.style.cssText='width:100%;height:740px;border:1px solid var(--border,#ddd);border-radius:8px;background:white';
   const nonce=crypto.randomUUID();iframe.src=url+'#'+nonce;let channel:MessageChannel|undefined;let alive=true;let pending=0;const used=new Set<string>();
   iframe.onload=()=>{
@@ -24,6 +25,6 @@ export function PluginFrame({pluginID,projectID,url,actions,label}:{pluginID:str
   };
   container.current.replaceChildren(iframe);
   return()=>{alive=false;channel?.port1.close();iframe.remove();};
- },[pluginID,projectID,url,actions,label]);
+ },[pluginID,projectID,url,actions,label,allowLocalHTTP]);
  return <>{error&&<p role="alert">{error}</p>}<div ref={container}/></>;
 }

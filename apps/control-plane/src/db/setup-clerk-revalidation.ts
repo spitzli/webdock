@@ -30,17 +30,18 @@ GRANT EXECUTE ON FUNCTION webdock_rls.setup_clerk_revalidation(text,text,text,te
 `;
 
 export const setupLegacyRevalidationSQL = String.raw`
-CREATE OR REPLACE FUNCTION webdock_rls.setup_legacy_revalidation() RETURNS jsonb
+DROP FUNCTION IF EXISTS webdock_rls.setup_legacy_revalidation();
+CREATE OR REPLACE FUNCTION webdock_rls.setup_legacy_revalidation(issuer text) RETURNS jsonb
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
- SELECT jsonb_build_object('issuer',o.issuer,'userID',i.clerk_user_id,'organizationID',o.organization_id,'clerkOrganizationID',o.clerk_organization_id,'customerID',s.customer_id,'enabled',o.enabled AND coalesce(i.enabled,false))
+ SELECT jsonb_build_object('issuer',i.issuer,'userID',i.clerk_user_id,'organizationID',o.organization_id,'clerkOrganizationID',o.clerk_organization_id,'customerID',s.customer_id,'enabled',i.enabled AND coalesce(o.enabled,true))
  FROM webdock_auth.hosting_setup s
  JOIN webdock_admin.customers c ON c.id=s.customer_id AND c.status='active'
  JOIN webdock_admin.projects p ON p.id=s.project_id AND p.customer_id=s.customer_id AND p.status='active'
  JOIN webdock_auth.tenant_customer t ON t.customer_id=s.customer_id
- JOIN webdock_auth.clerk_organization o ON o.organization_id=t.organization_id
- JOIN webdock_auth."user" u ON u.id=s.actor->>'subject' AND u.role='user' AND NOT coalesce(u.banned,false) AND u."emailVerified" AND NOT u."mustChangePassword"
+ LEFT JOIN webdock_auth.clerk_organization o ON o.organization_id=t.organization_id AND o.issuer=setup_legacy_revalidation.issuer
+ JOIN webdock_auth."user" u ON u.id=s.actor->>'subject' AND NOT coalesce(u.banned,false) AND u."emailVerified" AND NOT u."mustChangePassword"
  JOIN webdock_auth.session session ON session.id=s.actor->>'sessionID' AND session."userId"=u.id AND session."expiresAt">statement_timestamp()
- LEFT JOIN webdock_auth.clerk_identity i ON i.user_id=u.id AND i.issuer=o.issuer
+ JOIN webdock_auth.clerk_identity i ON i.user_id=u.id AND i.issuer=setup_legacy_revalidation.issuer
  WHERE webdock_rls.worker(ARRAY['hosting-setup-revalidation']) AND s.actor->'consoleIdentity' IS NULL
  AND s.id=webdock_rls.request_scope()->>'setupID' AND s.customer_id=webdock_rls.request_scope()->>'customerID' AND s.generation::text=webdock_rls.request_scope()->>'generation'
  AND s.state='running' AND s.confirmed_preview_id IS NOT NULL AND s.lease_until>statement_timestamp()
@@ -54,16 +55,19 @@ DECLARE proof jsonb; org text;
 BEGIN
  IF NOT webdock_rls.worker(ARRAY['hosting-setup']) THEN RETURN false; END IF;
  SELECT organization_id INTO org FROM webdock_auth.tenant_customer WHERE customer_id=customer;
- IF NOT EXISTS(SELECT 1 FROM webdock_auth.clerk_organization WHERE organization_id=org) THEN
+ IF webdock_rls.request_scope()->>'authProvider' IS DISTINCT FROM 'clerk' THEN
   RETURN EXISTS(SELECT 1 FROM webdock_auth.hosting_setup s JOIN webdock_auth.member m ON m."userId"=s.actor->>'subject' AND m."organizationId"=org WHERE s.id=webdock_rls.request_scope()->>'setupID' AND m.role IN ('owner','admin'));
  END IF;
  proof:=webdock_rls.request_scope()->'memberships';
- IF proof IS NULL OR proof->>'expiresAt' IS NULL OR proof->>'verifiedAt' IS NULL OR (proof->>'expiresAt')::numeric<=extract(epoch FROM statement_timestamp())*1000 OR (proof->>'verifiedAt')::numeric NOT BETWEEN extract(epoch FROM statement_timestamp())*1000-60000 AND extract(epoch FROM statement_timestamp())*1000 OR (proof->>'expiresAt')::numeric>(proof->>'verifiedAt')::numeric+60000 THEN RETURN false; END IF;
- RETURN EXISTS(SELECT 1 FROM webdock_auth.hosting_setup s JOIN webdock_auth.clerk_identity i ON i.user_id=s.actor->>'subject' AND i.issuer=proof->>'issuer' AND i.clerk_user_id=proof->>'userID' AND i.enabled JOIN webdock_auth.clerk_organization o ON o.issuer=i.issuer AND o.organization_id=org AND o.enabled CROSS JOIN jsonb_array_elements(proof->'roles') r WHERE s.id=webdock_rls.request_scope()->>'setupID' AND proof->>'subject'=s.actor->>'subject' AND r->>'organizationID'=org AND r->>'customerID'=customer AND r->>'role' IN ('admin','member') AND jsonb_typeof(r->'permissions')='array' AND r->'permissions' ? permission);
+ IF jsonb_typeof(proof) IS DISTINCT FROM 'object' OR jsonb_typeof(proof->'operator') IS DISTINCT FROM 'boolean' OR jsonb_typeof(proof->'twoFactorEnabled') IS DISTINCT FROM 'boolean'
+  OR proof->>'expiresAt' IS NULL OR proof->>'verifiedAt' IS NULL OR (proof->>'expiresAt')::numeric<=extract(epoch FROM statement_timestamp())*1000 OR (proof->>'verifiedAt')::numeric NOT BETWEEN extract(epoch FROM statement_timestamp())*1000-60000 AND extract(epoch FROM statement_timestamp())*1000 OR (proof->>'expiresAt')::numeric>(proof->>'verifiedAt')::numeric+60000 THEN RETURN false; END IF;
+ IF NOT EXISTS(SELECT 1 FROM webdock_auth.hosting_setup s JOIN webdock_auth.clerk_identity i ON i.user_id=s.actor->>'subject' AND i.issuer=proof->>'issuer' AND i.clerk_user_id=proof->>'userID' AND i.enabled WHERE s.id=webdock_rls.request_scope()->>'setupID' AND proof->>'subject'=s.actor->>'subject' AND proof->>'sessionID'=s.actor->>'sessionID') THEN RETURN false; END IF;
+ IF (proof->>'operator')::boolean THEN RETURN (proof->>'twoFactorEnabled')::boolean; END IF;
+ RETURN EXISTS(SELECT 1 FROM webdock_auth.clerk_organization o CROSS JOIN jsonb_array_elements(proof->'roles') r WHERE o.issuer=proof->>'issuer' AND o.organization_id=org AND o.enabled AND r->>'organizationID'=org AND r->>'customerID'=customer AND r->>'role' IN ('admin','member') AND jsonb_typeof(r->'permissions')='array' AND r->'permissions' ? permission);
 EXCEPTION WHEN invalid_text_representation OR numeric_value_out_of_range OR invalid_parameter_value THEN RETURN false;
 END $$;
-ALTER FUNCTION webdock_rls.setup_legacy_revalidation() OWNER TO webdock_platform_owner;
+ALTER FUNCTION webdock_rls.setup_legacy_revalidation(text) OWNER TO webdock_platform_owner;
 ALTER FUNCTION webdock_rls.setup_legacy_permission(text,text) OWNER TO webdock_platform_owner;
-REVOKE ALL ON FUNCTION webdock_rls.setup_legacy_revalidation(),webdock_rls.setup_legacy_permission(text,text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION webdock_rls.setup_legacy_revalidation(),webdock_rls.setup_legacy_permission(text,text) TO webdock_worker_runtime,webdock_platform_owner;
+REVOKE ALL ON FUNCTION webdock_rls.setup_legacy_revalidation(text),webdock_rls.setup_legacy_permission(text,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION webdock_rls.setup_legacy_revalidation(text),webdock_rls.setup_legacy_permission(text,text) TO webdock_worker_runtime,webdock_platform_owner;
 `;

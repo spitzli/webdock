@@ -25,6 +25,7 @@ export default async function Projects({
 }) {
   const i18n = await getRequestI18n();
 
+
   const { payload, user } = await requireRegistryOperator();
   const params = await searchParams;
   const query = listQuery(params);
@@ -47,7 +48,7 @@ export default async function Projects({
       user,
       overrideAccess: false,
     });
-  const [projects, active, archived, cmsCount] = await Promise.all([
+  const [projects, active, archived] = await Promise.all([
     query.q
       ? searchPage(
           async (page) => {
@@ -79,12 +80,7 @@ export default async function Projects({
       user,
       overrideAccess: false,
     }),
-    payload.count({
-      collection: "cms-instances",
-      where: { status: { equals: "active" } },
-      user,
-      overrideAccess: false,
-    }),
+
   ]);
   if (query.page > Math.max(1, projects.totalPages))
     redirect(
@@ -94,17 +90,6 @@ export default async function Projects({
         page: Math.max(1, projects.totalPages),
       }),
     );
-  const instances = projects.docs.length
-    ? await payload.find({
-        collection: "cms-instances",
-        where: { project: { in: projects.docs.map((p) => p.id) } },
-        pagination: false,
-        depth: 0,
-        user,
-        overrideAccess: false,
-      })
-    : { docs: [] };
-  const cms = new Map(instances.docs.map((i) => [relatedID(i.project), i]));
   return (
     <>
       <div className="page-heading">
@@ -127,10 +112,7 @@ export default async function Projects({
           <strong>{archived.totalDocs}</strong>
           {i18n.t(" Archived projects")}
         </Link>
-        <span>
-          <strong>{cmsCount.totalDocs}</strong>
-          {i18n.t(" Active CMS records")}
-        </span>
+
       </div>
       <ListControls
         path="/"
@@ -161,7 +143,6 @@ export default async function Projects({
             <tr>
               <th scope="col">{i18n.t("Project")}</th>
               <th scope="col">{i18n.t("Customer")}</th>
-              <th scope="col">{i18n.t("CMS record")}</th>
               <th scope="col">{i18n.t("Updated")}</th>
               <th scope="col">
                 <span className="sr-only">{i18n.t("Manage")}</span>
@@ -174,7 +155,7 @@ export default async function Projects({
                 <td data-label={i18n.t("Project")}>
                   <Link
                     className="project-name"
-                    href={"/hosting/projects/" + project.id + "/overview"}
+                    href={"/projects/" + project.id}
                   >
                     {project.name}
                   </Link>
@@ -190,18 +171,7 @@ export default async function Projects({
                       : i18n.t("Customer")}
                   </Link>
                 </td>
-                <td data-label={i18n.t("CMS record")}>
-                  <span
-                    className={
-                      "badge " +
-                      (cms.get(project.id)?.status === "active"
-                        ? "connected"
-                        : "")
-                    }
-                  >
-                    {cms.get(project.id)?.status || i18n.t("Not linked")}
-                  </span>
-                </td>
+
                 <td className="muted" data-label={i18n.t("Updated")}>
                   <time dateTime={project.updatedAt}>
                     {date(project.updatedAt, i18n.locale)}
@@ -210,7 +180,7 @@ export default async function Projects({
                 <td data-label={i18n.t("Manage")}>
                   <Link
                     className="row-link"
-                    href={"/hosting/projects/" + project.id + "/overview"}
+                    href={"/projects/" + project.id}
                     aria-label={i18n.t("Manage ") + project.name}
                   >
                     ↗
@@ -257,19 +227,7 @@ export default async function Projects({
         totalDocs={projects.totalDocs}
         limit={20}
       />
-      <aside className="note">
-        <span className="note-mark" aria-hidden="true">
-          ↳
-        </span>
-        <div>
-          <h3>{i18n.t("Independent websites. A shared workspace.")}</h3>
-          <p>
-            {i18n.t(
-              "Each project keeps its own design and content. CMS statuses are recorded inventory, not live health checks. Link a deployed CMS when your project needs one.",
-            )}
-          </p>
-        </div>
-      </aside>
+
     </>
   );
 }

@@ -1,3 +1,5 @@
+import { readAuthProviderConfiguration } from "@webdock/auth-configuration";
+import { legacyClerkMemberships } from "./clerk-provider";
 import { createBetterAuthRuntime } from "@webdock/auth-better-auth/runtime";
 import { admin, organization, jwt } from "better-auth/plugins";
 import { adminAc, userAc } from "better-auth/plugins/admin/access";
@@ -131,6 +133,9 @@ export function createAuthentication(options: {
       },
       hooks: {
         before: createAuthMiddleware(async (ctx) => {
+          if (readAuthProviderConfiguration(process.env.WEBDOCK_AUTH_PROVIDER).provider === "clerk" &&
+            (ctx.path.startsWith("/admin/") || ctx.path.startsWith("/organization/")))
+            throw new APIError("FORBIDDEN", { message: "Manage accounts, roles and team memberships in Clerk." });
           if (
             (ctx.path.startsWith("/admin/") ||
               ctx.path.startsWith("/organization/")) &&
@@ -293,18 +298,29 @@ export function createAuthentication(options: {
           accessTokenExpiresIn: 28800,
           idTokenExpiresIn: 300,
           rateLimit: { introspect: { window: 60, max: 600 } },
-          clientPrivileges: ({ user, action }) =>
-            action === "create"
-              ? Boolean(offlineProvisioning.getStore())
-              : user?.role === "operator" &&
-                user.twoFactorEnabled === true &&
-                user.mustChangePassword !== true,
+          clientPrivileges: async ({ user, action }) => {
+            if (action === "create") return Boolean(offlineProvisioning.getStore());
+            if (readAuthProviderConfiguration(process.env.WEBDOCK_AUTH_PROVIDER).provider === "clerk") {
+              if (!user?.id || user.banned === true) return false;
+              try {
+                const proof = await legacyClerkMemberships(user.id);
+                return proof?.operator === true && proof.twoFactorEnabled === true;
+              } catch { return false; }
+            }
+            return user?.role === "operator" && user.twoFactorEnabled === true && user.mustChangePassword !== true;
+          },
           postLogin: {
             page: "/account",
             consentReferenceId: () => undefined,
-            shouldRedirect: ({ user }) =>
-              user.mustChangePassword === true ||
-              (user.role === "operator" && user.twoFactorEnabled !== true),
+            shouldRedirect: async ({ user }) => {
+              if (readAuthProviderConfiguration(process.env.WEBDOCK_AUTH_PROVIDER).provider === "clerk") {
+                try {
+                  const proof = await legacyClerkMemberships(user.id);
+                  return !proof || (proof.operator && !proof.twoFactorEnabled);
+                } catch { return true; }
+              }
+              return user.mustChangePassword === true || (user.role === "operator" && user.twoFactorEnabled !== true);
+            },
           },
           generateClientId: () => {
             const id = offlineProvisioning.getStore()?.clientID;

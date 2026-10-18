@@ -34,7 +34,7 @@ docker compose -f deploy/compose/compose.yaml up -d console auth api
 
 Workers are optional. After configuring active modules and matching worker domains, start them with `docker compose -f deploy/compose/compose.yaml --profile workers up -d worker`.
 
-The one-shot migration exits on an incorrect target or migration failure. It journals checksums and applies changes under the installation lock. On a fresh installation, complete [initial operator setup](/developers/initial-setup) and configure its private OAuth output before exposing Console. Start application services only after successful migration and required configuration. Compose binds HTTP ports to loopback; terminate HTTPS using your controlled reverse proxy. There is no bundled production PostgreSQL or automatic role credential generation.
+The one-shot migration exits on an incorrect target or migration failure. It journals checksums and applies changes under the installation lock. Initialize signed plugin state with an explicit empty selection using the offline bootstrap workflow before API startup. On a fresh Better Auth installation, complete [initial operator setup](/developers/initial-setup) and configure its private OAuth output before exposing Console. Start application services only after successful migration and required configuration. Compose binds HTTP ports to loopback; terminate HTTPS using your controlled reverse proxy. There is no bundled production PostgreSQL or automatic role credential generation.
 
 For local database tests, use the existing disposable fixture workflow from the repository root. It verifies a local Docker engine and records fixture ownership; never direct it at customer databases.
 
@@ -46,9 +46,9 @@ npm run test:teardown -w @webdock/api
 
 ## Select products and browser authentication
 
-Five optional product modules are available in the source: Mail, Hosting, Databases, CMS and Storage. Products are disabled by default. Select only the products you have configured; see [installed modules](/developers/modules). Core identity, registry, plans and usage remain independent. Module activation does not create an incoming Mail instance, database, provider account.
+Four optional product modules are available: Mail, Hosting, Databases and Storage. CMS and Billing are removed from the active platform. Products are disabled by default. Select only the products you have configured; see [installed modules](/developers/modules). Core identity, registry, plans and usage remain independent. Module activation does not create an incoming Mail instance, database, provider account.
 
-An absent browser-provider setting retains Better Auth compatibility. Configured installations may select Clerk after establishing explicit local identity mappings; follow [authentication adapters](/developers/auth-adapters). This browser choice does not replace the native Auth foundation, application OAuth clients or MCP audiences. Do not change existing identities as part of container startup.
+An absent browser-provider setting retains Better Auth compatibility. Configured installations may select Clerk after establishing explicit local identity mappings; follow [authentication adapters](/developers/auth-adapters). Clerk uses its own verified Console transport and needs no Better Auth runtime or secret. Legacy OAuth APIs and MCP require explicit `WEBDOCK_OAUTH_PROVIDER=better-auth`; they are unavailable when that capability is disabled. Do not change existing identities as part of container startup.
 
 ## Kubernetes
 

@@ -1,3 +1,5 @@
+import { configureFullInstallation } from "../src/full-installation";
+configureFullInstallation();
 import { test, expect } from "bun:test";
 import {
   loadProductOperation,

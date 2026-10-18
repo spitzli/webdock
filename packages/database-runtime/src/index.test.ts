@@ -133,3 +133,17 @@ test('error release destroys immediately and pending/queued work never commits',
   }finally{await pool.end();}
  }
 });
+
+test("nested session scopes retain selected provider and exact proof only for the same identity", async () => {
+  const memberships = {operator:false,twoFactorEnabled:false,issuer:"https://fixture.test",userID:"provider-user",subject:"user",sessionID:"session",verifiedAt:Date.now(),expiresAt:Date.now()+60000,roles:[]};
+  const scope = {kind:"session" as const,authProvider:"clerk" as const,subject:"user",sessionID:"session",memberships};
+  await withDatabaseScope(scope, async () => {
+    await withDatabaseScope({kind:"session",subject:"user",sessionID:"session",authProvider:"better-auth"}, async () => {
+      assert.equal(currentDatabaseScope()?.kind, "session");
+      assert.deepEqual(currentDatabaseScope(), scope);
+    });
+    await withDatabaseScope({kind:"session",subject:"user",sessionID:"other"}, async () => {
+      assert.deepEqual(currentDatabaseScope(),{kind:"session",subject:"user",sessionID:"other"});
+    });
+  });
+});

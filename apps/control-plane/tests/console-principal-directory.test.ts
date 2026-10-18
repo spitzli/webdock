@@ -17,7 +17,7 @@ const principal: ConsolePrincipal = {
   clerkOrganizationID: "org_one",
   customerID: "customer",
   role: "admin",
-  permissions: [],
+  permissions: ["org:projects:manage"],
   verifiedAt: Date.now(),
   expiresAt: Date.now() + 60000,
   name: "Fixture",
@@ -72,21 +72,21 @@ test("verified Console identity carries provider authorization without inventing
         subject: "local",
         sessionID: "sess_one",
       }),
-    ).toBeNull();
+    ).toMatchObject({ role: "operator", operatorAuthorized: true });
     expect(
       await selectedIdentityDirectory.membership(
         database(),
         "local",
         "other-customer",
       ),
-    ).toEqual({ memberID: null, role: null });
+    ).toEqual({ memberID: null, role: null, permissions: [] });
     expect(
       await selectedIdentityDirectory.membership(
         database(),
         "local",
         "customer",
       ),
-    ).toEqual({ memberID: null, role: "admin" });
+    ).toEqual({ memberID: null, role: "admin", permissions: ["org:projects:manage"] });
   });
 });
 test("expired Console proof never becomes a local-cookie fallback", async () => {
@@ -98,4 +98,13 @@ test("expired Console proof never becomes a local-cookie fallback", async () => 
       );
     },
   );
+});
+
+
+test("Console directory projects ordinary Clerk role over a stale local operator", async () => {
+  await withConsolePrincipal({ ...principal, operator: false }, async () => {
+    expect(await selectedIdentityDirectory.session(database(), {
+      subject: "local", sessionID: "sess_one",
+    })).toMatchObject({ role: "user", operatorAuthorized: false });
+  });
 });

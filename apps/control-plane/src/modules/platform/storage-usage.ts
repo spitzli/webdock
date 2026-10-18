@@ -1,4 +1,4 @@
-import { currentConsolePrincipal } from "../auth/principal";
+import { selectedIdentityDirectory } from "../auth/principal";
 import { createStorageUsage } from "@webdock/module-storage/server/usage";
 import {
   measureStorage,
@@ -18,7 +18,7 @@ export {
 } from "@webdock/module-storage/server/usage";
 export const { getTenantStorage, manageTenantStorage, refreshStorageBatch } =
   createStorageUsage({
-    currentConsolePrincipal,
+    identity: selectedIdentityDirectory,
     database,
     withAuthenticatedDatabase,
     resolveSessionReference,

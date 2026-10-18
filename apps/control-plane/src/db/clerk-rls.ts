@@ -1,14 +1,14 @@
 // Inserted into actor() by the offline policy installer after Clerk schema migration.
 export const clerkActorSQL = `
  IF s ? 'clerk' THEN
-  IF jsonb_typeof(s->'clerk')<>'object' OR (s->'clerk'->>'expiresAt')::numeric<=extract(epoch FROM statement_timestamp())*1000
+  IF jsonb_typeof(s->'clerk') IS DISTINCT FROM 'object' OR jsonb_typeof(s->'clerk'->'operator') IS DISTINCT FROM 'boolean' OR (s->'clerk'->>'expiresAt')::numeric<=extract(epoch FROM statement_timestamp())*1000
    OR (s->'clerk'->>'verifiedAt')::numeric>extract(epoch FROM statement_timestamp())*1000
    OR (s->'clerk'->>'verifiedAt')::numeric<extract(epoch FROM statement_timestamp())*1000-60000
    OR (s->'clerk'->>'expiresAt')::numeric>(s->'clerk'->>'verifiedAt')::numeric+60000
    OR s->'clerk'->>'expiresAt' IS NULL OR s->'clerk'->>'verifiedAt' IS NULL THEN RETURN NULL; END IF;
-  SELECT u.id,u.email,u.role INTO actor_row FROM webdock_auth.clerk_identity i JOIN webdock_auth."user" u ON u.id=i.user_id
+  SELECT u.id,u.email INTO actor_row FROM webdock_auth.clerk_identity i JOIN webdock_auth."user" u ON u.id=i.user_id
    WHERE i.issuer=s->'clerk'->>'issuer' AND i.clerk_user_id=s->'clerk'->>'userID' AND i.enabled AND u.id=s->>'subject'
-   AND NOT coalesce(u.banned,false) AND u.role IN ('operator','user');
+   AND NOT coalesce(u.banned,false);
   IF NOT FOUND THEN RETURN NULL; END IF;
   IF s->'clerk'->>'organizationID' IS NOT NULL AND NOT EXISTS(
    SELECT 1 FROM webdock_auth.clerk_organization o JOIN webdock_auth.tenant_customer t ON t.organization_id=o.organization_id JOIN webdock_admin.customers c ON c.id=t.customer_id
@@ -18,7 +18,26 @@ export const clerkActorSQL = `
    (p.expired_at IS NULL AND p.expires_at>statement_timestamp() AND c.status='active' AND t.organization_id=p.organization_id) AS valid INTO preview_row
    FROM webdock_auth.console_tenant_preview p LEFT JOIN webdock_admin.customers c ON c.id=p.customer_id LEFT JOIN webdock_auth.tenant_customer t ON t.customer_id=p.customer_id
    WHERE p.issuer=s->'clerk'->>'issuer' AND p.session_id=s->>'sessionID' AND p.actor_id=actor_row.id;
-  RETURN jsonb_build_object('subject',actor_row.id,'email',actor_row.email,'sessionID',s->>'sessionID','operator',actor_row.role='operator' AND NOT FOUND,'root',actor_row.role='operator','clerk',s->'clerk','preview',CASE WHEN FOUND THEN to_jsonb(preview_row) ELSE NULL END);
+  RETURN jsonb_build_object('subject',actor_row.id,'email',actor_row.email,'sessionID',s->>'sessionID','operator',(s->'clerk'->>'operator')::boolean AND NOT FOUND,'root',(s->'clerk'->>'operator')::boolean,'clerk',s->'clerk','preview',CASE WHEN FOUND THEN to_jsonb(preview_row) ELSE NULL END);
+ END IF;
+`;
+export const clerkLegacyActorSQL = `
+ IF s->>'authProvider'='clerk' THEN
+  IF jsonb_typeof(s->'memberships') IS DISTINCT FROM 'object'
+   OR jsonb_typeof(s->'memberships'->'operator') IS DISTINCT FROM 'boolean'
+   OR jsonb_typeof(s->'memberships'->'twoFactorEnabled') IS DISTINCT FROM 'boolean'
+   OR s->'memberships'->>'subject' IS DISTINCT FROM s->>'subject' OR s->'memberships'->>'sessionID' IS DISTINCT FROM s->>'sessionID'
+   OR s->'memberships'->>'expiresAt' IS NULL OR s->'memberships'->>'verifiedAt' IS NULL
+   OR (s->'memberships'->>'expiresAt')::numeric<=extract(epoch FROM statement_timestamp())*1000
+   OR (s->'memberships'->>'verifiedAt')::numeric NOT BETWEEN extract(epoch FROM statement_timestamp())*1000-60000 AND extract(epoch FROM statement_timestamp())*1000
+   OR (s->'memberships'->>'expiresAt')::numeric>(s->'memberships'->>'verifiedAt')::numeric+60000
+   OR ((s->'memberships'->>'operator')::boolean AND NOT (s->'memberships'->>'twoFactorEnabled')::boolean) THEN RETURN NULL; END IF;
+  SELECT u.id,u.email INTO actor_row FROM webdock_auth.clerk_identity i JOIN webdock_auth."user" u ON u.id=i.user_id JOIN webdock_auth.session session ON session."userId"=u.id
+   WHERE i.issuer=s->'memberships'->>'issuer' AND i.clerk_user_id=s->'memberships'->>'userID' AND i.enabled AND u.id=s->>'subject'
+   AND session.id=s->>'sessionID' AND session."expiresAt">statement_timestamp() AND NOT coalesce(u.banned,false) AND u."emailVerified" AND NOT u."mustChangePassword";
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  SELECT p.session_id,p.actor_id,p.customer_id,p.organization_id,p.expires_at,p.expired_at, (p.expired_at IS NULL AND p.expires_at>statement_timestamp() AND c.status='active' AND t.organization_id=p.organization_id) AS valid INTO preview_row FROM webdock_auth.studio_tenant_preview p LEFT JOIN webdock_admin.customers c ON c.id=p.customer_id LEFT JOIN webdock_auth.tenant_customer t ON t.customer_id=p.customer_id WHERE p.session_id=s->>'sessionID' AND p.actor_id=actor_row.id;
+  RETURN jsonb_build_object('subject',actor_row.id,'email',actor_row.email,'sessionID',s->>'sessionID','operator',(s->'memberships'->>'operator')::boolean AND NOT FOUND,'root',(s->'memberships'->>'operator')::boolean,'preview',CASE WHEN FOUND THEN to_jsonb(preview_row) ELSE NULL END);
  END IF;
 `;
 export const clerkCustomerSQL = `
@@ -43,7 +62,8 @@ export const clerkSetupSQL = `
    AND (webdock_rls.request_scope()->'clerk'->>'expiresAt')::numeric>extract(epoch FROM statement_timestamp())*1000
    AND (webdock_rls.request_scope()->'clerk'->>'verifiedAt')::numeric BETWEEN extract(epoch FROM statement_timestamp())*1000-60000 AND extract(epoch FROM statement_timestamp())*1000
    AND (webdock_rls.request_scope()->'clerk'->>'expiresAt')::numeric<=(webdock_rls.request_scope()->'clerk'->>'verifiedAt')::numeric+60000
-   AND (u.role='operator' OR (u.role='user' AND h.mode='selfservice' AND webdock_rls.request_scope()->'clerk'->>'role' IN ('admin','member') AND jsonb_typeof(webdock_rls.request_scope()->'clerk'->'permissions')='array' AND webdock_rls.request_scope()->'clerk'->'permissions' ? 'org:projects:manage'
+   AND jsonb_typeof(webdock_rls.request_scope()->'clerk'->'operator')='boolean'
+   AND ((webdock_rls.request_scope()->'clerk'->>'operator')::boolean OR (h.mode='selfservice' AND webdock_rls.request_scope()->'clerk'->>'role' IN ('admin','member') AND jsonb_typeof(webdock_rls.request_scope()->'clerk'->'permissions')='array' AND webdock_rls.request_scope()->'clerk'->'permissions' ? 'org:projects:manage'
     AND (coalesce(s.configuration->'database'->>'mode','none')='none' OR webdock_rls.request_scope()->'clerk'->'permissions' ? 'org:databases:manage')
     AND (coalesce(s.configuration->'source'->>'kind','template')<>'git' OR webdock_rls.request_scope()->'clerk'->'permissions' ? 'org:deployments:create') AND webdock_rls.request_scope()->'clerk'->>'customerID'=customer
     AND EXISTS(SELECT 1 FROM webdock_auth.clerk_organization o WHERE o.issuer=i.issuer AND o.organization_id=t.organization_id AND o.organization_id=webdock_rls.request_scope()->'clerk'->>'organizationID' AND o.enabled AND o.clerk_organization_id=webdock_rls.request_scope()->'clerk'->>'clerkOrganizationID')))
@@ -63,7 +83,7 @@ BEGIN
  IF a ? 'clerk' THEN
   IF a->'clerk'->>'customerID' IS DISTINCT FROM customer OR a->'clerk'->>'organizationID' IS DISTINCT FROM org THEN RETURN false; END IF;
   permissions:=a->'clerk'->'permissions';
- ELSIF EXISTS(SELECT 1 FROM webdock_auth.clerk_organization WHERE organization_id=org) THEN
+ ELSIF webdock_rls.request_scope()->>'authProvider'='clerk' THEN
   SELECT r->'permissions' INTO permissions FROM jsonb_array_elements(webdock_rls.request_scope()->'memberships'->'roles') r WHERE r->>'organizationID'=org AND r->>'customerID'=customer;
  ELSE RETURN webdock_rls.membership_role(org) IN ('owner','admin');
  END IF;
@@ -83,6 +103,14 @@ $$;
 ALTER FUNCTION webdock_rls.billing_admin(text) OWNER TO webdock_platform_owner;
 REVOKE ALL ON FUNCTION webdock_rls.billing_admin(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION webdock_rls.billing_admin(text) TO webdock_auth_runtime;
+-- The retained allocation lock is also consulted when accepting a plan offer.
+DO $billing_lock$ DECLARE definition text;
+BEGIN
+ IF to_regprocedure('webdock_rls.billing_base_locked(text)') IS NOT NULL THEN
+  SELECT pg_get_functiondef(to_regprocedure('webdock_rls.billing_base_locked(text)')) INTO definition;
+  EXECUTE replace(definition,'webdock_rls.customer_allowed(customer,true)','webdock_rls.customer_permission(customer,''org:billing:manage'')');
+ END IF;
+END $billing_lock$;
 `;
 export const clerkBillingReadSQL = `
 CREATE OR REPLACE FUNCTION webdock_rls.billing_reader(customer text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
@@ -108,7 +136,7 @@ DECLARE a jsonb; proof jsonb; result text;
 BEGIN
  a:=webdock_rls.actor(); IF a IS NULL THEN RETURN NULL; END IF;
  IF a ? 'clerk' THEN RETURN CASE WHEN a->'clerk'->>'organizationID'=org THEN a->'clerk'->>'role' ELSE NULL END; END IF;
- IF EXISTS(SELECT 1 FROM webdock_auth.clerk_organization WHERE organization_id=org) THEN
+ IF webdock_rls.request_scope()->>'authProvider'='clerk' THEN
   proof:=webdock_rls.request_scope()->'memberships';
   IF proof IS NULL OR proof->>'expiresAt' IS NULL OR proof->>'verifiedAt' IS NULL OR (proof->>'expiresAt')::numeric<=extract(epoch FROM statement_timestamp())*1000
    OR (proof->>'verifiedAt')::numeric NOT BETWEEN extract(epoch FROM statement_timestamp())*1000-60000 AND extract(epoch FROM statement_timestamp())*1000
@@ -119,7 +147,7 @@ BEGIN
  END IF;
  SELECT role INTO result FROM webdock_auth.member WHERE "organizationId"=org AND "userId"=a->>'subject';
  RETURN result;
-EXCEPTION WHEN invalid_text_representation OR numeric_value_out_of_range THEN RETURN NULL;
+EXCEPTION WHEN invalid_text_representation OR numeric_value_out_of_range OR invalid_parameter_value THEN RETURN NULL;
 END $$;
 ALTER FUNCTION webdock_rls.membership_role(text) OWNER TO webdock_policy_owner;
 REVOKE ALL ON FUNCTION webdock_rls.membership_role(text) FROM PUBLIC;

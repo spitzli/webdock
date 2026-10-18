@@ -7,8 +7,8 @@ export function consoleAuthConfiguration(
   if (clerk && env.CLERK_ISSUER && env.CLERK_ISSUER !== clerk.issuer)
     throw Error("Configured Clerk issuers must match");
   return {
-    // JSON Clerk owns separate mappings and must never enter the live Console transport.
-    enabled: !clerk && env.WEBDOCK_CONSOLE_AUTH_PROVIDER === "clerk",
+    // Selected Clerk uses server delegation only after explicit service-key provisioning.
+    enabled: clerk ? !!env.WEBDOCK_CONSOLE_SERVICE_KEY : env.WEBDOCK_CONSOLE_AUTH_PROVIDER === "clerk",
     issuer: clerk?.issuer ?? env.CLERK_ISSUER,
     authorizedParties:
       clerk?.authorizedParties ??

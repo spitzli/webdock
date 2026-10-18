@@ -1,3 +1,4 @@
+import { requireOAuthCapability } from "@webdock/auth-configuration/protocols";
 import { AsyncLocalStorage } from "node:async_hooks";
 
 type Handler = (request: Request) => Promise<Response>;
@@ -25,6 +26,7 @@ export async function introspectToken(
   clientSecret: string,
   handler?: Handler,
 ): Promise<Response> {
+  if (!handler) requireOAuthCapability();
   handler ??= (await import("./auth")).auth.handler;
   const origin = new URL(process.env.BETTER_AUTH_URL || "http://localhost:3125")
     .origin;

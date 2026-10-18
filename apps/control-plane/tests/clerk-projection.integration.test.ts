@@ -53,6 +53,7 @@ const url = process.env.API_TEST_DATABASE_URL;
           external,
           user: {
             id: subject,
+            role: "user",
             banned: false,
             locked: false,
             twoFactorEnabled: false,

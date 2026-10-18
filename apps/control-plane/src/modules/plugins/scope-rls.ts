@@ -18,7 +18,7 @@ BEGIN
  AND p.current_generation=v.runtime_generation AND r.configuration_revision=config.revision
  AND g.revoked_at IS NULL AND g.revision=v.grant_revision
  AND (capability IS NULL OR (config.approved_capabilities ? capability AND g.capabilities ? capability AND v.capabilities ? capability))
- AND (capability IS NULL OR capability IN ('project.read','plugin.data.read','plugin.db.read','plugin.cache.read','plugin.storage.read','plugin.secrets.read','plugin.http.read') OR v.intent='write')
+ AND (capability IS NULL OR capability IN ('plugin.apps.read','project.read','plugin.data.read','plugin.db.read','plugin.cache.read','plugin.storage.read','plugin.secrets.read','plugin.http.read') OR v.intent='write')
  AND NOT EXISTS(SELECT 1 FROM webdock_admin.project_deletion d WHERE d.project_id=project.id AND d.status<>'deleted');
  IF NOT FOUND THEN RETURN NULL; END IF;
  IF invocation.kind='action' THEN

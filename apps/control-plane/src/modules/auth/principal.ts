@@ -30,7 +30,8 @@ export const {
 });
 
 import { AsyncLocalStorage } from "node:async_hooks";
-import { withDatabaseScope } from "@webdock/database-runtime";
+import { currentDatabaseScope, withDatabaseScope } from "@webdock/database-runtime";
+import { consoleAuthConfiguration } from "./console-configuration";
 import { ConsoleAuthError, type ConsolePrincipal } from "./clerk-identity";
 const principals = new AsyncLocalStorage<ConsolePrincipal>();
 export function currentConsolePrincipal() {
@@ -47,10 +48,12 @@ export function withConsolePrincipal<T>(
     withDatabaseScope(
       {
         kind: "session",
+        authProvider: "clerk",
         subject: principal.userID,
         sessionID: principal.sessionID,
         clerk: {
           issuer: principal.issuer,
+          operator: principal.operator,
           userID: principal.clerkUserID,
           organizationID: principal.organizationID,
           clerkOrganizationID: principal.clerkOrganizationID,
@@ -72,7 +75,7 @@ export function consoleMembership(userID: string, organizationID: string) {
   if (principal.userID !== userID)
     throw new ConsoleAuthError(403, "Console identity mismatch.");
   return principal.organizationID === organizationID && principal.role
-    ? { id: null, role: principal.role }
+    ? { id: null, role: principal.role, permissions: [...(principal.permissions ?? [])] }
     : null;
 }
 export function withStoredConsolePrincipal<T>(
@@ -101,23 +104,53 @@ export async function resolveSessionReference(headers: Headers) {
     ? { subject: principal.userID, sessionID: principal.sessionID }
     : resolveBrowserSessionReference(headers);
 }
+/** The worker revalidates this proof for its claimed job; SQL also checks mapping and lease. */
+function setupMemberships(subject: string, sessionID?: string) {
+  const scope = currentDatabaseScope();
+  if (browserAuthProvider !== "clerk" || scope?.kind !== "system" || scope.purpose !== "hosting-setup")
+    return undefined;
+  const proof = scope.memberships;
+  const now = Date.now();
+  if (!proof || scope.authProvider !== "clerk" || proof.subject !== subject ||
+      !proof.sessionID || (sessionID !== undefined && proof.sessionID !== sessionID) ||
+      proof.issuer !== consoleAuthConfiguration().issuer ||
+      typeof proof.operator !== "boolean" || typeof proof.twoFactorEnabled !== "boolean" ||
+      !Number.isFinite(proof.verifiedAt) || !Number.isFinite(proof.expiresAt) ||
+      proof.verifiedAt > now || proof.verifiedAt < now - 60000 ||
+      proof.expiresAt <= now || proof.expiresAt > proof.verifiedAt + 60000)
+    return null;
+  return proof;
+}
+function setupIdentity<T extends import("@webdock/core/identity").LocalIdentity>(
+  local: T | null, proof: NonNullable<ReturnType<typeof setupMemberships>>,
+) {
+  return local && !local.banned ? {
+    ...local, role: proof.operator ? "operator" : "user", emailVerified: true,
+    mustChangePassword: false, twoFactorEnabled: proof.twoFactorEnabled,
+    operatorAuthorized: proof.operator && proof.twoFactorEnabled,
+  } : null;
+}
 export const selectedIdentityDirectory: import("@webdock/core/identity").IdentityDirectory =
   {
     async subject(db, subject, options) {
       const principal = currentConsolePrincipal();
-      if (!principal)
+      if (!principal) {
+        const proof = setupMemberships(subject);
+        if (proof !== undefined)
+          return proof ? setupIdentity(await betterAuthIdentity.subject(db, subject, options), proof) : null;
         return browserIdentityDirectory.subject(db, subject, options);
+      }
       if (principal.userID !== subject) return null;
       const local = await betterAuthIdentity.subject(db, subject, options);
       if (
         !local ||
-        local.banned ||
-        local.role !== (principal.operator ? "operator" : "user")
+        local.banned
       )
         return null;
       // Console account setup and email verification are owned by the verified provider.
       return {
         ...local,
+        role: principal.operator ? "operator" : "user",
         emailVerified: true,
         mustChangePassword: false,
         twoFactorEnabled: false,
@@ -126,8 +159,12 @@ export const selectedIdentityDirectory: import("@webdock/core/identity").Identit
     },
     async session(db, reference, options) {
       const principal = currentConsolePrincipal();
-      if (!principal)
+      if (!principal) {
+        const proof = setupMemberships(reference.subject, reference.sessionID);
+        if (proof !== undefined)
+          return proof ? setupIdentity(await betterAuthIdentity.session(db, reference, options), proof) : null;
         return browserIdentityDirectory.session(db, reference, options);
+      }
       if (
         principal.userID !== reference.subject ||
         principal.sessionID !== reference.sessionID
@@ -151,6 +188,13 @@ export const selectedIdentityDirectory: import("@webdock/core/identity").Identit
     async membership(db, subject, customerID, options) {
       const principal = currentConsolePrincipal();
       if (!principal) {
+        const proof = setupMemberships(subject);
+        if (proof !== undefined) {
+          const member = proof?.roles.find(role => role.customerID === customerID);
+          return proof ? { memberID: null, role: member?.role ?? null, permissions: [...(member?.permissions ?? [])] } : null;
+        }
+        if (browserAuthProvider === "clerk")
+          return browserIdentityDirectory.membership(db, subject, customerID, options);
         const tenant = (
           await db.query(
             "SELECT organization_id FROM webdock_auth.tenant_customer WHERE customer_id=$1",
@@ -181,13 +225,12 @@ export const selectedIdentityDirectory: import("@webdock/core/identity").Identit
         )
       ).rows[0];
       if (!tenant) return null;
+      const matches = principal.customerID === customerID &&
+        principal.organizationID === tenant.organization_id;
       return {
         memberID: null,
-        role:
-          principal.customerID === customerID &&
-          principal.organizationID === tenant.organization_id
-            ? principal.role
-            : null,
+        role: matches ? principal.role : null,
+        permissions: matches ? [...(principal.permissions ?? [])] : [],
       };
     },
   };

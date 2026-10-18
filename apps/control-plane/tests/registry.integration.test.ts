@@ -602,3 +602,50 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
   },
   45_000,
 );
+
+(enabled ? test : test.skip)("direct Clerk OAuth registry calls obtain bound provider proof without a parent scope", async () => {
+  const ownerURL = new URL(process.env.API_TEST_OWNER_URL!);
+  if(ownerURL.hostname!=="127.0.0.1" || ownerURL.pathname!=="/webdock_rls_test") throw Error("Owned fixture required");
+  const db=new Pool({connectionString:ownerURL.href,max:1});
+  const subject="93"+BigInt("0x"+randomBytes(5).toString("hex")).toString();
+  const session=subject+"1", native=subject+"2", customer=subject+"3", issuer="https://fixture.clerk.accounts.dev", providerUser="user_"+subject;
+  try {
+    await db.query(`INSERT INTO webdock_auth."user"(id,name,email,role,"emailVerified","mustChangePassword","twoFactorEnabled") VALUES($1,'Clerk registry fixture',$2,'user',true,false,false)`,[subject,subject+"@example.invalid"]);
+    await db.query(`INSERT INTO webdock_auth.session(id,token,"userId","expiresAt","updatedAt") VALUES($1,$1,$2,now()+interval '1 hour',now())`,[session,subject]);
+    await db.query("INSERT INTO webdock_auth.clerk_identity(issuer,clerk_user_id,user_id) VALUES($1,$2,$3)",[issuer,providerUser,subject]);
+    await db.query("INSERT INTO webdock_admin.users(id,name,email,role,auth_subject) VALUES($1,'Clerk registry fixture',$2,'editor',$3)",[native,native+"@example.invalid",subject]);
+    await db.query("INSERT INTO webdock_admin.customers(id,name,status) VALUES($1,'Clerk registry fixture','active')",[customer]);
+    const script=`
+      import {mock} from "bun:test";
+      import assert from "node:assert/strict";
+      import {currentDatabaseScope} from "@webdock/database-runtime";
+      const actor=${JSON.stringify({subject,sessionID:session})};
+      let operator=true, reads=0;
+      mock.module("./src/modules/auth/clerk-provider",()=>({legacyClerkMemberships:async subject=>{reads++;assert.equal(subject,actor.subject);return {operator,twoFactorEnabled:true,subject,issuer:${JSON.stringify(issuer)},userID:${JSON.stringify(providerUser)},verifiedAt:Date.now(),expiresAt:Date.now()+59000,roles:[]};}}));
+      const {createRegistry}=await import("./src/modules/registry/service");
+      const registry=await createRegistry();
+      try {
+        assert.equal(currentDatabaseScope(),undefined);
+        const record=await registry.getRecord(actor,"customers",${JSON.stringify(customer)});
+        assert.equal(record.id,${JSON.stringify(customer)});
+        assert.equal((await registry.operator(actor)).role,"operator");
+        assert.equal(currentDatabaseScope(),undefined);
+        operator=false;
+        await assert.rejects(registry.getRecord(actor,"customers",${JSON.stringify(customer)}),/operator/i);
+        operator=true;
+        await assert.rejects(registry.getRecord({...actor,sessionID:"wrong-session"},"customers",${JSON.stringify(customer)}),/operator/i);
+        assert.equal(reads,4);
+      }finally{await registry.close();}
+    `;
+    const child=Bun.spawnSync([process.execPath,"--no-env-file","-e",script],{cwd:new URL("../",import.meta.url).pathname,env:{...process.env,WEBDOCK_AUTH_PROVIDER:JSON.stringify({provider:"clerk",issuer,authorizedParties:["https://console.example.invalid"],tokenMode:"session"})},stdout:"pipe",stderr:"pipe"});
+    expect(child.exitCode,new TextDecoder().decode(child.stderr)).toBe(0);
+  }finally{
+    await db.query("DELETE FROM webdock_auth.tenant_customer WHERE customer_id=$1",[customer]);
+    await db.query("DELETE FROM webdock_admin.customers WHERE id=$1",[customer]);
+    await db.query("DELETE FROM webdock_admin.users WHERE id=$1",[native]);
+    await db.query("DELETE FROM webdock_auth.clerk_identity WHERE user_id=$1",[subject]);
+    await db.query("DELETE FROM webdock_auth.session WHERE id=$1",[session]);
+    await db.query('DELETE FROM webdock_auth."user" WHERE id=$1',[subject]);
+    await db.end();
+  }
+});

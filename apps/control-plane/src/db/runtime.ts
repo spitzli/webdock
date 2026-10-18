@@ -1,3 +1,4 @@
+import { signedDatabaseScope } from "./signed-scope";
 import { createDatabases, createWorkerDatabases } from "./client";
 import { currentDatabaseScope } from "@webdock/database-runtime";
 const local = process.env.NODE_ENV !== "production";
@@ -8,6 +9,7 @@ export const databasePools =
         environment: local ? "development" : "production",
         workerURL: process.env.DATABASE_WORKER_URL || "",
         signingSecret: process.env.DATABASE_RLS_SECRET,
+        scope: signedDatabaseScope,
         ca: process.env.DATABASE_CA_CERT,
         max: Number(process.env.DATABASE_POOL_MAX || (local ? 4 : 0)),
       })
@@ -18,6 +20,7 @@ export const databasePools =
         workerURL:
           process.env.DATABASE_WORKER_URL || (local ? businessURL : ""),
         signingSecret: process.env.DATABASE_RLS_SECRET,
+        scope: signedDatabaseScope,
         ca: process.env.DATABASE_CA_CERT,
         max: Number(process.env.DATABASE_POOL_MAX || (local ? 4 : 0)),
       });

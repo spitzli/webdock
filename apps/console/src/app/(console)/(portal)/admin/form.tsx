@@ -30,7 +30,7 @@ export function AdminForms({
   connection,
 }: {
   settings: PlatformSettings;
-  connection: { configured: boolean; consumerKeySuffix?: string };
+  connection: { configured: boolean; consumerKeySuffix?: string } | null;
 }) {
   const i18n = useI18n();
 
@@ -117,7 +117,7 @@ export function AdminForms({
           </button>
         </form>
       </section>
-      <section className="auth-panel" aria-labelledby="mail-heading">
+      {connection && <section className="auth-panel" aria-labelledby="mail-heading">
         <h2 id="mail-heading">{i18n.t("Mail provider")}</h2>
         <p>{i18n.t("Connect the turboSMTP master account used to manage tenant Mail accounts.")}</p>
         <p>
@@ -198,7 +198,7 @@ export function AdminForms({
           </details>
         )}
         {!connection.configured && <Feedback state={clearState} />}
-      </section>
+      </section>}
     </div>
   );
 }

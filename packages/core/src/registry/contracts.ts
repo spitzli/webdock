@@ -6,12 +6,7 @@ export const recordID = z
     (v) => /^[1-9][0-9]{0,18}$/.test(v) && BigInt(v) <= 9223372036854775807n,
     "Invalid ID",
   );
-export const collectionName = z.enum([
-  "customers",
-  "projects",
-  "cms-instances",
-  "audit-events",
-]);
+export const collectionName = z.enum(["customers", "projects", "audit-events"]);
 const text = z.string().trim().max(160);
 const optionalText = text.nullable().optional();
 const notes = z.string().trim().max(3000).nullable().optional();
@@ -58,48 +53,16 @@ export const projectInput = z
     notes,
   })
   .strict();
-export const instanceInput = z
-  .object({
-    project: recordID,
-    label: text.min(1),
-    adminURL: url.unwrap().unwrap(),
-    schemaName: z.string().regex(/^[a-z][a-z0-9_]{0,62}$/),
-    providerProjectID: text.min(1),
-    provider: z.enum(["vercel", "other"]),
-    template: z.enum([
-      "webdock-landing",
-      "spitzli-portfolio",
-      "stall-business",
-      "custom",
-    ]),
-    payloadVersion: z.string().max(64).nullable().optional(),
-    status: z.enum(["active", "suspended", "retired"]),
-    notes,
-  })
-  .strict();
 export const listInput = z
   .object({
-    collection: collectionName,
+    collection: z.string().min(1).max(80),
     search: z.string().trim().max(160).optional(),
     page: z.number().int().min(1).max(10000).default(1),
     limit: z.number().int().min(1).max(50).default(20),
-    status: z.enum(["active", "archived", "suspended", "retired"]).optional(),
+    status: z.string().max(80).optional(),
     customer: recordID.optional(),
-    project: recordID.optional(),
-    targetCollection: z
-      .enum(["customers", "projects", "cms-instances"])
-      .optional(),
+    targetCollection: z.string().max(80).optional(),
     targetID: recordID.optional(),
-    sort: z
-      .enum([
-        "name",
-        "-name",
-        "label",
-        "-label",
-        "-updatedAt",
-        "-createdAt",
-        "createdAt",
-      ])
-      .default("-updatedAt"),
+    sort: z.string().max(80).default("-updatedAt"),
   })
   .strict();

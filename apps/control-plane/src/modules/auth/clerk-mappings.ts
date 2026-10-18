@@ -1,12 +1,23 @@
 import type { Pool } from "pg";
-import type {
-  ClerkMappings,
-  ExternalIdentity,
-} from "@webdock/auth-clerk";
+import type { ClerkMappings, ExternalIdentity } from "@webdock/auth-clerk";
 import type { DatabaseReader } from "@webdock/core/identity";
 
 export function createClerkMappings(database: DatabaseReader): ClerkMappings {
   return {
+    async externalOrganization(_db, customerID) {
+      const rows = (
+        await database.query<{ issuer: string; clerk_organization_id: string }>(
+          `SELECT o.issuer,o.clerk_organization_id FROM webdock_auth.clerk_organization o JOIN webdock_auth.tenant_customer t ON t.organization_id=o.organization_id JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE t.customer_id=$1 AND o.enabled AND c.status='active'`,
+          [customerID],
+        )
+      ).rows;
+      return rows.length === 1
+        ? {
+            issuer: rows[0].issuer,
+            organizationID: rows[0].clerk_organization_id,
+          }
+        : null;
+    },
     async localSubject(external) {
       return (
         (

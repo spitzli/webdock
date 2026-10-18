@@ -1,8 +1,11 @@
+import { configureFullInstallation } from "../src/full-installation";
+configureFullInstallation();
 import { test, expect } from "bun:test";
 import { readConfig } from "../src/config";
 import { createApp } from "../src/app";
 import { legacyAuthProtocols } from "../src/protocols/legacy-auth";
 import {
+  configureInstallation,
   installationRegistry,
   publicInstallation,
   validateWorkerModules,
@@ -125,7 +128,7 @@ test("MCP omits disabled Mail tools and rejects calls from an already-created to
 test("all product defaults, omitted modules, unknown IDs and worker ownership are strict", () => {
   expect(
     Object.keys(installationRegistry({}).publicView().modules).sort(),
-  ).toEqual(["cms", "databases", "hosting", "mail", "storage"]);
+  ).toEqual(["databases", "hosting", "mail", "storage"]);
   expect(Object.values(installationRegistry({}).publicView().modules).every(state => state === "disabled")).toBe(true);
   const env = {
     WEBDOCK_MODULES: JSON.stringify({
@@ -157,7 +160,6 @@ test("disabled products reject direct requests before any mounted handler", asyn
   for (const path of [
     "/api/hosting/bridge",
     "/api/databases/gateway",
-    "/api/cms/content",
   ]) {
     const response = await app.handle(new Request(config.apiOrigin + path));
     expect(response.status).toBe(404);
@@ -172,7 +174,7 @@ test("Studio command classifiers distinguish databases and retain existing-resou
     moduleForOperation("hosting.command", [{ action: "databases.list" }]),
   ).toBe("databases");
   expect(moduleForOperation("registry.query", ["projects"])).toBeUndefined();
-  expect(moduleForOperation("cms.content")).toBe("cms");
+  expect(moduleForOperation("cms.content")).toBeUndefined();
   expect(moduleForOperation("getTenantStorage")).toBe("storage");
   for (const action of [
     "apps.start",
@@ -227,4 +229,14 @@ test("database MCP tools are independent from customer Hosting and retain call-t
 test("removed billing configuration and worker ownership are rejected", () => {
  expect(() => installationRegistry({WEBDOCK_MODULES: JSON.stringify({configVersion: 1, modules: {billing: {enabled: true}}})})).toThrow();
  expect(() => validateWorkerModules(["billing"], {})).toThrow("disabled");
+});
+
+test("core installation metadata contains no product contributions", () => {
+  configureInstallation([]);
+  try {
+    expect(publicInstallation({ WEBDOCK_API_DOMAINS: "auth,portal,registry" }).modules).toEqual({});
+    expect(() => installationRegistry({ WEBDOCK_MODULES: JSON.stringify({ configVersion: 1, modules: { mail: { enabled: true } } }) })).toThrow();
+  } finally {
+    configureFullInstallation();
+  }
 });

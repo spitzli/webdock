@@ -30,3 +30,7 @@ docs
 **/*.dump
 **/*.sqlite*
 **/*.db
+
+apps/control-plane/dist-core/
+
+.core-build/

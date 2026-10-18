@@ -1,6 +1,6 @@
-import {linkedMembershipRole} from "../auth/clerk-provider";
+import {linkedMembershipRole, organizationPermission} from "../auth/clerk-provider";
 import {businessOperator} from "../auth/business-identity";
-import {currentConsolePrincipal, consoleMembership} from "../auth/principal";
+import {currentConsolePrincipal, consoleMembership, selectedIdentityDirectory} from "../auth/principal";
 import { getBusinessIdentity } from "../auth/business-identity";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { readCachedView } from "../../cache";
@@ -11,7 +11,6 @@ import {
 } from "@webdock/hosting-contracts";
 import { createHash, randomBytes } from "node:crypto";
 import type { PoolClient } from "pg";
-import { auth } from "../auth/auth";
 import { database } from "../../db/runtime";
 import { studioURL } from "../shared/studio-links";
 
@@ -153,21 +152,13 @@ async function actor(
 ) {
   const subjectID =
     subject || (await getBusinessIdentity(headers))?.user.id;
-  const user =
-    subjectID &&
-    (
-      await connection.query(
-        `SELECT id,role,banned,"emailVerified","mustChangePassword","twoFactorEnabled" FROM webdock_auth."user" WHERE id=$1${lock ? " FOR SHARE" : ""}`,
-        [subjectID],
-      )
-    ).rows[0];
-  if (!user || user.banned || (!currentConsolePrincipal() && (!user.emailVerified || user.mustChangePassword)))
+  const user = subjectID && await selectedIdentityDirectory.subject(connection, subjectID, { lock });
+  if (!user || user.banned || !user.emailVerified || user.mustChangePassword)
     throw new PlanError("Sign in and complete account setup first.");
-  const principal=currentConsolePrincipal();
-  const operator = !(await businessOperator(user.id)).disabled;
+  const operator = !(await businessOperator(user.subject)).disabled;
   if (user.role !== "user" && !operator)
     throw new PlanError("Complete operator security setup first.");
-  return { id: user.id as string, operator };
+  return { id: user.subject, operator };
 }
 async function tenant(
   user: Awaited<ReturnType<typeof actor>>,
@@ -200,7 +191,7 @@ async function tenant(
     throw new PlanError("Tenant not found or access unavailable.");
   return {
     ...row,
-    admin: !user.operator && ["admin", "owner"].includes(membership?.role),
+    admin: !user.operator && ((await organizationPermission(user.id, row.organization_id, "org:billing:manage")) ?? ["admin", "owner"].includes(membership?.role)),
   };
 }
 function requireOperator(user: Awaited<ReturnType<typeof actor>>) {

@@ -4,7 +4,7 @@ export function readBrowserAuthConfiguration(
 ) {
   const configured = readAuthProviderConfiguration(env.WEBDOCK_AUTH_PROVIDER);
   if (configured.provider === "clerk")
-    return { ...configured, transport: "adapter" as const };
+    return { ...configured, transport: "console" as const };
   if (env.WEBDOCK_CONSOLE_AUTH_PROVIDER === "clerk")
     return {
       provider: "clerk" as const,

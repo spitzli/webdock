@@ -29,38 +29,6 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "cms": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": [
-                    "enabled"
-                  ],
-                  "properties": {
-                    "enabled": {
-                      "type": "boolean"
-                    }
-                  }
-                },
-                {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": [
-                    "state"
-                  ],
-                  "properties": {
-                    "state": {
-                      "enum": [
-                        "enabled",
-                        "draining",
-                        "disabled"
-                      ]
-                    }
-                  }
-                }
-              ]
-            },
             "databases": {
               "oneOf": [
                 {

@@ -1,3 +1,8 @@
+import { configureFullInstallation } from "../../src/full-installation";
+import { requireHostingCommand } from "../../src/installation";
+configureFullInstallation();
+import { createManagedAppsHandler } from "../../src/modules/hosting/plugin-apps";
+import { createPluginApps } from "@webdock/core/plugin-apps";
 import {
   saveInventory,
   claimByokOperation,
@@ -931,14 +936,25 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
           200,
         );
         app = await call(root.actor, { action: "apps.get", appID: made.appID });
-        operation = await call(root.actor, {
-          action: "apps.stop",
-          appID: app.id,
-          revision: app.revision,
-          subscriptionRevision: 3,
-          idempotencyKey: key(),
-        });
-        await finish(operation.id);
+        const managedScope = {pluginID:"managed-apps",customerID:customers[0],projectID:project,operationID:key(),subject:root.actor.subject,sessionID:root.actor.sessionID};
+        const managedBinding = {appID:app.id,kind:"tabularium" as const,origin:"https://registry.example"};
+        const managed = createPluginApps({run:(_request,_capability,fn)=>fn(managedScope,[managedBinding]),handler:()=>createManagedAppsHandler(executeHosting,requireHostingCommand)});
+        const request = new Request("https://host.example/v1/plugin/apps");
+        const safe = await managed.request(request,{operation:"get",input:{app_id:app.id}});
+        assert.equal(JSON.stringify(safe).includes("private-env-fixture"),false);
+        assert.equal("logs" in safe,false);
+        const stop = {operation:"command",input:{app_id:app.id,operation:"stop",revision:app.revision,subscription_revision:3}};
+        const stopped = await managed.request(request,stop);
+        assert.ok("operation_id" in stopped);
+        assert.deepEqual(await managed.request(request,stop),stopped,"same invocation retries the native operation");
+        managedScope.operationID=key();
+        await assert.rejects(managed.request(request,stop),error=>!!error && typeof error==="object" && "code" in error && error.code==="conflict");
+        managedScope.projectID=secondProjectID;
+        await assert.rejects(managed.request(request,stop),error=>!!error && typeof error==="object" && "code" in error && error.code==="permission_denied");
+        managedScope.projectID=project;
+        managedScope.subject=b.actor.subject;managedScope.sessionID=b.actor.sessionID;
+        await assert.rejects(managed.request(request,{operation:"get",input:{app_id:app.id}}));
+        await finish(stopped.operation_id);
         assert.equal(
           (await call(root.actor, { action: "apps.get", appID: made.appID }))
             .status,

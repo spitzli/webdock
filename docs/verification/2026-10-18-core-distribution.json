@@ -1,0 +1,142 @@
+{
+  "verifiedAt": "2026-10-18",
+  "scope": "local distribution builds and owned Clerk development account; no production rollout",
+  "core": {
+    "apiProductImportsDenied": true,
+    "apiRelocatedWithoutSourceOrNodeModules": true,
+    "consoleProductImportsDenied": true,
+    "consoleStandaloneProductFiles": 0,
+    "consoleRoutes": 28,
+    "artifact": {
+      "distribution": "core",
+      "runtime": "bun",
+      "products": [],
+      "files": [
+        {
+          "file": "core.js",
+          "size": 8152209,
+          "sha256": "5812bad6cd2ce47d490d1af4e4baf6369250c6344408289020fe22014336e637"
+        }
+      ]
+    },
+    "dockerImages": {
+      "webdock-api-core:local": {
+        "id": "sha256:248a86d67539146d59bf0df368d173d348de70316eadc426dfa4fb24c184b5b8",
+        "sizeBytes": 333398353
+      },
+      "webdock-console-core:local": {
+        "id": "sha256:0b3060627396c232bf1806b3ed973de4dc4cd6fea857ba1860d6784a8b5cdf5d",
+        "sizeBytes": 435061829
+      }
+    },
+    "apiImageOnlyApplicationFile": "/app/core.js",
+    "consoleImageReadOnlyNetworkNoneAssetsHTTP": 200,
+    "retainedProductInventoryRefusesStartup": true,
+    "missingInventoryReadPoliciesFailClosed": true
+  },
+  "plugin": {
+    "synthetic": true,
+    "nativeBrowser": {
+      "passwordAndTOTP": true,
+      "realPKCE": true,
+      "sandboxedPanelLoaded": true,
+      "saveAction": true,
+      "reloadAndReadPersistedValue": true,
+      "value": "panel42",
+      "screenshot": "/home/newt/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvcyg36k-ee8407a8.png"
+    },
+    "finalArtifactHTTPProof": {
+      "isolatedCoreAPI": true,
+      "staticUIOnly": true,
+      "synthetic": true,
+      "coreBundle": true,
+      "coreConsole": true,
+      "uiTransport": "explicit-development-loopback-http",
+      "actionsTransport": "private-verified-TLS",
+      "signedInstall": true,
+      "privateTLSActivation": true,
+      "realPasswordMFAAndPKCE": true,
+      "actualOAuthReadWriteTokens": true,
+      "scopedAPIReadWrite": true,
+      "readOnlyAPIWriteDenied": true,
+      "crossProjectDenied": true,
+      "readOnlyMCPHidesWrite": true,
+      "scopedMCPReadWrite": true
+    },
+    "privateActionsTLS": true,
+    "UIHTTP": "explicit development loopback only; production rejects",
+    "OCIImagePullAttestationTested": false
+  },
+  "clerk": {
+    "realDevelopmentInstance": true,
+    "nativeBrowser": {
+      "realDevelopmentLogin": true,
+      "passwordAndDeviceVerification": true,
+      "workspaceAccess": true,
+      "pluginSave": true,
+      "value": "clerk42",
+      "operatorDowngradeDenied": true,
+      "operatorRestoreAllowsRead": true,
+      "mappingDisabledDenied": true,
+      "mappingRestored": true,
+      "remoteSessionRevokedRedirectsLogin": true,
+      "saveScreenshot": "/home/newt/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvcyvkuk-7127370d.png",
+      "deniedScreenshot": "/home/newt/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvcyxmm6-60a797f5.png"
+    },
+    "tokenMode": "session",
+    "noBetterAuthSecret": true,
+    "remoteSessionRevocation": {
+      "appID": "app_3KjGKUGb7dYUMgkjKC0eCWghnOB",
+      "instanceID": "ins_3KjGKQnAATh2cA4ddJBR2cg3NXu",
+      "externalID": "webdock-core-acceptance-20261017T220141Z-70ac50",
+      "checkedAt": "2026-10-17T22:29:32.256369+00:00",
+      "sessions": [
+        {
+          "sessionID": "sess_3KqD1wsU3mwmAhF5TkoHCiytQXw",
+          "status": "revoked",
+          "userID": "user_3KqA27SPwkrKlDPfau3Rp8LwR0q"
+        }
+      ]
+    },
+    "syntheticUserCleanup": {
+      "appID": "app_3KjGKUGb7dYUMgkjKC0eCWghnOB",
+      "instanceID": "ins_3KjGKQnAATh2cA4ddJBR2cg3NXu",
+      "userID": "user_3KqA27SPwkrKlDPfau3Rp8LwR0q",
+      "externalID": "webdock-core-acceptance-20261017T220141Z-70ac50",
+      "deleted": true,
+      "absenceVerified": true,
+      "absenceCode": "resource_not_found",
+      "checkedAt": "2026-10-17T22:30:48.584141+00:00",
+      "revokedSessions": [
+        {
+          "sessionID": "sess_3KqD1wsU3mwmAhF5TkoHCiytQXw",
+          "status": "revoked",
+          "userID": "user_3KqA27SPwkrKlDPfau3Rp8LwR0q"
+        }
+      ]
+    }
+  },
+  "regression": {
+    "apiUnitPassed": 158,
+    "modulePassed": 149,
+    "moduleSkipped": 4,
+    "consolePassed": 83,
+    "realDatabaseOperatorAndInventoryIntegration": true,
+    "coreBoundaryTests": true,
+    "helmSchemaChecks": true,
+    "apiTypeScript": true,
+    "consoleTypeScript": true,
+    "docsValidate": true,
+    "docsBrokenLinks": 0,
+    "gettextMessages": 3960
+  },
+  "limitations": [
+    "Historical product SQL migrations remain in the installer",
+    "Existing full installations require reviewed migration and resolved inventory before switching to core",
+    "Clerk native session mode does not provide OAuth/MCP tokens; explicit OAuth compatibility capability remains separate",
+    "Synthetic local plugin used for end-to-end acceptance; no registry publication or production container rollout"
+  ],
+  "temporaryResourcesCleaned": true,
+  "committed": false,
+  "pushed": false
+}

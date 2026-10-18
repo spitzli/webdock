@@ -1,3 +1,4 @@
+import { requireOAuthCapability } from "@webdock/auth-configuration/protocols";
 import { selectAuthPlugin } from "@webdock/auth-configuration/selection";
 import { betterAuthIdentity } from "@webdock/auth-better-auth";
 import { signCompatibilitySession } from "@webdock/auth-better-auth/compatibility";
@@ -30,6 +31,8 @@ export async function getClerkBrowserAdapter() {
 export async function validateBrowserAuthConfiguration() {
   await selected.load();
   if (configuration.provider === "clerk") {
+    if ((process.env.WEBDOCK_CONSOLE_SERVICE_KEY?.length ?? 0) < 32)
+      throw Error("Clerk Console requires WEBDOCK_CONSOLE_SERVICE_KEY with at least 32 characters");
     if (!/^sk_(live|test)_/.test(process.env.CLERK_SECRET_KEY ?? ""))
       throw Error("Configured Clerk backend secret required");
     const origin = new URL(
@@ -43,6 +46,7 @@ export async function validateBrowserAuthConfiguration() {
   return browserAuthProvider;
 }
 export async function clerkBrowserSession(headers: Headers) {
+  requireOAuthCapability();
   const clerk = await getClerkBrowserAdapter();
   return createClerkSessionBridge({
     database: authDatabase,

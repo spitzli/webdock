@@ -1,12 +1,12 @@
 # Webdock
 
-Webdock is a plugin-based admin platform with a small identity, project registry and capability core. Hosting, databases, Mail, CMS and storage are optional product modules; new installations enable no products by default. Billing is not included. It is maintained by Spitzli Development. Customer websites keep their own repositories and content stores.
+Webdock is a plugin-based admin platform with a small identity, project registry and capability core. Hosting, databases, Mail and storage are optional product modules; new installations enable no products by default. Billing is not included. It is maintained by Spitzli Development. Customer websites keep their own repositories and content stores.
 
 ## Repository structure
 
 ```text
 apps/          Executable HTTP applications: Console, Control Plane, Auth, website
-modules/       Product behavior: hosting, databases, mail, storage, cms
+modules/       Product behavior: hosting, databases, mail, storage
 adapters/      Product area / provider: hosting/vercel, auth/clerk, mail/turbosmtp, …
 packages/      Shared contracts, identity, registry, database schema and UI primitives
 integrations/  Cross-runtime integrations, including the native Tabularis gateway contract
@@ -28,7 +28,7 @@ The module owns what an operation means; the adapter implements its provider-spe
 | `apps/website` (`@webdock/web`) | Public website and its own CMS |
 | `apps/database-gateway` | Scoped access to isolated native Tabularis runtimes |
 | `agents/kubernetes` | Enrolled execution and reconciliation on authorized clusters |
-| `apps/cms` (`@webdock/cms`) | Historical shared-CMS notice and offline migration tools |
+| `apps/cms` (`@webdock/cms`) | Archived shared-CMS notice and offline migration tools; excluded from npm workspaces/build |
 
 Browser authentication can use Clerk or Better Auth. Local immutable user IDs, current memberships and resource permissions remain authoritative; external identities are explicitly mapped, never automatically linked by email. Legacy OAuth, MCP and service credentials keep their own contracts. See [authentication adapters](docs/developers/auth-adapters.mdx).
 
@@ -81,3 +81,5 @@ Platform-owned IDs use **Snowflake**, selected on 2026-10-03: a 2026-01-01 epoch
 - [Studio MCP, GitHub and passkeys](docs/architecture/studio-integrations.md)
 
 Incoming Mail remains explicitly activated per customer and uses an isolated Stalwart Community Edition instance. Outgoing-only Mail does not allocate Stalwart. Suspension retains data; deletion is a separate authorized operation. Existing Studio/OAuth/MCP protocol URLs and local decimal IDs are compatibility contracts, independent of filesystem names.
+
+The product-free Core API and Console have separate build targets: `npm run build:core`, `npm run build:core:console`, and Docker targets `api-core` / `console-core`. See [Core distribution](docs/developers/core-distribution.mdx). Existing full installations retain the full entry until active product resources are resolved.

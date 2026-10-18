@@ -1,8 +1,8 @@
+import { requireOAuthCapability } from "@webdock/auth-configuration/protocols";
 import { getBusinessIdentity } from "../auth/business-identity";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { searchPage } from "@webdock/search";
 import { randomBytes } from "node:crypto";
-import { auth } from "../auth/auth";
 import { database } from "../../db/runtime";
 import { businessOperator } from "../auth/business-identity";
 import { currentClaims } from "../auth/authorization";
@@ -230,6 +230,8 @@ export async function manageAccess(
     ).rows[0].id;
     let target: string | undefined;
     try {
+      requireOAuthCapability();
+      const { auth } = await import("../auth/auth");
       if (input.action === "create-organization") {
         const org = await auth.api.createOrganization({
           headers,

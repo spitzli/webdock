@@ -1,9 +1,4 @@
-import {
-  previewProjectDeletion,
-  deleteProject,
-  deleteProjectInput,
-} from "../lifecycle/project-deletion";
-import { projectVercelStatus } from "../integrations/vercel/vercel-project";
+import { projectHostingStatus } from "./product-contributions";
 import { RegistryError as APIError } from "../registry/service";
 import { z } from "zod";
 import { authenticateMCP, authorizeRegistry, mcpResource } from "./mcp-auth";
@@ -11,14 +6,12 @@ import {
   collectionName,
   customerInput,
   projectInput,
-  instanceInput,
   listInput,
   recordID,
   listRecords,
   getRecord,
   writeCustomer,
   writeProject,
-  writeInstance,
   setArchived,
 } from "../registry/compat";
 
@@ -82,10 +75,7 @@ export async function handleRegistryRequest(
             scopes: ["webdock:read", "webdock:write"],
             collections: collectionName.options,
             operations: {
-              hosting: "GET /api/registry/projects/{id}/hosting",
-              deletionPreview: "GET /api/registry/projects/{id}/deletion",
-              deletion:
-                "DELETE /api/registry/projects/{id}: { confirmName, planHash }",
+              ...(projectHostingStatus ? { hosting: "GET /api/registry/projects/{id}/hosting" } : {}),
               GET: "/api/registry/{collection}[/{id}]",
               POST: "/api/registry/{collection}",
               PUT: "/api/registry/{collection}/{id}",
@@ -94,43 +84,20 @@ export async function handleRegistryRequest(
             schemas: {
               customer: z.toJSONSchema(customerInput),
               project: z.toJSONSchema(projectInput),
-              cmsConnection: z.toJSONSchema(
-                z
-                  .object({ data: instanceInput, confirmExisting: z.boolean() })
-                  .strict(),
-              ),
               filters: z.toJSONSchema(listInput),
             },
             notes:
-              "Bearer authorization only. Uses the same resource and scopes as MCP. CMS writes change inventory only. Creates are not idempotent; do not retry ambiguous writes automatically.",
+              "Bearer authorization only. Uses the same resource and scopes as MCP. Creates are not idempotent; do not retry ambiguous writes automatically.",
           })
         : methodNotAllowed("GET");
     if (
+      projectHostingStatus &&
       path.length === 3 &&
       path[0] === "projects" &&
       path[2] === "hosting" &&
       request.method === "GET"
     )
-      return json(await projectVercelStatus(actor, recordID.parse(path[1])));
-    if (
-      path.length === 3 &&
-      path[0] === "projects" &&
-      path[2] === "deletion" &&
-      request.method === "GET"
-    )
-      return json(await previewProjectDeletion(actor, recordID.parse(path[1])));
-    if (
-      path.length === 2 &&
-      path[0] === "projects" &&
-      request.method === "DELETE"
-    )
-      return json(
-        await deleteProject(
-          actor,
-          recordID.parse(path[1]),
-          deleteProjectInput.parse(await readJSON(request)),
-        ),
-      );
+      return json(await projectHostingStatus!(actor, recordID.parse(path[1])));
     if (path.length > 2) return json({ error: "Not found" }, 404);
     const collection = collectionName.parse(path[0]);
     const id = path[1] === undefined ? null : recordID.parse(path[1]);
@@ -167,26 +134,14 @@ export async function handleRegistryRequest(
       (request.method === "POST" && !id) ||
       (request.method === "PUT" && id)
     ))
-      return methodNotAllowed(
-        id
-          ? collection === "cms-instances"
-            ? "GET, PUT"
-            : "GET, PUT, PATCH"
-          : "GET, POST",
-      );
+      return methodNotAllowed(id ? "GET, PUT, PATCH" : "GET, POST");
     const body = await readJSON(request);
     let result;
     if (collection === "customers")
       result = await writeCustomer(actor, id, body);
     else if (collection === "projects")
       result = await writeProject(actor, id, body);
-    else {
-      const { data, confirmExisting } = z
-        .object({ data: instanceInput, confirmExisting: z.boolean() })
-        .strict()
-        .parse(body);
-      result = await writeInstance(actor, id, data, confirmExisting);
-    }
+    else return methodNotAllowed("GET");
     return json(result, id ? 200 : 201);
   } catch (error) {
     if (error instanceof z.ZodError)

@@ -29,8 +29,6 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
 }) as typeof globalThis.fetch;
 const { readConfig } = await import("../../apps/control-plane/src/config");
 const { createApp } = await import("../../apps/control-plane/src/app");
-const { legacyAuthProtocols } =
-  await import("../../apps/control-plane/src/protocols/legacy-auth");
 const { authProtocol } = await import("../../apps/control-plane/src/protocols/auth");
 const { portalProtocols } = await import("../../apps/control-plane/src/protocols/portal");
 const { registryProtocol } =
@@ -44,10 +42,7 @@ const { verifyModuleShutdown } =
 const { handleConsoleOrigin } =
   await import("../../apps/control-plane/src/console-origin");
 const config = readConfig(process.env);
-assert.deepEqual(
-  Object.values(config.modules!.modules),
-  Array(6).fill("disabled"),
-);
+assert.deepEqual(config.modules!.modules, {});
 await verifyModuleShutdown();
 const registry = await registryService();
 let readyChecks = 0;
@@ -59,7 +54,6 @@ await ready();
 const app = await createApp(config, {
   ready,
   mounts: [
-    ...(await legacyAuthProtocols(config)),
     authProtocol(config, (request) => auth.handler(request)),
     ...portalProtocols(config),
     await registryProtocol(config),
@@ -251,11 +245,8 @@ try {
   const session = await sessionResponse.json();
   assert.equal(session.data.user.id, subject);
   assert.equal(session.data.operator, true);
-  assert.deepEqual(
-    Object.values(session.data.installation.modules),
-    Array(6).fill("disabled"),
-  );
-  for (const collection of ["customers", "cms-instances"]) {
+  assert.deepEqual(session.data.installation.modules, {});
+  for (const collection of ["customers", "projects", "audit-events"]) {
     const result = await handle(
       new Request(config.apiOrigin + "/v1/operator/registry/" + collection, {
         headers: { Cookie: portalCookies },
@@ -264,6 +255,7 @@ try {
     assert.equal(result.status, 200);
     assert.ok(Array.isArray((await result.json()).docs));
   }
+  assert.equal((await handle(new Request(config.apiOrigin + "/v1/operator/registry/cms-instances", {headers: {Cookie: portalCookies}}))).status, 400);
   assert.equal(
     (
       await handle(
@@ -276,8 +268,6 @@ try {
     "/api/mail/v1/emails",
     "/api/hosting/bridge",
     "/api/databases/bridge",
-    "/api/cms/content",
-    "/v1/tenant/billing/checkout",
   ]) {
     const response = await handle(
       new Request(config.apiOrigin + path, {
@@ -285,7 +275,7 @@ try {
       }),
     );
     assert.equal(response.status, 404);
-    assert.equal((await response.json()).error.code, "module_disabled");
+    assert.equal((await response.json()).error.code, "invalid_request");
   }
   const storage = await handle(
     new Request(config.apiOrigin + "/v1/studio", {
@@ -298,7 +288,11 @@ try {
       body: JSON.stringify({ operation: "getTenantStorage", args: ["123"] }),
     }),
   );
-  assert.equal(storage.status, 503);
+  assert.equal(storage.status, 400);
+  assert.equal((await storage.json()).error.message, "Invalid Studio request.");
+  // Explicit full composition restores product command admission and its existing DB authorization.
+  const { configureFullProducts } = await import("../../apps/control-plane/src/full-products");
+  configureFullProducts();
   // Managed DB commands keep their legacy wire name without owning Hosting routes.
   process.env.WEBDOCK_MODULES = JSON.stringify({ configVersion: 1, modules: { databases: { enabled: true } } });
   process.env.WEBDOCK_API_DOMAINS = "auth,databases,registry";

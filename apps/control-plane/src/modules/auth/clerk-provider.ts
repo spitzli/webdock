@@ -1,6 +1,7 @@
 import { consoleAuthConfiguration } from "./console-configuration";
 import {
   normalizeOrganizationPermissions,
+  isClerkOrganizationRole,
   type OrgPermission,
 } from "./organization-permissions";
 import { currentConsolePrincipal } from "./principal";
@@ -217,6 +218,7 @@ export async function legacyClerkMemberships(subject: string) {
       throw new ConsoleAuthError(403, "Setup membership proof is unavailable.");
     return proof;
   }
+  if (!consoleAuthConfiguration().requireExistingMapping && !currentConsolePrincipal()) return undefined;
   if (
     scope?.kind === "session" &&
     scope.subject === subject &&
@@ -264,6 +266,8 @@ export async function legacyClerkMemberships(subject: string) {
         503,
         "Linked identity verification is not configured for this issuer.",
       );
+    if (consoleAuthConfiguration().requireExistingMapping)
+      throw new ConsoleAuthError(403, "Clerk identity mapping is unavailable.");
     return undefined;
   }
   if (!link.enabled)
@@ -271,6 +275,7 @@ export async function legacyClerkMemberships(subject: string) {
   const provider = clerkProvider(),
     user = await provider.users.getUser(link.clerk_user_id);
   if (
+    user.id !== link.clerk_user_id ||
     user.banned ||
     user.locked ||
     !user.emailAddresses.some(
@@ -291,7 +296,7 @@ export async function legacyClerkMemberships(subject: string) {
     const member = live.find(
       (m) => m.organization.id === row.clerk_organization_id,
     );
-    return member && ["org:admin", "org:member"].includes(member.role)
+    return member && isClerkOrganizationRole(member.role)
       ? [
           {
             organizationID: String(row.organization_id),
@@ -307,6 +312,8 @@ export async function legacyClerkMemberships(subject: string) {
     subject,
     issuer,
     userID: link.clerk_user_id as string,
+    operator: user.privateMetadata?.webdockRole === "operator",
+    twoFactorEnabled: user.twoFactorEnabled === true,
     verifiedAt: now,
     expiresAt: now + 60000,
     roles,
@@ -324,6 +331,7 @@ export async function linkedMembershipRole(
           ?.role ?? null)
       : undefined;
   }
+  if (!consoleAuthConfiguration().requireExistingMapping && !currentConsolePrincipal()) return undefined;
   const issuer = consoleAuthConfiguration().issuer;
   if (!issuer) {
     if (
@@ -364,7 +372,7 @@ export async function linkedMembershipRole(
         503,
         "Linked team verification is not configured for this issuer.",
       );
-    return undefined;
+    return consoleAuthConfiguration().requireExistingMapping ? null : undefined;
   }
   if (!link.enabled) return null;
   const proof = await legacyClerkMemberships(subject);

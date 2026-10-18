@@ -1,8 +1,9 @@
 "use client";
 import { lazy, Suspense } from "react";
 import { useModuleNavigation, useModuleView } from "@webdock/module-sdk/react";
+import {hasProductModules} from "@/lib/module-data";
 import { moduleForPath } from "@webdock/module-sdk/selection";
-import { mailManifest } from "@webdock/module-mail/manifest";
+import { productManifests } from "@distribution/navigation";
 import { msgid } from "@webdock/i18n";
 
 import { useI18n } from "@webdock/i18n/react";
@@ -20,7 +21,9 @@ const SelectedAuthControls = lazy(() =>
 export function Navigation({
   operator = true,
   preview = false,
+  accountProvider = "better-auth",
 }: {
+  accountProvider?: "clerk" | "better-auth";
   operator?: boolean;
   preview?: boolean;
 }) {
@@ -38,16 +41,15 @@ export function Navigation({
     ? [
         ["projects", "/", msgid("Projects")],
         ["customers", "/customers", msgid("Customers")],
-        ["operations", "/operations", msgid("Operations")],
+        ...(view.modules.hosting ? [["operations", "/operations", msgid("Operations")]] : []),
       ]
     : [
         ["workspace", "/tenants", msgid("Workspaces")],
-        ["sites", "/sites", msgid("My websites")],
       ];
   const management = [
-    ["people", "/people", msgid("People & access")],
-    ["plans", "/admin/plans", msgid("Plans")],
-    ["connections", "/integrations", msgid("Connections")],
+    ...(accountProvider === "clerk" ? [["people", "/admin/registry-users", msgid("Studio accounts")]] : [["people", "/people", msgid("People & access")]]),
+    ...(hasProductModules(view) ? [["plans", "/admin/plans", msgid("Plans")]] : []),
+    ...(["enabled", "draining"].includes(view.modules.hosting ?? "") ? [["connections", "/integrations", msgid("Connections")]] : []),
     ["settings", "/admin", msgid("Settings")],
   ];
   const icons: Record<string, ConsoleIconName> = {
@@ -119,7 +121,8 @@ export function TenantNavigation({
   overviewHref?: string;
   children?: React.ReactNode;
 }) {
-  const contributions = useModuleNavigation([mailManifest], "tenant.services");
+  const view = useModuleView();
+  const contributions = useModuleNavigation(productManifests, "tenant.services");
   const i18n = useI18n();
 
   const base = `/tenants/${encodeURIComponent(customerID)}`;
@@ -165,11 +168,7 @@ export function TenantNavigation({
                   },
                 ]
               : []),
-            {
-              href: base + "/usage",
-              label: msgid("Plan & usage"),
-              icon: "billing",
-            },
+            ...(hasProductModules(view) ? [{ href: base + "/usage", label: msgid("Plan & usage"), icon: "billing" as const }] : []),
             {
               href: base + "/profile",
               label: msgid("Profile"),

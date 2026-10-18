@@ -18,7 +18,7 @@ import {
   verifyInvocation,
 } from "@webdock/plugin-sdk/server";
 const env = parseEnv(
-  readFileSync("apps/control-plane/.env.rls.test.local", "utf8"),
+  readFileSync(process.env.WEBDOCK_PLUGIN_TEST_ENV ?? "apps/control-plane/.env.rls.test.local", "utf8"),
 );
 const u = new URL(env.API_TEST_OWNER_URL!);
 if (u.hostname !== "127.0.0.1" || u.pathname !== "/webdock_rls_test")

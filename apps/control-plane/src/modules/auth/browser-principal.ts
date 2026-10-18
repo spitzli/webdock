@@ -61,8 +61,7 @@ export function createBrowserPrincipal(dependencies: {
       : null;
   }
   function selected(): IdentityDirectory {
-    return dependencies.provider === "better-auth" ||
-      trusted.getStore()?.kind === "legacy"
+    return dependencies.provider === "better-auth"
       ? dependencies.localDirectory
       : dependencies.clerkDirectory();
   }

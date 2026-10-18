@@ -1,7 +1,8 @@
-import {currentConsolePrincipal} from "../auth/principal";
+import { requireOAuthCapability } from "@webdock/auth-configuration/protocols";
+import { activeIdentity } from "@webdock/core/identity";
+import {currentConsolePrincipal, selectedIdentityDirectory} from "../auth/principal";
 import { withDatabaseScope } from "@webdock/database-runtime";
 import { createHash } from "node:crypto";
-import { auth } from "../auth/auth";
 import { database, authDatabase } from "../../db/runtime";
 import { currentMCPClaims, mcpResource } from "../auth/mcp";
 
@@ -86,6 +87,8 @@ async function operator(request: Request, value: Input) {
     fail(401, "Studio authentication required.");
   const origin = new URL(process.env.BETTER_AUTH_URL || "http://localhost:3125")
     .origin;
+  requireOAuthCapability();
+  const { auth } = await import("../auth/auth");
   const response = await auth.handler(
     new Request(origin + "/api/auth/oauth2/introspect", {
       method: "POST",
@@ -174,11 +177,15 @@ async function handleLifecycle(request: Request, consoleRequest:boolean): Promis
           // Serialize destructive work against preview entry and local suspension.
           const live = (
             await connection.query(
-              principal ? `SELECT u.id FROM webdock_auth."user" u WHERE $1::text IS NOT NULL AND u.id=$2 AND u.role='operator' AND NOT coalesce(u.banned,false) FOR UPDATE OF u` : `SELECT s.id FROM webdock_auth.session s JOIN webdock_auth."user" u ON u.id=s."userId" WHERE s.id=$1 AND u.id=$2 AND s."expiresAt">now() AND u.role='operator' AND NOT coalesce(u.banned,false) AND u."emailVerified" AND u."twoFactorEnabled" AND NOT u."mustChangePassword" FOR UPDATE OF s FOR SHARE OF u`,
+              principal ? `SELECT u.id FROM webdock_auth."user" u WHERE $1::text IS NOT NULL AND u.id=$2 AND NOT coalesce(u.banned,false) FOR UPDATE OF u` : `SELECT s.id FROM webdock_auth.session s JOIN webdock_auth."user" u ON u.id=s."userId" WHERE s.id=$1 AND u.id=$2 AND s."expiresAt">now() AND NOT coalesce(u.banned,false) FOR UPDATE OF s FOR SHARE OF u`,
               [actor.sessionID, actor.userID],
             )
           ).rows[0];
-          if (!live) fail(403, "Active operator session required.");
+          const identity = live ? await selectedIdentityDirectory.session(
+            connection, { subject: actor.userID, sessionID: actor.sessionID }, { lock: true },
+          ) : null;
+          if (!activeIdentity(identity) || identity.role !== "operator")
+            fail(403, "Active operator session required.");
           const preview = (
             await connection.query(
               principal ? "SELECT session_id FROM webdock_auth.console_tenant_preview WHERE session_id=$1 AND issuer=$2" : "SELECT session_id FROM webdock_auth.studio_tenant_preview WHERE session_id=$1 AND expires_at>now() AND expired_at IS NULL",

@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { PathnameContext, SearchParamsContext } from 'next/dist/shared/lib/hooks-client-context.shared-runtime';
 import { I18nProvider } from '@webdock/i18n/react';
 import { MailNavigation } from '../src/components/mail/mail-navigation';
-import { TenantNavigation } from '../src/components/navigation';
+import { Navigation, TenantNavigation } from '../src/components/navigation';
 import { AreaNavigation } from '../src/components/area-navigation';
 
 function render(path: string, element: ReturnType<typeof h>, query = '', state: 'enabled' | 'draining' | 'disabled' = 'enabled') {
@@ -51,4 +51,18 @@ test('minimal installation hides product navigation but preserves workspace acce
  const html=render('/tenants/12',element);
  assert.doesNotMatch(html,/href="[^"]*\/(?:hosting|databases|mail|billing)"/);
  assert.match(html,/\/team/);assert.match(html,/\/profile/);
+});
+
+test('empty installation renders the actual admin navigation without product links', () => {
+ const element=h(ModuleProvider,{view:{revision:'core',modules:{}},children:h(Navigation,{operator:true})});
+ const html=render('/',element);
+ assert.match(html,/href="\/"/);assert.match(html,/href="\/customers"/);assert.match(html,/href="\/people"/);
+ assert.doesNotMatch(html,/href="[^\"]*(?:hosting|sites|plans|integrations|operations|usage)/);
+});
+
+test('selected Clerk core links only to local registry accounts, without legacy provisioning', () => {
+ const element=h(ModuleProvider,{view:{revision:'core',modules:{}},children:h(Navigation,{operator:true,accountProvider:'clerk'})});
+ const html=render('/',element);
+ assert.match(html,/href="\/admin\/registry-users"/);
+ assert.doesNotMatch(html,/href="\/people"|href="[^\"]*(?:delete|hosting|sites|plans|integrations|operations)/);
 });

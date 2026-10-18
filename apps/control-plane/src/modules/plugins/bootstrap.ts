@@ -1,5 +1,5 @@
 import type { Pool } from "pg";
-import { installationRegistry, builtinManifests } from "../../installation";
+import { createRegistry } from "@webdock/module-sdk";
 /** Offline-only initialization. Runtime startup must never import or invoke this. */
 export async function initializePluginState(
   db: Pick<Pool, "connect">,
@@ -23,11 +23,14 @@ export async function initializePluginState(
     }
     if (mode === "fresh" && selection === undefined)
       throw Error("Fresh installation requires an explicit module selection");
-    const registry = installationRegistry(
-      selection === undefined
-        ? { WEBDOCK_MODULES: JSON.stringify({configVersion: 1, modules: Object.fromEntries(builtinManifests.map(({id}) => [id, {enabled: true}]))}) }
-        : { WEBDOCK_MODULES: JSON.stringify(selection) },
-    );
+    // Legacy import selects the complete retained catalog; fresh empty selection is core-only.
+    const selected = selection as { modules?: Record<string, unknown> } | undefined;
+    const builtinManifests = mode === "legacy" || (selected?.modules && Object.keys(selected.modules).length)
+      ? (await import("../../full-installation")).fullManifests
+      : [];
+    const registry = createRegistry(builtinManifests, selection === undefined
+      ? {configVersion: 1, modules: Object.fromEntries(builtinManifests.map(({id}) => [id, {enabled: true}]))}
+      : selection);
     const modules = registry.publicView().modules;
     for (const [id, state] of Object.entries(modules)) {
       const manifest = builtinManifests.find((m) => m.id === id)!;

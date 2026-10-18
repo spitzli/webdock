@@ -54,7 +54,7 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         (await readInstalledPlugins(owner)).filter(
           (p) => p.state === "enabled",
         ),
-      ).toHaveLength(5);
+      ).toHaveLength(4);
       await initializePluginState(
         owner,
         { configVersion: 1, modules: {} },
@@ -64,7 +64,7 @@ const enabled = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         (await readInstalledPlugins(owner)).filter(
           (p) => p.state === "enabled",
         ),
-      ).toHaveLength(5);
+      ).toHaveLength(4);
       await owner.query(
         'INSERT INTO webdock_auth."user"(id,name,email,role,"emailVerified","mustChangePassword","twoFactorEnabled") VALUES($1,\'Plugin operator fixture\',$2,\'operator\',true,false,true)',
         [subject, subject + "@example.invalid"],

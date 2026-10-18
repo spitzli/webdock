@@ -30,6 +30,19 @@ import {
   pinnedHTTPTransport,
   type HTTPBinding,
 } from "@webdock/core/plugin-http";
+import {
+  createPluginApps,
+  dispatchManagedApps,
+  type ManagedAppsHandler,
+  type ManagedAppBinding,
+} from "@webdock/core/plugin-apps";
+import { createPluginSessionRunner } from "./invocation-session";
+import { revalidateStoredConsoleIdentity } from "../auth/clerk-provider";
+import { withConsolePrincipal } from "../auth/principal";
+const withPluginSession = createPluginSessionRunner({
+  revalidate: revalidateStoredConsoleIdentity,
+  withPrincipal: withConsolePrincipal,
+});
 import { database, workerDatabase } from "../../db/runtime";
 const inputSchema = z.strictObject({
   pluginID: z.string().regex(/^[a-z][a-z0-9-]{0,63}$/),
@@ -51,6 +64,7 @@ type RuntimeBinding = {
   credential: string;
   ca: string;
   projects: Record<string, Record<string, HTTPBinding>>;
+  managedApps?: Record<string, ManagedAppBinding[]>;
 };
 type Settings = {
   privateKey: string;
@@ -136,8 +150,8 @@ async function installation(pluginID: string, projectID?: string) {
   });
 }
 export async function listRuntimePlugins(projectID?: string) {
-  currentSession();
-  if (projectID) await projectAccess(projectID);
+  const session = currentSession();
+  const project = projectID ? await projectAccess(projectID) : undefined;
   const ids = await controller(
     async () =>
       (
@@ -150,7 +164,66 @@ export async function listRuntimePlugins(projectID?: string) {
   for (const { id } of ids) {
     const { row, manifest, grant } = await installation(id, projectID);
     if (projectID && (!grant || grant.revoked_at)) continue;
+    let launchLinks: Array<{
+      appID: string;
+      label: string;
+      appURL: string;
+      consolePath: string;
+    }> = [];
+    if (projectID && project && managedAppsHandler && declaresApps(manifest)) {
+      const action = manifest.actions.find(
+        (a) =>
+          a.intent === "read" && a.capabilities.includes("plugin.apps.read"),
+      );
+      if (action)
+        try {
+          authorizePluginAction(
+            {
+              state: row.state,
+              runtime: row.runtime_status === "ready" ? row.runtime : "failed",
+              generation: Number(row.current_generation),
+              runtimeGeneration: Number(row.runtime_generation),
+              configurationRevision: Number(row.config_revision),
+              runtimeConfigurationRevision: Number(row.configuration_revision),
+              grantRevision: Number(grant?.revision ?? 0),
+              revoked:
+                !grant ||
+                !!grant.revoked_at ||
+                grant.customer_id !== project.customerID,
+              approved: row.approved_capabilities,
+              granted: grant?.capabilities ?? [],
+              actions: manifest.actions,
+              project,
+            },
+            action.name,
+          );
+          const binding = runtimeBinding(settings(), id, row);
+          const listed = await dispatchManagedApps(
+            {
+              pluginID: id,
+              projectID,
+              customerID: project.customerID,
+              operationID: "",
+              subject: session.subject,
+              sessionID: session.sessionID,
+            },
+            binding.managedApps?.[projectID] ?? [],
+            { operation: "list", input: {} },
+            managedAppsHandler,
+          );
+          if ("apps" in listed)
+            launchLinks = listed.apps.map((app) => ({
+              appID: app.app_id,
+              label: app.name,
+              appURL: app.origin,
+              consolePath: app.console_path,
+            }));
+        } catch {
+          /* Unavailable or unauthorized apps expose no launch links. */
+        }
+    }
     result.push({
+      launchLinks,
       state: row.state,
       runtime: row.runtime,
       manifest,
@@ -439,26 +512,23 @@ async function withInvocation<T>(
       "permission_denied",
       "Invocation identity unavailable",
     );
-  return withDatabaseScope(
-    { ...session, pluginInvocationID: claims.id },
-    async () => {
-      const scoped = (
-        await database.query("SELECT webdock_rls.plugin_context($1) AS scope", [
-          capability,
-        ])
-      ).rows[0]?.scope;
-      if (!scoped)
-        throw new PluginError("permission_denied", "Plugin capability revoked");
-      const access = await projectAccess(scoped.projectID);
-      if (
-        access.preview ||
-        !access.allowed ||
-        (inv.intent === "write" && !access.canWrite)
-      )
-        throw new PluginError("permission_denied", "Project authority revoked");
-      return fn(scoped, candidate);
-    },
-  );
+  return withPluginSession(session, claims.id, async () => {
+    const scoped = (
+      await database.query("SELECT webdock_rls.plugin_context($1) AS scope", [
+        capability,
+      ])
+    ).rows[0]?.scope;
+    if (!scoped)
+      throw new PluginError("permission_denied", "Plugin capability revoked");
+    const access = await projectAccess(scoped.projectID);
+    if (
+      access.preview ||
+      !access.allowed ||
+      (inv.intent === "write" && !access.canWrite)
+    )
+      throw new PluginError("permission_denied", "Project authority revoked");
+    return fn(scoped, candidate);
+  });
 }
 export const pluginData = createPluginData({
   run: (req, cap, work) => withInvocation(req, cap, (s) => work(s, database)),
@@ -481,4 +551,28 @@ export const pluginHTTP = createPluginHTTP({
         return binding;
       },
     ),
+});
+
+let managedAppsHandler: ManagedAppsHandler | undefined;
+export function configureManagedApps(handler: ManagedAppsHandler) {
+  managedAppsHandler = handler;
+}
+function declaresApps(manifest: PluginManifest) {
+  return [...manifest.services.required, ...manifest.services.optional].some(
+    (service) => service.name === "apps",
+  );
+}
+export const pluginApps = createPluginApps({
+  handler: () => managedAppsHandler,
+  run: (request, capability, work) =>
+    withInvocation(request, capability, async (scope, binding) => {
+      const installed = await installation(scope.pluginID, scope.projectID);
+      if (!declaresApps(installed.manifest))
+        throw new PluginError("permission_denied", "Undeclared apps service");
+      const session = currentSession();
+      return work(
+        { ...scope, subject: session.subject, sessionID: session.sessionID },
+        binding.managedApps?.[scope.projectID] ?? [],
+      );
+    }),
 });

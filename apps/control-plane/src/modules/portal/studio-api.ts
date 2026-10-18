@@ -1,5 +1,6 @@
-import {PluginError} from '@webdock/plugin-sdk/contracts';
-import {listRuntimePlugins,invokeRuntimePlugin} from '../plugins/runtime';
+import { PlatformError, getPlatformSettings, savePlatformSettings } from "../platform/platform-settings";
+import { PluginError } from "@webdock/plugin-sdk/contracts";
+import { listRuntimePlugins, invokeRuntimePlugin } from "../plugins/runtime";
 import { consoleAuthConfiguration } from "../auth/console-configuration";
 import { studioOperationDomain } from "./operation-domain";
 import {
@@ -9,6 +10,7 @@ import {
 import { ClerkSessionUnavailable } from "../auth/clerk-bridge";
 import {
   withTrustedLocalSession,
+  selectedIdentityDirectory,
   trustedLocalSessionKind,
 } from "../auth/principal";
 import {
@@ -27,18 +29,18 @@ import {
 import { ConsoleAuthError } from "../auth/clerk-identity";
 import { introspectToken } from "../auth/introspection";
 import { ZodError } from "zod";
-import {
-  previewProjectDeletion,
-  deleteProject,
-} from "../lifecycle/project-deletion";
-import { currentRegistryActor } from "../integrations/operator";
-import { HostingError } from "@webdock/hosting-contracts";
+
 import { registryService } from "../registry/context";
 import { RegistryError } from "../registry/service";
 import { currentDatabaseScope } from "@webdock/database-runtime";
-import { cmsShapes } from "@webdock/module-cms/server/dispatch-shapes";
-import {mailOperationShapes} from "../mail/studio-shapes";
-import {loadProductOperation, type ProductOperation} from "./product-operation";
+type Shape = ((value: unknown) => boolean)[];
+let contribution: { shapes: Record<string, Shape>; dispatch: (operation: string, args: unknown[], headers: Headers, userID: string) => Promise<unknown>; publicError: (error: unknown) => { kind: string; message: string; status: number } | undefined } | undefined;
+export function configureStudioProducts(value: NonNullable<typeof contribution>) { contribution = value; }
+
+import {
+  loadProductOperation,
+  type ProductOperation,
+} from "./product-operation";
 import { withNativeHeaders } from "./request-context";
 import {
   getConnections,
@@ -47,7 +49,7 @@ import {
 } from "../auth/connections";
 // Server-only delegation boundary: native cookies never leave this module.
 import { APIError, serializeSignedCookie } from "better-call";
-import { auth } from "../auth/auth";
+
 import { database, authDatabase } from "../../db/runtime";
 import { withDatabaseScope } from "@webdock/database-runtime";
 import {
@@ -69,20 +71,6 @@ import {
   getTenant,
   manageTenant,
 } from "../access/tenants";
-import {
-  PlanError,
-  getPlans,
-  getTenantPlan,
-  managePlans,
-  getOffer,
-  acceptOffer,
-} from "../plans/plans";
-import {
-  PlatformError,
-  getPlatformSettings,
-  savePlatformSettings,
-} from "../platform/platform";
-
 const bodyLimit = 128 * 1024;
 class RequestError extends Error {
   constructor(
@@ -112,25 +100,17 @@ const isInput = (value: unknown): value is Record<string, string> =>
 const shapes: Record<string, ((value: unknown) => boolean)[]> = {
   "plugins.list": [isString],
   "plugins.invoke": [isObject],
-  ...mailOperationShapes,
-  ...cmsShapes,
-  "project.preview": [isString],
-  "project.delete": [isString, isObject],
-  "integrations.github": [isInput],
-  "integrations.vercel": [isString],
-  "integrations.linkVercel": [isInput],
-  "integrations.projectStatus": [isString],
-  "hosting.command": [isObject],
-  "database.command": [isObject],
+
+
+
+
+
+
+
   "registry.session": [],
   "registry.query": [isString, isObject],
   "registry.customer": [(value) => value === null || isString(value), isObject],
   "registry.project": [(value) => value === null || isString(value), isObject],
-  "registry.instance": [
-    (value) => value === null || isString(value),
-    isObject,
-    (value) => typeof value === "boolean",
-  ],
   "registry.archive": [
     isString,
     isString,
@@ -150,15 +130,17 @@ const shapes: Record<string, ((value: unknown) => boolean)[]> = {
   listTenantInvitations: [],
   getTenant: [isString],
   manageTenant: [isString, isInput],
-  getPlans: [],
-  getTenantPlan: [isString],
-  managePlans: [isInput],
-  getOffer: [isString],
-  acceptOffer: [isString],
-  getTenantStorage: [isString],
-  manageTenantStorage: [isString, isInput],
   getPlatformSettings: [],
   savePlatformSettings: [isInput],
+
+
+
+
+
+
+
+
+
 };
 
 async function readBody(request: Request, native = false) {
@@ -168,7 +150,7 @@ async function readBody(request: Request, native = false) {
     "application/json"
   )
     invalid();
-  if (Number(request.headers.get("content-length")) > 2_200_000)
+  if (Number(request.headers.get("content-length")) > bodyLimit)
     fail(413, "Studio request is too large.");
   if (!request.body) invalid();
   const reader = request.body.getReader(),
@@ -179,7 +161,7 @@ async function readBody(request: Request, native = false) {
       const { done, value } = await reader.read();
       if (done) break;
       length += value.byteLength;
-      if (length > 2_200_000) {
+      if (length > bodyLimit) {
         await reader.cancel();
         fail(413, "Studio request is too large.");
       }
@@ -195,15 +177,7 @@ async function readBody(request: Request, native = false) {
     if (length > bodyLimit) fail(413, "Studio request is too large.");
     invalid();
   }
-  if (
-    length >
-    (isObject(body) &&
-    typeof body.operation === "string" &&
-    Object.hasOwn(cmsShapes, body.operation)
-      ? 2_200_000
-      : bodyLimit)
-  )
-    fail(413, "Studio request is too large.");
+  if (length > bodyLimit) fail(413, "Studio request is too large.");
   if (
     !isObject(body) ||
     Object.keys(body).some(
@@ -213,15 +187,14 @@ async function readBody(request: Request, native = false) {
         ).includes(key),
     ) ||
     !isString(body.operation) ||
-    !Object.hasOwn(shapes, body.operation) ||
+    !(Object.hasOwn(shapes, body.operation) || Object.hasOwn(contribution?.shapes ?? {}, body.operation)) ||
     !Array.isArray(body.args) ||
     (!native && (!isString(body.accessToken) || !body.accessToken))
   )
     invalid();
   const { operation, args, accessToken } = body;
-  if (length > (Object.hasOwn(cmsShapes, operation) ? 2_200_000 : bodyLimit))
-    fail(413, "Studio request is too large.");
-  const validators = shapes[operation];
+  if (length > bodyLimit) fail(413, "Studio request is too large.");
+  const validators = shapes[operation] ?? contribution!.shapes[operation];
   if (
     args.length !== validators.length ||
     validators.some((validate, index) => !validate(args[index]))
@@ -295,6 +268,7 @@ async function delegatedSession(
     )
   ).rows[0];
   if (!session) unauthorized();
+  const { auth } = await import("../auth/auth");
   const context = await auth.$context;
   const cookie = await serializeSignedCookie(
     context.authCookies.sessionToken.name,
@@ -306,15 +280,17 @@ async function delegatedSession(
   if (
     !native ||
     native.session.id !== token.sid ||
-    native.user.id !== token.sub ||
-    native.user.banned ||
-    !native.user.emailVerified ||
-    native.user.mustChangePassword
+    native.user.id !== token.sub
   )
     unauthorized();
-  const operator =
-    native.user.role === "operator" && native.user.twoFactorEnabled === true;
-  if (native.user.role !== "user" && !operator) unauthorized();
+  const identity = browserAuthProvider === "clerk"
+    ? await selectedIdentityDirectory.session(authDatabase, { subject: token.sub, sessionID: token.sid })
+    : undefined;
+  if (browserAuthProvider === "clerk" && (!identity || identity.subject !== token.sub || identity.sessionID !== token.sid)) unauthorized();
+  const user = { ...native.user, ...identity };
+  if (user.banned || !user.emailVerified || user.mustChangePassword) unauthorized();
+  const operator = user.role === "operator" && user.twoFactorEnabled === true;
+  if (user.role !== "user" && !operator) unauthorized();
   const {
     id,
     name,
@@ -323,7 +299,7 @@ async function delegatedSession(
     emailVerified,
     twoFactorEnabled,
     mustChangePassword,
-  } = native.user;
+  } = user;
   return {
     headers,
     actor: { userID: id, sessionID: native.session.id },
@@ -351,12 +327,15 @@ async function dispatch(
     | Awaited<ReturnType<typeof clerkBrowserSession>>["safe"],
   product?: ProductOperation,
 ) {
-  if (product) return product.dispatch(operation,args,headers,safe.user.id);
+  if (product) return product.dispatch(operation, args, headers, safe.user.id);
+  if (contribution && Object.hasOwn(contribution.shapes, operation))
+    return contribution.dispatch(operation, args, headers, safe.user.id);
   // Shape checks happen before dispatch; every original service still checks live permissions.
   const text = args[0] as string,
     input = args[0] as Record<string, string>,
     tenantInput = args[1] as Record<string, string>;
-  if (operation === "plugins.list") return listRuntimePlugins(args[0] as string);
+  if (operation === "plugins.list")
+    return listRuntimePlugins(args[0] as string);
   if (operation === "plugins.invoke") return invokeRuntimePlugin(args[0]);
   switch (operation) {
     case "session":
@@ -378,16 +357,6 @@ async function dispatch(
       return getTenant(headers, text);
     case "manageTenant":
       return manageTenant(headers, text, tenantInput);
-    case "getPlans":
-      return getPlans(headers);
-    case "getTenantPlan":
-      return getTenantPlan(headers, text);
-    case "managePlans":
-      return managePlans(headers, input);
-    case "getOffer":
-      return getOffer(headers, text);
-    case "acceptOffer":
-      return acceptOffer(headers, text);
 
   }
   // Even platform reads and connection tests require current root authorization.
@@ -407,13 +376,6 @@ async function dispatch(
         return registry.writeCustomer(actor, args[0] as string | null, args[1]);
       case "registry.project":
         return registry.writeProject(actor, args[0] as string | null, args[1]);
-      case "registry.instance":
-        return registry.writeInstance(
-          actor,
-          args[0] as string | null,
-          args[1],
-          args[2] as boolean,
-        );
       case "registry.archive":
         if (!["customers", "projects"].includes(text)) invalid();
         return registry.archive(
@@ -425,10 +387,6 @@ async function dispatch(
     }
   }
   switch (operation) {
-    case "project.preview":
-      return previewProjectDeletion(await currentRegistryActor(), text);
-    case "project.delete":
-      return deleteProject(await currentRegistryActor(), text, args[1]);
     case "getConnections":
       return getConnections(headers);
     case "registerConnection":
@@ -483,17 +441,17 @@ async function nativeSession(
         operator: principal.operator,
       },
     };
+  const { auth } = await import("../auth/auth");
   const native = await auth.api.getSession({ headers });
-  if (
-    !native ||
-    native.user.banned ||
-    !native.user.emailVerified ||
-    native.user.mustChangePassword
-  )
-    unauthorized();
-  const operator =
-    native.user.role === "operator" && native.user.twoFactorEnabled === true;
-  if (native.user.role !== "user" && !operator) unauthorized();
+  if (!native) unauthorized();
+  const identity = browserAuthProvider === "clerk"
+    ? await selectedIdentityDirectory.session(authDatabase, { subject: native.user.id, sessionID: native.session.id })
+    : undefined;
+  if (browserAuthProvider === "clerk" && (!identity || identity.subject !== native.user.id || identity.sessionID !== native.session.id)) unauthorized();
+  const user = { ...native.user, ...identity };
+  if (user.banned || !user.emailVerified || user.mustChangePassword) unauthorized();
+  const operator = user.role === "operator" && user.twoFactorEnabled === true;
+  if (user.role !== "user" && !operator) unauthorized();
   const {
     id,
     name,
@@ -502,7 +460,7 @@ async function nativeSession(
     emailVerified,
     twoFactorEnabled,
     mustChangePassword,
-  } = native.user;
+  } = user;
   return {
     headers,
     actor: { userID: id, sessionID: native.session.id },
@@ -552,7 +510,7 @@ async function handleRequest(
       if (!process.env.WEBDOCK_API_DOMAINS.split(",").includes(domain))
         fail(503, "This service is temporarily unavailable.");
     }
-    product = await loadProductOperation(operation,args);
+    product = await loadProductOperation(operation, args);
     const memberships = currentConsolePrincipal()
       ? undefined
       : await legacyClerkMemberships(actor.userID);
@@ -573,14 +531,7 @@ async function handleRequest(
             // An expired context remains present and restrictive until explicit exit.
             const context = await currentTenantPreview(actor);
             let data: unknown;
-            if (Object.hasOwn(cmsShapes, operation))
-              data = await withNativeHeaders(
-                headers,
-                () => product!.dispatch(operation, args, headers, safe.user.id),
-                dependencies.browserHeaders || request.headers,
-                accessToken,
-              );
-            else if (
+            if (
               operation === "hosting.command" ||
               operation === "database.command"
             )
@@ -647,8 +598,12 @@ async function handleRequest(
         ),
     );
   } catch (error) {
-    const publicError = product?.publicError(error);
-    if (publicError) return Response.json({error:{kind:publicError.kind,message:publicError.message}},{status:publicError.status,headers:responseHeaders});
+    const publicError = product?.publicError(error) ?? contribution?.publicError(error);
+    if (publicError)
+      return Response.json(
+        { error: { kind: publicError.kind, message: publicError.message } },
+        { status: publicError.status, headers: responseHeaders },
+      );
     if (error instanceof ClerkSessionUnavailable)
       return Response.json(
         {
@@ -686,12 +641,18 @@ async function handleRequest(
         },
         { status: 400, headers: responseHeaders },
       );
-    if (error instanceof HostingError)
+    if (error instanceof PluginError)
       return Response.json(
-        { error: { kind: "HostingError", message: error.message } },
-        { status: error.status, headers: responseHeaders },
+        { error: { kind: "PluginError", message: error.message } },
+        {
+          status:
+            error.code === "permission_denied"
+              ? 403
+              : error.code === "invalid_input"
+                ? 400
+                : 503,
+        },
       );
-    if (error instanceof PluginError) return Response.json({error:{kind:"PluginError",message:error.message}},{status:error.code==="permission_denied"?403:error.code==="invalid_input"?400:503});
     if (error instanceof RegistryError)
       return Response.json(
         { error: { kind: "RegistryError", message: error.message } },
@@ -700,7 +661,6 @@ async function handleRequest(
     const known = (
       [
         ["AccessError", AccessError],
-        ["PlanError", PlanError],
         ["PlatformError", PlatformError],
       ] as const
     ).find(([, type]) => error instanceof type);

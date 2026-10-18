@@ -1,13 +1,4 @@
-/** Platform metadata PostgreSQL pools. Customer database bindings never reuse these credentials. */
-export type DatabaseConfig = {
-  environment: "production" | "development" | "test";
-  businessURL: string;
-  authURL: string;
-  workerURL: string;
-  signingSecret?: string;
-  ca?: string;
-  max: number;
-};
+export type { DatabaseConfig } from "@webdock/database-runtime";
 
 export type DatabaseWorkspaceTarget =
   | {

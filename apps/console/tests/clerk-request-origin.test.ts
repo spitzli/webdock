@@ -27,3 +27,24 @@ test("network-path references cannot escape the configured origin", () => {
   const request = new NextRequest("https://deployment.vercel.app//attacker.example/login");
   assert.throws(() => canonicalClerkRequest(request, "https://console.webdock.dev"), /Ambiguous/);
 });
+
+test("explicit development loopback origin replaces the internal Next listener", () => {
+ const request=new NextRequest('http://127.0.0.1:3470/login?returnTo=%2Fprojects');
+ const normalized=canonicalClerkRequest(request,'http://localhost:3460',{allowLocalHTTP:true,environment:'development'});
+ assert.equal(createClerkRequest(normalized).clerkUrl.href,'http://localhost:3460/login?returnTo=%2Fprojects');
+ assert.equal(normalized.url,'http://localhost:3460/login?returnTo=%2Fprojects');
+ assert.throws(()=>canonicalClerkRequest(request,'http://localhost:3460',{allowLocalHTTP:true,environment:'production'}));
+ assert.throws(()=>canonicalClerkRequest(request,'http://evil.example',{allowLocalHTTP:true,environment:'development'}));
+});
+
+test('Clerk same-URL auth decoration continues internally without losing verified headers', async () => {
+ const {resumeClerkRequest}=await import('../src/lib/clerk-request-origin');
+ const response=new Response(null,{headers:{'x-middleware-rewrite':'http://localhost:3460/login?next=1','x-middleware-override-headers':'x-clerk-auth-signature','x-middleware-request-x-clerk-auth-signature':'verified'}});
+ resumeClerkRequest('http://localhost:3460/login?next=1',response);
+ assert.equal(response.headers.get('x-middleware-rewrite'),null);
+ assert.equal(response.headers.get('x-middleware-next'),'1');
+ assert.equal(response.headers.get('x-middleware-request-x-clerk-auth-signature'),'verified');
+ for(const target of ['https://elsewhere.example/login','http://localhost:3460/other']){
+  const different=new Response(null,{headers:{'x-middleware-rewrite':target}});resumeClerkRequest('http://localhost:3460/login',different);assert.equal(different.headers.get('x-middleware-rewrite'),target);
+ }
+});

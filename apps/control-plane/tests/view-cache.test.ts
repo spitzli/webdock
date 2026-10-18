@@ -269,12 +269,12 @@ test("Clerk and linked legacy views bypass cached SQL revisions across organizat
   // Seed the same legacy key to prove verified Clerk requests cannot hit it.
   expect(await readCachedView(options, version, load)).toEqual({ value: 1 });
   for (const [organizationID, role] of [["org-first", "admin"], ["org-second", "member"], ["org-first", "member"]] as const) {
-    const clerk = { issuer: "https://fixture.clerk.accounts.dev", userID: "clerk-user", organizationID, clerkOrganizationID: organizationID, customerID: organizationID, role, verifiedAt: Date.now(), expiresAt: Date.now() + 60000 };
+    const clerk = { operator: false, issuer: "https://fixture.clerk.accounts.dev", userID: "clerk-user", organizationID, clerkOrganizationID: organizationID, customerID: organizationID, role, verifiedAt: Date.now(), expiresAt: Date.now() + 60000 };
     const value = await withDatabaseScope({kind:"session",subject:"user-one",sessionID:"session-one",clerk}, () => readCachedView(options, version, load));
     expect(value).toEqual({value: loads});
   }
   expect(loads).toBe(4);
-  const value = await withDatabaseScope({kind:"session",subject:"user-one",sessionID:"session-one",memberships:{issuer:"https://fixture.clerk.accounts.dev",userID:"clerk-user",verifiedAt:Date.now(),expiresAt:Date.now()+60000,roles:[]}}, () => readCachedView(options, version, load));
+  const value = await withDatabaseScope({kind:"session",subject:"user-one",sessionID:"session-one",memberships:{operator:false,twoFactorEnabled:false,issuer:"https://fixture.clerk.accounts.dev",userID:"clerk-user",verifiedAt:Date.now(),expiresAt:Date.now()+60000,roles:[]}}, () => readCachedView(options, version, load));
   expect(value).toEqual({value:5});
   expect(writes).toHaveLength(1);
 });

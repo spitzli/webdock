@@ -14,10 +14,10 @@ function guard(user:unknown={collection:'users',role:'operator',name:'Fixture'},
 }
 test('operator pages use only the verified API mapping and HTTP registry client',async()=>{
  const g=guard(),value=await g.run();assert.equal(value.payload,g.client);assert.equal(g.calls(),1);
- for(const user of [null,{collection:'users',role:'reader'},{collection:'other',role:'operator'}])await assert.rejects(guard(user).run(),/redirect:\/sites/);
+ for(const user of [null,{collection:'users',role:'reader'},{collection:'other',role:'operator'}])await assert.rejects(guard(user).run(),/redirect:\/tenants/);
 });
 test('only a missing local session restarts SSO; upstream authentication failures stay visible',async()=>{
  await assert.rejects(guard(null,new AccessError('Sign in',401)).run(),/redirect:\/api\/sso\/login/);
- await assert.rejects(guard(null,new StudioError('Forbidden',403)).run(),/redirect:\/sites/);
+ await assert.rejects(guard(null,new StudioError('Forbidden',403)).run(),/redirect:\/tenants/);
  for(const status of [401,503]){const error=new StudioError('Upstream unavailable',status);await assert.rejects(guard(null,error).run(),value=>value===error);}
 });

@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import nodemailer from "nodemailer";
-import { publicPlatformSettings } from "../platform/platform";
+import { publicPlatformSettings } from "../platform/platform-settings";
 export const testOutbox: { to: string; subject: string; text: string }[] = [];
 type AuthMail = { to: string; subject: string; text: string };
 const deliveries = new AsyncLocalStorage<Promise<void>[]>();

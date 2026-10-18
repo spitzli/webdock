@@ -1,4 +1,10 @@
 import {
+  managedAppSchema,
+  managedAppListSchema,
+  managedAppOperationSchema,
+  managedAppGetSchema,
+  managedAppCommandSchema,
+  type PluginApps,
   httpRequestSchema,
   type PluginHTTP,
   documentKeySchema,
@@ -15,7 +21,7 @@ export function createPluginContext(options: {
   token: () => string | Promise<string>;
   fetch?: typeof fetch;
   runtimeCredential?: string;
-}): { jobs: PluginJobs; data: PluginData; http: PluginHTTP } {
+}): { jobs: PluginJobs; data: PluginData; http: PluginHTTP; apps: PluginApps } {
   const base = new URL(options.hostURL);
   if (
     base.username ||
@@ -62,6 +68,29 @@ export function createPluginContext(options: {
     return value;
   };
   return {
+    apps: {
+      list: async () =>
+        managedAppListSchema.parse(
+          await call("/v1/plugin/apps", "POST", {
+            operation: "list",
+            input: {},
+          }),
+        ),
+      get: async (input) =>
+        managedAppSchema.parse(
+          await call("/v1/plugin/apps", "POST", {
+            operation: "get",
+            input: managedAppGetSchema.parse(input),
+          }),
+        ),
+      command: async (input) =>
+        managedAppOperationSchema.parse(
+          await call("/v1/plugin/apps", "POST", {
+            operation: "command",
+            input: managedAppCommandSchema.parse(input),
+          }),
+        ),
+    },
     http: {
       request: (input) =>
         call("/v1/plugin/http", "POST", httpRequestSchema.parse(input)),

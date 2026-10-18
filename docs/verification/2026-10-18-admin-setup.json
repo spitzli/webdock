@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-18",
+  "scope": "local disposable database; no production rollout",
+  "command": "npm run setup:admin -- host:port/database new-private-output.json",
+  "security": [
+    "loopback only",
+    "random ephemeral capability",
+    "exact Host and Origin",
+    "bounded body and expiry",
+    "single concurrent submission",
+    "no repeat provisioning",
+    "exclusive mode0600 output before commit",
+    "uncertain commit retains recovery material",
+    "no runtime service elevated credentials"
+  ],
+  "checks": {
+    "unitTests": 17,
+    "consoleRegressionTests": 83,
+    "realPostgreSQLIntegration": "passed; wizard, password change, MFA, PKCE and core inventory guards",
+    "nativeBrowser": "created real operator in disposable PostgreSQL through HTML form",
+    "independentReview": "no remaining Important/Critical findings after disconnect shutdown fix",
+    "docsValidation": "passed",
+    "brokenLinks": 0
+  },
+  "screenshot": "/home/newt/.t3/userdata/browser-artifacts/browser-screenshot-127-0-0-1-mvczwr14-14f0a93f.png"
+}

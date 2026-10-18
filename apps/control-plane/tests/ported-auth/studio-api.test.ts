@@ -1,3 +1,5 @@
+import { configureFullProducts } from "../../src/full-products";
+configureFullProducts();
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes, createHash } from "node:crypto";

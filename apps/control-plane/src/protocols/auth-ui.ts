@@ -5,7 +5,7 @@ import { verifyOAuthQueryParams } from "@better-auth/oauth-provider";
 import type { ApiConfig } from "../config";
 import type { Mount } from "../route-manifest";
 import { auth } from "../modules/auth/auth";
-import { publicPlatformSettings } from "../modules/platform/platform";
+import { publicPlatformSettings } from "../modules/platform/platform-settings";
 import { handleNativeStudioRequest } from "../modules/portal/studio-api";
 import { readJSON } from "../plugins/body";
 export function authUIProtocol(config: ApiConfig): Mount {

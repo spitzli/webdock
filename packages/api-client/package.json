@@ -23,6 +23,7 @@
     "@webdock/hosting-contracts": "*",
     "@webdock/database-contracts": "*",
     "@webdock/mail-contracts": "*",
-    "@webdock/core": "*"
+    "@webdock/core": "*",
+    "@webdock/module-cms": "*"
   }
 }

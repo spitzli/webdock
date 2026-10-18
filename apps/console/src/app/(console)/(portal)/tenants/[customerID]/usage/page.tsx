@@ -1,4 +1,4 @@
-import {optionalModuleData} from "@/lib/module-data";
+import {hasProductModules,optionalModuleData} from "@/lib/module-data";
 import { AreaNavigation } from "@/components/area-navigation";
 import {uiLabel} from "@/lib/ui-labels";
 
@@ -33,6 +33,7 @@ export default async function Usage({
     redirect(
       `/api/sso/login?returnTo=${encodeURIComponent(`/tenants/${customerID}/usage`)}`,
     );
+  if (!hasProductModules(session.installation)) notFound();
   let tenantData, data, storage, plans, mail;
   try {
     [tenantData, data, storage, plans, mail] = await Promise.all([

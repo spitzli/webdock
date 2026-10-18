@@ -1,3 +1,5 @@
+import {getStudioSession} from "@/lib/studio-client";
+import {hasProductModules} from "@/lib/module-data";
 
 import { getRequestI18n } from '@webdock/i18n/next';
 import { headers } from "next/headers";
@@ -14,6 +16,7 @@ import {
 import { PlanForm } from "./form";
 export async function generateMetadata(){ const i18n = await getRequestI18n(); return { title: i18n.t("Plans") }; }
 export default async function Plans() {
+  if (!hasProductModules((await getStudioSession())?.installation)) notFound();
   const i18n = await getRequestI18n();
 
   const requestHeaders = await headers();

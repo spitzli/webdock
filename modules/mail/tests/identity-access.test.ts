@@ -219,5 +219,20 @@ test("native Mail uses provider-qualified grants without requiring a legacy memb
   await assert.rejects(() => auth.authorizeMail(f.db, actor, "456", true));
   live = provider;
   f.setMembership({ memberID: null, role: null });
-  await assert.rejects(() => auth.authorizeMail(f.db, actor, "456", true));
+  assert.equal((await auth.authorizeMail(f.db, actor, "456", true)).canManage, true);
+});
+
+test("fresh Clerk Mail role overrides stale identity operator privilege", async () => {
+  const f = fixture();
+  f.setIdentity({ ...f.identity, role: "operator", twoFactorEnabled: true });
+  f.setMembership({ memberID: null, role: "member" });
+  let live = { operator: false, canManage: false, clerkGrant: "verified" };
+  const policy = createNativeMailAuthorization(f.directory, async () => live);
+  const actor = { subject: "123", sessionID: "session-123" };
+  assert.equal((await policy.authorizeMail(f.db, actor, "456")).operator, false);
+  await assert.rejects(policy.authorizeMail(f.db, actor, "456", true));
+  f.setIdentity({ ...f.identity, role: "user" });
+  f.setMembership({ memberID: null, role: null });
+  live = { operator: true, canManage: true, clerkGrant: "verified" };
+  assert.equal((await policy.authorizeMail(f.db, actor, "456", true)).operator, true);
 });

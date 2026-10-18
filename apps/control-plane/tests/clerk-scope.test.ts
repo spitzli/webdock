@@ -29,7 +29,8 @@ test("nested business scope cannot discard Clerk identity or extend its expiry",
       { kind: "session", subject: p.userID, sessionID: p.sessionID },
       () => {
         expect(currentDatabaseScope()).toMatchObject({
-          clerk: { issuer: p.issuer, expiresAt: p.expiresAt },
+          authProvider: "clerk",
+          clerk: { issuer: p.issuer, operator: false, expiresAt: p.expiresAt },
         });
         expect(currentConsolePrincipal()?.userID).toBe(p.userID);
       },

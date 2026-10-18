@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@distribution/*": [
+        "./src/distribution/full/*"
       ]
     },
     "allowImportingTsExtensions": true,

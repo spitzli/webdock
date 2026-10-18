@@ -76,7 +76,7 @@ export default async function Tenants({searchParams}: {searchParams: Promise<{ch
         <p>{i18n.t("No active tenant memberships yet. Accept your emailed invitation to get started.")}</p>
       )}
       <p>
-        <Link href="/sites">{i18n.t("My websites")}</Link>
+
       </p>
     </div>
   );

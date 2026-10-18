@@ -1,19 +1,23 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawnSync, spawn } from "node:child_process";
 import { mkdtemp, writeFile, readFile, stat, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { Pool } from "pg";
+import { createServer } from "node:net";
+import { once } from "node:events";
+import { initializePluginState } from "../../apps/control-plane/src/modules/plugins/bootstrap";
 import { runtimeRoles } from "./config";
 import { oauthSecretHash } from "./operator-provision";
+import { startOperatorSetup } from "./operator-setup";
 const root = fileURLToPath(new URL("../../", import.meta.url));
 test(
   "initial operator bootstrap plus real MFA/PKCE and composed core API with all products disabled",
-  { skip: process.env.WEBDOCK_TEST_OPERATOR !== "true", timeout: 180000 },
+  { skip: process.env.WEBDOCK_TEST_OPERATOR !== "true", timeout: process.env.WEBDOCK_OPERATOR_BROWSER_HANDOFF ? 600000 : 180000 },
   async () => {
     const endpoint = execFileSync(
       "docker",
@@ -134,8 +138,30 @@ test(
       await owner.query(
         `UPDATE webdock_auth."user" SET email='existing@example.test' WHERE email='operator@example.test'`,
       );
-      const result = run("operator.ts", [input, output], env);
-      assert.equal(result.status, 0, result.stdout + result.stderr);
+      // Exercise the real loopback wizard and shared offline transaction on the fresh database.
+      const setup = await startOperatorSetup({ env, target, destination: output });
+      let browserResult = "";
+      try {
+        const handoff = process.env.WEBDOCK_OPERATOR_BROWSER_HANDOFF;
+        if (handoff) {
+          // Opt-in local browser proof. Capabilities and the disposable password stay in a private file.
+          await writeFile(handoff, JSON.stringify({ url: setup.url + "/#" + setup.capability, email: "operator@example.test", name: "Fixture operator", password: operatorPassword }), { mode: 0o600, flag: "wx" });
+          console.log("Private disposable browser handoff is ready");
+          try { assert.equal((await setup.closed).status, "success"); }
+          finally { await rm(handoff, { force: true }); }
+        } else {
+          const response = await fetch(setup.url + "/setup", {
+            method: "POST",
+            headers: { Origin: setup.url, Authorization: "Bearer " + setup.capability, "Content-Type": "application/json" },
+            body: JSON.stringify({ email: "operator@example.test", name: "Fixture operator", password: operatorPassword, ownershipConfirmed: true }),
+          });
+          browserResult = await response.text();
+          assert.equal(response.status, 200, browserResult);
+          assert.deepEqual(JSON.parse(browserResult), { created: true, securitySetupRequired: true });
+          assert.equal((await setup.closed).status, "success");
+        }
+      } finally { await setup.close(); }
+      const result = { stdout: browserResult, stderr: "" };
       const secrets = JSON.parse(await readFile(output, "utf8"));
       assert.equal((await stat(output)).mode & 0o777, 0o600);
       assert.ok(
@@ -219,6 +245,8 @@ test(
         value.password = passwords[role];
         return value.href;
       };
+      // The admin core must function without the removed CMS inventory table.
+      await owner.query("DROP TABLE webdock_admin.cms_instances CASCADE");
       const login = spawnSync(
         root + "node_modules/.bin/bun",
         ["--no-env-file", "tools/migrations/operator-auth-fixture.ts"],
@@ -247,6 +275,161 @@ test(
         },
       );
       assert.equal(login.status, 0, login.stdout + login.stderr);
+      await initializePluginState(
+        owner,
+        { configVersion: 1, modules: {} },
+        "fresh",
+      );
+      const inventoryOwner = new URL(url.href);
+      inventoryOwner.username = "postgres";
+      inventoryOwner.password = password;
+      const inventory = spawnSync(root + "node_modules/.bin/bun", ["--no-env-file", "tools/migrations/core-inventory-fixture.ts"], {
+        cwd: root, encoding: "utf8", env: {
+          ...env, ...secrets.environment, WEBDOCK_TEST_OPERATOR: "true", NODE_ENV: "development",
+          BETTER_AUTH_SECRET: randomBytes(48).toString("hex"),
+          CORE_INVENTORY_OWNER_URL: inventoryOwner.href,
+          DATABASE_URL: roleURL("webdock_auth_runtime"), AUTH_DATABASE_URL: roleURL("webdock_auth_bootstrap"),
+          DATABASE_WORKER_URL: roleURL("webdock_worker_runtime"), DATABASE_RLS_SECRET: base.DATABASE_CONTEXT_SECRET,
+          WEBDOCK_MODULES: JSON.stringify({configVersion:1,modules:{}}),
+        },
+      });
+      assert.equal(inventory.status, 0, inventory.stdout + inventory.stderr);
+      console.log(inventory.stdout.trim());
+      for (const provider of ["better-auth", "clerk"] as const) {
+        const reservation = createServer();
+        reservation.listen(0, "127.0.0.1");
+        await once(reservation, "listening");
+        const apiPort = (reservation.address() as { port: number }).port;
+        await new Promise<void>((resolve, reject) =>
+          reservation.close((error) => (error ? reject(error) : resolve())),
+        );
+        const ingressSecret = randomBytes(48).toString("hex");
+        const runtimeEnv: NodeJS.ProcessEnv = {
+          ...base,
+          ...secrets.environment,
+          // Production explicitly rejects loopback PostgreSQL without verified TLS.
+          // Keep real scoped roles and signatures in this disposable local fixture.
+          NODE_ENV: "development",
+          PORT: String(apiPort),
+          BIND_ADDRESS: "127.0.0.1",
+          DATABASE_URL: roleURL("webdock_auth_runtime"),
+          AUTH_DATABASE_URL: roleURL("webdock_auth_bootstrap"),
+          DATABASE_WORKER_URL: roleURL("webdock_worker_runtime"),
+          REGISTRY_DATABASE_URL: roleURL("webdock_registry_runtime"),
+          DATABASE_POOL_MAX: "2",
+          REGISTRY_POOL_MAX: "2",
+          DATABASE_RLS_SECRET: base.DATABASE_CONTEXT_SECRET,
+          WEBDOCK_API_ORIGIN: "https://api.example.test",
+          WEBDOCK_API_DOMAINS: "auth,portal,registry",
+          WEBDOCK_MODULES: JSON.stringify({ configVersion: 1, modules: {} }),
+          WEBDOCK_INGRESS_SECRET: ingressSecret,
+          WEBDOCK_TRUSTED_PROXIES: "127.0.0.1/32",
+        };
+        if (provider === "better-auth")
+          runtimeEnv.BETTER_AUTH_SECRET = randomBytes(48).toString("hex");
+        else {
+          delete runtimeEnv.BETTER_AUTH_SECRET;
+          runtimeEnv.WEBDOCK_AUTH_PROVIDER = JSON.stringify({
+            provider: "clerk",
+            issuer: "https://clerk.example.test",
+            authorizedParties: [base.WEBDOCK_CONSOLE_ORIGIN],
+            audience: "webdock-console",
+          });
+          runtimeEnv.WEBDOCK_OAUTH_PROVIDER = "disabled";
+          runtimeEnv.CLERK_SECRET_KEY =
+            "sk_test_" + randomBytes(24).toString("hex");
+          runtimeEnv.WEBDOCK_CONSOLE_SERVICE_KEY =
+            randomBytes(48).toString("hex");
+        }
+        const child = spawn(
+          root + "node_modules/.bin/bun",
+          ["--no-env-file", "apps/control-plane/src/core.ts"],
+          {
+            cwd: root,
+            env: runtimeEnv,
+            stdio: ["ignore", "pipe", "pipe"],
+          },
+        );
+        let diagnostics = "";
+        child.stdout.on("data", (data) => {
+          diagnostics += String(data);
+        });
+        child.stderr.on("data", (data) => {
+          diagnostics += String(data);
+        });
+        const redacted = () => {
+          let output = diagnostics;
+          for (const value of [
+            ...Object.values(runtimeEnv),
+            ...Object.values(passwords),
+          ])
+            if (value && value.length > 24)
+              output = output.replaceAll(value, "[redacted]");
+          return output.slice(-6000);
+        };
+        const request = (path: string, host = "api.example.test") =>
+          fetch(`http://127.0.0.1:${apiPort}${path}`, {
+            headers: {
+              "x-forwarded-host": host,
+              "x-forwarded-proto": "https",
+              "x-forwarded-for": "127.0.0.1",
+              "x-webdock-ingress-token": ingressSecret,
+            },
+            signal: AbortSignal.timeout(1000),
+          });
+        try {
+          let ready = false;
+          for (let attempt = 0; attempt < 150; attempt++) {
+            assert.equal(
+              child.exitCode,
+              null,
+              `${provider} process exited: ${redacted()}`,
+            );
+            try {
+              ready = (await request("/readyz")).status === 200;
+            } catch {}
+            if (ready) break;
+            await new Promise((resolve) => setTimeout(resolve, 200));
+          }
+          assert.ok(
+            ready,
+            `${provider} process did not become ready: ${redacted()}`,
+          );
+          assert.equal((await request("/healthz")).status, 200);
+          for (const path of [
+            "/v1/cms",
+            "/api/cms",
+            "/api/billing",
+            "/v1/billing",
+            "/api/hosting/bridge",
+            "/api/databases/bridge",
+            "/api/mail",
+            "/api/storage",
+          ])
+            assert.equal(
+              (await request(path)).status,
+              404,
+              `${provider} unexpectedly serves ${path}`,
+            );
+          if (provider === "clerk")
+            assert.equal(
+              (await request("/api/auth/get-session", "auth.example.test"))
+                .status,
+              404,
+            );
+        } finally {
+          if (child.exitCode === null) {
+            const stopped = once(child, "exit");
+            child.kill("SIGTERM");
+            const timer = setTimeout(() => child.kill("SIGKILL"), 5000);
+            try {
+              await stopped;
+            } finally {
+              clearTimeout(timer);
+            }
+          }
+        }
+      }
       const repeat = run("operator.ts", [input, join(dir, "repeat.json")], env);
       assert.notEqual(repeat.status, 0);
       assert.match(repeat.stderr, /already exists/);

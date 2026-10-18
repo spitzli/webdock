@@ -1,3 +1,5 @@
+import {notFound} from "next/navigation";
+import {getStudioSession} from "@/lib/studio-client";
 import {studioCall} from "@/lib/studio-client";
 import type {GitHubView} from "@webdock/api-client/integrations";
 
@@ -28,6 +30,7 @@ export default async function Integrations({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  if (!["enabled", "draining"].includes((await getStudioSession())?.installation?.modules.hosting ?? "")) notFound();
   const i18n = await getRequestI18n();
 
   const { payload, user } = await requireRegistryOperator();

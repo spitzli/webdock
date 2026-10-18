@@ -1,8 +1,8 @@
 import { Pool, type PoolConfig } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { ScopedPool, verifiedPostgresConfig } from "@webdock/database-runtime";
-import type { DatabaseConfig } from "@webdock/module-databases/providers";
-export type { DatabaseConfig } from "@webdock/module-databases/providers";
+import type { DatabaseConfig } from "@webdock/database-runtime";
+export type { DatabaseConfig } from "@webdock/database-runtime";
 export function databaseURL(raw: string): URL {
   let url: URL;
   try {
@@ -77,11 +77,13 @@ export function createDatabases(config: DatabaseConfig) {
   const business = new ScopedPool(businessConfig, {
     secret: config.signingSecret,
     audience: "webdock_auth_runtime",
+    scope: config.scope,
   });
   const authentication = new Pool(authConfig);
   const worker = new ScopedPool(workerConfig, {
     secret: config.signingSecret,
     audience: "webdock_worker_runtime",
+    scope: config.scope,
   });
   return {
     business,
@@ -98,7 +100,7 @@ export function createDatabases(config: DatabaseConfig) {
 export function createWorkerDatabases(
   config: Pick<
     DatabaseConfig,
-    "environment" | "workerURL" | "signingSecret" | "ca" | "max"
+    "environment" | "workerURL" | "signingSecret" | "ca" | "max" | "scope"
   >,
 ) {
   if (!Number.isInteger(config.max) || config.max < 1 || config.max > 4)
@@ -124,7 +126,7 @@ export function createWorkerDatabases(
       connectionTimeoutMillis: 10_000,
       idleTimeoutMillis: 5000,
     },
-    { secret: config.signingSecret, audience: "webdock_worker_runtime" },
+    { secret: config.signingSecret, audience: "webdock_worker_runtime", scope: config.scope },
   );
   const orm = drizzle({ client: pool });
   return {

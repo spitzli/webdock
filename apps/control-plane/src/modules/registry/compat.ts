@@ -8,7 +8,6 @@ export {
   recordID,
   customerInput,
   projectInput,
-  instanceInput,
   listInput,
   collectionName,
 } from "./contracts";

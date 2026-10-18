@@ -1,3 +1,4 @@
+import { readAuthProviderConfiguration } from "@webdock/auth-configuration";
 import { consoleAuthConfiguration } from "../modules/auth/console-configuration";
 import {
   currentDatabaseScope,
@@ -21,11 +22,13 @@ export async function withAuthenticatedDatabase<T>(
     throw new AccessError("Sign in and complete account setup first.");
   }
   const inherited = currentDatabaseScope();
+  const nativePrincipal = (await import("../modules/auth/principal")).currentConsolePrincipal();
   const memberships =
-    session.provider === "legacy" &&
+    !nativePrincipal &&
     !(
       inherited?.kind === "session" &&
       inherited.subject === session.user.id &&
+      inherited.sessionID === session.sessionID &&
       inherited.memberships
     )
       ? await (
@@ -35,9 +38,10 @@ export async function withAuthenticatedDatabase<T>(
   return withDatabaseScope(
     {
       kind: "session",
+      authProvider: readAuthProviderConfiguration(process.env.WEBDOCK_AUTH_PROVIDER).provider,
       subject: session.user.id,
       sessionID: session.sessionID,
-      ...(memberships ? { memberships } : {}),
+      ...(memberships ? { memberships: { ...memberships, subject: session.user.id, sessionID: session.sessionID } } : {}),
     },
     run,
   );
@@ -67,9 +71,16 @@ export async function withHostingDatabase<T>(
   return withDatabaseScope(
     {
       kind: "session",
+      authProvider: readAuthProviderConfiguration(process.env.WEBDOCK_AUTH_PROVIDER).provider,
       subject: actor.subject,
       sessionID: actor.sessionID,
-      ...(memberships ? { memberships } : {}),
+      ...(scope?.kind === "session" &&
+      scope.subject === actor.subject &&
+      scope.sessionID === actor.sessionID &&
+      scope.pluginInvocationID
+        ? { pluginInvocationID: scope.pluginInvocationID }
+        : {}),
+      ...(memberships ? { memberships: { ...memberships, subject: actor.subject, sessionID: actor.sessionID } } : {}),
     },
     run,
   );
@@ -97,9 +108,10 @@ export async function withMailDatabase<T>(
     return withDatabaseScope(
       {
         kind: "session",
+        authProvider: readAuthProviderConfiguration(process.env.WEBDOCK_AUTH_PROVIDER).provider,
         subject: principal.userID,
         sessionID: principal.sessionID,
-        ...(memberships ? { memberships } : {}),
+        ...(memberships ? { memberships: { ...memberships, subject: principal.userID, sessionID: principal.sessionID } } : {}),
       },
       run,
     );

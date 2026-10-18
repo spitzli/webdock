@@ -1,3 +1,4 @@
+import { readAuthProtocolSelection } from "@webdock/auth-configuration/protocols";
 import Elysia from "elysia";
 import { withDatabaseScope } from "@webdock/database-runtime";
 import { PluginError } from "@webdock/plugin-sdk/contracts";
@@ -9,6 +10,7 @@ import {
   getRuntimePlugin,
   pluginData,
   pluginHTTP,
+  pluginApps,
 } from "../modules/plugins/runtime";
 import { invokeExposedPlugin } from "../modules/plugins/exposure";
 import { readJSON, HTTPError } from "../plugins/body";
@@ -48,6 +50,20 @@ export function pluginProtocol(
       parse: "none",
     })
     .post(
+      "/v1/plugin/apps",
+      async ({ request }) => {
+        try {
+          return Response.json(
+            await pluginApps.request(request, await readJSON(request, 32768)),
+            { headers: { "cache-control": "no-store" } },
+          );
+        } catch (error) {
+          return failure(error);
+        }
+      },
+      { parse: "none" },
+    )
+    .post(
       "/v1/plugin/http",
       async ({ request }) => {
         try {
@@ -64,6 +80,10 @@ export function pluginProtocol(
       "/v1/plugins/:pluginID/projects/:projectID/api/*",
       async ({ request, params }) => {
         try {
+          if (
+            readAuthProtocolSelection(process.env).oauthProvider === "disabled"
+          )
+            return new Response(null, { status: 404 });
           const access = await authenticate(request, request.method !== "GET");
           if (access instanceof Response) return access;
           return await withDatabaseScope(

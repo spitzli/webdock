@@ -1,4 +1,5 @@
 "use server";
+import {browserAuthConfiguration} from "@/lib/browser-auth-config";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { AccessError, manageAccess } from "@/lib/access-management";
@@ -7,6 +8,7 @@ export async function accessAction(
   _state: AccessState,
   form: FormData,
 ): Promise<AccessState> {
+  if (browserAuthConfiguration.provider === "clerk") return {error: "Account provisioning is managed by the selected identity provider."};
   try {
     const input = Object.fromEntries(
       [...form].filter(

@@ -100,7 +100,7 @@ export async function saveProject(
     revalidatePath("/projects/" + savedID);
     return { success: "Project saved." };
   }
-  redirect("/hosting/projects/" + savedID + "/setup");
+  redirect("/projects/" + savedID);
 }
 export async function archiveRecord(
   collection: "customers" | "projects",

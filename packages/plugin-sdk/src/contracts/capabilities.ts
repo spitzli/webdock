@@ -1,5 +1,7 @@
 import { z } from "zod";
 export const capabilities = [
+  "plugin.apps.read",
+  "plugin.apps.manage",
   "project.read",
   "plugin.data.read",
   "plugin.data.write",
@@ -22,6 +24,7 @@ export const capabilities = [
 export const capabilitySchema = z.enum(capabilities);
 export type Capability = z.infer<typeof capabilitySchema>;
 export const readCapabilities: readonly Capability[] = [
+  "plugin.apps.read",
   "plugin.http.read",
   "project.read",
   "plugin.data.read",
@@ -32,6 +35,7 @@ export const readCapabilities: readonly Capability[] = [
   "plugin.secrets.read",
 ];
 export const serviceNames = [
+  "apps",
   "project",
   "data",
   "db",

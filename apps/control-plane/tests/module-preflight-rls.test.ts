@@ -13,9 +13,10 @@ test("preflight authority is an explicit SELECT-only policy and does not expand 
   const statements = plan.sql
     .split(";")
     .filter((sql) => sql.includes("installation-preflight"));
-  expect(statements.length).toBe(2);
+  expect(statements.length).toBe(1);
   for (const sql of statements) {
     expect(sql).toContain("FOR SELECT TO webdock_worker_runtime");
     expect(sql).not.toContain("audit_events");
+    expect(sql).not.toContain("cms_instances");
   }
 });

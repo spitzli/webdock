@@ -23,6 +23,7 @@ test("parallel hosting callers retain their own sessions and restore the outer s
           await new Promise((resolve) => setImmediate(resolve));
           assert.deepEqual(currentDatabaseScope(), {
             kind: "session",
+            authProvider: "better-auth",
             subject,
             sessionID: subject + "-session",
           });
@@ -89,4 +90,32 @@ test("Git policy and job actors cannot manufacture worker authority", async () =
     }),
   );
   assert.equal(currentDatabaseScope(), undefined);
+});
+
+test("Hosting retains plugin invocation only for the same verified session", async () => {
+  const session = {
+    kind: "session" as const,
+    subject: "alice",
+    sessionID: "alice-session",
+    pluginInvocationID: "invocation",
+  };
+  await withDatabaseScope(session, async () => {
+    for (const sessionID of ["alice-session", "different-session"]) {
+      await withHostingDatabase(
+        {
+          subject: "alice",
+          sessionID,
+          source: "studio",
+          scopes: ["hosting:read"],
+        },
+        async () => {
+          const scope = currentDatabaseScope();
+          assert.equal(
+            scope?.kind === "session" ? scope.pluginInvocationID : undefined,
+            sessionID === "alice-session" ? "invocation" : undefined,
+          );
+        },
+      );
+    }
+  });
 });

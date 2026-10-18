@@ -1,3 +1,4 @@
+import { configureFullInstallation } from "../src/full-installation";
 import { test, expect, mock } from "bun:test";
 import { Pool } from "pg";
 import { randomBytes, generateKeyPairSync } from "node:crypto";
@@ -12,6 +13,7 @@ const fixture = process.env.WEBDOCK_RLS_FIXTURE_FILE;
 (fixture ? test : test.skip)(
   "Clerk-only native mailbox grants require explicit live membership, applied revision, and worker revalidation",
   async () => {
+    configureFullInstallation();
     const url = new URL(process.env.API_TEST_OWNER_URL!);
     if (url.hostname !== "127.0.0.1" || url.pathname !== "/webdock_rls_test")
       throw Error("Isolated fixture required");
@@ -28,11 +30,16 @@ const fixture = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       sender = id();
     const issuer = "https://fixture.clerk.accounts.dev";
     const savedIssuer = process.env.CLERK_ISSUER;
+    const savedProvider = process.env.WEBDOCK_AUTH_PROVIDER;
+    const selectedProvider = JSON.stringify({ provider: "clerk", issuer, authorizedParties: ["https://console.example.test"], audience: "webdock" });
+    process.env.WEBDOCK_AUTH_PROVIDER = selectedProvider;
     process.env.CLERK_ISSUER = issuer;
     let memberPresent = true,
       memberID = "orgmem_original",
+      memberRole = "org:member",
       providerBanned = false,
-      providerFailure = false;
+      providerFailure = false,
+      providerOperator = false;
     let org = "";
     const actualProvider = await import("../src/modules/auth/clerk-provider");
     mock.module("../src/modules/auth/clerk-provider", () => ({
@@ -42,6 +49,8 @@ const fixture = process.env.WEBDOCK_RLS_FIXTURE_FILE;
           getUser: async (userID: string) => {
             if (providerFailure) throw Error("Provider unavailable");
             return {
+              id: userID,
+              privateMetadata: providerOperator && userID === "user_" + outsider ? { webdockRole: "operator" } : {},
               banned: providerBanned && userID === "user_" + member,
               locked: false,
               primaryEmailAddressId: "primary",
@@ -69,7 +78,7 @@ const fixture = process.env.WEBDOCK_RLS_FIXTURE_FILE;
               {
                 id: userID === "user_" + member ? memberID : "orgmem_admin",
                 organization: { id: "org_" + org },
-                role: userID === "user_" + admin ? "org:admin" : "org:member",
+                role: userID === "user_" + admin ? "org:admin" : memberRole,
               },
             ],
     }));
@@ -238,6 +247,9 @@ const fixture = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       );
       expect((await open()).accountID).toBe("account");
       expect((await queued()).accountID).toBe("account");
+      memberRole = "org:mail_user";
+      expect((await queued()).accountID).toBe("account");
+      memberRole = "org:member";
       await expect(queued("2")).rejects.toThrow();
       await expect(
         withConsolePrincipal(principal(member), () =>
@@ -247,8 +259,11 @@ const fixture = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         ),
       ).rejects.toThrow();
       process.env.CLERK_ISSUER = "https://wrong.clerk.accounts.dev";
+      process.env.WEBDOCK_AUTH_PROVIDER = JSON.stringify({ ...JSON.parse(selectedProvider), issuer: process.env.CLERK_ISSUER });
       await expect(queued()).rejects.toThrow("not configured");
       process.env.CLERK_ISSUER = issuer;
+      process.env.WEBDOCK_AUTH_PROVIDER = selectedProvider;
+      providerOperator = true;
       await owner.query(
         `UPDATE webdock_auth."user" SET role='operator' WHERE id=$1`,
         [outsider],
@@ -274,6 +289,9 @@ const fixture = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         [mailbox, outsider],
       );
       expect((await openOperator()).accountID).toBe("account");
+      providerOperator = false;
+      await expect(openOperator()).rejects.toThrow();
+      providerOperator = true;
       memberPresent = false;
       await expect(open()).rejects.toThrow();
       await expect(queued()).rejects.toThrow();
@@ -573,6 +591,8 @@ const fixture = process.env.WEBDOCK_RLS_FIXTURE_FILE;
         if (value === undefined) delete process.env[name];
         else process.env[name] = value;
       }
+      if (savedProvider === undefined) delete process.env.WEBDOCK_AUTH_PROVIDER;
+      else process.env.WEBDOCK_AUTH_PROVIDER = savedProvider;
       if (savedIssuer === undefined) delete process.env.CLERK_ISSUER;
       else process.env.CLERK_ISSUER = savedIssuer;
       if (oldSettings)

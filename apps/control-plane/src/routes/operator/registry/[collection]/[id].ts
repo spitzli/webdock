@@ -8,7 +8,6 @@ const params = t.Object({
   collection: t.Union([
     t.Literal("customers"),
     t.Literal("projects"),
-    t.Literal("cms-instances"),
     t.Literal("audit-events"),
   ]),
   id: t.String({ pattern: "^[1-9][0-9]{0,18}$" }),
@@ -34,8 +33,6 @@ export default new Elysia()
         return service.writeCustomer(actor, params.id, body);
       if (params.collection === "projects")
         return service.writeProject(actor, params.id, body);
-      if (params.collection === "cms-instances")
-        return service.writeInstance(actor, params.id, body, true);
       return new Response(null, { status: 405 });
     },
     { params, parse: "none" },

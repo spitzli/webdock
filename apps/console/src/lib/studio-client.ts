@@ -20,9 +20,7 @@ export async function studioCall<T>(
     ? { cookie: (await headers()).get("cookie") || "" }
     : await browserRequestCredentials();
   if (
-    (delegated && !consoleIdentity) ||
-    (browserAuthConfiguration.transport === "adapter" &&
-      !("bearerToken" in credentials && credentials.bearerToken))
+    (delegated && !consoleIdentity)
   )
     throw new AccessError("Sign in to Console.", 401);
   const module = moduleForOperation(operation, args);

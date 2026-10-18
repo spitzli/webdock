@@ -34,3 +34,7 @@
 **/.npmrc
 **/.netrc
 **/*.log
+
+apps/control-plane/dist-core/
+
+.core-build/

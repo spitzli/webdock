@@ -28,6 +28,7 @@ function fixture() {
     id: "user_one",
     banned: false,
     locked: false,
+    privateMetadata: {} as Record<string, unknown>,
     primaryEmailAddressId: "email_one",
     emailAddresses: [{ id: "email_one", verification: { status: "verified" } }],
   };
@@ -74,12 +75,12 @@ describe("Clerk Console trust boundary", () => {
     expect(p.role).toBe("admin");
     expect(p.operator).toBe(false);
   });
-  test("local operator is independent of organization role", async () => {
+  test("a stale local operator cannot grant global access", async () => {
     const f = fixture();
     f.local.role = "operator";
     f.state.orgId = "";
     const p = await f.verify(f.request());
-    expect(p.operator).toBe(true);
+    expect(p.operator).toBe(false);
     expect(p.customerID).toBeNull();
   });
   for (const field of ["iss", "azp", "sub", "sid"] as const)
@@ -140,7 +141,7 @@ describe("Clerk Console trust boundary", () => {
   });
   test("inactive customer and unsupported role deny", async () => {
     const f = fixture();
-    f.member.role = "org:operator";
+    f.member.role = "operator";
     await expect(f.verify(f.request())).rejects.toMatchObject({ status: 403 });
     f.member.role = "org:admin";
     f.deps.organization = async () => ({
@@ -209,4 +210,60 @@ test("explicit configured audience rejects missing or foreign claims before prov
   audience = ["other-app", "webdock-console"];
   expect((await verify(f.request())).userID).toBe("1001");
   expect(sessionReads).toBe(1);
+});
+
+
+test("organization role changes are applied on the next request with the same token", async () => {
+  const f = fixture();
+  expect((await f.verify(f.request())).role).toBe("admin");
+  f.member.role = "org:member";
+  expect((await f.verify(f.request())).role).toBe("member");
+  f.member.role = "org:admin";
+  expect((await f.verify(f.request())).role).toBe("admin");
+});
+
+test("missing or disabled organization mapping denies an otherwise verified member", async () => {
+  for (const mapping of [null, { id: "2001", customerID: "3001", active: true, enabled: false }]) {
+    const f = fixture();
+    f.deps.organization = async () => mapping;
+    await expect(f.verify(f.request())).rejects.toMatchObject({ status: 403 });
+  }
+});
+
+
+test("live Clerk metadata grants and revokes operator access independently of local roles", async () => {
+  const f = fixture();
+  f.user.privateMetadata.webdockRole = "operator";
+  for (const role of ["user", "operator", "legacy-role"]) {
+    f.local.role = role;
+    expect((await f.verify(f.request())).operator).toBe(true);
+  }
+  delete f.user.privateMetadata.webdockRole;
+  expect((await f.verify(f.request())).operator).toBe(false);
+});
+
+test("unknown private roles and spoofed public, unsafe or token metadata cannot grant operator", async () => {
+  const f = fixture();
+  f.local.role = "operator";
+  Object.assign(f.user, { unsafeMetadata: { webdockRole: "operator" }, publicMetadata: { webdockRole: "operator" } });
+  Object.assign(f.state, { privateMetadata: { webdockRole: "operator" }, role: "operator" });
+  for (const role of [undefined, null, "admin", "Operator", true, ["operator"], { role: "operator" }]) {
+    f.user.privateMetadata.webdockRole = role;
+    expect((await f.verify(f.request())).operator).toBe(false);
+  }
+});
+
+test("custom organization roles retain explicit permissions without becoming admin or operator", async () => {
+  const f = fixture();
+  f.member.role = "org:project_manager";
+  f.member.permissions = ["org:projects:manage", "org:deployments:create", "org:unknown:manage"];
+  expect(await f.verify(f.request())).toMatchObject({
+    role: "member", operator: false, permissions: ["org:projects:manage", "org:deployments:create"],
+  });
+  f.member.role = "org:operator";
+  expect(await f.verify(f.request())).toMatchObject({ role: "member", operator: false });
+  for (const role of ["", "admin", "org:", "org:admin:extra", "org:admin "]) {
+    f.member.role = role;
+    await expect(f.verify(f.request())).rejects.toMatchObject({ status: 403 });
+  }
 });

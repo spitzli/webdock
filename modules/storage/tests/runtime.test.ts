@@ -4,7 +4,7 @@ import { createStorageUsage, StorageUsageError } from "../src/server/usage.ts";
 import type { StoragePorts } from "../src/server/ports.ts";
 function ports(overrides: Partial<StoragePorts> = {}): StoragePorts {
   return {
-    currentConsolePrincipal: () => undefined,
+    identity: { session: async () => null, subject: async () => null, membership: async () => null },
     database: {
       query: async () => ({ rows: [], rowCount: 0 }),
       connect: async () => {
@@ -77,4 +77,39 @@ test("tenant membership cannot replace operator authority on storage mappings", 
     productionBytes: null,
     previewBytes: null,
   });
+});
+
+test("storage mutation rechecks provider operator authority inside its transaction", async () => {
+  let operator = true, removed = false;
+  const identity = {
+    subject: "123", role: "operator", banned: false, emailVerified: true,
+    mustChangePassword: false, twoFactorEnabled: false, operatorAuthorized: true,
+  };
+  const connection = {
+    release() {},
+    async query(sql: string) {
+      if (sql.includes('FROM webdock_auth."user"')) return { rows: [] };
+      if (sql.includes("FROM webdock_admin.customers")) return { rows: [{ id: "customer" }] };
+      if (sql.startsWith("DELETE")) removed = true;
+      return { rows: [], rowCount: 1 };
+    },
+  };
+  const runtime = createStorageUsage(ports({
+    getTenant: async () => ({ operator: true, tenant: { status: "active" } }),
+    identity: {
+      session: async () => ({ ...identity, role: operator ? "operator" : "user", operatorAuthorized: operator, sessionID: "456", preview: false }),
+      subject: async () => identity,
+      membership: async () => null,
+    },
+    database: {
+      query: async () => ({ rows: [{ id: "storage", revision: 1 }], rowCount: 1 }),
+      connect: async () => connection,
+    } as unknown as StoragePorts["database"],
+  }));
+  await runtime.manageTenantStorage(new Headers(), "customer", { action: "remove", storageID: "storage" });
+  assert.equal(removed, true);
+  operator = false;
+  removed = false;
+  await assert.rejects(runtime.manageTenantStorage(new Headers(), "customer", { action: "remove", storageID: "storage" }), StorageUsageError);
+  assert.equal(removed, false);
 });

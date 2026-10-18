@@ -17,28 +17,20 @@ export interface ProductOperation {
   ): Promise<unknown>;
   publicError(error: unknown): PublicOperationError | undefined;
 }
-async function load(module: ProductModule): Promise<ProductOperation> {
-  switch (module) {
-    case "mail":
-      return import("../mail/studio-operations");
-    case "storage":
-      return import("../platform/storage-operations");
-    case "cms":
-      return import("../cms-bridge/studio-operations");
-    case "hosting":
-    case "databases":
-      return import("./hosting-operations");
-  }
+let productLoader: ((module: ProductModule) => Promise<ProductOperation>) | undefined;
+export function configureProductOperations(loader: (module: ProductModule) => Promise<ProductOperation>) {
+  productLoader = loader;
 }
 /** Admission precedes importing any optional implementation, even for a denied call. */
 export async function loadProductOperation(
   operation: string,
   args: unknown[],
-  loader: (module: ProductModule) => Promise<ProductOperation> = load,
+  loader = productLoader,
 ): Promise<ProductOperation | undefined> {
   const module = moduleForOperation(operation, args);
   if (!module) return;
   requireInstalledOperation(operation, args);
   // Hosting's BYOK commands retain its transport's independent permission checks.
+  if (!loader) return;
   return loader(operation === "hosting.command" ? "hosting" : module);
 }

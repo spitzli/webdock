@@ -12,7 +12,6 @@ test("direct routes for all products fail closed independently from core registr
     "/tenants/12/hosting",
     "/tenants/12/databases",
     "/tenants/12/managed-databases",
-    "/sites/12/shop",
     "/tenants/12/storage",
   ])
     assert.equal(
@@ -29,17 +28,17 @@ test("direct routes for all products fail closed independently from core registr
 });
 test("draining serves existing pages while stale or unreachable session configuration denies access", async () => {
   assert.equal(
-    await guardModuleRoute(request("/sites/12"), async () => ({
+    await guardModuleRoute(request("/hosting/projects/12"), async () => ({
       status: 200,
       body: {
-        data: { installation: { revision: "1", modules: { cms: "draining" } } },
+        data: { installation: { revision: "1", modules: { hosting: "draining" } } },
       },
     })),
     undefined,
   );
   assert.equal(
     (
-      await guardModuleRoute(request("/sites/12"), async () => ({
+      await guardModuleRoute(request("/hosting/projects/12"), async () => ({
         status: 401,
         body: {},
       }))
@@ -48,7 +47,7 @@ test("draining serves existing pages while stale or unreachable session configur
   );
   assert.equal(
     (
-      await guardModuleRoute(request("/sites/12"), async () => {
+      await guardModuleRoute(request("/hosting/projects/12"), async () => {
         throw Error("offline");
       })
     )?.status,
@@ -58,9 +57,9 @@ test("draining serves existing pages while stale or unreachable session configur
 
 test("Clerk users without tenant access reach the pending page instead of an outage", async () => {
   const denied = async () => ({ status: 403, body: {} });
-  const result = await guardModuleRoute(request("/sites/12"), denied, true);
+  const result = await guardModuleRoute(request("/hosting/projects/12"), denied, true);
   assert.equal(result?.status, 307);
   assert.equal(result?.headers.get("location"), "/access-pending");
   assert.equal(result?.headers.get("cache-control"), "no-store");
-  assert.equal((await guardModuleRoute(request("/sites/12"), denied))?.status, 503);
+  assert.equal((await guardModuleRoute(request("/hosting/projects/12"), denied))?.status, 503);
 });

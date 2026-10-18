@@ -1,3 +1,4 @@
+import {browserAuthConfiguration} from "@/lib/browser-auth-config";
 import { AreaNavigation } from "@/components/area-navigation";
 import {LiveSearchForm} from "@webdock/search/form";
 import {uiLabel} from "@/lib/ui-labels";
@@ -15,6 +16,7 @@ export default async function People({
 }: {
   searchParams: Promise<{ q?: string; view?: string }>;
 }) {
+  if (browserAuthConfiguration.provider === "clerk") redirect("/admin/registry-users");
   const i18n = await getRequestI18n();
 
   const requestHeaders = await headers();

@@ -1,3 +1,4 @@
+import { selectedIdentityDirectory } from "../auth/principal";
 import { requireMail } from "../../installation";
 import { withAuthenticatedDatabase } from "../../db/database-context";
 import { database } from "../../db/runtime";
@@ -7,6 +8,7 @@ import { getPlatformSettings } from "../platform/platform";
 import { createNativeService } from "@webdock/module-mail/server/native-service";
 export const { getTenantMailService, manageTenantMailService } =
   createNativeService({
+    identity: selectedIdentityDirectory,
     requireMail,
     withAuthenticatedDatabase,
     database,

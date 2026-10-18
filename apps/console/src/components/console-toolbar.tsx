@@ -39,7 +39,7 @@ export async function ConsoleToolbar({
       preview={!!session.preview}
       navigation={
         <>
-          <Navigation operator={session.operator} preview={!!session.preview} />
+          <Navigation accountProvider={browserAuthConfiguration.provider} operator={session.operator} preview={!!session.preview} />
           <WorkspaceSidebar segments={segments} />
         </>
       }

@@ -5,17 +5,14 @@ import { RegistryError } from "./modules/registry/service";
 import { ZodError } from "zod";
 import Elysia from "elysia";
 import { randomUUID } from "node:crypto";
-import { fileURLToPath } from "node:url";
+import healthRoutes from "./routes/public/healthz";
 import type { ApiConfig } from "./config";
-import { loadRoutes } from "./route-preflight";
 import { validateMounts, type Mount } from "./route-manifest";
 export async function createApp(
   config: ApiConfig,
   dependencies: { ready?: () => Promise<void>; mounts?: Mount[] } = {},
 ) {
-  const routes = await loadRoutes(
-    fileURLToPath(new URL("./routes/public", import.meta.url)),
-  );
+  const publicRoutes = new Elysia().group("/healthz", app => app.use(healthRoutes));
   const readiness = new Elysia().get("/readyz", async () => {
     try {
       if (!dependencies.ready) throw Error("No readiness dependency");
@@ -26,7 +23,7 @@ export async function createApp(
     }
   });
   const mounts: Mount[] = [
-    { app: routes.app, host: config.apiOrigin, category: "public" },
+    { app: publicRoutes, host: config.apiOrigin, category: "public" },
     { app: readiness, host: config.apiOrigin, category: "public" },
     ...(dependencies.mounts || []),
   ];

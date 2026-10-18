@@ -1,4 +1,4 @@
-import type { User, Customer, Project, CmsInstance, AuditEvent } from "./types";
+import type { User, Customer, Project, AuditEvent } from "./types";
 import type { RegistryPool } from "./ports";
 import type { RegistryIdentity } from "./service";
 import type { createRegistryService } from "./service";
@@ -6,10 +6,9 @@ type Records = {
   users: User;
   customers: Customer;
   projects: Project;
-  "cms-instances": CmsInstance;
   "audit-events": AuditEvent;
 };
-type Options<C extends keyof Records> = {
+type Options<C extends string> = {
   collection: C;
   where?: unknown;
   id?: string;
@@ -21,29 +20,33 @@ type Options<C extends keyof Records> = {
   user?: unknown;
   overrideAccess?: boolean;
 };
-export type RegistryStore = {
+export type RegistryStore<Extensions extends Record<string, unknown> = {}> = {
   db: { pool: RegistryPool };
-  find<C extends keyof Records>(
+  find<C extends keyof (Records & Extensions) & string>(
     query: Options<C>,
   ): Promise<{
-    docs: Records[C][];
+    docs: (Records & Extensions)[C][];
     page: number;
     totalPages: number;
     totalDocs: number;
     hasNextPage: boolean;
   }>;
-  findByID<C extends keyof Records>(
+  findByID<C extends keyof (Records & Extensions) & string>(
     query: Options<C> & { id: string },
-  ): Promise<Records[C]>;
-  count<C extends keyof Records>(
+  ): Promise<(Records & Extensions)[C]>;
+  count<C extends keyof (Records & Extensions) & string>(
     query: Options<C>,
   ): Promise<{ totalDocs: number }>;
 };
-export function createRegistryStore(
+export function createRegistryStore<
+  Extensions extends Record<string, unknown> = {},
+>(
   service: Pick<ReturnType<typeof createRegistryService>, "query" | "raw">,
   identity: RegistryIdentity,
-): RegistryStore {
-  const clean = <C extends keyof Records>(query: Options<C>) => {
+): RegistryStore<Extensions> {
+  const clean = <C extends keyof (Records & Extensions) & string>(
+    query: Options<C>,
+  ) => {
     const { user, overrideAccess, ...options } = query;
     void user;
     void overrideAccess;

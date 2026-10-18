@@ -8,6 +8,7 @@ import {
 } from "./setup-clerk-revalidation";
 import {
   clerkActorSQL,
+  clerkLegacyActorSQL,
   clerkCustomerSQL,
   clerkSetupSQL,
   clerkBillingSQL,
@@ -265,7 +266,7 @@ END $$;
 CREATE OR REPLACE FUNCTION webdock_rls.operator() RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$ SELECT coalesce((webdock_rls.actor()->>'operator')::boolean,false) $$;
 CREATE OR REPLACE FUNCTION webdock_rls.subject() RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$ SELECT webdock_rls.actor()->>'subject' $$;
 CREATE OR REPLACE FUNCTION webdock_rls.portal_user() RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
- SELECT CASE WHEN count(*)=1 THEN jsonb_agg(jsonb_build_object('id',u.id,'name',u.name,'email',u.email,'role',u.role,'authSubject',u.auth_subject,'createdAt',u.created_at,'updatedAt',u.updated_at))->0 ELSE NULL END
+ SELECT CASE WHEN count(*)=1 THEN jsonb_agg(jsonb_build_object('id',u.id,'name',u.name,'email',u.email,'role','operator','authSubject',u.auth_subject,'createdAt',u.created_at,'updatedAt',u.updated_at))->0 ELSE NULL END
  FROM webdock_admin.users u WHERE u.auth_subject=webdock_rls.subject() AND u.role='operator' AND coalesce((webdock_rls.actor()->>'root')::boolean,false)
 $$;
 CREATE OR REPLACE FUNCTION webdock_rls.worker(purposes text[]) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$ SELECT coalesce(session_user='webdock_worker_runtime' AND webdock_rls.request_scope()->>'kind'='system' AND webdock_rls.request_scope()->>'purpose'=ANY(purposes),false) $$;
@@ -399,7 +400,7 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
   if (clerkReady) {
     identityHelpers = identityHelpers.replace(
       ' SELECT u.id,u.email,u.role,u."twoFactorEnabled" INTO actor_row',
-      clerkActorSQL +
+      clerkActorSQL + clerkLegacyActorSQL +
         ' SELECT u.id,u.email,u.role,u."twoFactorEnabled" INTO actor_row',
     );
     identityHelpers = identityHelpers.replace(
@@ -407,6 +408,11 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
       clerkCustomerSQL +
         " RETURN EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_admin.customers c ON c.id=t.customer_id JOIN webdock_auth.member",
     );
+  }
+  if (clerkReady) {
+    identityHelpers = identityHelpers.replace(" RETURN a->'preview'='null'::jsonb AND EXISTS(SELECT 1 FROM webdock_auth.member", " IF a ? 'clerk' OR webdock_rls.request_scope()->>'authProvider'='clerk' THEN RETURN false; END IF;\n RETURN a->'preview'='null'::jsonb AND EXISTS(SELECT 1 FROM webdock_auth.member");
+    identityHelpers = identityHelpers.replace("END $$;\nCREATE OR REPLACE FUNCTION webdock_rls.operator()", () => "EXCEPTION WHEN invalid_text_representation OR numeric_value_out_of_range OR invalid_parameter_value THEN RETURN NULL;\nEND $$;\nCREATE OR REPLACE FUNCTION webdock_rls.operator()");
+    identityHelpers = identityHelpers.replace("AND u.role='operator' AND coalesce((webdock_rls.actor()->>'root')::boolean,false)", "AND (webdock_rls.request_scope() ? 'clerk' OR webdock_rls.request_scope()->>'authProvider'='clerk' OR u.role='operator') AND coalesce((webdock_rls.actor()->>'root')::boolean,false)");
   }
   if (clerkReady)
     identityHelpers = identityHelpers.replace(
@@ -433,12 +439,12 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
               " RETURN EXISTS(\n SELECT 1 FROM webdock_auth.hosting_setup s",
           )
           .replace(
-            "m.role IN ('owner','admin')",
-            "webdock_rls.setup_legacy_permission(customer,'org:projects:manage') AND (coalesce(s.configuration->'database'->>'mode','none')='none' OR webdock_rls.setup_legacy_permission(customer,'org:databases:manage')) AND (coalesce(s.configuration->'source'->>'kind','template')<>'git' OR webdock_rls.setup_legacy_permission(customer,'org:deployments:create'))",
+            "((u.role='operator' AND u.\"twoFactorEnabled\") OR (u.role='user' AND m.role IN ('owner','admin') AND h.mode='selfservice'))",
+            "(CASE WHEN webdock_rls.request_scope()->>'authProvider'='clerk' THEN webdock_rls.setup_legacy_permission(customer,'operator') OR (h.mode='selfservice' AND webdock_rls.setup_legacy_permission(customer,'org:projects:manage') AND (coalesce(s.configuration->'database'->>'mode','none')='none' OR webdock_rls.setup_legacy_permission(customer,'org:databases:manage')) AND (coalesce(s.configuration->'source'->>'kind','template')<>'git' OR webdock_rls.setup_legacy_permission(customer,'org:deployments:create'))) ELSE ((u.role='operator' AND u.\"twoFactorEnabled\") OR (u.role='user' AND m.role IN ('owner','admin') AND h.mode='selfservice')) END)",
           )
           .replace(
             "IF proof IS NULL THEN RETURN true; END IF;",
-            "IF proof IS NULL THEN RETURN EXISTS(SELECT 1 FROM webdock_auth.hosting_setup s JOIN webdock_auth.\"user\" u ON u.id=s.actor->>'subject' WHERE s.id=webdock_rls.request_scope()->>'setupID' AND u.role='operator') OR webdock_rls.setup_legacy_permission(customer,permission); END IF;",
+            "IF proof IS NULL THEN RETURN CASE WHEN webdock_rls.request_scope()->>'authProvider'='clerk' THEN webdock_rls.setup_legacy_permission(customer,permission) ELSE true END; END IF;",
           )
       : setupHelperSQL,
   );
@@ -648,7 +654,9 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
                   "hosting_vercel_flow",
                 ].includes(t.name)
               ? ["org:projects:manage"]
-              : [];
+              : ["plan_offer", "tenant_subscription", "subscription_history"].includes(t.name)
+                ? ["org:billing:manage"]
+                : [];
       if (domains.length)
         write =
           "(" +

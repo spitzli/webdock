@@ -1,3 +1,4 @@
+import {getStudioSession} from "@/lib/studio-client";
 
 import { getRequestI18n } from '@webdock/i18n/next';
 import { headers } from "next/headers";
@@ -20,7 +21,7 @@ export default async function Administration() {
   }
   const [settings, connection] = await Promise.all([
     getPlatformSettings(),
-    getMailConnectionStatus(),
+    ["enabled", "draining"].includes((await getStudioSession())?.installation?.modules.mail ?? "") ? getMailConnectionStatus() : Promise.resolve(null),
   ]);
   return (
     <div className="access-page">
@@ -40,9 +41,6 @@ export default async function Administration() {
           }
         >{i18n.t("Account & security")}</Link>
       </header>
-      <p>
-        <Link className="button secondary" href="/admin/plans">{i18n.t("Plans and allowances")}</Link>
-      </p>
       <p><Link className="button secondary" href="/admin/registry-users">{i18n.t("Studio accounts")}</Link></p>
       <AdminForms settings={settings} connection={connection} />
       <p className="muted">{i18n.t("Only platform operators can change these settings. Tenant administrators manage their own tenant. Account registration remains invitation-only.")}</p>

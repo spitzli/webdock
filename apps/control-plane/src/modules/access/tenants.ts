@@ -1,7 +1,7 @@
 import {organizationCapabilities} from "../auth/organization-permissions";
-import {legacyClerkMemberships, linkedMembershipRole} from "../auth/clerk-provider";
+import {legacyClerkMemberships} from "../auth/clerk-provider";
 import {clerkTeamView, manageClerkTeam, linkedOrganization, linkClerkTeam} from "../auth/clerk-teams";
-import {currentConsolePrincipal, consoleMembership} from "../auth/principal";
+import {currentConsolePrincipal, consoleMembership, selectedIdentityDirectory} from "../auth/principal";
 import { getBusinessIdentity } from "../auth/business-identity";
 import { readCachedView } from "../../cache";
 import { AuthMailDeliveryError, withAuthMailDelivery } from "../auth/mail";
@@ -9,7 +9,6 @@ import { withAuthenticatedDatabase } from "../../db/database-context";
 import { randomBytes } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
 import type { PoolClient } from "pg";
-import { auth } from "../auth/auth";
 import { database, authDatabase } from "../../db/runtime";
 import { AccessError, websiteURL } from "./access-management";
 import { currentClaims } from "../auth/authorization";
@@ -69,23 +68,18 @@ const validID = (value: string) => {
 };
 async function actor(headers: Headers) {
   const session = await getBusinessIdentity(headers);
-  const user =
-    session &&
-    (
-      await database.query(
-        'SELECT id,email,role,banned,"emailVerified","mustChangePassword" FROM webdock_auth."user" WHERE id=$1',
-        [session.user.id],
-      )
-    ).rows[0];
-  if (!session || !user || user.banned || (!currentConsolePrincipal() && (!user.emailVerified || user.mustChangePassword)))
+  const user = session && await selectedIdentityDirectory.session(
+    database, { subject: session.user.id, sessionID: session.sessionID },
+  );
+  if (!session || !user || user.banned || !user.emailVerified || user.mustChangePassword)
     throw new AccessError("Sign in and complete account setup first.");
-  const operator = !(await businessOperator(user.id)).disabled;
+  const operator = !(await businessOperator(user.subject)).disabled;
   if (user.role !== "user" && !operator)
     throw new AccessError("Complete operator security setup first.");
   return {
-    id: user.id as string,
+    id: user.subject,
     sessionID: session.sessionID,
-    email: user.email as string,
+    email: session.user.email,
     operator,
   };
 }
@@ -102,6 +96,17 @@ async function tenantFor(
     if(!row || (!user.operator && (row.status!=="active" || !membership)))throw new AccessError("Tenant not found or access unavailable.");
     return {...row,member_role:membership?.role};
   }
+  const proof = await legacyClerkMemberships(user.id);
+  if (proof) {
+    const row = (await connection.query(
+      `SELECT ${columns},t.organization_id FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id WHERE c.id=$1`,
+      [validID(customerID)],
+    )).rows[0];
+    const member = row && proof.roles.find(member => member.customerID === customerID && member.organizationID === row.organization_id);
+    if (!row || (!user.operator && (row.status !== "active" || !member)))
+      throw new AccessError("Tenant not found or access unavailable.");
+    return { ...row, member_role: member?.role };
+  }
   const row = (
     await connection.query(
       `SELECT ${columns},t.organization_id,m.role AS member_role FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id LEFT JOIN webdock_auth.member m ON m."organizationId"=t.organization_id AND m."userId"=$2 WHERE c.id=$1 AND ($3 OR (c.status='active' AND m.id IS NOT NULL))`,
@@ -109,7 +114,6 @@ async function tenantFor(
     )
   ).rows[0];
   if (!row) throw new AccessError("Tenant not found or access unavailable.");
-  if(!user.operator){const role=await linkedMembershipRole(user.id,row.organization_id);if(role===null)throw new AccessError("Tenant not found or access unavailable.");if(role!==undefined)row.member_role=role;}
   return row;
 }
 export async function listTenants(headers: Headers) {
@@ -117,6 +121,18 @@ export async function listTenants(headers: Headers) {
     const user = await actor(headers);
     const principal=currentConsolePrincipal();
     if(principal)return (await database.query(`SELECT c.id,c.name,c.status,$3::text AS role FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id WHERE $1 OR (c.id=$2 AND c.status='active') ORDER BY c.name,c.id`,[user.operator,principal.customerID,principal.role])).rows.map(row => ({...row, ...(!user.operator ? {capabilities: organizationCapabilities(principal.permissions)} : {})}));
+    const proof = await legacyClerkMemberships(user.id);
+    if (proof) {
+      const rows = (await database.query(
+        `SELECT c.id,c.name,c.status,t.organization_id FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id WHERE $1 OR (c.status='active' AND c.id=ANY($2::varchar[])) ORDER BY c.name,c.id`,
+        [user.operator, proof.roles.map(member => member.customerID)],
+      )).rows;
+      return rows.flatMap(row => {
+        const member = proof.roles.find(member => member.customerID === row.id && member.organizationID === row.organization_id);
+        return user.operator || member ? [{ id: row.id, name: row.name, status: row.status, role: member?.role,
+          ...(!user.operator ? { capabilities: organizationCapabilities(member?.permissions) } : {}) }] : [];
+      });
+    }
     const rows = await readCachedView(
       { kind: "navigation", scope: {subject: user.id, sessionID: user.sessionID, operator: user.operator}, query: "tenant-membership-v2", ttlSeconds: 60 },
       async () => (await database.query("SELECT webdock_cache.version($1::text[]) AS version", [["webdock_admin.customers", "webdock_auth.user", "webdock_auth.member", "webdock_auth.tenant_customer"]])).rows[0].version,
@@ -125,16 +141,7 @@ export async function listTenants(headers: Headers) {
         [user.id, user.operator],
       )).rows,
     );
-    if(user.operator)return rows.map(({id,name,status,role})=>({id,name,status,role}));
-    const membershipProof = await legacyClerkMemberships(user.id);
-    const current = await Promise.all(rows.map(async row => {
-      const role = await linkedMembershipRole(user.id, row.organization_id);
-      const membership = membershipProof?.roles.find(member => member.organizationID === String(row.organization_id));
-      if (role === null) return null;
-      return {id: row.id, name: row.name, status: row.status, role: role ?? row.role,
-        ...(role !== undefined ? {capabilities: organizationCapabilities(membership?.permissions)} : {})};
-    }));
-    return current.filter(row=>row!==null);
+    return rows.map(({id,name,status,role})=>({id,name,status,role}));
   });
 }
 export async function listTenantInvitations(headers: Headers) {
@@ -463,8 +470,8 @@ export async function manageTenant(
       }
       if (["invite", "resend"].includes(input.action))
         await withAuthMailDelivery(() =>
-          tenantInvitationScope.run(tenant.organization_id, () =>
-            auth.api.createInvitation({
+          tenantInvitationScope.run(tenant.organization_id, async () =>
+            (await import("../auth/auth")).auth.api.createInvitation({
               headers,
               body: {
                 email,

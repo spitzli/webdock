@@ -2,11 +2,6 @@ import {registerPluginTools} from '../modules/plugins/exposure';
 import { withDatabaseScope } from "@webdock/database-runtime";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
-  registerHostingTools,
-  validateHostingMCPToken,
-} from "../modules/mcp/hosting-mcp";
-import { hostingTokenCall } from "../modules/mcp/hosting-client";
-import {
   introspectMCP,
   validateMCPToken,
   mcpOrigin,
@@ -29,9 +24,8 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
-  const hosting = validateHostingMCPToken(token, mcpResource(), mcpIssuer());
   const registry = validateMCPToken(token, mcpResource(), mcpIssuer());
-  if (!hosting && !registry) return challenge(401);
+  if (!registry) return challenge(401);
   const access = registry
     ? await authorizeRegistry(request, false, {
         authenticate: async () => registry,
@@ -70,7 +64,7 @@ export async function POST(request: Request) {
       { error: "Batch requests are not supported" },
       { status: 400 },
     );
-  const identity = registry || hosting!;
+  const identity = registry!;
   return withDatabaseScope(
     {
       kind: "session",
@@ -88,16 +82,6 @@ export async function POST(request: Request) {
       const server = access
         ? createRegistryMCP(access.actor, canWrite)
         : new McpServer({ name: "webdock-hosting", version: "1.0.0" });
-      if (hosting)
-        registerHostingTools(
-          server,
-          (cmd) =>
-            hostingTokenCall(
-              request.headers.get("authorization")!.slice(7),
-              cmd,
-            ),
-          hosting.scopes.has("hosting:write"),
-        );
       if (access) await registerPluginTools(server, canWrite);
       const transport = new WebStandardStreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
@@ -122,8 +106,7 @@ export async function GET(request: Request) {
   try {
     const token = await introspectMCP(request);
     if (
-      !validateMCPToken(token, mcpResource(), mcpIssuer()) &&
-      !validateHostingMCPToken(token, mcpResource(), mcpIssuer())
+      !validateMCPToken(token, mcpResource(), mcpIssuer())
     )
       return challenge(401);
     return new Response(null, {
