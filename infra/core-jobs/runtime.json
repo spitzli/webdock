@@ -126,6 +126,13 @@
                     "mountPath": "/data"
                   }
                 ],
+                "startupProbe": {
+                  "exec": {
+                    "command": ["redis-cli", "ping"]
+                  },
+                  "periodSeconds": 2,
+                  "failureThreshold": 60
+                },
                 "readinessProbe": {
                   "exec": {
                     "command": [
