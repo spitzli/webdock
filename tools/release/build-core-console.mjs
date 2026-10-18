@@ -3,6 +3,9 @@ import { resolve, relative, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
+export function coreRuntimeProductPath(path) {
+  return /(?:\/(?:modules\/(?:mail|hosting|databases|storage|cms|billing)|adapters\/(?:hosting|mail|database|storage))\/|\/packages\/(?:hosting-|mail-|database-contracts|payload-|page-builder)|\/@webdock\/(?:module-(?!sdk)|adapter-|hosting-|mail-|database-contracts|payload-|page-builder))/.test(path);
+}
 export function coreConsolePath(path) {
   if (path.split('/').some(part => part.startsWith('@'))) return true;
   const parts = path.replaceAll('\\','/').split('/').filter(part => part && !part.startsWith('(') && !part.startsWith('@'));

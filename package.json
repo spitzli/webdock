@@ -47,5 +47,6 @@
   "overrides": {
     "nodemailer": "10.0.13",
     "dompurify": "3.4.16"
-  }
+  },
+  "license": "AGPL-3.0-only"
 }

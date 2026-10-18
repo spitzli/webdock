@@ -9,6 +9,12 @@ The core installation runs three services: the bundled core API, the core Consol
 
 The default browser provider is local Better Auth. CMS and Billing are unavailable in the active core. Mail, Hosting, Databases and Storage require a separately configured full distribution or compatible plugins. No npm publication of a public `@webdock/core` package is implied by this container release.
 
+## License and alternative terms
+
+Original Webdock code is available under **AGPL-3.0-only**, including commercial use that complies with its conditions. If you modify the program and let users interact with it over a network, follow the license's corresponding-source requirements; a link to unmodified upstream code does not supply your modifications. Read the [complete license](https://github.com/spitzli/webdock/blob/main/LICENSE).
+
+Spitzli Development can separately agree commercial or special terms for code it owns or may sublicense. Only a separate written agreement grants those alternative rights; buying hosting or support does not automatically replace the AGPL. Third-party components retain their own licenses. See [commercial licensing](https://github.com/spitzli/webdock/blob/main/COMMERCIAL-LICENSING.md).
+
 ## Obtain the matching images
 
 The release contains nine image archives: `api-core`, `console-core`, `auth`, `migrate`, plus the full `api`, `console`, `worker`, `agent` and `mail-runtime` images. Verify the signed checksum list, expected signing identity, manifest and archive digests before importing artifacts. Use registry digests when registry images are available; otherwise import the verified OCI archives with an OCI-aware tool such as `skopeo`. Never substitute an unrelated moving tag.

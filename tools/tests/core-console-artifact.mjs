@@ -5,6 +5,7 @@ import { join, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
+import { coreRuntimeProductPath } from '../release/build-core-console.mjs';
 const root=resolve(fileURLToPath(new URL('../..',import.meta.url)));
 const source=resolve(process.argv[2] || join(root,'.core-build/console/.next/standalone'));
 const fixture=await mkdtemp(join(tmpdir(),'webdock-core-console-artifact-'));
@@ -20,7 +21,7 @@ try {
     return result;
   }
   const paths=await files(fixture);
-  assert.equal(paths.some(path=>/(?:\/modules\/(?:mail|hosting|databases|storage|cms)\/|\/packages\/(?:hosting-|mail-|database-contracts|payload-|page-builder)|\/@webdock\/(?:module-(?!sdk)|hosting-|mail-|database-contracts|payload-|page-builder))/.test(path)),false,'Standalone must not contain product packages');
+  assert.equal(paths.some(coreRuntimeProductPath),false,'Standalone must not contain product packages');
   const server=paths.find(path=>path.endsWith('/server.js')&&!path.includes('/node_modules/'));
   assert.ok(server);
   const port=await new Promise(resolvePort=>{const socket=createServer();socket.listen(0,'127.0.0.1',()=>{const port=socket.address().port;socket.close(()=>resolvePort(port));});});
