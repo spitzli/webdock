@@ -3,10 +3,95 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+import io
+import subprocess
+from types import SimpleNamespace
 from unittest.mock import patch
-from daemon import load_state, run_once
+from daemon import load_state, run_once, run_database_once
 
 class DaemonTests(unittest.TestCase):
+    def test_database_failure_diagnostic_only_contains_validated_identity_phase_and_class(self):
+        from test_databases import packet
+        p=packet();p['phase']='configure'
+        state={'endpoint':'https://control.invalid','clusterID':p['clusterID'],'generation':p['generation']}
+        failures=[RuntimeError('private-message-canary'),subprocess.TimeoutExpired(['private-command-canary'],60,output=b'private-output-canary',stderr=b'private-stderr-canary')]
+        for failure in failures:
+            stream=io.StringIO();completed=[]
+            def request(origin,state,route,body):
+                if route=='database-claim':return p
+                if route=='database-complete':completed.append(body)
+                return {'accepted':True}
+            def execute(value,checkpoint):
+                checkpoint(phase='configuring',cnpgUID='fixture')
+                raise failure
+            with self.subTest(exception=type(failure).__name__),patch('daemon.agent_request',side_effect=request),patch('databases.execute_database',side_effect=execute),patch('daemon.sys.stderr',stream):
+                result=run_database_once(state,{'capabilities':{'databaseVersion':1}},lambda:None)
+            self.assertEqual(result['outcome'],'needs-reconciliation')
+            self.assertEqual(json.loads(stream.getvalue()),{'event':'database-execution-failed','operationID':p['operationID'],'phase':'configuring','exception':type(failure).__name__})
+            self.assertNotIn('private-',stream.getvalue())
+            self.assertEqual(completed[0]['outcome'],'needs-reconciliation')
+            self.assertNotIn('error',completed[0])
+
+    def test_slow_database_stage_refreshes_real_heartbeat_before_guard_and_completion(self):
+        from test_databases import packet
+        for slow in [False,True]:
+            with self.subTest(slow=slow),tempfile.TemporaryDirectory() as directory:
+                path=self.state(directory);p=packet();p['clusterID']='123';p['phase']='configure'
+                clock=SimpleNamespace(value=0);beats=[];calls=[];collections=0
+                def collect():
+                    nonlocal collections
+                    collections+=1
+                    if collections>1:clock.value+=7
+                    return {'nodes':[],'capabilities':{'databaseVersion':1}}
+                def request(origin,state,route,body):
+                    calls.append((route,clock.value))
+                    if route=='heartbeat':
+                        beats.append(body['sequence'])
+                        self.assertEqual(body['generation'],1)
+                        self.assertEqual(load_state(path)['sequence'],body['sequence'])
+                    if route=='database-claim':return p
+                    if route in ['database-guard','database-complete']:
+                        last=max(value for name,value in calls if name=='heartbeat')
+                        self.assertLess(clock.value-last,20)
+                    if route=='claim':return None
+                    return {'valid':True}
+                def execute(value,checkpoint):
+                    checkpoint(phase='configuring',cnpgUID='fixture')
+                    clock.value=20 if slow else 5
+                    checkpoint()
+                    # A seven-second heartbeat must reset freshness after success, not before it.
+                    clock.value=40 if slow else 10
+                    checkpoint()
+                    clock.value=48 if slow else 15
+                    return {'state':'ready'}
+                with patch('daemon.time.monotonic',side_effect=lambda:clock.value),patch('daemon.collect_observation',side_effect=collect),patch('daemon.agent_request',side_effect=request),patch('databases.execute_database',side_effect=execute),patch('daemon.run_template_once',return_value=None):
+                    result=run_once(path)
+                self.assertEqual(result['outcome'],'succeeded')
+                self.assertEqual(beats,[1,2,3] if slow else [1])
+                self.assertEqual([value for route,value in calls if route=='database-guard'],[27,40] if slow else [5,10])
+                self.assertEqual(load_state(path)['generation'],1)
+                self.assertEqual(load_state(path)['credential'],'a'*43)
+
+    def test_failed_observation_refresh_blocks_next_effect_and_completion(self):
+        from test_databases import packet
+        with tempfile.TemporaryDirectory() as directory:
+            path=self.state(directory);p=packet();p['clusterID']='123';p['phase']='configure'
+            clock=SimpleNamespace(value=0);calls=[];effects=[];stream=io.StringIO()
+            def request(origin,state,route,body):
+                calls.append(route)
+                if route=='database-claim':return p
+                return {'valid':True}
+            def execute(value,checkpoint):
+                clock.value=21;checkpoint();effects.append('sql')
+            observed={'nodes':[],'capabilities':{'databaseVersion':1}}
+            with patch('daemon.time.monotonic',side_effect=lambda:clock.value),patch('daemon.collect_observation',side_effect=[observed,RuntimeError('private-NotReady-detail')]) as collect,patch('daemon.agent_request',side_effect=request),patch('databases.execute_database',side_effect=execute),patch('daemon.sys.stderr',stream):
+                with self.assertRaises(RuntimeError):run_once(path)
+            self.assertEqual(collect.call_count,2)
+            self.assertEqual(effects,[])
+            self.assertNotIn('database-guard',calls);self.assertNotIn('database-complete',calls)
+            self.assertEqual(load_state(path)['sequence'],1)
+            self.assertNotIn('private-',stream.getvalue())
+
     def state(self,directory):
         path=Path(directory)/'connection.json'
         path.write_text(json.dumps({'endpoint':'https://auth.webdock.dev','clusterID':'123','credential':'a'*43,'generation':1,'sequence':0}))

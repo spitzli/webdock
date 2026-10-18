@@ -26,8 +26,8 @@ printf '{"copySHA256":"%s"}\\n' "$(sha256sum /tmp/source-counts | cut -d ' ' -f1
 """
 
 
-def validate_migration(p):
-    db.validate_packet(p)
+def validate_migration(p,*,check_lease=True):
+    db.validate_packet(p,check_lease=check_lease)
     m=p.get('migration')
     if p['action']!='migrate' or not p['database'] or not isinstance(m,dict) or set(m)!={'id','source','transferPassword','jobUID','copySHA256'}:raise ValueError('Invalid migration packet')
     db.identifier(m['id']);s=m['source'];db.identifier(s['id'])
@@ -41,7 +41,7 @@ def validate_migration(p):
 
 
 def migration_job(p,config,source_ca,target_ca):
-    validate_migration(p);m=p['migration'];b=p['backend'];d=p['database'];name='migration-'+m['id'];ns=b['namespace'];role=db.role_names(d['id'])[1]
+    validate_migration(p,check_lease=False);m=p['migration'];b=p['backend'];d=p['database'];name='migration-'+m['id'];ns=b['namespace'];role=db.role_names(d['id'])[1]
     labels={'webdock.dev/database-installation':b['id'],'webdock.dev/database-migration':m['id'],'webdock.dev/operation-id':p['operationID']}
     meta={'name':name,'namespace':ns,'labels':labels}
     source_host='postgres-rw.'+m['source']['namespace']+'.svc';target_host='postgres-rw.'+ns+'.svc'
@@ -89,10 +89,10 @@ def execute_migration(p,checkpoint,config):
         size=int(db.sql(source,f"SELECT pg_catalog.pg_database_size('{d['name']}')"))
         if size>b['resources']['volumeBytes']*.7:raise ValueError('Source exceeds qualified target headroom')
         target_sql=db.sql_configuration(p);guard();db.sql(p,target_sql['roles'])
-        if not db.database_exists(p):db.sql(p,target_sql['create']);db.sql(p,target_sql['mark'])
-        guard();db.sql(p,target_sql['database']);db.sql(p,target_sql['schema'],d['name'])
+        if not db.database_exists(p):guard();db.sql(p,target_sql['create']);guard();db.sql(p,target_sql['mark'])
+        guard();db.sql(p,target_sql['database']);guard();db.sql(p,target_sql['schema'],d['name'])
         # Only the private transfer credential can use this temporary, DB-local privilege.
-        db.sql(p,f'GRANT CREATE ON DATABASE "{d["name"]}" TO "{migration}";')
+        guard();db.sql(p,f'GRANT CREATE ON DATABASE "{d["name"]}" TO "{migration}";')
         app=db.role_names(d['id'])[2]
         guard();db.sql(p,'BEGIN;'+target_sql['enable']+f'ALTER ROLE "{app}" NOLOGIN; COMMIT;')
         guard();db.kubectl('patch','cluster','postgres','-n',ns,'--type=merge','-p',json.dumps({'spec':{'postgresql':{'pg_hba':db.hba(p)}}}))
@@ -123,8 +123,8 @@ def execute_migration(p,checkpoint,config):
             guard();db.sql(source,db.sql_configuration(source)['disable'])
         _,migration,app=db.role_names(d['id']);guard()
         db.sql(p,db.sql_configuration(p)['schema'],d['name'])
-        db.sql(p,f'GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA app TO "{app}"; GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA app TO "{app}";',d['name'])
-        db.sql(p,f'REVOKE CREATE ON DATABASE "{d["name"]}" FROM "{migration}"; ALTER ROLE "{app}" LOGIN;')
+        guard();db.sql(p,f'GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA app TO "{app}"; GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA app TO "{app}";',d['name'])
+        guard();db.sql(p,f'REVOKE CREATE ON DATABASE "{d["name"]}" FROM "{migration}"; ALTER ROLE "{app}" LOGIN;')
         if source['backend']['kind']=='dedicated':
             guard();db.kubectl('annotate','cluster','postgres','-n',source['backend']['namespace'],'cnpg.io/hibernation=on','--overwrite')
         checkpoint(phase='observing',cnpgUID=uid,migrationJobUID=job['metadata']['uid'],copySHA256=proof['copySHA256']);return None

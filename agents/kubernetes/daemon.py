@@ -66,7 +66,7 @@ def run_once(path):
     path=Path(path)
     state=load_state(path)
     observation=heartbeat(path,state)
-    database = run_database_once(state, observation)
+    database = run_database_once(state, observation, lambda: heartbeat(path,state))
     try:template = run_template_once(state)
     except Exception:
         # Template authorization/transport failures must not starve unrelated lanes.
@@ -114,7 +114,17 @@ def run_template_once(state):
     return {'event':'template-operation','id':packet['operationID'],'outcome':result['outcome']}
 
 
-def run_database_once(state, observation):
+def run_database_once(state, observation, refresh):
+    # Refresh real observations between slow SQL calls without a second polling thread.
+    last_refresh=time.monotonic();refresh_failed=False
+    def refresh_if_due():
+        nonlocal last_refresh,refresh_failed
+        if time.monotonic()-last_refresh>=20:
+            try:refresh()
+            except Exception:
+                refresh_failed=True
+                raise
+            last_refresh=time.monotonic()
     if observation.get('capabilities',{}).get('databaseVersion')!=1:return None
     from databases import execute_database,validate_packet
     packet=agent_request(state['endpoint'],state,'database-claim',{})
@@ -126,13 +136,24 @@ def run_database_once(state, observation):
     validate_packet(packet)
     if packet['clusterID']!=state['clusterID'] or packet['generation']!=state['generation']:raise ValueError('Database operation belongs to another agent')
     identity={k:packet[k] for k in ['operationID','generation','leaseToken']}
+    phase=packet['phase']
     def checkpoint(**value):
-        return agent_request(state['endpoint'],state,'database-checkpoint' if value else 'database-guard',{**identity,**value})
+        nonlocal phase
+        refresh_if_due()
+        result=agent_request(state['endpoint'],state,'database-checkpoint' if value else 'database-guard',{**identity,**value})
+        phase=value.get('phase',phase)
+        return result
     try:
         proof=execute_database(packet,checkpoint)
-        if proof is None:return {'event':'database-pending','id':packet['operationID']}
+        if proof is None:
+            refresh_if_due()
+            return {'event':'database-pending','id':packet['operationID']}
         result={'outcome':'succeeded','proof':proof}
-    except Exception:result={'outcome':'needs-reconciliation'}
+    except Exception as error:
+        print(json.dumps({'event':'database-execution-failed','operationID':packet['operationID'],'phase':phase,'exception':type(error).__name__}),file=sys.stderr)
+        if refresh_failed:raise
+        result={'outcome':'needs-reconciliation'}
+    refresh_if_due()
     completed=agent_request(state['endpoint'],state,'database-complete',{**identity,**result})
     if completed.get('pending'):return {'event':'database-pending','id':packet['operationID']}
     return {'event':'database-operation','id':packet['operationID'],'outcome':result['outcome']}
