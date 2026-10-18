@@ -4,16 +4,26 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps/auth",
+    "apps/console",
+    "apps/control-plane",
+    "apps/build-worker",
+    "apps/database-gateway",
+    "apps/mail",
+    "apps/website",
+    "packages/*",
+    "modules/*",
+    "adapters/*/*",
+    "integrations/*"
   ],
   "engines": {
     "node": "24.x"
   },
   "scripts": {
     "dev": "npm run dev -w @webdock/web",
+    "setup:admin": "bun --no-env-file tools/migrations/operator-setup-cli.ts",
     "dev:admin": "npm run dev -w @webdock/admin",
-    "build": "npm run build -w @webdock/web && npm run build -w @webdock/admin && npm run build -w @webdock/auth && npm run build -w @webdock/cms",
+    "build": "npm run build -w @webdock/web && npm run build -w @webdock/admin && npm run build -w @webdock/auth",
     "build:web": "npm run build -w @webdock/web",
     "build:admin": "npm run build -w @webdock/admin",
     "lint": "npm run lint --workspaces --if-present",
@@ -24,9 +34,15 @@
     "test:auth": "npm run test -w @webdock/auth",
     "test:sso": "node --import tsx --test packages/payload-sso/src/index.test.ts",
     "test:cms-ui": "node --import tsx --test packages/cms-ui/src/server.test.ts",
-    "test:cms-integration": "node --env-file=apps/admin/.env.test.local --import tsx --test packages/cms-ui/src/integration.test.ts",
+    "test:cms-integration": "node --env-file=apps/console/.env.test.local --import tsx --test packages/cms-ui/src/integration.test.ts",
     "test:api": "npm run test -w @webdock/api",
-    "build:api": "npm run build -w @webdock/api"
+    "build:api": "npm run build -w @webdock/api",
+    "test:modules": "node tools/tests/modules.mjs",
+    "test:distribution": "node --test tools/release/manifest.test.mjs && python3 tools/release/check-charts.py",
+    "test:plugin-jobs": "node tools/plugins/test-jobs.mjs",
+    "build:core": "npm run build:core -w @webdock/api",
+    "test:core-boundary": "node tools/tests/core-product-free.mjs && node tools/tests/core-routes-artifact.mjs",
+    "build:core:console": "node tools/release/build-core-console.mjs"
   },
   "overrides": {
     "nodemailer": "10.0.13",

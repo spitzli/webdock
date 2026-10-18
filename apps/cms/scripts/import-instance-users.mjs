@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import {parseEnv} from 'node:util';
 import {Pool} from 'pg';
 const schema=process.argv[2];
-const paths={webdock:'../web',stall:'/home/newt/Projekte/Personal/spitzli-backup-roelfs-20261002/stall-eichenbruch'};
+const paths={webdock:'../website',stall:'/home/newt/Projekte/Personal/spitzli-backup-roelfs-20261002/stall-eichenbruch'};
 if(!paths[schema])throw Error('Choose webdock or stall; Spitzli importer includes its users.');
 const env=parseEnv(fs.readFileSync(`${paths[schema]}/.env.instance`,'utf8'));
 const pool=new Pool({connectionString:env.DATABASE_URL_UNPOOLED,max:1});

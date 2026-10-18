@@ -1,0 +1,37 @@
+{
+  "name": "@webdock/module-hosting",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./manifest": "./src/manifest.ts",
+    "./providers": "./src/providers.ts",
+    "./server/*": "./src/server/*.ts",
+    "./github": "./src/github.ts",
+    "./ui/*": "./src/ui/*.tsx",
+    "./ui/form-state": "./src/ui/form-state.ts",
+    "./ui/setup-view": "./src/ui/setup-view.ts",
+    "./ui/scope": "./src/ui/scope.ts",
+    "./ui-types": "./src/ui-types.ts",
+    "./ui/services": "./src/ui/services.ts"
+  },
+  "dependencies": {
+    "@webdock/module-sdk": "*",
+    "@webdock/core": "*",
+    "@webdock/hosting-contracts": "*",
+    "@webdock/database-runtime": "*",
+    "@webdock/mail-contracts": "*",
+    "@webdock/i18n": "*",
+    "@webdock/search": "*",
+    "pg": "8.16.3",
+    "ipaddr.js": "2.3.0",
+    "zod": "4.6.5",
+    "@webdock/hosting-provider-contracts": "*",
+    "@webdock/console-kit": "*",
+    "@webdock/database-contracts": "*"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "next": ">=16"
+  }
+}

@@ -1,0 +1,1 @@
+{"name":"@webdock/integration-tabularis-web","version":"0.1.0","private":true,"type":"module","exports":{"./policy":"./src/policy.ts","./launch":"./src/launch.ts"},"dependencies":{"@webdock/database-contracts":"*","@webdock/module-databases":"*","zod":"4.6.5"}}

@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "enabled",
+    "image",
+    "existingSecret",
+    "tabularisCommit",
+    "managedRuntimes",
+    "runtimeCapacity",
+    "resources",
+    "networkPolicy",
+    "runtimeCAConfigMap"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean"
+    },
+    "image": {
+      "type": "string"
+    },
+    "existingSecret": {
+      "type": "string"
+    },
+    "tabularisCommit": {
+      "const": "fdd6c0a6f979ede0acb38415fa12b25c04aa9c4e"
+    },
+    "managedRuntimes": {
+      "type": "boolean"
+    },
+    "runtimeCapacity": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 64
+    },
+    "resources": {
+      "type": "object",
+      "required": [
+        "requests",
+        "limits"
+      ]
+    },
+    "networkPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ingress",
+        "egress"
+      ],
+      "properties": {
+        "ingress": {
+          "type": "array"
+        },
+        "egress": {
+          "type": "array"
+        }
+      }
+    },
+    "runtimeCAConfigMap": {
+      "type": "string",
+      "pattern": "^$|^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$"
+    }
+  },
+  "if": {
+    "properties": {
+      "enabled": {
+        "const": true
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "image": {
+        "pattern": "^.+@sha256:[a-f0-9]{64}$"
+      },
+      "existingSecret": {
+        "minLength": 1,
+        "pattern": "^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$"
+      }
+    }
+  }
+}

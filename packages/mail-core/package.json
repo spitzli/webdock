@@ -12,7 +12,8 @@
     "./submission-proof": "./src/submission-proof.ts"
   },
   "dependencies": {
-    "pg": "8.16.3"
+    "pg": "8.16.3",
+    "@webdock/module-mail": "*"
   },
   "devDependencies": {
     "@types/pg": "^8"

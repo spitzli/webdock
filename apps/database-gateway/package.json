@@ -15,7 +15,8 @@
   "dependencies": {
     "@webdock/database-contracts": "*",
     "tsx": "^4.23.15",
-    "ws": "8.22.0"
+    "ws": "8.22.0",
+    "@webdock/integration-tabularis-web": "*"
   },
   "devDependencies": {
     "@types/node": "^24",

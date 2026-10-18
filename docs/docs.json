@@ -96,6 +96,7 @@
             "group": "Operate Webdock",
             "pages": [
               "developers/self-hosting",
+              "developers/core-distribution",
               "developers/initial-setup",
               "developers/modules",
               "developers/auth-adapters"

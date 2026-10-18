@@ -1,0 +1,8 @@
+FROM registry.k8s.io/kubectl:v1.36.0 AS kubectl
+FROM python:3.13.12-slim-bookworm
+WORKDIR /app
+COPY --from=kubectl /bin/kubectl /usr/local/bin/kubectl
+COPY agents/kubernetes/*.py ./
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 WEBDOCK_KUBECTL_CACHE_DIR=/tmp/kube-cache
+USER 65532:65532
+ENTRYPOINT ["python3", "daemon.py", "--byok", "--credentials", "/state/connection.json"]

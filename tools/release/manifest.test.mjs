@@ -1,0 +1,202 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { mkdtemp, writeFile, readFile, cp, rm, mkdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import {
+  createManifest,
+  verifyManifest,
+  validateVersion,
+  validateEvidence,
+  images,
+  databaseImages,
+  databaseExecutionChecks,
+  executionChecks,
+  inspectOCIArchive,
+} from "./manifest.mjs";
+const revision = "a".repeat(40);
+const evidence = {
+  schemaVersion: 1,
+  revision,
+  platform: "linux/amd64",
+  runnerPlatform: "linux/amd64",
+  emulated: false,
+  checks: executionChecks.map((name) => ({ name, passed: true })),
+  imageIndexDigests: Object.fromEntries(
+    images.map((name) => [name, "sha256:" + "0".repeat(64)]),
+  ),
+};
+async function fixture(dir) {
+  const root = join(dir, "oci");
+  await mkdir(join(root, "blobs/sha256"), { recursive: true });
+  const blob = async (value, mediaType) => {
+    const data = Buffer.from(JSON.stringify(value)),
+      hash = createHash("sha256").update(data).digest("hex");
+    await writeFile(join(root, "blobs/sha256", hash), data);
+    return { mediaType, digest: "sha256:" + hash, size: data.length };
+  };
+  const config = await blob(
+    { architecture: "amd64", os: "linux" },
+    "application/vnd.oci.image.config.v1+json",
+  );
+  const manifest = await blob(
+    { schemaVersion: 2, config, layers: [] },
+    "application/vnd.oci.image.manifest.v1+json",
+  );
+  await writeFile(
+    join(root, "index.json"),
+    JSON.stringify({
+      schemaVersion: 2,
+      manifests: [
+        { ...manifest, platform: { os: "linux", architecture: "amd64" } },
+      ],
+    }),
+  );
+  for (const name of images)
+    execFileSync("tar", [
+      "-cf",
+      join(dir, name + ".oci.tar"),
+      "-C",
+      root,
+      "index.json",
+      "blobs",
+    ]);
+  for (const name of ["webdock", "webdock-agent"])
+    await writeFile(join(dir, `${name}-0.1.0.tgz`), name);
+  await writeFile(
+    join(dir, "architecture-evidence.json"),
+    JSON.stringify({
+      ...evidence,
+      imageIndexDigests: Object.fromEntries(
+        images.map((name) => [
+          name,
+          inspectOCIArchive(join(dir, name + ".oci.tar")).indexDigest,
+        ]),
+      ),
+    }),
+  );
+}
+test("release OCI identities, proof and checksums round-trip; tampering fails", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "webdock-release-"));
+  try {
+    assert.throws(() => validateVersion("../bad"));
+    await fixture(dir);
+    const manifest = await createManifest(dir, "0.1.0", revision);
+    assert.equal((await verifyManifest(dir)).artifacts.length, 9);
+    assert.match(
+      manifest.artifacts.find((a) => a.kind === "oci-image").oci.indexDigest,
+      /^sha256:/,
+    );
+    await writeFile(join(dir, "api.oci.tar"), "tampered");
+    await assert.rejects(verifyManifest(dir), /mismatch/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+test("unsupported or unexecuted architecture, missing checks, artifacts and proof cannot release", async () => {
+  for (const bad of [
+    { ...evidence, emulated: true },
+    { ...evidence, runnerPlatform: "linux/arm64" },
+    { ...evidence, checks: [] },
+    { ...evidence, revision: "b".repeat(40) },
+  ])
+    assert.throws(() => validateEvidence(bad, revision));
+  const dir = await mkdtemp(join(tmpdir(), "webdock-release-"));
+  try {
+    await fixture(dir);
+    await rm(join(dir, "architecture-evidence.json"));
+    await assert.rejects(createManifest(dir, "0.1.0", revision));
+    await writeFile(
+      join(dir, "architecture-evidence.json"),
+      JSON.stringify({
+        ...evidence,
+        platform: "linux/arm64",
+        runnerPlatform: "linux/arm64",
+      }),
+    );
+    await assert.rejects(
+      createManifest(dir, "0.1.0", revision),
+      /architecture/,
+    );
+    await fixture(dir);
+    await rm(join(dir, "api.oci.tar"));
+    await assert.rejects(createManifest(dir, "0.1.0", revision), /Missing api/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+test("manifest cannot add unsupported architecture or substitute OCI digest", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "webdock-release-"));
+  try {
+    await fixture(dir);
+    const manifest = await createManifest(dir, "0.1.0", revision);
+    manifest.supportedArchitectures.push("linux/arm64");
+    await writeFile(join(dir, "manifest.json"), JSON.stringify(manifest));
+    await assert.rejects(verifyManifest(dir), /architecture/);
+    manifest.supportedArchitectures.pop();
+    manifest.artifacts[0].oci.indexDigest = "sha256:" + "0".repeat(64);
+    await writeFile(join(dir, "manifest.json"), JSON.stringify(manifest));
+    await assert.rejects(verifyManifest(dir), /OCI/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("optional database artifacts require pinned source, gateway execution proof and matching chart", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "webdock-database-release-"));
+  try {
+    await fixture(dir);
+    const proof = JSON.parse(
+      await readFile(join(dir, "architecture-evidence.json"), "utf8"),
+    );
+    for (const name of databaseImages) {
+      await cp(join(dir, "api.oci.tar"), join(dir, name + ".oci.tar"));
+      proof.imageIndexDigests[name] = inspectOCIArchive(
+        join(dir, name + ".oci.tar"),
+      ).indexDigest;
+    }
+    await writeFile(
+      join(dir, "architecture-evidence.json"),
+      JSON.stringify(proof),
+    );
+    await assert.rejects(
+      createManifest(dir, "0.1.0", revision),
+      /Unexpected artifact/,
+    );
+    proof.databaseRuntime = {
+      sourceCommit: "b".repeat(40),
+      sourceTree: "c".repeat(40),
+      sourceImage: "registry.example/tabularis@sha256:" + "d".repeat(64),
+    };
+    await writeFile(
+      join(dir, "architecture-evidence.json"),
+      JSON.stringify(proof),
+    );
+    await assert.rejects(
+      createManifest(dir, "0.1.0", revision),
+      /execution check/,
+    );
+    proof.checks.push(
+      ...databaseExecutionChecks.map((name) => ({ name, passed: true })),
+    );
+    await writeFile(
+      join(dir, "architecture-evidence.json"),
+      JSON.stringify(proof),
+    );
+    await assert.rejects(
+      createManifest(dir, "0.1.0", revision),
+      /Missing webdock-databases chart/,
+    );
+    await writeFile(join(dir, "webdock-databases-0.1.0.tgz"), "chart fixture");
+    const manifest = await createManifest(dir, "0.1.0", revision);
+    assert.equal(
+      manifest.databaseRuntime.sourceCommit,
+      proof.databaseRuntime.sourceCommit,
+    );
+    assert.equal((await verifyManifest(dir)).artifacts.length, 12);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

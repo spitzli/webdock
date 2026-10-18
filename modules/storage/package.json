@@ -1,0 +1,22 @@
+{
+  "name": "@webdock/module-storage",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./manifest": "./src/manifest.ts",
+    "./server/*": "./src/server/*.ts",
+    "./ui/*": "./src/ui/*.tsx"
+  },
+  "dependencies": {
+    "@webdock/module-sdk": "*",
+    "@webdock/core": "*",
+    "@webdock/i18n": "*"
+  },
+  "devDependencies": {
+    "@types/pg": "^8"
+  },
+  "peerDependencies": {
+    "react": "^19"
+  }
+}

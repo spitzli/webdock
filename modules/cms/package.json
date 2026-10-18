@@ -1,0 +1,20 @@
+{
+  "name": "@webdock/module-cms",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./manifest": "./src/manifest.ts",
+    "./ui": "./src/ui.ts",
+    "./server/*": "./src/server/*.ts"
+  },
+  "dependencies": {
+    "@webdock/module-sdk": "*",
+    "@webdock/i18n": "*",
+    "@webdock/page-builder": "*",
+    "@webdock/core": "*",
+    "@webdock/platform-db": "*",
+    "drizzle-orm": "1.0.0-rc.4",
+    "zod": "4.6.5"
+  }
+}

@@ -11,7 +11,6 @@
     "payload": "4.0.0-canary.37"
   },
   "dependencies": {
-    "openid-client": "6.8.8",
-    "iron-session": "^8.0.4"
+    "@webdock/oauth-session": "*"
   }
 }

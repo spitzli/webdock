@@ -1,0 +1,23 @@
+# Fresh installation onboarding boundary
+
+`tools/migrations/operator.ts` is a one-shot offline initial-operator and Console-client provisioner. It imports neither the application Auth singleton nor its offline privilege context. A dedicated `webdock_offline_migrate` connection verifies its database target and session role, takes the migration advisory lock, enters `webdock_platform_owner` for the transaction and locks identity/client tables before checking prerequisites.
+
+The command refuses any existing operator in either local Auth or the registry projection, a prior `operator.bootstrap` audit record, a case-insensitive email collision in either identity store, and existing OAuth clients/bindings. It never promotes or email-links existing users. Database-generated Snowflake IDs identify the new Auth user, account, registry projection, client and binding. The projection uses the explicit newly created `auth_subject`, which is necessary because the portal rejects unmapped operators even when customer-reader sessions allow unmapped users.
+
+The initial password is hashed with the installed Better Auth crypto implementation. Bootstrap refuses unsupported OAuth SDK versions and a baseline checksum different from the packaged artifact. Email verification is an explicit trusted offline-administrator assertion; the local user starts with `mustChangePassword=true` and `twoFactorEnabled=false`. No session, MFA secret, recovery code or provider account is created. Both initial user and client creation are audited in the same transaction.
+
+## OAuth compatibility
+
+The SQL client contract matches oauth-provider 1.7.7 with JWT enabled: SHA-256 UTF-8 client-secret digest encoded as unpadded base64url, `client_secret_post`, authorization-code grants, PKCE, `openid profile email`, skip consent and end-session support. The callback and logout URLs remain on the exact Studio protocol origin. The Auth issuer and Console origin are recorded separately. Customer portal membership continues using the normal global Console client; an operator-only client restriction is not substituted for the existing tenant-reader contract.
+
+The client metadata stores a versioned, canonical specification checksum and the initial operator ID alongside `webdock_binding`. The checksum excludes both user password and generated secrets. Repeating setup refuses rather than duplicating or rebinding records. Changes to the installed SDK contract require updating the contract tests and explicit bootstrap implementation together.
+
+Private JSON inputs reject symlinks, excessive size, foreign ownership and group/other permissions. The new output file is created exclusively at mode 0600 and synced before COMMIT. It contains generated client and cookie secrets but never the user's password. Failures before attempting COMMIT roll back and remove the unfinished output; an uncertain commit retains the output for explicit inspection. No raw database diagnostics or secret values are printed.
+
+## Actual first-login flow
+
+The standalone Auth UI supports direct `/sign-in`, then `/account` for real password replacement and TOTP enrollment/verification. The existing Auth policy blocks operator claims until password setup and MFA finish. The registered Console client then uses normal authorization-code/PKCE/token introspection with the explicit registry user mapping. HTTP/DNS/TLS ingress, the UI build's public origin and allowed-action origins, API ingress verification, role URLs, signing keys and system authentication SMTP remain deployment configuration.
+
+The optional `WEBDOCK_TEST_OPERATOR=true bun test tools/migrations/operator.integration.test.ts` creates a separately labelled, isolated PostgreSQL 18 Docker fixture. It installs the empty schema, exercises the dedicated offline role, checks collision/repeat refusal and secret output, verifies no initial session/MFA material exists, and invokes the real Auth handlers for password change, MFA enrollment and confidential PKCE OAuth. It never uses production endpoints or modifies other fixture containers. Unit tests verify private input permissions, canonical origins, target validation, checksum semantics and the installed SDK secret-hashing implementation.
+
+This is not a completed production rollout or proof that a particular custom hostname deployment works. New installations must validate their configured Auth/Studio/Console routes and browser build separately. External identity-provider account mapping is a separate explicit operation, not an email-based side effect of this local bootstrap.

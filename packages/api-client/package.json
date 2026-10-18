@@ -11,8 +11,9 @@
     "./integrations": "./src/integration-contracts.ts",
     "./registry": "./src/registry-types.ts",
     "./lifecycle": "./src/lifecycle-contracts.ts",
-    "./billing": "./src/billing-contracts.ts",
-    "./flow-cookies": "./src/flow-cookies.ts"
+    "./flow-cookies": "./src/flow-cookies.ts",
+    "./integration-callbacks": "./src/integration-callbacks.ts",
+    "./integration-resume": "./src/integration-resume.ts"
   },
   "scripts": {
     "test": "node --import tsx --test src/*.test.ts"
@@ -21,6 +22,8 @@
     "@webdock/mail-core": "*",
     "@webdock/hosting-contracts": "*",
     "@webdock/database-contracts": "*",
-    "@webdock/mail-contracts": "*"
+    "@webdock/mail-contracts": "*",
+    "@webdock/core": "*",
+    "@webdock/module-cms": "*"
   }
 }

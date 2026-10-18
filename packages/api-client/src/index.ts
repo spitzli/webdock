@@ -2,7 +2,7 @@ type Fetch = (
   input: string | URL | Request,
   init?: RequestInit,
 ) => Promise<Response>;
-function checkedOrigin(value: string) {
+export function checkedOrigin(value: string) {
   const url = new URL(value);
   if (
     url.username ||
@@ -31,16 +31,29 @@ export function sessionCookies(raw: string): string {
     )
     .join("; ");
 }
+/** Provider integration state is not browser authentication and may accompany the selected bearer. */
+export function integrationCookies(raw: string): string {
+  return raw
+    .split(";")
+    .map((part) => part.trim())
+    .filter((part) =>
+      /^(?:__Host-)?webdock-(?:github|github-flow|git-flow|vercel-flow|byok-vercel)=/.test(
+        part,
+      ),
+    )
+    .join("; ");
+}
 /** Server transport only: origins come from deployment config, never form values. */
 export async function requestAPI<T = unknown>(
   input: {
     apiOrigin: string;
     uiOrigin: string;
     cookie: string;
+    bearerToken?: string;
     path: string;
     body?: unknown;
     method?: string;
-    consoleSession?: {token:string;serviceKey:string};
+    consoleSession?: { token: string; serviceKey: string };
   },
   fetcher: Fetch = fetch,
 ): Promise<{ status: number; body: T }> {
@@ -54,7 +67,22 @@ export async function requestAPI<T = unknown>(
     url.origin !== origin
   )
     throw Error("Invalid API path");
-  if(input.consoleSession && (input.path!=="/v1/console" || !input.consoleSession.token || input.consoleSession.token.length>16384 || input.consoleSession.serviceKey.length<32))throw Error("Invalid Console transport");
+  if (
+    input.bearerToken !== undefined &&
+    (input.path !== "/v1/studio" ||
+      !/^[A-Za-z0-9_.-]{1,16384}$/.test(input.bearerToken))
+  )
+    throw Error("Browser bearer is restricted to Studio");
+  if (
+    input.consoleSession &&
+    (input.path !== "/v1/console" ||
+      !input.consoleSession.token ||
+      input.consoleSession.token.length > 16384 ||
+      input.consoleSession.serviceKey.length < 32)
+  )
+    throw Error("Invalid Console transport");
+  if (input.bearerToken !== undefined && input.consoleSession)
+    throw Error("Ambiguous browser authentication transport");
   const response = await fetcher(url, {
     method: input.method || (input.body === undefined ? "GET" : "POST"),
     cache: "no-store",
@@ -62,20 +90,32 @@ export async function requestAPI<T = unknown>(
     signal: AbortSignal.timeout(45_000),
     headers: {
       "content-type": "application/json",
+      ...(input.bearerToken
+        ? { authorization: "Bearer " + input.bearerToken }
+        : {}),
       origin: uiOrigin,
-      ...(input.consoleSession?{authorization:"Bearer "+input.consoleSession.token,"x-webdock-service-key":input.consoleSession.serviceKey}:{}),
-      cookie: input.consoleSession || input.path.startsWith("/v1/public/")
+      ...(input.consoleSession
+        ? {
+            authorization: "Bearer " + input.consoleSession.token,
+            "x-webdock-service-key": input.consoleSession.serviceKey,
+          }
+        : {}),
+      cookie: input.consoleSession
         ? ""
-        : sessionCookies(input.cookie)
-            .split("; ")
-            .filter((part) =>
-              input.path.startsWith("/v1/auth/")
-                ? /^(?:__Host-)?webdock-auth\./.test(part)
-                : /^(?:__Host-)?webdock-(?:sso|github|github-flow|git-flow|vercel-flow|byok-vercel)=/.test(
-                    part,
-                  ),
-            )
-            .join("; "),
+        : input.bearerToken
+          ? integrationCookies(input.cookie)
+          : input.path.startsWith("/v1/public/")
+            ? ""
+            : sessionCookies(input.cookie)
+                .split("; ")
+                .filter((part) =>
+                  input.path.startsWith("/v1/auth/")
+                    ? /^(?:__Host-)?webdock-auth\./.test(part)
+                    : /^(?:__Host-)?webdock-(?:sso|github|github-flow|git-flow|vercel-flow|byok-vercel)=/.test(
+                        part,
+                      ),
+                )
+                .join("; "),
     },
     body: input.body === undefined ? undefined : JSON.stringify(input.body),
   });

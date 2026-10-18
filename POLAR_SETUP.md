@@ -1,3 +1,5 @@
+> Historical setup record. Billing and the Polar integration were removed from active composition on 2026-10-17; the instructions below no longer configure a supported feature. Retained database data is unchanged.
+
 # Polar production setup
 
 Organization: **spitzli**, ID `900da77a-d11a-4230-873b-e93fbb89b377`.
@@ -5,13 +7,13 @@ API: `https://api.polar.sh`. This configuration uses **live production**, not sa
 
 ## Implementation
 
-The npm monorepo already uses TypeScript, Bun/Elysia in `apps/api`, and `@polar-sh/sdk` 1.0.2. No adapter or additional SDK dependency was installed. The installed SDK's current versioned `createPolar` and async `webhooks.validateEvent` APIs are used directly.
+The npm monorepo already uses TypeScript, Bun/Elysia in `apps/control-plane`, and `@polar-sh/sdk` 1.0.2. No adapter or additional SDK dependency was installed. The installed SDK's current versioned `createPolar` and async `webhooks.validateEvent` APIs are used directly.
 
-- `apps/api/src/modules/billing/hosted-client.ts`: one reusable SDK client selected by `POLAR_SERVER`.
-- `apps/api/src/protocols/polar-hosted.ts`: `GET /checkout?products=<id>` creates a hosted checkout; `POST /api/webhook/polar` verifies the original signed bytes before acknowledging events.
-- `apps/api/src/index.ts`: mounts these routes when the billing domain and environment token are configured.
-- `apps/api/tests/polar-hosted.test.ts`: product validation, sanitized failures, raw signature verification and tampered-body rejection.
-- Private, ignored `apps/api/.env`: `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_SERVER` (names only).
+- `apps/control-plane/src/modules/billing/hosted-client.ts`: one reusable SDK client selected by `POLAR_SERVER`.
+- `apps/control-plane/src/protocols/polar-hosted.ts`: `GET /checkout?products=<id>` creates a hosted checkout; `POST /api/webhook/polar` verifies the original signed bytes before acknowledging events.
+- `apps/control-plane/src/index.ts`: mounts these routes when the billing domain and environment token are configured.
+- `apps/control-plane/tests/polar-hosted.test.ts`: product validation, sanitized failures, raw signature verification and tampered-body rejection.
+- Private, ignored `apps/control-plane/.env`: `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_SERVER` (names only).
 
 The hosted checkout has no custom success URL or confirmation page. No new customer-portal route was added: Polar hosts the portal and emails customers its link. Existing Webdock agreement/subscription functionality remains separate. The new `order.paid` and `customer.state_changed` handlers intentionally contain TODOs and do not grant access. Keep this distinction when testing a standalone checkout.
 
@@ -57,7 +59,7 @@ The original operator-authorized catalog contained 35 draft entries from the own
 
 All 17 fixed-price entries are mapped as ready in both Polar environments through the operator workflow. Webdock sales and enforcement remain disabled. The earlier one-time Test Product is now archived. The live organization connection has also been saved successfully through the authenticated Webdock operator API.
 
-The current source inventory is `apps/api/src/modules/billing/initial-catalog.ts`. Non-website prices follow the source's **net EUR** basis. Price ranges, starting prices and unspecified amounts are quote-only, never zero-price products. Service descriptions preserve the original capacity/backup/SLA limits. Additional websites reuse a website package; customer-specific sponsorships and individual plans are not sold as reusable free catalog products.
+The current source inventory is `apps/control-plane/src/modules/billing/initial-catalog.ts`. Non-website prices follow the source's **net EUR** basis. Price ranges, starting prices and unspecified amounts are quote-only, never zero-price products. Service descriptions preserve the original capacity/backup/SLA limits. Additional websites reuse a website package; customer-specific sponsorships and individual plans are not sold as reusable free catalog products.
 
 Migration `0021_full_catalog.sql` adds services, one-time intervals and nullable prices for quotes. Manual fulfillment is explicit; the existing SQL purchase function remains website-only. Quote-only entries cannot be published to Polar. No additional customer resources, service grants, sales enablement or operational approvals are created by seeding the catalog.
 

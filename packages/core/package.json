@@ -1,0 +1,29 @@
+{
+  "name": "@webdock/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./identity": "./src/identity.ts",
+    "./registry/*": "./src/registry/*.ts",
+    "./jobs": "./src/jobs.ts",
+    "./plugin-jobs": "./src/plugin-jobs.ts",
+    "./plugin-data": "./src/plugin-data.ts",
+    "./plugin-http": "./src/plugin-http.ts",
+    "./plugin-exposure": "./src/plugin-exposure.ts",
+    "./plugin-runtime-policy": "./src/plugin-runtime-policy.ts",
+    "./auth-plugin": "./src/auth-plugin.ts",
+    "./plugin-apps": "./src/plugin-apps.ts"
+  },
+  "devDependencies": {
+    "@types/pg": "^8"
+  },
+  "dependencies": {
+    "@webdock/platform-db": "*",
+    "drizzle-orm": "1.0.0-rc.4",
+    "zod": "4.6.5",
+    "bullmq": "6.3.16",
+    "ioredis": "6.0.0",
+    "@webdock/plugin-sdk": "*"
+  }
+}

@@ -117,15 +117,16 @@ spec:
     requests.cpu: 500m
     requests.memory: 768Mi
     requests.ephemeral-storage: 128Mi
-    limits.cpu: '3'
-    limits.memory: 2Gi
+    limits.cpu: '3500m'
+    limits.memory: 2560Mi
     limits.ephemeral-storage: 512Mi
     count/secrets: '8'
     count/configmaps: '4'
     services: '5'
     services.loadbalancers: '0'
     services.nodeports: '0'
-    persistentvolumeclaims: '0'
+    persistentvolumeclaims: '1'
+    requests.storage: 1Gi
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

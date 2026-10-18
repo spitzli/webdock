@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-17",
+  "baseCommit": "3313e05",
+  "webdockProductionChanged": false,
+  "activeCMSRemoved": true,
+  "billingRemainsRemoved": true,
+  "coreDefaultDomains": [
+    "auth",
+    "portal",
+    "registry"
+  ],
+  "authProviders": [
+    "better-auth",
+    "clerk"
+  ],
+  "clerkStartupWithoutBetterAuthSecret": true,
+  "oauthCompatibility": "Explicit WEBDOCK_OAUTH_PROVIDER=better-auth for Clerk OAuth APIs/MCP",
+  "retainedCMSInventoryGuard": true,
+  "freshDatabaseWithoutCMSTable": true,
+  "checks": {
+    "apiUnitPassed": 149,
+    "consolePassed": 80,
+    "modulePassed": 146,
+    "moduleSkipped": 4,
+    "realProcessStartupBothProviders": true,
+    "realMFAAndPKCE": true,
+    "apiTypeScript": true,
+    "consoleTypeScript": true,
+    "apiBuild": true,
+    "docsValidate": true,
+    "brokenLinks": 0,
+    "helmSchemas": true
+  },
+  "limits": [
+    "Historical product SQL migrations remain in the installer",
+    "Remaining Mail, Hosting, Databases and Storage implementations are optional trusted modules, not all isolated runtime plugins",
+    "External Clerk login covered with provider fixtures, not a live external user",
+    "New Console authenticated browser smoke not performed"
+  ],
+  "stall": {
+    "repository": "https://github.com/spitzli/stall-eichenbruch",
+    "localSource": "/home/newt/.t3/worktrees/stall-independent",
+    "projectID": "prj_I6CM5NhcNs922GUDx1aU67TlEsCq",
+    "deploymentID": "dpl_9rbsYnU2vicxCmfatttP6AR6PwEG",
+    "deploymentURL": "https://stall-eichenbruch-hpfoh67ve-spitzli.vercel.app",
+    "functionRegion": "fra1",
+    "sourceBuild": "local",
+    "previousDeployment": "dpl_Fo42o5fta1EkUzeiHKT4DVAAeYeh",
+    "homeStatus": 200,
+    "loginStatus": 200,
+    "anonymousSessionUser": null,
+    "nativeBrowserLoginFields": [
+      "Email",
+      "Password",
+      "Forgot password?"
+    ],
+    "webdockRedirect": false,
+    "dataMigrated": false,
+    "passwordsRotated": false,
+    "productionOperatorLocalHashPresent": true,
+    "authenticatedProductionLoginTested": false,
+    "sourceChangesCommitted": false
+  }
+}

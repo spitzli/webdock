@@ -1,6 +1,6 @@
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { mailOpenAPI } from '../../apps/api/src/modules/mail/product/openapi';
+import { mailOpenAPI } from '../../apps/control-plane/src/modules/mail/product/openapi';
 
 const target = new URL('../openapi/mail.json', import.meta.url);
 const spec = mailOpenAPI();

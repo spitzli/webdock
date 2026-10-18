@@ -1,9 +1,0 @@
-{
-  "regions": [
-    "fra1"
-  ],
-  "git": {
-    "deploymentEnabled": true
-  },
-  "installCommand": "cd ../.. && npm ci"
-}

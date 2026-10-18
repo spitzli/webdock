@@ -7,6 +7,13 @@
     ".": "./src/index.ts",
     "./validation": "./src/validation.ts",
     "./limits": "./src/limits.ts",
-    "./events": "./src/events.ts"
+    "./events": "./src/events.ts",
+    "./errors": "./src/errors.ts",
+    "./provider-ports": "./src/provider-ports.ts",
+    "./agent-ports": "./src/agent-ports.ts",
+    "./domain": "./src/domain.ts"
+  },
+  "dependencies": {
+    "@webdock/core": "*"
   }
 }

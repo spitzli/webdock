@@ -1,0 +1,49 @@
+{
+  "verifiedAt": "2026-10-17",
+  "baseCommit": "1d64b77",
+  "productionChanged": false,
+  "billingReplacementCreated": false,
+  "billingActiveSurfacesRemoved": true,
+  "historicalBillingDataPreserved": true,
+  "defaultProductState": "disabled",
+  "authPlugins": [
+    "auth-better-auth",
+    "auth-clerk"
+  ],
+  "authPluginKind": "trusted startup authentication",
+  "lazyProductDispatch": [
+    "mail",
+    "hosting",
+    "databases",
+    "cms",
+    "storage"
+  ],
+  "checks": {
+    "apiUnitPassed": 138,
+    "consolePassed": 79,
+    "modulesPassed": 144,
+    "modulesSkipped": 4,
+    "bullmqRedisTestsPassed": 7,
+    "packedCLISeparatePluginProcess": true,
+    "realTLSRestrictedRLSPluginRuntime": true,
+    "betterAuthDatabaseSessionPassed": 1,
+    "betterAuthMFAOIDCRevocationPassed": 3,
+    "registrySignedRLSPassed": 1,
+    "clerkSignedRLSPassed": 1,
+    "freshPluginBootstrapRLSPassed": 1,
+    "moduleShutdownRLSPassed": 2,
+    "retainedBillingSchemaRLSPassed": 1,
+    "apiTypeScript": true,
+    "consoleTypeScript": true,
+    "apiBuild": true,
+    "docsValidate": true,
+    "docsBrokenLinks": 0,
+    "helmSchemas": true
+  },
+  "remainingBoundaries": [
+    "OAuth/MCP and existing account protocols retain Better Auth compatibility",
+    "Legacy product schemas, registry CMS DTO/query aliases and app policy hooks are not yet fully extracted",
+    "Existing products are optional trusted modules, not all isolated project containers"
+  ],
+  "deferredPreference": "Analytics dark theme preferred; core reduction first"
+}

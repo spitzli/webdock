@@ -1,0 +1,171 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "Namespace",
+      "metadata": {
+        "name": "webdock-plugins",
+        "labels": {
+          "pod-security.kubernetes.io/enforce": "restricted",
+          "pod-security.kubernetes.io/audit": "restricted",
+          "security.webdock.dev/ready": "true"
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "ResourceQuota",
+      "metadata": {
+        "name": "plugin-budget",
+        "namespace": "webdock-plugins"
+      },
+      "spec": {
+        "hard": {
+          "requests.cpu": "2",
+          "limits.cpu": "4",
+          "requests.memory": "2Gi",
+          "limits.memory": "4Gi",
+          "requests.ephemeral-storage": "1Gi",
+          "limits.ephemeral-storage": "2Gi",
+          "pods": "8"
+        }
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "default-deny",
+        "namespace": "webdock-plugins"
+      },
+      "spec": {
+        "podSelector": {},
+        "policyTypes": [
+          "Ingress",
+          "Egress"
+        ]
+      }
+    },
+    {
+      "apiVersion": "cert-manager.io/v1",
+      "kind": "Issuer",
+      "metadata": {
+        "name": "plugin-root-bootstrap",
+        "namespace": "webdock-plugins"
+      },
+      "spec": {
+        "selfSigned": {}
+      }
+    },
+    {
+      "apiVersion": "cert-manager.io/v1",
+      "kind": "Certificate",
+      "metadata": {
+        "name": "plugin-root",
+        "namespace": "webdock-plugins"
+      },
+      "spec": {
+        "isCA": true,
+        "commonName": "Webdock plugin runtime CA",
+        "secretName": "plugin-root",
+        "duration": "87600h",
+        "renewBefore": "8760h",
+        "privateKey": {
+          "algorithm": "ECDSA",
+          "size": 256
+        },
+        "issuerRef": {
+          "name": "plugin-root-bootstrap",
+          "kind": "Issuer"
+        }
+      }
+    },
+    {
+      "apiVersion": "cert-manager.io/v1",
+      "kind": "Issuer",
+      "metadata": {
+        "name": "plugin-runtime",
+        "namespace": "webdock-plugins"
+      },
+      "spec": {
+        "ca": {
+          "secretName": "plugin-root"
+        }
+      }
+    },
+    {
+      "apiVersion": "cert-manager.io/v1",
+      "kind": "Certificate",
+      "metadata": {
+        "name": "managed-analytics-g1",
+        "namespace": "webdock-plugins"
+      },
+      "spec": {
+        "secretName": "managed-analytics-g1-tls",
+        "dnsNames": [
+          "managed-analytics-g1.webdock-plugins.svc.cluster.local"
+        ],
+        "duration": "2160h",
+        "renewBefore": "720h",
+        "privateKey": {
+          "algorithm": "ECDSA",
+          "size": 256
+        },
+        "issuerRef": {
+          "name": "plugin-runtime",
+          "kind": "Issuer"
+        }
+      }
+    },
+    {
+      "apiVersion": "cert-manager.io/v1",
+      "kind": "Certificate",
+      "metadata": {
+        "name": "managed-analytics-g2",
+        "namespace": "webdock-plugins"
+      },
+      "spec": {
+        "secretName": "managed-analytics-g2-tls",
+        "dnsNames": [
+          "managed-analytics-g2.webdock-plugins.svc.cluster.local"
+        ],
+        "duration": "2160h",
+        "renewBefore": "720h",
+        "privateKey": {
+          "algorithm": "ECDSA",
+          "size": 256
+        },
+        "issuerRef": {
+          "name": "plugin-runtime",
+          "kind": "Issuer"
+        }
+      }
+    },
+    {
+      "apiVersion": "cert-manager.io/v1",
+      "kind": "Certificate",
+      "metadata": {
+        "name": "managed-analytics-g3",
+        "namespace": "webdock-plugins"
+      },
+      "spec": {
+        "secretName": "managed-analytics-g3-tls",
+        "dnsNames": [
+          "managed-analytics-g3.webdock-plugins.svc.cluster.local"
+        ],
+        "duration": "2160h",
+        "renewBefore": "720h",
+        "privateKey": {
+          "algorithm": "ECDSA",
+          "size": 256
+        },
+        "issuerRef": {
+          "name": "plugin-runtime",
+          "kind": "Issuer"
+        }
+      }
+    }
+  ]
+}

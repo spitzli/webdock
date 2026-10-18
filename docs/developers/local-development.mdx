@@ -9,15 +9,18 @@ Use Node.js 24 and the repository's workspace lockfile. The API workspace pins B
 
 | Workspace | Responsibility |
 | --- | --- |
-| `apps/web` | Public website and its CMS |
-| `apps/admin` | Console browser application |
+| `apps/website` | Public website and its CMS |
+| `apps/console` | Console browser application |
 | `apps/auth` | Central account and sign-in UI |
-| `apps/api` | Bun API, protocol handlers, services and worker |
-| `apps/hosting-agent` | Managed workload execution |
+| `apps/control-plane` | Bun API, protocol handlers, services and worker |
+| `agents/kubernetes` | Managed workload execution |
+| `packages/module-sdk`, `packages/core` | Installation contracts and local identity interfaces |
+| `modules/{mail,hosting,databases,storage}` | Product services, UI and module admission |
+| `adapters/<area>/<provider>` | Concrete identity and provider integrations |
 | `packages/api-client` | Server-side frontend transport to the API |
 | `docs` | Public Mintlify pages and excluded repository records |
 
-Console and Auth are HTTP frontends. Business and identity services now live in `apps/api`; older historical documents may refer to their former location in the frontends.
+Console and Auth are HTTP frontends. Business and identity services now live in `apps/control-plane`; older historical documents may refer to their former location in the frontends.
 
 ## Install
 
@@ -28,6 +31,8 @@ npm ci
 ```
 
 Configure only the local environment variables required by the workspace you run. Follow its checked-in examples and scripts. Do not copy production database URLs or provider credentials into a test environment.
+
+See [installed module configuration](/developers/modules) for runtime product selection and safe draining.
 
 ## Start a workspace
 

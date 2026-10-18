@@ -53,6 +53,8 @@ See Clerk's [metadata controls](https://clerk.com/docs/guides/users/extending) a
 
 Create or identify the local Webdock identity to map, then configure its Clerk identity and platform role explicitly. Native Clerk Console authentication uses Clerk account verification and organization membership. The optional legacy OAuth compatibility bridge retains its account-setup and MFA admission checks; a role assignment does not bypass those checks. Better Auth installations continue using the local bootstrap/password/MFA workflow.
 
+Native Console and existing Better Auth OAuth clients use the reviewed `clerk_identity` link between the exact issuer, Clerk user ID and local ID. OAuth also requires that link to remain enabled and `legacy_eligible`. The SDK bearer bridge uses the separate `clerk_identity_mapping` table; the command below enrolls that SDK mapping only. Neither workflow links accounts by email or creates a provider session.
+
 Prepare a mapping with the verified Clerk subject and existing immutable local ID:
 
 ```json
@@ -72,7 +74,9 @@ This mapping operation never matches by email, creates accounts, grants a Clerk 
 
 The core `IdentityDirectory` works with local subjects and sessions. The Clerk adapter verifies external evidence and uses typed mapping/backend ports; Better Auth projects the existing local identity. API composition supplies the selected directory to Mail and Hosting policies; managed Database services use the same Hosting authorization port. Provider tokens do not become database identities or product DTOs.
 
-The Console sends Clerk tokens through its server transport to the configured API, authenticated with the shared Console service key. The API verifies the provider session, explicit local identity mapping and current permissions. The separate legacy OAuth compatibility path is available only when explicitly enabled; that path creates a short native session projection. Current bans, setup flags, tenant membership, preview restrictions and product permissions still apply.
+The Console sends Clerk tokens through its server transport to the configured API, authenticated with the shared Console service key. The API verifies the provider session, explicit local identity mapping and current permissions. The separate SDK bearer bridge creates a short native session projection from a verified Clerk session.
+
+With Clerk selected and `WEBDOCK_OAUTH_PROVIDER=better-auth`, existing OAuth clients keep Better Auth authentication and local session IDs. After token verification, the host binds fresh Clerk authority to that exact session. Product authorization checks the real local session's expiry, account ban and setup state, then uses only Clerk roles and memberships. Operators must pass both the local and Clerk MFA admission checks. This compatibility path needs no synthetic Clerk session or SDK session mapping, and it never accepts a native browser cookie as a fallback for Clerk sign-in. Missing, disabled, mismatched or expired proof denies access. Tenant preview restrictions and product permissions still apply.
 
 OAuth, MCP, application API keys and legacy Auth setup are separate from this browser-provider choice. Enabling Clerk does not migrate their clients or replace their credentials. Roll out configuration and explicit mappings deliberately; this feature does not migrate production accounts automatically.
 

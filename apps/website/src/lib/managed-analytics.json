@@ -1,0 +1,11 @@
+{
+  "plugin": "managed-analytics",
+  "version": "0.1.0-alpha.2",
+  "projectID": "103216298636345344",
+  "websiteID": "bcaa0d24-4739-5576-aad1-f328ca6f8ac9",
+  "scriptURL": "https://moon.webdock.dev/script.js",
+  "domains": [
+    "webdock.dev",
+    "www.webdock.dev"
+  ]
+}

@@ -1,8 +1,0 @@
-.git
-**/.env*
-**/.next
-**/.vercel
-**/*.pem
-**/*.key
-.superpowers
-docs

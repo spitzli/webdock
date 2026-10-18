@@ -38,3 +38,13 @@ msgstr "Diese Seite ist nicht verfügbar. Prüfe die Adresse oder kehre zur Star
 
 msgid "Back to homepage"
 msgstr "Zur Startseite"
+
+msgid "Project extensions"
+msgstr "Projekterweiterungen"
+
+
+msgid "Roles and memberships are managed in Clerk. Local records only link identities to Webdock resources."
+msgstr "Rollen und Mitgliedschaften werden in Clerk verwaltet. Lokale Einträge ordnen Identitäten lediglich den Webdock-Ressourcen zu."
+
+msgid "Open Clerk administration"
+msgstr "Clerk-Verwaltung öffnen"

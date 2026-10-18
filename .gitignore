@@ -15,3 +15,10 @@ playwright-report/
 *.pem
 # Generated from the pinned dependency by Auth prebuild/predev.
 apps/auth/public/vendor/scalar/
+
+.core-build/
+
+apps/control-plane/dist-core/
+
+# Local test credentials, operator snapshots and verification caches.
+.cache/

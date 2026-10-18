@@ -1,0 +1,106 @@
+{
+  "date": "2026-10-18",
+  "version": "0.1.0-alpha.1",
+  "source": "/home/newt/Projekte/Personal/spitzli/webdock-extension-managed-registry",
+  "publication": "blocked:1Password SSH signing did not respond within45seconds; initial commit timed out;27 files staged; no remote release",
+  "scope": "operator-managed dedicated registry configuration alpha, local acceptance",
+  "providerImage": "ghcr.io/tabularisdb/tabularium@sha256:3384ebd98e74f704b31653d921ad872f94936e29ad3fef6c0281519ad9304cf3",
+  "providerVersion": "0.25.0",
+  "database": "disposable PostgreSQL18",
+  "unitTests": 15,
+  "assertions": 59,
+  "realProviderActions": 11,
+  "nativeBrowser": {
+    "events": [
+      {
+        "action": "registry.overview",
+        "status": 200
+      },
+      {
+        "action": "registry.kinds.list",
+        "status": 200
+      },
+      {
+        "action": "registry.extensions.read",
+        "status": 200
+      },
+      {
+        "action": "registry.providers.list",
+        "status": 200
+      },
+      {
+        "action": "registry.overview",
+        "status": 200
+      },
+      {
+        "action": "registry.kinds.list",
+        "status": 200
+      },
+      {
+        "action": "registry.extensions.read",
+        "status": 200
+      },
+      {
+        "action": "registry.providers.list",
+        "status": 200
+      },
+      {
+        "action": "registry.branding.update",
+        "status": 200
+      },
+      {
+        "action": "registry.overview",
+        "status": 200
+      },
+      {
+        "action": "registry.branding.update",
+        "status": 200
+      },
+      {
+        "action": "registry.overview",
+        "status": 200
+      },
+      {
+        "action": "registry.overview",
+        "status": 200
+      },
+      {
+        "action": "registry.extensions.read",
+        "status": 200
+      },
+      {
+        "action": "registry.kinds.list",
+        "status": 200
+      },
+      {
+        "action": "registry.providers.list",
+        "status": 200
+      }
+    ],
+    "branding": "HarborRegistry"
+  },
+  "imageChecks": [
+    "nonroot read-only",
+    "private HTTPS with verified certificate",
+    "health identity/version",
+    "public UI refuses actions",
+    "Console CSP distinct from callback host"
+  ],
+  "limits": [
+    "hosting/domain/OAuth secret provisioning remains operator-managed",
+    "no deletion action",
+    "authoring harness is not an installed Core deployment",
+    "Tabularium kind writes have no upstream CAS; avoid concurrent native-admin edits"
+  ],
+  "fixes": [
+    "separate Console iframe origin",
+    "read capability for preserving kind update",
+    "SDK-compatible snake-case inputs",
+    "sandbox-safe save buttons and Enter handling"
+  ],
+  "pluginImage": "ghcr.io/spitzli/webdock-extension-managed-registry@sha256:d13685f9b345e949761fd3d2ee522a7960cd3d00afc6fe327c8d91bb8428da7c",
+  "descriptorSha256": "516597fca9d6485386f820d9055b7cf09ace2ffbac9f1208c307f78fbbe00306",
+  "independentReview": "no remaining Important/Critical findings",
+  "docsValidation": "passed",
+  "brokenLinks": 0
+}

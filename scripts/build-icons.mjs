@@ -13,7 +13,7 @@ for (let i = 0; i < sizes.length; i++) {
   header.writeUInt32LE(pngs[i].length, at + 8); header.writeUInt32LE(offset, at + 12);
   offset += pngs[i].length;
 }
-for (const app of ["web", "admin", "auth"]) {
+for (const app of ["website", "console", "auth"]) {
   await fs.writeFile(`apps/${app}/src/app/icon.svg`, svg);
   await fs.writeFile(`apps/${app}/src/app/favicon.ico`, Buffer.concat([header, ...pngs]));
   await sharp(Buffer.from(svg)).resize(180).png().toFile(`apps/${app}/src/app/apple-icon.png`);

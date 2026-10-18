@@ -1,19 +1,36 @@
+/** Platform metadata PostgreSQL pools. Customer database bindings never reuse these credentials. */
+export type DatabaseConfig = {
+  environment: "production" | "development" | "test";
+  businessURL: string;
+  authURL: string;
+  workerURL: string;
+  signingSecret?: string;
+  scope?: () => DatabaseScope | undefined;
+  ca?: string;
+  max: number;
+};
+
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHmac, X509Certificate } from "node:crypto";
 import pg from "pg";
 
-export type ClerkDatabaseIdentity = { issuer: string; userID: string; organizationID: string | null; clerkOrganizationID: string | null; customerID: string | null; role: "admin" | "member" | null; permissions?: readonly string[]; verifiedAt: number; expiresAt: number };
-export type LegacyClerkMemberships={subject?:string;issuer:string;userID:string;verifiedAt:number;expiresAt:number;roles:Array<{organizationID:string;customerID:string;role:string;permissions?:readonly string[]}>};
+export type ClerkDatabaseIdentity = { operator: boolean; issuer: string; userID: string; organizationID: string | null; clerkOrganizationID: string | null; customerID: string | null; role: "admin" | "member" | null; permissions?: readonly string[]; verifiedAt: number; expiresAt: number };
+export type LegacyClerkMemberships={operator:boolean;twoFactorEnabled:boolean;sessionID?:string;subject?:string;issuer:string;userID:string;verifiedAt:number;expiresAt:number;roles:Array<{organizationID:string;customerID:string;role:string;permissions?:readonly string[]}>};
 export type DatabaseScope =
-  | { kind: "session"; subject: string; sessionID: string; clerk?: ClerkDatabaseIdentity; memberships?:LegacyClerkMemberships }
+  | { kind: "session"; authProvider?: "clerk" | "better-auth"; pluginInvocationID?: string; subject: string; sessionID: string; clerk?: ClerkDatabaseIdentity; memberships?:LegacyClerkMemberships }
   | {
       kind: "system";
+      authProvider?: "clerk" | "better-auth";
       memberships?: LegacyClerkMemberships;
       clerk?: ClerkDatabaseIdentity & {subject:string;sessionID:string};
       purpose: string;
+      pluginInvocationID?: string;
+      participantID?: string;
       clusterID?: string;
       customerID?: string;
       setupID?: string;
+      subject?: string;
+      sessionID?: string;
       generation?: number;
     }
   | {
@@ -30,6 +47,7 @@ export function withDatabaseScope<T>(scope: DatabaseScope, fn: () => T): T {
     scope = { ...scope, clerk: inherited.clerk };
   }
   if(scope.kind==="session" && !scope.memberships && inherited?.kind==="session" && inherited.memberships && scope.subject===inherited.subject && scope.sessionID===inherited.sessionID)scope={...scope,memberships:inherited.memberships};
+  if(scope.kind==="session" && inherited?.kind==="session" && scope.subject===inherited.subject && scope.sessionID===inherited.sessionID && inherited.authProvider)scope={...scope,authProvider:inherited.authProvider};
   return scopes.run(structuredClone(scope), fn);
 }
 export function currentDatabaseScope(): DatabaseScope | undefined {
@@ -157,7 +175,7 @@ function queryArgs(args: any[]): {
 
 // Read only command keywords; PostgreSQL allows comments between every keyword,
 // including nested block comments. Extended protocol rejects multiple statements.
-function commandWords(sql: string): string[] {
+export function sqlCommandWords(sql: string): string[] {
   const words: string[] = [];
   let offset = 0;
   while (offset < sql.length && words.length < 8) {
@@ -306,7 +324,7 @@ export class ScopedPool extends pg.Pool {
       const identity = JSON.stringify(scope);
       const run = async () => {
         if (poisoned) throw poisoned;
-        const words = commandWords(parsed.config.text);
+        const words = sqlCommandWords(parsed.config.text);
         const begin =
           words[0] === "BEGIN" ||
           (words[0] === "START" && words[1] === "TRANSACTION");
@@ -392,3 +410,5 @@ export class ScopedPool extends pg.Pool {
     return client;
   }
 }
+
+export { retainedMailChecks, assertMailCanDisable } from "./legacy-retention";

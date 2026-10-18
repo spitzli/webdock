@@ -1,0 +1,38 @@
+[
+  {
+    "case": "valid",
+    "accepted": true,
+    "unchanged": true,
+    "seconds": 4.92
+  },
+  {
+    "case": "missing-extension",
+    "accepted": false,
+    "unchanged": null,
+    "seconds": 4.19
+  },
+  {
+    "case": "mutable-image",
+    "accepted": false,
+    "unchanged": null,
+    "seconds": 4.28
+  },
+  {
+    "case": "unknown-privilege",
+    "accepted": false,
+    "unchanged": null,
+    "seconds": 3.72
+  },
+  {
+    "case": "missing-kind",
+    "accepted": false,
+    "unchanged": null,
+    "seconds": 3.52
+  },
+  {
+    "case": "unsupported-protocol",
+    "accepted": false,
+    "unchanged": null,
+    "seconds": 3.72
+  }
+]

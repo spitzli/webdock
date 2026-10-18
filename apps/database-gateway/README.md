@@ -4,7 +4,7 @@ Studio embeds the Tabularis explorer, SQL editor and data grid. The API authoriz
 
 ## Registered project databases
 
-1. Apply the existing Auth, hosting and Studio migrations first, then run `node --import tsx apps/api/scripts/legacy/migrate-databases.ts` with the Auth migration database credentials. The new tables live in `webdock_auth`; use the existing schema owner/runtime privilege conventions.
+1. Apply the existing Auth, hosting and Studio migrations first, then run `node --import tsx apps/control-plane/scripts/legacy/migrate-databases.ts` with the Auth migration database credentials. The new tables live in `webdock_auth`; use the existing schema owner/runtime privilege conventions.
 2. Configure Auth with `WEBDOCK_DATABASE_GATEWAY_ORIGIN` and a random `WEBDOCK_DATABASE_GATEWAY_SECRET` of at least 32 characters. The gateway uses the same secret. Auth also needs its existing `BETTER_AUTH_SECRET`, Studio OAuth consumer configuration and hosting region configuration. Production authorization retains the existing verified-region gate (`WEBDOCK_HOSTING_EU_VERIFIED=true` for the verified non-Vercel runtime, or the existing `vercel-fra1` policy).
 3. Configure and start the gateway with Node 24 using `.env.example` and `npm start -w @webdock/database-gateway`. Put TLS in front of it, including WebSocket upgrades. Use a gateway hostname on the same site as Studio, for example `database.webdock.dev` and `studio.webdock.dev`. The session cookie is HttpOnly, SameSite=Strict, Secure over HTTPS, and scoped to its workspace path. Cross-site embedding is not supported.
 4. Provision a separate Tabularis process/container **and storage directory for every database binding, user and permission profile**. Restrict network access to the gateway and the assigned database. Configure only the assigned saved connection; do not mount unrelated credentials, plugins or host files. Runtime origins must be explicitly included in the gateway allowlist.
@@ -22,9 +22,9 @@ administrator. No project binding, per-user grant, runtime origin or connection
 secret must be entered for each database. Operators using customer preview cannot
 launch it. The existing project database workflow above remains separate.
 
-Deploy the API migration `apps/api/drizzle/0022_managed_database_viewer.sql` through
+Deploy the API migration `apps/control-plane/drizzle/0022_managed_database_viewer.sql` through
 the normal migration runner, then install the matching platform RLS policies with
-`apps/api/scripts/install-platform-rls.ts`. Deploy the API routes before activating
+`apps/control-plane/scripts/install-platform-rls.ts`. Deploy the API routes before activating
 the gateway feature. `WEBDOCK_AUTH_ORIGIN` must point to the **Auth hostname** serving the API-owned
 legacy route `/api/databases/gateway` (normally `https://auth.webdock.dev`).
 The API implementation preserves this host boundary; using `api.webdock.dev`
@@ -113,7 +113,7 @@ From the repository root with Node 24:
 npm test -w @webdock/database-gateway
 npm run check -w @webdock/database-gateway
 node --import tsx --test packages/database-contracts/src/index.test.ts
-node --env-file=.env.database-test.local --import tsx --test apps/api/tests/ported-auth/databases/integration.test.ts
+node --env-file=.env.database-test.local --import tsx --test apps/control-plane/tests/ported-auth/databases/integration.test.ts
 ```
 
 The Auth integration test intentionally resets schemas only in the dedicated fixture database `postgres://…@127.0.0.1:55441/webdock_admin_test`; it refuses other destinations. Do not point this test at a shared development or production database. Real-runtime tests are opt-in with `WEBDOCK_DATABASE_RUNTIME_TEST=true` and use local reader/writer runtimes on ports 3138/3158, with their protected HTTPS proxies on 3139/3159. See the test sources and the verification record for fixture requirements.
@@ -128,7 +128,7 @@ Build the gateway with `npm run build -w @webdock/database-gateway`, then build 
 
 The cluster's admission policy also requires the `security.webdock.dev/ready=true` namespace label. Set it only after applying and inspecting the rendered ResourceQuota, network policies and Restricted Pod Security labels. Build `deploy/TLS.Dockerfile` for the TLS sidecar: it removes Caddy's privileged-port file capability, allowing port 8443 with all capabilities dropped. No admission policy exemption is required.
 
-After authenticated runtime checks pass, the explicitly invoked offline Auth script `apps/api/scripts/legacy/provision-database-browser.ts <private-inventory.json>` can register the verified schema-access grants. It requires `WEBDOCK_DATABASE_OPERATOR_ID`, an active MFA-enabled operator, and validates each subject's existing customer membership. Use the Auth production environment and keep inventory secrets out of logs/Git. Running it again replaces those grants and revokes their previous sessions through the revision increment.
+After authenticated runtime checks pass, the explicitly invoked offline Auth script `apps/control-plane/scripts/legacy/provision-database-browser.ts <private-inventory.json>` can register the verified schema-access grants. It requires `WEBDOCK_DATABASE_OPERATOR_ID`, an active MFA-enabled operator, and validates each subject's existing customer membership. Use the Auth production environment and keep inventory secrets out of logs/Git. Running it again replaces those grants and revokes their previous sessions through the revision increment.
 
 ## Moving one PostgreSQL browser runtime
 

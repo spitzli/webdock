@@ -132,7 +132,7 @@ and quota rules stay active. BYOK clusters require their own installed policy an
 
 `python3 -m unittest discover -s apps/build-worker -v`
 
-`python3 -m unittest discover -s apps/hosting-agent -p 'test_registry.py' -v`
+`python3 -m unittest discover -s agents/kubernetes -p 'test_registry.py' -v`
 
 Before activation run two hostile builds in a disposable real VM, prove no control
 credential or previous build files are visible, verify timeout/disk/log limits and denied

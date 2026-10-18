@@ -1,0 +1,66 @@
+{
+  "projectID": "104618288083894272",
+  "customerID": "103216044377636864",
+  "installationID": "103217546630533120",
+  "parentDatabaseID": "103217546714419200",
+  "database": "webdock_plugin_registry",
+  "role": "webdock_plugin_registry",
+  "host": "db-103217546630533120.pg.webdock.dev",
+  "directPort": 32000,
+  "pooledPort": 32001,
+  "verifiedAt": "2026-10-16T17:40:30.378Z",
+  "directVerifiedTLS": true,
+  "pooledVerifiedTLS": true,
+  "transactionalDDLAndWriteProbe": true,
+  "mainDatabaseConnectionDenied": true,
+  "wrongPasswordDenied": true,
+  "rolePrivileged": false,
+  "roleConnectionLimit": 10,
+  "databaseConnectionLimit": 10,
+  "mainCatalogUnchanged": true,
+  "mainACLUnchanged": true,
+  "originalHbaPreserved": true,
+  "clusterUID": "07eae67e-02f1-4f93-a258-14f42af7d3b1",
+  "runningPods": [
+    {
+      "name": "pooler-7b5fc9b476-dxhqj",
+      "uid": "c0f95e20-b682-4669-ba8a-462c2c51367d",
+      "createdAt": "2026-10-14T10:09:35Z",
+      "containers": [
+        {
+          "name": "pgbouncer",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "postgres-1",
+      "uid": "67818b10-d5d5-4e73-9c0f-d3b3b9fec102",
+      "createdAt": "2026-10-12T19:50:43Z",
+      "containers": [
+        {
+          "name": "postgres",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    }
+  ],
+  "agentActive": true,
+  "agentSourceSHA256": "d36a7680e2555611774ce6651301f23d1bbaa782626be54c2752b32b8a79dc1d",
+  "agentBackup": "/root/webdock-plugin-registry-20261016",
+  "credentialSecret": {
+    "namespace": "wd-db-103217546630533120",
+    "name": "webdock-plugin-registry-db"
+  },
+  "credentialFilesMode0600": true,
+  "managedDatabaseOrderCreated": false,
+  "registryApplicationDeployed": false,
+  "additionalPostgresServerCreated": false,
+  "agentTests": {
+    "run": 82,
+    "skipped": 1,
+    "skipReason": "Existing opt-in Mail Docker integration"
+  }
+}

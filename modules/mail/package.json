@@ -1,0 +1,30 @@
+{
+  "name": "@webdock/module-mail",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./manifest": "./src/manifest.ts",
+    "./navigation": "./src/navigation.ts",
+    "./server/*": "./src/server/*.ts",
+    "./hooks": "./src/hooks.ts",
+    "./ui/*": "./src/ui/*.tsx",
+    "./ui/types": "./src/ui/types.ts"
+  },
+  "dependencies": {
+    "@webdock/module-sdk": "*",
+    "pg": "8.16.3",
+    "@webdock/mail-contracts": "*",
+    "@webdock/core": "*",
+    "ipaddr.js": "2.3.0",
+    "zod": "4.6.5",
+    "@webdock/hosting-contracts": "*",
+    "@webdock/database-runtime": "*",
+    "@webdock/i18n": "*",
+    "dompurify": "^3.4.16"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "next": "^16.3.8"
+  }
+}

@@ -1,0 +1,138 @@
+import { type DemoBridge } from "./demo-bridge-policy";
+import { type ContentVariant } from "./demo-content";
+import { type ShopKind } from "./studio-shop";
+import { type Site } from "./ports";
+import { CMSBridgeError } from "./errors";
+import type { createCMSDemoBridges } from "./demo-bridges";
+import type { createCMSCanvasBridge } from "./canvas-bridge";
+import type { createCMSDemoContent } from "./demo-content";
+import type { createCMSStudioShop } from "./studio-shop";
+import type { CMSPorts } from "./ports";
+import { cmsShapes } from "./dispatch-shapes";
+export { cmsShapes } from "./dispatch-shapes";
+export interface CMSDispatchDependencies {
+  requireCMS: CMSPorts["requireCMS"];
+  demoAccess: ReturnType<typeof createCMSDemoBridges>["demoAccess"];
+  demoRequest: ReturnType<typeof createCMSDemoBridges>["demoRequest"];
+  demoCalendarRequest: ReturnType<
+    typeof createCMSDemoBridges
+  >["demoCalendarRequest"];
+  demoBridges: CMSPorts["demoBridges"];
+  canvasList: ReturnType<typeof createCMSCanvasBridge>["canvasList"];
+  canvasPage: ReturnType<typeof createCMSCanvasBridge>["canvasPage"];
+  writeCanvas: ReturnType<typeof createCMSCanvasBridge>["writeCanvas"];
+  websiteContent: ReturnType<typeof createCMSDemoContent>["websiteContent"];
+  saveWebsiteContent: ReturnType<
+    typeof createCMSDemoContent
+  >["saveWebsiteContent"];
+  shopAccess: ReturnType<typeof createCMSStudioShop>["shopAccess"];
+  shopRequest: ReturnType<typeof createCMSStudioShop>["shopRequest"];
+  getSites: CMSPorts["getSites"];
+}
+export function createCMSDispatch(dependencies: CMSDispatchDependencies) {
+  const {
+    requireCMS,
+    demoAccess,
+    demoRequest,
+    demoCalendarRequest,
+    demoBridges,
+    canvasList,
+    canvasPage,
+    writeCanvas,
+    websiteContent,
+    saveWebsiteContent,
+    shopAccess,
+    shopRequest,
+    getSites,
+  } = dependencies;
+  function publicBridge(bridge: DemoBridge) {
+    const { origin, kind, canvas, promotions, shop } = bridge;
+    return { origin, kind, canvas, promotions, shop };
+  }
+
+  function publicAccess(access: Awaited<ReturnType<typeof demoAccess>>) {
+    return {
+      site: access.site,
+      readOnly: access.readOnly,
+      bridge: publicBridge(access.bridge),
+    };
+  }
+
+  async function dispatchCMS(operation: string, args: unknown[]) {
+    requireCMS();
+    const id = args[0] as string;
+    switch (operation) {
+      case "cms.bridges": {
+        const sites = await getSites(),
+          config = demoBridges();
+        return Object.fromEntries(
+          sites
+            .filter(
+              (site) =>
+                config[site.id] &&
+                new URL(site.url).origin === config[site.id].origin,
+            )
+            .map((site) => {
+              return [site.id, publicBridge(config[site.id])];
+            }),
+        );
+      }
+      case "cms.access":
+        return publicAccess(await demoAccess(id, args[1] as boolean));
+      case "cms.requests":
+        return demoRequest(
+          id,
+          args[1] as number,
+          (args[2] || undefined) as Record<string, unknown> | undefined,
+        );
+      case "cms.calendar":
+        return demoCalendarRequest(
+          id,
+          (args[1] || undefined) as Record<string, unknown> | undefined,
+          args[2] as number,
+        );
+      case "cms.canvasList":
+        return canvasList(id);
+      case "cms.canvasPage":
+        return canvasPage(id, args[1] as number);
+      case "cms.writeCanvas":
+        return writeCanvas(id, args[1]);
+      case "cms.content":
+        return websiteContent(id, args[1] as ContentVariant);
+      case "cms.saveContent": {
+        const value = args[2] as Record<string, unknown>;
+        if (
+          Object.keys(value).some(
+            (key) => !["key", "value", "updatedAt"].includes(key),
+          ) ||
+          typeof value.key !== "string" ||
+          !/^(modern|old)_(text|image)_[0-9]{3}$/.test(value.key) ||
+          typeof value.value !== "string" ||
+          value.value.length > 6000 ||
+          typeof value.updatedAt !== "string" ||
+          !Number.isFinite(Date.parse(value.updatedAt))
+        )
+          throw new CMSBridgeError("Ungültiges Inhaltsfeld.");
+        return saveWebsiteContent(
+          id,
+          args[1] as ContentVariant,
+          value as { key: string; value: string; updatedAt: string },
+        );
+      }
+      case "cms.shopAccess":
+        return publicAccess(
+          await shopAccess(id, args[1] as ShopKind, args[2] as boolean),
+        );
+      case "cms.shop":
+        return shopRequest(
+          id,
+          args[1] as ShopKind,
+          args[2] as number,
+          (args[3] || undefined) as Record<string, unknown> | undefined,
+        );
+      default:
+        throw Error("Unknown CMS operation");
+    }
+  }
+  return { dispatchCMS };
+}

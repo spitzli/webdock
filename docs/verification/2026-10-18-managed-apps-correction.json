@@ -1,0 +1,77 @@
+{
+  "date": "2026-10-18",
+  "request": "Tabularium is a dedicated managed app; registry settings remain native; shared Umami tracking unchanged",
+  "oldPlugin": {
+    "id": "managed-registry",
+    "version": "0.1.0-alpha.1",
+    "yanked": true,
+    "catalogStatus": "rejected",
+    "productionInstalled": false
+  },
+  "newPlugin": {
+    "repository": "https://github.com/spitzli/webdock-extension-managed-apps",
+    "commit": "a7e22f1",
+    "version": "0.1.0-alpha.1",
+    "imageDigest": "sha256:f61a83c305f8c1d4e711d390facfc2dfed61c80241e93d5d98a341a13705a739",
+    "descriptorSha256": "03369c7843a82969162c6696e0dd6405e8b8751b6f0aff696fd558244ae94b97",
+    "publication": "published developer alpha; source, signed tag, OCI image and GitHub prerelease public; approved registry entry",
+    "actions": [
+      "apps.list",
+      "apps.get",
+      "apps.start",
+      "apps.stop",
+      "apps.restart"
+    ],
+    "productionInstalled": false,
+    "releaseURL": "https://github.com/spitzli/webdock-extension-managed-apps/releases/tag/v0.1.0-alpha.1",
+    "registryURL": "https://registry.webdock.dev/plugins/managed-apps",
+    "anonymousImagePull": true
+  },
+  "verification": {
+    "sdkTests": 23,
+    "apiUnitTests": 170,
+    "realPostgresRLSTests": 2,
+    "nativeHostingTests": 16,
+    "databaseContextTests": 4,
+    "consoleTests": 84,
+    "pluginTests": 15,
+    "pluginAssertions": 78,
+    "typechecks": "API, SDK, Console, plugin passed",
+    "coreBuild": "passed with product imports denied",
+    "container": "nonroot/read-only, private TLS, public UI isolated",
+    "browser": "scripts-only MessagePort fixture stop/start/restart; explicitly simulated Hosting",
+    "review": "no remaining Important/Critical findings after Clerk principal, module gate, schema compatibility and failed-state fixes"
+  },
+  "limits": [
+    "new host adapter and offline RLS policy not deployed",
+    "full API suite blocked by existing unsupported Bun node:test mock in auth-protocol.test.ts",
+    "no real Clerk-provider callback test this turn; live-revalidation path unit tested",
+    "existing app provisioning remains operator Hosting workflow"
+  ],
+  "docsPR": "https://github.com/spitzli/webdock/pull/39",
+  "docs": {
+    "url": "https://docs.webdock.dev/developers/managed-apps",
+    "pr": "https://github.com/spitzli/webdock/pull/39",
+    "mergeCommit": "03eb7df32548468eb457265713e67aa72bc03cad",
+    "published": true,
+    "pageAndScreenshotsHTTP": 200,
+    "releaseLinksPR": "https://github.com/spitzli/webdock/pull/40",
+    "releaseLinksMerged": true,
+    "liveReleaseLink": true
+  },
+  "releaseVerification": {
+    "id": "managed-apps",
+    "version": "0.1.0-alpha.1",
+    "image": "ghcr.io/spitzli/webdock-extension-managed-apps@sha256:f61a83c305f8c1d4e711d390facfc2dfed61c80241e93d5d98a341a13705a739",
+    "manifestSha256": "03369c7843a82969162c6696e0dd6405e8b8751b6f0aff696fd558244ae94b97",
+    "signerKeyID": "5d8025c66487bb44",
+    "signatureVerified": true,
+    "downloadedDescriptorMatches": true
+  },
+  "releaseWebhook": {
+    "id": "699908563",
+    "releaseEditedStatus": 200,
+    "pingStatus": 400,
+    "pingNote": "release-only receiver rejects ping; actual release event succeeded"
+  }
+}
