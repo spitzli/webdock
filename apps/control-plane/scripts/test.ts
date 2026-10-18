@@ -28,6 +28,7 @@ const integration = new Set([
   "cms-bridge.integration.test.ts",
 ]);
 const rls = new Set([
+  "database-job-identity-rls.integration.test.ts",
   "retained-billing-schema.integration.test.ts",
   "plugins-startup-rls.integration.test.ts",
   "plugins-runtime-state-rls.integration.test.ts",

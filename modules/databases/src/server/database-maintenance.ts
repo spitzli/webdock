@@ -108,7 +108,7 @@ export function createHostingDatabaseMaintenance(dependencies: Dependencies) {
     } else if (cmd.action === "databases.reconcile") {
       const pending = (
         await db.query(
-          `SELECT o.id,j.backend_id,j.checkpoint FROM webdock_auth.hosting_database_job j JOIN webdock_auth.hosting_operation o ON o.id=j.operation_id
+          `SELECT o.id,o.generation,o.lease_until,j.backend_id,j.action,j.revision,j.lease_token_hash,j.checkpoint FROM webdock_auth.hosting_database_job j JOIN webdock_auth.hosting_operation o ON o.id=j.operation_id
    WHERE j.database_id=$1 AND o.status='needs-reconciliation' ORDER BY o.created_at DESC LIMIT 1 FOR UPDATE OF o,j`,
           [row.id],
         )
@@ -116,31 +116,65 @@ export function createHostingDatabaseMaintenance(dependencies: Dependencies) {
       const actualBackend = pending
         ? (
             await db.query(
-              "SELECT cnpg_uid FROM webdock_auth.hosting_database_backend WHERE id=$1",
+              "SELECT cnpg_uid,revision,observed_revision,state FROM webdock_auth.hosting_database_backend WHERE id=$1",
               [pending.backend_id],
             )
           ).rows[0]
         : null;
-      if (!pending || !actualBackend?.cnpg_uid || !pending.checkpoint)
+      const neverClaimed =
+        pending &&
+        actualBackend &&
+        pending.id === current.operation_id &&
+        pending.backend_id === row.backend_id &&
+        pending.action === "create" &&
+        pending.revision === 1 &&
+        current.revision === 1 &&
+        current.state === "needs-reconciliation" &&
+        pending.generation === 0 &&
+        pending.lease_until === null &&
+        pending.lease_token_hash === null &&
+        pending.checkpoint === null &&
+        actualBackend.cnpg_uid === null &&
+        actualBackend.revision === 1 &&
+        actualBackend.observed_revision === 0 &&
+        actualBackend.state === "provisioning";
+      if (
+        !neverClaimed &&
+        (!pending || !actualBackend?.cnpg_uid || !pending.checkpoint)
+      )
         throw new HostingError(
           409,
           "Operator must inspect the unconfirmed installation before reconciliation.",
         );
-      // Reconciliation observes the previous intent. It never replays its unsafe mutation.
+      if (neverClaimed) {
+        // No lease was ever issued, so no agent could have started this creation.
+        await dependencies.freshDatabaseCluster(db, backend.cluster_id);
+        await db.query(
+          "UPDATE webdock_auth.hosting_database SET state='provisioning' WHERE id=$1",
+          [row.id],
+        );
+      } else {
+        // Once a lease exists, reconciliation only observes the previous intent.
+        await db.query(
+          "UPDATE webdock_auth.hosting_database_job SET checkpoint=$2 WHERE operation_id=$1",
+          [
+            pending.id,
+            JSON.stringify({
+              ...pending.checkpoint,
+              phase: "observing",
+              cnpgUID: actualBackend.cnpg_uid,
+            }),
+          ],
+        );
+      }
       await db.query(
-        "UPDATE webdock_auth.hosting_database_job SET checkpoint=$2 WHERE operation_id=$1",
+        "UPDATE webdock_auth.hosting_operation SET status='queued',actor_session=$2,subject=$3,desired=coalesce(desired,'{}'::jsonb)||jsonb_build_object('consoleIdentity',$4::jsonb) WHERE id=$1",
         [
           pending.id,
-          JSON.stringify({
-            ...pending.checkpoint,
-            phase: "observing",
-            cnpgUID: actualBackend.cnpg_uid,
-          }),
+          actor.sessionID,
+          actor.subject,
+          JSON.stringify(actor.consoleIdentity ?? null),
         ],
-      );
-      await db.query(
-        "UPDATE webdock_auth.hosting_operation SET status='queued',actor_session=$2 WHERE id=$1",
-        [pending.id, actor.sessionID],
       );
     } else {
       await dependencies.freshDatabaseCluster(db, backend.cluster_id);
