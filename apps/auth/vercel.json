@@ -3,6 +3,6 @@
     "fra1"
   ],
   "git": {
-    "deploymentEnabled": true
+    "deploymentEnabled": false
   }
 }
