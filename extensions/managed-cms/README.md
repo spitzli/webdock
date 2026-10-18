@@ -24,7 +24,7 @@ bun extensions/managed-cms/manifest.ts \
   managed-cms.plugin.json
 ```
 
-The runtime listens privately with TLS on port 3443, and serves its sandboxed UI on port 3444. It uses the existing runtime token, host public key, generation, host URL, Console origin and TLS-file environment contract. No CMS credentials are embedded in the UI.
+The runtime listens privately with TLS on port 3443, and serves its sandboxed UI on port 3444. It uses the installer's standard `WEBDOCK_PLUGIN_PUBLIC_KEY` PEM, runtime token, generation, host URL and TLS-file contract. Its exact Console CSP comes from operator-configured `runtime.consoleOrigin`, emitted as `WEBDOCK_PLUGIN_CONSOLE_ORIGIN`; the installer must be upgraded and configured before UI installation. The installed pod runs as UID/GID 1000, overriding the image's default 65532. No CMS credentials are embedded in the UI.
 
 ## Installation prerequisites
 

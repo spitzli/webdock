@@ -117,7 +117,7 @@ class InstallerTests(unittest.TestCase):
         config = {'runtime': {'namespace': 'plugins', 'apiNamespace': 'platform', 'apiPodLabels': {'app': 'webdock-api'},
                   'apiAddresses': ['203.0.113.10'], 'hostOrigin': 'https://api.example', 'clusterID': 'local',
                   'ingressNamespace': 'kube-system', 'ingressPodLabels': {'app.kubernetes.io/name': 'traefik'},
-                  'uiBaseDomain': 'source.plugins.example', 'uiCertResolver': 'webdock', 'ingressClass': 'traefik'}}
+                  'consoleOrigin': 'https://console.example.test', 'uiBaseDomain': 'source.plugins.example', 'uiCertResolver': 'webdock', 'ingressClass': 'traefik'}}
         job = {**JOB, 'manifestRaw': json.dumps({'name': 'example', 'version': '1.0.0', 'image': 'registry.example/p@sha256:' + 'a' * 64, 'navigation': [{'path': '/ui'}]})}
         resources = installer.runtime_resources(config, job, 'TOKEN', 'PUBLIC KEY', 'CERT', 'KEY')
         ingress = next(item for item in resources if item['kind'] == 'Ingress')
@@ -158,6 +158,52 @@ class InstallerTests(unittest.TestCase):
             installer.validate_config({**original, 'runtime':headless})
             with self.assertRaises(worker.Rejected):
                 installer.validate_config({**original, 'runtime':{**headless, 'uiCertResolver':'webdock'}})
+
+    def test_console_origin_is_required_for_ui_and_emitted_with_standard_identity(self):
+        runtime = json.loads(Path(__file__).with_name('plugin-installer.example.json').read_text())['runtime']
+        runtime.update(apiAddresses=['203.0.113.10'], consoleOrigin='https://console.example.test')
+        job = {**JOB, 'manifestRaw':json.dumps({'name':'example','version':'1.0.0','image':'registry.example/p@sha256:'+'a'*64,'navigation':[{'path':'/ui'}]})}
+        resources = installer.runtime_resources({'runtime':runtime}, job, 'TOKEN', 'PUBLIC KEY', 'CERT', 'KEY')
+        identity = next(item for item in resources if item['kind']=='Secret' and item['type']=='Opaque')['stringData']
+        self.assertEqual(identity['WEBDOCK_PLUGIN_CONSOLE_ORIGIN'], 'https://console.example.test')
+        self.assertEqual(identity['WEBDOCK_PLUGIN_PUBLIC_KEY'], 'PUBLIC KEY')
+        self.assertEqual(identity['WEBDOCK_PLUGIN_RUNTIME_TOKEN'], 'TOKEN')
+        self.assertNotIn('WEBDOCK_PLUGIN_HOST_PUBLIC_KEY', identity)
+        deployment = next(item for item in resources if item['kind']=='Deployment')
+        self.assertEqual(deployment['spec']['template']['spec']['securityContext']['runAsUser'],1000)
+        runtime.pop('consoleOrigin')
+        with self.assertRaisesRegex(worker.Rejected,'plugin_ui_setup_required'):
+            installer.runtime_resources({'runtime':runtime},job,'TOKEN','PUBLIC KEY','CERT','KEY')
+
+    def test_console_origin_validation_rejects_noncanonical_or_injected_sources(self):
+        config=json.loads(Path(__file__).with_name('plugin-installer.example.json').read_text())
+        config['runtime']['apiAddresses']=['203.0.113.10']
+        config['github'].update(appID='1',installationID='2',repositoryID='42')
+        invalid=['', 'http://console.example.test','https://console.example.test/',
+                 'https://console.example.test/path','https://user@console.example.test',
+                 'https://console.example.test?x=1','https://console.example.test#x',
+                 'https://*.example.test','https://CONSOLE.example.test',
+                 'https://console.example.test:443','https://console.example.test:bad',
+                 'https://127.1','https://0x7f000001','https://[fe80::1%eth0]',
+                 'https://console.example.test; frame-ancestors *','https://console.example.test\r\n',
+                 123, {}, True]
+        with tempfile.TemporaryDirectory() as directory, patch.object(worker,'private_file',side_effect=Path):
+            config['artifactRoot']=directory
+            missing={key:value for key,value in config['runtime'].items() if key!='consoleOrigin'}
+            with self.assertRaisesRegex(worker.Rejected,'plugin_ui_setup_required'):
+                installer.validate_config({**config,'runtime':missing})
+            for origin in invalid:
+                with self.subTest(origin=origin), self.assertRaisesRegex(worker.Rejected,'invalid_console_origin'):
+                    installer.validate_config({**config,'runtime':{**config['runtime'],'consoleOrigin':origin}})
+            for origin in ['https://console.example.test','https://console.example.test:8443','https://[2001:db8::1]:8443']:
+                installer.validate_config({**config,'runtime':{**config['runtime'],'consoleOrigin':origin}})
+            headless={key:value for key,value in config['runtime'].items() if key not in ('consoleOrigin','uiBaseDomain','uiTLSSecret','uiCertResolver','ingressClass')}
+            installer.validate_config({**config,'runtime':headless})
+            job={**JOB,'manifestRaw':json.dumps({'name':'headless','version':'1.0.0','image':'registry.example/p@sha256:'+'a'*64,'navigation':[]})}
+            resources=installer.runtime_resources({'runtime':headless},job,'TOKEN','PUBLIC KEY','CERT','KEY')
+            identity=next(item for item in resources if item['kind']=='Secret' and item['type']=='Opaque')['stringData']
+            self.assertNotIn('WEBDOCK_PLUGIN_CONSOLE_ORIGIN',identity)
+            self.assertEqual(identity['WEBDOCK_PLUGIN_PUBLIC_KEY'],'PUBLIC KEY')
 
     def test_api_hairpin_egress_uses_only_configured_ingress_pods(self):
         config = {'runtime': {'namespace': 'plugins', 'apiNamespace': 'platform', 'apiPodLabels': {'app': 'webdock-api'},

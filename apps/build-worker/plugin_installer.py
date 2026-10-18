@@ -90,6 +90,33 @@ def build_source(config, control, job, source):
         worker.remove_artifact_keys(config, [artifact['storageKey']])
 
 
+def console_origin(value):
+    if value is None:
+        return None
+    try:
+        if not isinstance(value, str) or len(value) > 2048:
+            raise ValueError('Invalid origin')
+        parsed = urllib.parse.urlsplit(value)
+        if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or parsed.path or parsed.query or parsed.fragment:
+            raise ValueError('Invalid origin')
+        host = parsed.hostname
+        if ':' in host:
+            if '%' in host:
+                raise ValueError('Scoped IPv6 is not a URL origin')
+            host = '[' + ipaddress.ip_address(host).compressed + ']'
+        elif not re.fullmatch(r'[a-z0-9.-]+', host):
+            raise ValueError('Invalid host')
+        elif re.fullmatch(r'[0-9]+|0x[a-f0-9]+', host.rstrip('.').rsplit('.', 1)[-1]):
+            host = str(ipaddress.IPv4Address(host))
+        port = parsed.port
+        canonical = 'https://' + host + (':' + str(port) if port is not None and port != 443 else '')
+        if value != canonical:
+            raise ValueError('Noncanonical origin')
+        return value
+    except ValueError:
+        raise worker.Rejected('invalid_console_origin') from None
+
+
 def runtime_resources(config, job, token, public_key, certificate, key):
     runtime = config['runtime']
     manifest = exact_json(job['manifestRaw'])
@@ -98,7 +125,8 @@ def runtime_resources(config, job, token, public_key, certificate, key):
     def resource(kind, body, api='v1', suffix=''):
         return {'apiVersion': api, 'kind': kind, 'metadata': {'name': name + suffix, 'namespace': runtime['namespace'], 'labels': labels}, **body}
     navigation = bool(manifest.get('navigation'))
-    if navigation and (not all(runtime.get(field) for field in ('uiBaseDomain', 'ingressClass', 'ingressNamespace', 'ingressPodLabels'))
+    console = console_origin(runtime.get('consoleOrigin'))
+    if navigation and (not all(runtime.get(field) for field in ('consoleOrigin', 'uiBaseDomain', 'ingressClass', 'ingressNamespace', 'ingressPodLabels'))
                        or bool(runtime.get('uiTLSSecret')) == bool(runtime.get('uiCertResolver'))):
         raise worker.Rejected('plugin_ui_setup_required')
     identity = {'WEBDOCK_PLUGIN_ID': manifest['name'], 'WEBDOCK_PLUGIN_VERSION': manifest['version'],
@@ -106,6 +134,8 @@ def runtime_resources(config, job, token, public_key, certificate, key):
                 'WEBDOCK_PLUGIN_RUNTIME_TOKEN': token, 'WEBDOCK_PLUGIN_PUBLIC_KEY': public_key,
                 'WEBDOCK_PLUGIN_CONFIGURATION': json.dumps(job.get('configuration', {})),
                 'WEBDOCK_PLUGIN_TLS_CERT': '/runtime-tls/tls.crt', 'WEBDOCK_PLUGIN_TLS_KEY': '/runtime-tls/tls.key'}
+    if console is not None:
+        identity['WEBDOCK_PLUGIN_CONSOLE_ORIGIN'] = console
     secret = resource('Secret', {'type': 'Opaque', 'stringData': identity}, suffix='-identity')
     tls = resource('Secret', {'type': 'kubernetes.io/tls', 'stringData': {'tls.crt': certificate, 'tls.key': key}}, suffix='-tls')
     security = {'allowPrivilegeEscalation': False, 'readOnlyRootFilesystem': True, 'capabilities': {'drop': ['ALL']}}
@@ -264,6 +294,7 @@ def validate_config(config):
         raise worker.Rejected('invalid_registry')
     worker.private_file(registry['authFile'])
     runtime = config['runtime']
+    console_origin(runtime.get('consoleOrigin'))
     if bool(runtime.get('ingressNamespace')) != bool(runtime.get('ingressPodLabels')):
         raise worker.Rejected('invalid_ingress_selector')
     for name in ['namespace', 'apiNamespace'] + (['ingressNamespace'] if runtime.get('ingressNamespace') else []):
@@ -280,7 +311,7 @@ def validate_config(config):
         if not isinstance(labels, dict) or not labels or any(not isinstance(value, str) or not value for value in labels.values()):
             raise worker.Rejected('invalid_pod_selector')
     if any(runtime.get(field) for field in ('uiBaseDomain', 'uiTLSSecret', 'uiCertResolver')):
-        if (not all(runtime.get(field) for field in ('uiBaseDomain', 'ingressClass', 'ingressNamespace', 'ingressPodLabels'))
+        if (not all(runtime.get(field) for field in ('consoleOrigin', 'uiBaseDomain', 'ingressClass', 'ingressNamespace', 'ingressPodLabels'))
                 or bool(runtime.get('uiTLSSecret')) == bool(runtime.get('uiCertResolver'))):
             raise worker.Rejected('plugin_ui_setup_required')
     if runtime.get('uiBaseDomain') and (not re.fullmatch(r'[a-z0-9.-]+', runtime['uiBaseDomain']) or runtime['uiBaseDomain'] == host.hostname):

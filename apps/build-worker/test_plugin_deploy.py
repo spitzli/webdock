@@ -163,6 +163,32 @@ class PluginDeployTests(unittest.TestCase):
         self.assertEqual(settings['runtimes']['example'], result['binding'])
         self.assertEqual(len(settings['runtimes']), 2)
 
+    def test_ui_deploy_uses_operator_console_origin_and_standard_public_key(self):
+        config=copy.deepcopy(CONFIG)
+        config['runtime'].update(consoleOrigin='https://console.example.test',uiBaseDomain='plugins.example.net',
+                                 uiCertResolver='webdock',ingressClass='traefik',ingressNamespace='kube-system',
+                                 ingressPodLabels={'app.kubernetes.io/name':'traefik'})
+        job={**copy.deepcopy(JOB),'manifestRaw':json.dumps({**MANIFEST,'navigation':[{'path':'/ui/cms'}]})}
+        with patch('plugin_installer.Kubernetes',return_value=self.kube):
+            installer.deploy_runtime(config,self.control,job)
+        identity=next(item for item in self.kube.created if item['kind']=='Secret' and item['type']=='Opaque')['stringData']
+        self.assertEqual(identity['WEBDOCK_PLUGIN_CONSOLE_ORIGIN'],'https://console.example.test')
+        self.assertEqual(identity['WEBDOCK_PLUGIN_PUBLIC_KEY'],self.public_key)
+        self.assertNotIn('WEBDOCK_PLUGIN_HOST_PUBLIC_KEY',identity)
+
+    def test_missing_or_invalid_ui_console_origin_creates_no_resource(self):
+        config=copy.deepcopy(CONFIG)
+        config['runtime'].update(uiBaseDomain='plugins.example.net',uiCertResolver='webdock',ingressClass='traefik',
+                                 ingressNamespace='kube-system',ingressPodLabels={'app.kubernetes.io/name':'traefik'})
+        job={**copy.deepcopy(JOB),'manifestRaw':json.dumps({**MANIFEST,'navigation':[{'path':'/ui/cms'}]})}
+        for origin in [None,'http://console.example.test','https://console.example.test/']:
+            with self.subTest(origin=origin),patch('plugin_installer.Kubernetes',return_value=self.kube):
+                config['runtime']['consoleOrigin']=origin
+                with self.assertRaises(worker.Rejected):
+                    installer.deploy_runtime(config,self.control,job)
+                self.assertEqual(self.kube.created,[])
+                self.assertEqual(self.kube.replacements,[])
+
     def test_wrong_requested_or_observed_image_never_updates_runtime_binding(self):
         for field in ('pod_image', 'observed_image'):
             with self.subTest(field=field):

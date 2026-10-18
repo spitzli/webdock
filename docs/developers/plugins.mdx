@@ -89,7 +89,7 @@ The action process listens on **HTTPS port 3443**. All requests require `Authori
 
 Verify the token with the SDK and check the exact action name, plugin identity, generation and expiration before processing input. Construct an SDK context per invocation using the configured host origin and runtime credential; never accept a caller-supplied host origin as authority. The generated template implements these checks and limits bodies to 32 KiB. Its echo action accepts a message of at most 1,000 characters.
 
-The installer supplies these environment variables: `WEBDOCK_PLUGIN_ID`, `WEBDOCK_PLUGIN_VERSION`, `WEBDOCK_PLUGIN_GENERATION`, `WEBDOCK_PLUGIN_HOST_URL`, `WEBDOCK_PLUGIN_RUNTIME_TOKEN`, `WEBDOCK_PLUGIN_PUBLIC_KEY`, `WEBDOCK_PLUGIN_CONFIGURATION`, `WEBDOCK_PLUGIN_TLS_CERT` and `WEBDOCK_PLUGIN_TLS_KEY`. The TLS files are mounted at `/runtime-tls/tls.crt` and `/runtime-tls/tls.key`. They and the runtime credential must stay out of the source archive. An optional browser UI uses a separate plain HTTP listener on **3444**, behind the host's HTTPS ingress.
+The installer supplies these environment variables: `WEBDOCK_PLUGIN_ID`, `WEBDOCK_PLUGIN_VERSION`, `WEBDOCK_PLUGIN_GENERATION`, `WEBDOCK_PLUGIN_HOST_URL`, `WEBDOCK_PLUGIN_RUNTIME_TOKEN`, `WEBDOCK_PLUGIN_PUBLIC_KEY`, `WEBDOCK_PLUGIN_CONFIGURATION`, `WEBDOCK_PLUGIN_TLS_CERT` and `WEBDOCK_PLUGIN_TLS_KEY`. The TLS files are mounted at `/runtime-tls/tls.crt` and `/runtime-tls/tls.key`. They and the runtime credential must stay out of the source archive. A UI plugin also receives `WEBDOCK_PLUGIN_CONSOLE_ORIGIN`, copied from the operator's `runtime.consoleOrigin`. An optional browser UI uses a separate plain HTTP listener on **3444**, behind the host's HTTPS ingress.
 
 ### Operator setup
 
@@ -102,20 +102,22 @@ The API requires `WEBDOCK_PLUGIN_INSTALLER_TOKEN` (at least 32 characters) and `
 - `runtime.namespace`, `runtime.kubeconfigFile`, `runtime.clusterID`, `runtime.hostOrigin`, `runtime.apiNamespace`, `runtime.apiPodLabels` and `runtime.apiAddresses` for workload isolation and host access.
 - `runtime.configSecret` with `name`, `namespace` and `key` identifying the runtime configuration secret mounted by the API. Optional `imagePullSecret` supports private image pulls. Set `ingressNamespace` and `ingressPodLabels` when API traffic is routed back through cluster ingress; this permits only those pods on TCP 443/8443 after address translation.
 
-Browser UI installations also require `uiBaseDomain`, `ingressClass`, `ingressNamespace`, `ingressPodLabels`, and **exactly one** TLS option:
+Browser UI installations also require `consoleOrigin`, `uiBaseDomain`, `ingressClass`, `ingressNamespace`, `ingressPodLabels`, and **exactly one** TLS option:
 
 - `uiCertResolver`: the name of an existing Traefik certificate resolver, such as `webdock` in the example configuration. The installer selects that resolver on the `websecure` entrypoint. It does not create or configure the resolver.
 - `uiTLSSecret`: an existing TLS Secret in `runtime.namespace`, whose certificate covers the generated UI hostname. Omit `uiCertResolver` when using this option.
 
 An existing Traefik HTTP-01 resolver can issue an individual certificate for each `pi-<importID>.<uiBaseDomain>` host; no wildcard certificate is required. Point those hostnames to the ingress endpoint (wildcard DNS is suitable) and keep port 80 reachable for the resolver's HTTP-01 challenge. HTTPS UI traffic uses `websecure`; the plugin's internal UI service remains on port 3444. See [Traefik's ingress TLS configuration](https://doc.traefik.io/traefik/reference/routing-configuration/kubernetes/ingress/) and [ACME HTTP-01 requirements](https://doc.traefik.io/traefik/reference/install-configuration/tls/certificate-resolvers/acme/).
 
-If no browser UI is needed, omit `uiBaseDomain` and both TLS options. Supplying both TLS options, or a UI domain without either option, fails configuration validation before any workload is created.
+Set `runtime.consoleOrigin` to the exact canonical HTTPS Console origin, such as `https://console.example.com`. It must have no path, trailing slash, credentials, query, fragment or wildcard. The installer validates it and passes it unchanged for an exact `frame-ancestors` policy; it never derives the Console origin from `hostOrigin`. Existing UI installer configurations must add this field when upgrading the installer source.
+
+If no browser UI is needed, `consoleOrigin` can be omitted along with `uiBaseDomain` and both TLS options. Supplying both TLS options, or a UI domain without either option, fails configuration validation before any workload is created.
 
 The worker creates a non-root workload with a read-only root filesystem, restricted network policy, private TLS credentials and image digest verification. It updates the runtime binding before API health verification and activation. Provision and test the worker, registry, secret mounting and network permissions for your installation; the Console setup indicator alone does not prove that infrastructure is ready.
 
 Workloads include startup, readiness and liveness probes. On clusters enforcing Webdock's application safety admission policy, verify Restricted Pod Security, the namespace quota and default-deny ingress/egress policy before setting `security.webdock.dev/ready=true` on the plugin namespace.
 
-Use the checked-in [example configuration](https://github.com/spitzli/webdock/blob/v0.1.0-alpha.2/apps/build-worker/plugin-installer.example.json)
+Use the checked-in [example configuration](https://github.com/spitzli/webdock/blob/main/apps/build-worker/plugin-installer.example.json)
 and [systemd service](https://github.com/spitzli/webdock/blob/v0.1.0-alpha.2/apps/build-worker/webdock-plugin-installer.service).
 Install the [private workflow template](https://github.com/spitzli/webdock/tree/v0.1.0-alpha.2/tools/plugins/github-actions)
 and its trusted helpers in the private build repository. Set its
