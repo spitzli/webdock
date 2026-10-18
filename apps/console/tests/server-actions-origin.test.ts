@@ -19,3 +19,12 @@ test("Server Actions trust only the configured public Console host behind Vercel
 test("unconfigured deployments do not add cross-origin Server Actions trust", () => {
   assert.deepEqual(allowedOrigins(), []);
 });
+
+
+test("Auth Server Actions trust only the configured public Better Auth host", () => {
+  const env = { ...process.env, BETTER_AUTH_URL: "https://auth.webdock.dev" };
+  const result = execFileSync(process.execPath, ["--import", "tsx", "--input-type=module", "-e",
+    "import config from './next.config.ts'; console.log(JSON.stringify(config.experimental.serverActions.allowedOrigins))",
+  ], { cwd: new URL("../../auth/", import.meta.url), env, encoding: "utf8" });
+  assert.deepEqual(JSON.parse(result), ["auth.webdock.dev"]);
+});
