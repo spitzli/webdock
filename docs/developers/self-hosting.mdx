@@ -3,7 +3,7 @@ title: "Self-host Webdock"
 description: "Install the alpha core with external PostgreSQL, offline initialization and your own HTTPS ingress."
 ---
 
-<Note>These instructions target `v0.1.0-alpha.1`. Use the matching source revision and verified artifacts from [GitHub Releases](https://github.com/spitzli/webdock/releases). An alpha installation requires operator-managed PostgreSQL, secrets and ingress; release artifacts do not configure a production environment for you.</Note>
+<Note>These instructions target `v0.1.0-alpha.2`. Use the matching source revision and verified artifacts from [GitHub Releases](https://github.com/spitzli/webdock/releases). An alpha installation requires operator-managed PostgreSQL, secrets and ingress; release artifacts do not configure a production environment for you.</Note>
 
 The core installation runs three services: the bundled core API, the core Console and the Auth frontend. API and Console core images exclude product runtime packages. The separate offline migrator retains the source, dependencies and complete historical database baseline, including product schemas and restricted roles. Installing that baseline creates no customer product service and enables no product. The small JavaScript API bundle is not the total container size: the image also contains Bun and its base operating system.
 
@@ -15,13 +15,21 @@ Original Webdock code is available under **AGPL-3.0-only**, including commercial
 
 Spitzli Development can separately agree commercial or special terms for code it owns or may sublicense. Only a separate written agreement grants those alternative rights; buying hosting or support does not automatically replace the AGPL. Third-party components retain their own licenses. See [commercial licensing](https://github.com/spitzli/webdock/blob/main/COMMERCIAL-LICENSING.md).
 
+## Optional source-plugin installer
+
+Version `0.1.0-alpha.2` adds operator installation from GitHub, HTTPS Git URLs and ZIP archives. Upgrade with the matching offline migration image, including `0046_plugin_sources.sql` and `0047_plugin_source_actions.sql`, before the API and Console. Keep the existing signing material and runtime bindings.
+
+Source installation is a separate opt-in service, not part of the three-service Core startup. It needs an operator-owned private GitHub Actions build repository, an artifact-only publisher on the existing application node, an image registry and a restricted Kubernetes runtime namespace. Source code does not execute on the application node; no additional KVM build host or application-node Docker socket is required. A Compose-only installation needs a Kubernetes target before enabling this feature.
+
+The [plugin guide](/developers/plugins) covers the private workflow template, App permissions, exact manifest/capability approval, background activation and UI TLS options. Without this configuration, Console reports **Installer setup required**. The artifact publisher and trusted workflow helpers are supplied in the matching source tag; there is no new installer image in the nine-image release bundle.
+
 ## Obtain the matching images
 
 The release contains nine image archives: `api-core`, `console-core`, `auth`, `migrate`, plus the full `api`, `console`, `worker`, `agent` and `mail-runtime` images. Verify the signed checksum list, expected signing identity, manifest and archive digests before importing artifacts. Use registry digests when registry images are available; otherwise import the verified OCI archives with an OCI-aware tool such as `skopeo`. Never substitute an unrelated moving tag.
 
 ### Verify a downloaded release
 
-Download `SHA256SUMS`, `SHA256SUMS.sigstore.json`, `manifest.json` and `architecture-evidence.json` from [v0.1.0-alpha.1](https://github.com/spitzli/webdock/releases/tag/v0.1.0-alpha.1). Keep all four files in one directory. Verify the signature and the downloaded metadata before selecting registry images:
+Download `SHA256SUMS`, `SHA256SUMS.sigstore.json`, `manifest.json` and `architecture-evidence.json` from [v0.1.0-alpha.2](https://github.com/spitzli/webdock/releases/tag/v0.1.0-alpha.2). Keep all four files in one directory. Verify the signature and the downloaded metadata before selecting registry images:
 
 ```sh
 cosign verify-blob --bundle SHA256SUMS.sigstore.json \
@@ -47,8 +55,8 @@ For archive import instead, additionally download `api-core.oci.tar`, `console-c
 For local Docker import, repeat for each selected image:
 
 ```sh
-skopeo copy oci-archive:api-core.oci.tar docker-daemon:webdock-api-core:0.1.0-alpha.1
-export WEBDOCK_API_CORE_IMAGE="$(docker image inspect webdock-api-core:0.1.0-alpha.1 --format '{{.Id}}')"
+skopeo copy oci-archive:api-core.oci.tar docker-daemon:webdock-api-core:0.1.0-alpha.2
+export WEBDOCK_API_CORE_IMAGE="$(docker image inspect webdock-api-core:0.1.0-alpha.2 --format '{{.Id}}')"
 ```
 
 This selects an immutable local image ID. For registry pulls, use the signed executable digest in `artifacts[].oci.manifests[]` for your architecture, or a separately verified registry index digest. **Do not use `oci.indexDigest` as a registry pull reference**: it identifies the archive's `index.json`, which can differ from the registry's root manifest.
@@ -265,7 +273,7 @@ node --test tools/release/manifest.test.mjs
 node --import tsx tools/release/generate-chart-schema.ts --check
 python3 tools/release/check-charts.py
 python3 tools/release/check-compose.py
-tools/release/build.sh 0.1.0-alpha.1 ./release-candidate linux/amd64
+tools/release/build.sh 0.1.0-alpha.2 ./release-candidate linux/amd64
 node tools/release/manifest.mjs verify ./release-candidate
 ```
 
