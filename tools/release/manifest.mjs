@@ -79,6 +79,12 @@ export function validateEvidence(evidence, revision) {
     )
   )
     throw Error("Missing tested image digest evidence");
+  if (
+    (evidence.cmsRuntime || evidence.imageRegistryDigests !== undefined) &&
+    (!evidence.imageRegistryDigests || evidenceImages(evidence).some(
+      (name) => !/^sha256:[a-f0-9]{64}$/.test(evidence.imageRegistryDigests[name]),
+    ))
+  ) throw Error("Missing tested image registry digest evidence");
   if (evidence.databaseRuntime) {
     const source = evidence.databaseRuntime;
     if (
@@ -96,8 +102,9 @@ export function validateEvidence(evidence, revision) {
 }
 /** The signed companion must install the exact image that passed native execution. */
 export function validateCMSPlugin(plugin, evidence, registry) {
-  const expected = evidence.imageIndexDigests?.["managed-cms"];
-  if (!evidence.cmsRuntime || !plugin || plugin.name !== "managed-cms" ||
+  const expected = evidence.imageRegistryDigests?.["managed-cms"];
+  if (!/^sha256:[a-f0-9]{64}$/.test(expected) ||
+    !evidence.cmsRuntime || !plugin || plugin.name !== "managed-cms" ||
     plugin.version !== cmsVersions.pluginVersion || plugin.kind !== "extension" ||
     plugin.protocolVersion !== 1 || plugin.sdkVersion !== 1 || plugin.schemaVersion !== 1 ||
     typeof plugin.image !== "string" ||
@@ -123,6 +130,8 @@ export function inspectOCIArchive(file) {
     index = JSON.parse(indexBytes);
   if (index.schemaVersion !== 2 || !Array.isArray(index.manifests))
     throw Error("Invalid OCI index");
+  if (index.manifests.length !== 1)
+    throw Error("OCI archive must have a single registry root");
   const manifests = [],
     seen = new Set();
   const blob = (descriptor) => {
@@ -166,7 +175,9 @@ export function inspectOCIArchive(file) {
   for (const descriptor of index.manifests) visit(descriptor);
   if (!manifests.length) throw Error("OCI archive has no executable image");
   return {
+    // index.json is the archive catalogue; Skopeo publishes its validated root blob.
     indexDigest: "sha256:" + digest(indexBytes),
+    registryDigest: index.manifests[0].digest,
     manifests: manifests.sort(
       (a, b) =>
         a.platform.localeCompare(b.platform) ||
@@ -232,8 +243,10 @@ export async function createManifest(directory, version, revision) {
       throw Error("Image architecture lacks matching execution evidence");
     if (
       oci &&
-      evidence.imageIndexDigests[file.replace(".oci.tar", "")] !==
-        oci.indexDigest
+      (evidence.imageIndexDigests[file.replace(".oci.tar", "")] !==
+        oci.indexDigest ||
+        (evidence.imageRegistryDigests &&
+          evidence.imageRegistryDigests[file.replace(".oci.tar", "")] !== oci.registryDigest))
     )
       throw Error("Image differs from architecture execution evidence");
     artifacts.push({
@@ -319,11 +332,17 @@ export async function verifyManifest(directory) {
       throw Error(`Artifact mismatch: ${artifact.file}`);
     if (artifact.file.endsWith(".oci.tar")) {
       const oci = inspectOCIArchive(join(directory, artifact.file));
+      // Earlier non-CMS manifests signed only the archive catalogue and platform manifests.
+      const comparableOCI = !evidence.imageRegistryDigests && artifact.oci?.registryDigest === undefined
+        ? { indexDigest: oci.indexDigest, manifests: oci.manifests }
+        : oci;
       if (
         manifest.architectureEvidence.imageIndexDigests[
           artifact.file.replace(".oci.tar", "")
         ] !== oci.indexDigest ||
-        JSON.stringify(oci) !== JSON.stringify(artifact.oci) ||
+        (evidence.imageRegistryDigests &&
+          evidence.imageRegistryDigests[artifact.file.replace(".oci.tar", "")] !== oci.registryDigest) ||
+        JSON.stringify(comparableOCI) !== JSON.stringify(artifact.oci) ||
         oci.manifests.some((item) => item.platform !== platform)
       )
         throw Error("OCI manifest or architecture mismatch");

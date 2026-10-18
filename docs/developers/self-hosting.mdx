@@ -59,7 +59,7 @@ skopeo copy oci-archive:api-core.oci.tar docker-daemon:webdock-api-core:0.1.0-al
 export WEBDOCK_API_CORE_IMAGE="$(docker image inspect webdock-api-core:0.1.0-alpha.2 --format '{{.Id}}')"
 ```
 
-This selects an immutable local image ID. For registry pulls, use the signed executable digest in `artifacts[].oci.manifests[]` for your architecture, or a separately verified registry index digest. **Do not use `oci.indexDigest` as a registry pull reference**: it identifies the archive's `index.json`, which can differ from the registry's root manifest.
+This selects an immutable local image ID. For registry pulls, use `artifacts[].oci.registryDigest`, also recorded in `architectureEvidence.imageRegistryDigests`. This is the validated single root image/index digest that is published to the registry. Older releases without these fields can use the signed executable digest in `artifacts[].oci.manifests[]` for your architecture, or a separately verified registry root digest. **Do not use `oci.indexDigest` as a registry pull reference**: it identifies the archive's `index.json`, which can differ from the registry's root manifest.
 
 For a local evaluation build from the pinned source revision:
 

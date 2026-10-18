@@ -29,7 +29,7 @@ const evidence = {
     images.map((name) => [name, "sha256:" + "0".repeat(64)]),
   ),
 };
-async function fixture(dir) {
+async function fixture(dir, { nested = false, multipleRoots = false } = {}) {
   const root = join(dir, "oci");
   await mkdir(join(root, "blobs/sha256"), { recursive: true });
   const blob = async (value, mediaType) => {
@@ -46,13 +46,15 @@ async function fixture(dir) {
     { schemaVersion: 2, config, layers: [] },
     "application/vnd.oci.image.manifest.v1+json",
   );
+  const image = { ...manifest, platform: { os: "linux", architecture: "amd64" } };
+  const registryRoot = nested
+    ? await blob({ schemaVersion: 2, manifests: [image] }, "application/vnd.oci.image.index.v1+json")
+    : image;
   await writeFile(
     join(root, "index.json"),
     JSON.stringify({
       schemaVersion: 2,
-      manifests: [
-        { ...manifest, platform: { os: "linux", architecture: "amd64" } },
-      ],
+      manifests: multipleRoots ? [registryRoot, image] : [registryRoot],
     }),
   );
   for (const name of images)
@@ -66,18 +68,16 @@ async function fixture(dir) {
     ]);
   for (const name of ["webdock", "webdock-agent"])
     await writeFile(join(dir, `${name}-0.1.0.tgz`), name);
+  const catalogueDigest = "sha256:" + createHash("sha256")
+    .update(await readFile(join(root, "index.json"))).digest("hex");
   await writeFile(
     join(dir, "architecture-evidence.json"),
     JSON.stringify({
       ...evidence,
-      imageIndexDigests: Object.fromEntries(
-        images.map((name) => [
-          name,
-          inspectOCIArchive(join(dir, name + ".oci.tar")).indexDigest,
-        ]),
-      ),
+      imageIndexDigests: Object.fromEntries(images.map(name => [name, catalogueDigest])),
     }),
   );
+  return registryRoot.digest;
 }
 test("release OCI identities, proof and checksums round-trip; tampering fails", async () => {
   const dir = await mkdtemp(join(tmpdir(), "webdock-release-"));
@@ -222,17 +222,20 @@ test("optional database artifacts require pinned source, gateway execution proof
 test("optional CMS release requires both tested images, pinned versions and signed plugin metadata", async () => {
   const dir = await mkdtemp(join(tmpdir(), "webdock-cms-release-"));
   try {
-    await fixture(dir);
+    await fixture(dir, { nested: true });
     const proof = JSON.parse(await readFile(join(dir, "architecture-evidence.json"), "utf8"));
+    proof.imageRegistryDigests = Object.fromEntries(images.map(name => [name, inspectOCIArchive(join(dir, `${name}.oci.tar`)).registryDigest]));
     proof.cmsRuntime = { payloadVersion: "4.0.0-canary.37", pluginVersion: "0.1.0-alpha.1" };
     proof.checks.push(...["cms-instance-fresh-postgres", "managed-cms-runtime"].map(name => ({ name, passed: true })));
     for (const name of ["cms-instance", "managed-cms"]) {
       await cp(join(dir, "api.oci.tar"), join(dir, `${name}.oci.tar`));
-      proof.imageIndexDigests[name] = inspectOCIArchive(join(dir, `${name}.oci.tar`)).indexDigest;
+      const oci = inspectOCIArchive(join(dir, `${name}.oci.tar`));
+      proof.imageIndexDigests[name] = oci.indexDigest;
+      proof.imageRegistryDigests[name] = oci.registryDigest;
     }
     await writeFile(join(dir, "architecture-evidence.json"), JSON.stringify(proof));
     await assert.rejects(createManifest(dir, "0.1.0", revision), /Missing managed-cms.plugin.json/);
-    const plugin = { name: "managed-cms", version: "0.1.0-alpha.1", kind: "extension", protocolVersion: 1, sdkVersion: 1, schemaVersion: 1, image: `ghcr.io/spitzli/webdock/managed-cms@${proof.imageIndexDigests["managed-cms"]}` };
+    const plugin = { name: "managed-cms", version: "0.1.0-alpha.1", kind: "extension", protocolVersion: 1, sdkVersion: 1, schemaVersion: 1, image: `ghcr.io/spitzli/webdock/managed-cms@${proof.imageRegistryDigests["managed-cms"]}` };
     assert.equal(validateCMSPlugin(plugin, proof, "ghcr.io/spitzli/webdock"), plugin);
     assert.throws(() => validateCMSPlugin(plugin, proof, "registry.example/webdock"), /destination image/);
     await writeFile(join(dir, "managed-cms.plugin.json"), JSON.stringify(plugin));
@@ -254,6 +257,7 @@ test("optional CMS release requires both tested images, pinned versions and sign
     }
     await writeFile(join(dir, "managed-cms.plugin.json"), "{");
     await assert.rejects(createManifest(dir, "0.1.0", revision), /CMS plugin metadata/);
+    assert.throws(() => validateEvidence({ ...proof, imageRegistryDigests: undefined }, revision), /registry digest evidence/);
     assert.throws(() => validateEvidence({ ...proof, cmsRuntime: { ...proof.cmsRuntime, payloadVersion: "latest" } }, revision), /pinned CMS/);
     assert.throws(() => validateEvidence({ ...proof, checks: evidence.checks }, revision), /execution check/);
     const { ["managed-cms"]: ignored, ...incomplete } = proof.imageIndexDigests;
@@ -271,5 +275,73 @@ test("non-CMS releases reject stray plugin metadata", async () => {
     await writeFile(join(dir, "managed-cms.plugin.json"), "{}");
     await assert.rejects(verifyManifest(dir), /Unexpected artifact outside manifest/);
     await assert.rejects(createManifest(dir, "0.1.0", revision), /Unexpected artifact/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test("nested OCI layout catalogue digest differs from its validated registry root", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "webdock-release-root-"));
+  try {
+    const expected = await fixture(dir, { nested: true });
+    const oci = inspectOCIArchive(join(dir, "api.oci.tar"));
+    assert.notEqual(oci.indexDigest, expected);
+    assert.equal(oci.registryDigest, expected);
+    const proof = JSON.parse(await readFile(join(dir, "architecture-evidence.json"), "utf8"));
+    proof.imageRegistryDigests = Object.fromEntries(images.map(name => [name, expected]));
+    await writeFile(join(dir, "architecture-evidence.json"), JSON.stringify(proof));
+    const manifest = await createManifest(dir, "0.1.0", revision);
+    assert.equal((await verifyManifest(dir)).artifacts[0].oci.registryDigest, expected);
+    const artifact = manifest.artifacts.find(item => item.file === "api.oci.tar");
+    artifact.oci.registryDigest = "sha256:" + "f".repeat(64);
+    await writeFile(join(dir, "manifest.json"), JSON.stringify(manifest));
+    await assert.rejects(verifyManifest(dir), /OCI/);
+    delete artifact.oci.registryDigest;
+    await writeFile(join(dir, "manifest.json"), JSON.stringify(manifest));
+    await assert.rejects(verifyManifest(dir), /OCI/);
+    artifact.oci.registryDigest = expected;
+    proof.imageRegistryDigests.api = "sha256:" + "f".repeat(64);
+    await writeFile(join(dir, "architecture-evidence.json"), JSON.stringify(proof));
+    await assert.rejects(createManifest(dir, "0.1.0", revision), /execution evidence/);
+    manifest.architectureEvidence = proof;
+    await writeFile(join(dir, "manifest.json"), JSON.stringify(manifest));
+    await assert.rejects(verifyManifest(dir), /OCI/);
+    const { api: ignored, ...missing } = proof.imageRegistryDigests;
+    assert.throws(() => validateEvidence({ ...proof, imageRegistryDigests: missing }, revision), /registry digest evidence/);
+    const root = join(dir, "oci");
+    const blob = join(root, "blobs/sha256", expected.slice(7));
+    await writeFile(blob, (await readFile(blob, "utf8")) + " ");
+    execFileSync("tar", ["-cf", join(dir, "api.oci.tar"), "-C", root, "index.json", "blobs"]);
+    assert.throws(() => inspectOCIArchive(join(dir, "api.oci.tar")), /OCI blob digest mismatch/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test("CMS companion requires the publishable registry root, never the layout catalogue digest", () => {
+  const proof = {
+    ...evidence,
+    cmsRuntime: { payloadVersion: "4.0.0-canary.37", pluginVersion: "0.1.0-alpha.1" },
+    imageIndexDigests: { ...evidence.imageIndexDigests, "managed-cms": "sha256:" + "a".repeat(64) },
+    imageRegistryDigests: { "managed-cms": "sha256:" + "b".repeat(64) },
+  };
+  const plugin = { name: "managed-cms", version: "0.1.0-alpha.1", kind: "extension", protocolVersion: 1, sdkVersion: 1, schemaVersion: 1, image: `ghcr.io/spitzli/webdock/managed-cms@${proof.imageRegistryDigests["managed-cms"]}` };
+  assert.equal(validateCMSPlugin(plugin, proof, "ghcr.io/spitzli/webdock"), plugin);
+  assert.throws(() => validateCMSPlugin({ ...plugin, image: `ghcr.io/spitzli/webdock/managed-cms@${proof.imageIndexDigests["managed-cms"]}` }, proof), /CMS plugin metadata/);
+  assert.throws(() => validateCMSPlugin(plugin, { ...proof, imageRegistryDigests: undefined }), /CMS plugin metadata/);
+});
+
+test("ambiguous multi-root OCI layouts cannot be selected implicitly for publication", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "webdock-release-roots-"));
+  try {
+    await fixture(dir, { nested: true, multipleRoots: true });
+    assert.throws(() => inspectOCIArchive(join(dir, "api.oci.tar")), /single registry root/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test("legacy non-CMS signed manifests without registry metadata still verify", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "webdock-release-legacy-"));
+  try {
+    await fixture(dir, { nested: true });
+    const manifest = await createManifest(dir, "0.1.0", revision);
+    for (const artifact of manifest.artifacts) if (artifact.oci) delete artifact.oci.registryDigest;
+    await writeFile(join(dir, "manifest.json"), JSON.stringify(manifest));
+    assert.equal((await verifyManifest(dir)).artifacts.length, 11);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
