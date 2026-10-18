@@ -45,11 +45,13 @@ jobs:
         with:
           name: distribution
           path: .release/
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: distribution-metadata
+          include-hidden-files: true
           path: |
             .release/SHA256SUMS
             .release/manifest.json
@@ -74,5 +76,6 @@ jobs:
         with:
           name: distribution-signature
           path: .release/SHA256SUMS.sigstore.json
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
