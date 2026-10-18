@@ -16,6 +16,7 @@
     "clusterID": "operator-cluster-1",
     "kubeconfigFile": "/etc/webdock-plugin-installer/kubeconfig",
     "hostOrigin": "https://api.example.com",
+    "consoleOrigin": "https://console.example.com",
     "apiNamespace": "webdock-platform",
     "apiPodLabels": {
       "app": "webdock-api"

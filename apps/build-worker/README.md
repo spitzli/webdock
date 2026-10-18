@@ -222,3 +222,24 @@ project configuration and stores only validated Build Output API output. Local
 publication recreates its own trusted project configuration. Customer scripts,
 package hooks, source configuration and artifact functions are never executed by
 this service. The supported Next.js output metadata cannot enable local bundling.
+
+
+## Source plugin installer runtime contract
+
+`plugin_installer.py` uses `plugin-installer.example.json` for its separate
+artifact-only installer configuration. UI plugins require operator-owned
+`runtime.consoleOrigin` plus their existing UI ingress/TLS settings. Set the exact
+canonical HTTPS Console origin (for example `https://console.example.com`), with
+no trailing slash, path, credentials, query, fragment or wildcard. It is validated
+and emitted unchanged as `WEBDOCK_PLUGIN_CONSOLE_ORIGIN`; it is never inferred
+from the API `hostOrigin`. Headless installations may omit Console/UI fields.
+
+The public invocation key remains plaintext PEM in `WEBDOCK_PLUGIN_PUBLIC_KEY`;
+`WEBDOCK_PLUGIN_RUNTIME_TOKEN` remains the independent private runtime credential.
+TLS files are mounted at `/runtime-tls/tls.crt` and `/runtime-tls/tls.key`.
+Kubernetes starts installed plugins as UID/GID 1000 with a read-only root, even if
+the image declares another non-root default. A UI image must be readable by that
+UID and expose its public UI separately on 3444, with private actions on TLS 3443.
+Upgrade the installer source and add `runtime.consoleOrigin` to its existing
+private config before installing a UI plugin; preserve existing keys, registry,
+GitHub, namespace and runtime-binding configuration.
