@@ -112,7 +112,8 @@ test("delegated Console transport isolates credentials and rejects mixed authent
   const input = {
     apiOrigin: "https://api.webdock.dev",
     uiOrigin: "https://console.webdock.dev",
-    cookie: "webdock-auth.session_token=native; webdock-github-flow=state",
+    cookie:
+      "webdock-auth.session_token=native; __Host-webdock-auth.session_token=native-host; webdock-sso=legacy; __Host-webdock-sso=legacy-host; __session=clerk-cookie; unrelated=secret; __Host-webdock-github=sealed-session; webdock-github-flow=state; webdock-git-flow=git; webdock-vercel-flow=vercel; webdock-byok-vercel=byok",
     path: "/v1/console",
     consoleSession: { token: "signed.clerk.token", serviceKey: "a".repeat(32) },
   };
@@ -122,7 +123,10 @@ test("delegated Console transport isolates credentials and rejects mixed authent
     const headers = new Headers(init?.headers);
     assert.equal(headers.get("authorization"), "Bearer signed.clerk.token");
     assert.equal(headers.get("x-webdock-service-key"), "a".repeat(32));
-    assert.equal(headers.get("cookie"), "");
+    assert.equal(
+      headers.get("cookie"),
+      "__Host-webdock-github=sealed-session; webdock-github-flow=state; webdock-git-flow=git; webdock-vercel-flow=vercel; webdock-byok-vercel=byok",
+    );
     return Response.json({ data: null });
   };
   await requestAPI(input, fetcher);
@@ -133,4 +137,58 @@ test("delegated Console transport isolates credentials and rejects mixed authent
   ])
     await assert.rejects(requestAPI({ ...input, ...update }, fetcher));
   assert.equal(calls, 1);
+});
+
+test("Console GitHub repository views and source imports retain the sealed provider session", async () => {
+  const bodies = [
+    { operation: "plugins.github", args: [{ installation: "12345678" }] },
+    {
+      operation: "plugins.sources",
+      args: [
+        {
+          action: "create",
+          projectID: "123",
+          mode: "build",
+          idempotencyKey: "fixture-import",
+          source: {
+            kind: "github",
+            installation: 12345678,
+            installationPage: 1,
+            page: 1,
+            repository: 42,
+            ref: "HEAD",
+          },
+        },
+      ],
+    },
+  ];
+  for (const body of bodies) {
+    const result = await requestAPI(
+      {
+        apiOrigin: "https://api.webdock.dev",
+        uiOrigin: "https://console.webdock.dev",
+        path: "/v1/console",
+        consoleSession: {
+          token: "signed.clerk.token",
+          serviceKey: "a".repeat(32),
+        },
+        cookie:
+          "__Host-webdock-github=encrypted-provider-session; __session=untrusted-browser-cookie; webdock-sso=legacy; webdock-auth.session_token=native; provider_token=secret",
+        body,
+      },
+      async (url, init) => {
+        assert.equal(String(url), "https://api.webdock.dev/v1/console");
+        const headers = new Headers(init?.headers);
+        assert.equal(
+          headers.get("cookie"),
+          "__Host-webdock-github=encrypted-provider-session",
+        );
+        assert.equal(headers.get("authorization"), "Bearer signed.clerk.token");
+        assert.equal(headers.get("x-webdock-service-key"), "a".repeat(32));
+        assert.deepEqual(JSON.parse(String(init?.body)), body);
+        return Response.json({ data: { accepted: true } });
+      },
+    );
+    assert.equal(result.status, 200);
+  }
 });
