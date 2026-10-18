@@ -51,7 +51,8 @@ if (!/^[a-f0-9]{40}$/.test(revision))
 const prefix = "webdock-release-" + randomUUID().replaceAll("-", ""),
   tags = [],
   checks = [],
-  imageIndexDigests = {};
+  imageIndexDigests = {},
+  imageRegistryDigests = {};
 const restrictions = [
   "--network",
   "none",
@@ -84,6 +85,7 @@ try {
     if (oci.manifests.some((item) => item.platform !== platform))
       throw Error("Archive platform does not match native runner");
     imageIndexDigests[name] = oci.indexDigest;
+    imageRegistryDigests[name] = oci.registryDigest;
     const tag = `${prefix}:${name}`;
     execFileSync(
       "skopeo",
@@ -200,6 +202,7 @@ if(values[0].apiOrigin===values[1].apiOrigin||values[0].modules.modules.mail!=='
         emulated: false,
         checks,
         imageIndexDigests,
+        imageRegistryDigests,
         ...(databaseRuntime ? { databaseRuntime } : {}),
         ...(cmsRuntime ? { cmsRuntime } : {}),
       },

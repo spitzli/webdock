@@ -54,7 +54,7 @@ import { createManifest } from "./extensions/managed-cms/src/manifest.ts";
 import { validateCMSPlugin } from "./tools/release/manifest.mjs";
 const [out, registry] = process.argv.slice(2);
 const evidence = JSON.parse(await readFile(join(out, "architecture-evidence.json"), "utf8"));
-const plugin = createManifest(`${registry}/managed-cms@${evidence.imageIndexDigests["managed-cms"]}`);
+const plugin = createManifest(`${registry}/managed-cms@${evidence.imageRegistryDigests["managed-cms"]}`);
 validateCMSPlugin(plugin, evidence, registry);
 await writeFile(join(out, "managed-cms.plugin.json"), JSON.stringify(plugin, null, 2) + "\n");
 JS

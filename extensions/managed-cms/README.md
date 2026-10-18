@@ -16,7 +16,7 @@ docker build -f extensions/managed-cms/Dockerfile -t managed-cms-plugin .
 docker build -f apps/cms-instance/Dockerfile -t managed-cms-instance .
 ```
 
-The optional signed release build generates `managed-cms.plugin.json` from the exact tested OCI index digest and includes it in the signed checksums. For a separate reviewed image, generate its manifest using its actual immutable index digest:
+The optional signed release build generates `managed-cms.plugin.json` from the exact tested registry root digest (`oci.registryDigest`) and includes it in the signed checksums. For a separate reviewed image, generate its manifest using its actual immutable registry root digest:
 
 ```bash
 bun extensions/managed-cms/manifest.ts \
