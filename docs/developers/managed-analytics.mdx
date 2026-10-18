@@ -1,0 +1,48 @@
+---
+title: "Managed Analytics"
+description: "Use an external ElysiaJS plugin for managed website analytics with Umami."
+---
+
+Managed Analytics is an external Webdock extension backed by a shared Umami service. Each customer receives project-scoped tracking resources, not a dedicated Umami instance. The same plugin actions are available in the Console panel, authenticated HTTP API and the Webdock host's MCP server. Webdock's public homepage uses this integration.
+
+<Note>
+This is an operator-managed alpha. An operator installs a verified release, configures the provider binding and grants the extension to a project. Automatic registry installation and customer billing activation are not included in this pilot.
+</Note>
+
+## Enable tracking
+
+Open the project's **Extensions** page. Enter the website name and public domain, then choose **Enable analytics**. The plugin provisions a deterministic website ID and stores its mapping in Core's project-scoped document service. Retrying setup with the same configuration reuses that website.
+
+Copy the returned tracking script into the website layout. Use the returned domain restriction so preview deployments do not contaminate production statistics. The panel shows visitors, visits and page views for the last seven days.
+
+Provider API keys remain in the host's project-specific HTTP binding. They are not included in the plugin container, public tracking script, iframe or MCP result.
+
+## API and MCP
+
+The plugin declares these actions:
+
+| Action | Local API route | MCP tool |
+| --- | --- | --- |
+| `analytics.provision` | `POST /site` | `plugin__managed_analytics__provision` |
+| `analytics.configuration` | `GET /configuration` | `plugin__managed_analytics__configuration` |
+| `analytics.stats` | `GET /stats` | `plugin__managed_analytics__stats` |
+
+Stats inputs contain `start_at` and `end_at` as Unix timestamps in milliseconds, covering at most 366 days. HTTP paths are prefixed with `/v1/plugins/managed-analytics/projects/{projectID}/api`. See [plugin API and MCP tools](/developers/plugin-api-mcp) for authentication and idempotency.
+
+These tools belong to the **Webdock host's MCP server**. The registry's separate MCP connection manages catalog entries and releases; it does not execute installed project plugins.
+
+## Optional tracking domain
+
+The default script origin is the configured Umami origin. An operator can connect a separate tracking subdomain for one project after verifying a project-bound DNS TXT challenge and the provider CNAME.
+
+The plugin repository includes a verification and routing planner. The generated ingress exposes only `/script.js` and `/api/send`, with exact path matching. It does not expose Umami login, administration or website APIs. The operator checks for existing hostname bindings, applies the reviewed routing and waits for a valid TLS certificate before setting that project's public `tracking_origin` override.
+
+The dashboard remains on the provider origin. DNS ownership checks, routing and TLS are currently operator-managed; the plugin does not silently edit a customer's DNS.
+
+## Source and release
+
+- [Plugin repository](https://github.com/spitzli/webdock-extension-managed-analytics)
+- [Registry entry](https://registry.webdock.dev/plugins/managed-analytics)
+- [Manifest contract](/developers/plugin-manifest)
+
+The runtime uses ElysiaJS with private HTTPS action handlers and a separate static UI listener. Core enforces current project access, explicit grants, approved capabilities and runtime generations on every invocation.

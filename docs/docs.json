@@ -80,6 +80,28 @@
             ]
           },
           {
+            "group": "Plugins",
+            "pages": [
+              "developers/plugins",
+              "developers/managed-apps",
+              "developers/managed-analytics",
+              "developers/project-notes",
+              "developers/plugin-manifest",
+              "developers/plugin-api-mcp",
+              "developers/plugin-jobs",
+              "developers/managed-registry"
+            ]
+          },
+          {
+            "group": "Operate Webdock",
+            "pages": [
+              "developers/self-hosting",
+              "developers/initial-setup",
+              "developers/modules",
+              "developers/auth-adapters"
+            ]
+          },
+          {
             "group": "Contribute",
             "pages": [
               "developers/local-development",
