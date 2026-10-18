@@ -1,0 +1,17 @@
+{
+  "name": "@webdock/cms-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./types": "./src/types.ts",
+    "./client": "./src/client.ts",
+    "./server": "./src/server.ts",
+    "./auth": "./src/auth.ts",
+    "./postgres": "./src/postgres.ts"
+  },
+  "peerDependencies": {
+    "payload": "4.0.0-canary.37",
+    "@webdock/payload-sso": "*"
+  }
+}

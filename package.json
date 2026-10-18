@@ -11,10 +11,12 @@
     "apps/database-gateway",
     "apps/mail",
     "apps/website",
+    "apps/cms-instance",
     "packages/*",
     "modules/*",
     "adapters/*/*",
-    "integrations/*"
+    "integrations/*",
+    "extensions/*"
   ],
   "engines": {
     "node": "24.x"
@@ -33,7 +35,8 @@
     "build:auth": "npm run build -w @webdock/auth",
     "test:auth": "npm run test -w @webdock/auth",
     "test:sso": "node --import tsx --test packages/payload-sso/src/index.test.ts",
-    "test:cms-ui": "node --import tsx --test packages/cms-ui/src/server.test.ts",
+    "test:cms-ui": "node --import tsx --test packages/cms-ui/src/server.test.ts packages/cms-ui/src/localization.test.tsx packages/cms-ui/src/uncertain-save.test.tsx",
+    "test:cms-instance:acceptance": "python3 apps/cms-instance/scripts/acceptance.py",
     "test:cms-integration": "node --env-file=apps/console/.env.test.local --import tsx --test packages/cms-ui/src/integration.test.ts",
     "test:api": "npm run test -w @webdock/api",
     "build:api": "npm run build -w @webdock/api",

@@ -41,6 +41,7 @@ export type HostingDemand = Record<HostingDimension, number>;
 export type Enforcement =
   "provider-enforced" | "webdock-enforced" | "observed-only" | "unsupported";
 export type HostingActor = {
+  pluginProvisioningID?: string;
   consoleIdentity?: {issuer:string;userID:string;sessionID:string;organizationID:string|null};
   subject: string;
   sessionID: string;
@@ -497,6 +498,7 @@ export const observationSchema = z
         environment: z.boolean().optional(),
         serviceBindingsVersion: z.literal(1).optional(),
         storageVersion: z.literal(1).optional(),
+        provisioningGuardVersion: z.literal(1).optional(),
         databaseVersion: z.literal(1).optional(),
         databasePools: z
           .array(

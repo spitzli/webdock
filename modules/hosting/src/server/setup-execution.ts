@@ -10,6 +10,9 @@ import {
 } from "@webdock/hosting-contracts";
 import type { SetupRow } from "./project-setup";
 export type Dependencies = {
+  authorizeProvisioning?(row: SetupRow): Promise<void>;
+  beforeRelease?(row: SetupRow): Promise<boolean>;
+  beforeReady?(row: SetupRow): Promise<boolean>;
   authorizeSetupConfiguration: ReturnType<
     typeof import("./permissions").createHostingPermissions
   >["authorizeSetupConfiguration"];
@@ -46,6 +49,7 @@ export function createHostingSetupExecution(dependencies: Dependencies) {
         409,
         "Confirm this setup again before continuing.",
       );
+    await dependencies.authorizeProvisioning?.(row);
     const actor = row.actor,
       config = row.configuration,
       resources = { ...row.resources };
@@ -72,6 +76,7 @@ export function createHostingSetupExecution(dependencies: Dependencies) {
       step.state = "succeeded";
     };
     const call = async (raw: HostingCommand): Promise<any> => {
+      await dependencies.authorizeProvisioning?.(row);
       const command = commandSchema.parse(raw);
       if ("idempotencyKey" in command && !command.action.startsWith("git.")) {
         const recovered = await dependencies.transaction(async (db) => {
@@ -294,6 +299,13 @@ export function createHostingSetupExecution(dependencies: Dependencies) {
         if (build.status === "succeeded") done();
       }
     } else if (step.name === "release") {
+      if (
+        dependencies.beforeRelease &&
+        !(await dependencies.beforeRelease({ ...row, resources }))
+      ) {
+        step.reason = "Waiting for application initialization.";
+        return { resources, steps, ready: false };
+      }
       if (config.source.kind === "git") {
         const releases = await call({
           action: "git.releases.list",
@@ -404,6 +416,14 @@ export function createHostingSetupExecution(dependencies: Dependencies) {
         done();
       else
         step.reason = "Waiting for observed application and service readiness.";
+    }
+    if (
+      steps.every((s) => ["succeeded", "skipped"].includes(s.state)) &&
+      dependencies.beforeReady &&
+      !(await dependencies.beforeReady({ ...row, resources, steps }))
+    ) {
+      step.state = "running";
+      step.reason = "Waiting for verified application publication.";
     }
     return {
       resources,

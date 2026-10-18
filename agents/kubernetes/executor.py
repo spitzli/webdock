@@ -21,6 +21,14 @@ class ExecutionError(Exception):
 def lease(packet):
     if datetime.fromisoformat(packet['leaseUntil'].replace('Z','+00:00')) <= datetime.now(timezone.utc):
         raise ExecutionError('execution_failed')
+    if packet.get('pluginProvisioningGuard') is True:
+        state=packet.get('_guard')
+        if not isinstance(state,dict) or state.get('clusterID')!=packet['clusterID']:
+            raise ExecutionError('execution_failed')
+        from connect import agent_request
+        result=agent_request(state['endpoint'],state,'guard',{'id':packet['operationID'],'generation':packet['generation']})
+        if not isinstance(result,dict) or result.get('valid') is not True:
+            raise ExecutionError('execution_failed')
 
 
 def validate_packet(p):
@@ -109,6 +117,15 @@ def cleanup_environment(p,keep=()):
     for secret in result['items']:
         name=secret['metadata']['name']
         if name in keep:continue
+        if name=='app-'+p['appID']+'-tls' and secret.get('type')=='kubernetes.io/tls' and secret['metadata'].get('annotations',{}).get('cert-manager.io/certificate-name')==name and re.fullmatch(r'[1-9][0-9]{0,18}',secret['metadata'].get('labels',{}).get('webdock.dev/provisioning-id','')):
+            check_owner(secret,p,True)
+            certificate=get('Certificate',name,p['namespace'])
+            if not certificate:raise ExecutionError('ownership_conflict')
+            check_owner(certificate,p,True)
+            if certificate.get('spec',{}).get('secretName')!=name or certificate['metadata'].get('labels',{}).get('webdock.dev/provisioning-id')!=secret['metadata']['labels']['webdock.dev/provisioning-id']:raise ExecutionError('ownership_conflict')
+            refs=secret['metadata'].get('ownerReferences',[])
+            if refs and not any(r.get('kind')=='Certificate' and r.get('uid')==certificate['metadata'].get('uid') for r in refs):raise ExecutionError('ownership_conflict')
+            continue
         if re.fullmatch('app-'+p['appID']+r'-services-[1-9][0-9]*',name):continue
         if not re.fullmatch('app-'+p['appID']+r'-env-[1-9][0-9]*',name):raise ExecutionError('ownership_conflict')
         guarded_delete('secrets',secret,p)
@@ -177,11 +194,15 @@ def prepare_namespace(p,namespace):
     def resource(kind,name,spec,api='v1'):
         return {'apiVersion':api,'kind':kind,'metadata':{'name':name,'namespace':namespace,'labels':owner},'spec':spec}
     quota=p['quota']
+    solver=False
+    if existing and existing.get('metadata',{}).get('labels',{}).get('webdock.dev/certificate-budget')=='1':
+        from app_templates import certificate_budget
+        solver=certificate_budget(p,existing)
     apply(resource('ResourceQuota','webdock-allocation',{'hard':{
-      'requests.cpu':str(quota['cpuMillicores'])+'m','limits.cpu':str(quota['cpuMillicores'])+'m',
-      'requests.memory':str(quota['memoryBytes']),'limits.memory':str(quota['memoryBytes']),
-      'requests.ephemeral-storage':str(quota['ephemeralBytes']),'limits.ephemeral-storage':str(quota['ephemeralBytes']),
-      'pods':str(max(10,quota['apps']*20)),'services':str(max(1,quota['apps'])),
+      'requests.cpu':str(quota['cpuMillicores']+(25 if solver else 0))+'m','limits.cpu':str(quota['cpuMillicores']+(200 if solver else 0))+'m',
+      'requests.memory':str(quota['memoryBytes']+(33554432 if solver else 0)),'limits.memory':str(quota['memoryBytes']+(67108864 if solver else 0)),
+      'requests.ephemeral-storage':str(quota['ephemeralBytes']+(8388608 if solver else 0)),'limits.ephemeral-storage':str(quota['ephemeralBytes']+(67108864 if solver else 0)),
+      'pods':str(max(10,quota['apps']*20)),'services':str(max(1,quota['apps'])+(1 if solver else 0)),
       'services.nodeports':'0','services.loadbalancers':'0','persistentvolumeclaims':str(quota.get('volumeBytes',0)//67108864),'requests.storage':str(quota.get('volumeBytes',0)),'count/jobs.batch':'0','count/secrets':str(max(20,quota['apps']*4+2)),'count/configmaps':'20'}}),p)
     apply(resource('LimitRange','webdock-defaults',{'limits':[{'type':'Container','defaultRequest':{'cpu':'100m','memory':'128Mi','ephemeral-storage':'128Mi'},'default':{'cpu':'100m','memory':'128Mi','ephemeral-storage':'128Mi'}}]}),p)
     apply({'apiVersion':'v1','kind':'ServiceAccount','metadata':{'name':'default','namespace':namespace,'labels':owner},'automountServiceAccountToken':False},p,default_account=True)
@@ -221,8 +242,8 @@ def guarded_delete(kind,obj,p):
 
 def prepare_storage(p, initial_allocation=False):
     lease(p)
-    # Mail intent revisions can advance before any allocation has happened.
-    # Only its first-bootstrap path opts in; known instances retain the missing-disk guard.
+    # Service binding and mail intent can advance revisions before first allocation.
+    # Reviewed bootstrap paths opt in; known instances retain the missing-disk guard.
     config,path=storage.ensure({**p,'revision':1} if initial_allocation else p)
     name='app-'+p['appID']+'-data';pvname='wd-'+p['appID']+'-data'
     meta={'labels':labels(p),'annotations':{'webdock.dev/revision':str(p['revision'])}}

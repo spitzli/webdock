@@ -1,3 +1,4 @@
+import { pluginOperationAuthority } from "./plugin-provisioning-store";
 import { createHostingOperations } from "@webdock/module-hosting/server/operations";
 import { revokeBindingMail } from "./mail-binding";
 import { openEnvironment, redactValues } from "./environment";
@@ -8,8 +9,10 @@ export const {
   replay,
   recordResult,
   claimOperation,
+  guardOperation,
   completeOperation,
 } = createHostingOperations({
+  operationAuthority: pluginOperationAuthority,
   get revokeBindingMail() {
     return revokeBindingMail;
   },

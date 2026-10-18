@@ -1,17 +1,104 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element -- Runtime CMS records have per-instance schemas and image hosts. */
-import React, { useEffect, useState, type ComponentType } from "react";
-import {msgid} from "@webdock/i18n";
-import {I18nProvider,useI18n} from "@webdock/i18n/react";
+import React, {
+  useEffect,
+  useState,
+  createContext,
+  useContext,
+  useCallback,
+  type ComponentType,
+} from "react";
+import { msgid } from "@webdock/i18n";
+import { I18nProvider, useI18n } from "@webdock/i18n/react";
 import { defaultData, editorData } from "./schema";
-import type { CMSAppProps, CMSField, RichTextEditorProps } from "./types";
+import type {
+  CMSAppProps,
+  CMSField,
+  RichTextEditorProps,
+  CMSTransport,
+} from "./types";
 const api = "/api/cms";
+const ConfirmationContext = createContext<
+  (message: string) => Promise<boolean>
+>(async (message) => window.confirm(message));
+function ConfirmationProvider({
+  embedded,
+  children,
+}: {
+  embedded?: boolean;
+  children: React.ReactNode;
+}) {
+  const { t } = useI18n();
+  const [pending, setPending] = useState<{
+    message: string;
+    resolve: (allowed: boolean) => void;
+  } | null>(null);
+  const confirm = useCallback(
+    (message: string) =>
+      embedded
+        ? new Promise<boolean>((resolve) => setPending({ message, resolve }))
+        : Promise.resolve(window.confirm(message)),
+    [embedded],
+  );
+  const answer = (allowed: boolean) => {
+    pending?.resolve(allowed);
+    setPending(null);
+  };
+  return (
+    <ConfirmationContext.Provider value={confirm}>
+      {children}
+      {pending && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="cms-confirm-message"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            display: "grid",
+            placeItems: "center",
+            background: "#0008",
+          }}
+        >
+          <div
+            className="cms-notice"
+            style={{
+              maxWidth: 480,
+              padding: 24,
+              background: "var(--cms-surface, #fff)",
+            }}
+          >
+            <p id="cms-confirm-message">{pending.message}</p>
+            <button
+              type="button"
+              className="cms-button cms-secondary"
+              onClick={() => answer(false)}
+              autoFocus
+            >
+              {t("Cancel")}
+            </button>{" "}
+            <button
+              type="button"
+              className="cms-button"
+              onClick={() => answer(true)}
+            >
+              {t("Continue")}
+            </button>
+          </div>
+        </div>
+      )}
+    </ConfirmationContext.Provider>
+  );
+}
+const TransportContext = createContext<CMSTransport | undefined>(undefined);
 async function request(
   query: Record<string, string> = {},
   body?: any,
   method = "POST",
+  transport: CMSTransport = fetch,
 ) {
-  const response = await fetch(
+  const response = await transport(
     api + "?" + new URLSearchParams(query),
     body
       ? {
@@ -41,6 +128,14 @@ async function request(
   }
   return result;
 }
+function useRequest() {
+  const transport = useContext(TransportContext);
+  return useCallback(
+    (query?: Record<string, string>, body?: any, method?: string) =>
+      request(query, body, method, transport),
+    [transport],
+  );
+}
 function Relation({
   field,
   value,
@@ -54,7 +149,8 @@ function Relation({
   disabled: boolean;
   locale: string;
 }) {
-  const {t,error:translateError,number:formatNumber}=useI18n();
+  const request = useRequest();
+  const { t, error: translateError, number: formatNumber } = useI18n();
   const collections = Array.isArray(field.relationTo)
     ? field.relationTo
     : [field.relationTo!];
@@ -218,7 +314,8 @@ function Fields({
   richTextEditor?: ComponentType<RichTextEditorProps>;
   path?: string;
 }) {
-  const {t,n}=useI18n();
+  const confirm = useContext(ConfirmationContext);
+  const { t, n } = useI18n();
   return (
     <>
       {fields.map((f, index) => {
@@ -321,10 +418,12 @@ function Fields({
                         <button
                           type="button"
                           disabled={items.length <= (f.minRows || 0)}
-                          onClick={() => {
+                          onClick={async () => {
                             if (
-                              window.confirm(
-                                t("Remove this item from the page? Save to apply the change."),
+                              await confirm(
+                                t(
+                                  "Remove this item from the page? Save to apply the change.",
+                                ),
                               )
                             )
                               set(items.filter((_, i) => i !== n));
@@ -525,9 +624,24 @@ function contentURL(
   const result = new URL(path, siteURL);
   return result.origin === new URL(siteURL).origin ? result.href : null;
 }
-export function CMSApp(props: CMSAppProps) { return <I18nProvider locale={props.uiLocale||"en"} preference={props.uiPreference||props.uiLocale||"en"}><CMSAppContent {...props}/></I18nProvider>; }
+export function CMSApp(props: CMSAppProps) {
+  return (
+    <TransportContext.Provider value={props.transport}>
+      <I18nProvider
+        locale={props.uiLocale || "en"}
+        preference={props.uiPreference || props.uiLocale || "en"}
+      >
+        <ConfirmationProvider embedded={props.embedded}>
+          <CMSAppContent {...props} />
+        </ConfirmationProvider>
+      </I18nProvider>
+    </TransportContext.Provider>
+  );
+}
 function CMSAppContent(props: CMSAppProps) {
-  const {t,n,error:translateError,date,number:formatNumber}=useI18n();
+  const request = useRequest();
+  const confirm = useContext(ConfirmationContext);
+  const { t, n, error: translateError, date, number: formatNumber } = useI18n();
   const [manifest, setManifest] = useState<any>(null),
     [module, setModule] = useState(""),
     [id, setID] = useState(""),
@@ -546,6 +660,7 @@ function CMSAppContent(props: CMSAppProps) {
     [section, setSection] = useState(""),
     [accountOpen, setAccountOpen] = useState(false),
     [reload, setReload] = useState(0);
+  const [uncertainSave, setUncertainSave] = useState<{module: string; id: string; locale: string} | null>(null);
   useEffect(() => {
     let active = true;
     void request().then(
@@ -594,6 +709,8 @@ function CMSAppContent(props: CMSAppProps) {
           (result) => {
             if (!active) return;
             setLoaded(result);
+            setUncertainSave(pending => pending && pending.module === module &&
+              ((result.kind !== "global" && !id) || (locale === pending.locale && (result.kind === "global" || (id !== "new" && id === pending.id)))) ? null : pending);
             setData(
               result.doc ? editorData(result.fields || [], result.doc) : {},
             );
@@ -605,7 +722,8 @@ function CMSAppContent(props: CMSAppProps) {
               ...(id ? { id } : {}),
               ...(locale ? { locale } : {}),
             });
-            window.history.replaceState(null, "", "/cms?" + query);
+            if (!props.embedded)
+              window.history.replaceState(null, "", "/cms?" + query);
           },
           (e) => {
             if (active) {
@@ -623,7 +741,7 @@ function CMSAppContent(props: CMSAppProps) {
     };
   }, [module, id, locale, page, search, reload, manifest]);
   useEffect(() => {
-    if (!dirty) return;
+    if (!dirty || props.embedded) return;
     const before = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = "";
@@ -631,10 +749,11 @@ function CMSAppContent(props: CMSAppProps) {
     window.addEventListener("beforeunload", before);
     return () => window.removeEventListener("beforeunload", before);
   }, [dirty]);
-  const leave = () =>
-    !dirty || window.confirm(t("You have unsaved changes. Leave without saving?"));
-  const navigate = (m: string, nextID = "") => {
-    if (!leave()) return;
+  const leave = async () =>
+    !dirty ||
+    (await confirm(t("You have unsaved changes. Leave without saving?")));
+  const navigate = async (m: string, nextID = "") => {
+    if (!(await leave())) return;
     setModule(m);
     setSection("");
     setID(nextID);
@@ -649,6 +768,7 @@ function CMSAppContent(props: CMSAppProps) {
     setMessage("");
   };
   async function save(mode: string, versionID?: string) {
+    if (uncertainSave) return;
     setBusy(true);
     setError("");
     setMessage("");
@@ -681,7 +801,10 @@ function CMSAppContent(props: CMSAppProps) {
       else if (id === "new") setID(String(result.doc.id));
       setReload((n) => n + 1);
     } catch (e) {
-      setError(
+      if (e instanceof Error && "code" in e && e.code === "cms_save_uncertain") {
+        setUncertainSave({module, id, locale});
+        setError("");
+      } else setError(
         e instanceof Error ? e.message : msgid("The change could not be saved."),
       );
     } finally {
@@ -722,23 +845,43 @@ function CMSAppContent(props: CMSAppProps) {
         : null;
   return (
     <div className="cms-shell">
-      <a className="cms-skip" href="#cms-main">{t("Skip to content")}</a>
+      <a className="cms-skip" href="#cms-main">
+        {t("Skip to content")}
+      </a>
       <aside className="cms-sidebar">
-        <a
-          className="cms-wordmark"
-          href="/cms"
-          onClick={(e) => {
-            if (!leave()) e.preventDefault();
-          }}
-        >{"webdock"}<span>.</span> <strong>{"CMS"}</strong>
-        </a>
-        <button
-          className="cms-account-toggle"
-          type="button"
-          aria-expanded={accountOpen}
-          aria-controls="cms-account-links"
-          onClick={() => setAccountOpen((value) => !value)}
-        >{t("Account")}</button>
+        {props.embedded ? (
+          <button
+            type="button"
+            className="cms-wordmark"
+            onClick={() => void navigate(manifest?.modules[0]?.slug || "")}
+          >
+            {"webdock"}
+            <span>.</span> <strong>{"CMS"}</strong>
+          </button>
+        ) : (
+          <a
+            className="cms-wordmark"
+            href="/cms"
+            onClick={async (e) => {
+              e.preventDefault();
+              if (await leave()) window.location.assign("/cms");
+            }}
+          >
+            {"webdock"}
+            <span>.</span> <strong>{"CMS"}</strong>
+          </a>
+        )}
+        {!props.embedded && (
+          <button
+            className="cms-account-toggle"
+            type="button"
+            aria-expanded={accountOpen}
+            aria-controls="cms-account-links"
+            onClick={() => setAccountOpen((value) => !value)}
+          >
+            {t("Account")}
+          </button>
+        )}
         <p className="cms-site-name">{props.siteName}</p>
         <nav aria-label={t("Content areas")}>
           {manifest?.modules.map((m: any) => (
@@ -753,36 +896,44 @@ function CMSAppContent(props: CMSAppProps) {
             </button>
           ))}
         </nav>
-        <div
-          id="cms-account-links"
-          className={`cms-account${accountOpen ? " is-open" : ""}`}
-        >
-          <span>{manifest?.user.name}</span>
-          <small>
-            {manifest?.user.role === "operator"
-              ? t("Platform administrator")
-              : manifest?.user.role === "admin"
-                ? t("Administrator")
-                : manifest?.user.role === "editor"
-                  ? t("Editor")
-                  : t("Read only")}
-          </small>
-          <a href={props.accountURL}>{t("My account")}</a>
-          {manifest?.user.role === "operator" && (
-            <>
-              <a href={props.accessURL}>{t("People & access")}</a>
-              {props.technicalURL && (
-                <a href={props.technicalURL}>{t("Advanced tools")}</a>
-              )}
-            </>
-          )}
-          <a href={new URL("/sites", props.accountURL).href}>{t("My websites")}</a>
-        </div>
+        {!props.embedded && (
+          <div
+            id="cms-account-links"
+            className={`cms-account${accountOpen ? " is-open" : ""}`}
+          >
+            <span>{manifest?.user.name}</span>
+            <small>
+              {manifest?.user.role === "operator"
+                ? t("Platform administrator")
+                : manifest?.user.role === "admin"
+                  ? t("Administrator")
+                  : manifest?.user.role === "editor"
+                    ? t("Editor")
+                    : t("Read only")}
+            </small>
+            <a href={props.accountURL}>{t("My account")}</a>
+            {manifest?.user.role === "operator" && (
+              <>
+                <a href={props.accessURL}>{t("People & access")}</a>
+                {props.technicalURL && (
+                  <a href={props.technicalURL}>{t("Advanced tools")}</a>
+                )}
+              </>
+            )}
+            <a href={new URL("/sites", props.accountURL).href}>
+              {t("My websites")}
+            </a>
+          </div>
+        )}
       </aside>
       <div className="cms-main-wrap">
         <header className="cms-topbar">
           <span>{t("Your website, in your hands.")}</span>
-          <a href={props.siteURL} target="_blank" rel="noreferrer">{t("View website ↗")}</a>
+          {!props.embedded && (
+            <a href={props.siteURL} target="_blank" rel="noreferrer">
+              {t("View website ↗")}
+            </a>
+          )}
         </header>
         <main id="cms-main">
           <div className="cms-heading">
@@ -798,11 +949,14 @@ function CMSAppContent(props: CMSAppProps) {
               <p>{loaded?.description ? t(loaded.description) : t("Keep your website up to date.")}</p>
             </div>
             {manifest?.locales.length > 1 && (
-              <label className="cms-language">{t("Content language")}<select
+              <label className="cms-language">
+                {t("Content language")}
+                <select
                   value={locale}
-                  onChange={(e) => {
-                    if (leave()) {
-                      setLocale(e.target.value);
+                  onChange={async (e) => {
+                    const value = e.target.value;
+                    if (await leave()) {
+                      setLocale(value);
                       setDirty(false);
                     }
                   }}
@@ -821,12 +975,21 @@ function CMSAppContent(props: CMSAppProps) {
               {translateError(error)}
               <button
                 type="button"
-                onClick={() => {
-                  if (leave()) setReload((n) => n + 1);
+                onClick={async () => {
+                  if (await leave()) setReload((n) => n + 1);
                 }}
-              >{t("Reload")}</button>
+              >
+                {t("Reload")}
+              </button>
             </div>
           )}
+          {uncertainSave && <div className="cms-notice cms-error" role="alert">
+            <p>{t("This save may have completed. Check the content list before trying again.")}</p>
+            <button type="button" onClick={async () => {
+              if (!(await leave())) return;
+              setModule(uncertainSave.module); setLocale(uncertainSave.locale); setID(""); setPage(1); setSearch(""); setDirty(false); setReload(value => value + 1);
+            }}>{t("Check saved content")}</button>
+          </div>}
           {message && (
             <p className="cms-notice" role="status">
               {t(message)}
@@ -879,7 +1042,7 @@ function CMSAppContent(props: CMSAppProps) {
                           alt={loaded.doc.alt || ""}
                         />
                       )}
-                      <label className="cms-field">
+                      {(id === "new" || loaded.canReplaceFile !== false) ? <label className="cms-field">
                         {id === "new" ? t("Upload image") : t("Replace image")}
                         <input
                           type="file"
@@ -890,7 +1053,7 @@ function CMSAppContent(props: CMSAppProps) {
                             setDirty(true);
                           }}
                         />
-                      </label>
+                      </label> : <p>{t("To change this image, upload a new image in Media, then select it in your content. You can edit this image’s description below.")}</p>}
                     </section>
                   )}
                   {sections.length > 1 && (
@@ -934,9 +1097,19 @@ function CMSAppContent(props: CMSAppProps) {
                     <div className="cms-save-actions">
                       {manifest.canWrite && (
                         <button
-                          type="submit"
+                          type={props.embedded ? "button" : "submit"}
+                          onClick={
+                            props.embedded
+                              ? (event) => {
+                                  if (
+                                    event.currentTarget.form?.reportValidity()
+                                  )
+                                    void save(loaded.drafts ? "draft" : "save");
+                                }
+                              : undefined
+                          }
                           className="cms-button cms-secondary"
-                          disabled={busy || (!dirty && id !== "new")}
+                          disabled={busy || Boolean(uncertainSave) || (!dirty && id !== "new")}
                         >
                           {busy
                             ? t("Saving…")
@@ -949,33 +1122,51 @@ function CMSAppContent(props: CMSAppProps) {
                         <button
                           className="cms-button"
                           type="button"
-                          disabled={busy}
-                          onClick={() => {
+                          disabled={busy || Boolean(uncertainSave)}
+                          onClick={async () => {
                             if (
-                              window.confirm(
+                              await confirm(
                                 t("Publish this content to the website?"),
                               )
                             )
                               void save("publish");
                           }}
-                        >{t("Publish")}</button>
+                        >
+                          {t("Publish")}
+                        </button>
                       )}
-                      {previewURL && (
-                        <a
-                          className="cms-button cms-secondary"
-                          href={previewURL}
-                          target="_blank"
-                          rel="noreferrer"
-                        >{t("Preview saved draft ↗")}</a>
+                      {manifest.canWrite && loaded.drafts && loaded.published && id !== "new" && (
+                        <><button type="button" className="cms-button cms-secondary" disabled={busy || Boolean(uncertainSave) || dirty}
+                          onClick={async () => { if (await confirm(loaded.localizedStatus ? t("Unpublish this language from the website? Your saved draft and history will be kept.") : t("Unpublish this content from the website? Your saved draft and history will be kept."))) void save("unpublish"); }}>
+                          {t("Unpublish")}
+                        </button>{dirty && <small>{t("Save your draft before unpublishing.")}</small>}</>
                       )}
-                      {liveURL && (
-                        <a
-                          className="cms-text-button"
-                          href={liveURL}
-                          target="_blank"
-                          rel="noreferrer"
-                        >{t("View live ↗")}</a>
-                      )}
+                      {previewURL &&
+                        (props.embedded ? (
+                          <span>{previewURL}</span>
+                        ) : (
+                          <a
+                            className="cms-button cms-secondary"
+                            href={previewURL}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {t("Preview saved draft ↗")}
+                          </a>
+                        ))}
+                      {liveURL &&
+                        (props.embedded ? (
+                          <span>{liveURL}</span>
+                        ) : (
+                          <a
+                            className="cms-text-button"
+                            href={liveURL}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {t("View live ↗")}
+                          </a>
+                        ))}
                     </div>
                   </div>
                 </form>
@@ -1002,11 +1193,13 @@ function CMSAppContent(props: CMSAppProps) {
                         {manifest.canDelete && (
                           <button
                             type="button"
-                            disabled={busy}
-                            onClick={() => {
+                            disabled={busy || Boolean(uncertainSave)}
+                            onClick={async () => {
                               if (
-                                window.confirm(
-                                  t("Restore this version? This replaces the current content."),
+                                await confirm(
+                                  t(
+                                    "Restore this version? This replaces the current content.",
+                                  ),
                                 )
                               )
                                 void save("restore", String(v.id));
@@ -1021,16 +1214,18 @@ function CMSAppContent(props: CMSAppProps) {
                   loaded.kind === "collection" &&
                   id !== "new" && (
                     <details className="cms-danger">
-                      <summary>{t("Delete this content")}</summary>
-                      <p>{t("This removes the record. Images may still be used by other content.")}</p>
+                      <summary>{loaded.deleteMode === "trash" ? t("Remove this image") : t("Delete this content")}</summary>
+                      <p>{loaded.deleteMode === "trash" ? t("This removes the image from the media library. Content using it may stop displaying the image. Its file is retained until an operator purges it.") : t("This removes the record. Images may still be used by other content.")}</p>
                       <button
                         type="button"
-                        disabled={busy}
-                        onClick={() => {
-                          if (window.confirm(t("Permanently delete this record?")))
+                        disabled={busy || Boolean(uncertainSave)}
+                        onClick={async () => {
+                          if (
+                            await confirm(loaded.deleteMode === "trash" ? t("Remove this image from the library? Its file will be retained until an operator purges it.") : t("Permanently delete this record?"))
+                          )
                             void save("delete");
                         }}
-                      >{t("Delete permanently")}</button>
+                      >{loaded.deleteMode === "trash" ? t("Remove image") : t("Delete permanently")}</button>
                     </details>
                   )}
               </>

@@ -122,3 +122,37 @@ test("CMS API requires current instance auth, respects reader rights, origin, mo
   assert.equal((await call("GET")).status, 401);
   assert.equal(writes, 0);
 });
+test("server-only trusted user bypasses browser cookies while role restrictions remain enforced", async () => {
+  let authCalls = 0;
+  const p = {
+    auth: async () => {
+      authCalls++;
+      throw Error("untrusted cookie");
+    },
+    config: { globals: [] },
+    collections: {},
+  } as unknown as Payload;
+  const request = new Request("https://site.invalid/api/cms", {
+    headers: { cookie: "forged", origin: "https://site.invalid" },
+  });
+  const response = await handleCMSRequest(request, options, async () => p, {
+    trustedUser: { id: 1, collection: "users", role: "reader" } as never,
+  });
+  assert.equal(response.status, 200);
+  assert.equal(authCalls, 0);
+  assert.equal((await response.json()).canWrite, false);
+  const denied = await handleCMSRequest(
+    new Request(request.url, {
+      method: "POST",
+      headers: {
+        origin: "https://site.invalid",
+        "content-type": "application/json",
+      },
+      body: "{}",
+    }),
+    options,
+    async () => p,
+    { trustedUser: { id: 1, collection: "users", role: "reader" } as never },
+  );
+  assert.equal(denied.status, 403);
+});

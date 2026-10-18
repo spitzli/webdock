@@ -8,6 +8,10 @@
 !modules/**
 !adapters/**
 !integrations/**
+!extensions/**
+!LICENSE
+!COMMERCIAL-LICENSING.md
+!NOTICE
 !vendor/**
 !scripts/**
 !tools/migrations/**

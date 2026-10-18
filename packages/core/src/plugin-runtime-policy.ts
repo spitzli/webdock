@@ -24,7 +24,26 @@ export type RuntimePolicy = {
     preview: boolean;
   };
 };
-export function authorizePluginAction(p: RuntimePolicy, name: string) {
+export function isWebsiteHTTPAction(
+  action: PluginManifest["actions"][number],
+): boolean {
+  return (
+    !!action.httpBinding &&
+    action.capabilities.length > 0 &&
+    action.capabilities.every(
+      (c) => c === "plugin.http.read" || c === "plugin.http.request",
+    ) &&
+    action.capabilities.includes(
+      action.intent === "write" ? "plugin.http.request" : "plugin.http.read",
+    )
+  );
+}
+/** Deferred HTTP admission must be followed by live website authorization before execution. */
+export function authorizePluginAction(
+  p: RuntimePolicy,
+  name: string,
+  options: { deferWebsiteHTTP?: boolean } = {},
+) {
   const action = p.actions.find((a) => a.name === name);
   if (
     !action ||
@@ -36,7 +55,9 @@ export function authorizePluginAction(p: RuntimePolicy, name: string) {
     !p.project.active ||
     !p.project.allowed ||
     p.project.preview ||
-    (action.intent === "write" && !p.project.canWrite) ||
+    (action.intent === "write" &&
+      !p.project.canWrite &&
+      !(options.deferWebsiteHTTP && isWebsiteHTTPAction(action))) ||
     action.capabilities.some(
       (c) => !p.approved.includes(c) || !p.granted.includes(c),
     )

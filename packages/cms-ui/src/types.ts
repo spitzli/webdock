@@ -42,7 +42,15 @@ export type RichTextEditorProps = {
   onChange: (value: unknown) => void;
   readOnly: boolean;
 };
+export type CMSTransport = (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+) => Promise<Response>;
 export type CMSAppProps = {
+  /** Optional host bridge; omitted consumers retain same-origin fetch. */
+  transport?: CMSTransport;
+  /** A sandboxed plugin frame owns no browser navigation or account links. */
+  embedded?: boolean;
   /** Interface language only; content locale remains selected independently. */
   uiLocale?: "en" | "de";
   uiPreference?: "system" | "en" | "de";

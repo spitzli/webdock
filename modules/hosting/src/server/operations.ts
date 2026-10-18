@@ -12,6 +12,10 @@ import {
 import type { Connection } from "./authorization";
 import type { Agent } from "./clusters";
 export type Dependencies = {
+  operationAuthority?(
+    db: Connection,
+    id: string,
+  ): Promise<{ required: boolean; allowed: boolean }>;
   revokeBindingMail: ReturnType<
     typeof import("./mail-binding").createHostingMailBinding
   >["revokeBindingMail"];
@@ -128,7 +132,7 @@ export function createHostingOperations(dependencies: Dependencies) {
   }
   async function claimOperation(agent: Agent) {
     return dependencies.transaction(async (db) => {
-      await dependencies.verifyAgent(db, agent);
+      const agentState = await dependencies.verifyAgent(db, agent);
       await db.query(
         "UPDATE webdock_auth.hosting_operation SET status=CASE WHEN action='apps.logs' THEN 'failed' ELSE 'needs-reconciliation' END WHERE cluster_id=$1 AND status='running' AND lease_until<now()",
         [agent.clusterID],
@@ -145,6 +149,32 @@ export function createHostingOperations(dependencies: Dependencies) {
         )
       ).rows[0];
       if (!row) return null;
+      const authority = await dependencies.operationAuthority?.(db, row.id);
+      if (authority && !authority.allowed) {
+        await db.query(
+          "UPDATE webdock_auth.hosting_operation SET status='failed',result=$2 WHERE id=$1 AND status='queued'",
+          [
+            row.id,
+            JSON.stringify({
+              error: "Application provisioning authority changed.",
+            }),
+          ],
+        );
+        await db.query(
+          "UPDATE webdock_auth.hosting_app SET status='failed',last_error=$3 WHERE id=$1 AND revision=$2",
+          [
+            row.app_id,
+            row.target_revision,
+            "Resume application provisioning with current authority.",
+          ],
+        );
+        return null;
+      }
+      if (
+        authority?.required &&
+        agentState.observation?.capabilities?.provisioningGuardVersion !== 1
+      )
+        return null;
       const locked = (
         await db.query(
           "SELECT pg_try_advisory_xact_lock(hashtextextended($1,0)) AS locked",
@@ -196,6 +226,7 @@ export function createHostingOperations(dependencies: Dependencies) {
         });
         claimed.desired = {
           ...claimed.desired,
+          ...(authority?.required ? { pluginProvisioningGuard: true } : {}),
           quota: totals(reservations),
           finalQuota: totals(finalRows),
           operationID: claimed.id,
@@ -251,6 +282,34 @@ export function createHostingOperations(dependencies: Dependencies) {
         .optional(),
     })
     .strict();
+  async function guardOperation(
+    agent: Agent,
+    input: { id: string; generation: number },
+  ) {
+    return dependencies.transaction(async (db) => {
+      await dependencies.verifyAgent(db, agent);
+      const row = (
+        await db.query(
+          "SELECT * FROM webdock_auth.hosting_operation WHERE id=$1 AND cluster_id=$2",
+          [input.id, agent.clusterID],
+        )
+      ).rows[0];
+      if (
+        !row ||
+        row.generation !== input.generation ||
+        row.status !== "running" ||
+        new Date(row.lease_until).getTime() <= Date.now()
+      )
+        throw new HostingError(409, "Operation lease changed.");
+      const authority = await dependencies.operationAuthority?.(db, row.id);
+      if (authority && !authority.allowed)
+        throw new HostingError(
+          403,
+          "Application provisioning authority changed.",
+        );
+      return { valid: true as const };
+    });
+  }
   async function completeOperation(
     agent: Agent,
     input: {
@@ -499,6 +558,7 @@ export function createHostingOperations(dependencies: Dependencies) {
     replay,
     recordResult,
     claimOperation,
+    guardOperation,
     completeOperation,
   };
 }

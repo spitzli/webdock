@@ -29,7 +29,8 @@
     "@webdock/payload-sso": "*",
     "@webdock/cms-ui": "*",
     "@webdock/i18n": "*",
-    "@webdock/database-runtime": "*"
+    "@webdock/database-runtime": "*",
+    "@webdock/cms-bridge": "*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

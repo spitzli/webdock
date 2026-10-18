@@ -34,11 +34,17 @@ import {
   createPluginApps,
   dispatchManagedApps,
   type ManagedAppsHandler,
+  type ManagedAppsProvisioningHandler,
   type ManagedAppBinding,
 } from "@webdock/core/plugin-apps";
 import { createPluginSessionRunner } from "./invocation-session";
 import { revalidateStoredConsoleIdentity } from "../auth/clerk-provider";
-import { withConsolePrincipal } from "../auth/principal";
+import { withConsolePrincipal, storedConsoleIdentity } from "../auth/principal";
+import { currentClaims } from "../auth/authorization";
+import {
+  authorizeWebsiteHTTPBinding,
+  authorizePluginHTTPAction,
+} from "./website-http";
 const withPluginSession = createPluginSessionRunner({
   revalidate: revalidateStoredConsoleIdentity,
   withPrincipal: withConsolePrincipal,
@@ -54,6 +60,21 @@ const inputSchema = z.strictObject({
 const controller = <T>(fn: () => Promise<T>) =>
   withDatabaseScope({ kind: "system", purpose: "plugin-controller" }, fn);
 // Operator-only deployment file, mounted as a Secret. No URLs/credentials from invocation payloads.
+type ScopedHTTPBinding = HTTPBinding & { websiteBindingID?: string };
+type ResourceScope = {
+  pluginID: string;
+  customerID: string;
+  projectID: string;
+};
+type ResourceBindings = {
+  http(scope: ResourceScope, name: string): Promise<ScopedHTTPBinding | null>;
+  apps(scope: ResourceScope): Promise<ManagedAppBinding[]>;
+};
+let resourceBindings: ResourceBindings | undefined;
+/** Optional product adapter; Core owns no application template or provider credentials. */
+export function configurePluginResourceBindings(bindings: ResourceBindings) {
+  resourceBindings = bindings;
+}
 type RuntimeBinding = {
   uiOrigin?: string;
   publicConfiguration?: Record<string, unknown>;
@@ -63,7 +84,7 @@ type RuntimeBinding = {
   addresses: string[];
   credential: string;
   ca: string;
-  projects: Record<string, Record<string, HTTPBinding>>;
+  projects: Record<string, Record<string, ScopedHTTPBinding>>;
   managedApps?: Record<string, ManagedAppBinding[]>;
 };
 type Settings = {
@@ -207,7 +228,14 @@ export async function listRuntimePlugins(projectID?: string) {
               subject: session.subject,
               sessionID: session.sessionID,
             },
-            binding.managedApps?.[projectID] ?? [],
+            [
+              ...(binding.managedApps?.[projectID] ?? []),
+              ...((await resourceBindings?.apps({
+                pluginID: id,
+                projectID,
+                customerID: project.customerID,
+              })) ?? []),
+            ],
             { operation: "list", input: {} },
             managedAppsHandler,
           );
@@ -293,6 +321,7 @@ export async function invokeRuntimePlugin(
       project,
     },
     input.action,
+    { deferWebsiteHTTP: true },
   );
   if (action.intent === "write" && !ceiling.canWrite)
     throw new PluginError("permission_denied", "Write scope required");
@@ -394,6 +423,17 @@ export async function invokeRuntimePlugin(
     "." +
     sign(null, Buffer.from(body), config.privateKey).toString("base64url");
   try {
+    // No runtime sees this invocation until its exact website authority is checked.
+    await withInvocation(
+      new Request(config.hostOrigin, {
+        headers: {
+          authorization: `Bearer ${token}`,
+          "x-plugin-runtime": binding.credential,
+        },
+      }),
+      undefined,
+      async () => null,
+    );
     const result = await pinnedHTTPTransport({
       url: new URL(
         `https://${binding.service}.${binding.namespace}.svc.cluster.local:3443/actions/${encodeURIComponent(action.name)}`,
@@ -455,7 +495,9 @@ async function withInvocation<T>(
       operationID: string;
     },
     binding: RuntimeBinding,
+    websiteBinding?: HTTPBinding,
   ) => Promise<T>,
+  httpRequest?: { name: string; method: string },
 ): Promise<T> {
   const config = settings();
   const token =
@@ -521,41 +563,125 @@ async function withInvocation<T>(
     if (!scoped)
       throw new PluginError("permission_denied", "Plugin capability revoked");
     const access = await projectAccess(scoped.projectID);
+    const action = state.manifest.actions.find(
+      (candidate) => candidate.name === inv.name,
+    );
+    if (!action)
+      throw new PluginError("permission_denied", "Invocation action changed");
+    if (action.httpBinding)
+      authorizePluginAction(
+        {
+          state: state.row.state,
+          runtime:
+            state.row.runtime_status === "ready" ? state.row.runtime : "failed",
+          generation: Number(state.row.current_generation),
+          runtimeGeneration: Number(state.row.runtime_generation),
+          configurationRevision: Number(state.row.config_revision),
+          runtimeConfigurationRevision: Number(
+            state.row.configuration_revision,
+          ),
+          grantRevision: Number(state.grant?.revision ?? 0),
+          revoked:
+            !state.grant ||
+            !!state.grant.revoked_at ||
+            state.grant.customer_id !== scoped.customerID,
+          approved: state.row.approved_capabilities,
+          granted: state.grant?.capabilities ?? [],
+          actions: state.manifest.actions,
+          project: access,
+        },
+        inv.name,
+        { deferWebsiteHTTP: true },
+      );
     if (
-      access.preview ||
-      !access.allowed ||
-      (inv.intent === "write" && !access.canWrite)
+      action.intent !== inv.intent ||
+      JSON.stringify(action.capabilities) !== JSON.stringify(inv.capabilities)
     )
-      throw new PluginError("permission_denied", "Project authority revoked");
-    return fn(scoped, candidate);
+      throw new PluginError("permission_denied", "Invocation action changed");
+    const authorized = await authorizePluginHTTPAction(
+      {
+        subject: session.subject,
+        customerID: scoped.customerID,
+        projectID: scoped.projectID,
+        generation: candidate.generation,
+        grantRevision: Number(state.grant.revision),
+      },
+      action,
+      access,
+      {
+        ...websiteAuthority,
+        resolve: async (name) =>
+          candidate.projects[scoped.projectID]?.[name] ??
+          (await resourceBindings?.http(scoped, name)) ??
+          null,
+      },
+      { capability, http: httpRequest },
+    );
+    return fn(scoped, candidate, authorized);
   });
 }
 export const pluginData = createPluginData({
   run: (req, cap, work) => withInvocation(req, cap, (s) => work(s, database)),
 });
+const websiteAuthority = {
+  claims: currentClaims,
+  website: async (id: string) =>
+    (
+      await database.query(
+        `SELECT b.enabled AND NOT c.disabled AS enabled,t.customer_id AS "customerID",c."redirectUris" AS "redirectURIs"
+   FROM webdock_auth.app_binding b JOIN webdock_auth."oauthClient" c ON c."clientId"=b.client_id
+   JOIN webdock_auth.tenant_customer t ON t.organization_id=b.organization_id WHERE b.id=$1`,
+        [id],
+      )
+    ).rows[0] ?? null,
+};
 export const pluginHTTP = createPluginHTTP({
   authorize: (req, name, method) =>
     withInvocation(
       req,
       method === "GET" ? "plugin.http.read" : "plugin.http.request",
-      async (s, b) => {
+      async (s, b, authorized) => {
+        if (authorized) return authorized;
         const installed = await installation(s.pluginID, s.projectID);
         if (!installed.manifest.httpBindings.includes(name))
           throw new PluginError("permission_denied", "Undeclared HTTP binding");
-        const binding = b.projects[s.projectID]?.[name];
+        const binding =
+          b.projects[s.projectID]?.[name] ??
+          (await resourceBindings?.http(s, name));
         if (!binding)
           throw new PluginError(
             "capability_unavailable",
             "HTTP binding is not configured for this project",
           );
-        return binding;
+        if (!binding.websiteBindingID) return binding;
+        const session = currentSession();
+        return authorizeWebsiteHTTPBinding(
+          {
+            subject: session.subject,
+            customerID: s.customerID,
+            projectID: s.projectID,
+            generation: b.generation,
+            grantRevision: Number(installed.grant?.revision),
+          },
+          binding.websiteBindingID,
+          binding,
+          method,
+          websiteAuthority,
+        );
       },
+      { name, method },
     ),
 });
 
 let managedAppsHandler: ManagedAppsHandler | undefined;
+let managedAppsProvisioningHandler: ManagedAppsProvisioningHandler | undefined;
 export function configureManagedApps(handler: ManagedAppsHandler) {
   managedAppsHandler = handler;
+}
+export function configureManagedAppProvisioning(
+  handler: ManagedAppsProvisioningHandler,
+) {
+  managedAppsProvisioningHandler = handler;
 }
 function declaresApps(manifest: PluginManifest) {
   return [...manifest.services.required, ...manifest.services.optional].some(
@@ -564,6 +690,7 @@ function declaresApps(manifest: PluginManifest) {
 }
 export const pluginApps = createPluginApps({
   handler: () => managedAppsHandler,
+  provisioningHandler: () => managedAppsProvisioningHandler,
   run: (request, capability, work) =>
     withInvocation(request, capability, async (scope, binding) => {
       const installed = await installation(scope.pluginID, scope.projectID);
@@ -571,8 +698,18 @@ export const pluginApps = createPluginApps({
         throw new PluginError("permission_denied", "Undeclared apps service");
       const session = currentSession();
       return work(
-        { ...scope, subject: session.subject, sessionID: session.sessionID },
-        binding.managedApps?.[scope.projectID] ?? [],
+        {
+          ...scope,
+          subject: session.subject,
+          sessionID: session.sessionID,
+          pluginGeneration: binding.generation,
+          grantRevision: Number(installed.grant?.revision),
+          consoleIdentity: storedConsoleIdentity() ?? undefined,
+        },
+        [
+          ...(binding.managedApps?.[scope.projectID] ?? []),
+          ...((await resourceBindings?.apps(scope)) ?? []),
+        ],
       );
     }),
 });

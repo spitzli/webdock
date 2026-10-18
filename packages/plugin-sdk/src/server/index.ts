@@ -1,5 +1,9 @@
 import {
   managedAppSchema,
+  managedAppProvisionSchema,
+  managedAppProvisioningListSchema,
+  managedAppProvisioningSchema,
+  managedAppProvisioningStatusSchema,
   managedAppListSchema,
   managedAppOperationSchema,
   managedAppGetSchema,
@@ -69,6 +73,27 @@ export function createPluginContext(options: {
   };
   return {
     apps: {
+      provisioningList: async () =>
+        managedAppProvisioningListSchema.parse(
+          await call("/v1/plugin/apps", "POST", {
+            operation: "provisioningList",
+            input: {},
+          }),
+        ),
+      provision: async (input) =>
+        managedAppProvisioningSchema.parse(
+          await call("/v1/plugin/apps", "POST", {
+            operation: "provision",
+            input: managedAppProvisionSchema.parse(input),
+          }),
+        ),
+      provisioningStatus: async (input) =>
+        managedAppProvisioningSchema.parse(
+          await call("/v1/plugin/apps", "POST", {
+            operation: "provisioningStatus",
+            input: managedAppProvisioningStatusSchema.parse(input),
+          }),
+        ),
       list: async () =>
         managedAppListSchema.parse(
           await call("/v1/plugin/apps", "POST", {

@@ -7,12 +7,16 @@
     "./server": "./src/server.ts",
     "./client": "./src/client.tsx",
     "./styles.css": "./src/styles.css",
-    "./types": "./src/types.ts"
+    "./types": "./src/types.ts",
+    "./schema": "./src/schema.ts"
   },
   "peerDependencies": {
     "payload": "4.0.0-canary.37",
     "react": ">=19",
     "next": ">=16",
     "@webdock/i18n": "*"
+  },
+  "devDependencies": {
+    "happy-dom": "20.14.5"
   }
 }

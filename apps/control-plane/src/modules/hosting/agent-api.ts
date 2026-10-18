@@ -1,3 +1,5 @@
+import { guardOperation } from "./operations";
+import { templateAgentRequest } from "./plugin-template-runtime";
 import { createHostingAgentApi } from "@webdock/module-hosting/server/agent-api";
 import { withDatabaseScope } from "@webdock/database-runtime";
 import { authDatabase } from "../../db/runtime";
@@ -36,6 +38,8 @@ import {
 } from "./clusters";
 import { requireHostingEnvironment, readHostingJSON } from "./http";
 export const { hostingAgentAPI } = createHostingAgentApi({
+  templateAgentRequest,
+  guardOperation,
   get withDatabaseScope() {
     return withDatabaseScope;
   },

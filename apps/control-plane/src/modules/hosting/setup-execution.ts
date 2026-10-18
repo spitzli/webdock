@@ -1,3 +1,8 @@
+import {
+  authorizePluginSetup,
+  beforePluginSetupRelease,
+  beforePluginSetupReady,
+} from "./plugin-provisioning-runtime";
 import { authorizeSetupConfiguration } from "./permissions";
 import { createHostingSetupExecution } from "@webdock/module-hosting/server/setup-execution";
 import { transaction } from "./db";
@@ -10,6 +15,9 @@ import { executeGitDeployment } from "./git-deployments";
 import { openEnvironment } from "./environment";
 export const { executeSetupStep } = createHostingSetupExecution({
   authorizeSetupConfiguration,
+  authorizeProvisioning: authorizePluginSetup,
+  beforeRelease: beforePluginSetupRelease,
+  beforeReady: beforePluginSetupReady,
   get transaction() {
     return transaction;
   },

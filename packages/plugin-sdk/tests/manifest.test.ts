@@ -257,3 +257,32 @@ test("read HTTP methods cannot invoke write actions and MCP names are local", ()
     assert.throws(() => parsePluginManifest(m));
   }
 });
+test("website-scoped actions declare exactly one HTTP alias and no extra authority", () => {
+  const m = fixture();
+  m.capabilities = [
+    "plugin.http.read",
+    "plugin.http.request",
+    "plugin.apps.provision",
+  ];
+  m.httpBindings = ["cms"];
+  m.actions = [
+    {
+      name: "cms.write",
+      intent: "write",
+      httpBinding: "cms",
+      capabilities: ["plugin.http.request"],
+    },
+  ];
+  m.jobs = [];
+  m.slots = [];
+  assert.equal(parsePluginManifest(m).actions[0].httpBinding, "cms");
+  for (const patch of [
+    { httpBinding: "other" },
+    { capabilities: ["plugin.http.request", "plugin.apps.provision"] },
+    { capabilities: [] },
+    { capabilities: ["plugin.http.read"] },
+  ])
+    assert.throws(() =>
+      parsePluginManifest({ ...m, actions: [{ ...m.actions[0], ...patch }] }),
+    );
+});

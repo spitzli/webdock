@@ -10,6 +10,10 @@ import { HostingError, resourceID } from "@webdock/hosting-contracts";
 import type { Agent } from "@webdock/hosting-contracts/runtime-ports";
 import type { Connection } from "@webdock/hosting-contracts/runtime-ports";
 export type Dependencies = {
+  operationAuthority?(
+    db: Connection,
+    id: string,
+  ): Promise<{ required: boolean; allowed: boolean }>;
   verifyAgent: DatabaseRuntimePorts["verifyAgent"];
   transaction: DatabaseRuntimePorts["transaction"];
   clusterLock: DatabaseRuntimePorts["clusterLock"];
@@ -120,6 +124,12 @@ export function createHostingDatabaseAgent(dependencies: Dependencies) {
           new Date(o.lease_until).getTime() <= Date.now()))
     )
       conflict();
+    if (
+      !(completed && o.status === "succeeded") &&
+      dependencies.operationAuthority &&
+      !(await dependencies.operationAuthority(db, o.id)).allowed
+    )
+      throw new HostingError(403, "Database provisioning authority changed.");
     return o;
   }
   async function claimDatabaseOperation(agent: Agent) {
@@ -149,6 +159,21 @@ export function createHostingDatabaseAgent(dependencies: Dependencies) {
         )
       ).rows[0];
       if (!row) return null;
+      if (
+        dependencies.operationAuthority &&
+        !(await dependencies.operationAuthority(db, row.id)).allowed
+      ) {
+        await db.query(
+          "UPDATE webdock_auth.hosting_operation SET status='needs-reconciliation' WHERE id=$1",
+          [row.id],
+        );
+        if (row.database_id)
+          await db.query(
+            "UPDATE webdock_auth.hosting_database SET state='needs-reconciliation' WHERE id=$1",
+            [row.database_id],
+          );
+        return null;
+      }
       const first = row.status === "queued";
       if (first && !row.checkpoint) {
         try {

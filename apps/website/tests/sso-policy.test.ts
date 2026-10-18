@@ -29,6 +29,10 @@ test('enforced SSO rejects native login, recovery and existing Payload JWTs with
       }
       assert.ok(await users.access.read!({ req } as never));
       assert.equal(await users.access.admin!({ req } as never), true);
+      const disabled = users.fields.find(field => 'name' in field && field.name === 'disabled');
+      assert.ok(disabled && 'access' in disabled);
+      assert.equal(await disabled.access!.update!({ req } as never), role === 'operator');
+      assert.equal(await disabled.access!.create!({ req } as never), role === 'operator');
     }
     assert.deepEqual(users.auth.disableLocalStrategy, { enableFields: true, optionalPassword: true });
     assert.ok(payload.authStrategies.every(strategy => strategy.name !== 'local-jwt'));

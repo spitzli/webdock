@@ -2,6 +2,21 @@ import { z } from "zod";
 import { capabilitySchema, pluginLimits } from "./capabilities.js";
 /** Wire metadata, not an assertion that a host has installed these adapters. */
 export const hostMethodCatalog = {
+  "apps.provisioningList": {
+    version: 1,
+    capability: "plugin.apps.read",
+    intent: "read",
+  },
+  "apps.provision": {
+    version: 1,
+    capability: "plugin.apps.provision",
+    intent: "write",
+  },
+  "apps.provisioningStatus": {
+    version: 1,
+    capability: "plugin.apps.read",
+    intent: "read",
+  },
   "apps.list": { version: 1, capability: "plugin.apps.read", intent: "read" },
   "apps.get": { version: 1, capability: "plugin.apps.read", intent: "read" },
   "apps.command": {

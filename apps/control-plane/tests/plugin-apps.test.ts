@@ -299,3 +299,43 @@ test("disabled Hosting denies before reading or operating an app", async () => {
   ).rejects.toMatchObject({ code: "unavailable" });
   expect(called).toBe(false);
 });
+test("provisioning uses separate optional adapter and exact capability with bounded results", async () => {
+  const caps: string[] = [];
+  const status = {
+    provisioning_id: "777",
+    template_id: "approved-app",
+    state: "running" as const,
+    steps: [],
+  };
+  const service = core.createPluginApps({
+    run: (_r, cap, fn) => {
+      caps.push(cap);
+      return fn(scope, []);
+    },
+    handler: () => undefined,
+    provisioningHandler: () => async () => status,
+  });
+  expect(
+    await service.request(request, {
+      operation: "provision",
+      input: { template_id: "approved-app", name: "App", request_id: "req" },
+    }),
+  ).toEqual(status);
+  expect(
+    await service.request(request, {
+      operation: "provisioningStatus",
+      input: { provisioning_id: "777" },
+    }),
+  ).toEqual(status);
+  expect(caps).toEqual(["plugin.apps.provision", "plugin.apps.read"]);
+  const missing = core.createPluginApps({
+    run: (_r, _cap, fn) => fn(scope, []),
+    handler: () => undefined,
+  });
+  await expect(
+    missing.request(request, {
+      operation: "provision",
+      input: { template_id: "approved-app", name: "App", request_id: "req" },
+    }),
+  ).rejects.toMatchObject({ code: "capability_unavailable" });
+});

@@ -1,3 +1,5 @@
+import { pluginTemplateSchemaSQL } from "../modules/hosting/plugin-template-schema";
+import { pluginProvisioningRlsSQL, pluginProvisioningPolicy } from "./plugin-provisioning-rls";
 import {pluginScopeSQL} from "../modules/plugins/scope-rls";
 import {pluginTables,pluginPolicy} from "../modules/plugins/rls";
 import { modulePreflightTables } from "./module-preflight-tables";
@@ -69,7 +71,7 @@ const adminTables = new Set(
   ),
 );
 const websiteTables = new Set(
-  "_landing_page_v _landing_page_v_version_faqs _landing_page_v_version_use_cases landing_page landing_page_faqs landing_page_use_cases payload_kv payload_locked_documents payload_locked_documents_rels payload_migrations payload_preferences payload_preferences_rels users users_sessions".split(
+  "_landing_page_v _landing_page_v_version_faqs _landing_page_v_version_use_cases landing_page landing_page_faqs landing_page_use_cases payload_kv payload_locked_documents payload_locked_documents_rels payload_migrations payload_preferences payload_preferences_rels users users_sessions cms_bridge_transfers cms_bridge_transfer_chunks".split(
     " ",
   ),
 );
@@ -457,6 +459,7 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
     "DO $$ BEGIN IF to_regprocedure('webdock_admin.lock_hosting_project(character varying)') IS NOT NULL THEN GRANT EXECUTE ON FUNCTION webdock_admin.lock_hosting_project(varchar) TO webdock_auth_runtime,webdock_worker_runtime; END IF; END $$;",
   );
   if(seen.has("webdock_auth.plugin_invocation"))sql.push(pluginScopeSQL);
+  if(seen.has("webdock_auth.hosting_plugin_provisioning") && seen.has("webdock_auth.plugin_invocation"))sql.push(pluginProvisioningRlsSQL,pluginTemplateSchemaSQL);
   const worker = (purposes: string[], cluster?: string) =>
     `webdock_rls.worker(ARRAY[${purposes.map(literal).join(",")}]::text[]${cluster ? "," + cluster : ""})`;
   for (const t of tables) {
@@ -881,6 +884,10 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         "mail-webmail-gateway",
         "database-gateway",
       ]);
+    } else if (["hosting_plugin_provisioning","hosting_plugin_provisioning_request"].includes(t.name)) {
+      const provision=pluginProvisioningPolicy(t.name);
+      read=provision.read;write=provision.write;workRead=provision.workerRead;workWrite=provision.workerWrite;runtimeDelete=workDelete="false";
+      if(t.name.endsWith("_request"))runtimeUpdate=workUpdate="false";
     } else if ((pluginTables as readonly string[]).includes(t.name)) {
       const plugin=pluginPolicy(t.name);
       read=plugin.read;write=plugin.write;workRead=plugin.workerRead;workWrite=plugin.workerWrite;
@@ -1019,6 +1026,8 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         workDelete ??= workUpdate ?? previousWrite;
         workUpdate = `(${workUpdate ?? previousWrite}) OR (${setup.update ?? setup.write})`;
       }
+      if (t.name === "hosting_setup" && seen.has("webdock_auth.hosting_plugin_provisioning"))
+        workRead += ` OR (webdock_rls.agent_project(${col("project_id")}) AND EXISTS(SELECT 1 FROM webdock_auth.hosting_plugin_provisioning provision WHERE provision.setup_id=${col("id")}))`;
       if (modulePreflightTables.has(key))
         sql.push(
           `GRANT SELECT ON ${q} TO webdock_worker_runtime; CREATE POLICY installation_preflight_read ON ${q} FOR SELECT TO webdock_worker_runtime USING(${worker(["installation-preflight"])});`,
