@@ -10331,3 +10331,54 @@ msgstr ""
 #: packages/i18n/src/picker.tsx:23
 msgid "Changing language…"
 msgstr ""
+
+msgid "Unpublished."
+msgstr ""
+
+msgid "Unpublish this language from the website? Your saved draft and history will be kept."
+msgstr ""
+
+msgid "Unpublish this content from the website? Your saved draft and history will be kept."
+msgstr ""
+
+msgid "Existing images cannot be replaced. Upload a new image in Media, then select it in your content."
+msgstr ""
+
+msgid "To change this image, upload a new image in Media, then select it in your content. You can edit this image’s description below."
+msgstr ""
+
+msgid "Your role cannot unpublish this content."
+msgstr ""
+
+msgid "Upload a valid PNG, JPEG, WebP or AVIF image (maximum 10 MiB and 40 megapixels)."
+msgstr ""
+
+msgid "This save may have completed. Check the content list before trying again."
+msgstr ""
+
+msgid "Check saved content"
+msgstr ""
+
+msgid "Save your draft before unpublishing."
+msgstr ""
+
+msgid "Remove this image"
+msgstr ""
+
+msgid "Remove image"
+msgstr ""
+
+msgid "This removes the image from the media library. Content using it may stop displaying the image. Its file is retained until an operator purges it."
+msgstr ""
+
+msgid "Remove this image from the library? Its file will be retained until an operator purges it."
+msgstr ""
+
+msgid "Image removed. Its file is retained until an operator purges it."
+msgstr ""
+
+msgid "Media removal is unavailable until the retention migration has run."
+msgstr ""
+
+msgid "An administrator is required to remove or restore media."
+msgstr ""

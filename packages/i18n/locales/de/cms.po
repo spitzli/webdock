@@ -437,3 +437,54 @@ msgstr "Eine andere Änderung wurde gleichzeitig gespeichert. Lade die Seite neu
 
 msgid "The CMS could not complete this request. Your changes were not confirmed."
 msgstr "Das CMS konnte diese Anfrage nicht abschließen. Deine Änderungen wurden nicht bestätigt."
+
+msgid "Unpublished."
+msgstr "Veröffentlichung zurückgenommen."
+
+msgid "Unpublish this language from the website? Your saved draft and history will be kept."
+msgstr "Diese Sprachversion von der Website nehmen? Dein gespeicherter Entwurf und der Verlauf bleiben erhalten."
+
+msgid "Unpublish this content from the website? Your saved draft and history will be kept."
+msgstr "Diesen Inhalt von der Website nehmen? Dein gespeicherter Entwurf und der Verlauf bleiben erhalten."
+
+msgid "Existing images cannot be replaced. Upload a new image in Media, then select it in your content."
+msgstr "Vorhandene Bilder können nicht ersetzt werden. Lade unter Medien ein neues Bild hoch und wähle es anschließend in deinem Inhalt aus."
+
+msgid "To change this image, upload a new image in Media, then select it in your content. You can edit this image’s description below."
+msgstr "Um dieses Bild zu ändern, lade unter Medien ein neues Bild hoch und wähle es anschließend in deinem Inhalt aus. Die Beschreibung dieses Bildes kannst du unten bearbeiten."
+
+msgid "Your role cannot unpublish this content."
+msgstr "Deine Rolle darf die Veröffentlichung dieses Inhalts nicht zurücknehmen."
+
+msgid "Upload a valid PNG, JPEG, WebP or AVIF image (maximum 10 MiB and 40 megapixels)."
+msgstr "Lade ein gültiges PNG-, JPEG-, WebP- oder AVIF-Bild hoch (höchstens 10 MiB und 40 Megapixel)."
+
+msgid "This save may have completed. Check the content list before trying again."
+msgstr "Das Speichern könnte bereits abgeschlossen sein. Prüfe die Inhaltsliste, bevor du es erneut versuchst."
+
+msgid "Check saved content"
+msgstr "Gespeicherte Inhalte prüfen"
+
+msgid "Save your draft before unpublishing."
+msgstr "Speichere deinen Entwurf, bevor du die Veröffentlichung zurücknimmst."
+
+msgid "Remove this image"
+msgstr "Dieses Bild entfernen"
+
+msgid "Remove image"
+msgstr "Bild entfernen"
+
+msgid "This removes the image from the media library. Content using it may stop displaying the image. Its file is retained until an operator purges it."
+msgstr "Dadurch wird das Bild aus der Medienbibliothek entfernt. Inhalte, die es verwenden, zeigen das Bild möglicherweise nicht mehr an. Die Datei bleibt erhalten, bis ein Betreiber sie endgültig löscht."
+
+msgid "Remove this image from the library? Its file will be retained until an operator purges it."
+msgstr "Dieses Bild aus der Medienbibliothek entfernen? Die Datei bleibt erhalten, bis ein Betreiber sie endgültig löscht."
+
+msgid "Image removed. Its file is retained until an operator purges it."
+msgstr "Bild entfernt. Die Datei bleibt erhalten, bis ein Betreiber sie endgültig löscht."
+
+msgid "Media removal is unavailable until the retention migration has run."
+msgstr "Bilder können erst entfernt werden, nachdem die Migration für aufbewahrte Dateien ausgeführt wurde."
+
+msgid "An administrator is required to remove or restore media."
+msgstr "Nur Administratoren dürfen Bilder entfernen oder wiederherstellen."

@@ -65,7 +65,7 @@ for (const [index, request] of sent.entries()) {
   assert.equal(
     request.headers.get("cookie"),
     mode !== "legacy"
-      ? ""
+      ? "webdock-github=integration"
       : "webdock-sso=stale; webdock-github=integration",
   );
 }

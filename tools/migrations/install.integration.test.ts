@@ -5,6 +5,7 @@ import { execFileSync, spawnSync, spawn } from "node:child_process";
 import { Pool } from "pg";
 import { runtimeRoles } from "./config.ts";
 import { fileURLToPath } from "node:url";
+import { readFile } from "node:fs/promises";
 const root = fileURLToPath(new URL("../../", import.meta.url));
 test(
   "empty installation, retained-data upgrade and signing-key refusal use restricted roles",
@@ -122,6 +123,40 @@ test(
       assert.ok(roleRows.every((r) => !r.rolsuper && !r.rolbypassrls));
       url.username = "webdock_offline_migrate";
       url.password = passwords.webdock_offline_migrate;
+      // Fresh bootstrap already journals every migration as postgres. Exercise a
+      // genuinely new function under the restricted upgrade login as well.
+      const provisioningSQL = await readFile(
+        new URL("../../apps/control-plane/drizzle/0048_plugin_app_provisioning.sql", import.meta.url),
+        "utf8",
+      );
+      const restricted = new Pool({ connectionString: url.href, max: 1 });
+      const migration = await restricted.connect();
+      try {
+        await migration.query("BEGIN");
+        assert.equal((await migration.query(
+          "SELECT has_schema_privilege('webdock_platform_owner','webdock_rls','CREATE') AS allowed",
+        )).rows[0].allowed, false);
+        await migration.query("DROP FUNCTION webdock_rls.plugin_provisioning_status(text) CASCADE");
+        for (const [, policy, table] of provisioningSQL.matchAll(/^CREATE POLICY (\w+) ON ([\w.]+)/gm))
+          await migration.query(`DROP POLICY IF EXISTS ${policy} ON ${table}`);
+        await migration.query("SAVEPOINT without_owner_create");
+        await assert.rejects(
+          migration.query(provisioningSQL.replace(
+            "GRANT USAGE,CREATE ON SCHEMA webdock_rls TO webdock_platform_owner;",
+            "",
+          )),
+          (error: any) => error.code === "42501" && /webdock_rls/.test(error.message),
+        );
+        await migration.query("ROLLBACK TO SAVEPOINT without_owner_create");
+        await migration.query(provisioningSQL);
+        assert.deepEqual((await migration.query(
+          "SELECT p.proowner::regrole::text AS owner,has_schema_privilege('webdock_platform_owner','webdock_rls','CREATE') AS can_create FROM pg_proc p WHERE p.oid='webdock_rls.plugin_provisioning_status(text)'::regprocedure",
+        )).rows[0], { owner: "webdock_platform_owner", can_create: false });
+      } finally {
+        await migration.query("ROLLBACK");
+        migration.release();
+        await restricted.end();
+      }
       const initializePlugins = (modules: Record<string, unknown>) => spawnSync(
         root + "node_modules/.bin/bun",
         ["--no-env-file", "tools/plugins/bootstrap.ts", target, "fresh"],

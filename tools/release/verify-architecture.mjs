@@ -7,11 +7,15 @@ import { coreRuntimeProductPath } from "./build-core-console.mjs";
 import {
   images,
   databaseImages,
+  cmsImages,
+  cmsVersions,
   inspectOCIArchive,
   executionChecks,
   evidenceChecks,
 } from "./manifest.mjs";
 const [directory, platform, revision] = process.argv.slice(2);
+const includeCMS = process.env.WEBDOCK_RELEASE_CMS === "true";
+const cmsRuntime = includeCMS ? cmsVersions : undefined;
 const includeDatabases = process.env.WEBDOCK_RELEASE_DATABASES === "true";
 const pin = JSON.parse(
   await readFile(
@@ -26,7 +30,7 @@ const databaseRuntime = includeDatabases
       sourceImage: process.env.TABULARIS_IMAGE,
     }
   : undefined;
-const selectedImages = [...images, ...(includeDatabases ? databaseImages : [])];
+const selectedImages = [...images, ...(includeDatabases ? databaseImages : []), ...(includeCMS ? cmsImages : [])];
 const architecture = { x64: "amd64", arm64: "arm64" }[arch()];
 if (hostOS() !== "linux" || platform !== `linux/${architecture}`)
   throw Error(
@@ -97,8 +101,8 @@ try {
       throw Error("Loaded image architecture mismatch");
   }
   const licenseDigests = Object.fromEntries(await Promise.all(["LICENSE", "COMMERCIAL-LICENSING.md", "NOTICE"].map(async name => [name, createHash("sha256").update(await readFile(name)).digest("hex")])));
-  for (const name of ["api-core", "console-core", "api", "console", "auth", "worker", "migrate"])
-    run(name, ["console-core", "console", "auth"].includes(name) ? "node" : "bun", ["-e", `const fs=require('node:fs'),crypto=require('node:crypto');for(const [name,expected] of Object.entries(${JSON.stringify(licenseDigests)}))if(crypto.createHash('sha256').update(fs.readFileSync('/usr/share/licenses/webdock/'+name)).digest('hex')!==expected)throw Error('License notice differs: '+name);`]);
+  for (const name of ["api-core", "console-core", "api", "console", "auth", "worker", "migrate", ...(includeCMS ? cmsImages : [])])
+    run(name, ["console-core", "console", "auth", "cms-instance"].includes(name) ? "node" : "bun", ["-e", `const fs=require('node:fs'),crypto=require('node:crypto');for(const [name,expected] of Object.entries(${JSON.stringify(licenseDigests)}))if(crypto.createHash('sha256').update(fs.readFileSync('/usr/share/licenses/webdock/'+name)).digest('hex')!==expected)throw Error('License notice differs: '+name);`]);
   run("agent", "python3", ["-c", "import hashlib,json,pathlib,sys; expected=json.loads(sys.argv[1]); assert all(hashlib.sha256((pathlib.Path('/usr/share/licenses/webdock')/name).read_bytes()).hexdigest()==digest for name,digest in expected.items())", JSON.stringify(licenseDigests)]);
   checks.push({ name: "webdock-license-notices", passed: true });
   run("api", "bun", ["test", "/app/packages/module-sdk/src/index.test.ts"]);
@@ -172,8 +176,15 @@ if(values[0].apiOrigin===values[1].apiOrigin||values[0].modules.modules.mail!=='
     );
     checks.push({ name: "database-gateway-managed-runtime", passed: true });
   }
+  if (includeCMS) {
+    run("cms-instance", "node", ["-e", `const fs=require('node:fs');if(process.versions.node.split('.')[0]!=='24'||JSON.parse(fs.readFileSync('/app/node_modules/payload/package.json','utf8')).version!==${JSON.stringify(cmsVersions.payloadVersion)})throw Error('CMS runtime version differs from pinned evidence');`]);
+    execFileSync("python3", ["apps/cms-instance/scripts/acceptance.py", "--image", `${prefix}:cms-instance`], { stdio: "inherit", timeout: 600000 });
+    checks.push({ name: "cms-instance-fresh-postgres", passed: true });
+    execFileSync(process.execPath, ["extensions/managed-cms/tests/image-smoke.mjs"], { stdio: "inherit", timeout: 120000, env: { ...process.env, PLUGIN_TEST_IMAGE: `${prefix}:managed-cms` } });
+    checks.push({ name: "managed-cms-runtime", passed: true });
+  }
   if (
-    evidenceChecks({ databaseRuntime }).some(
+    evidenceChecks({ databaseRuntime, cmsRuntime }).some(
       (name) => !checks.some((check) => check.name === name),
     )
   )
@@ -190,6 +201,7 @@ if(values[0].apiOrigin===values[1].apiOrigin||values[0].modules.modules.mail!=='
         checks,
         imageIndexDigests,
         ...(databaseRuntime ? { databaseRuntime } : {}),
+        ...(cmsRuntime ? { cmsRuntime } : {}),
       },
       null,
       2,

@@ -6,6 +6,11 @@ on:
         description: Semantic candidate version
         required: true
         type: string
+      include_cms:
+        description: Include native CMS instance and managed CMS plugin artifacts
+        required: false
+        default: true
+        type: boolean
       include_databases:
         description: Include verified native database gateway and Tabularis artifacts
         required: false
@@ -32,6 +37,7 @@ jobs:
       - name: Validate and build without provider credentials
         env:
           RELEASE_VERSION: ${{ inputs.version }}
+          WEBDOCK_RELEASE_CMS: ${{ inputs.include_cms }}
           WEBDOCK_RELEASE_DATABASES: ${{ inputs.include_databases }}
           TABULARIS_IMAGE: ${{ inputs.tabularis_image }}
         run: |

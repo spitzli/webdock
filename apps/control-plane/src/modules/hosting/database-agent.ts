@@ -1,3 +1,4 @@
+import { pluginOperationAuthority } from "./plugin-provisioning-store";
 import { createHostingDatabaseAgent } from "@webdock/module-databases/server/database-agent";
 import { verifyAgent } from "./clusters";
 import { transaction, clusterLock } from "./db";
@@ -9,6 +10,7 @@ export const {
   completeDatabaseOperation,
   guardDatabaseOperation,
 } = createHostingDatabaseAgent({
+  operationAuthority: pluginOperationAuthority,
   get verifyAgent() {
     return verifyAgent;
   },

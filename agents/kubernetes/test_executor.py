@@ -57,3 +57,41 @@ class ExecutorTests(unittest.TestCase):
         with self.assertRaises(ExecutionError):validate_packet(p)
 
 if __name__=='__main__':unittest.main()
+
+class ProvisioningGuardTests(unittest.TestCase):
+    def test_revocation_between_mutations_stops_the_next_effect(self):
+        from executor import apply
+        p=ExecutorTests().packet();p['pluginProvisioningGuard']=True
+        p['_guard']={'endpoint':'https://control.example','credential':'x'*43,'clusterID':p['clusterID']}
+        obj={'apiVersion':'v1','kind':'Service','metadata':{'name':'app-123','namespace':p['namespace']}}
+        with patch('connect.agent_request',side_effect=[{'valid':True},ValueError('revoked')]) as guard,patch('executor.get',return_value=None),patch('executor.kubectl') as kube:
+            apply(obj,p)
+            count=kube.call_count
+            with self.assertRaises(Exception):apply(obj,p)
+            self.assertEqual(kube.call_count,count)
+            self.assertEqual(guard.call_count,2)
+
+    def test_guard_required_packet_fails_closed_without_private_connection(self):
+        from executor import lease
+        p=ExecutorTests().packet();p['pluginProvisioningGuard']=True
+        with self.assertRaises(ExecutionError):lease(p)
+
+class PublishedTLSRetentionTests(unittest.TestCase):
+    def test_owned_template_tls_survives_environment_cleanup(self):
+        from executor import labels
+        p=ExecutorTests().packet()
+        secret={'type':'kubernetes.io/tls','metadata':{'name':'app-123-tls','annotations':{'cert-manager.io/certificate-name':'app-123-tls'},'labels':{**labels(p),'webdock.dev/provisioning-id':'101'}}}
+        certificate={'metadata':{**secret['metadata'],'uid':'certificate-uid'},'spec':{'secretName':'app-123-tls'}}
+        with patch('executor.get',return_value=certificate),patch('executor.kubectl',return_value=json.dumps({'items':[secret]})),patch('executor.guarded_delete') as delete:
+            cleanup_environment(p)
+            delete.assert_not_called()
+        secret['metadata']['labels']['webdock.dev/project-id']='999'
+        with patch('executor.kubectl',return_value=json.dumps({'items':[secret]})):
+            with self.assertRaises(ExecutionError):cleanup_environment(p)
+
+    def test_tls_secret_without_matching_certificate_is_not_adopted(self):
+        from executor import labels
+        p=ExecutorTests().packet()
+        secret={'type':'kubernetes.io/tls','metadata':{'name':'app-123-tls','annotations':{'cert-manager.io/certificate-name':'app-123-tls'},'labels':{**labels(p),'webdock.dev/provisioning-id':'101'}}}
+        for certificate in [None,{'metadata':{'labels':{**labels(p),'webdock.dev/provisioning-id':'999'}},'spec':{'secretName':'app-123-tls'}}]:
+            with patch('executor.get',return_value=certificate),patch('executor.kubectl',return_value=json.dumps({'items':[secret]})),self.assertRaises(ExecutionError):cleanup_environment(p)

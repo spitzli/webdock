@@ -24,6 +24,25 @@ class DaemonTests(unittest.TestCase):
             self.assertEqual(load_state(path)['sequence'],1)
             path.chmod(0o644)
             with self.assertRaises(ValueError):load_state(path)
+    def test_pending_template_cycles_do_not_starve_ordinary_or_mail_lanes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=self.state(directory);calls=[]
+            def request(origin,state,route,body):calls.append(route);return None
+            with patch('daemon.collect_observation',return_value={'nodes':[]}),patch('daemon.agent_request',side_effect=request),patch('daemon.run_template_once',return_value={'event':'template-operation','id':'77','outcome':'pending'}) as template,patch('daemon.run_mail_once',return_value=None) as mail,patch('daemon.run_mail_configuration',return_value=None):
+                for _ in range(3):run_once(path)
+            self.assertEqual(calls.count('claim'),3);self.assertEqual(template.call_count,3);self.assertEqual(mail.call_count,3)
+
+    def test_template_claim_failure_does_not_block_ordinary_operation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=self.state(directory);approval=Path(directory)/'templates.json';approval.write_text('{}');calls=[]
+            def request(origin,state,route,body):
+                calls.append(route)
+                if route=='template-claim':raise PermissionError('revoked template actor')
+                if route=='claim':return {'id':'456','generation':1,'desired':{'clusterID':'123','operationID':'456','generation':1}}
+            with patch.dict(os.environ,{'WEBDOCK_APP_TEMPLATES':str(approval)}),patch('daemon.collect_observation',return_value={'nodes':[]}),patch('daemon.agent_request',side_effect=request),patch('daemon.execute_local',return_value={'outcome':'succeeded','proof':{}}):
+                result=run_once(path)
+            self.assertEqual(result['event'],'operation');self.assertIn('complete',calls)
+
     def test_foreign_cluster_job_never_executes(self):
         with tempfile.TemporaryDirectory() as directory:
             path=self.state(directory);results=[]

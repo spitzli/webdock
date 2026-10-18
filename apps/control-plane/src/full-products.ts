@@ -11,11 +11,16 @@ import { HostingError } from "@webdock/hosting-contracts";
 import { configureModulePreflight } from "./module-preflight";
 import { verifyModuleShutdown } from "./full-module-preflight";
 import { requireHostingCommand } from "./installation";
-import { configureManagedApps } from "./modules/plugins/runtime";
+import { configureManagedApps, configureManagedAppProvisioning, configurePluginResourceBindings } from "./modules/plugins/runtime";
 import { createManagedAppsHandler } from "./modules/hosting/plugin-apps";
 import { executeHosting } from "./modules/hosting/service";
+import { configureOperatorAppTemplates } from "./modules/hosting/approved-templates";
+import { resolveApprovedTemplateHTTP, resolveApprovedTemplateApps } from "./modules/hosting/plugin-template-runtime";
 export function configureFullProducts() {
   configureManagedApps(createManagedAppsHandler(executeHosting, requireHostingCommand));
+  configurePluginResourceBindings({http:resolveApprovedTemplateHTTP,apps:resolveApprovedTemplateApps});
+  const provisioning = configureOperatorAppTemplates();
+  if(provisioning) configureManagedAppProvisioning(provisioning);
   configureMCPProducts(projectVercelStatus);
   configurePreviewProducts(readPreviewProduct);
   configureFullInstallation();

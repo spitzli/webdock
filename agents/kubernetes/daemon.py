@@ -48,6 +48,7 @@ def save_state(path,state):
 
 def heartbeat(path,state):
     observed=collect_observation()
+    observed.setdefault('capabilities',{})['provisioningGuardVersion']=1
     state['sequence']=state.get('sequence',0)+1
     observed.update(sequence=state['sequence'],generation=state['generation'])
     save_state(path,state)
@@ -66,23 +67,51 @@ def run_once(path):
     state=load_state(path)
     observation=heartbeat(path,state)
     database = run_database_once(state, observation)
+    try:template = run_template_once(state)
+    except Exception:
+        # Template authorization/transport failures must not starve unrelated lanes.
+        # No failed template is executed or acknowledged as successful here.
+        print(json.dumps({'event':'template-lane','status':'failed'}),file=sys.stderr)
+        template = None
     operation=agent_request(state['endpoint'],state,'claim',{})
     if not operation:
         mail = run_mail_once(path, state, observation)
         if mail is not None: return mail
         configuration = run_mail_configuration(path, state, observation)
         if configuration is not None: return configuration
-        return database or {'event':'heartbeat','clusterID':state['clusterID'],'nodes':len(observation['nodes'])}
+        return template or database or {'event':'heartbeat','clusterID':state['clusterID'],'nodes':len(observation['nodes'])}
     packet=operation.get('desired')
     valid=packet and packet.get('clusterID')==state['clusterID'] and packet.get('operationID')==operation.get('id') and packet.get('generation')==operation.get('generation')
     outcome={'outcome':'failed','error':'execution_failed'}
     if valid:
+        if packet.get('pluginProvisioningGuard') is True:
+            packet={**packet,'_guard':{key:state[key] for key in ['endpoint','clusterID','credential']}}
         try:outcome=execute_local(packet)
         except Exception:pass
     # Refresh capacity observation before releasing a completed allocation.
     heartbeat(path,state)
     agent_request(state['endpoint'],state,'complete',{'id':operation['id'],'generation':operation['generation'],**outcome})
     return {'event':'operation','id':operation['id'],'outcome':outcome['outcome']}
+
+
+def run_template_once(state):
+    # Local operator approval is opt-in; existing agents keep their exact polling contract.
+    if not Path(os.environ.get('WEBDOCK_APP_TEMPLATES','/etc/webdock/app-templates.json')).is_file():return None
+    from app_templates import execute
+    packet=agent_request(state['endpoint'],state,'template-claim',{})
+    if packet is None:return None
+    if packet['clusterID']!=state['clusterID']:raise ValueError('Template belongs to another agent')
+    identity={key:packet[key] for key in ['operationID','generation','leaseToken','phase']}
+    def checkpoint(**value):return agent_request(state['endpoint'],state,'template-checkpoint',{**identity,**value})
+    try:
+        with open(os.environ.get('WEBDOCK_EXECUTOR_LOCK','/run/lock/webdock-managed-executor.lock'),'w') as lock:
+            fcntl.flock(lock,fcntl.LOCK_EX)
+            proof=execute(packet,checkpoint)
+        result={'outcome':'pending'} if proof is None else {'outcome':'succeeded','proof':proof}
+    except Exception:
+        result={'outcome':'needs-reconciliation'}
+    agent_request(state['endpoint'],state,'template-complete',{**identity,**result})
+    return {'event':'template-operation','id':packet['operationID'],'outcome':result['outcome']}
 
 
 def run_database_once(state, observation):

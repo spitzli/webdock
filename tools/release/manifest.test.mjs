@@ -10,6 +10,7 @@ import {
   verifyManifest,
   validateVersion,
   validateEvidence,
+  validateCMSPlugin,
   images,
   databaseImages,
   databaseExecutionChecks,
@@ -216,4 +217,59 @@ test("optional database artifacts require pinned source, gateway execution proof
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test("optional CMS release requires both tested images, pinned versions and signed plugin metadata", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "webdock-cms-release-"));
+  try {
+    await fixture(dir);
+    const proof = JSON.parse(await readFile(join(dir, "architecture-evidence.json"), "utf8"));
+    proof.cmsRuntime = { payloadVersion: "4.0.0-canary.37", pluginVersion: "0.1.0-alpha.1" };
+    proof.checks.push(...["cms-instance-fresh-postgres", "managed-cms-runtime"].map(name => ({ name, passed: true })));
+    for (const name of ["cms-instance", "managed-cms"]) {
+      await cp(join(dir, "api.oci.tar"), join(dir, `${name}.oci.tar`));
+      proof.imageIndexDigests[name] = inspectOCIArchive(join(dir, `${name}.oci.tar`)).indexDigest;
+    }
+    await writeFile(join(dir, "architecture-evidence.json"), JSON.stringify(proof));
+    await assert.rejects(createManifest(dir, "0.1.0", revision), /Missing managed-cms.plugin.json/);
+    const plugin = { name: "managed-cms", version: "0.1.0-alpha.1", kind: "extension", protocolVersion: 1, sdkVersion: 1, schemaVersion: 1, image: `ghcr.io/spitzli/webdock/managed-cms@${proof.imageIndexDigests["managed-cms"]}` };
+    assert.equal(validateCMSPlugin(plugin, proof, "ghcr.io/spitzli/webdock"), plugin);
+    assert.throws(() => validateCMSPlugin(plugin, proof, "registry.example/webdock"), /destination image/);
+    await writeFile(join(dir, "managed-cms.plugin.json"), JSON.stringify(plugin));
+    const manifest = await createManifest(dir, "0.1.0", revision);
+    assert.equal(manifest.artifacts.find(a => a.file === "managed-cms.plugin.json").kind, "plugin-manifest");
+    assert.match(await readFile(join(dir, "SHA256SUMS"), "utf8"), /  managed-cms.plugin.json\n/);
+    assert.equal((await verifyManifest(dir)).artifacts.length, 14);
+    const companion = manifest.artifacts.find(a => a.file === "managed-cms.plugin.json");
+    companion.kind = "helm-chart";
+    await writeFile(join(dir, "manifest.json"), JSON.stringify(manifest));
+    await assert.rejects(verifyManifest(dir), /artifact kind/);
+    companion.kind = "plugin-manifest";
+    await writeFile(join(dir, "manifest.json"), JSON.stringify(manifest));
+    await rm(join(dir, "managed-cms.plugin.json"));
+    await assert.rejects(verifyManifest(dir), /CMS plugin metadata/);
+    for (const invalid of [null, {}, { ...plugin, version: "0.2.0" }, { ...plugin, image: "ghcr.io/spitzli/webdock/managed-cms:latest" }, { ...plugin, image: `ghcr.io/spitzli/webdock/managed-cms@sha256:${"f".repeat(64)}` }]) {
+      await writeFile(join(dir, "managed-cms.plugin.json"), JSON.stringify(invalid));
+      await assert.rejects(createManifest(dir, "0.1.0", revision), /CMS plugin metadata/);
+    }
+    await writeFile(join(dir, "managed-cms.plugin.json"), "{");
+    await assert.rejects(createManifest(dir, "0.1.0", revision), /CMS plugin metadata/);
+    assert.throws(() => validateEvidence({ ...proof, cmsRuntime: { ...proof.cmsRuntime, payloadVersion: "latest" } }, revision), /pinned CMS/);
+    assert.throws(() => validateEvidence({ ...proof, checks: evidence.checks }, revision), /execution check/);
+    const { ["managed-cms"]: ignored, ...incomplete } = proof.imageIndexDigests;
+    assert.throws(() => validateEvidence({ ...proof, imageIndexDigests: incomplete }, revision), /digest evidence/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("non-CMS releases reject stray plugin metadata", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "webdock-cms-stray-"));
+  try {
+    await fixture(dir);
+    await createManifest(dir, "0.1.0", revision);
+    await writeFile(join(dir, "managed-cms.plugin.json"), "{}");
+    await assert.rejects(verifyManifest(dir), /Unexpected artifact outside manifest/);
+    await assert.rejects(createManifest(dir, "0.1.0", revision), /Unexpected artifact/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });

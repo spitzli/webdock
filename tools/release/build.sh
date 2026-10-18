@@ -13,6 +13,7 @@ test -z "$(git status --porcelain --untracked-files=normal)" || { echo "Release 
 mkdir -p "$out"
 test -z "$(ls -A "$out")" || { echo 'Output directory must be empty' >&2; exit 1; }
 revision=$(git rev-parse HEAD)
+case "${WEBDOCK_RELEASE_CMS:-false}" in true|false) ;; *) echo 'WEBDOCK_RELEASE_CMS must be true or false' >&2; exit 1;; esac
 case "${WEBDOCK_RELEASE_DATABASES:-false}" in true|false) ;; *) echo 'WEBDOCK_RELEASE_DATABASES must be true or false' >&2; exit 1;; esac
 if [ "${WEBDOCK_RELEASE_DATABASES:-false}" = true ]; then
   : "${TABULARIS_IMAGE:?Database artifacts require the verified immutable runtime image}"
@@ -33,8 +34,30 @@ if [ "${WEBDOCK_RELEASE_DATABASES:-false}" = true ]; then
   done
   helm package deploy/helm/webdock-databases --version "$version" --app-version "$version" --destination "$out"
 fi
+if [ "${WEBDOCK_RELEASE_CMS:-false}" = true ]; then
+  for target in cms-instance managed-cms; do
+    case "$target" in cms-instance) dockerfile=apps/cms-instance/Dockerfile ;; managed-cms) dockerfile=extensions/managed-cms/Dockerfile ;; esac
+    docker buildx build --platform "$platform" --file "$dockerfile" \
+      --label "org.opencontainers.image.revision=$revision" --label "org.opencontainers.image.version=$version" \
+      --label "org.opencontainers.image.source=https://github.com/spitzli/webdock" \
+      --provenance=mode=max --sbom=true --output "type=oci,compression=gzip,force-compression=true,dest=$out/$target.oci.tar" .
+  done
+fi
 helm package deploy/helm/webdock --version "$version" --app-version "$version" --destination "$out"
 helm package deploy/helm/webdock-agent --version "$version" --app-version "$version" --destination "$out"
 node tools/release/verify-architecture.mjs "$out" "$platform" "$revision"
+if [ "${WEBDOCK_RELEASE_CMS:-false}" = true ]; then
+  node --import tsx --input-type=module - "$out" "${WEBDOCK_RELEASE_REGISTRY:-ghcr.io/spitzli/webdock}" <<'JS'
+import { readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { createManifest } from "./extensions/managed-cms/src/manifest.ts";
+import { validateCMSPlugin } from "./tools/release/manifest.mjs";
+const [out, registry] = process.argv.slice(2);
+const evidence = JSON.parse(await readFile(join(out, "architecture-evidence.json"), "utf8"));
+const plugin = createManifest(`${registry}/managed-cms@${evidence.imageIndexDigests["managed-cms"]}`);
+validateCMSPlugin(plugin, evidence, registry);
+await writeFile(join(out, "managed-cms.plugin.json"), JSON.stringify(plugin, null, 2) + "\n");
+JS
+fi
 node tools/release/manifest.mjs create "$out" "$version" "$revision"
 node tools/release/manifest.mjs verify "$out"

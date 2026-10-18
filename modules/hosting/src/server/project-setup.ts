@@ -436,6 +436,24 @@ export function createHostingProjectSetup(dependencies: Dependencies) {
           )
         ).rows[0];
       }
+      if (actor.pluginProvisioningID && cmd.action === "setup.save") {
+        const attached = await db.query(
+          "UPDATE webdock_auth.hosting_plugin_provisioning SET setup_id=$2,updated_at=now() WHERE id=$1 AND project_id=$3 AND customer_id=$4 AND actor->>'subject'=$5 AND actor->>'sessionID'=$6 AND (setup_id IS NULL OR setup_id=$2)",
+          [
+            actor.pluginProvisioningID,
+            row!.id,
+            cmd.projectID,
+            access.customerID,
+            actor.subject,
+            actor.sessionID,
+          ],
+        );
+        if (!attached.rowCount)
+          throw new HostingError(
+            409,
+            "Application provisioning ownership changed.",
+          );
+      }
       const result = setupView(row!);
       await dependencies.recordResult(
         db,

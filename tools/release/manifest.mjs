@@ -15,6 +15,9 @@ export const images = [
   "agent",
   "mail-runtime",
 ];
+export const cmsImages = ["cms-instance", "managed-cms"];
+export const cmsExecutionChecks = ["cms-instance-fresh-postgres", "managed-cms-runtime"];
+export const cmsVersions = { payloadVersion: "4.0.0-canary.37", pluginVersion: "0.1.0-alpha.1" };
 export const databaseImages = ["database-gateway", "tabularis-runtime"];
 export const databaseExecutionChecks = [
   "database-gateway-managed-runtime",
@@ -23,10 +26,12 @@ export const databaseExecutionChecks = [
 export const evidenceImages = (evidence) => [
   ...images,
   ...(evidence.databaseRuntime ? databaseImages : []),
+  ...(evidence.cmsRuntime ? cmsImages : []),
 ];
 export const evidenceChecks = (evidence) => [
   ...executionChecks,
   ...(evidence.databaseRuntime ? databaseExecutionChecks : []),
+  ...(evidence.cmsRuntime ? cmsExecutionChecks : []),
 ];
 export const executionChecks = [
   "webdock-license-notices",
@@ -83,8 +88,33 @@ export function validateEvidence(evidence, revision) {
     )
       throw Error("Invalid pinned database runtime evidence");
   }
+  if (evidence.cmsRuntime && (
+    evidence.cmsRuntime.payloadVersion !== cmsVersions.payloadVersion ||
+    evidence.cmsRuntime.pluginVersion !== cmsVersions.pluginVersion
+  )) throw Error("Invalid pinned CMS runtime evidence");
   return evidence.platform;
 }
+/** The signed companion must install the exact image that passed native execution. */
+export function validateCMSPlugin(plugin, evidence, registry) {
+  const expected = evidence.imageIndexDigests?.["managed-cms"];
+  if (!evidence.cmsRuntime || !plugin || plugin.name !== "managed-cms" ||
+    plugin.version !== cmsVersions.pluginVersion || plugin.kind !== "extension" ||
+    plugin.protocolVersion !== 1 || plugin.sdkVersion !== 1 || plugin.schemaVersion !== 1 ||
+    typeof plugin.image !== "string" ||
+    !/^[a-z0-9][a-z0-9./:_-]*\/managed-cms@sha256:[a-f0-9]{64}$/.test(plugin.image) ||
+    plugin.image.split("@")[1] !== expected ||
+    (registry !== undefined && plugin.image !== `${registry}/managed-cms@${expected}`))
+    throw Error("Invalid CMS plugin metadata or destination image");
+  return plugin;
+}
+async function readCMSPlugin(directory, evidence) {
+  let plugin;
+  try { plugin = JSON.parse(await readFile(join(directory, "managed-cms.plugin.json"), "utf8")); }
+  catch { throw Error("Invalid CMS plugin metadata"); }
+  return validateCMSPlugin(plugin, evidence);
+}
+const artifactKind = file => file.endsWith(".oci.tar") ? "oci-image" : file.endsWith(".tgz") ? "helm-chart" : "plugin-manifest";
+const isArtifact = file => /\.(?:oci\.tar|tgz|plugin\.json)$/.test(file);
 /** Read only named metadata blobs; never extract archive files onto disk. */
 export function inspectOCIArchive(file) {
   const extract = (name) =>
@@ -158,9 +188,14 @@ function requiredArtifacts(artifacts, version, evidence) {
   const expected = new Set([
     ...evidenceImages(evidence).map((name) => `${name}.oci.tar`),
     ...chartNames.map((name) => `${name}-${version}.tgz`),
+    ...(evidence.cmsRuntime ? ["managed-cms.plugin.json"] : []),
   ]);
   if (artifacts.some((artifact) => !expected.has(artifact.file)))
     throw Error("Unexpected artifact without matching execution evidence");
+  if (evidence.cmsRuntime && !artifacts.some(item => item.file === "managed-cms.plugin.json"))
+    throw Error("Missing managed-cms.plugin.json");
+  if (artifacts.some(item => item.kind !== artifactKind(item.file)))
+    throw Error("Invalid artifact kind");
   for (const name of evidenceImages(evidence))
     if (!artifacts.some((item) => item.file === `${name}.oci.tar`))
       throw Error(`Missing ${name} image`);
@@ -182,9 +217,9 @@ export async function createManifest(directory, version, revision) {
   const platform = validateEvidence(evidence, revision);
   const artifacts = [];
   for (const file of (await readdir(directory))
-    .filter((name) => /\.(?:oci\.tar|tgz)$/.test(name))
+    .filter(isArtifact)
     .sort()) {
-    const kind = file.endsWith(".oci.tar") ? "oci-image" : "helm-chart";
+    const kind = artifactKind(file);
     const oci =
       kind === "oci-image"
         ? inspectOCIArchive(join(directory, file))
@@ -209,6 +244,7 @@ export async function createManifest(directory, version, revision) {
     });
   }
   requiredArtifacts(artifacts, version, evidence);
+  if (evidence.cmsRuntime) await readCMSPlugin(directory, evidence);
   const manifest = {
     schemaVersion: 2,
     version,
@@ -268,6 +304,7 @@ export async function verifyManifest(directory) {
   )
     throw Error("Database runtime evidence mismatch");
   requiredArtifacts(manifest.artifacts, manifest.version, evidence);
+  if (evidence.cmsRuntime) await readCMSPlugin(directory, evidence);
   const files = new Set();
   for (const artifact of manifest.artifacts) {
     if (
@@ -293,8 +330,8 @@ export async function verifyManifest(directory) {
     }
   }
   for (const file of await readdir(directory))
-    if (/\.(?:oci\.tar|tgz)$/.test(file) && !files.has(file))
-      throw Error(`Unexpected archive outside manifest: ${file}`);
+    if (isArtifact(file) && !files.has(file))
+      throw Error(`Unexpected ${file.endsWith(".plugin.json") ? "artifact" : "archive"} outside manifest: ${file}`);
   return manifest;
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

@@ -93,3 +93,77 @@ test("app origins are canonical and Hosting path identifies exactly the bound ap
   };
   assert.equal(contracts.managedAppSchema.safeParse(app).success, false);
 });
+test("approved template provisioning is strict, bounded and uses dedicated authority", async () => {
+  assert.ok(contracts.capabilities.includes("plugin.apps.provision" as never));
+  const input = {
+    template_id: "approved-app",
+    name: "My application",
+    request_id: "request-1",
+  };
+  const schema = (contracts as any).managedAppProvisionSchema;
+  assert.ok(schema.safeParse(input).success);
+  for (const extra of [
+    { image: "evil" },
+    { project_id: "99" },
+    { command: ["sh"] },
+  ])
+    assert.equal(schema.safeParse({ ...input, ...extra }).success, false);
+  const status = {
+    provisioning_id: "123",
+    template_id: "approved-app",
+    state: "running",
+    steps: [{ name: "database", state: "running" }],
+  };
+  const calls: any[] = [];
+  const ctx = createPluginContext({
+    hostURL: "https://host.example",
+    token: () => "token",
+    fetch: (async (_url: any, init: any) => {
+      calls.push(JSON.parse(init.body));
+      return Response.json(status);
+    }) as typeof fetch,
+  });
+  assert.deepEqual(await (ctx.apps as any).provision(input), status);
+  assert.deepEqual(
+    await (ctx.apps as any).provisioningStatus({ provisioning_id: "123" }),
+    status,
+  );
+  assert.deepEqual(calls, [
+    { operation: "provision", input },
+    { operation: "provisioningStatus", input: { provisioning_id: "123" } },
+  ]);
+  assert.equal(
+    (contracts as any).managedAppProvisioningSchema.safeParse({
+      ...status,
+      secret: "private",
+    }).success,
+    false,
+  );
+  assert.equal(
+    (contracts as any).managedAppProvisioningSchema.safeParse({
+      ...status,
+      steps: Array(33).fill(status.steps[0]),
+    }).success,
+    false,
+  );
+});
+test("provisioning discovery is read-only and bounded", async () => {
+  assert.deepEqual(
+    (contracts.hostMethodCatalog as any)["apps.provisioningList"],
+    { version: 1, capability: "plugin.apps.read", intent: "read" },
+  );
+  const ctx = createPluginContext({
+    hostURL: "https://host.example",
+    token: () => "token",
+    fetch: (async (_url: any, init: any) => {
+      assert.deepEqual(JSON.parse(init.body), {
+        operation: "provisioningList",
+        input: {},
+      });
+      return Response.json({ provisionings: [] });
+    }) as typeof fetch,
+  });
+  assert.deepEqual(await (ctx.apps as any).provisioningList(), {
+    provisionings: [],
+  });
+});

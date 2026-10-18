@@ -257,6 +257,7 @@ export const extensionSchema = z.strictObject({
         input: valueSchema.optional(),
         output: valueSchema.optional(),
         storage: z.enum(["upload", "download"]).optional(),
+        httpBinding: name.optional(),
         destructive: z.boolean().optional(),
       }),
     )
@@ -409,6 +410,20 @@ export const manifestSchema = z
       if (a.capabilities.some((c) => !x.capabilities.includes(c)))
         issue("Undeclared capability");
     for (const a of x.actions) {
+      if (
+        a.httpBinding &&
+        (!x.httpBindings.includes(a.httpBinding) ||
+          !a.capabilities.length ||
+          a.capabilities.some(
+            (c) => c !== "plugin.http.read" && c !== "plugin.http.request",
+          ) ||
+          !a.capabilities.includes(
+            a.intent === "write" ? "plugin.http.request" : "plugin.http.read",
+          ))
+      )
+        issue(
+          "Website action requires a declared HTTP binding and only matching HTTP capabilities",
+        );
       if (
         a.intent === "read" &&
         a.capabilities.some((c) => !readCapabilities.includes(c))

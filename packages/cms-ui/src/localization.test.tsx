@@ -15,3 +15,9 @@ test('explicit UI locale has its own boundary and cannot be replaced by an outer
  const german=renderToStaticMarkup(<CMSApp {...props} uiLocale="de"/>);
  assert.ok(german.includes('Deine Website. In deiner Hand.'));assert.ok(german.includes(props.siteName));
 });
+test("embedded CMS renders no navigation links out of its sandbox", () => {
+  const html = renderToStaticMarkup(<CMSApp {...props} embedded />);
+  assert.equal(html.includes('href="/cms"'), false);
+  assert.equal(html.includes('href="https://site.example"'), false);
+  assert.equal(html.includes("My account"), false);
+});

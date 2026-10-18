@@ -8,6 +8,8 @@ import {
   resourceID,
 } from "@webdock/hosting-contracts";
 export type Dependencies = {
+  guardOperation?: (agent: import("./clusters").Agent, input: {id:string;generation:number}) => Promise<{valid:true}>;
+  templateAgentRequest?: (agent: import("./clusters").Agent, action: string, input: unknown) => Promise<unknown>;
   withDatabaseScope: HostingPorts["withDatabaseScope"];
   authDatabase: HostingPorts["authDatabase"];
   databaseObservationConfig: DatabaseServices["databaseObservationConfig"];
@@ -69,6 +71,10 @@ export function createHostingAgentApi(dependencies: Dependencies) {
         request.method !== "POST" ||
         path.length !== 1 ||
         ![
+          "guard",
+          "template-claim",
+          "template-checkpoint",
+          "template-complete",
           "database-config",
           "database-observation",
           "database-claim",
@@ -156,7 +162,13 @@ export function createHostingAgentApi(dependencies: Dependencies) {
           } else {
             if (!credentials || !clusterID)
               throw new HostingError(401, "Cluster authentication failed.");
-            if (path[0] === "database-config") {
+            if (path[0] === "guard") {
+              if (!dependencies.guardOperation) throw new HostingError(404, "Operation guard is unavailable.");
+              data = await dependencies.guardOperation(agent!, z.object({id:resourceID,generation:z.number().int().positive()}).strict().parse(input));
+            } else if (path[0].startsWith("template-")) {
+              if (!dependencies.templateAgentRequest) throw new HostingError(404, "Approved application templates are unavailable.");
+              data = await dependencies.templateAgentRequest(agent!, path[0], input);
+            } else if (path[0] === "database-config") {
               z.object({}).strict().parse(input);
               data = await dependencies.databaseObservationConfig(agent!);
             } else if (path[0] === "database-observation")

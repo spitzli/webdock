@@ -2,6 +2,7 @@ import { z } from "zod";
 export const capabilities = [
   "plugin.apps.read",
   "plugin.apps.manage",
+  "plugin.apps.provision",
   "project.read",
   "plugin.data.read",
   "plugin.data.write",

@@ -45,6 +45,8 @@ if (selected.includes("mail")) {
     );
 }
 if (selected.includes("hosting")) {
+  const { configureOperatorAppTemplates } = await import("./modules/hosting/approved-templates");
+  configureOperatorAppTemplates();
   const { runSetupBatch } = await import("./modules/hosting/setup-worker");
   handlers.set("hosting.setup", async () => {
     await runSetupBatch();

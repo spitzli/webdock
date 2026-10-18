@@ -173,7 +173,7 @@ def configuration():
     if path.is_symlink() or info.st_uid!=os.getuid() or info.st_mode&0o077:raise ValueError('Private database configuration required')
     config=json.loads(path.read_text())
     required={'image','poolerImage','issuer','apiCIDRs','podCIDRs','storageSocket','caFile'}
-    if not required<=set(config)<=required|{'platformDatabases','platformAuxiliaryDatabases'}:raise ValueError('Invalid database configuration')
+    if not required<=set(config)<=required|{'platformDatabases','platformAuxiliaryDatabases','additionalStoragePools'}:raise ValueError('Invalid database configuration')
     auxiliary_databases(None,config)
     platform=config.get('platformDatabases',{})
     if not isinstance(platform,dict) or len(platform)>10:raise ValueError('Invalid platform database map')
@@ -188,12 +188,69 @@ def configuration():
     for key in ['apiCIDRs','podCIDRs']:
         if not isinstance(config[key],list) or not 1<=len(config[key])<=20:raise ValueError('Invalid database network boundary')
         for cidr in config[key]:ipaddress.ip_network(cidr,strict=True)
-    if not config['storageSocket'].startswith('/run/webdock-postgres-storage/'):raise ValueError('Separate database storage helper required')
+    storage_routes(config)
     ca=Path(config['caFile']).read_bytes()
     if len(ca)>262144 or b'BEGIN CERTIFICATE' not in ca or b'PRIVATE KEY' in ca:raise ValueError('A public CA certificate bundle is required')
     import ssl
     ssl.create_default_context(cafile=config['caFile'])
     return config
+
+
+def storage_routes(config):
+    extra=config.get('additionalStoragePools',[])
+    if not isinstance(extra,list) or len(extra)>7:raise ValueError('At most eight operator-owned database pools are supported')
+    routes=[{'storageSocket':config['storageSocket']}]+extra
+    sockets=set();nodes=set();pools=set()
+    for index,route in enumerate(routes):
+        if not isinstance(route,dict) or set(route)!=({'storageSocket','node','poolID'} if index else {'storageSocket'}):raise ValueError('Invalid database pool route')
+        path=route['storageSocket']
+        if not isinstance(path,str) or len(path)>103 or not re.fullmatch(r'/run/webdock-postgres-storage/(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_.-]+\.sock',path) or not Path(path).resolve().is_relative_to('/run/webdock-postgres-storage') or path in sockets:raise ValueError('Unsafe or duplicate database storage socket')
+        sockets.add(path)
+        if index:
+            if not isinstance(route['node'],str) or not re.fullmatch(r'[a-z0-9][a-z0-9.-]{0,252}',route['node']) or str(uuid.UUID(route['poolID']))!=route['poolID']:raise ValueError('Invalid database pool placement')
+            if route['node'] in nodes or route['poolID'] in pools:raise ValueError('Duplicate database pool placement')
+            nodes.add(route['node']);pools.add(route['poolID'])
+    return routes
+
+
+def storage_pools(config,nodes):
+    from storage_client import request
+    result=[];seen_nodes=set();seen_pools=set();allocations=set()
+    routes=storage_routes(config)
+    for index,route in enumerate(routes):
+        try:pool=request('database.capability',nodes,socket_path=route['storageSocket'])
+        except (FileNotFoundError,ConnectionError,TimeoutError):continue
+        # An unavailable independent pool is omitted; malformed identity is never ignored.
+        if index==0 and isinstance(pool,dict) and any(pool.get('node')==extra['node'] or pool.get('poolID')==extra['poolID'] for extra in routes[1:]):raise ValueError('Primary pool conflicts with an additional route')
+        if not isinstance(pool,dict) or pool.get('node') not in nodes or str(uuid.UUID(pool['poolID']))!=pool['poolID']:raise ValueError('Invalid database pool observation')
+        if any(pool.get(key)!=route[key] for key in ['node','poolID'] if key in route):raise ValueError('Database pool route identity changed')
+        if pool['node'] in seen_nodes or pool['poolID'] in seen_pools:raise ValueError('Database pools must have unique nodes and identities')
+        seen_nodes.add(pool['node']);seen_pools.add(pool['poolID'])
+        for key in ['capacityBytes','availableBytes','allocatedBytes']:
+            if type(pool.get(key)) is not int or not 0<=pool[key]<=9007199254740991:raise ValueError('Invalid database pool capacity')
+        if type(pool.get('ready')) is not bool or not isinstance(pool.get('allocations'),list) or len(pool['allocations'])>100:raise ValueError('Invalid database pool readiness')
+        for allocation in pool['allocations']:
+            identifier(allocation['installationID'])
+            if allocation['installationID'] in allocations:raise ValueError('Database installation exists in multiple pools')
+            allocations.add(allocation['installationID'])
+        result.append((route['storageSocket'],pool))
+    return result
+
+
+def storage_request(config,action,value):
+    from storage_client import request
+    if action not in ['database.ensure','database.state','database.retained','database.purge']:raise ValueError('Unsupported database storage action')
+    from database_storage import validate
+    validate(value)
+    routes=storage_routes(config)
+    selected=routes[0]['storageSocket']
+    for route in routes[1:]:
+        node_matches=route['node']==value['node'];pool_matches=route['poolID']==value['poolID']
+        if node_matches!=pool_matches:raise ValueError('Database node and pool conflict with an approved route')
+        if node_matches:selected=route['storageSocket']
+    # Never query unrelated pools. The selected private helper validates the exact
+    # cluster/node/pool/installation before every operation, including legacy fallback.
+    return request(action,value,socket_path=selected)
 
 
 def kubectl(*args,source=None):
@@ -324,8 +381,7 @@ def execute_database(p,checkpoint):
         if not current:
             if b['cnpgUID'] or b['revision']!=1:raise ValueError('Missing database installation; refusing empty replacement')
             if p['action'] not in ['create','prepareMigration']:raise ValueError('Installation must already exist')
-            from storage_client import request
-            volume=request('database.ensure',{'version':1,'installationID':b['id'],'clusterID':p['clusterID'],'revision':b['revision'],'node':b['node'],'poolID':b['poolID'],'volumeBytes':b['resources']['volumeBytes'],'leaseUntil':p['leaseUntil']},socket_path=config['storageSocket'])
+            volume=storage_request(config,'database.ensure',{'version':1,'installationID':b['id'],'clusterID':p['clusterID'],'revision':b['revision'],'node':b['node'],'poolID':b['poolID'],'volumeBytes':b['resources']['volumeBytes'],'leaseUntil':p['leaseUntil']})
             manifests=backend_manifests(p,config)
             apply(manifests[0],p,guard);apply(volume['persistentVolume'],p,guard)
             import base64
@@ -388,6 +444,8 @@ def execute_database(p,checkpoint):
         state='paused' if p['action']=='pause' else 'retained'
         if b['kind']=='dedicated':
             if volume_users(ns):return None
+            checkpoint()
+            storage_request(config,'database.retained',{'version':1,'installationID':b['id'],'clusterID':p['clusterID'],'revision':b['revision'],'node':b['node'],'poolID':b['poolID'],'volumeBytes':b['resources']['volumeBytes'],'leaseUntil':p['leaseUntil']})
         elif d:
             _,migration,app=role_names(d['id'])
             if sql(p,f"SELECT count(*) FROM pg_catalog.pg_roles WHERE rolname IN ('{migration}','{app}') AND rolcanlogin")!='0':return None
@@ -408,7 +466,7 @@ def execute_database(p,checkpoint):
 
 
 def database_capability(nodes):
-    """Advertise only a configured local DB pool and a healthy pinned operator."""
+    """Advertise only verified operator-owned DB pools and a healthy pinned operator."""
     try:
         config=configuration()
         operator=get('deployment','cnpg-controller-manager','cnpg-system')
@@ -416,30 +474,37 @@ def database_capability(nodes):
         for name in ['webdock-database-pods','webdock-database-services']:
             policy=get('validatingadmissionpolicy',name);binding=get('validatingadmissionpolicybinding',name)
             if not policy or not binding or policy['metadata'].get('labels',{}).get('webdock.dev/database-boundary-version')!='1' or 'Deny' not in binding['spec'].get('validationActions',[]) or policy.get('status',{}).get('typeChecking',{}).get('expressionWarnings'):return None
-        from storage_client import request
-        pool=request('database.capability',nodes,socket_path=config['storageSocket'])
-        if not pool['ready']:return None
-        node=get('node',pool['node'])
-        if not node or node.get('spec',{}).get('unschedulable') or node.get('spec',{}).get('taints'):return None
-        conditions={c['type']:c['status'] for c in node['status'].get('conditions',[])}
-        if conditions.get('Ready')!='True' or any(conditions.get(k)=='True' for k in ['MemoryPressure','DiskPressure','PIDPressure']):return None
+        node_map={n['metadata']['name']:n for n in json.loads(kubectl('get','nodes','-o','json'))['items']}
+        pools=storage_pools(config,nodes)
+        if not pools:return None
+        pods=json.loads(kubectl('get','pods','-A','-o','json'))['items']
+        services=json.loads(kubectl('get','services','-A','-o','json'))['items']
         from observer import quantity
-        cpu=memory=0;by_installation={}
-        for pod in json.loads(kubectl('get','pods','-A','-o','json'))['items']:
-            if pod.get('status',{}).get('phase') in ['Succeeded','Failed']:continue
-            if pod.get('spec',{}).get('nodeName') not in [None,pool['node']]:continue
-            # Conservative preflight: sum init and regular requests, including unplaced work.
-            for container in pod['spec'].get('containers',[])+pod['spec'].get('initContainers',[]):
-                resources=container.get('resources',{}).get('requests',{})
-                requested_cpu=quantity(resources.get('cpu','0'),cpu=True);requested_memory=quantity(resources.get('memory','0'))
-                cpu+=requested_cpu;memory+=requested_memory
-                match=re.fullmatch(r'wd-db-([1-9][0-9]{0,18})',pod['metadata']['namespace'])
-                if match:
-                    allocation=by_installation.setdefault(match[1],{'installationID':match[1],'cpuMillicores':0,'memoryBytes':0})
-                    allocation['cpuMillicores']+=requested_cpu;allocation['memoryBytes']+=requested_memory
-        pool.update(requestedCpuMillicores=cpu,requestedMemoryBytes=memory,observedDatabases=list(by_installation.values()))
-        ports=[p['nodePort'] for service in json.loads(kubectl('get','services','-A','-o','json'))['items'] for p in service['spec'].get('ports',[]) if p.get('nodePort')]
-        return {'databaseVersion':1,'databasePools':[pool],'databaseNodePorts':ports}
+        observed=[]
+        for _,pool in pools:
+            if not pool['ready']:continue
+            node=node_map.get(pool['node'])
+            if not node or node.get('spec',{}).get('unschedulable') or node.get('spec',{}).get('taints'):continue
+            conditions={c['type']:c['status'] for c in node['status'].get('conditions',[])}
+            if conditions.get('Ready')!='True' or any(conditions.get(k)=='True' for k in ['MemoryPressure','DiskPressure','PIDPressure']):continue
+            cpu=memory=0;by_installation={}
+            for pod in pods:
+                if pod.get('status',{}).get('phase') in ['Succeeded','Failed']:continue
+                if pod.get('spec',{}).get('nodeName') not in [None,pool['node']]:continue
+                # Preserve conservative accounting, including unplaced and init work.
+                for container in pod['spec'].get('containers',[])+pod['spec'].get('initContainers',[]):
+                    resources=container.get('resources',{}).get('requests',{})
+                    requested_cpu=quantity(resources.get('cpu','0'),cpu=True);requested_memory=quantity(resources.get('memory','0'))
+                    cpu+=requested_cpu;memory+=requested_memory
+                    match=re.fullmatch(r'wd-db-([1-9][0-9]{0,18})',pod['metadata']['namespace'])
+                    if match:
+                        allocation=by_installation.setdefault(match[1],{'installationID':match[1],'cpuMillicores':0,'memoryBytes':0})
+                        allocation['cpuMillicores']+=requested_cpu;allocation['memoryBytes']+=requested_memory
+            pool.update(requestedCpuMillicores=cpu,requestedMemoryBytes=memory,observedDatabases=list(by_installation.values()))
+            observed.append(pool)
+        if not observed:return None
+        ports=[p['nodePort'] for service in services for p in service['spec'].get('ports',[]) if p.get('nodePort')]
+        return {'databaseVersion':1,'databasePools':observed,'databaseNodePorts':ports}
     except (OSError,ValueError,KeyError,RuntimeError,subprocess.SubprocessError):return None
 
 
@@ -466,7 +531,6 @@ def purge_installation(p,checkpoint,config):
     b=p['backend'];ns=b['namespace'];uid=b['cnpgUID']
     if not uid:raise ValueError('A confirmed installation is required for physical purge')
     def guard():checkpoint()
-    from storage_client import request
     volume={'version':1,'installationID':b['id'],'clusterID':p['clusterID'],'revision':b['revision'],'node':b['node'],'poolID':b['poolID'],'volumeBytes':b['resources']['volumeBytes'],'leaseUntil':p['leaseUntil']}
     namespace=get('namespace',ns)
     if namespace:owned(namespace,p)
@@ -492,12 +556,12 @@ def purge_installation(p,checkpoint,config):
             delete_owned(pvc,p,guard,cnpg_owner=True);return None
         if pv:delete_owned(pv,p,guard);return None
         checkpoint(phase='configuring',cnpgUID=uid);guard()
-        request('database.purge',volume,socket_path=config['storageSocket'])
+        storage_request(config,'database.purge',volume)
         if namespace:delete_owned(namespace,p,guard)
         checkpoint(phase='observing',cnpgUID=uid);return None
     if p['phase']!='observe':raise ValueError('Uncertain physical purge requires reconciliation')
     if namespace or get('persistentvolume','wd-db-'+b['id']):return None
-    if request('database.state',volume,socket_path=config['storageSocket'])['state']!='purged':return None
+    if storage_request(config,'database.state',volume)['state']!='purged':return None
     return {'installationID':b['id'],'databaseID':p['database']['id'],'cnpgUID':uid,'revision':p['revision'],'state':'purged','endpointReady':False}
 
 

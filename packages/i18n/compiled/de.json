@@ -920,6 +920,9 @@
   "An administrator is required to delete content.": [
     "Zum Löschen von Inhalten sind Administratorrechte erforderlich."
   ],
+  "An administrator is required to remove or restore media.": [
+    "Nur Administratoren dürfen Bilder entfernen oder wiederherstellen."
+  ],
   "An administrator is required to restore content versions.": [
     "Zum Wiederherstellen von Inhaltsversionen sind Adminrechte erforderlich."
   ],
@@ -1756,6 +1759,9 @@
   ],
   "Check connection and domains": [
     "Verbindung und Domains prüfen"
+  ],
+  "Check saved content": [
+    "Gespeicherte Inhalte prüfen"
   ],
   "Check sending status": [
     "Versandstatus prüfen"
@@ -3918,6 +3924,9 @@
   "Existing images appear here. Uploading is not available in this view.": [
     "Bereits hinterlegte Bilder erscheinen hier. Diese Ansicht bietet keinen Upload."
   ],
+  "Existing images cannot be replaced. Upload a new image in Media, then select it in your content.": [
+    "Vorhandene Bilder können nicht ersetzt werden. Lade unter Medien ein neues Bild hoch und wähle es anschließend in deinem Inhalt aus."
+  ],
   "Existing linked items are preserved. New choices shown from {collection}.": [
     "Vorhandene Verknüpfungen bleiben erhalten. Neue Auswahlmöglichkeiten stammen aus {collection}."
   ],
@@ -4559,6 +4568,9 @@
   ],
   "Image preview": [
     "Bildvorschau"
+  ],
+  "Image removed. Its file is retained until an operator purges it.": [
+    "Bild entfernt. Die Datei bleibt erhalten, bis ein Betreiber sie endgültig löscht."
   ],
   "Image unavailable": [
     "Bild nicht erreichbar"
@@ -5765,6 +5777,9 @@
   ],
   "Media preview": [
     "Medienvorschau"
+  ],
+  "Media removal is unavailable until the retention migration has run.": [
+    "Bilder können erst entfernt werden, nachdem die Migration für aufbewahrte Dateien ausgeführt wurde."
   ],
   "Media storage": [
     "Medienspeicher"
@@ -7911,6 +7926,9 @@
   "Remove exception {date}": [
     "Ausnahme für {date} entfernen"
   ],
+  "Remove image": [
+    "Bild entfernen"
+  ],
   "Remove local suppression": [
     "Lokale Sperre entfernen"
   ],
@@ -7931,6 +7949,12 @@
   ],
   "Remove this domain from the sending provider. Applications may no longer send from it.": [
     "Entferne diese Domain beim Versandanbieter. Anwendungen können möglicherweise nicht mehr über sie senden."
+  ],
+  "Remove this image": [
+    "Dieses Bild entfernen"
+  ],
+  "Remove this image from the library? Its file will be retained until an operator purges it.": [
+    "Dieses Bild aus der Medienbibliothek entfernen? Die Datei bleibt erhalten, bis ein Betreiber sie endgültig löscht."
   ],
   "Remove this item from the page? Save to apply the change.": [
     "Diesen Eintrag von der Seite entfernen? Speichere, um die Änderung zu übernehmen."
@@ -8525,6 +8549,9 @@
   ],
   "Save variables": [
     "Variablen speichern"
+  ],
+  "Save your draft before unpublishing.": [
+    "Speichere deinen Entwurf, bevor du die Veröffentlichung zurücknimmst."
   ],
   "Save your new credential": [
     "Neue Zugangsdaten sicher speichern"
@@ -10212,6 +10239,9 @@
   "This removes the application deployment, its pods and its service. The managed project namespace remains. Only a platform operator can confirm deletion.": [
     "Entfernt das Deployment, die Pods und den Service der Anwendung. Der verwaltete Projekt-Namespace bleibt erhalten. Nur ein Plattformadministrator kann die Löschung bestätigen."
   ],
+  "This removes the image from the media library. Content using it may stop displaying the image. Its file is retained until an operator purges it.": [
+    "Dadurch wird das Bild aus der Medienbibliothek entfernt. Inhalte, die es verwenden, zeigen das Bild möglicherweise nicht mehr an. Die Datei bleibt erhalten, bis ein Betreiber sie endgültig löscht."
+  ],
   "This removes the record. Images may still be used by other content.": [
     "Dadurch wird der Datensatz entfernt. Bilder können weiterhin in anderen Inhalten verwendet werden."
   ],
@@ -10235,6 +10265,9 @@
   ],
   "This runtime is already assigned to another database user.": [
     "Diese Instanz ist bereits einem anderen Datenbankbenutzer zugewiesen."
+  ],
+  "This save may have completed. Check the content list before trying again.": [
+    "Das Speichern könnte bereits abgeschlossen sein. Prüfe die Inhaltsliste, bevor du es erneut versuchst."
   ],
   "This scheduled message was canceled before sending.": [
     "Diese geplante Nachricht wurde vor dem Versand abgebrochen."
@@ -10298,6 +10331,9 @@
   ],
   "To cancel a schedule, POST /emails/{id}/cancel with its revision in If-Match. Unknown outcomes must be reconciled, never resent.": [
     "Zum Abbrechen eines Versandtermins: POST /emails/{id}/cancel mit der Revision in If-Match. Unklare Ausgänge müssen abgeglichen werden; sie dürfen nicht erneut versendet werden."
+  ],
+  "To change this image, upload a new image in Media, then select it in your content. You can edit this image’s description below.": [
+    "Um dieses Bild zu ändern, lade unter Medien ein neues Bild hoch und wähle es anschließend in deinem Inhalt aus. Die Beschreibung dieses Bildes kannst du unten bearbeiten."
   ],
   "To rotate a credential, create a replacement, update your application, then revoke the old credential.": [
     "Erstelle zum Wechsel der Zugangsdaten zuerst einen Ersatz, aktualisiere deine Anwendung und widerrufe anschließend die alten Zugangsdaten."
@@ -10500,8 +10536,17 @@
   "Unpublish": [
     "Veröffentlichung zurücknehmen"
   ],
+  "Unpublish this content from the website? Your saved draft and history will be kept.": [
+    "Diesen Inhalt von der Website nehmen? Dein gespeicherter Entwurf und der Verlauf bleiben erhalten."
+  ],
+  "Unpublish this language from the website? Your saved draft and history will be kept.": [
+    "Diese Sprachversion von der Website nehmen? Dein gespeicherter Entwurf und der Verlauf bleiben erhalten."
+  ],
   "Unpublish this page? If it is the homepage, the original website will be shown again.": [
     "Diese Seite aus der Veröffentlichung nehmen? Falls sie die Startseite ist, wird die ursprüngliche Website wieder angezeigt."
+  ],
+  "Unpublished.": [
+    "Veröffentlichung zurückgenommen."
   ],
   "Unsaved": [
     "Ungespeichert"
@@ -10589,6 +10634,9 @@
   ],
   "Upgrade database plan": [
     "Datenbanktarif erweitern"
+  ],
+  "Upload a valid PNG, JPEG, WebP or AVIF image (maximum 10 MiB and 40 megapixels).": [
+    "Lade ein gültiges PNG-, JPEG-, WebP- oder AVIF-Bild hoch (höchstens 10 MiB und 40 Megapixel)."
   ],
   "Upload image": [
     "Bild hochladen"
@@ -11630,6 +11678,9 @@
   ],
   "Your role can view content but cannot change it.": [
     "Deine Rolle erlaubt das Ansehen, aber nicht das Ändern von Inhalten."
+  ],
+  "Your role cannot unpublish this content.": [
+    "Deine Rolle darf die Veröffentlichung dieses Inhalts nicht zurücknehmen."
   ],
   "Your session ended. Reload to sign in again.": [
     "Deine Sitzung ist abgelaufen. Lade die Seite neu, um dich erneut anzumelden."

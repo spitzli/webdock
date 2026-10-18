@@ -1,0 +1,49 @@
+# Independent managed CMS instance
+
+This application uses Next 16.3.8 and **Payload 4.0.0-canary.37**. It is separate from the retired shared CMS. One image serves one project, PostgreSQL schema `app`, and retained `/data/media`. The native editor is at `/cms`; the Console uses the authenticated `/api/webdock/cms` bridge. Pages contain localized structured text/image blocks, SEO fields and draft/version history; media supports raster images; settings include navigation. Only the explicit pages/media/settings modules are editable. Editors can unpublish a language while retaining its saved draft and history; the other language keeps its own publication state. The installed Payload version derives localized status from localized fields, and the initial migration already stores those statuses per locale.
+
+Build with Node 24: `npm run build -w @webdock/cms-instance`. Build the image from the repository root with `docker build -f apps/cms-instance/Dockerfile .`. The image runs as UID/GID 65532. Deploy with a read-only root, writable `/tmp` tmpfs, one replica, Recreate strategy, a retained `/data` volume and database TLS CA mount. The runtime image contains the standalone server and a bundled migration executable; it contains no development loader or monorepo source tree.
+
+See `.env.example` for the environment contract. Runtime `DATABASE_URL` must have DML privileges only; do not give the runtime schema ownership, CREATE, superuser or migration credentials. URLs must require verified TLS; mounted `sslrootcert` and PEM `DATABASE_CA_CERT` are supported. Secrets must be distinct and at least 32 characters. `CMS_ORIGIN` is an exact HTTPS origin. Health verifies a database read and writable media volume, and returns the exact instance/project audience.
+
+Before starting the runtime, run a bounded job from the same immutable image: `node /app/migrate.mjs`, setting `CMS_MIGRATING=true` and `CMS_MIGRATION_DATABASE_URL` without `DATABASE_URL`. The migration takes an advisory lock, creates schema `app` if necessary, runs reviewed generated SQL migrations and optionally bootstraps `CMS_BOOTSTRAP_SUBJECT`/`CMS_BOOTSTRAP_ROLE` by immutable subject. Configure default DML/sequence grants from the migration owner to the runtime role before migration. There is no schema push or runtime migration. Existing local role ceilings and disabled flags win; bootstrap never raises an existing user's role.
+
+The trusted host overwrites `Authorization: Bearer <CMS_BRIDGE_SECRET>`, `X-Webdock-Instance`, `X-Webdock-Project`, `X-Webdock-Subject`, `X-Webdock-Role`, and `X-Webdock-Grant-Epoch` on every bridge request. It revalidates the current actor/project/site grant and removes browser cookies. The instance validates the secret and exact audience, looks up only the immutable subject, creates a missing projection on first use, and intersects the central role with the existing local ceiling. It exposes no Payload REST endpoint or local password login. Direct SSO is enabled only with a complete `WEBDOCK_SSO_*` configuration; otherwise `/cms` directs users to their Console project.
+
+Published pages are available at `/{en|de}/{slug}` and `/api/content/pages/{slug}?locale=en`; public media is at `/api/media/file/{generated-filename}`. `/preview/{locale}/{slug}` requires the current direct SSO session. Unpublished changes are never read through the public routes. Public media can remain available after a page is unpublished; unpublishing is not a media deletion action.
+
+The bridge transfer protocol and browser transport live in `@webdock/cms-bridge`. Frames carry at most 16 KiB of raw bytes as base64. JSON is capped at 1 MiB, raster files at 10 MiB plus 64 KiB multipart metadata, decoded image size at 40 megapixels. MIME and real raster decoding must agree; filenames are generated. SVG/HTML are excluded. Existing media files are immutable: upload a new image and select it in the content to change the image. Image descriptions remain editable. Administrator removal uses the native editor's `removeToTrash` option to move media metadata to native trash, removes it from normal editor lists and fresh public requests, and retains its file until a separate explicit operator purge. Editors cannot trash or restore media. Ordinary page deletion keeps its existing administrator-only behavior. This avoids relying on database rollback to restore files that Payload may already have deleted. Transfer journals are retained under `/data/transfers`, bound to exact instance/project/subject/role/grant epoch, and expire after ten minutes. Completed reads release their slots; completed mutations retain their outcome. An executing marker is fsynced before mutation, and an interrupted outcome returns `reconciliation_required` rather than executing again. An uncertain save locks further editor mutations until the saved content is reloaded or its content list has been checked; the browser does not retry the mutation automatically. The instance is designed for one process/replica; do not share this journal directory among multiple live instances.
+
+Backups must fence writes and capture a matching database dump plus media archive with hashes and the image/schema version. Restore into isolated resources before switching service. Same-host volume snapshots alone do not establish disaster recovery. Transfer journals are operational receipts, not content backups.
+
+Run focused tests with `npm test -w @webdock/cms-instance` and `node --import tsx --test packages/cms-bridge/src/*.test.ts packages/cms-ui/src/server.test.ts packages/cms-ui/src/localization.test.tsx`. The isolated DB acceptance test is opt-in (`CMS_ACCEPTANCE_RUN=true`) and needs a fresh explicitly migrated database with TLS, DML-only runtime credentials, and writable `/data/media`; it never targets an existing customer database automatically. Production readiness additionally requires the full provisioning, signed-image, HTTPS, revocation and backup/restore acceptance in the design spec.
+
+## Reproducible disposable acceptance
+
+With Docker, OpenSSL, Python 3, installed workspace dependencies and **Node 24 on PATH**, run from the repository root:
+
+```sh
+python3 apps/cms-instance/scripts/acceptance.py
+python3 apps/cms-instance/scripts/acceptance.py --image webdock-cms-instance:candidate
+```
+
+The first command creates fresh PostgreSQL 18 with a test TLS certificate, a private Docker network, a retained test volume, and separate migration/runtime roles. It explicitly migrates twice, then runs the existing source acceptance, editor safety and media-trash tests with DML-only credentials. Inherited database URLs, application credentials, SSO settings and Node preload options are ignored. The source runner uses a Node 24 container matching the local Node patch version. `--postgres-image` and `--node-image` can select preloaded/pinned test images; their versions are checked and image IDs are resolved before use.
+
+`--image` uses an **already-built local CMS image**, requiring UID/GID 65532. It runs that image's bundled migration and starts it with a read-only root and retained test volume. The reusable HTTP image test uploads exactly 10 MiB through the chunked bridge, checks published bytes by SHA256, recreates the whole CMS container, and checks the published page and media hash again. It also verifies draft/public separation, reader write denial, audience rejection and closed native REST. No candidate image is built, published or deployed by this script.
+
+Each run uses random names and an ownership label. Containers, network and volume are removed only after that exact label is verified. Passing runs remove the private temporary directory too; failed runs retain private logs/environment files for diagnosis after removing Docker resources. Secrets and logs are mode 0600, the fixture directory is mode 0700, and credentials are never printed. Resource limits are 512 MiB for PostgreSQL, 1 GiB for source/test jobs and 768 MiB for the CMS image. The script never inspects or removes another fixture by a shared name prefix.
+
+To retain a candidate for browser/bridge investigation:
+
+```sh
+python3 apps/cms-instance/scripts/acceptance.py --image webdock-cms-instance:candidate --keep
+python3 apps/cms-instance/scripts/acceptance.py --cleanup /tmp/webdock-cms-acceptance-PRINTED_RUN_ID
+```
+
+The retained run prints its loopback HTTP endpoint and private fixture directory, including `runtime.env` for a local trusted bridge. Direct SSO is intentionally not configured. This is a disposable Docker proof, including HTTP on loopback; it does not verify production HTTPS, real Auth/Core grants, Kubernetes provisioning, or disaster recovery. Harness boundary tests run with `python3 -m unittest discover -s apps/cms-instance/scripts -p 'test_*.py'`.
+
+The additive `20261018_201453_managed_media_trash` migration adds nullable media/version trash timestamps and indexes without replacing existing tables or files. Run it through the bounded migration job before serving this image. A failed or concurrent media removal rolls back metadata while retaining raster bytes; it does not rely on restoring a file after a crash. Retained/trash files count toward media storage and backups until an operator explicitly purges them; removal does not reclaim quota.
+
+Managed publication uses a cert-manager Certificate, Ingress and TLS Secret for this instance's exact hostname. The agent does not copy wildcard certificate key material. Wildcard DNS still points instance names at the approved ingress; cert-manager renewal continues when the plugin is disabled.
+
+The existing `apps/website` bridge instead uses a shared PostgreSQL transfer journal after its explicit `cms:migrate`. Its serverless requests must not use this image's single-process filesystem journal. Neither the disposable acceptance harness nor retained media establishes a verified production backup/restore.
