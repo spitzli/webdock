@@ -1,8 +1,11 @@
 import copy
+import subprocess
+from types import SimpleNamespace
 from datetime import datetime,timedelta,timezone
 from unittest import TestCase
 from databases import validate_packet,backend_manifests,role_names,sql_configuration,hba,execute_database
 from unittest.mock import patch
+import databases as db
 
 
 def packet():
@@ -14,6 +17,101 @@ def packet():
 
 
 class DatabaseTests(TestCase):
+    def test_sql_exec_can_exceed_metadata_deadline_without_exposing_statement(self):
+        statement="SELECT 'private-sql-canary';";calls=[]
+        def run(command,**kwargs):
+            calls.append((command,kwargs))
+            if command[2]=='exec' and kwargs['timeout']<30:
+                raise subprocess.TimeoutExpired(command,kwargs['timeout'])
+            self.assertNotIn(statement,' '.join(command))
+            self.assertTrue(kwargs['capture_output'])
+            return SimpleNamespace(returncode=0,stdout='1\n',stderr='private-stderr-canary')
+        with patch.object(db.subprocess,'run',side_effect=run):
+            self.assertEqual(db.sql(packet(),statement),'1')
+            db.kubectl('get','cluster','postgres')
+        self.assertEqual([call[1]['timeout'] for call in calls],[60,25])
+        self.assertEqual(calls[0][1]['input'],statement)
+
+    def configure(self,expire_locally=True,deny_guard=None):
+        p=packet();p['phase']='configure';p['backend']['cnpgUID']='original'
+        start=datetime.now(timezone.utc);p['leaseUntil']=(start+timedelta(seconds=10)).isoformat()
+        clock=SimpleNamespace(value=start,server_expiry=start+timedelta(seconds=10),guards=0)
+        class Clock(datetime):
+            @classmethod
+            def now(cls,tz=None):return clock.value
+        original_lease=p['leaseUntil'];self.events=[];self.statements=[]
+        def checkpoint(**value):
+            self.events.append('checkpoint' if value else 'guard')
+            if value.get('phase')=='configuring':
+                if expire_locally:clock.value=start+timedelta(seconds=20)
+                clock.server_expiry=clock.value+timedelta(seconds=300)
+            if not value:
+                clock.guards+=1
+                if clock.guards==deny_guard or clock.value>=clock.server_expiry:raise PermissionError('Server lease revoked or expired')
+            return {'accepted':True}
+        def sql(value,statement,database='postgres'):
+            self.statements.append(statement)
+            if not statement.startswith('SELECT '):self.assertEqual(self.events[-1],'guard','Every separate SQL mutation needs fresh authority')
+            self.events.append('read' if statement.startswith('SELECT ') else 'sql')
+            return ''
+        def kubectl(*args,**kwargs):
+            self.assertEqual(self.events[-1],'guard');self.events.append('kubectl')
+        cluster={'kind':'Cluster','metadata':{'uid':'original','labels':{'webdock.dev/database-installation':'125'}},'status':{'readyInstances':1}}
+        with patch.object(db,'datetime',Clock),patch.object(db,'configuration',return_value={}),patch.object(db,'get',return_value=cluster),patch.object(db,'sql',side_effect=sql),patch.object(db,'kubectl',side_effect=kubectl),patch.object(db,'endpoint_services',return_value=True):
+            result=execute_database(p,checkpoint)
+        self.assertEqual(p['leaseUntil'],original_lease)
+        return result
+
+    def test_accepted_server_renewal_outlives_captured_local_deadline(self):
+        self.assertIsNone(self.configure())
+        self.assertTrue(any(statement.startswith('CREATE DATABASE') for statement in self.statements))
+        self.assertEqual(self.events[-1],'checkpoint')
+
+    def test_each_separate_sql_mutation_has_a_fresh_server_guard(self):
+        self.assertIsNone(self.configure(expire_locally=False))
+
+    def test_server_rejection_prevents_first_sql_even_after_local_renewal(self):
+        with self.assertRaises(PermissionError):self.configure(deny_guard=1)
+        self.assertEqual(self.statements,[])
+
+    def test_server_revocation_after_create_prevents_following_mark(self):
+        with self.assertRaises(PermissionError):self.configure(expire_locally=False,deny_guard=3)
+        self.assertTrue(any(statement.startswith('CREATE DATABASE') for statement in self.statements))
+        self.assertFalse(any(statement.startswith('COMMENT ON DATABASE') for statement in self.statements))
+
+    def test_expired_initial_packet_never_reaches_server_or_effects(self):
+        p=packet();p['leaseUntil']='2000-01-01T00:00:00Z'
+        with patch.object(db,'configuration') as config,patch.object(db,'get') as get,patch.object(db,'sql') as sql,patch.object(db,'kubectl') as kubectl,patch.object(db,'storage_request') as storage:
+            with self.assertRaisesRegex(ValueError,'Expired database lease'):execute_database(p,lambda **value:self.fail('Expired packet reached server guard'))
+        for effect in [config,get,sql,kubectl,storage]:effect.assert_not_called()
+
+    def test_storage_helper_keeps_original_deadline_after_server_guard(self):
+        import database_storage
+        p=packet();start=datetime.now(timezone.utc);p['leaseUntil']=(start+timedelta(seconds=10)).isoformat();original=p['leaseUntil']
+        clock=SimpleNamespace(value=start)
+        class Clock(datetime):
+            @classmethod
+            def now(cls,tz=None):return clock.value
+        def checkpoint(**value):clock.value=start+timedelta(seconds=20)
+        with patch.object(db,'datetime',Clock),patch.object(database_storage,'datetime',Clock),patch.object(db,'configuration',return_value={}),patch.object(db,'get',return_value=None),patch('storage_client.request') as rpc:
+            with self.assertRaisesRegex(ValueError,'Expired or invalid storage lease'):execute_database(p,checkpoint)
+        rpc.assert_not_called();self.assertEqual(p['leaseUntil'],original)
+
+    def test_observation_does_not_replay_creation(self):
+        p=packet();p['phase']='observe';p['backend']['cnpgUID']='original'
+        cluster={'kind':'Cluster','metadata':{'uid':'original','labels':{'webdock.dev/database-installation':'125'}}}
+        with patch.object(db,'configuration',return_value={}),patch.object(db,'get',return_value=cluster),patch.object(db,'runtime_ready',return_value=False),patch.object(db,'sql') as sql,patch.object(db,'storage_request') as storage:
+            self.assertIsNone(execute_database(p,lambda **value:None))
+        sql.assert_not_called();storage.assert_not_called()
+
+    def test_pure_builders_ignore_elapsed_time_but_still_validate_structure(self):
+        p=packet();p['leaseUntil']='2000-01-01T00:00:00Z'
+        config={'image':'ghcr.io/cloudnative-pg/postgresql@sha256:'+'a'*64,'poolerImage':'ghcr.io/cloudnative-pg/pgbouncer@sha256:'+'b'*64,'issuer':'fixture','apiCIDRs':['10.0.0.1/32'],'podCIDRs':['10.42.0.0/16']}
+        self.assertTrue(backend_manifests(p,config));self.assertTrue(sql_configuration(p))
+        p['backend']['namespace']='foreign'
+        for build in [lambda:backend_manifests(p,config),lambda:sql_configuration(p)]:
+            with self.assertRaises(ValueError):build()
+
     def test_packet_rejects_unfenced_or_cross_backend_targets(self):
         self.assertEqual(validate_packet(packet())['database']['id'],'300')
         for key,value in [('action','shell'),('revision',True),('generation',0),('leaseUntil','2000-01-01T00:00:00Z')]:
