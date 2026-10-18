@@ -18,3 +18,5 @@
 - [ ] Publish selfhosting prerequisites, initialization/configuration/upgrade steps, limitations and measured runtime/image sizes.
 
 **Review focus:** Empty-database initialization; private owner/runtime credential separation; reverse-proxy origin/CSRF behavior; wrong architecture or unsigned artifacts; product-free runtime versus retained database schema and optional full products.
+
+Owner licensing decision: AGPLv3 with separately negotiable commercial/special licenses for rights owned or sublicensable by Spitzli Development. Implemented as AGPL-3.0-only plus a commercial licensing notice; third-party licenses remain unchanged. External contributions need a separate rights grant before commercial relicensing.

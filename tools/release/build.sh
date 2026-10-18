@@ -22,14 +22,14 @@ for target in api-core console-core console auth api worker migrate; do
   docker buildx build --platform "$platform" --file deploy/docker/Dockerfile --target "$target" \
     --label "org.opencontainers.image.revision=$revision" --label "org.opencontainers.image.version=$version" \
     --label "org.opencontainers.image.source=https://github.com/spitzli/webdock" \
-    --provenance=mode=max --sbom=true --output "type=oci,dest=$out/$target.oci.tar" .
+    --provenance=mode=max --sbom=true --output "type=oci,compression=gzip,force-compression=true,dest=$out/$target.oci.tar" .
 done
-docker buildx build --platform "$platform" --file deploy/docker/agent.Dockerfile --label "org.opencontainers.image.source=https://github.com/spitzli/webdock" --label "org.opencontainers.image.revision=$revision" --label "org.opencontainers.image.version=$version" --provenance=mode=max --sbom=true --output "type=oci,dest=$out/agent.oci.tar" .
-docker buildx build --platform "$platform" --file infra/mail/Dockerfile --label "org.opencontainers.image.source=https://github.com/spitzli/webdock" --label "org.opencontainers.image.revision=$revision" --label "org.opencontainers.image.version=$version" --provenance=mode=max --sbom=true --output "type=oci,dest=$out/mail-runtime.oci.tar" infra/mail
+docker buildx build --platform "$platform" --file deploy/docker/agent.Dockerfile --label "org.opencontainers.image.source=https://github.com/spitzli/webdock" --label "org.opencontainers.image.revision=$revision" --label "org.opencontainers.image.version=$version" --provenance=mode=max --sbom=true --output "type=oci,compression=gzip,force-compression=true,dest=$out/agent.oci.tar" .
+docker buildx build --platform "$platform" --file infra/mail/Dockerfile --label "org.opencontainers.image.source=https://github.com/spitzli/webdock" --label "org.opencontainers.image.revision=$revision" --label "org.opencontainers.image.version=$version" --provenance=mode=max --sbom=true --output "type=oci,compression=gzip,force-compression=true,dest=$out/mail-runtime.oci.tar" infra/mail
 if [ "${WEBDOCK_RELEASE_DATABASES:-false}" = true ]; then
   tabularis_commit=$(node --input-type=module -e 'import {readFileSync} from "node:fs"; console.log(JSON.parse(readFileSync("vendor/tabularis-web-ui.json")).sourceCommit)')
   for target in database-gateway tabularis-runtime; do
-    docker buildx build --platform "$platform" --file "deploy/docker/$target.Dockerfile"       --build-arg "TABULARIS_IMAGE=$TABULARIS_IMAGE" --build-arg "TABULARIS_SOURCE_COMMIT=$tabularis_commit"       --provenance=mode=max --sbom=true --output "type=oci,dest=$out/$target.oci.tar" .
+    docker buildx build --platform "$platform" --file "deploy/docker/$target.Dockerfile"       --build-arg "TABULARIS_IMAGE=$TABULARIS_IMAGE" --build-arg "TABULARIS_SOURCE_COMMIT=$tabularis_commit"       --provenance=mode=max --sbom=true --output "type=oci,compression=gzip,force-compression=true,dest=$out/$target.oci.tar" .
   done
   helm package deploy/helm/webdock-databases --version "$version" --app-version "$version" --destination "$out"
 fi

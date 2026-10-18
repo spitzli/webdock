@@ -1,8 +1,9 @@
 import { execFileSync } from "node:child_process";
 import { arch, platform as hostOS } from "node:os";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { coreRuntimeProductPath } from "./build-core-console.mjs";
 import {
   images,
   databaseImages,
@@ -95,9 +96,14 @@ try {
     )
       throw Error("Loaded image architecture mismatch");
   }
+  const licenseDigests = Object.fromEntries(await Promise.all(["LICENSE", "COMMERCIAL-LICENSING.md", "NOTICE"].map(async name => [name, createHash("sha256").update(await readFile(name)).digest("hex")])));
+  for (const name of ["api-core", "console-core", "api", "console", "auth", "worker", "migrate"])
+    run(name, ["console-core", "console", "auth"].includes(name) ? "node" : "bun", ["-e", `const fs=require('node:fs'),crypto=require('node:crypto');for(const [name,expected] of Object.entries(${JSON.stringify(licenseDigests)}))if(crypto.createHash('sha256').update(fs.readFileSync('/usr/share/licenses/webdock/'+name)).digest('hex')!==expected)throw Error('License notice differs: '+name);`]);
+  run("agent", "python3", ["-c", "import hashlib,json,pathlib,sys; expected=json.loads(sys.argv[1]); assert all(hashlib.sha256((pathlib.Path('/usr/share/licenses/webdock')/name).read_bytes()).hexdigest()==digest for name,digest in expected.items())", JSON.stringify(licenseDigests)]);
+  checks.push({ name: "webdock-license-notices", passed: true });
   run("api", "bun", ["test", "/app/packages/module-sdk/src/index.test.ts"]);
   run("api-core", "bun", ["-e", "const fs=require('node:fs');if(JSON.stringify(fs.readdirSync('/app'))!==JSON.stringify(['core.js']))throw Error('Unexpected files in Core API runtime');if(fs.statSync('/app/core.js').size===0)throw Error('Empty Core API bundle');"]);
-  run("console-core", "node", ["-e", `const fs=require('node:fs');function walk(path){for(const entry of fs.readdirSync(path,{withFileTypes:true})){const child=path+'/'+entry.name;if(/\\/(modules|adapters)\\//.test(child)||/\\/@webdock\\/module-(mail|hosting|databases|storage|cms|billing)(\\/|$)/.test(child))throw Error('Product file in Core Console: '+child);if(entry.isDirectory())walk(child);}}walk('/app');if(!fs.existsSync('/app/.core-build/console/server.js'))throw Error('Missing Core Console entry');`]);
+  run("console-core", "node", ["-e", `const fs=require('node:fs');const isProduct=${coreRuntimeProductPath.toString()};function walk(path){for(const entry of fs.readdirSync(path,{withFileTypes:true})){const child=path+'/'+entry.name;if(isProduct(child))throw Error('Product file in Core Console: '+child);if(entry.isDirectory())walk(child);}}walk('/app');if(!fs.existsSync('/app/.core-build/console/server.js'))throw Error('Missing Core Console entry');`]);
   checks.push({ name: "core-product-boundary", passed: true });
   execFileSync(process.execPath, ["tools/release/smoke-core-images.mjs", ...["api-core", "console-core", "auth", "migrate"].map(name => `${prefix}:${name}`)], { stdio: "inherit", timeout: 300000 });
   checks.push({ name: "core-images-fresh-installation", passed: true });

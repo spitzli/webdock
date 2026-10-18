@@ -29,6 +29,7 @@ export const evidenceChecks = (evidence) => [
   ...(evidence.databaseRuntime ? databaseExecutionChecks : []),
 ];
 export const executionChecks = [
+  "webdock-license-notices",
   "core-product-boundary",
   "core-images-fresh-installation",
   "api-module-tests",

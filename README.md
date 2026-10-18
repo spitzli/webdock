@@ -2,6 +2,23 @@
 
 Webdock is a plugin-based admin platform with a small identity, project registry and capability core. Hosting, databases, Mail and storage are optional product modules; new installations enable no products by default. Billing is not included. It is maintained by Spitzli Development. Customer websites keep their own repositories and content stores.
 
+## Self-hosting
+
+Start with the [selfhosting guide](https://docs.webdock.dev/developers/self-hosting/) and the verified developer-alpha artifacts under [Releases](https://github.com/spitzli/webdock/releases). Linux AMD64 is the tested architecture. You provide a dedicated PostgreSQL 18 database, verified database TLS, HTTPS ingress and private credentials.
+
+| Installation | Images | Products |
+| --- | --- | --- |
+| Core | `api-core`, `console-core`, `auth` | None enabled; product-free API and Console runtime |
+| Full | `api`, `console`, `auth`, optional `worker` | Explicitly configured Mail, Hosting, Databases and Storage |
+
+Both use `migrate` only for offline database setup/upgrades. The migration baseline retains historical product schemas; the small Core runtime does not delete old data. Initialize empty plugin state, create the first operator, then complete password replacement and real MFA before using Console. Local Better Auth is the default; Clerk is optional. External runtime plugins need separate installation and explicit project grants.
+
+The alpha includes signed checksums, an image manifest and native execution evidence. Read the guide's verification and operational limits before exposing an installation. A ready container is not proof of your SMTP delivery or reverse-proxy configuration.
+
+## License
+
+Original Webdock code is **AGPL-3.0-only**. Separate written commercial or special licenses may be available from Spitzli Development for code it owns or may sublicense. See [LICENSE](LICENSE), [alternative licensing](COMMERCIAL-LICENSING.md) and [contribution requirements](CONTRIBUTING.md). Third-party components keep their own licenses.
+
 ## Repository structure
 
 ```text
@@ -30,7 +47,7 @@ The module owns what an operation means; the adapter implements its provider-spe
 | `agents/kubernetes` | Enrolled execution and reconciliation on authorized clusters |
 | `apps/cms` (`@webdock/cms`) | Archived shared-CMS notice and offline migration tools; excluded from npm workspaces/build |
 
-Browser authentication can use Clerk or Better Auth. Local immutable user IDs, current memberships and resource permissions remain authoritative; external identities are explicitly mapped, never automatically linked by email. Legacy OAuth, MCP and service credentials keep their own contracts. See [authentication adapters](docs/developers/auth-adapters.mdx).
+Browser authentication can use Clerk or Better Auth. Better Auth uses local roles and memberships; selecting Clerk makes freshly verified Clerk operator roles and organization permissions authoritative. Local immutable IDs and explicit mappings remain, and local bans can deny access but cannot grant Clerk privileges. Identities are never automatically linked by email. Legacy OAuth, MCP and service credentials keep their own contracts. See [authentication adapters](docs/developers/auth-adapters.mdx).
 
 Product selection is installation-wide. `enabled` allows authorized operations, `draining` blocks new provisioning while retaining supported management/reconciliation, and `disabled` removes product access after retained-resource checks. Core registry and platform persistence do not depend on customer CMS or Databases being enabled. Enabling a module does not create provider accounts, subscriptions or customer infrastructure.
 
