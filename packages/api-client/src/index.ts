@@ -101,7 +101,7 @@ export async function requestAPI<T = unknown>(
           }
         : {}),
       cookie: input.consoleSession
-        ? ""
+        ? integrationCookies(input.cookie)
         : input.bearerToken
           ? integrationCookies(input.cookie)
           : input.path.startsWith("/v1/public/")

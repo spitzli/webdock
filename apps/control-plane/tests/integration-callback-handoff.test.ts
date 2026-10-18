@@ -74,7 +74,6 @@ test("expired callback proof defers all provider side effects, attempts refresh 
   const runner = createIntegrationBrowserRunner({
     provider: "clerk",
     origin,
-    requireHosting: () => {},
     refreshCallback: (request) => handoff.begin(request),
     clerk: async () =>
       verified

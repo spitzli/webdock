@@ -9,13 +9,20 @@ import { currentRegistryActor } from "../operator";
 export async function githubView(input: Record<string, string>) {
   const actor = await currentRegistryActor(),
     github = getGitHub();
-  const positive = (raw: string | undefined, fallback: number) =>
-    raw && /^\d+$/.test(raw) && Number(raw) > 0 && Number(raw) <= 10000
+  const positiveID = (raw: string | undefined) =>
+    raw &&
+    /^\d+$/.test(raw) &&
+    Number.isSafeInteger(Number(raw)) &&
+    Number(raw) > 0
       ? Number(raw)
-      : fallback;
-  const installationPage = positive(input.installationPage, 1),
-    page = positive(input.page, 1);
-  let installation = positive(input.installation, 0),
+      : 0;
+  const pageNumber = (raw: string | undefined) => {
+    const value = positiveID(raw);
+    return value > 0 && value <= 10000 ? value : 1;
+  };
+  const installationPage = pageNumber(input.installationPage),
+    page = pageNumber(input.page);
+  let installation = positiveID(input.installation),
     installations: GitHubInstallation[] = [],
     repositories: GitHubRepository[] = [],
     installationPages = 1,

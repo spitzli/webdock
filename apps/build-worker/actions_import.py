@@ -53,7 +53,9 @@ def unpack_zip(data):
 
 
 def verify_manifest(manifest,job,tar):
-    a=job['actionsArtifact'];component='panel' if job['recipe']=='vercel' else 'bot'
+    if not isinstance(manifest,dict):raise worker.Rejected('artifact_identity_mismatch')
+    a=job['actionsArtifact'];component=job.get('component', 'panel' if job['recipe']=='vercel' else 'bot')
+    if component not in ('panel','bot','plugin') or (component=='plugin' and (job['recipe']!='dockerfile' or not re.fullmatch(r'[a-f0-9]{64}',job.get('expectedSourceSHA256','')) or manifest.get('sourceSHA256')!=job['expectedSourceSHA256'])):raise worker.Rejected('artifact_identity_mismatch')
     expected={'schemaVersion':1,'component':component,'repository':a['repository'],'commit':job['sourceSHA'],'ref':a['ref'],'workflow':a['workflowPath']}
     if not isinstance(manifest,dict) or any(manifest.get(k)!=v for k,v in expected.items()) or str(manifest.get('runAttempt'))!='1' or str(manifest.get('runId'))!=str(a['runID']) or a['runAttempt']!=1 or str(a['repositoryID'])!=str(job['repositoryID']):raise worker.Rejected('artifact_identity_mismatch')
     if manifest.get('artifact')!={'file':'artifact.tar','sha256':hashlib.sha256(tar).hexdigest()}:raise worker.Rejected('artifact_checksum')

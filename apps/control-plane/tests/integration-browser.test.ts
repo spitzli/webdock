@@ -1,4 +1,6 @@
 import { test, expect } from "bun:test";
+import { configureFullInstallation } from "../src/full-installation";
+configureFullInstallation();
 import {
   createIntegrationBrowserRunner,
   clerkIntegrationProof,
@@ -9,6 +11,7 @@ function fixture(
   state: "enabled" | "disabled" | "draining" = "enabled",
   provider: "clerk" | "better-auth" = "clerk",
   valid = true,
+  hosting = true,
 ) {
   const calls: string[] = [];
   const registry = installationRegistry({
@@ -20,7 +23,12 @@ function fixture(
   const run = createIntegrationBrowserRunner({
     provider,
     origin,
-    requireHosting: (intent) => registry.require("hosting", intent),
+    ...(hosting
+      ? {
+          requireAdmission: (intent: "access" | "provision") =>
+            registry.require("hosting", intent),
+        }
+      : {}),
     clerk: async (headers) => {
       calls.push("clerk:" + headers.get("authorization"));
       return valid
@@ -143,14 +151,14 @@ test("POST integration CSRF rejects foreign and missing origins before any ident
       expect(f.calls).toEqual([]);
     }
 });
-test("disabled Hosting rejects all integration work and draining rejects enrollment before provider verification", async () => {
+test("disabled Hosting rejects product integration work and draining rejects enrollment before provider verification", async () => {
   for (const state of ["disabled", "draining"] as const) {
     for (const action of ["connect", "callback", "select"]) {
       const f = fixture(state);
       expect(
         (
           await f.run(
-            request("/api/github/" + action, {
+            request("/api/hosting/git/" + action, {
               method: action === "callback" ? "GET" : "POST",
             }),
             "provision",
@@ -183,12 +191,15 @@ test("disabled Hosting rejects all integration work and draining rejects enrollm
     ).status,
   ).toBe(204);
 });
-test("direct GitHub and Vercel paths belong to Hosting, and legacy selection remains explicit", async () => {
+test("generic GitHub paths belong to Core while project linking and Vercel retain Hosting gates", async () => {
   for (const path of [
     "/api/github/connect",
     "/api/github/callback",
-    "/api/github/select",
     "/api/github/disconnect",
+  ])
+    expect(moduleForRequest(path)).toBeUndefined();
+  for (const path of [
+    "/api/github/select",
     "/api/vercel/connect",
     "/api/vercel/callback",
     "/api/vercel/disconnect",
@@ -211,4 +222,27 @@ test("direct GitHub and Vercel paths belong to Hosting, and legacy selection rem
       new Headers({ cookie: "__session=not-a-signed-token" }),
     ),
   ).toBeNull();
+});
+
+test("Core GitHub authentication works with Hosting disabled and never skips identity verification", async () => {
+  for (const provider of ["clerk", "better-auth"] as const) {
+    const f = fixture("disabled", provider, true, false);
+    expect(
+      (
+        await f.run(
+          request(),
+          "provision",
+          async () => new Response(null, { status: 204 }),
+        )
+      ).status,
+    ).toBe(204);
+    expect(f.calls).toContain(
+      `scope:${provider === "clerk" ? "clerk" : "legacy"}`,
+    );
+  }
+  const revoked = fixture("disabled", "clerk", false, false);
+  expect(
+    (await revoked.run(request(), "provision", async () => new Response()))
+      .status,
+  ).toBe(401);
 });

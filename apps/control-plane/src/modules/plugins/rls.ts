@@ -1,4 +1,6 @@
 export const pluginTables = [
+  "plugin_source_import",
+  "plugin_source_chunk",
   "plugin_bootstrap",
   "plugin_installation",
   "plugin_operation",
@@ -17,6 +19,15 @@ export function pluginPolicy(table: string) {
   const controller = "webdock_rls.worker(ARRAY['plugin-controller']::text[])";
   const projection =
     "webdock_rls.worker(ARRAY['plugin-public-view','plugin-admission']::text[])";
+  if (table === "plugin_source_chunk") {
+    const own = `${operator} AND EXISTS(SELECT 1 FROM webdock_auth.plugin_source_import i WHERE i.id="plugin_source_chunk".import_id AND i.actor_id=webdock_rls.subject())`;
+    return {
+      read: own,
+      write: own,
+      workerRead: controller,
+      workerWrite: controller,
+    };
+  }
   if (table === "plugin_document" || table === "plugin_document_receipt") {
     const scope = (cap: string) =>
       `webdock_rls.plugin_allows("${table}".plugin_id,"${table}".customer_id,"${table}".project_id,'${cap}')`;
@@ -72,6 +83,8 @@ export function pluginPolicy(table: string) {
     write: operator,
     workerRead: controller,
     workerWrite: [
+      "plugin_source_import",
+      "plugin_source_chunk",
       "plugin_operation",
       "plugin_runtime",
       "plugin_job_execution",

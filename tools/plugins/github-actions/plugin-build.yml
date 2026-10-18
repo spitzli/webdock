@@ -1,0 +1,38 @@
+# TEMPLATE: install only in the dedicated PRIVATE build repository, never public Webdock.
+name: Private plugin source build
+on:
+  workflow_dispatch:
+    inputs:
+      id: {required: true, type: string}
+      nonce: {required: true, type: string}
+      control_url: {required: true, type: string}
+      expected_sha: {required: true, type: string}
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Acquire source with scoped OIDC and build on this disposable hosted runner
+        env:
+          SOURCE_ID: ${{ inputs.id }}
+          SOURCE_NONCE: ${{ inputs.nonce }}
+          SOURCE_CONTROL_URL: ${{ inputs.control_url }}
+          EXPECTED_CONTROL_URL: ${{ vars.WEBDOCK_PLUGIN_CONTROL_URL }}
+          EXPECTED_WORKFLOW_SHA: ${{ inputs.expected_sha }}
+        run: python3 trusted/plugin_build.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: webdock-plugin-${{ inputs.id }}
+          path: |
+            ${{ runner.temp }}/plugin-artifact/artifact.tar
+            ${{ runner.temp }}/plugin-artifact/manifest.json
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0

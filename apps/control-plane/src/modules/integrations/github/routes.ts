@@ -1,17 +1,27 @@
 import { RegistryError } from "../../registry/service";
 import { currentRegistryActor } from "../operator";
-import { getGitHub, githubOrigin } from "./client";
+import { getGitHub, githubOrigin, githubReturnPath } from "./client";
 import { linkGitHubRepository } from "./project";
 
-const notice = (status: string) =>
+const notice = (status: string, returnTo = "/integrations") =>
   new Response(null, {
     status: 303,
     headers: {
-      Location: new URL(`/integrations?github=${status}`, githubOrigin()).href,
+      Location: new URL(`${returnTo}?github=${status}`, githubOrigin()).href,
       "Cache-Control": "no-store",
       "Referrer-Policy": "no-referrer",
     },
   });
+function returnTo(request: Request) {
+  const query = new URL(request.url).searchParams;
+  const path = query.get("returnTo") ?? "/integrations";
+  return query.getAll("returnTo").length <= 1 && githubReturnPath(path)
+    ? path
+    : new Response(null, {
+        status: 400,
+        headers: { "cache-control": "no-store" },
+      });
+}
 async function operator(_request: Request) {
   try {
     return await currentRegistryActor();
@@ -23,11 +33,15 @@ async function operator(_request: Request) {
 }
 
 export async function githubConnect(request: Request) {
+  const target = returnTo(request);
+  if (target instanceof Response) return target;
   const actor = await operator(request);
   if (actor instanceof Response) return actor;
   if (!actor) return new Response(null, { status: 403 });
   const github = getGitHub();
-  return github ? github.connect(request, actor.user.id) : notice("setup");
+  return github
+    ? github.connect(request, actor.user.id, target)
+    : notice("setup", target);
 }
 export async function githubCallback(request: Request) {
   const actor = await operator(request);
@@ -37,11 +51,13 @@ export async function githubCallback(request: Request) {
   return github.callback(request, actor?.user.id || "");
 }
 export async function githubDisconnect(request: Request) {
+  const target = returnTo(request);
+  if (target instanceof Response) return target;
   const actor = await operator(request);
   if (actor instanceof Response) return actor;
   if (!actor) return new Response(null, { status: 403 });
   const github = getGitHub();
-  return github ? github.disconnect(request) : notice("setup");
+  return github ? github.disconnect(request, target) : notice("setup", target);
 }
 export async function githubSelect(request: Request) {
   if (

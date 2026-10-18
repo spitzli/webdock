@@ -1,0 +1,49 @@
+{
+  "controlURL": "https://api.example.com/v1/plugin-installer",
+  "credentialFile": "/etc/webdock-plugin-installer/credential",
+  "country": "DE",
+  "locationEvidence": "Operator-verified location record",
+  "storageEvidence": "Operator-verified storage record",
+  "isolation": "artifact-only",
+  "isolationEvidence": "Source executes only on disposable GitHub-hosted runners in the private trusted build repository",
+  "artifactRoot": "/var/lib/webdock-plugin-installer/artifacts",
+  "registry": {
+    "repository": "registry.example.com/webdock/plugins",
+    "authFile": "/etc/webdock-plugin-installer/registry.json"
+  },
+  "runtime": {
+    "namespace": "webdock-source-plugins",
+    "clusterID": "operator-cluster-1",
+    "kubeconfigFile": "/etc/webdock-plugin-installer/kubeconfig",
+    "hostOrigin": "https://api.example.com",
+    "apiNamespace": "webdock-platform",
+    "apiPodLabels": {
+      "app": "webdock-api"
+    },
+    "apiAddresses": [
+      "REPLACE_WITH_API_IP"
+    ],
+    "imagePullSecret": "plugins-pull",
+    "configSecret": {
+      "namespace": "webdock-platform",
+      "name": "plugin-runtime-config",
+      "key": "runtime.json"
+    },
+    "uiBaseDomain": "plugins.example.net",
+    "uiCertResolver": "webdock",
+    "ingressClass": "traefik",
+    "ingressNamespace": "kube-system",
+    "ingressPodLabels": {
+      "app.kubernetes.io/name": "traefik"
+    }
+  },
+  "github": {
+    "appID": "REPLACE_APP_ID",
+    "installationID": "REPLACE_INSTALLATION_ID",
+    "privateKeyFile": "/etc/webdock-plugin-installer/github-app.pem",
+    "repository": "spitzli/webdock-plugin-builds",
+    "repositoryID": "REPLACE_PRIVATE_REPOSITORY_ID",
+    "workflow": "plugin-build.yml",
+    "ref": "main"
+  }
+}

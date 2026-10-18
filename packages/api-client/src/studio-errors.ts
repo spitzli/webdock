@@ -20,6 +20,7 @@ export class MailDomainsError extends StudioError {}
 export class MailKeysError extends StudioError {}
 export class TrackingError extends StudioError {}
 export class StorageUsageError extends StudioError {}
+export class PluginSourceError extends StudioError {}
 export function studioError(kind: string, message: string, status: number) {
   // The caller already delegated a locally valid session. A rejected bridge must
   // stay an error, not become a missing-session redirect and repeat OAuth forever.
@@ -37,6 +38,7 @@ export function studioError(kind: string, message: string, status: number) {
     MailKeysError,
     TrackingError,
     StorageUsageError,
+    PluginSourceError,
   };
   const Constructor = kinds[kind as keyof typeof kinds] || StudioError;
   return new Constructor(message, status);

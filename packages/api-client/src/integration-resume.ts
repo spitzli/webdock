@@ -12,6 +12,7 @@ export async function resumeIntegrationCallback(
     consoleOrigin: string;
     cookie: string;
     bearerToken: string | null;
+    serviceKey?: string;
   },
   fetcher: Fetch = fetch,
 ): Promise<Response> {
@@ -51,6 +52,9 @@ export async function resumeIntegrationCallback(
       headers: {
         origin: ui,
         authorization: "Bearer " + input.bearerToken,
+        ...(input.serviceKey
+          ? { "x-webdock-service-key": input.serviceKey }
+          : {}),
         cookie: [integrationCookies(input.cookie), handoffs[0]]
           .filter(Boolean)
           .join("; "),

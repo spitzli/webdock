@@ -29,7 +29,7 @@ export function createIntegrationBrowserRunner(dependencies: {
   provider: "clerk" | "better-auth";
   origin: string;
   refreshCallback?(request: Request): Response | null;
-  requireHosting(intent: "access" | "provision"): void;
+  requireAdmission?(intent: "access" | "provision"): void;
   clerk(headers: Headers): Promise<Identity | null>;
   legacy(headers: Headers): Promise<Identity | null>;
   withIdentity(
@@ -54,7 +54,7 @@ export function createIntegrationBrowserRunner(dependencies: {
         ? (dependencies.refreshCallback?.(request) ?? reply(401))
         : reply(401);
     try {
-      dependencies.requireHosting(intent);
+      dependencies.requireAdmission?.(intent);
       // Cookie authentication requires its own CSRF check, including disconnect, before provider I/O.
       if (
         request.method === "POST" &&

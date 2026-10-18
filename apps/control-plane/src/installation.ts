@@ -101,7 +101,7 @@ export function moduleForRequest(path: string) {
   if (mailRequest(path)) return "mail";
   if (/^\/api\/hosting\/agent(?:\/|$)/.test(path)) return undefined;
   if (/^\/api\/databases(?:\/|$)/.test(path)) return "databases";
-  if (/^\/api\/(?:hosting|github|vercel)(?:\/|$)/.test(path)) return "hosting";
+  if (path === "/api/github/select" || /^\/api\/(?:hosting|vercel)(?:\/|$)/.test(path)) return "hosting";
   if (/^\/api\/cms(?:\/|$)/.test(path)) return "cms";
   return undefined;
 }

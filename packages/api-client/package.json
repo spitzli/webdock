@@ -9,6 +9,7 @@
     "./errors": "./src/studio-errors.ts",
     "./cms": "./src/cms-contracts.ts",
     "./integrations": "./src/integration-contracts.ts",
+    "./plugin-sources": "./src/plugin-source-contracts.ts",
     "./registry": "./src/registry-types.ts",
     "./lifecycle": "./src/lifecycle-contracts.ts",
     "./flow-cookies": "./src/flow-cookies.ts",

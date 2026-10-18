@@ -1,0 +1,28 @@
+[Unit]
+Description=Webdock artifact-only plugin publisher and installer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=webdock-builder
+Group=webdock-builder
+WorkingDirectory=/opt/webdock-build-worker
+ExecStart=/usr/bin/python3 /opt/webdock-build-worker/plugin_installer.py --config /etc/webdock-plugin-installer/config.json
+Restart=on-failure
+RestartSec=10
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/webdock-plugin-installer/artifacts
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryMax=2G
+MemorySwapMax=0
+TasksMax=128
+CPUQuota=100%
+
+[Install]
+WantedBy=multi-user.target

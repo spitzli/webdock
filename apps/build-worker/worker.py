@@ -97,10 +97,10 @@ def tree_size(root):
     return total
 
 
-def pack(root):
+def pack(root, *, format=tarfile.USTAR_FORMAT):
     tree_size(root)
     buf=io.BytesIO()
-    with tarfile.open(fileobj=buf,mode='w',format=tarfile.USTAR_FORMAT) as out:
+    with tarfile.open(fileobj=buf,mode='w',format=format) as out:
         for path in sorted(root.rglob('*')):
             out.add(path,arcname=path.relative_to(root),recursive=False)
     if buf.tell()>MAX_OUTPUT:raise Rejected('artifact_limit')
@@ -234,7 +234,7 @@ def execute_vm(config,job,source,lease_check=None):
         if not checkout.joinpath(request['rootDirectory']).is_dir():raise Rejected('missing_root')
         (temp/'request').mkdir();shutil.move(checkout,temp/'request/source')
         (temp/'request/job.json').write_text(json.dumps(request))
-        input_tar=temp/'input.tar';input_tar.write_bytes(pack(temp/'request'))
+        input_tar=temp/'input.tar';input_tar.write_bytes(pack(temp/'request', format=tarfile.PAX_FORMAT))
         output_tar=temp/'output.tar'
         run_bounded(qemu_command(config['image'],input_tar,output_tar,request['limits'],egress),timeout=request['limits']['durationSeconds'],file_limit=file_limit,env={'PATH':'/usr/bin:/bin','TMPDIR':str(temp)},lease_check=lease_check)
         if not output_tar.exists() or output_tar.stat().st_size>MAX_OUTPUT:raise Rejected('artifact_limit')
