@@ -8,12 +8,30 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import socketserver
+import threading
+from contextlib import contextmanager
 import sys
 import tempfile
 import time
 from datetime import datetime, timezone, timedelta
 from unittest.mock import patch
 import databases
+
+
+@contextmanager
+def proxy_response(path,response):
+    class Handler(socketserver.StreamRequestHandler):
+        def handle(self):
+            self.rfile.readline(4097)
+            if response:self.wfile.write(response)
+    with socketserver.UnixStreamServer(path,Handler) as server:
+        os.chmod(path,0o600)
+        thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+        try:yield
+        finally:
+            server.shutdown();thread.join()
+    Path(path).unlink()
 
 
 def main():
@@ -68,7 +86,18 @@ def main():
                 try:databases.storage_request(configured,'database.state',{**primary,'node':'unknown-node','poolID':'dd0ba8e4-e801-4c16-bf1b-060129437ccb'})
                 except ValueError:pass
                 else:raise AssertionError('Unknown pool was accepted by primary')
-            print(json.dumps({'passed':True,'actualPrivateUnixSocketPools':2,'rootPeerAuthentication':True,'checks':['exact state routing','retained routing','idempotent purged routing','no empty replacement','cross-pool denial','primary survives offline extra','offline extra has no fallback','unknown pool rejected']}))
+            # A root-only local proxy can accept the request but lose its SSH peer.
+            with proxy_response(routes[1]['storageSocket'],b''):
+                assert [p['poolID'] for _,p in databases.storage_pools(configured,nodes)]==[routes[0]['poolID']]
+                assert databases.storage_request(configured,'database.state',primary)['state']=='purged'
+                try:databases.storage_request(configured,'database.retained',value)
+                except ConnectionError:pass
+                else:raise AssertionError('Zero-byte mutation response was not ambiguous/unavailable')
+            with proxy_response(routes[1]['storageSocket'],b'not-json\n'):
+                try:databases.storage_pools(configured,nodes)
+                except ValueError:pass
+                else:raise AssertionError('Malformed nonempty response was hidden as unavailability')
+            print(json.dumps({'passed':True,'actualPrivateUnixSocketPools':2,'rootPeerAuthentication':True,'checks':['exact state routing','retained routing','idempotent purged routing','no empty replacement','cross-pool denial','primary survives offline extra','offline extra has no fallback','unknown pool rejected','zero-byte proxy EOF omits only extra','malformed nonempty proxy response rejected']}))
     finally:
         for process in processes:
             process.terminate()

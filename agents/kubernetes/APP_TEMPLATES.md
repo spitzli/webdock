@@ -205,3 +205,63 @@ It verifies separate pool inventories, exact state/retain/purge routing, rejecti
 of purged storage recreation, cross-pool denial, and continued primary state/retain
 operations after the additional helper is stopped and its socket removed. Real fresh filesystem
 allocation, cert-manager issuance and restoration still require cluster acceptance.
+
+## Remote database pool RPC over SSH
+
+A root-only local Unix socket may forward each connection through a fixed SSH
+configuration and a dedicated restricted key. Use systemd `Accept=yes` with
+`StandardInput=socket`, `StandardOutput=socket`, and a fixed `ExecStart=ssh -T -F
+/etc/webdock-postgres-storage-ssh/config webdock-db-storage-NODE`. Keep the socket
+root-owned `0600`, its directory `0700`, and strict existing host-key verification.
+The primary helper's runtime directory must not be removed while an independent
+additional-pool socket lives there. Preserve existing application storage routing,
+keys and customized `storage_rpc.py`; this is a separate DB-only lane.
+
+Install reviewed `database_storage_rpc.py`, `database_storage.py`, `storage.py`
+and `storage_client.py` together in the remote DB helper directory. The dedicated
+key's root-owned authorized_keys entry must restrict the source address, disable
+forwarding/PTY/user startup files (`restrict`), and force only
+`/usr/bin/python3 -Es /opt/webdock-postgres-storage/database_storage_rpc.py`.
+Do not allow arbitrary client commands, environments, socket paths or generic
+application storage actions. The wrapper's fixed socket is
+`/run/webdock-postgres-storage/control.sock`; a different inherited
+`WEBDOCK_STORAGE_SOCKET` is rejected. `SSH_ORIGINAL_COMMAND` is never executed.
+
+The forced wrapper requires root, accepts one newline-terminated JSON request of
+at most 4096 bytes, and allows only `database.capability`, `database.ensure`,
+`database.state`, `database.retained` and `database.purge`. It validates packet
+shape before contacting the helper, preserves successful result values, and
+bounds its complete JSON reply to 8192 bytes. No credential or request detail is
+printed in error messages.
+
+Availability is represented by **zero-byte EOF**, not malformed JSON: if the
+fixed helper is unavailable (`OSError`, including refusal/timeout/EOF), the wrapper
+exits nonzero without stdout. SSH forwards that EOF to the local socket, and the
+client raises `ConnectionError`; inventory omits only that unavailable extra
+pool. A malformed request, unsafe socket, rejected operation, malformed helper
+reply or conflicting identity emits a bounded nonempty `{"ok":false,"value":null}`
+and exits nonzero. The client keeps these as hard protocol/identity failures.
+A mutation interrupted by EOF remains uncertain; never automatically replay it
+or fall back to another pool. Existing ownership/revision reconciliation applies.
+
+The disposable SSH proof adds actual strict-key SSH and a forced command between
+the private Unix client and real root-authenticated helpers. Build its test image
+locally, then run it without external networking or production credentials:
+
+```sh
+docker build -t webdock-database-rpc-ssh:fixture - <<'DOCKERFILE'
+FROM python:3.13-alpine@sha256:420cd0bf0f3998275875e02ecd5808168cf0843cbb4d3c536432f729247b2acc
+RUN apk add --no-cache openssh && passwd -d root
+DOCKERFILE
+docker run --rm --network none --read-only --tmpfs /tmp \
+  --tmpfs /run:mode=0755 -v "$PWD/agents/kubernetes:/tests:ro" \
+  -e PYTHONDONTWRITEBYTECODE=1 webdock-database-rpc-ssh:fixture \
+  python /tests/check_database_rpc_ssh.py
+```
+
+The password change affects only this disposable test image; its SSH server binds
+container loopback, requires its generated key and permits no password login.
+The proof checks remote state/retain/purge, non-root and malformed/oversized/app
+RPC rejection, stopped remote helper and SSH-listener EOF, primary-pool survival,
+and hard failure on nonempty malformed remote data. It does not qualify a live
+host install, real allocations, Kubernetes publication or backup restoration.

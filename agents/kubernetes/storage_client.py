@@ -13,6 +13,7 @@ def request(action, value, socket_path=None):
         client.settimeout(100);client.connect(path)
         client.sendall(json.dumps({'action':action,'value':value}).encode()+b'\n')
         with client.makefile('rb') as stream:data=stream.readline(8193)
+    if not data:raise ConnectionError('Storage peer closed without a response')
     if len(data)>8192:raise ValueError('Invalid storage response')
     result=json.loads(data)
     if result.get('ok') is not True:raise ValueError('Storage operation failed')
