@@ -84,7 +84,9 @@ test("release OCI identities, proof and checksums round-trip; tampering fails", 
     assert.throws(() => validateVersion("../bad"));
     await fixture(dir);
     const manifest = await createManifest(dir, "0.1.0", revision);
-    assert.equal((await verifyManifest(dir)).artifacts.length, 9);
+    assert.equal((await verifyManifest(dir)).artifacts.length, 11);
+    for (const name of ["api", "console", "api-core", "console-core"])
+      assert.ok(manifest.artifacts.some((artifact) => artifact.file === `${name}.oci.tar`));
     assert.match(
       manifest.artifacts.find((a) => a.kind === "oci-image").oci.indexDigest,
       /^sha256:/,
@@ -144,6 +146,21 @@ test("manifest cannot add unsupported architecture or substitute OCI digest", as
   }
 });
 
+test("unlisted stale archives cannot be published beside a verified manifest", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "webdock-release-extra-"));
+  try {
+    await fixture(dir);
+    await createManifest(dir, "0.1.0", revision);
+    for (const name of ["database-gateway.oci.tar", "unreviewed-0.1.0.tgz"]) {
+      await writeFile(join(dir, name), "not covered by signed checksums");
+      await assert.rejects(verifyManifest(dir), /Unexpected archive outside manifest/);
+      await rm(join(dir, name));
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("optional database artifacts require pinned source, gateway execution proof and matching chart", async () => {
   const dir = await mkdtemp(join(tmpdir(), "webdock-database-release-"));
   try {
@@ -195,7 +212,7 @@ test("optional database artifacts require pinned source, gateway execution proof
       manifest.databaseRuntime.sourceCommit,
       proof.databaseRuntime.sourceCommit,
     );
-    assert.equal((await verifyManifest(dir)).artifacts.length, 12);
+    assert.equal((await verifyManifest(dir)).artifacts.length, 14);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

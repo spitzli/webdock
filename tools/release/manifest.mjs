@@ -5,6 +5,8 @@ import { execFileSync } from "node:child_process";
 import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 export const images = [
+  "api-core",
+  "console-core",
   "api",
   "worker",
   "migrate",
@@ -27,6 +29,8 @@ export const evidenceChecks = (evidence) => [
   ...(evidence.databaseRuntime ? databaseExecutionChecks : []),
 ];
 export const executionChecks = [
+  "core-product-boundary",
+  "core-images-fresh-installation",
   "api-module-tests",
   "api-runtime-configurations",
   "worker-pool-tests",
@@ -287,6 +291,9 @@ export async function verifyManifest(directory) {
         throw Error("OCI manifest or architecture mismatch");
     }
   }
+  for (const file of await readdir(directory))
+    if (/\.(?:oci\.tar|tgz)$/.test(file) && !files.has(file))
+      throw Error(`Unexpected archive outside manifest: ${file}`);
   return manifest;
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

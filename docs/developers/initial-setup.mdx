@@ -3,9 +3,9 @@ title: "Create the first operator"
 description: "Provision a fresh installation's initial operator and Console OAuth client, then complete real password and MFA setup."
 ---
 
-<Note>Implementation preview: these instructions describe locally verified development work that is not yet included in a published Webdock core release. Use them only with the matching implementation; the currently published main branch does not include all commands and paths below.</Note>
+<Note>These instructions target `v0.1.0-alpha.1`. Use the matching source revision and verified release artifacts. Setup is an offline operation; application startup does not provision an administrator.</Note>
 
-Run this once after the [offline database installation](/developers/self-hosting). The command creates a local operator, its explicit Console identity mapping and a confidential OAuth client. It creates no login session, authenticator secret, backup codes, customer, provider account or Mail instance.
+Run this once after the [offline database installation and empty plugin-state initialization](/developers/self-hosting). The command creates a local operator, its explicit Console identity mapping and a confidential OAuth client. It creates no login session, authenticator secret, backup codes, customer, provider account or Mail instance.
 
 This procedure initializes the native Auth foundation in `apps/control-plane`, served through `apps/auth`, and the Console client used by `apps/console`. It also precedes a configured Clerk installation: finish local setup first, then follow [authentication adapters](/developers/auth-adapters) for explicit external-subject mappings. This command never links accounts by email or replaces existing identities.
 
@@ -17,7 +17,7 @@ Run the command on the same machine as your browser. Pass the exact `host:port/d
 
 ```sh
 umask 077
-bun run setup:admin db.example.com:5432/webdock /private/initial-operator-secrets.json
+npm run setup:admin -- db.example.com:5432/webdock /private/initial-operator-secrets.json
 ```
 
 Open the private `http://127.0.0.1:…/#…` link printed in the terminal. Treat the entire link as a setup credential. The random capability stays in the URL fragment, is removed from the address bar when the page loads, and authorizes only this temporary local session. The command always binds to `127.0.0.1`; there is no public setup route or configurable public bind address. The session expires after ten minutes. An optional final argument sets an expiry of 60–900 seconds.
@@ -66,10 +66,10 @@ unset WEBDOCK_INITIAL_OPERATOR_PASSWORD
 To use the migration image instead, first replace the bootstrap administrator URL in `migrator.env` with the dedicated offline migrator URL, remove the empty-database bootstrap settings, and include the same canonical origins/password configuration. The image's normal entrypoint runs schema installation, so override it explicitly for this command. Mount a private input/output directory owned by the selected container user:
 
 ```sh
-docker compose -f deploy/compose/compose.yaml --profile migration run --rm \
+docker compose -f deploy/compose/compose.core.yaml --profile migration run --rm \
   --entrypoint bun --user "$(id -u):$(id -g)" \
   --volume "$PWD/private-setup:/setup" migrate \
-  tools/migrations/operator.ts db.example.com:5432/webdock \
+  --no-env-file tools/migrations/operator.ts db.example.com:5432/webdock \
   /setup/initial-operator.json /setup/initial-operator-secrets.json
 ```
 
@@ -100,7 +100,7 @@ The private output uses `status: "verify-command-result"`: only the command's su
 3. Enable the authenticator using that password, scan the displayed QR code in your authenticator, save the recovery codes privately and verify a current code.
 4. Open the Console origin. Its normal login flow uses the registered Studio protocol callback. Operator authorization remains unavailable until password setup and MFA enrollment are complete.
 
-No SQL edit to `twoFactorEnabled`, manual session insertion or synthetic cookie is part of this flow. Existing authorization rechecks the current native user, session and binding. Configure a working system-authentication email transport for password recovery; customer Mail installation is independent of that transport. You can complete setup with all optional product modules disabled. Enabling a product later does not grant its permissions or provision resources.
+No SQL edit to `twoFactorEnabled`, manual session insertion or synthetic cookie is part of this flow. Existing authorization rechecks the current native user, session and binding. Fresh setup uses your verified operator address as the default support address and disables the retained CMS setting unless those settings were already supplied. Configure a working system-authentication email transport and your own explicit `SMTP_FROM` for invitations and password recovery; customer Mail installation is independent of that transport. You can complete setup with all optional product modules disabled. Enabling a product later does not grant its permissions or provision resources.
 
 ## Verification boundary
 

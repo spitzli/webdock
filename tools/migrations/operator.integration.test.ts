@@ -180,6 +180,9 @@ test(
       assert.equal(user.role, "operator");
       assert.equal(user.twoFactorEnabled, false);
       assert.equal(user.mustChangePassword, true);
+      const settings = (await owner.query("SELECT settings FROM webdock_auth.platform_settings WHERE id=true")).rows[0]?.settings;
+      assert.equal(settings?.supportEmail, "operator@example.test", "Fresh support address belongs to the installation owner");
+      assert.equal(settings?.cmsEnabled, false, "Removed CMS is not enabled by initial setup");
       const require = createRequire(
         new URL("../../apps/control-plane/package.json", import.meta.url),
       );

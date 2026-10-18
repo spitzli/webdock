@@ -183,6 +183,12 @@ export async function provisionInitialOperator(
     "INSERT INTO webdock_auth.app_binding(id,client_id,label,organization_id) VALUES($1,$2,'Webdock Console',NULL)",
     [ids.binding, ids.client],
   );
+  // Fresh installations belong to their operator, never the upstream operator's address.
+  await db.query(
+    `INSERT INTO webdock_auth.platform_settings(id,settings) VALUES(true,jsonb_build_object('supportEmail',$1::text,'cmsEnabled',false))
+     ON CONFLICT(id) DO UPDATE SET settings=EXCLUDED.settings || webdock_auth.platform_settings.settings`,
+    [input.email],
+  );
   await db.query(
     "INSERT INTO webdock_auth.access_event(actor_id,action,target_id,outcome) VALUES($1,'operator.bootstrap',$1,'succeeded'),($1,'console.bootstrap',$2,'succeeded')",
     [user.id, ids.client],

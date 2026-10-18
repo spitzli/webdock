@@ -18,13 +18,14 @@ if [ "${WEBDOCK_RELEASE_DATABASES:-false}" = true ]; then
   : "${TABULARIS_IMAGE:?Database artifacts require the verified immutable runtime image}"
   node --input-type=module -e 'if(!/^[a-z0-9][a-z0-9./:_-]*@sha256:[a-f0-9]{64}$/.test(process.env.TABULARIS_IMAGE||""))throw Error("Immutable Tabularis image digest required")'
 fi
-for target in console auth api worker migrate; do
+for target in api-core console-core console auth api worker migrate; do
   docker buildx build --platform "$platform" --file deploy/docker/Dockerfile --target "$target" \
     --label "org.opencontainers.image.revision=$revision" --label "org.opencontainers.image.version=$version" \
+    --label "org.opencontainers.image.source=https://github.com/spitzli/webdock" \
     --provenance=mode=max --sbom=true --output "type=oci,dest=$out/$target.oci.tar" .
 done
-docker buildx build --platform "$platform" --file deploy/docker/agent.Dockerfile --provenance=mode=max --sbom=true --output "type=oci,dest=$out/agent.oci.tar" .
-docker buildx build --platform "$platform" --file infra/mail/Dockerfile --provenance=mode=max --sbom=true --output "type=oci,dest=$out/mail-runtime.oci.tar" infra/mail
+docker buildx build --platform "$platform" --file deploy/docker/agent.Dockerfile --label "org.opencontainers.image.source=https://github.com/spitzli/webdock" --label "org.opencontainers.image.revision=$revision" --label "org.opencontainers.image.version=$version" --provenance=mode=max --sbom=true --output "type=oci,dest=$out/agent.oci.tar" .
+docker buildx build --platform "$platform" --file infra/mail/Dockerfile --label "org.opencontainers.image.source=https://github.com/spitzli/webdock" --label "org.opencontainers.image.revision=$revision" --label "org.opencontainers.image.version=$version" --provenance=mode=max --sbom=true --output "type=oci,dest=$out/mail-runtime.oci.tar" infra/mail
 if [ "${WEBDOCK_RELEASE_DATABASES:-false}" = true ]; then
   tabularis_commit=$(node --input-type=module -e 'import {readFileSync} from "node:fs"; console.log(JSON.parse(readFileSync("vendor/tabularis-web-ui.json")).sourceCommit)')
   for target in database-gateway tabularis-runtime; do
