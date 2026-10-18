@@ -12,7 +12,15 @@ import { revalidateStoredConsoleIdentity } from "../auth/clerk-provider";
 import { withConsolePrincipal } from "../auth/principal";
 import { createPluginSourceService } from "./sources-store";
 import { verifySourceRuntime } from "./sources-runtime";
-import { sourceOperatorIdentity } from "./sources-identity";
+import {
+  createVerifiedSourceActorRunner,
+  sourceOperatorIdentity,
+} from "./sources-identity";
+import { createPluginInstallerDispatch } from "./sources-dispatch";
+import {
+  actionsSourceInput,
+  createGitHubActionsVerifier,
+} from "./sources-actions";
 import {
   installerConfigured,
   runtimeBindingSchema,
@@ -32,45 +40,38 @@ async function currentActor() {
     scope = currentDatabaseScope();
   return sourceOperatorIdentity(actor, scope);
 }
+const withVerifiedSourceActor = createVerifiedSourceActorRunner({
+  revalidate: revalidateStoredConsoleIdentity,
+  withPrincipal: withConsolePrincipal,
+  authorize: async (projectID, customerID) => {
+    await currentActor();
+    if (
+      !(
+        await database.query(
+          "SELECT 1 FROM webdock_admin.projects p JOIN webdock_admin.customers c ON c.id=p.customer_id WHERE p.id=$1 AND p.customer_id=$2 AND p.status='active' AND c.status='active' AND NOT EXISTS(SELECT 1 FROM webdock_admin.project_deletion d WHERE d.project_id=p.id AND d.status<>'deleted')",
+          [projectID, customerID],
+        )
+      ).rows.length
+    )
+      sourceFail(
+        "project_unavailable",
+        "Select an active project and customer.",
+        403,
+      );
+  },
+});
 async function verifyActor(
   scope: Extract<DatabaseScope, { kind: "session" }>,
   projectID: string,
   customerID: string,
 ) {
   try {
-    if (
-      !scope ||
-      scope.kind !== "session" ||
-      !scope.subject ||
-      !scope.sessionID
-    )
-      return false;
-    const check = async () => {
-      await currentRegistryActor();
-      return (
-        (
-          await database.query(
-            "SELECT 1 FROM webdock_admin.projects p JOIN webdock_admin.customers c ON c.id=p.customer_id WHERE p.id=$1 AND p.customer_id=$2 AND p.status='active' AND c.status='active' AND NOT EXISTS(SELECT 1 FROM webdock_admin.project_deletion d WHERE d.project_id=p.id AND d.status<>'deleted')",
-            [projectID, customerID],
-          )
-        ).rows.length === 1
-      );
-    };
-    if (scope.clerk) {
-      const principal = await revalidateStoredConsoleIdentity({
-        issuer: scope.clerk.issuer,
-        userID: scope.clerk.userID,
-        sessionID: scope.sessionID,
-        organizationID: scope.clerk.clerkOrganizationID,
-      });
-      if (
-        principal.userID !== scope.subject ||
-        principal.sessionID !== scope.sessionID
-      )
-        return false;
-      return withConsolePrincipal(principal, check);
-    }
-    return withDatabaseScope(scope, check);
+    return await withVerifiedSourceActor(
+      scope,
+      projectID,
+      customerID,
+      async () => true,
+    );
   } catch {
     return false;
   }
@@ -126,8 +127,34 @@ const installer = createPluginSourceService({
   ...settings,
   db: workerDatabase,
 });
+const dispatchInstaller = createPluginInstallerDispatch({
+  nextReady: installer.nextReady,
+  withActor: (job, work) =>
+    withVerifiedSourceActor(
+      job.actor_scope,
+      job.project_id,
+      job.customer_id,
+      work,
+    ),
+  activate: (id) => interactive.command({ action: "activate", id }),
+  worker: installer.worker,
+});
 export const pluginSources = (input: unknown) => interactive.command(input);
+const verifyActions = createGitHubActionsVerifier();
+export async function pluginActionsSource(
+  authorization: string | null,
+  input: unknown,
+) {
+  const parsed = actionsSourceInput.safeParse(input);
+  if (!parsed.success)
+    sourceFail("invalid_input", "Invalid Actions source request.", 400);
+  const claims = await verifyActions(authorization, parsed.data);
+  return withDatabaseScope(
+    { kind: "system", purpose: "plugin-controller" },
+    () => installer.actionsSource(parsed.data, claims),
+  );
+}
 export const pluginInstaller = (action: string, input: unknown) =>
   withDatabaseScope({ kind: "system", purpose: "plugin-controller" }, () =>
-    installer.worker(action, input),
+    dispatchInstaller(action, input),
   );

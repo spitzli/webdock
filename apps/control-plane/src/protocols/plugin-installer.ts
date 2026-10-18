@@ -13,12 +13,23 @@ export function pluginInstallerProtocol(
     input,
   ) =>
     (await import("../modules/plugins/sources")).pluginInstaller(action, input),
+  actionsSource: (
+    authorization: string | null,
+    input: unknown,
+  ) => Promise<unknown> = async (authorization, input) =>
+    (await import("../modules/plugins/sources")).pluginActionsSource(
+      authorization,
+      input,
+    ),
 ): Mount {
   const app = new Elysia().post(
     "/v1/plugin-installer/:action",
     async ({ request, params }) => {
       const headers = { "cache-control": "no-store" };
-      if (!installerAuthorized(request.headers.get("authorization")))
+      if (
+        params.action !== "actions-source" &&
+        !installerAuthorized(request.headers.get("authorization"))
+      )
         return Response.json(
           {
             error: {
@@ -28,9 +39,28 @@ export function pluginInstallerProtocol(
           },
           { status: 401, headers },
         );
-      if (!["claim", "source", "complete", "lease"].includes(params.action))
+      if (
+        ![
+          "claim",
+          "source",
+          "complete",
+          "lease",
+          "actions-prepare",
+          "actions-chunk",
+          "actions-bind",
+          "actions-source",
+        ].includes(params.action)
+      )
         return new Response(null, { status: 404, headers });
       try {
+        if (params.action === "actions-source")
+          return Response.json(
+            await actionsSource(
+              request.headers.get("authorization"),
+              await readJSON(request, 4096),
+            ),
+            { headers },
+          );
         return Response.json(
           await dispatch(params.action, await readJSON(request, 512 * 1024)),
           { headers },

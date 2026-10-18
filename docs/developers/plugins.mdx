@@ -5,7 +5,7 @@ description: "Discover the Webdock plugin registry, its manifest contract and th
 
 The [Webdock Registry](https://registry.webdock.dev) catalogs extensions for Webdock projects. Sign in with GitHub through the **Webdock Studio** GitHub App. Publishing requires repository access and operator approval; signing in does not install a plugin in Webdock.
 
-<Info>A source installer pilot is implemented for configured Webdock installations. It requires an operator, a dedicated KVM build worker, an image registry and a Kubernetes runtime adapter. This is not a claim that installation is enabled on the public production service. Jobs, plugin tables and migrations are not supported by this installer.</Info>
+<Info>A source installer pilot is implemented for configured Webdock installations. It requires an operator, a private GitHub Actions build repository, an artifact publisher on the existing app node, an image registry and a Kubernetes runtime adapter. This is not a claim that installation is enabled on the public production service. Jobs, plugin tables and migrations are not supported by this installer.</Info>
 
 ## Plugin kind
 
@@ -52,11 +52,11 @@ The source installer below builds directly from source; registry publication rem
 
 Operators can open a project's **Extensions → Install plugin** page at `/plugins/<projectID>/install`. Choose one of:
 
-- **GitHub** (default): connect the existing GitHub App, choose an account and repository, including private repositories granted to the app. Importing source requires **Contents → Read-only** permission; metadata-only connections can browse but cannot download source. Source import only reads repositories; the existing Hosting App's **Actions → Read-only** and **Checks → Write** permissions may remain. Unrelated permissions and Contents write access are rejected.
+- **GitHub** (default): connect the existing GitHub App, choose an account and repository, including private repositories granted to the app. Importing source requires **Contents → Read-only** permission; metadata-only connections can browse but cannot download source. Source import only reads repositories. **Actions → Read and write** enables automatic builds in the private build repository; existing **Checks → Write** may remain. Unrelated permissions and Contents write access are rejected.
 - **Git URL**: provide an HTTPS repository URL and optional branch, tag or commit. For private repositories, enter a username and token in the separate fields. Credentials are used for this import and are cleared from the form on submission.
 - **ZIP upload**: upload a non-empty archive up to **32 MiB**. Console transfers it in sequential 64 KiB chunks.
 
-The source must contain `tabularium.json` and a `Dockerfile` at its root. The installer builds an OCI image in a disposable KVM guest and pins the result to its actual digest. It then pauses for you to review the exact manifest, image, requested capabilities and JSON configuration. Approval applies to that manifest hash. Deployment and project activation follow automatically while the installer page is open. Keep the page open; automatic status checks pause after ten minutes or a request failure. Temporary runtime-readiness failures retry every three seconds for up to one minute. Use **Refresh status** to continue, or **Retry activation** if activation paused. No import is reported as installed until activation succeeds.
+The source must contain `tabularium.json` and a `Dockerfile` at its root. The installer builds an OCI image with Docker BuildKit on a disposable GitHub-hosted runner in the private build repository and pins the result to its actual digest. It then pauses for you to review the exact manifest, image, requested capabilities and JSON configuration. Approval applies to that manifest hash. Deployment and project activation continue in the background after approval. The worker revalidates the approving session and current operator/project authority before enabling the plugin. Browser status checks pause after ten minutes or a request failure. Temporary runtime-readiness failures retry every three seconds for up to one minute. Use **Refresh status** to continue, or **Retry activation** if activation paused. No import is reported as installed until activation succeeds.
 
 An unconfigured installation shows **Installer setup required** and disables import and approval actions.
 
@@ -96,19 +96,30 @@ The installer supplies these environment variables: `WEBDOCK_PLUGIN_ID`, `WEBDOC
 The API requires `WEBDOCK_PLUGIN_INSTALLER_TOKEN` (at least 32 characters) and `WEBDOCK_PLUGIN_RUNTIME_FILE`. Run `apps/build-worker/plugin_installer.py --config <private-config.json>` as the dedicated installer. Its configuration extends the existing build worker configuration with:
 
 - `controlURL` pointing to `https://<api-host>/v1/plugin-installer`, and `credentialFile` holding the matching installer bearer token.
-- `isolation: "qemu-kvm"`, a verified VM image (`image`, `imageSHA256`), private `artifactRoot`, and the existing location, isolation and storage evidence fields.
+- `isolation: "artifact-only"`, a private `artifactRoot`, and the existing location, isolation and storage evidence fields. No KVM, VM image or additional build host is required.
+- `github.appID`, `installationID`, `privateKeyFile`, `repository`, `repositoryID`, `workflow` and `ref`, restricted to an operator-owned private build repository. The App needs Actions write and Contents read on that repository.
 - `registry.repository` and a private `registry.authFile` for publishing built OCI images.
 - `runtime.namespace`, `runtime.kubeconfigFile`, `runtime.clusterID`, `runtime.hostOrigin`, `runtime.apiNamespace`, `runtime.apiPodLabels` and `runtime.apiAddresses` for workload isolation and host access.
-- `runtime.configSecret` with `name`, `namespace` and `key` identifying the runtime configuration secret mounted by the API. Optional `imagePullSecret` supports private image pulls. Browser UI installations additionally need `uiBaseDomain`, `uiTLSSecret`, `ingressClass`, `ingressNamespace` and `ingressPodLabels`.
+- `runtime.configSecret` with `name`, `namespace` and `key` identifying the runtime configuration secret mounted by the API. Optional `imagePullSecret` supports private image pulls. Set `ingressNamespace` and `ingressPodLabels` when API traffic is routed back through cluster ingress; this permits only those pods on TCP 443/8443 after address translation. Browser UI installations additionally need `uiBaseDomain`, `uiTLSSecret` and `ingressClass`.
 
 The worker creates a non-root workload with a read-only root filesystem, restricted network policy, private TLS credentials and image digest verification. It updates the runtime binding before API health verification and activation. Provision and test the worker, registry, secret mounting and network permissions for your installation; the Console setup indicator alone does not prove that infrastructure is ready.
 
 Use the checked-in [example configuration](https://github.com/spitzli/webdock/blob/main/apps/build-worker/plugin-installer.example.json)
 and [systemd service](https://github.com/spitzli/webdock/blob/main/apps/build-worker/webdock-plugin-installer.service).
-Follow the [isolated build worker setup](https://github.com/spitzli/webdock/blob/main/apps/build-worker/README.md)
-for the pinned guest image and package/image download proxy. Keep source execution
-off API and database hosts. The service limits host memory, processes and CPU;
-each Git fetch and VM also has its own bounds.
+Install the [private workflow template](https://github.com/spitzli/webdock/tree/main/tools/plugins/github-actions)
+and its trusted helpers in the private build repository. Set its
+`WEBDOCK_PLUGIN_CONTROL_URL` variable to the exact API URL ending in
+`/v1/plugin-installer`. The existing app node downloads source as data, verifies
+artifacts, publishes images and provisions runtimes; it does not execute source
+Dockerfiles or package scripts. The service limits memory, processes and CPU.
+
+The publisher mints a GitHub App token restricted to the one private build
+repository. The runner receives source through a short-lived GitHub OIDC identity
+bound to the exact repository, workflow commit, run, first attempt and import.
+The installer token, GitHub source credentials, App key, registry credentials and
+Kubernetes credentials never enter the build runner. Public build repositories
+are rejected. Builds use existing GitHub Actions capacity; private base images
+requiring additional registry credentials are not supported by this template.
 
 Create a dedicated plugin namespace with Pod Security Admission set to
 `pod-security.kubernetes.io/enforce=restricted`. The installer refuses other

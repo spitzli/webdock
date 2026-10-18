@@ -1,4 +1,10 @@
-# Plugin source installer acceptance
+# Initial plugin source installer component acceptance
+
+The KVM build component below was an initial experiment. The final installer uses
+a private GitHub Actions workflow and the existing artifact-only app-node pattern,
+without an additional KVM or server. KVM evidence below is historical and does not
+stand in for acceptance of the Actions source handoff. Runtime/DB/UI boundary
+checks remain applicable; final Actions acceptance is recorded separately.
 
 The source installer adds operator-owned GitHub, HTTPS Git and ZIP imports to the
 product-free Core. The user explicitly selected automatic image builds. A separate
@@ -61,5 +67,5 @@ was not exercised; the real private Git download used an explicit Git credential
 All owned acceptance clusters, registry/tool containers, networks, temporary keys
 and kubeconfigs were removed. Private raw VM/OCI artifacts and detailed evidence
 remain in the operator's acceptance cache. Production configuration and existing
-plugins were not changed by these tests. A permanent build host must be configured
-before enabling automatic source builds on the live installation.
+plugins were not changed by these tests. The final workflow uses the existing app node and a private GitHub Actions build
+repository; it does not require a permanent additional build host.

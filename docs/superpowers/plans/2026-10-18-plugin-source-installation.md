@@ -5,12 +5,13 @@
 **Goal:** Install supported runtime plugins from GitHub, HTTPS Git, and ZIP through the Console.
 
 **Architecture:** Product-free source intake and durable operator review live in Core.
-A separately provisioned worker acquires/normalizes sources, builds in the existing
-KVM sandbox, publishes immutable images, and provisions restricted runtimes. Existing
+An artifact-only worker on the existing app node acquires/normalizes sources,
+dispatches a private GitHub Actions build, verifies/publishes its immutable image,
+and provisions restricted runtimes. No extra KVM or host is required. Existing
 manifest validation, grants, invocation isolation, and authenticated health checks
 remain authoritative.
 
-**Tech stack:** TypeScript, PostgreSQL/RLS, Next.js, Python stdlib, existing KVM/OCI worker.
+**Tech stack:** TypeScript, PostgreSQL/RLS, Next.js, Python stdlib, GitHub Actions/OIDC, existing OCI publisher.
 
 **Spec:** ../specs/2026-10-18-plugin-source-installation-design.md
 
@@ -37,7 +38,7 @@ remain authoritative.
   bounded public/private HTTPS Git acquisition; add hostile-source unit tests.
 - [x] Add source job persistence and operator/worker commands with bounded uploads,
   immutable review data, live authority checks, claim fencing and explicit failures.
-- [x] Adapt isolated builder/publisher and restricted Kubernetes provisioning; connect
+- [x] Adapt private GitHub Actions builds, artifact verification and restricted Kubernetes provisioning; connect
   final reviewed release to existing grant/runtime activation semantics.
 - [x] Expose product-free GitHub browser routes and Console source selection, upload,
   capability review, progress/retry UX.
@@ -55,5 +56,6 @@ remain authoritative.
 - Acceptance and independent-review evidence is recorded in
   `docs/verification/2026-10-18-plugin-source-installer.md`. Source jobs preserve
   Auth ownership separately from the Registry ID used by GitHub cookies.
-- Live rollout needs a permanent build host. The user has been asked for an
-  existing host or a budget for a separate server; no new paid host is assumed.
+- Live rollout uses the existing app node and a private trusted GitHub Actions
+  repository. No new server or KVM is provisioned. Worker-issued source metadata
+  is matched against GitHub OIDC and the exact returned workflow run ID.

@@ -419,9 +419,14 @@ test("GitHub source supports the existing Hosting App permissions without accept
   const result = await github.source(headers, actor, selection);
   assert.equal(result.repository.private, true);
   assert.equal(result.commit, state.commit);
+  state.permissions.actions = "write";
+  assert.equal(
+    (await github.source(headers, actor, selection)).commit,
+    state.commit,
+  );
   for (const extra of [
     { contents: "write" },
-    { actions: "write" },
+    { actions: "admin" },
     { issues: "write" },
     { deployments: "write" },
     { checks: "admin" },

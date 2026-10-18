@@ -28,6 +28,7 @@ export const pluginSourceImport = auth.table(
     sourceRef: text("source_ref"),
     sourceCommit: text("source_commit"),
     sourceSHA256: text("source_sha256"),
+    actionsMetadata: jsonb("actions_metadata"),
     secretCipher: text("secret_cipher"),
     runtimeCipher: text("runtime_cipher"),
     clusterID: text("cluster_id"),

@@ -8635,5 +8635,5 @@ msgid "Repository permissions → Metadata → Read-only; Contents → Read-only
 msgstr "Repository-Berechtigungen → Metadaten → Nur lesen; Inhalte → Nur lesen"
 
 
-msgid ". Source import only reads repositories. Existing Hosting Actions → Read-only and Checks → Write permissions may remain. Keep user access token expiration enabled."
-msgstr ". Der Quellimport liest ausschließlich Repositories. Bestehende Hosting-Berechtigungen für Actions → Nur lesen und Checks → Schreiben können bestehen bleiben. Lass den Ablauf von Benutzerzugriffstokens aktiviert."
+msgid ". Source import only reads repositories. Actions → Read and write enables automatic builds in the private build repository; existing Checks → Write may remain. Keep user access token expiration enabled."
+msgstr ". Der Quellimport liest ausschließlich Repositories. Actions → Lesen und Schreiben ermöglicht automatische Builds im privaten Build-Repository; Checks → Schreiben kann bestehen bleiben. Lass den Ablauf von Benutzerzugriffstokens aktiviert."

@@ -4,13 +4,9 @@
   "country": "DE",
   "locationEvidence": "Operator-verified location record",
   "storageEvidence": "Operator-verified storage record",
-  "isolation": "qemu-kvm",
-  "isolationEvidence": "Real hostile-build acceptance record",
-  "image": "/var/lib/webdock-build-worker/base.raw",
-  "imageSHA256": "REPLACE_WITH_VERIFIED_SHA256",
+  "isolation": "artifact-only",
+  "isolationEvidence": "Source executes only on disposable GitHub-hosted runners in the private trusted build repository",
   "artifactRoot": "/var/lib/webdock-plugin-installer/artifacts",
-  "egress": "loopback-connect-proxy",
-  "egressEvidence": "Verified package/base-image host allowlist",
   "registry": {
     "repository": "registry.example.com/webdock/plugins",
     "authFile": "/etc/webdock-plugin-installer/registry.json"
@@ -21,8 +17,12 @@
     "kubeconfigFile": "/etc/webdock-plugin-installer/kubeconfig",
     "hostOrigin": "https://api.example.com",
     "apiNamespace": "webdock-platform",
-    "apiPodLabels": { "app": "webdock-api" },
-    "apiAddresses": ["REPLACE_WITH_API_IP"],
+    "apiPodLabels": {
+      "app": "webdock-api"
+    },
+    "apiAddresses": [
+      "REPLACE_WITH_API_IP"
+    ],
     "imagePullSecret": "plugins-pull",
     "configSecret": {
       "namespace": "webdock-platform",
@@ -33,6 +33,17 @@
     "uiTLSSecret": "plugin-ui-wildcard",
     "ingressClass": "traefik",
     "ingressNamespace": "kube-system",
-    "ingressPodLabels": { "app.kubernetes.io/name": "traefik" }
+    "ingressPodLabels": {
+      "app.kubernetes.io/name": "traefik"
+    }
+  },
+  "github": {
+    "appID": "REPLACE_APP_ID",
+    "installationID": "REPLACE_INSTALLATION_ID",
+    "privateKeyFile": "/etc/webdock-plugin-installer/github-app.pem",
+    "repository": "spitzli/webdock-plugin-builds",
+    "repositoryID": "REPLACE_PRIVATE_REPOSITORY_ID",
+    "workflow": "plugin-build.yml",
+    "ref": "main"
   }
 }

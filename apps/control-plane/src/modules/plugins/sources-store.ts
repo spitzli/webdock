@@ -1,5 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
+import type { ReadySource } from "./sources-dispatch";
+import {
+  actionsPrepareSchema,
+  actionsChunkSchema,
+  actionsBindSchema,
+  actionsMetadataSchema,
+  actionsSourceInput,
+  requireActionsIdentity,
+  type ActionsClaims,
+} from "./sources-actions";
 import { z } from "zod";
 import type { DatabaseScope } from "@webdock/database-runtime";
 import type {
@@ -136,7 +146,7 @@ export function createPluginSourceService(deps: Dependencies) {
       "DELETE FROM webdock_auth.plugin_source_chunk WHERE import_id IN (SELECT id FROM webdock_auth.plugin_source_import WHERE status IN ('failed','enabled') OR expires_at<=now())",
     );
     await c.query(
-      "UPDATE webdock_auth.plugin_source_import SET secret_cipher=NULL,runtime_cipher=NULL,actor_scope='{}' WHERE (status IN ('enabled','failed') OR expires_at<=now()) AND (secret_cipher IS NOT NULL OR runtime_cipher IS NOT NULL OR actor_scope<>'{}'::jsonb)",
+      "UPDATE webdock_auth.plugin_source_import SET secret_cipher=NULL,runtime_cipher=NULL,actor_scope='{}',actions_metadata=NULL WHERE (status IN ('enabled','failed') OR expires_at<=now()) AND (secret_cipher IS NOT NULL OR runtime_cipher IS NOT NULL OR actor_scope<>'{}'::jsonb OR actions_metadata IS NOT NULL)",
     );
   }
   async function row(c: Client, id: string, actor?: Actor) {
@@ -178,8 +188,9 @@ export function createPluginSourceService(deps: Dependencies) {
     job: SourceRow,
     offset: number,
     bytes: Buffer,
+    state: "uploading" | "building" = "uploading",
   ) {
-    if (job.status !== "uploading")
+    if (job.status !== state)
       sourceFail(
         "upload_closed",
         "This import no longer accepts upload chunks.",
@@ -486,7 +497,7 @@ export function createPluginSourceService(deps: Dependencies) {
       );
       const enabled = (
         await c.query(
-          "UPDATE webdock_auth.plugin_source_import SET status='enabled',secret_cipher=NULL,runtime_cipher=NULL,actor_scope='{}',claim_token=NULL,lease_until=NULL,updated_at=now() WHERE id=$1 RETURNING *",
+          "UPDATE webdock_auth.plugin_source_import SET status='enabled',secret_cipher=NULL,runtime_cipher=NULL,actor_scope='{}',actions_metadata=NULL,claim_token=NULL,lease_until=NULL,updated_at=now() WHERE id=$1 RETURNING *",
           [id],
         )
       ).rows[0];
@@ -540,7 +551,7 @@ export function createPluginSourceService(deps: Dependencies) {
         );
         job = (
           await c.query(
-            "UPDATE webdock_auth.plugin_source_import SET status='failed',error_code='discarded',secret_cipher=NULL,runtime_cipher=NULL,actor_scope='{}',claim_token=NULL,lease_until=NULL,updated_at=now() WHERE id=$1 RETURNING *",
+            "UPDATE webdock_auth.plugin_source_import SET status='failed',error_code='discarded',secret_cipher=NULL,runtime_cipher=NULL,actor_scope='{}',actions_metadata=NULL,claim_token=NULL,lease_until=NULL,updated_at=now() WHERE id=$1 RETURNING *",
             [job.id],
           )
         ).rows[0];
@@ -587,6 +598,11 @@ export function createPluginSourceService(deps: Dependencies) {
               "approval_changed",
               "This import already has a different approved configuration.",
             );
+          if (job.status !== "enabled")
+            await c.query(
+              "UPDATE webdock_auth.plugin_source_import SET actor_scope=$2::jsonb,updated_at=now() WHERE id=$1",
+              [job.id, JSON.stringify(who.scope)],
+            );
           return sourceView(job);
         }
         if (job.status !== "review")
@@ -603,16 +619,29 @@ export function createPluginSourceService(deps: Dependencies) {
         await assertNewPlugin(c, manifest.name, job.id);
         job = (
           await c.query(
-            "UPDATE webdock_auth.plugin_source_import SET status='approved',configuration=$2::jsonb,approved_capabilities=$3::jsonb,updated_at=now() WHERE id=$1 RETURNING *",
+            "UPDATE webdock_auth.plugin_source_import SET status='approved',configuration=$2::jsonb,approved_capabilities=$3::jsonb,actor_scope=$4::jsonb,updated_at=now() WHERE id=$1 RETURNING *",
             [
               job.id,
               JSON.stringify(input.configuration),
               JSON.stringify(input.capabilities),
+              JSON.stringify(who.scope),
             ],
           )
         ).rows[0];
       }
       return sourceView(job);
+    });
+  }
+  async function nextReady(): Promise<ReadySource | undefined> {
+    configured();
+    return tx(async (c) => {
+      await expire(c);
+      // Rotate every attempted candidate, including revoked sessions, so it cannot starve others.
+      return (
+        await c.query(
+          "UPDATE webdock_auth.plugin_source_import SET updated_at=now() WHERE id=(SELECT id FROM webdock_auth.plugin_source_import WHERE status='ready' AND expires_at>now() ORDER BY updated_at,id LIMIT 1 FOR UPDATE SKIP LOCKED) RETURNING id,actor_scope,project_id,customer_id",
+        )
+      ).rows[0] as ReadySource | undefined;
     });
   }
   async function worker(action: string, input: unknown): Promise<unknown> {
@@ -684,13 +713,21 @@ export function createPluginSourceService(deps: Dependencies) {
       });
     }
     const parsed =
-      action === "complete"
-        ? completeSchema.parse(input)
-        : action === "source"
-          ? workerIdentity
-              .extend({ offset: z.number().int().min(0).max(sourceLimit) })
-              .parse(input)
-          : workerIdentity.parse(input);
+      action === "actions-prepare"
+        ? actionsPrepareSchema.parse(input)
+        : action === "actions-chunk"
+          ? actionsChunkSchema.parse(input)
+          : action === "actions-bind"
+            ? actionsBindSchema.parse(input)
+            : action === "complete"
+              ? completeSchema.parse(input)
+              : action === "source"
+                ? workerIdentity
+                    .extend({
+                      offset: z.number().int().min(0).max(sourceLimit),
+                    })
+                    .parse(input)
+                : workerIdentity.parse(input);
     return tx(async (c) => {
       await expire(c);
       const job = await row(c, parsed.id);
@@ -730,6 +767,92 @@ export function createPluginSourceService(deps: Dependencies) {
           "Operator or project access changed. The installer claim is no longer authorized.",
           403,
         );
+      if (
+        ["actions-prepare", "actions-chunk", "actions-bind"].includes(action)
+      ) {
+        if (job.status !== "building")
+          sourceFail(
+            "wrong_phase",
+            "Actions preparation requires a live build claim.",
+          );
+        if (action === "actions-prepare") {
+          const {
+            id: _id,
+            claimToken: _claim,
+            ...fields
+          } = parsed as z.infer<typeof actionsPrepareSchema>;
+          const metadata = actionsMetadataSchema.parse(fields);
+          if (job.actions_metadata) {
+            const { runID: _run, ...prior } = actionsMetadataSchema.parse(
+              job.actions_metadata,
+            );
+            if (!isDeepStrictEqual(prior, metadata))
+              sourceFail(
+                "actions_conflict",
+                "This build already has a different prepared Actions source.",
+              );
+            return { accepted: true };
+          }
+          if (
+            job.source_commit &&
+            metadata.commit &&
+            job.source_commit !== metadata.commit
+          )
+            sourceFail(
+              "actions_conflict",
+              "Prepared source commit differs from the selected source.",
+            );
+          await c.query(
+            "DELETE FROM webdock_auth.plugin_source_chunk WHERE import_id=$1",
+            [job.id],
+          );
+          await c.query(
+            "UPDATE webdock_auth.plugin_source_import SET actions_metadata=$2::jsonb,expected_bytes=$3,uploaded_bytes=0,source_sha256=$4,source_commit=COALESCE($5,source_commit),secret_cipher=NULL,updated_at=now() WHERE id=$1",
+            [
+              job.id,
+              JSON.stringify(metadata),
+              metadata.size,
+              metadata.sourceSHA256,
+              metadata.commit ?? null,
+            ],
+          );
+          return { accepted: true };
+        }
+        const metadata = actionsMetadataSchema.safeParse(job.actions_metadata);
+        if (!metadata.success)
+          sourceFail(
+            "actions_unprepared",
+            "Prepare this build's Actions source first.",
+          );
+        if (action === "actions-chunk") {
+          const chunk = parsed as z.infer<typeof actionsChunkSchema>;
+          const changed = await putChunk(
+            c,
+            job,
+            chunk.offset,
+            decodeSourceChunk(chunk.data),
+            "building",
+          );
+          return { accepted: true, uploadedBytes: changed.uploaded_bytes };
+        }
+        const { runID } = parsed as z.infer<typeof actionsBindSchema>;
+        if (job.uploaded_bytes !== job.expected_bytes || job.expected_bytes < 1)
+          sourceFail(
+            "upload_incomplete",
+            "Complete the Actions source upload before binding a run.",
+          );
+        if (metadata.data.runID && metadata.data.runID !== runID)
+          sourceFail(
+            "actions_conflict",
+            "This build is already bound to another Actions run.",
+          );
+        if (!metadata.data.runID)
+          await c.query(
+            "UPDATE webdock_auth.plugin_source_import SET actions_metadata=$2::jsonb,updated_at=now() WHERE id=$1",
+            [job.id, JSON.stringify({ ...metadata.data, runID })],
+          );
+        return { accepted: true };
+      }
       if (action === "source") {
         if (job.status !== "building" || job.source_kind === "git")
           sourceFail(
@@ -776,6 +899,16 @@ export function createPluginSourceService(deps: Dependencies) {
           sourceFail("wrong_phase", "This claim is not building a plugin.");
         try {
           const manifest = parseSourceManifest(result.manifestRaw);
+          if (
+            job.actions_metadata &&
+            (!job.actions_metadata.runID ||
+              job.source_sha256 !== result.sourceSHA256)
+          )
+            sourceFail(
+              "invalid_manifest",
+              "Built source does not match the prepared Actions run.",
+              400,
+            );
           if (
             job.source_commit &&
             result.commit &&
@@ -825,6 +958,66 @@ export function createPluginSourceService(deps: Dependencies) {
       return { accepted: true };
     });
   }
+  async function actionsSource(raw: unknown, claims: ActionsClaims) {
+    configured();
+    const input = actionsSourceInput.parse(raw);
+    await tx(expire);
+    return tx(async (c) => {
+      const job = await row(c, input.id),
+        metadata = requireActionsIdentity(job.actions_metadata, claims, input);
+      if (job.status !== "building" || typeof job.claim_token !== "string")
+        sourceFail("lease_lost", "Actions source is no longer available.", 409);
+      requireSourceLease(job, job.claim_token);
+      if (
+        !deps.verifyActor ||
+        !(await deps.verifyActor(
+          job.actor_scope,
+          job.project_id,
+          job.customer_id,
+        ))
+      )
+        sourceFail(
+          "authority_revoked",
+          "The source import no longer has current operator authority.",
+          403,
+        );
+      if (
+        job.uploaded_bytes !== job.expected_bytes ||
+        job.source_sha256 !== metadata.sourceSHA256
+      )
+        sourceFail(
+          "actions_binding_pending",
+          "The prepared source is not complete yet.",
+          503,
+        );
+      const fields = {
+        sourceSHA256: metadata.sourceSHA256,
+        projectID: job.project_id,
+        customerID: job.customer_id,
+        ...(job.source_commit ? { commit: job.source_commit } : {}),
+      };
+      if (input.offset === job.uploaded_bytes)
+        return { data: "", done: true, ...fields };
+      const chunk = (
+        await c.query(
+          "SELECT data FROM webdock_auth.plugin_source_chunk WHERE import_id=$1 AND offset_bytes=$2",
+          [job.id, input.offset],
+        )
+      ).rows[0];
+      if (!chunk || Buffer.from(chunk.data).length > chunkLimit)
+        sourceFail(
+          "invalid_source_offset",
+          "Read source at the next chunk offset.",
+          400,
+        );
+      return {
+        data: Buffer.from(chunk.data).toString("base64"),
+        done:
+          input.offset + Buffer.from(chunk.data).length === job.uploaded_bytes,
+        ...fields,
+      };
+    });
+  }
   const safe = <T extends (...args: any[]) => Promise<any>>(fn: T) =>
     (async (...args: Parameters<T>) => {
       try {
@@ -840,5 +1033,10 @@ export function createPluginSourceService(deps: Dependencies) {
         );
       }
     }) as T;
-  return { command: safe(command), worker: safe(worker) };
+  return {
+    command: safe(command),
+    worker: safe(worker),
+    nextReady: safe(nextReady),
+    actionsSource: safe(actionsSource),
+  };
 }

@@ -20,14 +20,17 @@ claiming success. It must remain independent of the Hosting product.
 - HTTPS Git only initially. SSH credentials/ambient SSH agent access are not used.
 - ZIP up to 32 MiB compressed, 128 MiB expanded, 10,000 files. Reject traversal,
   links, duplicate/case-colliding paths, special files, and ambiguous manifest roots.
-- Use the existing isolated KVM builder and trusted OCI publisher for Dockerfile
-  builds. The user explicitly selected automatic build and installation; there is
-  no prebuilt-image choice in this source flow.
+- Automatic build and installation uses a private trusted GitHub Actions workflow
+  and the existing artifact-only publisher pattern. No extra KVM or build host.
+  Source code never executes on the application/database node. The workflow uses
+  GitHub-hosted runners, scoped OIDC source access and no platform credentials.
+  There is no prebuilt-image choice in this source flow.
 - Display exact final manifest capabilities, source identity, image digest, and
   configuration before approval. Source-provided signatures never establish trust.
 - Preserve the current runtime pilot's supported manifest boundary; unsupported
   dependencies/schema migrations/tables/jobs fail with an actionable explanation.
-- A separately configured installer worker owns build/publish/Kubernetes privileges.
+- An artifact-only installer on the existing app node owns dispatch/publication/
+  Kubernetes privileges. Builds run remotely in the private GitHub Actions repository.
   No Docker socket, registry push key, Kubernetes token, or offline DB credential is
   added to Core API/Console. Unconfigured self-hosts show setup required.
 - Durable source jobs use bounded storage, claims, and expiry. Failed or ambiguous

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dedicated plugin installer. Source code runs only in the disposable KVM guest."""
+"""Dedicated plugin installer. Source code runs only on a disposable private GitHub Actions runner."""
 import argparse
 import base64
 import fcntl
@@ -17,6 +17,7 @@ import time
 import urllib.parse
 
 import plugin_source
+import plugin_actions
 import publisher
 import worker
 
@@ -68,11 +69,11 @@ def build_source(config, control, job, source):
         manifest = exact_json(archive.extractfile(entry).read())
         if not isinstance(manifest, dict) or not archive.getmember('Dockerfile').isfile():
             raise worker.Rejected('missing_dockerfile')
-    request = {'buildID': job['id'], 'customerID': job['customerID'], 'projectID': job['projectID'],
-               'generation': 1, 'sourceSHA': source.get('commit') or digest[:40], 'recipe': 'dockerfile',
-               'rootDirectory': '.', 'buildEnvironment': {},
-               'limits': {'cpu': 2, 'memoryMiB': 2048, 'diskBytes': 24 * 1024**3, 'durationSeconds': 1800}}
-    artifact, _logs = worker.execute_vm(config, request, source['archive'], lease_check=lambda: fence(control, job))
+    if config.get('isolation') != 'artifact-only':
+        raise worker.Rejected('artifact_only_required')
+    request = {'buildID': job['id'], 'customerID': job['customerID'], 'projectID': job['projectID'], 'generation': 1}
+    build_job = {field: job[field] for field in ('id', 'claimToken', 'projectID', 'customerID')}
+    artifact, _logs = plugin_actions.build(config, control, build_job, source)
     try:
         fence(control, job)
         with tempfile.TemporaryDirectory(prefix='wd-plugin-publish-') as directory:
@@ -126,6 +127,11 @@ def runtime_resources(config, job, token, public_key, certificate, key):
     service = resource('Service', {'spec': {'selector': labels, 'ports': [{'name': 'runtime', 'port': 3443, 'targetPort': 3443}, {'name': 'ui', 'port': 3444, 'targetPort': 3444}]}})
     api_peer = {'namespaceSelector': {'matchLabels': {'kubernetes.io/metadata.name': runtime['apiNamespace']}}, 'podSelector': {'matchLabels': runtime['apiPodLabels']}}
     egress = [{'to': [{'ipBlock': {'cidr': str(ipaddress.ip_network(address + ('/32' if ':' not in address else '/128'), strict=True))}}], 'ports': [{'protocol': 'TCP', 'port': 443}]} for address in runtime['apiAddresses']]
+    if runtime.get('ingressNamespace') and runtime.get('ingressPodLabels'):
+        # Some CNIs enforce the destination after public-API traffic is DNATed to ingress pods.
+        egress.append({'to': [{'namespaceSelector': {'matchLabels': {'kubernetes.io/metadata.name': runtime['ingressNamespace']}},
+                               'podSelector': {'matchLabels': runtime['ingressPodLabels']}}],
+                       'ports': [{'protocol': 'TCP', 'port': 443}, {'protocol': 'TCP', 'port': 8443}]})
     egress.append({'to': [{'namespaceSelector': {'matchLabels': {'kubernetes.io/metadata.name': 'kube-system'}}, 'podSelector': {'matchLabels': {'k8s-app': 'kube-dns'}}}], 'ports': [{'protocol': 'UDP', 'port': 53}, {'protocol': 'TCP', 'port': 53}]})
     ingress = [{'from': [api_peer], 'ports': [{'protocol': 'TCP', 'port': 3443}]}]
     resources = [secret, tls, service, deployment]
@@ -231,9 +237,10 @@ def run_once(config, control):
 
 
 def validate_config(config):
+    if config.get('isolation') != 'artifact-only':
+        raise worker.Rejected('artifact_only_required')
     worker.validate_config(config)
-    if config['isolation'] != 'qemu-kvm':
-        raise worker.Rejected('kvm_required')
+    plugin_actions.validate_config(config['github'])
     origin = urllib.parse.urlsplit(config['controlURL'])
     if origin.username or origin.password or origin.query or origin.fragment or origin.path != '/v1/plugin-installer':
         raise worker.Rejected('invalid_control_url')
@@ -242,7 +249,9 @@ def validate_config(config):
         raise worker.Rejected('invalid_registry')
     worker.private_file(registry['authFile'])
     runtime = config['runtime']
-    for name in ('namespace', 'apiNamespace'):
+    if bool(runtime.get('ingressNamespace')) != bool(runtime.get('ingressPodLabels')):
+        raise worker.Rejected('invalid_ingress_selector')
+    for name in ['namespace', 'apiNamespace'] + (['ingressNamespace'] if runtime.get('ingressNamespace') else []):
         if not re.fullmatch(r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?', runtime[name]):
             raise worker.Rejected('invalid_namespace')
     if not runtime['apiAddresses'] or len(runtime['apiAddresses']) > 8:
@@ -252,7 +261,7 @@ def validate_config(config):
     host = urllib.parse.urlsplit(runtime['hostOrigin'])
     if host.scheme != 'https' or not host.hostname or host.username or host.password or host.path not in ('', '/') or host.query or host.fragment:
         raise worker.Rejected('invalid_host_origin')
-    for labels in [runtime['apiPodLabels']] + ([runtime['ingressPodLabels']] if runtime.get('uiBaseDomain') else []):
+    for labels in [runtime['apiPodLabels']] + ([runtime['ingressPodLabels']] if runtime.get('ingressNamespace') else []):
         if not isinstance(labels, dict) or not labels or any(not isinstance(value, str) or not value for value in labels.values()):
             raise worker.Rejected('invalid_pod_selector')
     if runtime.get('uiBaseDomain') and (not re.fullmatch(r'[a-z0-9.-]+', runtime['uiBaseDomain']) or runtime['uiBaseDomain'] == host.hostname):

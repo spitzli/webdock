@@ -191,12 +191,12 @@ export function configureGitHub(options: Options) {
             key !== "metadata" &&
             value !== "none" &&
             !(key === "contents" && value === "read") &&
-            !(key === "actions" && value === "read") &&
+            !(key === "actions" && (value === "read" || value === "write")) &&
             !(key === "checks" && value === "write"),
         )
       )
         throw Error(
-          "Configure the GitHub App with Metadata: read-only and optionally Contents: read-only. Existing Hosting Actions: read-only and Checks: write permissions may remain; unrelated permissions are not supported.",
+          "Configure the GitHub App with Metadata: read-only and optionally Contents: read-only. Existing Hosting or build Actions: read/write and Checks: write permissions may remain; unrelated permissions are not supported.",
         );
       if (
         installation.id === contentsFor &&
