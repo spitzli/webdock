@@ -98,7 +98,8 @@ def runtime_resources(config, job, token, public_key, certificate, key):
     def resource(kind, body, api='v1', suffix=''):
         return {'apiVersion': api, 'kind': kind, 'metadata': {'name': name + suffix, 'namespace': runtime['namespace'], 'labels': labels}, **body}
     navigation = bool(manifest.get('navigation'))
-    if navigation and not all(runtime.get(field) for field in ('uiBaseDomain', 'uiTLSSecret', 'ingressClass', 'ingressNamespace', 'ingressPodLabels')):
+    if navigation and (not all(runtime.get(field) for field in ('uiBaseDomain', 'ingressClass', 'ingressNamespace', 'ingressPodLabels'))
+                       or bool(runtime.get('uiTLSSecret')) == bool(runtime.get('uiCertResolver'))):
         raise worker.Rejected('plugin_ui_setup_required')
     identity = {'WEBDOCK_PLUGIN_ID': manifest['name'], 'WEBDOCK_PLUGIN_VERSION': manifest['version'],
                 'WEBDOCK_PLUGIN_GENERATION': '1', 'WEBDOCK_PLUGIN_HOST_URL': runtime['hostOrigin'],
@@ -138,8 +139,16 @@ def runtime_resources(config, job, token, public_key, certificate, key):
     if navigation:
         host = name + '.' + runtime['uiBaseDomain']
         ingress.append({'from': [{'namespaceSelector': {'matchLabels': {'kubernetes.io/metadata.name': runtime['ingressNamespace']}}, 'podSelector': {'matchLabels': runtime['ingressPodLabels']}}], 'ports': [{'protocol': 'TCP', 'port': 3444}]})
-        resources.append(resource('Ingress', {'spec': {'ingressClassName': runtime['ingressClass'], 'tls': [{'hosts': [host], 'secretName': runtime['uiTLSSecret']}],
-                                 'rules': [{'host': host, 'http': {'paths': [{'path': '/', 'pathType': 'Prefix', 'backend': {'service': {'name': name, 'port': {'number': 3444}}}}]}}]}}, 'networking.k8s.io/v1'))
+        tls = {'hosts': [host]}
+        if runtime.get('uiTLSSecret'):
+            tls['secretName'] = runtime['uiTLSSecret']
+        route = resource('Ingress', {'spec': {'ingressClassName': runtime['ingressClass'], 'tls': [tls],
+                         'rules': [{'host': host, 'http': {'paths': [{'path': '/', 'pathType': 'Prefix', 'backend': {'service': {'name': name, 'port': {'number': 3444}}}}]}}]}}, 'networking.k8s.io/v1')
+        if runtime.get('uiCertResolver'):
+            route['metadata']['annotations'] = {'traefik.ingress.kubernetes.io/router.entrypoints': 'websecure',
+                                               'traefik.ingress.kubernetes.io/router.tls': 'true',
+                                               'traefik.ingress.kubernetes.io/router.tls.certresolver': runtime['uiCertResolver']}
+        resources.append(route)
     # Establish isolation before the deployment is created.
     resources.insert(0, resource('NetworkPolicy', {'spec': {'podSelector': {'matchLabels': labels}, 'policyTypes': ['Ingress', 'Egress'], 'ingress': ingress, 'egress': egress}}, 'networking.k8s.io/v1'))
     return resources
@@ -264,8 +273,15 @@ def validate_config(config):
     for labels in [runtime['apiPodLabels']] + ([runtime['ingressPodLabels']] if runtime.get('ingressNamespace') else []):
         if not isinstance(labels, dict) or not labels or any(not isinstance(value, str) or not value for value in labels.values()):
             raise worker.Rejected('invalid_pod_selector')
+    if any(runtime.get(field) for field in ('uiBaseDomain', 'uiTLSSecret', 'uiCertResolver')):
+        if (not all(runtime.get(field) for field in ('uiBaseDomain', 'ingressClass', 'ingressNamespace', 'ingressPodLabels'))
+                or bool(runtime.get('uiTLSSecret')) == bool(runtime.get('uiCertResolver'))):
+            raise worker.Rejected('plugin_ui_setup_required')
     if runtime.get('uiBaseDomain') and (not re.fullmatch(r'[a-z0-9.-]+', runtime['uiBaseDomain']) or runtime['uiBaseDomain'] == host.hostname):
         raise worker.Rejected('invalid_ui_domain')
+    if runtime.get('uiCertResolver') and (not isinstance(runtime['uiCertResolver'], str)
+                                       or not re.fullmatch(r'[A-Za-z0-9_-]{1,63}', runtime['uiCertResolver'])):
+        raise worker.Rejected('invalid_ui_resolver')
     worker.private_file(runtime['kubeconfigFile'])
 
 

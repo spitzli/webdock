@@ -112,6 +112,52 @@ class InstallerTests(unittest.TestCase):
         with self.assertRaises(worker.Rejected):
             installer.runtime_resources(config, job, 'TOKEN', 'PUBLIC KEY', 'CERT', 'KEY')
 
+    def test_ui_can_use_existing_traefik_http01_resolver_without_wildcard_secret(self):
+        config = {'runtime': {'namespace': 'plugins', 'apiNamespace': 'platform', 'apiPodLabels': {'app': 'webdock-api'},
+                  'apiAddresses': ['203.0.113.10'], 'hostOrigin': 'https://api.example', 'clusterID': 'local',
+                  'ingressNamespace': 'kube-system', 'ingressPodLabels': {'app.kubernetes.io/name': 'traefik'},
+                  'uiBaseDomain': 'source.plugins.example', 'uiCertResolver': 'webdock', 'ingressClass': 'traefik'}}
+        job = {**JOB, 'manifestRaw': json.dumps({'name': 'example', 'version': '1.0.0', 'image': 'registry.example/p@sha256:' + 'a' * 64, 'navigation': [{'path': '/ui'}]})}
+        resources = installer.runtime_resources(config, job, 'TOKEN', 'PUBLIC KEY', 'CERT', 'KEY')
+        ingress = next(item for item in resources if item['kind'] == 'Ingress')
+        self.assertEqual(ingress['metadata']['annotations'], {'traefik.ingress.kubernetes.io/router.entrypoints': 'websecure',
+                         'traefik.ingress.kubernetes.io/router.tls': 'true', 'traefik.ingress.kubernetes.io/router.tls.certresolver': 'webdock'})
+        self.assertEqual(ingress['spec']['tls'], [{'hosts': ['pi-123.source.plugins.example']}])
+
+    def test_ui_certificate_modes_are_exclusive_and_preserve_secret_ingress(self):
+        config = json.loads(Path(__file__).with_name('plugin-installer.example.json').read_text())
+        runtime = config['runtime'];runtime['apiAddresses'] = ['203.0.113.10']
+        runtime.pop('uiTLSSecret', None);runtime.pop('uiCertResolver', None)
+        job = {**JOB, 'manifestRaw': json.dumps({'name':'example','version':'1.0.0','image':'registry.example/p@sha256:'+'a'*64,'navigation':[{'path':'/ui'}]})}
+        for selection in [{}, {'uiTLSSecret':'existing-ui-cert','uiCertResolver':'webdock'}]:
+            with self.subTest(selection=selection), self.assertRaisesRegex(worker.Rejected, 'plugin_ui_setup_required'):
+                installer.runtime_resources({'runtime':{**runtime, **selection}}, job, 'TOKEN', 'PUBLIC KEY', 'CERT', 'KEY')
+        resources = installer.runtime_resources({'runtime':{**runtime, 'uiTLSSecret':'existing-ui-cert'}}, job, 'TOKEN', 'PUBLIC KEY', 'CERT', 'KEY')
+        ingress = next(item for item in resources if item['kind'] == 'Ingress')
+        self.assertEqual(ingress['spec']['tls'], [{'hosts':['pi-123.plugins.example.net'],'secretName':'existing-ui-cert'}])
+        self.assertNotIn('traefik.ingress.kubernetes.io/router.tls.certresolver', ingress['metadata'].get('annotations', {}))
+        self.assertEqual(ingress['spec']['rules'][0]['http']['paths'][0]['backend']['service'], {'name':'pi-123','port':{'number':3444}})
+
+    def test_ui_startup_configuration_rejects_missing_ambiguous_and_malformed_tls(self):
+        original = json.loads(Path(__file__).with_name('plugin-installer.example.json').read_text())
+        with tempfile.TemporaryDirectory() as directory, patch.object(worker, 'private_file', side_effect=Path):
+            original['artifactRoot'] = directory
+            original['github'].update(appID='1', installationID='2', repositoryID='42')
+            original['runtime']['apiAddresses'] = ['203.0.113.10']
+            original['runtime'].pop('uiTLSSecret', None);original['runtime'].pop('uiCertResolver', None)
+            for selection in [{}, {'uiTLSSecret':'existing-ui-cert','uiCertResolver':'webdock'}]:
+                with self.subTest(selection=selection), self.assertRaises(worker.Rejected):
+                    installer.validate_config({**original, 'runtime':{**original['runtime'], **selection}})
+            for resolver in ['bad resolver', 'bad/resolver', 'bad\nresolver', 'x'*64, 123, {'name':'webdock'}]:
+                with self.subTest(resolver=resolver), self.assertRaises(worker.Rejected):
+                    installer.validate_config({**original, 'runtime':{**original['runtime'], 'uiCertResolver':resolver}})
+            for selection in [{'uiTLSSecret':'existing-ui-cert'}, {'uiCertResolver':'webdock'}]:
+                installer.validate_config({**original, 'runtime':{**original['runtime'], **selection}})
+            headless = {key:value for key,value in original['runtime'].items() if key not in ('uiBaseDomain','ingressClass')}
+            installer.validate_config({**original, 'runtime':headless})
+            with self.assertRaises(worker.Rejected):
+                installer.validate_config({**original, 'runtime':{**headless, 'uiCertResolver':'webdock'}})
+
     def test_api_hairpin_egress_uses_only_configured_ingress_pods(self):
         config = {'runtime': {'namespace': 'plugins', 'apiNamespace': 'platform', 'apiPodLabels': {'app': 'webdock-api'},
                   'apiAddresses': ['203.0.113.10'], 'hostOrigin': 'https://api.example', 'clusterID': 'local',

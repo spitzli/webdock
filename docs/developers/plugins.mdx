@@ -100,7 +100,16 @@ The API requires `WEBDOCK_PLUGIN_INSTALLER_TOKEN` (at least 32 characters) and `
 - `github.appID`, `installationID`, `privateKeyFile`, `repository`, `repositoryID`, `workflow` and `ref`, restricted to an operator-owned private build repository. The App needs Actions write and Contents read on that repository.
 - `registry.repository` and a private `registry.authFile` for publishing built OCI images.
 - `runtime.namespace`, `runtime.kubeconfigFile`, `runtime.clusterID`, `runtime.hostOrigin`, `runtime.apiNamespace`, `runtime.apiPodLabels` and `runtime.apiAddresses` for workload isolation and host access.
-- `runtime.configSecret` with `name`, `namespace` and `key` identifying the runtime configuration secret mounted by the API. Optional `imagePullSecret` supports private image pulls. Set `ingressNamespace` and `ingressPodLabels` when API traffic is routed back through cluster ingress; this permits only those pods on TCP 443/8443 after address translation. Browser UI installations additionally need `uiBaseDomain`, `uiTLSSecret` and `ingressClass`.
+- `runtime.configSecret` with `name`, `namespace` and `key` identifying the runtime configuration secret mounted by the API. Optional `imagePullSecret` supports private image pulls. Set `ingressNamespace` and `ingressPodLabels` when API traffic is routed back through cluster ingress; this permits only those pods on TCP 443/8443 after address translation.
+
+Browser UI installations also require `uiBaseDomain`, `ingressClass`, `ingressNamespace`, `ingressPodLabels`, and **exactly one** TLS option:
+
+- `uiCertResolver`: the name of an existing Traefik certificate resolver, such as `webdock` in the example configuration. The installer selects that resolver on the `websecure` entrypoint. It does not create or configure the resolver.
+- `uiTLSSecret`: an existing TLS Secret in `runtime.namespace`, whose certificate covers the generated UI hostname. Omit `uiCertResolver` when using this option.
+
+An existing Traefik HTTP-01 resolver can issue an individual certificate for each `pi-<importID>.<uiBaseDomain>` host; no wildcard certificate is required. Point those hostnames to the ingress endpoint (wildcard DNS is suitable) and keep port 80 reachable for the resolver's HTTP-01 challenge. HTTPS UI traffic uses `websecure`; the plugin's internal UI service remains on port 3444. See [Traefik's ingress TLS configuration](https://doc.traefik.io/traefik/reference/routing-configuration/kubernetes/ingress/) and [ACME HTTP-01 requirements](https://doc.traefik.io/traefik/reference/install-configuration/tls/certificate-resolvers/acme/).
+
+If no browser UI is needed, omit `uiBaseDomain` and both TLS options. Supplying both TLS options, or a UI domain without either option, fails configuration validation before any workload is created.
 
 The worker creates a non-root workload with a read-only root filesystem, restricted network policy, private TLS credentials and image digest verification. It updates the runtime binding before API health verification and activation. Provision and test the worker, registry, secret mounting and network permissions for your installation; the Console setup indicator alone does not prove that infrastructure is ready.
 

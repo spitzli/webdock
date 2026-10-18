@@ -30,7 +30,7 @@
       "key": "runtime.json"
     },
     "uiBaseDomain": "plugins.example.net",
-    "uiTLSSecret": "plugin-ui-wildcard",
+    "uiCertResolver": "webdock",
     "ingressClass": "traefik",
     "ingressNamespace": "kube-system",
     "ingressPodLabels": {
