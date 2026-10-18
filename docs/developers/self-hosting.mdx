@@ -21,7 +21,7 @@ The release contains nine image archives: `api-core`, `console-core`, `auth`, `m
 
 ### Verify a downloaded release
 
-Download `SHA256SUMS`, `SHA256SUMS.sigstore.json`, `manifest.json`, `architecture-evidence.json` and the four Core installation archives from the release. Keep the files in one directory. Verify before importing:
+Download `SHA256SUMS`, `SHA256SUMS.sigstore.json`, `manifest.json` and `architecture-evidence.json` from [v0.1.0-alpha.1](https://github.com/spitzli/webdock/releases/tag/v0.1.0-alpha.1). Keep all four files in one directory. Verify the signature and the downloaded metadata before selecting registry images:
 
 ```sh
 cosign verify-blob --bundle SHA256SUMS.sigstore.json \
@@ -31,7 +31,18 @@ sha256sum --check --ignore-missing SHA256SUMS
 jq -e '.supportedArchitectures == ["linux/amd64"]' manifest.json
 ```
 
-The checksum command checks only downloaded files; ensure all four required archives are present (`api-core.oci.tar`, `console-core.oci.tar`, `auth.oci.tar`, `migrate.oci.tar`). To validate the complete release with `node tools/release/manifest.mjs verify`, download all nine archives and both charts too.
+The checksum command checks only downloaded files. For direct registry pulls, the verified manifest supplies the executable image digests:
+
+```sh
+export WEBDOCK_API_CORE_IMAGE="ghcr.io/spitzli/webdock/api-core@$(jq -r '.artifacts[] | select(.file == "api-core.oci.tar") | .oci.manifests[] | select(.platform == "linux/amd64") | .digest' manifest.json)"
+export WEBDOCK_CONSOLE_CORE_IMAGE="ghcr.io/spitzli/webdock/console-core@$(jq -r '.artifacts[] | select(.file == "console-core.oci.tar") | .oci.manifests[] | select(.platform == "linux/amd64") | .digest' manifest.json)"
+export WEBDOCK_AUTH_IMAGE="ghcr.io/spitzli/webdock/auth@$(jq -r '.artifacts[] | select(.file == "auth.oci.tar") | .oci.manifests[] | select(.platform == "linux/amd64") | .digest' manifest.json)"
+export WEBDOCK_MIGRATE_IMAGE="ghcr.io/spitzli/webdock/migrate@$(jq -r '.artifacts[] | select(.file == "migrate.oci.tar") | .oci.manifests[] | select(.platform == "linux/amd64") | .digest' manifest.json)"
+```
+
+These public packages require no registry login. The migrator is used only during offline administration, not as a running Core service.
+
+For archive import instead, additionally download `api-core.oci.tar`, `console-core.oci.tar`, `auth.oci.tar` and `migrate.oci.tar`, and run the checksum command again before importing. To validate the complete release with `node tools/release/manifest.mjs verify`, download all nine archives and both charts too.
 
 For local Docker import, repeat for each selected image:
 
@@ -100,13 +111,9 @@ Now complete [initial operator setup](/developers/initial-setup) using that offl
 
 ## Configure the core services
 
-Use `deploy/compose/compose.core.yaml`. Place private `api.env`, `console.env`, `auth.env` and `migrator.env` files beside it. Set these deployment selectors to the verified image references and exact migration target:
+Use `deploy/compose/compose.core.yaml` from the matching source tag. Place private `api.env`, `console.env`, `auth.env` and `migrator.env` files beside it. Retain the four verified image selectors from the preceding step (or the immutable local IDs after archive import), and set the exact migration target:
 
 ```sh
-export WEBDOCK_API_CORE_IMAGE='registry.example.com/webdock-api-core@sha256:REPLACE_WITH_VERIFIED_DIGEST'
-export WEBDOCK_CONSOLE_CORE_IMAGE='registry.example.com/webdock-console-core@sha256:REPLACE_WITH_VERIFIED_DIGEST'
-export WEBDOCK_AUTH_IMAGE='registry.example.com/webdock-auth@sha256:REPLACE_WITH_VERIFIED_DIGEST'
-export WEBDOCK_MIGRATE_IMAGE='registry.example.com/webdock-migrate@sha256:REPLACE_WITH_VERIFIED_DIGEST'
 export WEBDOCK_MIGRATION_TARGET='db.example.com:5432/webdock'
 ```
 

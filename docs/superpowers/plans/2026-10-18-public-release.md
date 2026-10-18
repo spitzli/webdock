@@ -11,11 +11,11 @@
 **Global constraints:** No secrets in artifacts or logs; clean committed build source; native AMD64 checks; signed checksums and pinned image identities; no unsupported ARM64 claim; no weakening TLS, MFA, tenant authorization or signature verification. Billing/CMS remain disabled in production. No destructive registry lifecycle smoke test.
 
 - [x] Read live auth/module/plugin state: Better Auth globally/OAuth, native Clerk Console; four products plus two ready external plugins; Billing/CMS disabled with retained metadata.
-- [ ] Extend required image inventory and native checks for Core artifacts. Reject missing/tampered artifacts in manifest tests.
-- [ ] Repair Compose verification and add minimal Core Compose; rehearse a fresh installation with generated fixture credentials.
-- [ ] Build from a clean revision on an ephemeral EU runner, sign with GitHub OIDC/Sigstore, verify signatures and checksums locally.
-- [ ] Publish developer alpha `0.1.0-alpha.1`; verify anonymous download of exact release artifacts and any published registry references.
-- [ ] Publish selfhosting prerequisites, initialization/configuration/upgrade steps, limitations and measured runtime/image sizes.
+- [x] Extend required image inventory and native checks for Core artifacts. Reject missing/tampered artifacts in manifest tests.
+- [x] Repair Compose verification and add minimal Core Compose; rehearse a fresh installation with generated fixture credentials.
+- [x] Build from a clean revision on an ephemeral EU runner, sign with GitHub OIDC/Sigstore, verify signatures and checksums locally.
+- [x] Publish developer alpha `0.1.0-alpha.1`; verify anonymous download of exact release artifacts and any published registry references.
+- [x] Publish selfhosting prerequisites, initialization/configuration/upgrade steps, limitations and measured runtime/image sizes.
 
 **Review focus:** Empty-database initialization; private owner/runtime credential separation; reverse-proxy origin/CSRF behavior; wrong architecture or unsigned artifacts; product-free runtime versus retained database schema and optional full products.
 

@@ -1,0 +1,187 @@
+{
+  "version": "0.1.0-alpha.1",
+  "source": "a4d99e47466273b1999b2f29246f0d328e3ee3f4",
+  "platforms": [
+    "linux/amd64"
+  ],
+  "nativeChecks": [
+    {
+      "name": "webdock-license-notices",
+      "passed": true
+    },
+    {
+      "name": "core-product-boundary",
+      "passed": true
+    },
+    {
+      "name": "core-images-fresh-installation",
+      "passed": true
+    },
+    {
+      "name": "api-module-tests",
+      "passed": true
+    },
+    {
+      "name": "api-runtime-configurations",
+      "passed": true
+    },
+    {
+      "name": "worker-pool-tests",
+      "passed": true
+    },
+    {
+      "name": "migration-config-tests",
+      "passed": true
+    },
+    {
+      "name": "console-http-assets",
+      "passed": true
+    },
+    {
+      "name": "auth-http-assets",
+      "passed": true
+    },
+    {
+      "name": "agent-entrypoint",
+      "passed": true
+    },
+    {
+      "name": "mail-runtime-version",
+      "passed": true
+    }
+  ],
+  "downloadMiB": {
+    "agent.oci.tar": 62.4,
+    "api-core.oci.tar": 74.03,
+    "api.oci.tar": 508.4,
+    "auth.oci.tar": 104.65,
+    "console-core.oci.tar": 104.44,
+    "console.oci.tar": 112.45,
+    "mail-runtime.oci.tar": 124.74,
+    "migrate.oci.tar": 508.4,
+    "webdock-0.1.0-alpha.1.tgz": 0.0,
+    "webdock-agent-0.1.0-alpha.1.tgz": 0.0,
+    "worker.oci.tar": 508.4
+  },
+  "license": "AGPL-3.0-only",
+  "commercialLicenseOption": "separate written agreement; owned/authorized rights only",
+  "signatureVerified": true,
+  "publicDownloadsVerified": true,
+  "sourceTagMatches": true,
+  "coreBundleBytes": 8179869,
+  "anonymousCorePull": {
+    "anonymous": true,
+    "digest": "sha256:b894d1c64501709fc4ba1f3b167897c7aab2f0a78ef932a0e6a67447c33b879c",
+    "matchesSignedManifest": true
+  },
+  "publicDownloadProof": {
+    "releaseURL": "https://github.com/spitzli/webdock/releases/tag/v0.1.0-alpha.1",
+    "anonymous": true,
+    "draft": false,
+    "prerelease": true,
+    "assets": 15,
+    "downloadedAndHashed": [
+      "manifest.json",
+      "architecture-evidence.json",
+      "SHA256SUMS",
+      "SHA256SUMS.sigstore.json",
+      "api-core.oci.tar"
+    ]
+  },
+  "anonymousImageManifests": [
+    {
+      "image": "agent",
+      "anonymous": true,
+      "digest": "sha256:f6bb87851cee30c9fddb480f76cfc0d22d6da414356e3767f31e34606598ea90",
+      "matchesSignedManifest": true
+    },
+    {
+      "image": "api-core",
+      "anonymous": true,
+      "digest": "sha256:b894d1c64501709fc4ba1f3b167897c7aab2f0a78ef932a0e6a67447c33b879c",
+      "matchesSignedManifest": true
+    },
+    {
+      "image": "api",
+      "anonymous": true,
+      "digest": "sha256:da4d7c1b4bc49f48d274606001958a3fab0590d2a42fee20425e9a5f6612d179",
+      "matchesSignedManifest": true
+    },
+    {
+      "image": "auth",
+      "anonymous": true,
+      "digest": "sha256:d2c1408e514be40080ed3e5d0c6592178a673329433967c422351431db984b34",
+      "matchesSignedManifest": true
+    },
+    {
+      "image": "console-core",
+      "anonymous": true,
+      "digest": "sha256:7510a896983b63d5f3f360b1fe1fb3d1aafba2b1f5fac3a63d626c0798073d4f",
+      "matchesSignedManifest": true
+    },
+    {
+      "image": "console",
+      "anonymous": true,
+      "digest": "sha256:98a77d7935157190ff9b2e6bf09f481aea96d853d5e36fa89c157d5a5f491b69",
+      "matchesSignedManifest": true
+    },
+    {
+      "image": "mail-runtime",
+      "anonymous": true,
+      "digest": "sha256:795ab6b4fc5090eba945741150b908e7ccbe49263664620033ff35beb2697305",
+      "matchesSignedManifest": true
+    },
+    {
+      "image": "migrate",
+      "anonymous": true,
+      "digest": "sha256:9fec350b289e7d9dcdb7d9c8ba88f6157cf4a7f4dfacc0453b2ef2f764aa3e89",
+      "matchesSignedManifest": true
+    },
+    {
+      "image": "worker",
+      "anonymous": true,
+      "digest": "sha256:b781267f38351d98ab7f00ef42d79d647a7dcbe3f956184225f5fdc1a7eecfeb",
+      "matchesSignedManifest": true
+    }
+  ],
+  "anonymousChartsMatchSignedChecksums": true,
+  "publicSignatureVerified": true,
+  "workflow": "https://github.com/spitzli/webdock/actions/runs/39134544577",
+  "release": "https://github.com/spitzli/webdock/releases/tag/v0.1.0-alpha.1",
+  "licensingNotice": "https://github.com/spitzli/webdock/blob/v0.1.0-alpha.1/COMMERCIAL-LICENSING.md",
+  "productionChangedByPublication": false,
+  "productionAudit": {
+    "distribution": "full",
+    "globalAuth": "better-auth",
+    "consoleAuth": "clerk",
+    "oauth": "better-auth",
+    "enabledModules": [
+      "mail",
+      "hosting",
+      "databases",
+      "storage"
+    ],
+    "readyExternalPlugins": [
+      "managed-apps",
+      "managed-analytics"
+    ],
+    "disabledModules": [
+      "billing",
+      "cms"
+    ],
+    "retainedHistoricalData": true
+  },
+  "additionalVerification": {
+    "offlineSetupUnitTests": 20,
+    "manifestAndCoreBoundaryTests": 7,
+    "freshOperatorPasswordMfaPkce": "passed in disposable PostgreSQL fixture",
+    "completeNativeChecks": 11
+  },
+  "limits": [
+    "Developer alpha, Linux AMD64 only",
+    "Exact-image smoke covers database TLS, installation, operator state, readiness and frontend assets; public HTTPS browser ingress and SMTP remain installation-specific acceptance work",
+    "Core runtime is product-free; the historical database baseline is retained",
+    "Mail, Hosting, Databases and Storage are modules in the full distribution; external plugin lifecycle remains operator-managed",
+    "Third-party licenses remain applicable; commercial sublicensing requires sufficient rights"
+  ]
+}
