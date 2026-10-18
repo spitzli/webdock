@@ -161,6 +161,9 @@ export function createHostingDatabaseOrders(dependencies: Dependencies) {
             databaseID,
             action,
             revision,
+            ...(actor.consoleIdentity
+              ? { consoleIdentity: actor.consoleIdentity }
+              : {}),
           }),
           revision,
           actor.sessionID,

@@ -6,7 +6,11 @@ import {
   X509Certificate,
 } from "node:crypto";
 import { z } from "zod";
-import { HostingError, resourceID } from "@webdock/hosting-contracts";
+import {
+  HostingError,
+  resourceID,
+  type HostingActor,
+} from "@webdock/hosting-contracts";
 import type { Agent } from "@webdock/hosting-contracts/runtime-ports";
 import type { Connection } from "@webdock/hosting-contracts/runtime-ports";
 export type Dependencies = {
@@ -18,6 +22,10 @@ export type Dependencies = {
   transaction: DatabaseRuntimePorts["transaction"];
   clusterLock: DatabaseRuntimePorts["clusterLock"];
   authorizeHosting: DatabaseRuntimePorts["authorizeHosting"];
+  withStoredIdentity?<T>(
+    reference: NonNullable<HostingActor["consoleIdentity"]>,
+    run: (principal: { userID: string; sessionID: string }) => Promise<T>,
+  ): Promise<T>;
   decryptSecret: DatabaseRuntimePorts["decryptSecret"];
   env: DatabaseRuntimePorts["env"];
 };
@@ -177,23 +185,45 @@ export function createHostingDatabaseAgent(dependencies: Dependencies) {
       const first = row.status === "queued";
       if (first && !row.checkpoint) {
         try {
-          await dependencies.authorizeHosting(
-            {
-              subject: row.subject,
-              sessionID: row.actor_session,
-              source: "studio",
-              scopes: ["hosting:read", "hosting:write"],
-            },
-            row.project_id
-              ? {
-                  permission: "org:databases:manage",
-                  projectID: row.project_id,
-                  write: true,
-                  tenantAdmin: true,
-                }
-              : { operator: true, write: true },
-            db,
-          );
+          const actor: HostingActor = {
+            subject: row.subject,
+            sessionID: row.actor_session,
+            source: "studio",
+            scopes: ["hosting:read", "hosting:write"],
+            ...(row.desired?.consoleIdentity
+              ? { consoleIdentity: row.desired.consoleIdentity }
+              : {}),
+          };
+          const authorize = () =>
+            dependencies.authorizeHosting(
+              actor,
+              row.project_id
+                ? {
+                    permission: "org:databases:manage",
+                    projectID: row.project_id,
+                    write: true,
+                    tenantAdmin: true,
+                  }
+                : { operator: true, write: true },
+              db,
+            );
+          if (actor.consoleIdentity) {
+            if (!dependencies.withStoredIdentity) conflict();
+            await dependencies.withStoredIdentity(
+              actor.consoleIdentity,
+              (principal) => {
+                if (
+                  principal.userID !== actor.subject ||
+                  principal.sessionID !== actor.sessionID
+                )
+                  throw new HostingError(
+                    403,
+                    "Database operation identity changed.",
+                  );
+                return authorize();
+              },
+            );
+          } else await authorize();
         } catch {
           await db.query(
             "UPDATE webdock_auth.hosting_operation SET status='needs-reconciliation' WHERE id=$1",
