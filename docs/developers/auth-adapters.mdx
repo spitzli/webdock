@@ -3,7 +3,7 @@ title: Authentication adapters
 description: Select a browser provider while preserving local Webdock identity and authorization.
 ---
 
-<Note>Implementation preview: these instructions describe locally verified development work that is not yet included in a published Webdock core release. Use them only with the matching implementation; the currently published main branch does not include all commands and paths below.</Note>
+<Note>The matching implementation is available on the main branch. Webdock production uses the verified mixed mode: global Better Auth, native Clerk Console and Better Auth OAuth. A full global Clerk cutover remains separate, and no new signed public Core distribution bundle has been published for this rollout.</Note>
 
 Webdock keeps stable local user IDs and workspace/project mappings when changing authentication. The selected provider owns roles and memberships: Better Auth uses local records; Clerk uses live Clerk authority. An installation without `WEBDOCK_AUTH_PROVIDER` continues using Better Auth. A configured object with issuer, authorized parties and audience defaults to Clerk when `provider` is omitted; an entirely absent environment variable retains legacy compatibility. New configured installations can select Clerk explicitly:
 
