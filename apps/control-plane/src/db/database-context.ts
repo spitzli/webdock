@@ -33,7 +33,7 @@ export async function withAuthenticatedDatabase<T>(
     )
       ? await (
           await import("../modules/auth/clerk-provider")
-        ).legacyClerkMemberships(session.user.id)
+        ).legacyClerkMemberships(session.user.id, session.sessionID)
       : undefined;
   return withDatabaseScope(
     {
@@ -63,11 +63,12 @@ export async function withHostingDatabase<T>(
     ? undefined
     : scope?.kind === "session" &&
         scope.subject === actor.subject &&
+        scope.sessionID === actor.sessionID &&
         scope.memberships
       ? scope.memberships
       : await (
           await import("../modules/auth/clerk-provider")
-        ).legacyClerkMemberships(actor.subject);
+        ).legacyClerkMemberships(actor.subject, actor.sessionID);
   return withDatabaseScope(
     {
       kind: "session",
@@ -100,11 +101,12 @@ export async function withMailDatabase<T>(
       ? undefined
       : scope?.kind === "session" &&
           scope.subject === principal.userID &&
+          scope.sessionID === principal.sessionID &&
           scope.memberships
         ? scope.memberships
         : await (
             await import("../modules/auth/clerk-provider")
-          ).legacyClerkMemberships(principal.userID);
+          ).legacyClerkMemberships(principal.userID, principal.sessionID);
     return withDatabaseScope(
       {
         kind: "session",

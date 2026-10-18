@@ -329,6 +329,21 @@ const fixtureFile = process.env.WEBDOCK_RLS_FIXTURE_FILE;
       const previousProvider = process.env.WEBDOCK_AUTH_PROVIDER;
       try {
         process.env.WEBDOCK_AUTH_PROVIDER = JSON.stringify({provider:"clerk",issuer,authorizedParties:["https://console.example.invalid"],tokenMode:"session"});
+        const previousOAuth = process.env.WEBDOCK_OAUTH_PROVIDER;
+        process.env.WEBDOCK_OAUTH_PROVIDER = "better-auth";
+        try {
+          const { selectedIdentityDirectory } = await import("../src/modules/auth/principal");
+          const read = () => selectedIdentityDirectory.session(signedPools.business, {subject: user, sessionID: legacyID});
+          expect((await withDatabaseScope({...legacy, memberships}, read))?.role).toBe("user");
+          expect((await withDatabaseScope(legacyOperator, read))?.role).toBe("operator");
+          expect(await withDatabaseScope({...legacy, memberships:{...memberships,sessionID:"wrong"}},read)).toBeNull();
+          await owner.query('UPDATE webdock_auth.clerk_identity SET enabled=false WHERE user_id=$1',[user]);
+          expect(await withDatabaseScope({...legacy,memberships},read)).toBeNull();
+          await owner.query('UPDATE webdock_auth.clerk_identity SET enabled=true WHERE user_id=$1',[user]);
+        } finally {
+          if (previousOAuth === undefined) delete process.env.WEBDOCK_OAUTH_PROVIDER;
+          else process.env.WEBDOCK_OAUTH_PROVIDER = previousOAuth;
+        }
         const direct = {kind:"session" as const,subject:user,sessionID:legacyID,authProvider:"better-auth" as const};
         expect((await withDatabaseScope(direct,()=>signedPools.business.query("SELECT webdock_rls.operator() AS operator"))).rows[0].operator).toBe(false);
         expect((await withDatabaseScope({...direct,memberships:{...memberships,operator:true,twoFactorEnabled:true}},()=>signedPools.business.query("SELECT webdock_rls.operator() AS operator"))).rows[0].operator).toBe(true);

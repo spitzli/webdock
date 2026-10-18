@@ -198,7 +198,7 @@ export async function requireConsoleBrowserPrincipal(request: Request) {
 }
 
 /** Live membership authority for linked legacy clients; their own session/MFA checks still run. */
-export async function legacyClerkMemberships(subject: string) {
+export async function legacyClerkMemberships(subject: string, sessionID?: string) {
   const scope = currentDatabaseScope();
   if (scope?.kind === "system" && scope.purpose === "hosting-setup") {
     // The claimed-job verifier supplies this proof; SQL independently rejects linked jobs without it.
@@ -222,10 +222,19 @@ export async function legacyClerkMemberships(subject: string) {
   if (
     scope?.kind === "session" &&
     scope.subject === subject &&
-    scope.memberships &&
-    scope.memberships.expiresAt > Date.now()
-  )
+    (sessionID === undefined || scope.sessionID === sessionID) &&
+    scope.memberships
+  ) {
+    const proof = scope.memberships, now = Date.now();
+    if (scope.authProvider !== "clerk" || proof.subject !== subject ||
+        proof.sessionID !== scope.sessionID || !scope.sessionID ||
+        proof.issuer !== consoleAuthConfiguration().issuer ||
+        !Number.isFinite(proof.verifiedAt) || !Number.isFinite(proof.expiresAt) ||
+        proof.verifiedAt > now || proof.verifiedAt < now - 60000 ||
+        proof.expiresAt <= now || proof.expiresAt > proof.verifiedAt + 60000)
+      throw new ConsoleAuthError(403, "Session membership proof is unavailable.");
     return scope.memberships;
+  }
   const issuer = consoleAuthConfiguration().issuer;
   if (!issuer) {
     if (

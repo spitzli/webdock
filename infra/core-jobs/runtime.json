@@ -1,0 +1,220 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "jobs-redis",
+        "namespace": "webdock-platform",
+        "labels": {
+          "app": "webdock-jobs-redis",
+          "app.kubernetes.io/managed-by": "webdock-operator"
+        }
+      },
+      "spec": {
+        "selector": {
+          "app": "webdock-jobs-redis"
+        },
+        "ports": [
+          {
+            "name": "redis",
+            "port": 6379,
+            "targetPort": 6379
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "StatefulSet",
+      "metadata": {
+        "name": "jobs-redis",
+        "namespace": "webdock-platform",
+        "labels": {
+          "app": "webdock-jobs-redis",
+          "app.kubernetes.io/managed-by": "webdock-operator"
+        }
+      },
+      "spec": {
+        "serviceName": "jobs-redis",
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "webdock-jobs-redis"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "webdock-jobs-redis",
+              "app.kubernetes.io/managed-by": "webdock-operator"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "securityContext": {
+              "runAsNonRoot": true,
+              "runAsUser": 999,
+              "runAsGroup": 999,
+              "fsGroup": 999,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "containers": [
+              {
+                "name": "redis",
+                "image": "docker.io/library/redis@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499",
+                "workingDir": "/data",
+                "command": [
+                  "sh",
+                  "-c",
+                  "exec redis-server --appendonly yes --appendfsync everysec --maxmemory 256mb --maxmemory-policy noeviction --requirepass \"$REDIS_PASSWORD\""
+                ],
+                "env": [
+                  {
+                    "name": "REDIS_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "jobs-redis",
+                        "key": "password"
+                      }
+                    }
+                  },
+                  {
+                    "name": "REDISCLI_AUTH",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "jobs-redis",
+                        "key": "password"
+                      }
+                    }
+                  }
+                ],
+                "ports": [
+                  {
+                    "name": "redis",
+                    "containerPort": 6379
+                  }
+                ],
+                "resources": {
+                  "requests": {
+                    "cpu": "50m",
+                    "memory": "128Mi",
+                    "ephemeral-storage": "16Mi"
+                  },
+                  "limits": {
+                    "cpu": "500m",
+                    "memory": "384Mi",
+                    "ephemeral-storage": "64Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "data",
+                    "mountPath": "/data"
+                  }
+                ],
+                "readinessProbe": {
+                  "exec": {
+                    "command": [
+                      "redis-cli",
+                      "ping"
+                    ]
+                  },
+                  "initialDelaySeconds": 3,
+                  "periodSeconds": 5
+                },
+                "livenessProbe": {
+                  "exec": {
+                    "command": [
+                      "redis-cli",
+                      "ping"
+                    ]
+                  },
+                  "initialDelaySeconds": 15,
+                  "periodSeconds": 15
+                }
+              }
+            ]
+          }
+        },
+        "volumeClaimTemplates": [
+          {
+            "metadata": {
+              "name": "data"
+            },
+            "spec": {
+              "accessModes": [
+                "ReadWriteOnce"
+              ],
+              "storageClassName": "local-path",
+              "resources": {
+                "requests": {
+                  "storage": "1Gi"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "jobs-redis",
+        "namespace": "webdock-platform"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "webdock-jobs-redis"
+          }
+        },
+        "policyTypes": [
+          "Ingress",
+          "Egress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchExpressions": [
+                    {
+                      "key": "app",
+                      "operator": "In",
+                      "values": [
+                        "webdock-api",
+                        "webdock-worker"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 6379
+              }
+            ]
+          }
+        ],
+        "egress": []
+      }
+    }
+  ]
+}

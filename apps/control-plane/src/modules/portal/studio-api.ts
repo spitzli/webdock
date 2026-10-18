@@ -283,8 +283,18 @@ async function delegatedSession(
     native.user.id !== token.sub
   )
     unauthorized();
+  const memberships = browserAuthProvider === "clerk"
+    ? await legacyClerkMemberships(token.sub) : undefined;
+  if (browserAuthProvider === "clerk" && !memberships) unauthorized();
+  const reference = { subject: token.sub, sessionID: token.sid };
   const identity = browserAuthProvider === "clerk"
-    ? await selectedIdentityDirectory.session(authDatabase, { subject: token.sub, sessionID: token.sid })
+    ? await withDatabaseScope(
+        {
+          kind: "session", authProvider: "clerk", subject: token.sub, sessionID: token.sid,
+          ...(memberships ? { memberships: { ...memberships, subject: token.sub, sessionID: token.sid } } : {}),
+        },
+        () => selectedIdentityDirectory.session(authDatabase, reference),
+      )
     : undefined;
   if (browserAuthProvider === "clerk" && (!identity || identity.subject !== token.sub || identity.sessionID !== token.sid)) unauthorized();
   const user = { ...native.user, ...identity };
@@ -522,9 +532,10 @@ async function handleRequest(
         withDatabaseScope(
           {
             kind: "session",
+            authProvider: browserAuthProvider,
             subject: actor.userID,
             sessionID: actor.sessionID,
-            ...(memberships ? { memberships } : {}),
+            ...(memberships ? { memberships: { ...memberships, subject: actor.userID, sessionID: actor.sessionID } } : {}),
           },
           async () => {
             // The context comes from the authenticated central session, never a caller hint.

@@ -17,7 +17,7 @@ for (const selected of ["clerk", "better-auth"]) {
       const principal = await import("./apps/control-plane/src/modules/auth/principal");
       mock.module("./apps/control-plane/src/modules/auth/principal", () => ({ ...principal, trustedLocalSessionKind: () => "clerk", selectedIdentityDirectory: { session: async (_db, reference) => { assert.deepEqual(reference, { subject: "123", sessionID: "session" }); return mapped ? effective : null; } } }));
       const provider = await import("./apps/control-plane/src/modules/auth/clerk-provider");
-      mock.module("./apps/control-plane/src/modules/auth/clerk-provider", () => ({ ...provider, legacyClerkMemberships: async () => undefined }));
+      mock.module("./apps/control-plane/src/modules/auth/clerk-provider", () => ({ ...provider, legacyClerkMemberships: async () => ({ subject: "123", issuer: "https://identity.example", userID: "user_one", operator: effective.role === "operator", twoFactorEnabled: true, verifiedAt: Date.now(), expiresAt: Date.now()+60000, roles: [] }) }));
       mock.module("./apps/control-plane/src/modules/auth/introspection", () => ({ introspectToken: async () => Response.json({ active: true, client_id: "studio", sub: "123", sid: "session", exp: Date.now()/1000+60 }) }));
       const db = await import("./apps/control-plane/src/db/runtime");
       db.authDatabase.query = async sql => ({ rows: sql.includes("SELECT token") ? [{ token: "local-private" }] : [], rowCount: 0 });

@@ -5,6 +5,7 @@ import { createPlugin as createBetterAuthPlugin } from "@webdock/auth-better-aut
 import { readAuthProviderConfiguration } from "@webdock/auth-configuration";
 const browserAuthProvider = readAuthProviderConfiguration(process.env.WEBDOCK_AUTH_PROVIDER).provider;
 import { createBrowserPrincipal } from "./browser-principal";
+import { oauthCompatibilityIdentity } from "./oauth-compatibility";
 const local = createBetterAuthPlugin(async (headers) => {
   const { auth } = await import("./auth");
   return auth.api.getSession({ headers });
@@ -138,6 +139,10 @@ export const selectedIdentityDirectory: import("@webdock/core/identity").Identit
         const proof = setupMemberships(subject);
         if (proof !== undefined)
           return proof ? setupIdentity(await betterAuthIdentity.subject(db, subject, options), proof) : null;
+        if (!currentTrustedBrowserReference()) {
+          const compatibility = await oauthCompatibilityIdentity(db, subject, undefined, options);
+          if (compatibility !== undefined) return compatibility?.identity ?? null;
+        }
         return browserIdentityDirectory.subject(db, subject, options);
       }
       if (principal.userID !== subject) return null;
@@ -163,6 +168,10 @@ export const selectedIdentityDirectory: import("@webdock/core/identity").Identit
         const proof = setupMemberships(reference.subject, reference.sessionID);
         if (proof !== undefined)
           return proof ? setupIdentity(await betterAuthIdentity.session(db, reference, options), proof) : null;
+        if (!currentTrustedBrowserReference()) {
+          const compatibility = await oauthCompatibilityIdentity(db, reference.subject, reference.sessionID, options);
+          if (compatibility !== undefined) return compatibility?.identity ?? null;
+        }
         return browserIdentityDirectory.session(db, reference, options);
       }
       if (
@@ -192,6 +201,13 @@ export const selectedIdentityDirectory: import("@webdock/core/identity").Identit
         if (proof !== undefined) {
           const member = proof?.roles.find(role => role.customerID === customerID);
           return proof ? { memberID: null, role: member?.role ?? null, permissions: [...(member?.permissions ?? [])] } : null;
+        }
+        if (!currentTrustedBrowserReference()) {
+          const compatibility = await oauthCompatibilityIdentity(db, subject, undefined, options);
+          if (compatibility !== undefined) {
+            const member = compatibility?.memberships.find(role => role.customerID === customerID);
+            return compatibility ? { memberID: null, role: member?.role ?? null, permissions: [...(member?.permissions ?? [])] } : null;
+          }
         }
         if (browserAuthProvider === "clerk")
           return browserIdentityDirectory.membership(db, subject, customerID, options);

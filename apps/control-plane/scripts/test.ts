@@ -18,6 +18,7 @@ const files = (await readdir(root + "tests")).filter((name) =>
   name.endsWith(".test.ts"),
 );
 const integration = new Set([
+  "clerk-oauth-session.integration.test.ts",
   "clerk-projection.integration.test.ts",
   "auth-adapter.test.ts",
   "mail-origin.integration.test.ts",
