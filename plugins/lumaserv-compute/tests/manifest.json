@@ -1,0 +1,139 @@
+{
+  "name": "lumaserv-compute",
+  "version": "1.0.0",
+  "kind": "extension",
+  "description": "Scoped cloud server observations",
+  "protocolVersion": 1,
+  "sdkVersion": 1,
+  "dataProtocolVersion": 1,
+  "coreVersion": ">=0.1.0 <1.0.0",
+  "image": "registry.example.invalid/plugins/lumaserv-compute@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "dependencies": [],
+  "capabilities": [
+    "plugin.http.read"
+  ],
+  "schemaVersion": 1,
+  "readableSchema": {
+    "min": 1,
+    "max": 1
+  },
+  "migrations": [],
+  "tables": [],
+  "services": {
+    "required": [
+      {
+        "name": "http",
+        "version": 1
+      }
+    ],
+    "optional": []
+  },
+  "configuration": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "actions": [
+    {
+      "name": "servers.list",
+      "intent": "read",
+      "capabilities": [
+        "plugin.http.read"
+      ],
+      "input": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "servers.get",
+      "intent": "read",
+      "capabilities": [
+        "plugin.http.read"
+      ],
+      "input": {
+        "type": "object",
+        "properties": {
+          "server": {
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36
+          }
+        },
+        "required": [
+          "server"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "servers.panel",
+      "intent": "read",
+      "capabilities": [
+        "plugin.http.read"
+      ],
+      "input": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ],
+  "jobs": [],
+  "navigation": [],
+  "slots": [
+    {
+      "id": "servers",
+      "slot": "project.overview.panel",
+      "order": 0,
+      "path": "/ui/servers",
+      "capabilities": [
+        "plugin.http.read"
+      ],
+      "label": "Cloud servers",
+      "action": "servers.panel"
+    }
+  ],
+  "events": [],
+  "secrets": [],
+  "httpBindings": [
+    "compute"
+  ],
+  "api": [
+    {
+      "method": "GET",
+      "path": "/servers",
+      "action": "servers.list"
+    },
+    {
+      "method": "GET",
+      "path": "/server",
+      "action": "servers.get"
+    }
+  ],
+  "mcp": [
+    {
+      "name": "servers",
+      "description": "List scoped cloud servers",
+      "action": "servers.list"
+    },
+    {
+      "name": "server",
+      "description": "Observe one scoped cloud server",
+      "action": "servers.get"
+    }
+  ]
+}

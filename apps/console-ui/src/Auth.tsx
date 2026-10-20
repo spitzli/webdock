@@ -1,0 +1,384 @@
+import { formText } from "./form";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
+import { useApi, useSession } from "./context";
+import { ShieldCheckIcon } from "@phosphor-icons/react/dist/csr/ShieldCheck";
+const authResult = z.object({
+  twoFactorRedirect: z.boolean().optional(),
+  status: z.boolean().optional(),
+});
+export function SignIn() {
+  const api = useApi();
+  const client = useQueryClient();
+  const [mode, setMode] = useState<"signin" | "totp" | "reset">("signin");
+  const [message, setMessage] = useState("");
+  const login = useMutation({
+    mutationFn: async (data: FormData) => {
+      if (mode === "reset")
+        return api.write(
+          "/api/auth/request-password-reset",
+          "POST",
+          {
+            email: data.get("email"),
+            redirectTo: new URL("/reset-password", window.location.origin).href,
+          },
+          authResult,
+          true,
+        );
+      if (mode === "totp")
+        return api.write(
+          "/api/auth/two-factor/verify-totp",
+          "POST",
+          { code: data.get("code") },
+          authResult,
+          true,
+        );
+      return api.write(
+        "/api/auth/sign-in/email",
+        "POST",
+        { email: data.get("email"), password: data.get("password") },
+        authResult,
+        true,
+      );
+    },
+    onSuccess: (result) => {
+      if (mode === "reset") {
+        setMessage(
+          "If an account matches this email, a reset link will be sent.",
+        );
+        return;
+      }
+      if (result.twoFactorRedirect) {
+        setMode("totp");
+        return;
+      }
+      client.clear();
+      window.location.assign("/projects");
+    },
+  });
+  if (api.config.sso)
+    return (
+      <main className="auth-layout">
+        <div className="auth-brand">
+          <span className="brand-mark">w</span>webdock
+          <span className="muted">Console</span>
+        </div>
+        <section className="auth-panel">
+          <h1>Welcome back</h1>
+          <p className="muted">
+            Sign in to your Webdock account to open your workspace.
+          </p>
+          {new URLSearchParams(window.location.search).has("error") ? (
+            <p role="alert" className="error">
+              Sign-in could not be completed. Please try again.
+            </p>
+          ) : null}
+          <a
+            className="button primary"
+            href={`/api/sso/login?returnTo=${encodeURIComponent(window.location.pathname === "/login" ? "/projects" : window.location.pathname + window.location.search)}`}
+          >
+            Continue to sign in
+          </a>
+        </section>
+      </main>
+    );
+  return (
+    <main className="auth-layout">
+      <div className="auth-brand">
+        <span className="brand-mark">w</span>webdock
+        <span className="muted">Console</span>
+      </div>
+      <section className="auth-panel">
+        <ShieldCheckIcon size={30} weight="light" />
+        <h1>
+          {mode === "totp"
+            ? "Verify your identity"
+            : mode === "reset"
+              ? "Reset your password"
+              : "Welcome back"}
+        </h1>
+        <p className="muted">
+          {mode === "totp"
+            ? "Enter the code from your authenticator."
+            : mode === "reset"
+              ? "We’ll send a reset link to your account email."
+              : "Sign in to your Webdock account."}
+        </p>
+        <form
+          className="editor"
+          onSubmit={(event) => {
+            event.preventDefault();
+            login.mutate(new FormData(event.currentTarget));
+          }}
+        >
+          {mode === "totp" ? (
+            <label>
+              Authentication code
+              <input
+                name="code"
+                inputMode="numeric"
+                pattern="[0-9]{6}"
+                autoComplete="one-time-code"
+                required
+                autoFocus
+              />
+            </label>
+          ) : (
+            <label>
+              Email
+              <input
+                type="email"
+                name="email"
+                autoComplete="username"
+                required
+                maxLength={254}
+                autoFocus
+              />
+            </label>
+          )}
+          {mode === "signin" ? (
+            <label>
+              Password
+              <input
+                type="password"
+                name="password"
+                autoComplete="current-password"
+                required
+                maxLength={1024}
+              />
+            </label>
+          ) : null}
+          {login.isError ? (
+            <p role="alert" className="error">
+              {login.error.message}
+            </p>
+          ) : null}
+          {message ? (
+            <p role="status" className="success">
+              {message}
+            </p>
+          ) : null}
+          <button className="button primary" disabled={login.isPending}>
+            {login.isPending
+              ? "Working…"
+              : mode === "signin"
+                ? "Sign in"
+                : mode === "totp"
+                  ? "Verify code"
+                  : "Send reset link"}
+          </button>
+        </form>
+        {mode !== "totp" ? (
+          <button
+            className="text-button"
+            onClick={() => {
+              login.reset();
+              setMessage("");
+              setMode(mode === "signin" ? "reset" : "signin");
+            }}
+          >
+            {mode === "signin" ? "Forgot password?" : "Back to sign in"}
+          </button>
+        ) : null}
+      </section>
+      <p className="auth-footer muted">Your workspace starts here.</p>
+    </main>
+  );
+}
+export function ResetPassword() {
+  const api = useApi();
+  const [token] = useState(() =>
+    new URLSearchParams(window.location.search).get("token"),
+  );
+  const reset = useMutation({
+    mutationFn: (newPassword: string) =>
+      api.write(
+        "/api/auth/reset-password",
+        "POST",
+        { token, newPassword },
+        authResult,
+        true,
+      ),
+  });
+  return (
+    <main className="auth-layout">
+      <section className="auth-panel">
+        <h1>Set a new password</h1>
+        {!token ? (
+          <p role="alert">
+            This reset link is invalid. Request a new one from the sign-in page.
+          </p>
+        ) : reset.isSuccess ? (
+          <p role="status">
+            Password updated. <a href="/">Sign in</a>
+          </p>
+        ) : (
+          <form
+            className="editor"
+            onSubmit={(event) => {
+              event.preventDefault();
+              reset.mutate(
+                formText(new FormData(event.currentTarget), "newPassword"),
+              );
+            }}
+          >
+            <label>
+              New password
+              <input
+                name="newPassword"
+                type="password"
+                autoComplete="new-password"
+                minLength={12}
+                maxLength={1024}
+                required
+              />
+            </label>
+            {reset.isError ? (
+              <p role="alert" className="error">
+                {reset.error.message}
+              </p>
+            ) : null}
+            <button className="button primary" disabled={reset.isPending}>
+              {reset.isPending ? "Updating…" : "Update password"}
+            </button>
+          </form>
+        )}
+      </section>
+    </main>
+  );
+}
+export function Account() {
+  const session = useSession();
+  const api = useApi();
+  const client = useQueryClient();
+  const change = useMutation({
+    mutationFn: (data: FormData) =>
+      api.write(
+        "/api/auth/change-password",
+        "POST",
+        {
+          currentPassword: data.get("currentPassword"),
+          newPassword: data.get("newPassword"),
+          revokeOtherSessions: true,
+        },
+        z.object({}),
+        true,
+      ),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["session"] });
+    },
+  });
+  if (api.config.sso)
+    return (
+      <section>
+        <div className="page-heading">
+          <div>
+            <h1>Account</h1>
+            <p className="muted">{session.user.email}</p>
+          </div>
+        </div>
+        <section className="security-section">
+          <h2>Account security</h2>
+          <p>
+            Manage your password, authenticator, passkeys, and sessions in your
+            Webdock account.
+          </p>
+          <a
+            className="button primary"
+            href={new URL("/account", api.config.authOrigin).href}
+          >
+            Open account security
+          </a>
+        </section>
+      </section>
+    );
+  return (
+    <section>
+      <div className="page-heading">
+        <div>
+          <h1>Account</h1>
+          <p className="muted">Manage your sign-in and account security.</p>
+        </div>
+      </div>
+      <div className="editor-layout">
+        <form
+          className="editor"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const form = event.currentTarget;
+            change.mutate(new FormData(form), {
+              onSuccess: () => {
+                form.reset();
+              },
+            });
+          }}
+        >
+          <h2>Change password</h2>
+          {session.user.mustChangePassword ? (
+            <p role="alert">Update your password before continuing.</p>
+          ) : null}
+          <label>
+            Current password
+            <input
+              name="currentPassword"
+              type="password"
+              required
+              autoComplete="current-password"
+              maxLength={1024}
+            />
+          </label>
+          <label>
+            New password
+            <input
+              name="newPassword"
+              type="password"
+              required
+              autoComplete="new-password"
+              minLength={12}
+              maxLength={1024}
+            />
+          </label>
+          <p className="field-hint">Other sessions will be signed out.</p>
+          {change.isError ? (
+            <p role="alert" className="error">
+              {change.error.message}
+            </p>
+          ) : null}
+          {change.isSuccess ? (
+            <p role="status" className="success">
+              Password updated.
+            </p>
+          ) : null}
+          <div>
+            <button className="button primary" disabled={change.isPending}>
+              {change.isPending ? "Updating…" : "Update password"}
+            </button>
+          </div>
+        </form>
+        <aside className="editor-aside">
+          <h2>{session.user.name}</h2>
+          <p>{session.user.email}</p>
+          <dl className="detail-grid">
+            <div>
+              <dt>Email</dt>
+              <dd>
+                {session.user.emailVerified ? "Verified" : "Not verified"}
+              </dd>
+            </div>
+            <div>
+              <dt>Two-factor authentication</dt>
+              <dd>
+                {session.user.twoFactorEnabled ? "Enabled" : "Not enabled"}
+              </dd>
+            </div>
+            <div>
+              <dt>Current session expires</dt>
+              <dd>{new Date(session.session.expiresAt).toLocaleString()}</dd>
+            </div>
+          </dl>
+        </aside>
+      </div>
+    </section>
+  );
+}

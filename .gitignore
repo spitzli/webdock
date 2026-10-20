@@ -22,3 +22,10 @@ apps/control-plane/dist-core/
 
 # Local test credentials, operator snapshots and verification caches.
 .cache/
+
+# Rust build output and disposable runtime verification state.
+/target/
+/.runtime-test/
+
+# Local Tilt development state (generated credentials and database bootstrap output).
+/.dev-local/

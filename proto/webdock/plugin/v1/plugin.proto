@@ -1,0 +1,56 @@
+syntax = "proto3";
+package webdock.plugin.v1;
+
+// The transport version is independent from the v1 manifest and signed claims.
+// Caller identity is authenticated through private UDS credentials or required mTLS.
+service PluginRuntime {
+  rpc Describe(DescribeRequest) returns (DescribeResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+  rpc Invoke(InvokeRequest) returns (InvokeResponse);
+  rpc WatchOperation(WatchOperationRequest) returns (stream OperationEvent);
+}
+message DescribeRequest {}
+message DescribeResponse { bytes manifest_json = 1; }
+message HealthRequest {}
+message HealthResponse {
+  string plugin_id = 1;
+  string version = 2;
+  uint64 generation = 3;
+  uint32 protocol_version = 4;
+}
+message InvokeRequest {
+  string invocation_token = 1;
+  string action = 2;
+  bytes input_json = 3;
+  bytes configuration_json = 4;
+}
+message InvokeResponse { bytes output_json = 1; }
+message WatchOperationRequest {
+  string invocation_token = 1;
+  string operation_id = 2;
+  string after_cursor = 3;
+}
+message OperationEvent {
+  string operation_id = 1;
+  string cursor = 2;
+  bytes payload_json = 3;
+}
+
+// Host capabilities remain separately authenticated; a plugin never receives a database scope.
+service PluginHost {
+  rpc AuthorizePeer(HostPeerRequest) returns (HostAuthorityResponse);
+  rpc AuthorizeInvocation(HostInvocationRequest) returns (HostAuthorityResponse);
+  rpc AuthorizeRequest(HostPayloadRequest) returns (HostAuthorityResponse);
+  rpc Call(HostCallRequest) returns (HostCallResponse);
+}
+message HostPeerRequest { string plugin_id = 1; uint64 generation = 2; }
+message HostInvocationRequest { bytes claims_json = 1; }
+message HostPayloadRequest { bytes claims_json = 1; bytes input_json = 2; bytes configuration_json = 3; }
+message HostAuthorityResponse { bool active = 1; }
+message HostCallRequest {
+  string invocation_token = 1;
+  string service = 2;
+  string method = 3;
+  bytes input_json = 4;
+}
+message HostCallResponse { bytes output_json = 1; }

@@ -1,0 +1,17 @@
+# Local development database for the root Tiltfile. Loopback only; credentials are generated in .dev-local/.
+name: webdock-dev
+services:
+  postgres:
+    image: postgres:18-alpine
+    env_file: [../../.dev-local/postgres.env]
+    environment:
+      POSTGRES_DB: webdock
+    ports: ['127.0.0.1:${WEBDOCK_DEV_POSTGRES_PORT:-55440}:5432']
+    volumes: [postgres:/var/lib/postgresql]
+    healthcheck:
+      test: [CMD, pg_isready, -U, postgres, -d, webdock]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+volumes:
+  postgres:

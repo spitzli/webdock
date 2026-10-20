@@ -1,6 +1,6 @@
 import { pluginTemplateSchemaSQL } from "../modules/hosting/plugin-template-schema";
 import { pluginProvisioningRlsSQL, pluginProvisioningPolicy } from "./plugin-provisioning-rls";
-import {pluginScopeSQL} from "../modules/plugins/scope-rls";
+import {pluginScopeSQL,pluginInvocationFenceSQL,mailPluginPolicySQL} from "../modules/plugins/scope-rls";
 import {pluginTables,pluginPolicy} from "../modules/plugins/rls";
 import { modulePreflightTables } from "./module-preflight-tables";
 import { gitInvalidationSQL } from "./database-git-rls";
@@ -46,7 +46,7 @@ const runtimeRoles = [
   "webdock_browser_website",
 ];
 const identity = new Set(
-  "clerk_identity_mapping clerk_session_mapping user account session verification twoFactor passkey jwks rateLimit organization member invitation oauthAccessToken oauthClient oauthClientAssertion oauthClientResource oauthConsent oauthRefreshToken oauthResource".split(
+  "clerk_identity_mapping clerk_session_mapping user account session verification twoFactor passkey jwks rateLimit organization member invitation oauthAccessToken oauthClient oauthClientAssertion oauthClientResource oauthConsent oauthRefreshToken oauthResource identity_mfa_challenge identity_totp_replay identity_mfa_enrollment identity_recovery_token identity_delivery_job identity_passkey_ceremony identity_oauth_request identity_browser_flow identity_browser_session".split(
     " ",
   ),
 );
@@ -56,7 +56,7 @@ const authCustomer = new Set(
   ),
 );
 const mailCustomer = new Set(
-  "service operation instance cluster_reservation domain mailbox identity mailbox_grant configuration configuration_operation access_event webmail_launch webmail_session webmail_write api_key send_transport send_job month_usage budget_reservation".split(
+  "service operation instance cluster_reservation domain mailbox identity mailbox_grant configuration configuration_operation access_event webmail_launch webmail_session webmail_write api_key send_transport send_job month_usage budget_reservation provider_binding provider_lease".split(
     " ",
   ),
 );
@@ -179,6 +179,7 @@ const metadata: Record<string, string[]> = {
   ],
 };
 Object.assign(metadata, {
+  "webdock_auth.clerk_identity_mapping": ["local_subject"],
   "webdock_auth.clerk_identity": [
     "issuer",
     "clerk_user_id",
@@ -243,6 +244,37 @@ const bootstrapMetadata: Record<string, string[]> = {
   ],
 };
 const helperSQL = `
+CREATE OR REPLACE FUNCTION webdock_rls.native_organization_authority(org text) RETURNS boolean
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+DECLARE allowed boolean;
+BEGIN
+ IF to_regprocedure('webdock_rls.local_organization_authority(text)') IS NOT NULL THEN
+  EXECUTE 'SELECT webdock_rls.local_organization_authority($1)' INTO allowed USING org;
+  RETURN coalesce(allowed,false);
+ END IF;
+ IF to_regclass('webdock_auth.clerk_organization') IS NULL THEN RETURN true; END IF;
+ EXECUTE 'SELECT NOT EXISTS(SELECT 1 FROM webdock_auth.clerk_organization WHERE organization_id=$1)' INTO allowed USING org;
+ RETURN allowed;
+END $$;
+CREATE OR REPLACE FUNCTION webdock_rls.native_identity_authority(subject text) RETURNS boolean
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+DECLARE allowed boolean;
+BEGIN
+ IF to_regprocedure('webdock_rls.local_identity_authority(text)') IS NOT NULL THEN
+  EXECUTE 'SELECT webdock_rls.local_identity_authority($1)' INTO allowed USING subject;
+  RETURN coalesce(allowed,false);
+ END IF;
+ IF to_regclass('webdock_auth.clerk_identity') IS NOT NULL THEN
+  EXECUTE 'SELECT NOT EXISTS(SELECT 1 FROM webdock_auth.clerk_identity WHERE user_id=$1)' INTO allowed USING subject;
+  IF NOT allowed THEN RETURN false; END IF;
+ END IF;
+ IF to_regclass('webdock_auth.clerk_identity_mapping') IS NOT NULL THEN
+  EXECUTE 'SELECT NOT EXISTS(SELECT 1 FROM webdock_auth.clerk_identity_mapping WHERE local_subject=$1)' INTO allowed USING subject;
+  IF NOT allowed THEN RETURN false; END IF;
+ END IF;
+ RETURN true;
+END $$;
+
 CREATE OR REPLACE FUNCTION webdock_rls.request_scope() RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,webdock_rls AS $$
 DECLARE raw text; signature text; envelope jsonb; secret_value text; expiry numeric;
 BEGIN
@@ -262,6 +294,7 @@ BEGIN
  IF session_user NOT IN ('webdock_auth_runtime','webdock_registry_runtime') OR s->>'kind' IS DISTINCT FROM 'session' THEN RETURN NULL; END IF;
  SELECT u.id,u.email,u.role,u."twoFactorEnabled" INTO actor_row FROM webdock_auth."user" u JOIN webdock_auth.session a ON a."userId"=u.id WHERE u.id=s->>'subject' AND a.id=s->>'sessionID' AND a."expiresAt">statement_timestamp() AND NOT coalesce(u.banned,false) AND u."emailVerified" AND NOT u."mustChangePassword" AND (u.role='user' OR (u.role='operator' AND u."twoFactorEnabled"));
  IF NOT FOUND THEN RETURN NULL; END IF;
+ IF NOT webdock_rls.native_identity_authority(actor_row.id) THEN RETURN NULL; END IF;
  SELECT p.session_id,p.actor_id,p.customer_id,p.organization_id,p.expires_at,p.expired_at, (p.expired_at IS NULL AND p.expires_at>statement_timestamp() AND c.status='active' AND t.organization_id=p.organization_id) AS valid INTO preview_row FROM webdock_auth.studio_tenant_preview p LEFT JOIN webdock_admin.customers c ON c.id=p.customer_id LEFT JOIN webdock_auth.tenant_customer t ON t.customer_id=p.customer_id WHERE p.session_id=s->>'sessionID' AND p.actor_id=actor_row.id;
  RETURN jsonb_build_object('subject',actor_row.id,'email',actor_row.email,'sessionID',s->>'sessionID','operator',actor_row.role='operator' AND NOT FOUND,'root',actor_row.role='operator','preview',CASE WHEN FOUND THEN to_jsonb(preview_row) ELSE NULL END);
 END $$;
@@ -294,6 +327,7 @@ DECLARE a jsonb; customer text;
 BEGIN
  a:=webdock_rls.actor(); IF a IS NULL THEN RETURN false; END IF;
  IF (a->>'operator')::boolean THEN RETURN true; END IF;
+ IF NOT (a ? 'clerk') AND coalesce(webdock_rls.request_scope()->>'authProvider','')<>'clerk' AND NOT webdock_rls.native_organization_authority(org) THEN RETURN false; END IF;
  SELECT customer_id INTO customer FROM webdock_auth.tenant_customer WHERE organization_id=org;
  IF FOUND THEN RETURN webdock_rls.customer_allowed(customer,writing); END IF;
  RETURN a->'preview'='null'::jsonb AND EXISTS(SELECT 1 FROM webdock_auth.member m WHERE m."organizationId"=org AND m."userId"=a->>'subject' AND (NOT writing OR m.role IN ('owner','admin')));
@@ -319,6 +353,8 @@ $$;
 const signatures = [
   "request_scope()",
   "actor()",
+  "native_identity_authority(text)",
+  "native_organization_authority(text)",
   "operator()",
   "subject()",
   "portal_user()",
@@ -421,6 +457,10 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
       `JOIN webdock_auth.member m ON m."organizationId"=t.organization_id WHERE t.customer_id=customer AND c.status='active' AND m."userId"=a->>'subject' AND (NOT writing OR m.role IN ('owner','admin'))`,
       `WHERE t.customer_id=customer AND c.status='active' AND webdock_rls.membership_role(t.organization_id) IS NOT NULL AND (NOT writing OR webdock_rls.membership_role(t.organization_id) IN ('owner','admin'))`,
     );
+  identityHelpers = identityHelpers.replace(
+    " RETURN EXISTS(SELECT 1 FROM webdock_auth.tenant_customer",
+    " IF NOT (a ? 'clerk') AND coalesce(webdock_rls.request_scope()->>'authProvider','')<>'clerk' AND EXISTS(SELECT 1 FROM webdock_auth.tenant_customer WHERE customer_id=customer AND NOT webdock_rls.native_organization_authority(organization_id)) THEN RETURN false; END IF;\n RETURN EXISTS(SELECT 1 FROM webdock_auth.tenant_customer",
+  );
   sql.push(identityHelpers, gitInvalidationSQL);
   if (clerkReady)
     sql.push(
@@ -458,7 +498,8 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
   sql.push(
     "DO $$ BEGIN IF to_regprocedure('webdock_admin.lock_hosting_project(character varying)') IS NOT NULL THEN GRANT EXECUTE ON FUNCTION webdock_admin.lock_hosting_project(varchar) TO webdock_auth_runtime,webdock_worker_runtime; END IF; END $$;",
   );
-  if(seen.has("webdock_auth.plugin_invocation"))sql.push(pluginScopeSQL);
+  if(seen.has("webdock_auth.plugin_invocation"))sql.push(pluginScopeSQL,pluginInvocationFenceSQL);
+  if(seen.has("webdock_mail.provider_binding"))sql.push(mailPluginPolicySQL);
   if(seen.has("webdock_auth.hosting_plugin_provisioning") && seen.has("webdock_auth.plugin_invocation"))sql.push(pluginProvisioningRlsSQL,pluginTemplateSchemaSQL);
   const worker = (purposes: string[], cluster?: string) =>
     `webdock_rls.worker(ARRAY[${purposes.map(literal).join(",")}]::text[]${cluster ? "," + cluster : ""})`;
@@ -560,6 +601,17 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
       workRead =
         workWrite = `${worker(["mail-send-gateway", "mail-webmail-gateway"])} OR ${t.columns.includes("cluster_id") ? worker(["agent"], col("cluster_id")) : `EXISTS(SELECT 1 FROM webdock_mail.cluster_reservation r WHERE r.customer_id::text=${col("customer_id")} AND ${worker(["agent"], "r.cluster_id::text")})`}`;
       if (t.name === "service") workRead += ` OR ${worker(["mail-cron"])}`;
+      if (t.name === "provider_lease") {
+        read = write = runtimeUpdate = runtimeDelete = "false";
+        workRead = workUpdate = worker(["mail-send-gateway"]);
+        workWrite = `(${workRead}) AND ${col("attempted_at")} IS NULL AND ${col("revoked_at")} IS NULL`;
+        workDelete = "false";
+      }
+      if (t.name === "provider_binding") {
+        // Selection is an explicit tenant admin decision; the sender only reads its grant.
+        workRead = worker(["mail-send-gateway"]);
+        workWrite = workUpdate = workDelete = runtimeDelete = "false";
+      }
       if (["month_usage", "budget_reservation"].includes(t.name)) {
         // Usage ledgers are observable by the tenant but only authenticated send
         // gateways may reserve or settle recipient units.
@@ -587,6 +639,36 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
           : seen.has("webdock_mail.service")
             ? `EXISTS(SELECT 1 FROM webdock_auth.tenant_customer t JOIN webdock_mail.service s ON s.customer_id=t.customer_id WHERE t.organization_id=${col("organization_id")} AND (${worker(["mail-send-gateway", "mail-webmail-gateway"])} OR webdock_rls.agent_customer(t.customer_id)))`
             : "false";
+    } else if (t.schema === "webdock_auth" && t.name === "hosting_database_binding_route") {
+      // Explicit operator-reviewed transport authority; an agent may only inspect its own source routes.
+      read = write = "webdock_rls.operator()";
+      runtimeDelete = "false";
+      workRead = worker(["agent"], col("source_cluster_id"));
+      workWrite = workUpdate = workDelete = "false";
+    } else if (t.schema === "webdock_auth" && t.name === "repository_lease") {
+      // Native repository callbacks have a separate fixed purpose, never ordinary Invoke.
+      read = write = "false";
+      workRead = workWrite = worker(["repository-admission"]);
+    } else if (t.schema === "webdock_auth" && t.name === "agent_transport_enrollment") {
+      // Enrollment is an explicit offline authority change. Runtime can only record liveness.
+      policy("webdock_auth_bootstrap", "true", "false", false, "true", "false");
+      sql.push(`GRANT SELECT,UPDATE(last_sequence,last_seen) ON ${q} TO webdock_auth_bootstrap;`);
+      read = write = workRead = workWrite = "false";
+    } else if (t.schema === "webdock_auth" && t.name === "agent_runtime_dispatch") {
+      policy("webdock_auth_bootstrap", "true", "true", false, "true", "false");
+      sql.push(`GRANT SELECT,INSERT,UPDATE ON ${q} TO webdock_auth_bootstrap;`);
+      read = write = workRead = workWrite = "false";
+    } else if (t.schema === "webdock_auth" && ["access_invitation_state", "access_delivery_job"].includes(t.name)) {
+      policy("webdock_auth_bootstrap", "true", "true");
+      sql.push(`GRANT SELECT,INSERT,UPDATE,DELETE ON ${q} TO webdock_auth_bootstrap;`);
+      read = `webdock_rls.organization_allowed(${col("organization_id")},true)`;
+      write = read + (t.name === "access_delivery_job" ? ` AND ${col("actor_id")}=webdock_rls.subject()` : ` AND EXISTS(SELECT 1 FROM webdock_auth.invitation i WHERE i.id=${col("invitation_id")} AND i."organizationId"=${col("organization_id")})`);
+      runtimeDelete = workRead = workWrite = "false";
+    } else if (t.schema === "webdock_auth" && ["local_identity_activation", "local_organization_activation"].includes(t.name)) {
+      policy("webdock_auth_bootstrap", "true", "false", false, "false", "false");
+      const subject = t.name === "local_identity_activation" ? "user_id" : "organization_id";
+      sql.push(`GRANT SELECT(${ident(subject)},bindings) ON ${q} TO webdock_auth_bootstrap;`);
+      read = write = workRead = workWrite = "false";
     } else if (identity.has(t.name)) {
       policy("webdock_auth_bootstrap", "true", "true");
       if (t.name === "user") read = `webdock_rls.user_visible(${col("id")})`;
@@ -885,11 +967,16 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         "database-gateway",
       ]);
     } else if (["hosting_plugin_provisioning","hosting_plugin_provisioning_request"].includes(t.name)) {
-      const provision=pluginProvisioningPolicy(t.name);
+      const provision = seen.has("webdock_auth.plugin_invocation")
+        ? pluginProvisioningPolicy(t.name)
+        : { read: "false", write: "false", workerRead: "false", workerWrite: "false" };
       read=provision.read;write=provision.write;workRead=provision.workerRead;workWrite=provision.workerWrite;runtimeDelete=workDelete="false";
       if(t.name.endsWith("_request"))runtimeUpdate=workUpdate="false";
     } else if ((pluginTables as readonly string[]).includes(t.name)) {
-      const plugin=pluginPolicy(t.name);
+      // Retained document tables can predate the invocation migration during offline upgrades.
+      const plugin = ["plugin_document", "plugin_document_receipt"].includes(t.name) && !seen.has("webdock_auth.plugin_invocation")
+        ? { read: "false", write: "false", workerRead: "false", workerWrite: "false" }
+        : pluginPolicy(t.name);
       read=plugin.read;write=plugin.write;workRead=plugin.workerRead;workWrite=plugin.workerWrite;
       runtimeDelete=workDelete="false";
       if(t.name==="plugin_source_chunk"){runtimeDelete=write;workDelete=workWrite;}
@@ -1049,6 +1136,14 @@ export function buildDatabaseRls(tables: readonly RlsTable[]): RlsPlan {
         workUpdate,
         workDelete,
       );
+      if (t.schema === "webdock_mail" && t.name === "provider_lease")
+        sql.push(`REVOKE ALL ON ${q} FROM webdock_auth_runtime,webdock_auth_bootstrap,webdock_registry_runtime; REVOKE DELETE ON ${q} FROM webdock_worker_runtime;`);
+      if (t.schema === "webdock_mail" && t.name === "provider_binding")
+        sql.push(`REVOKE INSERT,UPDATE,DELETE ON ${q} FROM webdock_worker_runtime; REVOKE DELETE ON ${q} FROM webdock_auth_runtime;`);
+      if (t.schema === "webdock_auth" && t.name === "hosting_database_binding_route")
+        sql.push(`REVOKE INSERT,UPDATE,DELETE ON ${q} FROM webdock_worker_runtime; REVOKE DELETE ON ${q} FROM webdock_auth_runtime;`);
+      if (t.schema === "webdock_auth" && t.name === "repository_lease")
+        sql.push(`REVOKE ALL ON ${q} FROM webdock_auth_runtime,webdock_auth_bootstrap,webdock_registry_runtime;`);
       if (t.schema === "webdock_auth" && t.name === "hosting_setup")
         sql.push(
           `GRANT SELECT ON ${q} TO webdock_worker_runtime; GRANT UPDATE(state,reason,resources,steps,generation,lease_until,next_attempt_at,updated_at) ON ${q} TO webdock_worker_runtime;`,

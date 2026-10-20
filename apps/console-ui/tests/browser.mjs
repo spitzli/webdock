@@ -1,0 +1,54 @@
+import assert from 'node:assert/strict';
+import { chromium } from 'playwright';
+import { server } from './preview-server.ts';
+import { workbenchBrowserChecks } from './workbench-browser.mjs';
+const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } : {}) });
+const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+const errors = [];
+page.on('pageerror', error => errors.push(error.message));
+try {
+  await page.goto('http://127.0.0.1:3121/projects');
+  await page.getByRole('link', { name: 'Acceptance project', exact: true }).waitFor();
+  await page.getByRole('link', { name: 'Acceptance project', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Changed name');
+  page.once('dialog', dialog => dialog.dismiss());
+  await page.getByRole('link', { name: 'Customers', exact: true }).first().click();
+  assert.ok(page.url().endsWith('/projects/201'), 'dirty navigation remains blocked');
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Saved.' }).waitFor();
+  await page.getByRole('link', { name: 'Customers', exact: true }).first().click();
+  await page.getByRole('link', { name: 'New customer', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Created in browser test');
+  await page.getByRole('button', { name: 'Create customer', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Saved.' }).waitFor();
+  await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Edited after create');
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Saved.' }).waitFor();
+  const listing = await (await page.request.get('http://127.0.0.1:3121/v1/operator/registry/customers')).json();
+  assert.equal(listing.totalDocs, 2, 'editing a new record must not create another record');
+  await page.getByRole('link', { name: 'Open record', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Confirm archive', exact: true }).check();
+  await page.getByRole('button', { name: 'Archive record', exact: true }).click();
+  await page.getByRole('heading', { name: 'Restore record', exact: true }).waitFor();
+  await page.goto('http://127.0.0.1:3121/projects');
+  for (const width of [320, 375, 414, 768, 1280]) {
+    await page.setViewportSize({ width, height: 812 });
+    await page.getByRole('link', { name: 'Changed name', exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `no page overflow at ${width}px`);
+  }
+  await page.getByRole('button', { name: 'Use dark theme' }).click();
+  assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
+  await page.keyboard.press('Control+k');
+  await page.getByRole('dialog', { name: 'Go to workspace' }).waitFor();
+  await page.getByRole('textbox', { name: 'Search projects and customers' }).fill('Changed');
+  await page.getByRole('button', { name: 'Changed name Project', exact: true }).waitFor();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.getByRole('dialog').count(), 0);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.getByRole('button', { name: 'Open navigation' }).click();
+  await page.getByRole('dialog', { name: 'Navigation' }).getByRole('link', { name: 'Account', exact: true }).click();
+  await page.getByRole('heading', { name: 'Change password', exact: true }).waitFor();
+  await workbenchBrowserChecks(page);
+  assert.deepEqual(errors, []);
+  console.log('Browser checks passed: edit/create/archive, unsaved navigation, responsive light/dark layout, palette, mobile navigation, hosting and extension lifecycle. Test-only HTTP fixtures; not live auth or tenant acceptance.');
+} finally { await browser.close(); await server.close(); }

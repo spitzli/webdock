@@ -16,7 +16,8 @@
     "modules/*",
     "adapters/*/*",
     "integrations/*",
-    "extensions/*"
+    "extensions/*",
+    "apps/console-ui"
   ],
   "engines": {
     "node": "24.x"
@@ -45,7 +46,14 @@
     "test:plugin-jobs": "node tools/plugins/test-jobs.mjs",
     "build:core": "npm run build:core -w @webdock/api",
     "test:core-boundary": "node tools/tests/core-product-free.mjs && node tools/tests/core-routes-artifact.mjs",
-    "build:core:console": "node tools/release/build-core-console.mjs"
+    "build:core:console": "node tools/release/build-core-console.mjs",
+    "dev:console-ui": "npm run dev -w @webdock/console-ui",
+    "build:console-ui": "npm run build -w @webdock/console-ui",
+    "test:rust": "cargo test --workspace",
+    "quality": "cargo run --manifest-path tools/quality/Cargo.toml --locked -- all",
+    "quality:rust": "cargo run --manifest-path tools/quality/Cargo.toml --locked -- rust",
+    "quality:frontend": "cargo run --manifest-path tools/quality/Cargo.toml --locked -- frontend",
+    "quality:contracts": "cargo run --manifest-path tools/quality/Cargo.toml --locked -- contracts"
   },
   "overrides": {
     "nodemailer": "10.0.13",

@@ -145,6 +145,7 @@ BEGIN
   SELECT r->>'role' INTO result FROM jsonb_array_elements(proof->'roles') r JOIN webdock_auth.tenant_customer t ON t.organization_id=r->>'organizationID' AND t.customer_id=r->>'customerID' WHERE r->>'organizationID'=org AND r->>'role' IN ('admin','member');
   RETURN result;
  END IF;
+ IF NOT webdock_rls.native_organization_authority(org) THEN RETURN NULL; END IF;
  SELECT role INTO result FROM webdock_auth.member WHERE "organizationId"=org AND "userId"=a->>'subject';
  RETURN result;
 EXCEPTION WHEN invalid_text_representation OR numeric_value_out_of_range OR invalid_parameter_value THEN RETURN NULL;
