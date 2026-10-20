@@ -120,6 +120,24 @@ export function actionCommand(
     ...(action === "apps.scale" ? { replicas } : {}),
   });
 }
+function formSpec(data: FormData) {
+  const args: unknown = JSON.parse(formText(data, "args"));
+  return {
+    image: formText(data, "image"),
+    args,
+    port: Number(formText(data, "port")),
+    healthPath: formText(data, "healthPath"),
+    cpuMillicores: parseResourceInput("cpuMillicores", formText(data, "cpuMillicores")),
+    memoryBytes: parseResourceInput("memoryBytes", formText(data, "memoryBytes")),
+    ephemeralBytes: parseResourceInput("ephemeralBytes", formText(data, "ephemeralBytes")),
+    replicas: Number(formText(data, "replicas")),
+  };
+}
+// Only explicit changes are sent; saved values are never read back or resubmitted.
+function formEnvironment(data: FormData) {
+  const raw = data.get("environment");
+  return environmentPatchSchema.parse(typeof raw === "string" && raw ? JSON.parse(raw) : []);
+}
 export function settingsCommand(
   app: HostingApp,
   data: FormData,
@@ -129,32 +147,8 @@ export function settingsCommand(
     throw new Error(
       "Deploy this application before editing its configuration.",
     );
-  const args: unknown = JSON.parse(formText(data, "args"));
-  const spec = appSpecSchema.parse({
-    ...app.spec,
-    image: formText(data, "image"),
-    args,
-    port: Number(formText(data, "port")),
-    healthPath: formText(data, "healthPath"),
-    cpuMillicores: parseResourceInput(
-      "cpuMillicores",
-      formText(data, "cpuMillicores"),
-    ),
-    memoryBytes: parseResourceInput(
-      "memoryBytes",
-      formText(data, "memoryBytes"),
-    ),
-    ephemeralBytes: parseResourceInput(
-      "ephemeralBytes",
-      formText(data, "ephemeralBytes"),
-    ),
-    replicas: Number(formText(data, "replicas")),
-  });
-  // Only explicit changes are sent; saved values are never read back or resubmitted.
-  const raw = data.get("environment");
-  const environment = environmentPatchSchema.parse(
-    typeof raw === "string" && raw ? JSON.parse(raw) : [],
-  );
+  const spec = appSpecSchema.parse({ ...app.spec, ...formSpec(data) });
+  const environment = formEnvironment(data);
   const result = commandSchema.parse({
     action: "apps.update",
     appID: app.id,
@@ -167,6 +161,60 @@ export function settingsCommand(
   if (result.action !== "apps.update")
     throw new Error("Unsupported application update.");
   return result;
+}
+export function createCommand(
+  projectID: string,
+  subscriptionRevision: number,
+  data: FormData,
+  idempotencyKey: string,
+) {
+  const spec = appSpecSchema.parse({
+    template: "custom",
+    ...formSpec(data),
+    volumeBytes: parseResourceInput("volumeBytes", formText(data, "volumeBytes")),
+  });
+  const environment = formEnvironment(data);
+  if (environment.some((row) => row.value === null))
+    throw new Error("A new application has no variables to remove.");
+  const result = commandSchema.parse({
+    action: "apps.create",
+    projectID,
+    name: formText(data, "name").trim(),
+    spec,
+    subscriptionRevision,
+    idempotencyKey,
+    ...(environment.length ? { environment } : {}),
+  });
+  if (result.action !== "apps.create")
+    throw new Error("Unsupported application creation.");
+  return result;
+}
+export const deletionPlanSchema = z.object({
+  plan: z.object({
+    name: z.string(),
+    resources: z.array(z.string()).max(16),
+    persistentData: z.boolean(),
+    volumeBytes: z.number().int().nonnegative(),
+  }),
+  planHash: z.string().regex(/^[a-f0-9]{64}$/),
+});
+export type DeletionPlan = z.infer<typeof deletionPlanSchema>;
+/** The server re-derives the plan; a stale hash or mistyped name is rejected there as well. */
+export function deleteCommand(
+  app: HostingApp,
+  review: DeletionPlan,
+  typedName: string,
+  idempotencyKey: string,
+) {
+  if (review.plan.name !== app.name || typedName !== app.name)
+    throw new Error("Type the exact application name to confirm deletion.");
+  return commandSchema.parse({
+    action: "apps.delete",
+    appID: app.id,
+    confirmName: typedName,
+    planHash: review.planHash,
+    idempotencyKey,
+  });
 }
 
 export const logReadSchema = z.object({

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { HostingCreate } from "./HostingCreate";
 import { useQuery } from "@tanstack/react-query";
 import { formatResource } from "@webdock/hosting-contracts";
-import { useApi } from "./context";
+import { useApi, useSession } from "./context";
 import { useHostingCommand } from "./hosting-client";
 import {
   appsPageSchema,
@@ -156,6 +157,7 @@ export function HostingDirectory({
 }
 export function HostingProject({ projectID }: { projectID: string }) {
   const api = useApi();
+  const session = useSession();
   const call = useHostingCommand();
   const enabled = api.config.enabledFeatures.includes("hosting");
   const [search, setSearch] = useState("");
@@ -219,6 +221,12 @@ export function HostingProject({ projectID }: { projectID: string }) {
         </Empty>
       ) : (
         <>
+          {apps.data?.canManage && !session.user.preview ? (
+            <HostingCreate
+              projectID={projectID}
+              subscriptionRevision={apps.data.subscriptionRevision}
+            />
+          ) : null}
           <HostingSearch
             search={search}
             onSearch={(value) => {
@@ -232,8 +240,7 @@ export function HostingProject({ projectID }: { projectID: string }) {
             <Failure error={apps.error} retry={() => void apps.refetch()} />
           ) : apps.data.docs.length === 0 ? (
             <Empty title="No applications">
-              No applications match this project and search. Application
-              creation is not yet available in this Console.
+              No applications match this project and search.
             </Empty>
           ) : (
             <>

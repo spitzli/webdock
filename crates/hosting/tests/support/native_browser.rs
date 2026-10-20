@@ -110,6 +110,8 @@ async fn enroll(f: &Fixture, socket: &Path) -> (String, ControlPlane) {
     (installation, control)
 }
 
+const CREATED: &str = "browser-created";
+
 async fn remove_runtime(engine: &bollard::Docker, installation: &str, app: &str) {
     let name = format!("wd-{installation}-{app}");
     match engine.inspect_container(&name, None).await {
@@ -225,7 +227,7 @@ async fn console_drives_real_native_hosting_and_docker() {
         mail_runtime: None,
         policy: Default::default(),
     };
-    let captured_app = Arc::new(std::sync::Mutex::new(None::<String>));
+    let captured_app = Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
     let captured = captured_app.clone();
     let f = fixture.clone();
     let probe = (engine.clone(), installation.clone());
@@ -246,7 +248,7 @@ async fn console_drives_real_native_hosting_and_docker() {
             "spec":runtime_spec,"subscriptionRevision":1,"idempotencyKey":"browser-create-runtime"
         })).await.unwrap();
         let app = created["appID"].as_str().unwrap().to_owned();
-        *captured.lock().unwrap() = Some(app.clone());
+        captured.lock().unwrap().push(app.clone());
         daemon.cycle().await.unwrap();
         let view = f
             .service
@@ -254,7 +256,37 @@ async fn console_drives_real_native_hosting_and_docker() {
             .await
             .unwrap();
         assert_eq!(view["status"], "ready");
+        // Room for exactly one Console-created application beside the fixture runtime.
+        sql(&f.owner,"UPDATE webdock_auth.tenant_subscription SET base=jsonb_set(base,'{hosting,apps}','2'),revision=revision+1 WHERE customer_id=$1",vec![f.cid.clone().into()]).await;
+        sql(&f.owner,"UPDATE webdock_auth.hosting_cluster SET capacity=jsonb_set(capacity,'{apps}','2') WHERE id=$1",vec![f.cluster.clone().into()]).await;
         run_browser(&f, daemon, &app, root, &dist, directory.path()).await;
+        // The Console-created application ran and was then deleted through the reviewed plan.
+        let created = f
+            .owner
+            .query_one_raw(sea_orm::Statement::from_sql_and_values(
+                sea_orm::DbBackend::Postgres,
+                "SELECT id,status FROM webdock_auth.hosting_app WHERE project_id=$1 AND name=$2",
+                [f.pid.clone().into(), CREATED.into()],
+            ))
+            .await
+            .unwrap()
+            .expect("Console must have created the second application");
+        let created_id: String = created.try_get("", "id").unwrap();
+        captured.lock().unwrap().push(created_id.clone());
+        assert_eq!(created.try_get::<String>("", "status").unwrap(), "deleted");
+        assert!(
+            matches!(
+                probe
+                    .0
+                    .inspect_container(&format!("wd-{}-{created_id}", probe.1), None)
+                    .await,
+                Err(bollard::errors::Error::DockerResponseServerError {
+                    status_code: 404,
+                    ..
+                })
+            ),
+            "Deleted application container must be removed"
+        );
         // The write-only browser patch must reach the redeployed container, not just the database.
         let container = probe
             .0
@@ -271,8 +303,8 @@ async fn console_drives_real_native_hosting_and_docker() {
     .await;
     let _ = stop_rpc.send(());
     rpc_task.await.unwrap();
-    let app = captured_app.lock().unwrap().clone();
-    if let Some(app) = app {
+    let apps = captured_app.lock().unwrap().clone();
+    for app in apps {
         remove_runtime(&engine, &installation, &app).await;
     }
     for table in ["agent_runtime_dispatch", "agent_transport_enrollment"] {
@@ -318,7 +350,9 @@ async fn run_browser(
         serde_json::to_string(&json!({
             "origin":origin,"cookie":cookie,"customerID":f.cid,"customerName":f.nonce,
             "projectID":f.pid,"projectName":f.nonce,"appID":app,"appName":"browser-runtime",
-            "updateCPU":"0.2 cores","expectedLog":"browser-runtime-log"
+            "updateCPU":"0.2 cores","expectedLog":"browser-runtime-log",
+            "createName":CREATED,"createImage":spec()["image"],
+            "createArgs":["sh","-c","printf ok >/tmp/index.html; exec httpd -f -p 8080 -h /tmp"]
         }))
         .unwrap()
         .as_bytes(),
@@ -335,7 +369,7 @@ async fn run_browser(
             .unwrap();
     });
     let output = tokio::time::timeout(
-        Duration::from_secs(180),
+        Duration::from_secs(300),
         tokio::process::Command::new("node")
             .arg(root.join("apps/console-ui/tests/hosting-native-browser.mjs"))
             .env("WEBDOCK_HOSTING_BROWSER_FIXTURE", &descriptor)

@@ -19,6 +19,7 @@ import {
   useHostingActionCompletion,
 } from "./HostingOperation";
 import { HostingSettings } from "./HostingSettings";
+import { HostingDeletion } from "./HostingDeletion";
 import { ActionFailure } from "./HostingActionState";
 const labels = {
   "apps.start": "Start application",
@@ -125,7 +126,10 @@ export function HostingApplication({
             <>
               <ApplicationSummary app={app.data} />
               {canManageApp(app.data, session.user.preview === true) ? (
-                <ApplicationControls key={appID} app={app.data} />
+                <>
+                  <ApplicationControls key={appID} app={app.data} />
+                  <HostingDeletion key={`delete-${appID}`} app={app.data} />
+                </>
               ) : (
                 <p className="muted mt-4">
                   Application changes are unavailable with your current access

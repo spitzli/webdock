@@ -9,6 +9,7 @@ const fixture = z.object({
   origin: z.url(), cookie: z.object({ name: z.string().min(1), value: z.string().min(1) }),
   customerID: z.string(), customerName: z.string(), projectID: z.string(), projectName: z.string(), appID: z.string(), appName: z.string(),
   updateCPU: z.string().optional(), expectedLog: z.string().optional(),
+  createName: z.string(), createImage: z.string(), createArgs: z.array(z.string()),
 }).parse(JSON.parse(readFileSync(source, 'utf8')));
 const origin = new URL(fixture.origin);
 assert.ok(['127.0.0.1', 'localhost', '[::1]'].includes(origin.hostname), 'Native acceptance requires an owned loopback fixture');
@@ -23,7 +24,7 @@ async function accepted(action, click) {
   const response = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/console/hosting' && response.request().postDataJSON().action === action);
   await click();
   const result = await response;
-  assert.equal(result.ok(), true, `${action} was not accepted by native Core`);
+  assert.equal(result.ok(), true, `${action} was not accepted by native Core (HTTP ${String(result.status())})`);
   const receipt = await result.json();
   assert.equal(typeof receipt.id, 'string');
   assert.ok(['queued', 'running'].includes(receipt.status), `${action} must produce a durable operation receipt`);
@@ -44,6 +45,12 @@ async function completedOperation() {
   await page.getByRole('link', { name: fixture.appName, exact: true }).click();
   await page.getByRole('heading', { name: fixture.appName, exact: true }).waitFor();
   await assertContext();
+}
+async function terminalOperation() {
+  await page.getByRole('link', { name: 'View operation', exact: true }).click();
+  const terminal = page.getByRole('status').filter({ hasText: /^(succeeded|failed|needs-reconciliation)$/ });
+  await terminal.waitFor({ timeout: 120000 });
+  assert.equal(await terminal.textContent(), 'succeeded', 'Native runtime did not confirm successful completion');
 }
 async function lifecycle(name, action, nextControl) {
   const overview = page.url();
@@ -97,6 +104,29 @@ try {
   assert.equal(await page.getByRole('textbox', { name: 'Variable name 1', exact: true }).inputValue(), 'WEBDOCK_PROOF_TOKEN');
   await page.getByText('Saved value — hidden', { exact: true }).waitFor();
   assert.ok(!(await page.locator('body').textContent()).includes('browser-proof-value'), 'Saved environment value was rendered');
+  // Create a second application from the Console, wait for the runtime, then delete it by plan.
+  await page.goto(`${fixture.origin}/hosting/projects/${fixture.projectID}`);
+  await page.getByRole('button', { name: 'New application', exact: true }).click();
+  const creation = page.getByRole('region', { name: 'New application', exact: true });
+  await creation.getByRole('textbox', { name: 'Application name', exact: true }).fill(fixture.createName);
+  await creation.getByRole('textbox', { name: 'Image digest', exact: true }).fill(fixture.createImage);
+  await creation.getByRole('textbox', { name: 'Startup arguments', exact: true }).fill(JSON.stringify(fixture.createArgs));
+  await creation.getByRole('textbox', { name: 'Memory', exact: true }).fill('32 MB');
+  await creation.getByRole('textbox', { name: 'Temporary storage', exact: true }).fill('16 MB');
+  await accepted('apps.create', () => creation.getByRole('button', { name: 'Request application', exact: true }).click());
+  await terminalOperation();
+  await page.goto(`${fixture.origin}/hosting/projects/${fixture.projectID}`);
+  await page.getByRole('link', { name: fixture.createName, exact: true }).click();
+  await page.getByRole('heading', { name: fixture.createName, exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Review deletion', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  assert.match(await dialog.innerText(), /Deployment, Service, Secret/);
+  const confirm = dialog.getByRole('button', { name: 'Confirm deletion', exact: true });
+  await dialog.getByRole('textbox', { name: 'Type the application name to confirm', exact: true }).fill(fixture.createName.toUpperCase());
+  assert.equal(await confirm.isDisabled(), true);
+  await dialog.getByRole('textbox', { name: 'Type the application name to confirm', exact: true }).fill(fixture.createName);
+  await accepted('apps.delete', () => confirm.click());
+  await terminalOperation();
   for (const width of [320, 375, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `Native hosting layout overflow at ${width}px`);
@@ -111,5 +141,5 @@ try {
   }
   assert.ok(!(await page.locator('body').textContent()).includes(fixture.cookie.value), 'Session credential appeared in the rendered interface');
   assert.deepEqual(errors, [], 'Native hosting browser emitted page errors');
-  console.log('Native hosting browser passed: workspace navigation, restart/stop/start, durable completion, sanitized log snapshot, settings and write-only environment update reaching the container, and responsive layout.');
+  console.log('Native hosting browser passed: workspace navigation, restart/stop/start, durable completion, sanitized log snapshot, settings and write-only environment update reaching the container, Console creation and plan-confirmed deletion, and responsive layout.');
 } finally { await context.close(); await browser.close(); }

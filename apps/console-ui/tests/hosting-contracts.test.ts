@@ -4,6 +4,9 @@ import {
   appSchema,
   actionCommand,
   settingsCommand,
+  createCommand,
+  deleteCommand,
+  deletionPlanSchema,
   operationPolling,
   canManageApp,
 } from "../src/hosting-contracts";
@@ -129,4 +132,39 @@ await test("hosting deep links identify selectors without inferring tenant owner
   });
   assert.equal(hostingLocation("/hosting/apps/not-an-id").kind, "invalid");
   assert.equal(hostingLocation("/projects/201").kind, "none");
+});
+function createForm(overrides: Record<string, string> = {}) {
+  const data = new FormData();
+  for (const [name, value] of Object.entries({
+    name: "new-app", image: spec.image, args: '["--serve"]', port: "8080", healthPath: "/health",
+    cpuMillicores: "0.1 cores", memoryBytes: "64 MB", ephemeralBytes: "64 MB", replicas: "1", volumeBytes: "0 MB",
+    environment: "[]", ...overrides,
+  }))
+    data.set(name, value);
+  return data;
+}
+await test("creation builds one custom application with explicit resources and optional environment", () => {
+  const command = createCommand("201", 3, createForm(), "create-request-identity-1");
+  assert.equal(command.action, "apps.create");
+  assert.equal(command.projectID, "201");
+  assert.equal(command.subscriptionRevision, 3);
+  assert.equal(command.spec.template, "custom");
+  assert.deepEqual(command.spec.args, ["--serve"]);
+  assert.equal(command.spec.cpuMillicores, 100);
+  assert.equal("environment" in command, false);
+  const withEnvironment = createCommand("201", 3, createForm({ environment: JSON.stringify([{ name: "TOKEN", value: "v" }]) }), "create-request-identity-2");
+  assert.deepEqual("environment" in withEnvironment ? withEnvironment.environment : undefined, [{ name: "TOKEN", value: "v" }]);
+  for (const invalid of [
+    { name: "" }, { image: "nginx:latest" }, { args: "--serve" }, { replicas: "2", volumeBytes: "128 MB" },
+    { environment: JSON.stringify([{ name: "GONE", value: null }]) },
+  ])
+    assert.throws(() => createCommand("201", 3, createForm(invalid), "create-request-identity-3"));
+});
+await test("deletion requires the exact typed name and the reviewed plan hash", () => {
+  const plan = deletionPlanSchema.parse({ plan: { name: "Application", resources: ["Deployment", "Service", "Secret"], persistentData: false, volumeBytes: 0 }, planHash: "b".repeat(64) });
+  const command = deleteCommand(app, plan, "Application", "delete-request-identity-1");
+  assert.deepEqual(command, { action: "apps.delete", appID: "301", confirmName: "Application", planHash: "b".repeat(64), idempotencyKey: "delete-request-identity-1" });
+  assert.throws(() => deleteCommand(app, plan, "application", "delete-request-identity-2"));
+  const stale = deletionPlanSchema.parse({ ...plan, plan: { ...plan.plan, name: "Renamed" } });
+  assert.throws(() => deleteCommand(app, stale, "Application", "delete-request-identity-3"));
 });
