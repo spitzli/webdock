@@ -10,7 +10,7 @@ const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CH
 const context=await browser.newContext({viewport:{width:1280,height:900}});const page=await context.newPage();
 const errors=[];page.on('pageerror',error=>errors.push(error.message));
 const cdp=await context.newCDPSession(page);await cdp.send('WebAuthn.enable');
-await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true}});
+const {authenticatorId}=await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true}});
 try {
   await context.addCookies([{name:'payload-token',value:'retained-local-fixture',domain:'127.0.0.1',path:'/',httpOnly:true,sameSite:'Lax'}]);
   await page.goto(consoleOrigin+'/projects');
@@ -93,6 +93,15 @@ try {
   await other.getByRole('alert').waitFor();
   assert.equal(await other.getByRole('heading',{name:'Account security',exact:true}).count(),0,'used recovery code cannot open a session');
   await otherContext.close();
+  // A declined device check leaves no passkey and the page usable.
+  await cdp.send('WebAuthn.setUserVerified',{authenticatorId,isUserVerified:false});
+  const listed=()=>page.locator('.security-passkeys .security-list > li').count();
+  const passkeysBefore=await listed();
+  await page.getByLabel('New passkey name').fill('Declined passkey');
+  await page.getByRole('button',{name:'Add a passkey',exact:true}).click();
+  await page.locator('.security-passkeys [role="alert"]').waitFor();
+  assert.equal(await listed(),passkeysBefore,'declined ceremony stores no passkey');
+  await cdp.send('WebAuthn.setUserVerified',{authenticatorId,isUserVerified:true});
   await page.getByLabel('New passkey name').fill('Browser fixture passkey');
   await page.getByRole('button',{name:'Add a passkey',exact:true}).click();
   await page.locator('input[value="Browser fixture passkey"]').waitFor();
@@ -119,7 +128,22 @@ try {
   await page.waitForURL(consoleOrigin+'/projects');
   const after=(await (await page.request.get(authOrigin+'/api/auth/get-session')).json()).session.id;
   assert.notEqual(after,before,'prompt=login performs a fresh authentication and does not redirect-loop');
+  // Removing the passkey revokes it server-side even though the device still holds the credential.
+  await page.goto(authOrigin+'/account');
+  await page.locator('input[value="Renamed browser passkey"]').waitFor();
+  page.once('dialog',dialog=>dialog.accept());
+  await page.locator('.security-passkeys').getByRole('button',{name:'Remove',exact:true}).click();
+  await page.getByText('No passkeys yet.').waitFor();
+  const fresh=await browser.newContext({viewport:{width:1280,height:900}});const probe=await fresh.newPage();
+  const probeCDP=await fresh.newCDPSession(probe);await probeCDP.send('WebAuthn.enable');
+  const {authenticatorId:probeID}=await probeCDP.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true}});
+  for(const credential of (await cdp.send('WebAuthn.getCredentials',{authenticatorId})).credentials) await probeCDP.send('WebAuthn.addCredential',{authenticatorId:probeID,credential});
+  await probe.goto(authOrigin+'/login');
+  await probe.getByRole('button',{name:'Sign in with a passkey',exact:true}).click();
+  await probe.getByRole('alert').waitFor();
+  assert.equal(await probe.getByRole('heading',{name:'Account security',exact:true}).count(),0,'a removed passkey cannot sign in');
+  await fresh.close();
   writeFileSync(accountCookies,JSON.stringify(await context.cookies()),{mode:0o600});
   assert.deepEqual(errors,[]);
-  console.log('Real browser account flow passed: canonical setup, TOTP, consent, PKCE handoff, origin denial, recovery regeneration/use/replay denial, session revocation, passkey registration/rename/sign-in, responsive account, and central logout. Virtual authenticator; no physical-device claim.');
+  console.log('Real browser account flow passed: canonical setup, TOTP, consent, PKCE handoff, origin denial, recovery regeneration/use/replay denial, session revocation, passkey registration/rename/sign-in/removal, declined ceremony, responsive account, and central logout. Virtual authenticator; no physical-device claim.');
 } finally {await browser.close();}

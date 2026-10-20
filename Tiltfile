@@ -5,6 +5,14 @@
 
 local('node tools/dev/local.mjs secrets', quiet=True)
 
+# WEBDOCK_DEV_HTTPS=1 tilt up: Console and account pages over HTTPS (needs mkcert; reset when switching).
+https = os.getenv('WEBDOCK_DEV_HTTPS', '') == '1'
+scheme = 'https' if https else 'http'
+tls_env = {
+    'WEBDOCK_DEV_TLS_CERT': os.path.join(config.main_dir, '.dev-local/tls/cert.pem'),
+    'WEBDOCK_DEV_TLS_KEY': os.path.join(config.main_dir, '.dev-local/tls/key.pem'),
+} if https else {}
+
 docker_compose('deploy/dev/compose.yaml', project_name='webdock-dev')
 dc_resource('postgres', labels=['infra'])
 dc_resource('registry', labels=['infra'], links=[link('http://127.0.0.1:5005/v2/_catalog', 'catalog')])
@@ -90,8 +98,9 @@ local_resource(
     'console',
     serve_cmd='npx vite --host 127.0.0.1 --port 3121 --strictPort',
     serve_dir='apps/console-ui',
+    serve_env=tls_env,
     resource_deps=['core'],
-    links=[link('http://127.0.0.1:3121', 'Console')],
+    links=[link(scheme + '://127.0.0.1:3121', 'Console')],
     labels=['ui'],
 )
 
@@ -100,7 +109,8 @@ local_resource(
     'account',
     serve_cmd='npx vite --host localhost --port 3125 --strictPort',
     serve_dir='apps/console-ui',
+    serve_env=tls_env,
     resource_deps=['core'],
-    links=[link('http://localhost:3125/account', 'Account')],
+    links=[link(scheme + '://localhost:3125/account', 'Account')],
     labels=['ui'],
 )

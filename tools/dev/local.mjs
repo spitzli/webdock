@@ -10,11 +10,15 @@ const state = join(root, ".dev-local");
 const compose = ["compose", "-f", join(root, "deploy/dev/compose.yaml")];
 const port = Number(process.env.WEBDOCK_DEV_POSTGRES_PORT ?? 55440);
 const target = `127.0.0.1:${port}/webdock`;
+// WEBDOCK_DEV_HTTPS=1 serves Console and account pages over HTTPS (some password managers refuse
+// passkeys on plain-HTTP localhost). Origins are recorded at bootstrap, so switching needs a reset.
+const https = process.env.WEBDOCK_DEV_HTTPS === "1";
+const scheme = https ? "https" : "http";
 const origins = {
   WEBDOCK_API_ORIGIN: "http://127.0.0.1:3130",
-  WEBDOCK_AUTH_ORIGIN: "http://localhost:3125",
-  WEBDOCK_STUDIO_ORIGIN: "http://127.0.0.1:3120",
-  WEBDOCK_CONSOLE_ORIGIN: "http://127.0.0.1:3121",
+  WEBDOCK_AUTH_ORIGIN: `${scheme}://localhost:3125`,
+  WEBDOCK_STUDIO_ORIGIN: `${scheme}://127.0.0.1:3120`,
+  WEBDOCK_CONSOLE_ORIGIN: `${scheme}://127.0.0.1:3121`,
 };
 const roles = [
   "webdock_auth_bootstrap", "webdock_auth_runtime", "webdock_worker_runtime", "webdock_admin_runtime",
@@ -28,8 +32,19 @@ function privateJSON(name, value) {
 }
 const url = (role, password) => `postgresql://${role}:${password}@${target}`;
 
+function tls() {
+  const dir = join(state, "tls");
+  if (!https || existsSync(join(dir, "cert.pem"))) return;
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  try {
+    execFileSync("mkcert", ["-cert-file", join(dir, "cert.pem"), "-key-file", join(dir, "key.pem"), "localhost", "127.0.0.1"], { stdio: "inherit" });
+  } catch {
+    throw new Error("WEBDOCK_DEV_HTTPS=1 needs mkcert with its local CA installed: install mkcert, run `mkcert -install` once, then restart Tilt.");
+  }
+}
 function secrets() {
   mkdirSync(state, { recursive: true, mode: 0o700 });
+  tls();
   if (existsSync(file("secrets.json"))) return JSON.parse(readFileSync(file("secrets.json"), "utf8"));
   const value = {
     postgres: secret(), rls: secret(), auth: secret(), operatorPassword: `Dev-${secret().slice(0, 20)}!`,
@@ -73,7 +88,12 @@ function init(value) {
   } else {
     run("webdock-migrate", ["--target", target], admin);
   }
-  if (existsSync(file("initial-secrets.json"))) return;
+  if (existsSync(file("initial-secrets.json"))) {
+    // Sign-in redirect URIs were registered with the scheme used at bootstrap.
+    const recorded = existsSync(file("scheme")) ? readFileSync(file("scheme"), "utf8").trim() : "http";
+    if (recorded !== scheme) throw new Error(`This database was set up for ${recorded}. Reset it (docker compose -f deploy/dev/compose.yaml -p webdock-dev down -v && rm -rf .dev-local) to switch to ${scheme}.`);
+    return;
+  }
   privateJSON("operator.json", {
     email: "operator@example.test", name: "Local operator", password: value.operatorPassword,
     authOrigin: origins.WEBDOCK_AUTH_ORIGIN, studioOrigin: origins.WEBDOCK_STUDIO_ORIGIN, consoleOrigin: origins.WEBDOCK_CONSOLE_ORIGIN,
@@ -81,6 +101,7 @@ function init(value) {
   run("webdock-bootstrap-operator", ["--target", target, "--config", file("operator.json"), "--output", file("initial-secrets.json")], {
     ...origins, WEBDOCK_AUTH_SECRET: value.auth, DATABASE_URL_UNPOOLED: url("webdock_offline_migrate", value.roles.webdock_offline_migrate),
   });
+  writeFileSync(file("scheme"), scheme, { mode: 0o600 });
   console.log(`Local operator: operator@example.test / ${value.operatorPassword} (password change and MFA are required at first sign-in)`);
 }
 
