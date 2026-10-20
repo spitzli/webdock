@@ -52,10 +52,13 @@ export function Modal({
   title,
   close,
   children,
+  dismissible = true,
 }: {
   title: string;
   close: () => void;
   children: ReactNode;
+  /** False for steps that must be completed explicitly, such as saving one-time codes. */
+  dismissible?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -73,21 +76,23 @@ export function Modal({
       aria-label={title}
       onCancel={(event) => {
         event.preventDefault();
-        close();
+        if (dismissible) close();
       }}
       onClick={(event) => {
-        if (event.target === event.currentTarget) close();
+        if (dismissible && event.target === event.currentTarget) close();
       }}
     >
       <div className="dialog-head">
         <h2>{title}</h2>
-        <button
-          className="button quiet"
-          onClick={close}
-          aria-label={`Close ${title}`}
-        >
-          Close
-        </button>
+        {dismissible ? (
+          <button
+            className="button quiet"
+            onClick={close}
+            aria-label={`Close ${title}`}
+          >
+            Close
+          </button>
+        ) : null}
       </div>
       {children}
     </dialog>

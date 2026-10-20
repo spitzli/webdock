@@ -3,6 +3,7 @@ import { ArrowClockwiseIcon } from "@phosphor-icons/react/dist/csr/ArrowClockwis
 import { PlugsIcon } from "@phosphor-icons/react/dist/csr/Plugs";
 import { ApiError } from "./api";
 import { ThemeButton } from "./theme";
+import { LocalePicker } from "./Locale";
 // Shared frame for sign-in, account and full-page states, before any workspace shell exists.
 export const authFrame = "relative flex min-h-dvh flex-col items-center justify-center gap-5 bg-page px-4 pb-16 pt-28 text-foreground";
 // Global element rules sit outside Tailwind's layers, so spacing uses flex gaps rather than margins.
@@ -12,16 +13,20 @@ export const authPanel =
   "[&_.editor]:mt-5 [&_.text-button]:mx-auto [&_.text-button]:mt-3 [&_.text-button]:text-xs";
 export function Brand({ product, href }: { product?: string | undefined; href?: string | undefined }) {
   const content = <>
-    <span className="brand-mark">w</span>webdock
-    {product ? <span className="ml-1 border-l border-outline pl-3 text-[13px] font-normal tracking-normal text-muted">{product}</span> : null}
+    <span className="brand-mark" aria-hidden>w</span>
+    <span className="max-[420px]:sr-only">webdock</span>
+    {product ? <span className="ml-1 border-l border-outline pl-3 text-[13px] font-normal tracking-normal text-muted max-[700px]:hidden">{product}</span> : null}
   </>;
-  const style = "flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground no-underline";
+  const style = "flex shrink-0 items-center gap-2 text-xl font-semibold tracking-tight text-foreground no-underline hover:no-underline max-[700px]:text-lg";
   return href ? <a className={style} href={href}>{content}</a> : <div className={style}>{content}</div>;
 }
 export function AuthHeader({ product, href }: { product?: string | undefined; href?: string | undefined }) {
   return <header className="absolute inset-x-0 top-0 flex items-center justify-between px-6 py-5 max-sm:px-4">
     <Brand product={product} href={href} />
-    <ThemeButton />
+    <div className="flex items-center gap-1">
+      <LocalePicker />
+      <ThemeButton />
+    </div>
   </header>;
 }
 /** Network failures surface as browser-specific text; never show that raw to people. */

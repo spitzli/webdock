@@ -232,3 +232,20 @@ export const tenantsSchema = z.array(
     role: z.string().nullable().optional(),
   }),
 );
+
+// Browser-side live checks mirroring the shared schema; the Core still validates every request.
+export const fieldRules = {
+  image: { pattern: "[a-zA-Z0-9.\\-]+(:[0-9]+)?/[a-zA-Z0-9_.\\/\\-]+@sha256:[a-f0-9]{64}", title: "Use registry/name@sha256: followed by 64 lowercase hex characters." },
+  healthPath: { pattern: "/[a-zA-Z0-9\\/_\\-]*", title: "Start with / and use letters, digits, /, _ or -." },
+  cpuMillicores: { pattern: "\\d+([.,]\\d+)?\\s*(cores)?", title: "For example, 0.5 cores." },
+  bytes: { pattern: "\\d+([.,]\\d+)?\\s*(MB|GB|TB)?", title: "For example, 512 MB or 1 GB." },
+} as const;
+/** Startup arguments must be a JSON list of strings; reported live through native validity. */
+export function checkArguments(input: HTMLTextAreaElement) {
+  let valid = false;
+  try {
+    const value: unknown = JSON.parse(input.value);
+    valid = Array.isArray(value) && value.length <= 20 && value.every((item) => typeof item === "string" && item.length <= 512);
+  } catch { /* reported below */ }
+  input.setCustomValidity(valid ? "" : 'Use a JSON list of strings, for example ["--serve"] or [].');
+}

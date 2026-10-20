@@ -83,7 +83,7 @@ async function serve(
   res: ServerResponse,
   next: () => void,
 ) {
-  const url = new URL(req.url ?? "/", "http://127.0.0.1:3121");
+  const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "127.0.0.1"}`);
   const send = (data: unknown) => {
     res.setHeader("Content-Type", "application/json");
     res.setHeader("Cache-Control", "no-store");
@@ -142,7 +142,8 @@ async function serve(
 }
 export const server = await createServer({
   root,
-  server: { host: "127.0.0.1", port: 3121, strictPort: true },
+  // 3121 by default; another free port when a local Tilt Console already uses it.
+  server: { host: "127.0.0.1", port: Number(process.env.WEBDOCK_PREVIEW_PORT ?? 3121), strictPort: false },
   plugins: [
     {
       name: "test-only-api",
@@ -155,4 +156,5 @@ export const server = await createServer({
   ],
 });
 await server.listen();
-console.log("Test-only preview listening on http://127.0.0.1:3121");
+export const previewOrigin = (server.resolvedUrls?.local[0] ?? "http://127.0.0.1:3121/").replace(/\/$/, "");
+console.log(`Test-only preview listening on ${previewOrigin}`);

@@ -14,6 +14,8 @@ import { ClockCounterClockwiseIcon } from "@phosphor-icons/react/dist/csr/ClockC
 import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
 import { ListIcon } from "@phosphor-icons/react/dist/csr/List";
 import { ThemeButton } from "./theme";
+import { UserMenu } from "./UserMenu";
+import { Brand } from "./AuthFrame";
 import { SignOutIcon } from "@phosphor-icons/react/dist/csr/SignOut";
 import { UserCircleIcon } from "@phosphor-icons/react/dist/csr/UserCircle";
 import { CommandIcon } from "@phosphor-icons/react/dist/csr/Command";
@@ -260,13 +262,7 @@ export function Shell() {
         Skip to content
       </a>
       <header className="topbar">
-        <div className="brand">
-          <span className="brand-mark" aria-hidden>
-            w
-          </span>
-          <span>webdock</span>
-          <span className="brand-product">Console</span>
-        </div>
+        <Brand product="Console" />
         <button
           className="button icon-button mobile-nav"
           aria-label="Open navigation"
@@ -291,13 +287,18 @@ export function Shell() {
         <div className="topbar-actions">
           <LocalePicker />
           <ThemeButton />
-          <Link
-            className="avatar"
-            to="/account"
-            aria-label={`Account: ${session.user.name}`}
-          >
-            {session.user.name.slice(0, 1).toUpperCase()}
-          </Link>
+          <UserMenu
+            name={session.user.name}
+            email={session.user.email}
+            accountHref={
+              api.config.sso
+                ? new URL("/account", api.config.authOrigin).href
+                : "/account"
+            }
+            signOut={() => {
+              logout.mutate();
+            }}
+          />
         </div>
       </header>
       <aside className="sidebar">

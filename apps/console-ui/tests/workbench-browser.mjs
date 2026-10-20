@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { setWorkbenchMode, workbenchRequests } from './workbench-fixtures.ts';
-const origin = 'http://127.0.0.1:3121';
+import { previewOrigin as origin } from './preview-server.ts';
 const updates = () => workbenchRequests.filter(value => value.body.action === 'apps.update');
 async function openAvailability(page, desired) {
   await page.getByRole('button', { name: 'Change availability', exact: true }).click();

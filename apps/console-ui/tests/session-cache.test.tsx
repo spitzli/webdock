@@ -1,3 +1,4 @@
+import { I18nProvider } from "@webdock/i18n/react";
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { act } from "react";
@@ -324,7 +325,7 @@ await test("AccountApp reuses the root client and retires account security data 
       fixture.root.render(
         <QueryClientProvider client={fixture.client}>
           <ApiContext.Provider value={api}>
-            <AccountApp />
+            <I18nProvider locale="en" preference="system"><AccountApp /></I18nProvider>
           </ApiContext.Provider>
         </QueryClientProvider>,
       );
@@ -404,7 +405,7 @@ await test("account password mutation still invalidates the root session across 
       fixture.root.render(
         <QueryClientProvider client={fixture.client}>
           <ApiContext.Provider value={api}>
-            <AccountApp />
+            <I18nProvider locale="en" preference="system"><AccountApp /></I18nProvider>
           </ApiContext.Provider>
         </QueryClientProvider>,
       );
@@ -478,7 +479,7 @@ await test("cached account authority cannot redirect before successful current-s
         fixture.root.render(
           <QueryClientProvider client={fixture.client}>
             <ApiContext.Provider value={api}>
-              <AccountApp />
+              <I18nProvider locale="en" preference="system"><AccountApp /></I18nProvider>
             </ApiContext.Provider>
           </QueryClientProvider>,
         );
@@ -539,7 +540,7 @@ await test("reauthentication proof cannot remove a different principal's prompt 
       fixture.root.render(
         <QueryClientProvider client={fixture.client}>
           <ApiContext.Provider value={api}>
-            <AccountApp />
+            <I18nProvider locale="en" preference="system"><AccountApp /></I18nProvider>
           </ApiContext.Provider>
         </QueryClientProvider>,
       );
@@ -580,6 +581,21 @@ async function waitFor(condition: () => boolean) {
   assert.ok(condition(), "React did not render the settled query result");
 }
 
+/** Acknowledgement is only offered after the one-time codes were downloaded or copied. */
+async function keepRecoveryCodes(host: HTMLElement) {
+  const button = (label: string) =>
+    [...host.querySelectorAll<HTMLButtonElement>("button")].find((item) => item.textContent === label);
+  const done = button("I saved my recovery codes");
+  assert.ok(done);
+  assert.equal(done.disabled, true);
+  const download = button("Download codes");
+  assert.ok(download);
+  await flush(() => {
+    download.click();
+  });
+  assert.equal(done.disabled, false);
+  return done;
+}
 async function submitAccountForm(
   host: HTMLElement,
   buttonText: string,
@@ -645,7 +661,7 @@ await test("MFA polling preserves owned recovery codes and cannot continue SSO b
       fixture.root.render(
         <QueryClientProvider client={fixture.client}>
           <ApiContext.Provider value={api}>
-            <AccountApp />
+            <I18nProvider locale="en" preference="system"><AccountApp /></I18nProvider>
           </ApiContext.Provider>
         </QueryClientProvider>,
       );
@@ -667,10 +683,7 @@ await test("MFA polling preserves owned recovery codes and cannot continue SSO b
     assert.match(fixture.host.textContent, /fixture-recovery-one/);
     assert.equal(fixture.client.getQueryData(["database-capacity"]), undefined);
     assert.deepEqual(redirects, []);
-    const done = [
-      ...fixture.host.querySelectorAll<HTMLButtonElement>("button"),
-    ].find((button) => button.textContent === "I saved my recovery codes");
-    assert.ok(done);
+    const done = await keepRecoveryCodes(fixture.host);
     await flush(() => {
       done.click();
     });
@@ -737,7 +750,7 @@ await test("owned recovery codes clear permanently on logout, revocation, user/s
         fixture.root.render(
           <QueryClientProvider client={fixture.client}>
             <ApiContext.Provider value={api}>
-              <AccountApp />
+              <I18nProvider locale="en" preference="system"><AccountApp /></I18nProvider>
             </ApiContext.Provider>
           </QueryClientProvider>,
         );
@@ -853,7 +866,7 @@ async function forcedSetup(
       fixture.root.render(
         <QueryClientProvider client={fixture.client}>
           <ApiContext.Provider value={api}>
-            <AccountApp />
+            <I18nProvider locale="en" preference="system"><AccountApp /></I18nProvider>
           </ApiContext.Provider>
         </QueryClientProvider>,
       );
@@ -883,10 +896,7 @@ async function forcedSetup(
     });
     assert.match(fixture.host.textContent, /forced-setup-recovery-code/);
     assert.deepEqual(redirects, []);
-    const done = [
-      ...fixture.host.querySelectorAll<HTMLButtonElement>("button"),
-    ].find((button) => button.textContent === "I saved my recovery codes");
-    assert.ok(done);
+    const done = await keepRecoveryCodes(fixture.host);
     await flush(() => {
       done.click();
     });
@@ -976,7 +986,7 @@ await test("MFA transition rejects mismatched readback and aborts an A-to-B race
         fixture.root.render(
           <QueryClientProvider client={fixture.client}>
             <ApiContext.Provider value={api}>
-              <AccountApp />
+              <I18nProvider locale="en" preference="system"><AccountApp /></I18nProvider>
             </ApiContext.Provider>
           </QueryClientProvider>,
         );

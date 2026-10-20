@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
-import { server } from './preview-server.ts';
+import { server, previewOrigin } from './preview-server.ts';
 import { workbenchBrowserChecks } from './workbench-browser.mjs';
 const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } : {}) });
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 const errors = [];
 page.on('pageerror', error => errors.push(error.message));
 try {
-  await page.goto('http://127.0.0.1:3121/projects');
+  await page.goto(previewOrigin + '/projects');
   await page.getByRole('link', { name: 'Acceptance project', exact: true }).waitFor();
   await page.getByRole('link', { name: 'Acceptance project', exact: true }).click();
   await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Changed name');
@@ -19,18 +19,25 @@ try {
   await page.getByRole('link', { name: 'Customers', exact: true }).first().click();
   await page.getByRole('link', { name: 'New customer', exact: true }).click();
   await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Created in browser test');
+  // Live check: a company needs its company name before it can be created.
   await page.getByRole('button', { name: 'Create customer', exact: true }).click();
-  await page.getByRole('status').filter({ hasText: 'Saved.' }).waitFor();
+  await page.getByRole('alert').filter({ hasText: /./ }).first().waitFor();
+  assert.ok(page.url().endsWith('/customers/new'), 'invalid customer is not submitted');
+  await page.getByRole('textbox', { name: 'Company name', exact: true }).fill('Created Company GmbH');
+  await page.getByRole('combobox', { name: 'Country', exact: true }).selectOption('DE');
+  await page.getByRole('button', { name: 'Create customer', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Customer created.' }).waitFor();
+  assert.match(page.url(), /\/customers\/[0-9]+$/, 'creation opens the new customer');
   await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Edited after create');
   await page.getByRole('button', { name: 'Save changes', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Saved.' }).waitFor();
-  const listing = await (await page.request.get('http://127.0.0.1:3121/v1/operator/registry/customers')).json();
+  const listing = await (await page.request.get(previewOrigin + '/v1/operator/registry/customers')).json();
   assert.equal(listing.totalDocs, 2, 'editing a new record must not create another record');
   await page.getByRole('link', { name: 'Open record', exact: true }).click();
   await page.getByRole('checkbox', { name: 'Confirm archive', exact: true }).check();
   await page.getByRole('button', { name: 'Archive record', exact: true }).click();
   await page.getByRole('heading', { name: 'Restore record', exact: true }).waitFor();
-  await page.goto('http://127.0.0.1:3121/projects');
+  await page.goto(previewOrigin + '/projects');
   for (const width of [320, 375, 414, 768, 1280]) {
     await page.setViewportSize({ width, height: 812 });
     await page.getByRole('link', { name: 'Changed name', exact: true }).waitFor();

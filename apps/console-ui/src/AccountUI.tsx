@@ -1,7 +1,8 @@
 import { AuthHeader, Brand, PageFailure, PageProgress, authFrame, authPanel } from "./AuthFrame";
 import { ThemeButton } from "./theme";
+import { LocalePicker } from "./Locale";
 import { formText } from "./form";
-import { useEffect, useRef, useState, type SubmitEvent } from "react";
+import { useEffect, useRef, useState, type ReactNode, type SubmitEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   startAuthentication,
@@ -13,13 +14,16 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import { PasswordIcon } from "@phosphor-icons/react/dist/csr/Password";
 import { ShieldCheckIcon } from "@phosphor-icons/react/dist/csr/ShieldCheck";
+import { GlobeIcon } from "@phosphor-icons/react/dist/csr/Globe";
+import { UserMenu } from "./UserMenu";
+import { FieldError } from "./live-validation";
 import { KeyIcon } from "@phosphor-icons/react/dist/csr/Key";
 import { DevicesIcon } from "@phosphor-icons/react/dist/csr/Devices";
 import { z } from "zod";
 import { useApi } from "./context";
 import { type Session } from "./api";
 import { sessionCacheScope, useSessionCacheIsolation } from "./session-cache";
-import { Failure, Loading } from "./common";
+import { Failure, Loading, Modal } from "./common";
 import {
   authorizationContinuation,
   nativeSessionSchema,
@@ -41,7 +45,23 @@ function PasswordField({
   label?: string;
   fresh?: boolean;
 }) {
+  const [touched, setTouched] = useState(false);
+  const [message, setMessage] = useState("");
+  const check = (input: HTMLInputElement) => {
+    const form = input.form;
+    if (name === "confirmPassword") {
+      const next = form?.elements.namedItem("newPassword") ?? form?.elements.namedItem("password");
+      input.setCustomValidity(next instanceof HTMLInputElement && next.value !== input.value ? "The passwords do not match." : "");
+    }
+    if (fresh && name !== "confirmPassword") {
+      // Keep the confirmation's live result in step with the new password.
+      const confirmation = form?.elements.namedItem("confirmPassword");
+      if (confirmation instanceof HTMLInputElement && confirmation.value) confirmation.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    setMessage(input.validity.valid ? "" : input.validationMessage);
+  };
   return (
+    <>
     <label>
       {label}
       <input
@@ -51,8 +71,13 @@ function PasswordField({
         minLength={fresh ? 12 : undefined}
         maxLength={128}
         autoComplete={fresh ? "new-password" : "current-password"}
+        onBlur={(event) => { setTouched(true); check(event.currentTarget); }}
+        onInput={(event) => { if (touched || name === "confirmPassword") check(event.currentTarget); }}
       />
     </label>
+      {fresh && name !== "confirmPassword" && !(touched && message) ? <span className="field-hint -mt-3">At least 12 characters.</span> : null}
+      <FieldError message={touched ? message : undefined} />
+    </>
   );
 }
 function Feedback({
@@ -313,25 +338,53 @@ function PasswordReset() {
     </main>
   );
 }
-function RecoveryCodes({ codes, done }: { codes: string[]; done: () => void }) {
+function RecoveryCodes({ codes, account, done }: { codes: string[]; account: string; done: () => void }) {
+  // Confirmation stays unavailable until the codes have left this page at least once.
+  const [kept, setKept] = useState(false);
+  const [status, setStatus] = useState("");
+  const text = `Webdock recovery codes for ${account}\nCreated ${new Date().toISOString().slice(0, 10)}. Each code works once.\n\n${codes.join("\n")}\n`;
+  const copy = () => {
+    void navigator.clipboard.writeText(text).then(() => {
+      setKept(true);
+      setStatus("Copied to your clipboard.");
+    }, () => {
+      setStatus("Copying is unavailable in this browser. Download the codes instead.");
+    });
+  };
+  const download = () => {
+    const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "webdock-recovery-codes.txt";
+    anchor.click();
+    setTimeout(() => { URL.revokeObjectURL(url); }, 1000);
+    setKept(true);
+    setStatus("Downloaded webdock-recovery-codes.txt.");
+  };
   return (
-    <section className="security-section">
-      <h2>Save your recovery codes</h2>
-      <p>
-        Keep these somewhere private. Each code can be used once if you lose
-        your authenticator.
-      </p>
-      <ul className="recovery-codes" aria-label="Recovery codes">
-        {codes.map((code) => (
-          <li key={code}>
-            <code>{code}</code>
-          </li>
-        ))}
-      </ul>
-      <button className="button primary" onClick={done}>
-        I saved my recovery codes
-      </button>
-    </section>
+    <Modal title="Save your recovery codes" close={() => undefined} dismissible={false}>
+      <div className="flex flex-col gap-4">
+        <p className="text-muted">
+          Keep these somewhere private, such as your password manager. Each code
+          signs you in once if you lose your authenticator.
+        </p>
+        <ul className="recovery-codes" aria-label="Recovery codes">
+          {codes.map((code) => (
+            <li key={code}>
+              <code>{code}</code>
+            </li>
+          ))}
+        </ul>
+        <div className="flex flex-wrap gap-2">
+          <button className="button" onClick={copy}>Copy codes</button>
+          <button className="button" onClick={download}>Download codes</button>
+        </div>
+        <p role="status" className="min-h-5 text-[13px] text-muted">{status || "Copy or download the codes to continue."}</p>
+        <button className="button primary self-start" disabled={!kept} onClick={done}>
+          I saved my recovery codes
+        </button>
+      </div>
+    </Modal>
   );
 }
 function accountCanContinue(session: Session | null | undefined): boolean {
@@ -721,8 +774,9 @@ export function AccountSecurity({
           </p>
         ) : null}
         {codes ? (
-          <RecoveryCodes codes={codes} done={completeCodes} />
+          <RecoveryCodes codes={codes} account={session.user.email} done={completeCodes} />
         ) : enrollment ? (
+          <Modal title="Set up authenticator" close={() => { setEnrollment(null); confirm.reset(); enable.reset(); }}>
           <form
             className="editor"
             onSubmit={(event) => {
@@ -762,6 +816,7 @@ export function AccountSecurity({
               </button>
             </div>
           </form>
+          </Modal>
         ) : session.user.twoFactorEnabled || enrolled ? (
           <>
             <p>Your authenticator protects this account.</p>
@@ -1491,27 +1546,69 @@ export function AccountApp() {
       </>
     );
   return (
-    <div className="account-layout">
-      <header className="account-topbar">
-        <Brand product="Account" href="/account" />
-        <div className="flex items-center gap-4">
-          <nav aria-label="Account">
-            <a href="/account">Security</a>
-            <a href="/sites">Websites</a>
-            <a href="/logout">Sign out</a>
-          </nav>
-          <ThemeButton />
-        </div>
-      </header>
-      <main
-        className={
-          ["/consent", "/logout", "/invitation"].includes(location.pathname)
-            ? "account-main compact"
-            : "account-main"
-        }
-      >
-        {content}
+    <AccountShell session={session.data} consoleLink={ready}>
+      {content}
+    </AccountShell>
+  );
+}
+
+function AccountShell({ session, consoleLink, children }: { session: Session; consoleLink: boolean; children: ReactNode }) {
+  const api = useApi();
+  return (
+    // Single-purpose steps keep the focused sign-in frame; account pages share the Console shell.
+    ["/consent", "/logout", "/invitation"].includes(location.pathname) ? (
+      <main className={authFrame}>
+        <AuthHeader product="Account" href="/account" />
+        <div className="w-full max-w-[540px]">{children}</div>
       </main>
-    </div>
+    ) : (
+      <div className="app-shell">
+        <a className="skip-link" href="#main">
+          Skip to content
+        </a>
+        <header className="topbar">
+          <Brand product="Account" href="/account" />
+          <div className="topbar-actions ml-auto">
+            <LocalePicker />
+            <ThemeButton />
+            <UserMenu
+              name={session.user.name}
+              email={session.user.email}
+              consoleHref={
+                consoleLink && api.config.consoleOrigin
+                  ? `${api.config.consoleOrigin}/api/sso/login`
+                  : undefined
+              }
+              signOut="/logout"
+            />
+          </div>
+        </header>
+        <aside className="sidebar">
+          <nav aria-label="Account">
+            {[
+              { href: "/account", label: "Security", Icon: ShieldCheckIcon },
+              { href: "/sites", label: "Websites", Icon: GlobeIcon },
+            ].map(({ href, label, Icon }) => (
+              <a
+                key={href}
+                href={href}
+                className={`nav-item${location.pathname === href ? " selected" : ""}`}
+                aria-current={location.pathname === href ? "page" : undefined}
+              >
+                <Icon size={18} aria-hidden />
+                {label}
+              </a>
+            ))}
+          </nav>
+        </aside>
+        <main id="main" className="account-main w-full">
+          <nav aria-label="Account sections" className="mb-6 flex gap-2 min-[701px]:hidden">
+            <a className="button" href="/account">Security</a>
+            <a className="button" href="/sites">Websites</a>
+          </nav>
+          {children}
+        </main>
+      </div>
+    )
   );
 }

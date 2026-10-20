@@ -1,7 +1,10 @@
 import { ProjectExtensions } from "./plugins/ProjectExtensions";
 import { formText } from "./form";
-import { useEffect, useState } from "react";
-import { Link, useBlocker } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useI18n } from "@webdock/i18n/react";
+import { countryOptions } from "./countries";
+import { FieldError, useLiveValidation } from "./live-validation";
+import { Link, useBlocker, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowLeft";
 import { ArrowRightIcon } from "@phosphor-icons/react/dist/csr/ArrowRight";
@@ -268,6 +271,7 @@ export function RegistryDetail({
   id: string;
 }) {
   const api = useApi();
+  const created = useRouterState({ select: (state) => state.location.state.created });
   const record = useQuery({
     queryKey: ["registry", collection, id],
     queryFn: ({ signal }) =>
@@ -298,6 +302,13 @@ export function RegistryDetail({
           <Status status={record.data.status} />
         ) : null}
       </div>
+      {created === collection ? (
+        <p role="status" className="mb-6 rounded-lg border border-outline bg-surface px-4 py-3 text-[13px]">
+          {collection === "customers"
+            ? "Customer created. Invite the first person below or add a project."
+            : "Project created."}
+        </p>
+      ) : null}
       {collection === "customers" ? (
         <div className="context-links">
           <Link
@@ -411,6 +422,8 @@ function RegistryForm({
   const [createdId, setCreatedId] = useState<string>();
   const [customerSearch, setCustomerSearch] = useState("");
   const [customerPage, setCustomerPage] = useState(1);
+  const live = useLiveValidation();
+  const navigate = useNavigate();
   const [selectedCustomer, setSelectedCustomer] = useState(
     record?.customer ?? customer ?? "",
   );
@@ -444,11 +457,17 @@ function RegistryForm({
       void client.invalidateQueries({ queryKey: ["registry"] });
     },
   });
+  // A new record opens its own page once the unsaved-changes guard has been released.
+  useEffect(() => {
+    if (!record && createdId && !dirty)
+      void navigate({ to: "/$collection/$id", params: { collection, id: createdId }, state: { created: collection } });
+  }, [record, createdId, dirty, collection, navigate]);
 
   return (
     <div className="editor-layout">
       <form
         className="editor"
+        {...live.form}
         onChange={() => {
           setDirty(true);
           setSaved(null);
@@ -489,8 +508,9 @@ function RegistryForm({
             disabled={write.isPending}
           />
         </label>
+        {live.errors.name ? <FieldError message={live.errors.name} /> : <span className="field-hint -mt-3">How this {collection === "customers" ? "customer" : "project"} appears across Webdock.</span>}
         {collection === "customers" ? (
-          <CustomerFields record={record} pending={write.isPending} />
+          <CustomerFields record={record} pending={write.isPending} errors={live.errors} />
         ) : (
           <>
             {record ? (
@@ -658,68 +678,79 @@ function RegistryForm({
 function CustomerFields({
   record,
   pending,
+  errors,
 }: {
   record: RegistryRecord | undefined;
   pending: boolean;
+  errors: Record<string, string>;
 }) {
+  const i18n = useI18n();
+  const [type, setType] = useState(record?.customerType === "person" ? "person" : "company");
+  const countries = useMemo(() => countryOptions(i18n.locale), [i18n.locale]);
+  const visible = type === "company" ? ["companyName", "contactName"] : ["firstName", "lastName"];
+  const field = (key: (typeof customerFields)[number]["key"], label: string, autoComplete: string, extra: { required?: boolean; max?: number } = {}) => (
+    <div key={key} className="grid content-start gap-1.5">
+      <label>
+        {label}
+        <input name={key} maxLength={extra.max ?? 160} required={extra.required} autoComplete={autoComplete} defaultValue={record?.[key] ?? ""} disabled={pending} />
+      </label>
+      <FieldError className="" message={errors[key]} />
+    </div>
+  );
   return (
     <>
-      <label>
-        Customer type
-        <select
-          name="customerType"
-          defaultValue={record?.customerType ?? "company"}
-          disabled={pending}
-        >
-          <option value="company">Company</option>
-          <option value="person">Person</option>
-        </select>
-      </label>
-      <label>
-        Contact email
-        <input
-          type="email"
-          name="contactEmail"
-          maxLength={254}
-          defaultValue={record?.contactEmail ?? ""}
-          autoComplete="email"
-          disabled={pending}
-        />
-      </label>
-      <label>
-        Phone
-        <input
-          type="tel"
-          name="phone"
-          maxLength={50}
-          defaultValue={record?.phone ?? ""}
-          autoComplete="tel"
-          disabled={pending}
-        />
-      </label>
-      <details>
-        <summary>Names and address</summary>
-        <div className="editor mt-4">
-          {customerFields.map((field) => (
-            <label key={field.key}>
-              {field.label}
-              <input
-                name={field.key}
-                maxLength={"max" in field ? field.max : 160}
-                pattern={field.key === "country" ? "[A-Za-z]{2}" : undefined}
-                autoComplete={field.autoComplete}
-                defaultValue={record?.[field.key] ?? ""}
-                disabled={pending}
-              />
-              {field.key === "country" ? (
-                <span className="field-hint">
-                  Two-letter country code, for example DE.
-                </span>
-              ) : null}
+      <fieldset className="flex flex-col gap-3">
+        <legend>Customer type</legend>
+        <div className="inline-flex self-start rounded-md border border-outline p-0.5" role="radiogroup" aria-label="Customer type">
+          {(["company", "person"] as const).map((value) => (
+            <label key={value} className={`cursor-pointer rounded px-3 py-1.5 text-[13px] font-medium ${type === value ? "bg-soft text-foreground" : "text-muted"}`}>
+              <input type="radio" name="customerType" value={value} checked={type === value} onChange={() => { setType(value); }} disabled={pending} className="sr-only" />
+              {value === "company" ? "Company" : "Person"}
             </label>
           ))}
         </div>
-      </details>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {type === "company"
+            ? [field("companyName", "Company name", "organization", { required: true }), field("contactName", "Contact person", "name")]
+            : [field("firstName", "First name", "given-name", { required: true }), field("lastName", "Last name", "family-name", { required: true })]}
+        </div>
+        {customerFields.filter((item) => ["companyName", "contactName", "firstName", "lastName"].includes(item.key) && !visible.includes(item.key)).map((item) => (
+          // Values of the other customer type are kept, not silently cleared.
+          <input key={item.key} type="hidden" name={item.key} defaultValue={record?.[item.key] ?? ""} />
+        ))}
+      </fieldset>
+      <fieldset className="grid gap-3 sm:grid-cols-2">
+        <legend>Contact</legend>
+        <div className="grid content-start gap-1.5">
+          <label>
+            Contact email
+            <input type="email" name="contactEmail" maxLength={254} defaultValue={record?.contactEmail ?? ""} autoComplete="email" disabled={pending} />
+          </label>
+          <FieldError className="" message={errors.contactEmail} />
+        </div>
+        <div className="grid content-start gap-1.5">
+          <label>
+            Phone
+            <input type="tel" name="phone" maxLength={50} pattern="[+0-9 ()/-]{3,50}" title="Digits, spaces and + ( ) / - only" defaultValue={record?.phone ?? ""} autoComplete="tel" disabled={pending} />
+          </label>
+          <FieldError className="" message={errors.phone} />
+        </div>
+      </fieldset>
+      <fieldset className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <legend>Address</legend>
+        <div className="sm:col-span-2">{field("addressLine1", "Street and number", "address-line1")}</div>
+        <div className="sm:col-span-2">{field("addressLine2", "Address line 2 (optional)", "address-line2")}</div>
+        {field("postalCode", "Postal code", "postal-code", { max: 32 })}
+        {field("city", "City", "address-level2")}
+        {field("region", "State or region (optional)", "address-level1")}
+        <label>
+          Country
+          <select name="country" defaultValue={record?.country ?? ""} autoComplete="country" disabled={pending}>
+            <option value="">Choose a country</option>
+            {countries.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
+          </select>
+        </label>
+      </fieldset>
     </>
   );
 }
@@ -813,4 +844,10 @@ function RecordInformation({
       )}
     </aside>
   );
+}
+
+declare module "@tanstack/react-router" {
+  interface HistoryState {
+    created?: "customers" | "projects";
+  }
 }

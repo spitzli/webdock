@@ -43,6 +43,8 @@ try {
   await page.getByRole('button',{name:'Verify and enable',exact:true}).click();
   await page.getByRole('heading',{name:'Save your recovery codes',exact:true}).waitFor();
   assert.equal(await page.locator('.recovery-codes li').count(),10);
+  assert.equal(await page.getByRole('button',{name:'I saved my recovery codes',exact:true}).isDisabled(),true);
+  await page.getByRole('button',{name:'Download codes',exact:true}).click();
   await page.getByRole('button',{name:'I saved my recovery codes',exact:true}).click();
   await page.getByRole('heading',{name:'Connect Webdock Console?'}).waitFor();
   await page.getByRole('button',{name:'Allow access',exact:true}).click();
@@ -64,6 +66,8 @@ try {
   await recoverySection.getByRole('button',{name:'Generate new recovery codes',exact:true}).click();
   await page.getByRole('heading',{name:'Save your recovery codes',exact:true}).waitFor();
   const recoveryCode=(await page.locator('.recovery-codes li code').first().textContent()).trim();
+  assert.equal(await page.getByRole('button',{name:'I saved my recovery codes',exact:true}).isDisabled(),true);
+  await page.getByRole('button',{name:'Download codes',exact:true}).click();
   await page.getByRole('button',{name:'I saved my recovery codes',exact:true}).click();
   const otherContext=await browser.newContext();const other=await otherContext.newPage();
   await other.goto(authOrigin+'/login');

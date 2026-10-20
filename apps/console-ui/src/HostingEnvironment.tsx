@@ -22,6 +22,8 @@ export function HostingEnvironment({ names, disabled, changed }: { names: string
       <label>
         Variable name
         <input aria-label={`Variable name ${String(index + 1)}`} value={row.name} readOnly={row.saved} disabled={row.removed} required={!row.removed}
+          ref={(input) => { input?.setCustomValidity(rows.some((other) => other.id !== row.id && !other.removed && other.name === row.name && row.name) ? "This variable name is already used." : ""); }}
+          title="Start with a letter or _, then letters, digits or _."
           pattern="[A-Za-z_][A-Za-z0-9_]*" maxLength={128} autoComplete="off" spellCheck={false}
           onChange={(event) => { edit(row.id, { name: event.target.value }); }} />
       </label>

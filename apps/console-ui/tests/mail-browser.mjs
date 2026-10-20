@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-import { server } from "./preview-server.ts";
+import { server, previewOrigin } from "./preview-server.ts";
 const browser = await chromium.launch({
   headless: true,
   ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
@@ -57,8 +57,8 @@ page.on("pageerror", (error) => errors.push(error.message));
 await page.route("**/console-config.json", (route) =>
   route.fulfill({
     json: {
-      apiOrigin: "http://127.0.0.1:3121",
-      authOrigin: "http://127.0.0.1:3121",
+      apiOrigin: previewOrigin,
+      authOrigin: previewOrigin,
       enabledFeatures: ["mail"],
     },
   }),
@@ -102,7 +102,7 @@ await page.route("**/api/console/mail", async (route) => {
   return route.fulfill({ json: { data: service } });
 });
 try {
-  await page.goto("http://127.0.0.1:3121/tenants");
+  await page.goto(previewOrigin + "/tenants");
   await page.getByRole("main").getByRole("link", { name: "Mail", exact: true }).click();
   await page.getByText("Acceptance mailbox", { exact: true }).waitFor();
   assert.match(await page.getByRole("main").innerText(), /Applied revision 0/);

@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { FieldError, useLiveValidation } from "./live-validation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useBlocker } from "@tanstack/react-router";
 import { resourceInput } from "@webdock/hosting-contracts";
 import {
   appSchema,
+  checkArguments,
+  fieldRules,
   settingsCommand,
   type HostingApp,
 } from "./hosting-contracts";
@@ -16,6 +19,7 @@ export function HostingSettings({ app }: { app: HostingApp }) {
   const [editorVersion, setEditorVersion] = useState(0);
   const [dirty, setDirty] = useState(false);
   const [validation, setValidation] = useState<string>();
+  const live = useLiveValidation();
   const { mutation, retry, uncertain } = useHostingAction(() => {
     setDirty(false);
   });
@@ -53,7 +57,7 @@ export function HostingSettings({ app }: { app: HostingApp }) {
   return (
     <div className="editor-layout">
       <form
-        className="editor"
+        className="editor" {...live.form}
         key={editorVersion}
         onChange={() => {
           setDirty(true);
@@ -87,17 +91,17 @@ export function HostingSettings({ app }: { app: HostingApp }) {
           <label>
             Image digest
             <input
-              name="image"
+              name="image" pattern={fieldRules.image.pattern} title={fieldRules.image.title}
               required
               maxLength={512}
               defaultValue={snapshot.spec.image}
               readOnly={snapshot.spec.template === "healthcheck"}
             />
-          </label>
+          </label><FieldError message={live.errors.image} />
           <label>
             Startup arguments
             <textarea
-              name="args"
+              name="args" onInput={(event) => { checkArguments(event.currentTarget); }}
               aria-label="Startup arguments"
               rows={4}
               required
@@ -107,7 +111,7 @@ export function HostingSettings({ app }: { app: HostingApp }) {
             <span className="field-hint">
               A JSON list of arguments. Use [] for no arguments.
             </span>
-          </label>
+          </label><FieldError message={live.errors.args} />
           <label>
             Application port
             <input
@@ -119,21 +123,21 @@ export function HostingSettings({ app }: { app: HostingApp }) {
               defaultValue={snapshot.spec.port}
               readOnly={snapshot.spec.template === "healthcheck"}
             />
-          </label>
+          </label><FieldError message={live.errors.port} />
           <label>
             Health path
             <input
-              name="healthPath"
+              name="healthPath" pattern={fieldRules.healthPath.pattern} title={fieldRules.healthPath.title}
               required
               maxLength={160}
               defaultValue={snapshot.spec.healthPath}
               readOnly={snapshot.spec.template === "healthcheck"}
             />
-          </label>
+          </label><FieldError message={live.errors.healthPath} />
           <label>
             CPU
             <input
-              name="cpuMillicores"
+              name="cpuMillicores" pattern={fieldRules.cpuMillicores.pattern} title={fieldRules.cpuMillicores.title}
               aria-label="CPU"
               required
               defaultValue={resourceInput(
@@ -142,11 +146,11 @@ export function HostingSettings({ app }: { app: HostingApp }) {
               )}
             />
             <span className="field-hint">For example, 0.5 cores.</span>
-          </label>
+          </label><FieldError message={live.errors.cpuMillicores} />
           <label>
             Memory
             <input
-              name="memoryBytes"
+              name="memoryBytes" pattern={fieldRules.bytes.pattern} title={fieldRules.bytes.title}
               aria-label="Memory"
               required
               defaultValue={resourceInput(
@@ -155,18 +159,18 @@ export function HostingSettings({ app }: { app: HostingApp }) {
               )}
             />
             <span className="field-hint">For example, 512 MB.</span>
-          </label>
+          </label><FieldError message={live.errors.memoryBytes} />
           <label>
             Temporary storage
             <input
-              name="ephemeralBytes"
+              name="ephemeralBytes" pattern={fieldRules.bytes.pattern} title={fieldRules.bytes.title}
               required
               defaultValue={resourceInput(
                 "ephemeralBytes",
                 snapshot.spec.ephemeralBytes,
               )}
             />
-          </label>
+          </label><FieldError message={live.errors.ephemeralBytes} />
           <label>
             Replicas
             <input
@@ -178,7 +182,7 @@ export function HostingSettings({ app }: { app: HostingApp }) {
               required
               defaultValue={snapshot.spec.replicas}
             />
-          </label>
+          </label><FieldError message={live.errors.replicas} />
         </fieldset>
         <HostingEnvironment
           names={snapshot.environmentNames ?? []}

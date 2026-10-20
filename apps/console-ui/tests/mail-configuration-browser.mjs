@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-import { server } from "./preview-server.ts";
+import { server, previewOrigin } from "./preview-server.ts";
 import { commandSchema } from "../src/mail-contracts.ts";
 const browser = await chromium.launch({
   headless: true,
@@ -63,8 +63,8 @@ page.on("pageerror", (error) => errors.push(error.message));
 await page.route("**/console-config.json", (route) =>
   route.fulfill({
     json: {
-      apiOrigin: "http://127.0.0.1:3121",
-      authOrigin: "http://127.0.0.1:3121",
+      apiOrigin: previewOrigin,
+      authOrigin: previewOrigin,
       enabledFeatures: ["mail"],
     },
   }),
@@ -130,7 +130,7 @@ await page.route("**/api/console/mail", async (route) => {
   return route.fulfill({ json: { data: { ok: true } } });
 });
 try {
-  await page.goto("http://127.0.0.1:3121/mail?customer=101");
+  await page.goto(previewOrigin + "/mail?customer=101");
   const attach = page.getByRole("form", { name: "Attach incoming domain" });
   await attach.getByRole("combobox").selectOption("201");
   await attach.getByRole("button").click();
