@@ -34,6 +34,8 @@ The native Console already exposes account/security, registry/workspaces and man
 
 Session/authorization cache isolation passed focused regression tests and independent review. Confirmed preview responses invalidate protected data even when the preview boolean remains true. Real native account browser checks cover ordinary setup and forced `prompt=login` / `max_age` setup, including the MFA session rotation and recovery-code acknowledgement barrier.
 
+Invitation onboarding: operators choose Managed or Self-service per customer and invite people from the customer page, with a copyable one-use link. A new invitee gets one setup mail that creates the account (password, then an optional passkey), signs in and continues into the invitation; self-service owners then complete the customer details. Core sends account mail itself to a loopback catch-all (`WEBDOCK_ACCOUNT_SMTP`, Mailpit in Tilt). The restricted-role access test covers the whole sequence from invitation to acceptance; an in-process SMTP fixture covers the mail path; fixture browser checks cover the Console panel. The account pages for this flow have no real browser run yet.
+
 ## Next independently testable slices
 
 1. Extend the reviewed Registry/Hosting bearer boundary to remaining callable native families, preserving each domain's live OAuth authority and scope ceiling.

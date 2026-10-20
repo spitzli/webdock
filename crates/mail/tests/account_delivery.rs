@@ -246,3 +246,71 @@ async fn only_canonical_kind_bound_account_links_can_enter_mail() {
     assert!(MailDelivery::new(config(&server.origin, &ca), "http://outside.invalid").is_err());
     server.assert_healthy();
 }
+/// Minimal in-process SMTP catch-all: accepts one message and returns its DATA section.
+async fn catch_one(listener: tokio::net::TcpListener) -> String {
+    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+    let (stream, _) = listener.accept().await.unwrap();
+    let (read, mut write) = stream.into_split();
+    let mut lines = BufReader::new(read).lines();
+    write.write_all(b"220 fixture\r\n").await.unwrap();
+    let mut data = String::new();
+    let mut in_data = false;
+    while let Some(line) = lines.next_line().await.unwrap() {
+        if in_data {
+            if line == "." {
+                in_data = false;
+                write.write_all(b"250 queued\r\n").await.unwrap();
+            } else {
+                data.push_str(&line);
+                data.push('\n');
+            }
+            continue;
+        }
+        let reply: &[u8] = match line.split(' ').next().unwrap_or("").to_uppercase().as_str() {
+            "EHLO" => b"250 fixture\r\n",
+            "DATA" => {
+                in_data = true;
+                b"354 go\r\n"
+            }
+            "QUIT" => {
+                write.write_all(b"221 bye\r\n").await.unwrap();
+                break;
+            }
+            _ => b"250 ok\r\n",
+        };
+        write.write_all(reply).await.unwrap();
+    }
+    data
+}
+#[tokio::test]
+async fn loopback_smtp_carries_the_activation_link_with_its_invitation() {
+    assert!(
+        MailDelivery::loopback(
+            "192.0.2.1:25".parse().unwrap(),
+            "webdock@example.test",
+            "http://localhost:3125"
+        )
+        .is_err(),
+        "only a loopback catch-all is accepted"
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let caught = tokio::spawn(catch_one(listener));
+    let sender =
+        MailDelivery::loopback(address, "webdock@example.test", "http://localhost:3125").unwrap();
+    let mut activation = request();
+    activation.kind = DeliveryKind::Activation;
+    activation.url = format!(
+        "http://localhost:3125/reset-password?token={}&invitation=456",
+        "a".repeat(64)
+    );
+    sender.deliver(&activation).await.unwrap();
+    let message = caught.await.unwrap();
+    assert!(message.contains("To: <recipient@example.test>"));
+    assert!(message.contains("Subject: Set up your Webdock account"));
+    assert!(message.contains(&activation.url));
+    // Only activations may continue into an invitation; resets stay single-purpose.
+    let mut reset = activation.clone();
+    reset.kind = DeliveryKind::Reset;
+    assert!(sender.deliver(&reset).await.is_err());
+}

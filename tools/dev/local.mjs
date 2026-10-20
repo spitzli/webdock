@@ -197,6 +197,7 @@ function runtimeEnv(value) {
     WEBDOCK_AUTH_SECRET: value.auth, DATABASE_RLS_SECRET: value.rls,
     WEBDOCK_FEATURES: process.env.WEBDOCK_DEV_FEATURES ?? "{}",
     WEBDOCK_BIND_ADDRESS: "127.0.0.1", PORT: "3130",
+    WEBDOCK_ACCOUNT_SMTP: `127.0.0.1:${process.env.WEBDOCK_DEV_SMTP_PORT ?? 55025}`,
     ...(existsSync(pluginFile("plugin-config.json")) ? { WEBDOCK_NATIVE_PLUGIN_CONFIG: pluginFile("plugin-config.json") } : {}),
   };
 }

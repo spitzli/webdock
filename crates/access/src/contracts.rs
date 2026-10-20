@@ -238,6 +238,9 @@ pub enum AccessCommand {
 #[derive(Debug, Serialize)]
 pub struct ChangeResult {
     pub id: Option<String>,
+    /// One-use setup or invitation link, returned to operators only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub link: Option<String>,
     pub message: String,
     pub delivery: Option<&'static str>,
 }

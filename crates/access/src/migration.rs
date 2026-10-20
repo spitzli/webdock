@@ -176,7 +176,7 @@ impl AccessService {
         tx.commit().await?;
         let delivery = if self
             .identity
-            .queue_account_activation(subject)
+            .queue_account_activation(subject, None)
             .await
             .is_ok()
         {
@@ -185,6 +185,7 @@ impl AccessService {
             "activation-unavailable"
         };
         Ok(ChangeResult {
+            link: None,
             id: Some(subject.into()),
             message:
                 "Local authority activated. Account verification and security setup are required."
@@ -282,6 +283,7 @@ impl AccessService {
         .await?;
         tx.commit().await?;
         Ok(ChangeResult {
+            link: None,
             id: Some(organization.into()),
             message: "Reviewed native memberships activated; previous project grants disabled."
                 .into(),

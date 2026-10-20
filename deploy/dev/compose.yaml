@@ -18,6 +18,10 @@ services:
     image: registry:3
     ports: ['127.0.0.1:${WEBDOCK_DEV_REGISTRY_PORT:-5005}:5000']
     volumes: [registry:/var/lib/registry]
+  # Catch-all for account mail from Core (activation, invitations); nothing leaves this machine.
+  mailpit:
+    image: axllent/mailpit:v1.27.11
+    ports: ['127.0.0.1:${WEBDOCK_DEV_SMTP_PORT:-55025}:1025', '127.0.0.1:${WEBDOCK_DEV_MAILPIT_PORT:-55026}:8025']
 volumes:
   postgres:
   registry:

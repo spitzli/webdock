@@ -194,6 +194,7 @@ impl RegistryService {
                 "city",
                 "region",
                 "country",
+                "onboarding",
             ],
             _ => vec![
                 "name",
@@ -260,7 +261,7 @@ impl RegistryService {
         let mut updated = match &before {
             Some(old) => old.clone(),
             None => {
-                json!({"id":self.allocator.allocate(&tx).await?,"status":"active","customerType":"company","createdAt":chrono::Utc::now(),"updatedAt":chrono::Utc::now()})
+                json!({"id":self.allocator.allocate(&tx).await?,"status":"active","customerType":"company","onboarding":"managed","createdAt":chrono::Utc::now(),"updatedAt":chrono::Utc::now()})
             }
         };
         updated

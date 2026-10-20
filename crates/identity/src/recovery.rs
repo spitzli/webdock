@@ -103,27 +103,35 @@ impl IdentityService {
                 } else {
                     DeliveryKind::Reset
                 };
-                self.queue_recovery(&tx, &id, kind).await?;
+                self.queue_recovery(&tx, &id, kind, None).await?;
             }
         }
         tx.commit().await?;
         Ok(())
     }
     /// Operator/invitation service only. Binds activation to an existing canonical identity.
-    pub async fn queue_account_activation(&self, user_id: &str) -> Result<()> {
+    /// Returns the one-use link, or None when one was issued within the last minute.
+    /// `invitation` lets the activation page continue straight into that invitation.
+    pub async fn queue_account_activation(
+        &self,
+        user_id: &str,
+        invitation: Option<&str>,
+    ) -> Result<Option<String>> {
         let tx = self.db.begin().await?;
         if tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT id FROM webdock_auth.\"user\" WHERE id=$1 AND NOT \"emailVerified\" AND \"mustChangePassword\" AND NOT coalesce(banned,false) FOR UPDATE",[user_id.into()])).await?.is_none()||externally_managed(&tx,user_id).await? {return Err(IdentityError::SecurityState)}
-        self.queue_recovery(&tx, user_id, DeliveryKind::Activation)
+        let link = self
+            .queue_recovery(&tx, user_id, DeliveryKind::Activation, invitation)
             .await?;
         tx.commit().await?;
-        Ok(())
+        Ok(link)
     }
     async fn queue_recovery(
         &self,
         tx: &DatabaseTransaction,
         id: &str,
         kind: DeliveryKind,
-    ) -> Result<()> {
+        invitation: Option<&str>,
+    ) -> Result<Option<String>> {
         let keys = self.keys.as_ref().ok_or(IdentityError::Configuration)?;
         let origin = self
             .account_origin
@@ -131,7 +139,7 @@ impl IdentityService {
             .ok_or(IdentityError::Configuration)?;
         tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"DELETE FROM webdock_auth.identity_recovery_token WHERE user_id=$1 AND expires_at<=statement_timestamp()",[id.into()])).await?;
         // One active request per minute per account prevents repeated emails without exposing existence.
-        if tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT token_hash FROM webdock_auth.identity_recovery_token WHERE user_id=$1 AND created_at>statement_timestamp()-interval '1 minute' LIMIT 1",[id.into()])).await?.is_some(){return Ok(())}
+        if tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT token_hash FROM webdock_auth.identity_recovery_token WHERE user_id=$1 AND created_at>statement_timestamp()-interval '1 minute' LIMIT 1",[id.into()])).await?.is_some(){return Ok(None)}
         let email: String = tx
             .query_one_raw(Statement::from_sql_and_values(
                 DbBackend::Postgres,
@@ -150,17 +158,21 @@ impl IdentityService {
             .join("/reset-password")
             .map_err(|_| IdentityError::Configuration)?;
         url.query_pairs_mut().append_pair("token", &token);
+        if let Some(invitation) = invitation {
+            url.query_pairs_mut().append_pair("invitation", invitation);
+        }
+        let link = String::from(url);
         let payload = DeliveryRequest {
             id: job_id.clone(),
             email,
             kind,
-            url: url.into(),
+            url: link.clone(),
         };
         let encrypted = keys.encrypt(
             &serde_json::to_string(&payload).map_err(|_| IdentityError::InvalidEncoding)?,
         )?;
         tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.identity_delivery_job(id,token_hash,payload) VALUES($1,$2,$3)",[job_id.into(),token_hash.into(),encrypted.into()])).await?;
-        Ok(())
+        Ok(Some(link))
     }
     /// Worker call. The delivery sink must deduplicate on request.id; delivery is at-least-once.
     pub async fn dispatch_delivery_jobs(&self, limit: u32) -> Result<DeliveryBatch> {
@@ -194,7 +206,8 @@ impl IdentityService {
         }
         Ok(result)
     }
-    pub async fn complete_password_reset(&self, token: &str, new_password: &str) -> Result<()> {
+    /// Returns the account email so the holder of the mailed link can sign in next.
+    pub async fn complete_password_reset(&self, token: &str, new_password: &str) -> Result<String> {
         if token.len() != 64 || !token.bytes().all(|b| b.is_ascii_hexdigit()) {
             return Err(IdentityError::Unauthorized);
         }
@@ -243,6 +256,6 @@ impl IdentityService {
         ))
         .await?;
         tx.commit().await?;
-        Ok(())
+        Ok(user.try_get("", "email")?)
     }
 }

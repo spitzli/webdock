@@ -579,11 +579,11 @@ async fn perform(
         }
         "reset-password" => {
             let input: ResetPassword = parse(body)?;
-            identity
+            let email = identity
                 .complete_password_reset(&input.token, &input.new_password)
                 .await
                 .map_err(failure)?;
-            Ok(Json(json!({"status":true})).into_response())
+            Ok(Json(json!({"status":true,"email":email})).into_response())
         }
         "passkey/verify-registration" => {
             let input: PasskeyRegistration = parse(body)?;

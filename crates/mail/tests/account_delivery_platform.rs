@@ -314,7 +314,10 @@ async fn run(url: &url::Url, name: &str) {
         )
         .await
         .unwrap();
-    identity.queue_account_activation(&recipient).await.unwrap();
+    identity
+        .queue_account_activation(&recipient, None)
+        .await
+        .unwrap();
     let activation = recovery(&owner).await;
     assert!(activation.kind == DeliveryKind::Activation);
     once(&dispatcher, false).await;

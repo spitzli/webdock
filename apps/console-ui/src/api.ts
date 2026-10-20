@@ -52,6 +52,7 @@ export const recordSchema = z.object({
   status: z.string().optional(),
   customer: z.string().optional(),
   customerType: z.string().nullish(),
+  onboarding: z.string().nullish(),
   contactEmail: z.string().nullish(),
   firstName: z.string().nullish(),
   lastName: z.string().nullish(),

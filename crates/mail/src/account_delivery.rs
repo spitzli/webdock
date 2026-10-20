@@ -39,10 +39,18 @@ pub struct DispatcherConfiguration {
     pub mail: MailConfiguration,
 }
 pub struct MailDelivery {
-    client: Client,
-    target: url::Url,
+    transport: Transport,
     account_origin: url::Url,
     from: String,
+    sender: String,
+}
+enum Transport {
+    Api {
+        client: Client,
+        target: url::Url,
+    },
+    /// Plain SMTP to a local catch-all (development mail viewer); never a remote relay.
+    Loopback(std::net::SocketAddr),
 }
 fn unavailable(_: impl std::fmt::Display) -> DeliveryError {
     DeliveryError::Unavailable
@@ -150,14 +158,93 @@ impl MailDelivery {
             }
         }
         Ok(Self {
-            client: builder.build().map_err(unavailable)?,
-            target,
+            transport: Transport::Api {
+                client: builder.build().map_err(unavailable)?,
+                target,
+            },
             account_origin,
+            sender: config.from.email.clone(),
             from: match config.from.name {
                 Some(name) => format!("{name} <{}>", config.from.email),
                 None => config.from.email,
             },
         })
+    }
+    pub fn loopback(
+        smtp: std::net::SocketAddr,
+        from: &str,
+        account_origin: &str,
+    ) -> Result<Self, DeliveryError> {
+        if !smtp.ip().is_loopback() || envelope_address(from).map_err(unavailable)? != from {
+            return Err(DeliveryError::Unavailable);
+        }
+        Ok(Self {
+            transport: Transport::Loopback(smtp),
+            account_origin: self::account_origin(account_origin)?,
+            from: from.into(),
+            sender: from.into(),
+        })
+    }
+    async fn loopback_send(
+        &self,
+        smtp: std::net::SocketAddr,
+        id: &str,
+        message: Message<'_>,
+    ) -> Result<(), DeliveryError> {
+        let raw = format!(
+            "From: {}\r\nTo: <{}>\r\nSubject: {}\r\nDate: {}\r\nMessage-ID: <account-{id}@webdock.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n{}\r\n",
+            message.from,
+            message.to[0],
+            message.subject,
+            chrono::Utc::now().to_rfc2822(),
+            message.text.replace('\n', "\r\n")
+        );
+        let timeout = Duration::from_secs(8);
+        tokio::time::timeout(timeout, async {
+            use mail_send::smtp::AssertReply;
+            let stream = tokio::net::TcpStream::connect(smtp)
+                .await
+                .map_err(unavailable)?;
+            let mut client = mail_send::SmtpClient { stream, timeout };
+            client
+                .read()
+                .await
+                .map_err(unavailable)?
+                .assert_positive_completion()
+                .map_err(unavailable)?;
+            client.ehlo("webdock.invalid").await.map_err(unavailable)?;
+            for command in [
+                format!("MAIL FROM:<{}>\r\n", self.sender),
+                format!("RCPT TO:<{}>\r\n", message.to[0]),
+            ] {
+                client
+                    .cmd(command)
+                    .await
+                    .map_err(unavailable)?
+                    .assert_positive_completion()
+                    .map_err(unavailable)?;
+            }
+            client
+                .cmd(b"DATA\r\n")
+                .await
+                .map_err(unavailable)?
+                .assert_code(354)
+                .map_err(unavailable)?;
+            client
+                .write_message(raw.as_bytes())
+                .await
+                .map_err(unavailable)?;
+            client
+                .read()
+                .await
+                .map_err(unavailable)?
+                .assert_positive_completion()
+                .map_err(unavailable)?;
+            let _ = client.cmd(b"QUIT\r\n").await;
+            Ok(())
+        })
+        .await
+        .map_err(unavailable)?
     }
     fn message(&self, request: &DeliveryRequest) -> Result<Message<'_>, DeliveryError> {
         if !canonical_id(&request.id) || request.url.len() > 2048 {
@@ -175,7 +262,12 @@ impl MailDelivery {
         let query = link.query_pairs().collect::<Vec<_>>();
         let path = match request.kind {
             DeliveryKind::Reset | DeliveryKind::Activation => {
-                if query.len() != 1
+                // An activation may carry the invitation it completes.
+                let invitation = query.len() == 2
+                    && request.kind == DeliveryKind::Activation
+                    && query[1].0 == "invitation"
+                    && canonical_id(&query[1].1);
+                if !(query.len() == 1 || invitation)
                     || query[0].0 != "token"
                     || query[0].1.len() != 64
                     || !query[0]
@@ -201,7 +293,7 @@ impl MailDelivery {
             }
         };
         let mut expected = self.account_origin.join(path).map_err(unavailable)?;
-        if let Some((name, value)) = query.first() {
+        for (name, value) in &query {
             expected.query_pairs_mut().append_pair(name, value);
         }
         if expected.as_str() != request.url {
@@ -272,9 +364,14 @@ struct Receipt {
 impl Delivery for MailDelivery {
     async fn deliver(&self, request: &DeliveryRequest) -> Result<(), DeliveryError> {
         let message = self.message(request)?;
-        let mut response = self
-            .client
-            .post(self.target.clone())
+        let (client, target) = match &self.transport {
+            Transport::Api { client, target } => (client, target),
+            Transport::Loopback(smtp) => {
+                return self.loopback_send(*smtp, &request.id, message).await;
+            }
+        };
+        let mut response = client
+            .post(target.clone())
             .header("idempotency-key", format!("account:{}", request.id))
             .json(&message)
             .send()

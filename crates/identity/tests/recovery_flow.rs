@@ -55,7 +55,7 @@ async fn activation_reset_and_delivery_are_durable_scoped_and_single_use() {
         )
         .await
         .unwrap();
-    service.queue_account_activation(&id).await.unwrap();
+    service.queue_account_activation(&id, None).await.unwrap();
     let unavailable = service.dispatch_delivery_jobs(10).await.unwrap();
     assert_eq!(unavailable.failed, 1);
     let capture = Arc::new(Capture::default());

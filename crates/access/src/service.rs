@@ -356,6 +356,7 @@ impl AccessService {
         }
         let mut target = None;
         let mut queued = false;
+        let mut recipient = invitee.clone();
         let action;
         match command {
             TenantCommand::Profile { profile } => {
@@ -375,10 +376,11 @@ impl AccessService {
             }
             TenantCommand::Resend { invitation } => {
                 action = "tenant-resend";
-                target = Some(
-                    self.resend_invitation(&tx, actor, &org, &invitation)
-                        .await?,
-                );
+                let (invitation, user) = self
+                    .resend_invitation(&tx, actor, &org, &invitation)
+                    .await?;
+                target = Some(invitation);
+                recipient = Some(user);
                 queued = true;
             }
             TenantCommand::Cancel { invitation } => {
@@ -404,13 +406,12 @@ impl AccessService {
         live(&tx).await?;
         tx.commit().await?;
         let mut delivery = queued.then_some("queued");
-        if let Some(user) = invitee
-            && self.activation_needed(&user).await?
-            && self.identity.queue_account_activation(&user).await.is_err()
-        {
-            delivery = Some("invitation-queued-activation-unavailable");
+        let mut link = None;
+        if let (true, Some(user), Some(invitation)) = (queued, recipient, target.as_deref()) {
+            (delivery, link) = self.invitation_link(actor, &user, invitation).await?;
         }
         Ok(ChangeResult {
+            link,
             id: target,
             message: if queued {
                 "Invitation saved and queued. Access starts after acceptance."
@@ -481,6 +482,35 @@ impl AccessService {
         }
         Ok(())
     }
+    /// Queues the activation that completes an invitation for a new account, and returns the
+    /// copyable link for operators. Customer administrators only ever get the mailed copy.
+    pub(crate) async fn invitation_link(
+        &self,
+        actor: &Principal,
+        user: &str,
+        invitation: &str,
+    ) -> Result<(Option<&'static str>, Option<String>)> {
+        if !self.activation_needed(user).await? {
+            let mut url = self
+                .config
+                .auth_origin
+                .join("/invitation")
+                .map_err(|_| Error::Configuration)?;
+            url.query_pairs_mut().append_pair("id", invitation);
+            return Ok((Some("queued"), actor.is_operator().then(|| url.into())));
+        }
+        Ok(
+            match self
+                .identity
+                .queue_account_activation(user, Some(invitation))
+                .await
+            {
+                Ok(Some(url)) => (Some("queued"), actor.is_operator().then_some(url)),
+                Ok(None) => (Some("activation-recently-sent"), None),
+                Err(_) => (Some("invitation-queued-activation-unavailable"), None),
+            },
+        )
+    }
     pub(crate) async fn activation_needed(&self, user: &str) -> Result<bool> {
         Ok(self.auth.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT id FROM webdock_auth.\"user\" WHERE id=$1 AND NOT \"emailVerified\" AND \"mustChangePassword\"",[user.into()])).await?.is_some())
     }
@@ -529,8 +559,11 @@ impl AccessService {
         let invitation = self.next_id().await?;
         tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.invitation(id,\"organizationId\",email,role,status,\"expiresAt\",\"createdAt\",\"inviterId\") VALUES($1,$2,$3,$4,'pending',statement_timestamp()+interval '48 hours',statement_timestamp(),$5)",[invitation.clone().into(),org.into(),email.into(),role.as_str().into(),actor.user_id.clone().into()])).await?;
         tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.access_invitation_state(invitation_id,organization_id,user_id) VALUES($1,$2,$3)",[invitation.clone().into(),org.into(),user.into()])).await?;
-        self.queue_delivery(tx, actor, org, user, email, Some(&invitation), None, 1)
-            .await?;
+        // A new account's activation mail carries the invitation; one message is enough.
+        if !self.activation_needed(user).await? {
+            self.queue_delivery(tx, actor, org, user, email, Some(&invitation), None, 1)
+                .await?;
+        }
         Ok(invitation)
     }
     pub(crate) async fn resend_invitation(
@@ -539,7 +572,7 @@ impl AccessService {
         actor: &Principal,
         org: &str,
         invitation: &str,
-    ) -> Result<String> {
+    ) -> Result<(String, String)> {
         let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT email,role FROM webdock_auth.invitation WHERE id=$1 AND \"organizationId\"=$2 AND status='pending' FOR UPDATE",[id(invitation)?.into(),org.into()])).await?.ok_or(Error::NotFound)?;
         let email: String = row.try_get("", "email")?;
         let state=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.access_invitation_state SET generation=generation+1 WHERE invitation_id=$1 RETURNING user_id,generation",[invitation.into()])).await?;
@@ -554,18 +587,20 @@ impl AccessService {
             (user, 1)
         };
         tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.invitation SET \"expiresAt\"=statement_timestamp()+interval '48 hours' WHERE id=$1",[invitation.into()])).await?;
-        self.queue_delivery(
-            tx,
-            actor,
-            org,
-            &user,
-            &email,
-            Some(invitation),
-            None,
-            generation,
-        )
-        .await?;
-        Ok(invitation.into())
+        if !self.activation_needed(&user).await? {
+            self.queue_delivery(
+                tx,
+                actor,
+                org,
+                &user,
+                &email,
+                Some(invitation),
+                None,
+                generation,
+            )
+            .await?;
+        }
+        Ok((invitation.into(), user))
     }
     pub(crate) async fn cancel_invitation(
         &self,
@@ -638,7 +673,7 @@ impl AccessService {
             .authenticate_session_in(&tx, &actor.user_id, &actor.session_id)
             .await?
             .ok_or(Error::Unauthorized)?;
-        let rows=json_rows(&tx,"SELECT to_jsonb(i)||jsonb_build_object('organizationName',o.name,'organizationSlug',o.slug) AS data FROM webdock_auth.invitation i JOIN webdock_auth.organization o ON o.id=i.\"organizationId\" LEFT JOIN webdock_auth.tenant_customer t ON t.organization_id=o.id LEFT JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE i.id=$1 AND lower(i.email)=lower($2) AND (c.id IS NULL OR c.status='active') AND webdock_rls.local_organization_authority(o.id)",vec![id(invitation)?.into(),actor.email.into()]).await?;
+        let rows=json_rows(&tx,"SELECT to_jsonb(i)||jsonb_build_object('organizationName',o.name,'organizationSlug',o.slug,'customerID',c.id,'onboarding',c.onboarding) AS data FROM webdock_auth.invitation i JOIN webdock_auth.organization o ON o.id=i.\"organizationId\" LEFT JOIN webdock_auth.tenant_customer t ON t.organization_id=o.id LEFT JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE i.id=$1 AND lower(i.email)=lower($2) AND (c.id IS NULL OR c.status='active') AND webdock_rls.local_organization_authority(o.id)",vec![id(invitation)?.into(),actor.email.into()]).await?;
         tx.commit().await?;
         rows.into_iter().next().ok_or(Error::NotFound)
     }

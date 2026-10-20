@@ -75,8 +75,24 @@ impl Hooks for WebdockApp {
             .await
             .map_err(|_| loco_rs::Error::Message("ID allocation database unavailable".into()))?,
         );
-        let identity = std::sync::Arc::new(
-            webdock_identity::IdentityService::new(ctx.db.clone(), cookies)
+        // Account mail (activation, reset, invitations) leaves from Core itself. Only a loopback
+        // catch-all is supported here; hosted installations use the separate Mail API dispatcher.
+        let account_mail = match std::env::var("WEBDOCK_ACCOUNT_SMTP") {
+            Ok(smtp) => Some(std::sync::Arc::new(
+                webdock_mail::account_delivery::MailDelivery::loopback(
+                    smtp.parse().map_err(|_| {
+                        loco_rs::Error::Message("Invalid WEBDOCK_ACCOUNT_SMTP".into())
+                    })?,
+                    &std::env::var("WEBDOCK_ACCOUNT_MAIL_FROM")
+                        .unwrap_or_else(|_| "webdock@example.test".into()),
+                    &config.auth_origin,
+                )
+                .map_err(|_| loco_rs::Error::Message("Account mail must be loopback".into()))?,
+            )),
+            Err(_) => None,
+        };
+        let identity = std::sync::Arc::new({
+            let service = webdock_identity::IdentityService::new(ctx.db.clone(), cookies)
                 .with_secret_keys(keys)
                 .with_allocator(ids.clone())
                 .with_account_origin(
@@ -90,8 +106,12 @@ impl Hooks for WebdockApp {
                 })
                 .map_err(|_| {
                     loco_rs::Error::Message("Invalid native identity configuration".into())
-                })?,
-        );
+                })?;
+            match &account_mail {
+                Some(mail) => service.with_delivery(mail.clone()),
+                None => service,
+            }
+        });
         let registry_url = std::env::var("WEBDOCK_REGISTRY_DATABASE_URL")
             .map_err(|_| loco_rs::Error::Message("Missing WEBDOCK_REGISTRY_DATABASE_URL".into()))?;
         let registry_db = crate::db::connect_runtime(
@@ -201,8 +221,27 @@ impl Hooks for WebdockApp {
                     allow_local_http: !config.production,
                 },
             )
-            .map_err(|_| loco_rs::Error::Message("Invalid access configuration".into()))?,
+            .map_err(|_| loco_rs::Error::Message("Invalid access configuration".into()))
+            .map(|service| match &account_mail {
+                Some(mail) => service.with_delivery(mail.clone()),
+                None => service,
+            })?,
         );
+        if account_mail.is_some() {
+            let (identity, access) = (identity.clone(), access.clone());
+            tokio::spawn(async move {
+                loop {
+                    let (sent, invited) = tokio::join!(
+                        identity.dispatch_delivery_jobs(10),
+                        access.dispatch_invitation_jobs(10)
+                    );
+                    if sent.is_err() || invited.is_err() {
+                        tracing::warn!("Account mail delivery unavailable; jobs stay queued");
+                    }
+                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                }
+            });
+        }
         let hosting = if config.features.state("hosting")
             != webdock_core::features::FeatureState::Disabled
             || config.features.state("databases") != webdock_core::features::FeatureState::Disabled

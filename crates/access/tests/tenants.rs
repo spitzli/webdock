@@ -12,7 +12,7 @@ impl webdock_identity::Delivery for CaptureDelivery {
         &self,
         request: &webdock_identity::DeliveryRequest,
     ) -> std::result::Result<(), webdock_identity::DeliveryError> {
-        self.0.lock().unwrap().push(request.id.clone());
+        self.0.lock().unwrap().push(request.url.clone());
         Ok(())
     }
 }
@@ -38,6 +38,10 @@ async fn tenant_invites_roles_and_revocation_preserve_restricted_boundaries() {
         .execute_unprepared(include_str!("../migrations/0001_access_authority.sql"))
         .await
         .unwrap();
+    offline
+        .execute_unprepared(include_str!("../migrations/0002_customer_onboarding.sql"))
+        .await
+        .unwrap();
     let auth_url = guarded("AUTH_DATABASE_URL");
     let auth = Database::connect(auth_url.clone()).await.unwrap();
     let business = Database::connect(guarded("DATABASE_URL")).await.unwrap();
@@ -58,6 +62,7 @@ async fn tenant_invites_roles_and_revocation_preserve_restricted_boundaries() {
         )
         .unwrap()
     };
+    let setup_mail = Arc::new(CaptureDelivery::default());
     let identity = Arc::new(
         IdentityService::new(
             auth.clone(),
@@ -66,7 +71,8 @@ async fn tenant_invites_roles_and_revocation_preserve_restricted_boundaries() {
         .with_account_origin(url::Url::parse("https://auth.example.invalid").unwrap())
         .unwrap()
         .with_secret_keys(keys())
-        .with_allocator(allocator.clone()),
+        .with_allocator(allocator.clone())
+        .with_delivery(setup_mail.clone()),
     );
     let captured = Arc::new(CaptureDelivery::default());
     let access = AccessService::new(
@@ -181,6 +187,88 @@ async fn tenant_invites_roles_and_revocation_preserve_restricted_boundaries() {
         .unwrap();
     let invitation = invite.id.unwrap();
     assert_eq!(invite.delivery, Some("queued"));
+    assert!(
+        invite.link.is_none(),
+        "only operators receive a copyable link"
+    );
+    // A new person gets one setup mail that carries the invitation, never a throwaway password.
+    let newcomer = format!(
+        "access-new-{}@example.invalid",
+        allocator.allocate().await.unwrap()
+    );
+    let fresh = access
+        .manage_tenant(
+            cookie(&cookies[0]),
+            &customers[0],
+            TenantCommand::Invite {
+                email: newcomer.clone(),
+                name: "Newcomer".into(),
+                role: MemberRole::Admin,
+            },
+        )
+        .await
+        .unwrap();
+    let fresh_invitation = fresh.id.unwrap();
+    assert_eq!(fresh.delivery, Some("queued"));
+    let separate: i64 = auth
+        .query_one_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "SELECT count(*) AS n FROM webdock_auth.access_delivery_job WHERE invitation_id=$1",
+            [fresh_invitation.clone().into()],
+        ))
+        .await
+        .unwrap()
+        .unwrap()
+        .try_get("", "n")
+        .unwrap();
+    assert_eq!(
+        separate, 0,
+        "the activation mail replaces the invitation mail"
+    );
+    identity.dispatch_delivery_jobs(100).await.unwrap();
+    let setup = setup_mail
+        .0
+        .lock()
+        .unwrap()
+        .iter()
+        .find(|url| url.ends_with(&format!("&invitation={fresh_invitation}")))
+        .cloned()
+        .expect("activation link continues to the invitation");
+    let token = url::Url::parse(&setup)
+        .unwrap()
+        .query_pairs()
+        .find(|(key, _)| key == "token")
+        .unwrap()
+        .1
+        .into_owned();
+    assert_eq!(
+        identity
+            .complete_password_reset(&token, "newcomer-password-123")
+            .await
+            .unwrap(),
+        newcomer
+    );
+    let PasswordAuthentication::Authenticated(newcomer_session) = identity
+        .authenticate_password(&newcomer, "newcomer-password-123")
+        .await
+        .unwrap()
+    else {
+        panic!("the new account signs in with the chosen password")
+    };
+    let joined = access
+        .get_invitation(cookie(&newcomer_session.set_cookie), &fresh_invitation)
+        .await
+        .unwrap();
+    assert_eq!(joined["customerID"], customers[0].as_str());
+    assert_eq!(joined["onboarding"], "managed");
+    access
+        .respond_invitation(
+            cookie(&newcomer_session.set_cookie),
+            &fresh_invitation,
+            true,
+        )
+        .await
+        .unwrap();
     assert!(
         access
             .list_tenants(cookie(&cookies[2]))

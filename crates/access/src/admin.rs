@@ -73,6 +73,7 @@ impl AccessService {
                 id: Some(user),
                 message: "Account status saved.".into(),
                 delivery: None,
+                link: None,
             });
         }
         // Provisioning can leave an unverified, access-free account if the subsequent transaction fails.
@@ -87,6 +88,7 @@ impl AccessService {
         let tx = self.domain(actor).await?;
         operator(&tx).await?;
         let mut queued = false;
+        let mut invited = None;
         let target = match command {
             AccessCommand::CreateOrganization { name } => {
                 let org = self.next_id().await?;
@@ -131,8 +133,8 @@ impl AccessService {
                 if tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT id FROM webdock_auth.member WHERE \"userId\"=$1 AND \"organizationId\"=$2",[user.into(),org.into()])).await?.is_some(){
                     self.queue_delivery(&tx,actor,org,user,&email,None,Some(&binding),1).await?;
                 }else if let Some(row)=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT id FROM webdock_auth.invitation WHERE \"organizationId\"=$1 AND lower(email)=lower($2) AND status='pending'",[org.into(),email.clone().into()])).await?{
-                    self.resend_invitation(&tx,actor,org,&row.try_get::<String>("","id")?).await?;
-                }else{self.create_invitation(&tx,actor,org,user,&email,MemberRole::Member).await?;}
+                    invited=Some(self.resend_invitation(&tx,actor,org,&row.try_get::<String>("","id")?).await?.0);
+                }else{invited=Some(self.create_invitation(&tx,actor,org,user,&email,MemberRole::Member).await?);}
                 queued = true;
                 user.to_owned()
             }
@@ -175,13 +177,21 @@ impl AccessService {
         self.audit(&tx, actor, action, Some(&target), false).await?;
         tx.commit().await?;
         let mut delivery = queued.then_some("queued");
-        if let Some(user) = invitee
+        let mut link = None;
+        if let (Some(user), Some(invitation)) = (&invitee, &invited) {
+            (delivery, link) = self.invitation_link(actor, user, invitation).await?;
+        } else if let Some(user) = invitee
             && self.activation_needed(&user).await?
-            && self.identity.queue_account_activation(&user).await.is_err()
+            && self
+                .identity
+                .queue_account_activation(&user, None)
+                .await
+                .is_err()
         {
             delivery = Some("invitation-queued-activation-unavailable")
         }
         Ok(ChangeResult {
+            link,
             id: Some(target),
             message: "Change saved.".into(),
             delivery,

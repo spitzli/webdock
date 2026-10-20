@@ -34,6 +34,8 @@ const records = {
   ],
   "audit-events": [],
 } satisfies Record<string, z.infer<typeof recordSchema>[]>;
+// Test-only tenant invitations per customer.
+const tenants: Record<string, { id: string; email: string; role: string; status: string }[]> = {};
 const bodySchema = recordSchema
   .omit({ id: true })
   .extend({ archived: z.boolean().optional() });
@@ -78,6 +80,19 @@ async function registry(req: IncomingMessage, url: URL) {
   list.push(created);
   return created;
 }
+async function tenant(req: IncomingMessage, url: URL) {
+  const match = /^\/api\/console\/tenant\/([0-9]+)$/.exec(url.pathname);
+  if (!match) return undefined;
+  const invitations = (tenants[match[1] ?? ""] ??= []);
+  if (req.method !== "POST") return { canManage: true, members: [], invitations };
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) chunks.push(Buffer.from(chunk as Buffer));
+  const command = z.object({ action: z.string(), email: z.string().optional(), role: z.string().optional(), invitation: z.string().optional() }).parse(JSON.parse(Buffer.concat(chunks).toString()));
+  if (command.action === "invite" && command.email) invitations.push({ id: String(5000 + invitations.length), email: command.email, role: command.role ?? "admin", status: "pending" });
+  const target = command.invitation ?? invitations.at(-1)?.id ?? "0";
+  if (command.action === "cancel") invitations.forEach((row) => { if (row.id === target) row.status = "canceled"; });
+  return { id: target, message: "Invitation saved and queued. Access starts after acceptance.", delivery: "queued", ...(command.action === "cancel" ? {} : { link: `${url.origin}/reset-password?token=${"a".repeat(64)}&invitation=${target}` }) };
+}
 async function serve(
   req: IncomingMessage,
   res: ServerResponse,
@@ -118,6 +133,11 @@ async function serve(
         },
       },
     });
+    return;
+  }
+  const tenantResult = await tenant(req, url);
+  if (tenantResult) {
+    send(tenantResult);
     return;
   }
   const result = await workbench(req, url);

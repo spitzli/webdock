@@ -16,12 +16,13 @@ import { PasswordIcon } from "@phosphor-icons/react/dist/csr/Password";
 import { ShieldCheckIcon } from "@phosphor-icons/react/dist/csr/ShieldCheck";
 import { GlobeIcon } from "@phosphor-icons/react/dist/csr/Globe";
 import { UserMenu } from "./UserMenu";
-import { FieldError } from "./live-validation";
+import { FieldError, useLiveValidation } from "./live-validation";
+import { CustomerFields } from "./CustomerFields";
 import { KeyIcon } from "@phosphor-icons/react/dist/csr/Key";
 import { DevicesIcon } from "@phosphor-icons/react/dist/csr/Devices";
 import { z } from "zod";
 import { useApi } from "./context";
-import { type Session } from "./api";
+import { type RegistryRecord, type Session } from "./api";
 import { sessionCacheScope, useSessionCacheIsolation } from "./session-cache";
 import { Failure, Loading, Modal } from "./common";
 import {
@@ -281,31 +282,44 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
 }
 function PasswordReset() {
   const api = useApi();
-  const token = new URLSearchParams(location.search).get("token");
+  const query = new URLSearchParams(location.search);
+  const token = query.get("token");
+  // An invitation's activation link: create the account, sign in, then continue to the invitation.
+  const invitation = query.get("invitation");
   const reset = useMutation({
     mutationFn: async (data: FormData) => {
       if (data.get("password") !== data.get("confirmPassword"))
         throw new Error("The passwords do not match.");
-      return api.write(
+      const result = await api.write(
         "/api/auth/reset-password",
         "POST",
         { token, newPassword: data.get("password") },
+        z.object({ email: z.string() }),
+        true,
+      );
+      if (!invitation) return;
+      const signIn = await api.write(
+        "/api/auth/sign-in/email",
+        "POST",
+        { email: result.email, password: data.get("password") },
         resultSchema,
         true,
       );
+      location.assign(signIn.twoFactorRedirect ? "/login" : `/invitation?${new URLSearchParams({ id: invitation, welcome: "1" })}`);
     },
   });
   return (
     <main className={authFrame}>
       <AuthHeader product="Account" href="/account" />
       <section className={authPanel}>
-        <h1>Choose a new password</h1>
+        <h1>{invitation ? "Create your account" : "Choose a new password"}</h1>
+        {invitation ? <p className="muted">Choose a password for your new account. You can add a passkey next.</p> : null}
         {!token ? (
           <p role="alert">
             This link is incomplete.{" "}
             <a href="/login">Request another reset link.</a>
           </p>
-        ) : reset.isSuccess ? (
+        ) : reset.isSuccess && !invitation ? (
           <p role="status">
             Your password is ready.{" "}
             <a className="text-button" href="/login">
@@ -319,18 +333,18 @@ function PasswordReset() {
               reset.mutate(form(event));
             }}
           >
-            <PasswordField label="New password" fresh />
+            <PasswordField label={invitation ? "Password" : "New password"} fresh />
             <PasswordField
               name="confirmPassword"
-              label="Confirm new password"
+              label={invitation ? "Confirm password" : "Confirm new password"}
               fresh
             />
             <p className="field-hint">
-              Use at least 12 characters. Previous sessions will be signed out.
+              {invitation ? "Use at least 12 characters." : "Use at least 12 characters. Previous sessions will be signed out."}
             </p>
             <Feedback error={reset.error} />
-            <button className="button primary" disabled={reset.isPending}>
-              {reset.isPending ? "Saving…" : "Save password"}
+            <button className="button primary" disabled={reset.isPending || reset.isSuccess}>
+              {reset.isPending || reset.isSuccess ? (invitation ? "Creating…" : "Saving…") : invitation ? "Create account" : "Save password"}
             </button>
           </form>
         )}
@@ -1222,9 +1236,14 @@ function SitesPage() {
     </section>
   );
 }
+const profileKeys = ["customer_type", "name", "first_name", "last_name", "company_name", "contact_name", "contact_email", "phone", "address_line1", "address_line2", "postal_code", "city", "region", "country"] as const;
+const camel = (key: string) => key.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 function InvitationPage() {
   const api = useApi();
-  const id = new URLSearchParams(location.search).get("id");
+  const query = new URLSearchParams(location.search);
+  const id = query.get("id");
+  const welcome = query.get("welcome") === "1";
+  const [step, setStep] = useState<"join" | "details" | "passkey">("join");
   const invite = useQuery({
     queryKey: ["invitation", id],
     queryFn: () =>
@@ -1235,11 +1254,17 @@ function InvitationPage() {
           email: z.string(),
           role: z.string(),
           status: z.string(),
+          customerID: z.string().nullish(),
+          onboarding: z.string().nullish(),
         }),
         {},
         true,
       ),
   });
+  const finish = () => {
+    if (welcome && browserSupportsWebAuthn()) setStep("passkey");
+    else location.assign("/sites");
+  };
   const answer = useMutation({
     mutationFn: (accept: boolean) =>
       api.write(
@@ -1249,12 +1274,18 @@ function InvitationPage() {
         z.object({}),
         true,
       ),
-    onSuccess: () => {
-      location.assign("/sites");
+    onSuccess: (_, accept) => {
+      const data = invite.data;
+      if (!accept) { location.assign("/sites"); return; }
+      if (data?.customerID && data.onboarding === "self-service" && ["owner", "admin"].includes(data.role)) setStep("details");
+      else finish();
     },
   });
   if (invite.isPending) return <Loading>Loading invitation…</Loading>;
   if (invite.error) return <Failure error={invite.error} />;
+  if (step === "details" && invite.data.customerID)
+    return <CustomerOnboarding customer={invite.data.customerID} done={finish} />;
+  if (step === "passkey") return <WelcomePasskey done={() => { location.assign("/sites"); }} />;
   return (
     <section className={authPanel}>
       <h1>Join {invite.data.organizationName}</h1>
@@ -1279,6 +1310,69 @@ function InvitationPage() {
         >
           Accept invitation
         </button>
+      </div>
+    </section>
+  );
+}
+/** Self-service onboarding: the new owner completes the customer details the operator left open. */
+function CustomerOnboarding({ customer, done }: { customer: string; done: () => void }) {
+  const api = useApi();
+  const live = useLiveValidation();
+  const tenant = useQuery({
+    queryKey: ["tenant", customer],
+    queryFn: () => api.request(`/api/tenant/${encodeURIComponent(customer)}`, z.object({ tenant: z.record(z.string(), z.unknown()) }), {}, true),
+  });
+  const save = useMutation({
+    mutationFn: (data: FormData) => {
+      const value = (key: string) => formText(data, camel(key)).trim() || null;
+      const type = formText(data, "customerType") === "person" ? "person" : "company";
+      const name = type === "company" ? value("company_name") : [value("first_name"), value("last_name")].filter(Boolean).join(" ");
+      const profile = Object.fromEntries(profileKeys.filter((key) => !["customer_type", "name"].includes(key)).map((key) => [key, value(key)]));
+      return api.write(`/api/tenant/${encodeURIComponent(customer)}`, "POST", { action: "profile", profile: { ...profile, customer_type: type, name } }, z.object({}), true);
+    },
+    onSuccess: done,
+  });
+  if (tenant.isPending) return <Loading>Loading customer details…</Loading>;
+  if (tenant.error) return <Failure error={tenant.error} />;
+  const record = { id: customer, ...Object.fromEntries(profileKeys.map((key) => [camel(key), tenant.data.tenant[key] ?? null])) } as RegistryRecord;
+  return (
+    <section className={authPanel}>
+      <h1>Your customer details</h1>
+      <p className="muted">These details appear on your account and invoices. You can change them later.</p>
+      <form className="editor" {...live.form} onSubmit={(event) => { event.preventDefault(); save.mutate(new FormData(event.currentTarget)); }}>
+        <CustomerFields record={record} pending={save.isPending} errors={live.errors} />
+        <Feedback error={save.error} />
+        <div className="button-row">
+          <button type="button" className="button" disabled={save.isPending} onClick={done}>Later</button>
+          <button className="button primary" disabled={save.isPending}>{save.isPending ? "Saving…" : "Save details"}</button>
+        </div>
+      </form>
+    </section>
+  );
+}
+function WelcomePasskey({ done }: { done: () => void }) {
+  const api = useApi();
+  const add = useMutation({
+    mutationFn: async () => {
+      const options = await api.request(
+        "/api/auth/passkey/generate-register-options",
+        z.custom<PublicKeyCredentialCreationOptionsJSON>((value) => typeof value === "object" && value !== null && "challenge" in value),
+        {},
+        true,
+      );
+      const response = await startRegistration({ optionsJSON: options });
+      return api.write("/api/auth/passkey/verify-registration", "POST", { response, name: "My passkey" }, z.object({ id: z.string() }), true);
+    },
+    onSuccess: done,
+  });
+  return (
+    <section className={authPanel}>
+      <h1>Add a passkey</h1>
+      <p>Sign in with your fingerprint, face or device PIN instead of typing your password.</p>
+      <Feedback error={add.error} />
+      <div className="button-row">
+        <button className="button" disabled={add.isPending} onClick={done}>Not now</button>
+        <button className="button primary" disabled={add.isPending} onClick={() => { add.mutate(); }}>{add.isPending ? "Waiting for your device…" : "Add passkey"}</button>
       </div>
     </section>
   );

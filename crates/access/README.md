@@ -52,6 +52,12 @@ Register `migrations/0001_access_authority.sql` as native migration 0010. It add
 
 The coordinated policy-generator changes are in `apps/control-plane/src/db/database-rls-schema.ts` and the native fallback of `apps/control-plane/src/db/clerk-rls.ts`; reinstalling policies preserves the guards and table classifications. Native scopes cannot reuse externally projected users/organizations. During overlap, the existing separately verified external-proof branches remain intact. OAuth additionally checks the same organization authority for bound clients and Console membership admission, including every token/refresh revalidation.
 
+## Invitation onboarding
+
+Register `migrations/0002_customer_onboarding.sql` as native migration 0025. It adds `webdock_admin.customers.onboarding` (`managed` default, or `self-service`), readable by the auth roles and changed only through the operator registry. The invitation read returns `customerID` and `onboarding` so the account page can offer the profile step to self-service owners and admins.
+
+Inviting an address without a local account sends a single activation mail whose link (`/reset-password?token=…&invitation=…`) creates the password, signs the person in and continues into the invitation; no separate invitation mail is queued for that person. Existing accounts keep the plain invitation mail. Operators receive the one-use link in `ChangeResult.link` to hand over directly; customer administrators never do.
+
 ## Verification and remaining integration
 
 `cargo test -p webdock-access`, strict Clippy, and the retained-role integration test cover tenant separation, invitation recipient/acceptance, last-owner and role protections, real operator MFA, website ownership-transfer rejection, grants/revocation, preview expiry/exit, bans/session revocation, stale review rejection, encrypted authority transitions, and native OAuth/RLS denial before explicit organization activation. Test URLs are checked before connection and must name literal loopback `webdock_rls_test`; only created fixture rows are deleted. `tests/policy-generator.test.ts` checks policy reinstall classification and external-proof overlap.

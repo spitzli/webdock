@@ -28,11 +28,23 @@ try {
   await page.getByRole('button', { name: 'Create customer', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Customer created.' }).waitFor();
   assert.match(page.url(), /\/customers\/[0-9]+$/, 'creation opens the new customer');
+  // Self-service onboarding is chosen per customer and saved with it.
+  await page.getByRole('radio', { name: /^Self-service/ }).check();
+  const invite = page.getByRole('form', { name: 'Invite a person', exact: true });
+  await invite.getByRole('textbox', { name: 'Email address', exact: true }).fill('new-owner@example.test');
+  await invite.getByRole('textbox', { name: 'Full name', exact: true }).fill('New owner');
+  await invite.getByRole('button', { name: 'Send invitation', exact: true }).click();
+  assert.match(await page.getByRole('textbox', { name: 'Invitation link', exact: true }).inputValue(), /\/reset-password\?token=[0-9a-f]{64}&invitation=/);
+  await page.getByText('new-owner@example.test').waitFor();
+  await page.getByRole('button', { name: 'Cancel invitation', exact: true }).click();
+  await page.getByText('No one has access yet. Invite the first person below.').waitFor();
+  await page.waitForFunction(() => !document.body.textContent?.includes('Waiting for an answer'));
   await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Edited after create');
   await page.getByRole('button', { name: 'Save changes', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Saved.' }).waitFor();
   const listing = await (await page.request.get(previewOrigin + '/v1/operator/registry/customers')).json();
   assert.equal(listing.totalDocs, 2, 'editing a new record must not create another record');
+  assert.equal(listing.docs.at(-1).onboarding, 'self-service', 'the onboarding mode is saved with the customer');
   await page.getByRole('link', { name: 'Open record', exact: true }).click();
   await page.getByRole('checkbox', { name: 'Confirm archive', exact: true }).check();
   await page.getByRole('button', { name: 'Archive record', exact: true }).click();
@@ -60,5 +72,5 @@ try {
   await page.getByRole('heading', { name: 'Change password', exact: true }).waitFor();
   await workbenchBrowserChecks(page);
   assert.deepEqual(errors, []);
-  console.log('Browser checks passed: edit/create/archive, unsaved navigation, responsive light/dark layout, palette, mobile navigation, hosting and extension lifecycle. Test-only HTTP fixtures; not live auth or tenant acceptance.');
+  console.log('Browser checks passed: edit/create/archive, per-customer onboarding and invitations with copyable link, unsaved navigation, responsive light/dark layout, palette, mobile navigation, hosting and extension lifecycle. Test-only HTTP fixtures; not live auth or tenant acceptance.');
 } finally { await browser.close(); await server.close(); }

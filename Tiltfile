@@ -16,6 +16,7 @@ tls_env = {
 docker_compose('deploy/dev/compose.yaml', project_name='webdock-dev')
 dc_resource('postgres', labels=['infra'])
 dc_resource('registry', labels=['infra'], links=[link('http://127.0.0.1:5005/v2/_catalog', 'catalog')])
+dc_resource('mailpit', labels=['infra'], links=[link('http://127.0.0.1:55026', 'Mailpit')])
 
 local_resource(
     'core-build',
@@ -29,7 +30,7 @@ local_resource(
 local_resource(
     'database',
     cmd='node tools/dev/local.mjs init',
-    deps=['crates/persistence/migrations', 'crates/persistence/schema', 'tools/dev/local.mjs'],
+    deps=['crates/persistence/migrations', 'crates/persistence/schema', 'crates/access/migrations', 'tools/dev/local.mjs'],
     resource_deps=['postgres', 'core-build'],
     labels=['infra'],
 )
