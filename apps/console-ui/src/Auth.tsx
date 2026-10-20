@@ -1,9 +1,9 @@
 import { formText } from "./form";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { useApi, useSession } from "./context";
-import { ShieldCheckIcon } from "@phosphor-icons/react/dist/csr/ShieldCheck";
+import { AuthHeader, PageProgress, authFrame, authPanel } from "./AuthFrame";
 const authResult = z.object({
   twoFactorRedirect: z.boolean().optional(),
   status: z.boolean().optional(),
@@ -57,40 +57,11 @@ export function SignIn() {
       window.location.assign("/projects");
     },
   });
-  if (api.config.sso)
-    return (
-      <main className="auth-layout">
-        <div className="auth-brand">
-          <span className="brand-mark">w</span>webdock
-          <span className="muted">Console</span>
-        </div>
-        <section className="auth-panel">
-          <h1>Welcome back</h1>
-          <p className="muted">
-            Sign in to your Webdock account to open your workspace.
-          </p>
-          {new URLSearchParams(window.location.search).has("error") ? (
-            <p role="alert" className="error">
-              Sign-in could not be completed. Please try again.
-            </p>
-          ) : null}
-          <a
-            className="button primary"
-            href={`/api/sso/login?returnTo=${encodeURIComponent(window.location.pathname === "/login" ? "/projects" : window.location.pathname + window.location.search)}`}
-          >
-            Continue to sign in
-          </a>
-        </section>
-      </main>
-    );
+  if (api.config.sso) return <SignInRedirect />;
   return (
-    <main className="auth-layout">
-      <div className="auth-brand">
-        <span className="brand-mark">w</span>webdock
-        <span className="muted">Console</span>
-      </div>
-      <section className="auth-panel">
-        <ShieldCheckIcon size={30} weight="light" />
+    <main className={authFrame}>
+      <AuthHeader product="Console" />
+      <section className={authPanel}>
         <h1>
           {mode === "totp"
             ? "Verify your identity"
@@ -182,7 +153,6 @@ export function SignIn() {
           </button>
         ) : null}
       </section>
-      <p className="auth-footer muted">Your workspace starts here.</p>
     </main>
   );
 }
@@ -202,8 +172,9 @@ export function ResetPassword() {
       ),
   });
   return (
-    <main className="auth-layout">
-      <section className="auth-panel">
+    <main className={authFrame}>
+      <AuthHeader product="Console" />
+      <section className={authPanel}>
         <h1>Set a new password</h1>
         {!token ? (
           <p role="alert">
@@ -381,4 +352,25 @@ export function Account() {
       </div>
     </section>
   );
+}
+/** Console sign-in happens on the account origin; go there directly unless the last attempt failed. */
+function SignInRedirect() {
+  const failed = new URLSearchParams(window.location.search).has("error");
+  const returnTo = window.location.pathname === "/login" ? "/projects" : window.location.pathname + window.location.search;
+  const href = `/api/sso/login?returnTo=${encodeURIComponent(returnTo)}`;
+  useEffect(() => {
+    if (!failed) window.location.replace(href);
+  }, [failed, href]);
+  if (!failed)
+    return <PageProgress product="Console" action={<a className="text-xs text-muted underline-offset-4 hover:underline" href={href}>Continue to sign in</a>}>
+      Redirecting to sign in…
+    </PageProgress>;
+  return <main className={authFrame}>
+    <AuthHeader product="Console" />
+    <section className={authPanel} role="alert">
+      <h1>Sign-in was not completed</h1>
+      <p>Your sign-in request expired or was cancelled. Start again to open your workspace.</p>
+      <a className="button primary mt-5 w-full" href={href}>Sign in again</a>
+    </section>
+  </main>;
 }

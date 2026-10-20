@@ -14,6 +14,7 @@ import {
 import { ApiClient, ApiError, loadRuntimeConfig, sessionSchema } from "./api";
 import { ApiContext, SessionContext, useApi, useSession } from "./context";
 import { Account, ResetPassword, SignIn } from "./Auth";
+import { PageFailure, PageProgress } from "./AuthFrame";
 const AccountApp = lazy(() =>
   import("./AccountUI").then((module) => ({ default: module.AccountApp })),
 );
@@ -92,7 +93,7 @@ function SessionGate() {
     session.isError ? null : session.data?.data,
     session.dataUpdatedAt,
   );
-  if (!cacheReady) return <Loading>Opening your workspace…</Loading>;
+  if (!cacheReady) return <PageProgress product="Console">Opening your workspace…</PageProgress>;
   if (window.location.pathname === "/reset-password") return <ResetPassword />;
   if (
     window.location.pathname === "/login" &&
@@ -100,12 +101,14 @@ function SessionGate() {
   )
     return <SignIn />;
   if (session.isPending || (!session.isFetchedAfterMount && !session.isError))
-    return <Loading>Opening your workspace…</Loading>;
+    return <PageProgress product="Console">Opening your workspace…</PageProgress>;
   if (session.isError)
     return session.error instanceof ApiError && session.error.status === 401 ? (
       <SignIn />
     ) : (
-      <Failure
+      <PageFailure
+        product="Console"
+        title="Workspace unavailable"
         error={session.error}
         retry={() => {
           void session.refetch();
@@ -403,11 +406,11 @@ function Bootstrap() {
     staleTime: Infinity,
     retry: false,
   });
-  if (config.isPending)
-    return <Loading>Loading Console configuration…</Loading>;
+  if (config.isPending) return <PageProgress>Connecting to Webdock…</PageProgress>;
   if (config.isError)
     return (
-      <Failure
+      <PageFailure
+        title="Webdock unavailable"
         error={config.error}
         retry={() => {
           setAttempt(attempt + 1);
@@ -418,7 +421,7 @@ function Bootstrap() {
     <ApiContext.Provider value={new ApiClient(config.data)}>
       <LocaleProvider preference={config.data.localePreference ?? "system"}>
         {config.data.surface === "account" ? (
-          <Suspense fallback={<Loading>Opening your account…</Loading>}>
+          <Suspense fallback={<PageProgress product="Account">Opening your account…</PageProgress>}>
             <AccountApp />
           </Suspense>
         ) : (

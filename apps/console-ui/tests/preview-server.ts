@@ -97,6 +97,10 @@ async function serve(
     });
     return;
   }
+  if (url.pathname === "/api/console/plugins") {
+    send([]);
+    return;
+  }
   if (url.pathname === "/v1/auth/session") {
     send({
       data: {

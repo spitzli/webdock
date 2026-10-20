@@ -22,7 +22,7 @@ try {
     destination.searchParams.set(initialForce==='prompt'?'prompt':'max_age',initialForce==='prompt'?'login':'0');
     await page.goto(destination.href);
   }else{
-    await page.getByRole('link',{name:'Continue to sign in'}).click();
+    // The Console redirects to the account origin on its own.
   }
   await page.getByRole('heading',{name:'Sign in to Webdock'}).waitFor();assert.equal(new URL(page.url()).origin,authOrigin);
   await page.getByRole('textbox',{name:'Email',exact:true}).fill(fixture.email);
@@ -102,7 +102,7 @@ try {
   await page.getByRole('heading',{name:'Sign out of Webdock?',exact:true}).waitFor();assert.equal(new URL(page.url()).origin,authOrigin);
   await page.getByRole('button',{name:'Sign out',exact:true}).click();
   await page.waitForURL(consoleOrigin+'/login');
-  await page.getByRole('link',{name:'Continue to sign in'}).click();
+  // The Console redirects to the account origin on its own.
   await page.getByRole('button',{name:'Sign in with a passkey',exact:true}).click();
   await page.waitForURL(consoleOrigin+'/projects');
   await page.getByRole('heading',{name:'Projects',exact:true}).waitFor();

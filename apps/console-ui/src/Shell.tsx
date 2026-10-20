@@ -13,8 +13,7 @@ import { FolderSimpleIcon } from "@phosphor-icons/react/dist/csr/FolderSimple";
 import { ClockCounterClockwiseIcon } from "@phosphor-icons/react/dist/csr/ClockCounterClockwise";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
 import { ListIcon } from "@phosphor-icons/react/dist/csr/List";
-import { MoonIcon } from "@phosphor-icons/react/dist/csr/Moon";
-import { SunIcon } from "@phosphor-icons/react/dist/csr/Sun";
+import { ThemeButton } from "./theme";
 import { SignOutIcon } from "@phosphor-icons/react/dist/csr/SignOut";
 import { UserCircleIcon } from "@phosphor-icons/react/dist/csr/UserCircle";
 import { CommandIcon } from "@phosphor-icons/react/dist/csr/Command";
@@ -100,25 +99,6 @@ export function Shell() {
   );
   const [palette, setPalette] = useState(false);
   const [mobile, setMobile] = useState(false);
-  const [dark, setDark] = useState(() => {
-    try {
-      return (
-        localStorage.getItem("webdock.theme.v1") === "dark" ||
-        (!localStorage.getItem("webdock.theme.v1") &&
-          matchMedia("(prefers-color-scheme: dark)").matches)
-      );
-    } catch {
-      return false;
-    }
-  });
-  useEffect(() => {
-    document.documentElement.dataset.theme = dark ? "dark" : "light";
-    try {
-      localStorage.setItem("webdock.theme.v1", dark ? "dark" : "light");
-    } catch {
-      /* Storage can be disabled by browser policy. */
-    }
-  }, [dark]);
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
@@ -310,15 +290,7 @@ export function Shell() {
         </button>
         <div className="topbar-actions">
           <LocalePicker />
-          <button
-            className="button icon-button quiet"
-            aria-label={dark ? "Use light theme" : "Use dark theme"}
-            onClick={() => {
-              setDark(!dark);
-            }}
-          >
-            {dark ? <SunIcon size={19} /> : <MoonIcon size={19} />}
-          </button>
+          <ThemeButton />
           <Link
             className="avatar"
             to="/account"

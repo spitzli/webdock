@@ -38,7 +38,7 @@
    system sans typography, no decorative motion. Audience: workspace operators. */
 :root { color-scheme: light; --bg: #f7f8f9; --panel: #ffffff; --ink: #202428; --muted: #616972; --line: #dfe3e6; --soft: #eff1f3; --accent: #c2511b; --on-accent: #ffffff; --focus: #b64815; --success: #24623e; --success-bg: #eaf5ee; --error: #b43131; --error-bg: #fff0ef; font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-synthesis: none; text-rendering: optimizeLegibility; }
 :root[data-theme='dark'] { color-scheme: dark; --bg: #16191d; --panel: #1d2126; --ink: #e4e7eb; --muted: #a5adb7; --line: #353b43; --soft: #2a3038; --accent: #ff9255; --on-accent: #202428; --focus: #ffad79; --success: #a4d9b7; --success-bg: #263c30; --error: #ffaaa5; --error-bg: #432b2c; }
-@theme inline { --color-page: var(--bg); --color-surface: var(--panel); --color-foreground: var(--ink); --color-muted: var(--muted); --color-outline: var(--line); }
+@theme inline { --color-page: var(--bg); --color-surface: var(--panel); --color-foreground: var(--ink); --color-muted: var(--muted); --color-outline: var(--line); --color-soft: var(--soft); --color-accent: var(--accent); --color-on-accent: var(--on-accent); --color-danger: var(--error); --color-danger-soft: var(--error-bg); }
 * { box-sizing: border-box; }
 body { margin: 0; color: var(--ink); background: var(--bg); line-height: 1.5; }
 button, input, select, textarea { font: inherit; }
@@ -68,7 +68,7 @@ p { max-width: 76ch; }
 .text-button { background: none; color: var(--ink); border: 0; padding: 8px 0; text-decoration: underline; text-underline-offset: 3px; }
 .app-shell { display: grid; grid-template-columns: 226px minmax(0, 1fr); grid-template-rows: 60px minmax(calc(100dvh - 60px), auto); }
 .topbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 24px; padding: 0 22px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 10; }
-.brand, .auth-brand { display: flex; align-items: center; gap: 9px; font-size: 20px; font-weight: 650; letter-spacing: -.7px; }
+.brand { display: flex; align-items: center; gap: 9px; font-size: 20px; font-weight: 650; letter-spacing: -.7px; }
 .brand-mark { width: 27px; height: 27px; display: inline-flex; align-items: center; justify-content: center; background: var(--ink); color: var(--panel); font-size: 22px; font-weight: 750; border-radius: 7px; padding-bottom: 3px; letter-spacing: -2px; padding-right: 2px; }
 .brand-product { font-size: 12px; font-weight: 400; letter-spacing: 0; color: var(--muted); border-left: 1px solid var(--line); margin-left: 4px; padding-left: 12px; }
 .command-trigger { margin-left: 24px; width: min(460px, 42vw); display: flex; align-items: center; gap: 9px; background: var(--bg); color: var(--muted); border: 1px solid var(--line); border-radius: 6px; height: 34px; padding: 0 10px; font-size: 12px; text-align: left; }
@@ -151,16 +151,6 @@ dialog::backdrop { background: #0007; }
 .palette-item { border: none; display: flex; align-items: center; gap: 12px; padding: 12px; width: 100%; text-align: left; background: transparent; border-radius: 5px; color: var(--ink); }
 .palette-item:hover, .palette-item:focus-visible { background: var(--soft); }
 .palette-item .muted { margin-left: auto; font-size: 11px; }
-.auth-layout { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; padding: 64px 20px 32px; }
-.auth-brand { margin-bottom: 48px; }
-.auth-brand .muted { font-size: 13px; font-weight: 400; margin-left: 8px; letter-spacing: 0; }
-.auth-panel { width: min(100%, 410px); padding: 32px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
-.auth-panel > svg { margin-bottom: 20px; }
-.auth-panel h1 { margin-bottom: 10px; }
-.auth-panel > p { font-size: 13px; }
-.auth-panel .editor { margin-top: 28px; }
-.auth-panel .text-button { display: block; margin: 18px auto 0; font-size: 12px; }
-.auth-footer { font-size: 11px; margin-top: 28px; }
 .skip-link { position: fixed; top: -100px; left: 16px; z-index: 100; background: var(--panel); border: 1px solid var(--focus); padding: 10px 18px; }
 .skip-link:focus { top: 10px; }
 .mobile-nav { display: none; }
@@ -169,7 +159,7 @@ dialog::backdrop { background: #0007; }
 .status-line { display: flex; align-items: center; gap: 20px; }
 .plugin-frame { width: 100%; min-height: 480px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
 @media (max-width: 1000px) { .app-shell { grid-template-columns: 200px minmax(0, 1fr); } .topbar { gap: 16px; } .command-trigger { margin-left: 0; } .editor-layout { grid-template-columns: 1fr; gap: 32px; } .editor-aside { border-top: 1px solid var(--line); padding-top: 24px; } }
-@media (max-width: 700px) { .app-shell { display: block; } .topbar { height: 60px; padding: 0 16px; gap: 10px; } .brand { font-size: 18px; } .brand-product, .sidebar { display: none; } .mobile-nav { display: inline-flex; margin-left: auto; } .command-trigger { width: 36px; height: 36px; padding: 8px; justify-content: center; } .command-trigger span, .command-trigger kbd { display: none; } .topbar-actions { margin: 0; gap: 4px; } .breadcrumb { padding: 0 20px; } #main { padding: 24px 20px; min-height: calc(100dvh - 180px); } .page-heading { align-items: flex-start; flex-direction: column; gap: 16px; margin-bottom: 24px; } .page-heading .button { min-height: 40px; } .workspace-footer { padding: 16px 20px; } .workspace-footer span:last-child { display: none; } .nav-item { min-height: 44px; } .pagination { flex-wrap: wrap; } .pagination .button { padding: 8px; } .auth-layout { padding-top: 32px; } .auth-brand { margin-bottom: 32px; } .auth-panel { padding: 24px; } .state { padding: 24px 18px; } .list-toolbar { gap: 8px; } .search-field { width: 75%; } .palette-search { width: 100%; } }
+@media (max-width: 700px) { .app-shell { display: block; } .topbar { height: 60px; padding: 0 16px; gap: 10px; } .brand { font-size: 18px; } .brand-product, .sidebar { display: none; } .mobile-nav { display: inline-flex; margin-left: auto; } .command-trigger { width: 36px; height: 36px; padding: 8px; justify-content: center; } .command-trigger span, .command-trigger kbd { display: none; } .topbar-actions { margin: 0; gap: 4px; } .breadcrumb { padding: 0 20px; } #main { padding: 24px 20px; min-height: calc(100dvh - 180px); } .page-heading { align-items: flex-start; flex-direction: column; gap: 16px; margin-bottom: 24px; } .page-heading .button { min-height: 40px; } .workspace-footer { padding: 16px 20px; } .workspace-footer span:last-child { display: none; } .nav-item { min-height: 44px; } .pagination { flex-wrap: wrap; } .pagination .button { padding: 8px; } .state { padding: 24px 18px; } .list-toolbar { gap: 8px; } .search-field { width: 75%; } .palette-search { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
 
 @media (max-width: 700px) { .list-toolbar { flex-wrap: wrap; } .list-toolbar .search-field { width: 100%; } .list-toolbar .status-filter { flex: 1; } }
@@ -179,7 +169,6 @@ dialog::backdrop { background: #0007; }
 .account-topbar nav { display: flex; gap: 20px; font-size: 13px; }
 .account-main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
 .account-main.compact { max-width: 540px; }
-.account-main .auth-panel { width: 100%; }
 .security-stack { display: grid; gap: 0; }
 .security-section { padding: 28px 0; border-top: 1px solid var(--line); display: grid; gap: 16px; }
 .security-section:first-child { border-top: 0; }
@@ -228,3 +217,4 @@ dialog::backdrop { background: #0007; }
 @media (max-width: 420px) { .topbar .brand > span:nth-child(2) { display: none; } }
 .environment-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:0 16px; align-items:end; border-top:1px solid var(--line); padding-top:12px; margin-top:12px; } .environment-row .form-actions { grid-column:1/-1; flex-wrap:wrap; gap:8px; }
 @media (max-width:600px) { .environment-row { grid-template-columns:1fr; } }
+@keyframes page-progress { from { transform: translateX(-100%); } to { transform: translateX(300%); } }

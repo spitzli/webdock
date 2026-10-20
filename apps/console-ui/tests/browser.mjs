@@ -36,7 +36,10 @@ try {
     await page.getByRole('link', { name: 'Changed name', exact: true }).waitFor();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `no page overflow at ${width}px`);
   }
-  await page.getByRole('button', { name: 'Use dark theme' }).click();
+  // System (default) → light → dark.
+  await page.getByRole('button', { name: /Switch to light theme/ }).click();
+  assert.equal(await page.locator('html').getAttribute('data-theme'), 'light');
+  await page.getByRole('button', { name: /Switch to dark theme/ }).click();
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
   await page.keyboard.press('Control+k');
   await page.getByRole('dialog', { name: 'Go to workspace' }).waitFor();

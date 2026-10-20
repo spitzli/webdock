@@ -1,6 +1,6 @@
 // Local development helper used by the root Tiltfile. Owned loopback state only; never deployment config.
-// Usage: node tools/dev/local.mjs secrets|init|plugin-image|seed|core|plugin-control|plugin-controller|echo-demo
-import { execFileSync, spawn } from "node:child_process";
+// Usage: node tools/dev/local.mjs secrets|init|plugin-image|seed
+import { execFileSync } from "node:child_process";
 import { createHash, generateKeyPairSync, randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -179,24 +179,16 @@ function runtimeEnv(value) {
     ...(existsSync(pluginFile("plugin-config.json")) ? { WEBDOCK_NATIVE_PLUGIN_CONFIG: pluginFile("plugin-config.json") } : {}),
   };
 }
-function serve(binary, args, env) {
-  const child = spawn(binary, args, { cwd: root, env, stdio: "inherit" });
-  for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => child.kill(signal));
-  child.on("exit", (code, signal) => process.exit(code ?? (signal ? 1 : 0)));
+// Tilt execs the binaries directly with this file, so stopping Tilt never orphans a server.
+function writeEnv(value) {
+  const quote = (text) => `'${String(text).replaceAll("'", "'\\''")}'`;
+  const lines = Object.entries(runtimeEnv(value)).filter(([key]) => !["PATH", "HOME"].includes(key)).map(([key, text]) => `${key}=${quote(text)}`);
+  writeFileSync(file("runtime.env"), lines.join("\n") + "\n", { mode: 0o600 });
 }
 
 const command = process.argv[2];
 const value = secrets();
-const debug = (binary) => join(root, "target/debug", binary);
 if (command === "init") init(value);
 else if (command === "plugin-image") await pluginImage();
-else if (command === "seed") seed();
-else if (command === "core") serve(debug("webdock-control-plane"), [], runtimeEnv(value));
-else if (command === "plugin-control") {
-  rmSync(pluginFile("control.sock"), { force: true });
-  serve(debug("webdock-plugin-control"), ["--config", pluginFile("plugin-config.json")], runtimeEnv(value));
-} else if (command === "plugin-controller") serve(debug("webdock-plugin-controller"), ["--config", pluginFile("plugin-config.json")], runtimeEnv(value));
-else if (command === "echo-demo") {
-  rmSync(pluginFile("echo-demo.sock"), { force: true });
-  serve(join(root, "plugins/echo-demo/target/debug/webdock-echo-demo"), [pluginFile("echo-demo.json")], { PATH: process.env.PATH, RUST_LOG: "info" });
-} else if (command !== "secrets") throw new Error("Use: secrets | init | plugin-image | seed | core | plugin-control | plugin-controller | echo-demo");
+else if (command === "seed") { seed(); writeEnv(value); }
+else if (command !== "secrets") throw new Error("Use: secrets | init | plugin-image | seed");

@@ -51,8 +51,8 @@ local_resource(
 
 local_resource(
     'plugin-control',
-    serve_cmd='node tools/dev/local.mjs plugin-control',
-    deps=['target/debug/webdock-plugin-control'],
+    serve_cmd="sh -c 'set -a && . .dev-local/runtime.env && set +a && rm -f .dev-local/plugins/control.sock && exec target/debug/webdock-plugin-control --config \"$PWD/.dev-local/plugins/plugin-config.json\"'",
+    deps=['target/debug/webdock-plugin-control', '.dev-local/runtime.env'],
     resource_deps=['seed', 'core-build'],
     readiness_probe=probe(exec=exec_action(['test', '-S', '.dev-local/plugins/control.sock']), period_secs=1),
     labels=['plugins'],
@@ -60,15 +60,15 @@ local_resource(
 
 local_resource(
     'plugin-controller',
-    serve_cmd='node tools/dev/local.mjs plugin-controller',
-    deps=['target/debug/webdock-plugin-controller'],
+    serve_cmd="sh -c 'set -a && . .dev-local/runtime.env && set +a && exec target/debug/webdock-plugin-controller --config \"$PWD/.dev-local/plugins/plugin-config.json\"'",
+    deps=['target/debug/webdock-plugin-controller', '.dev-local/runtime.env'],
     resource_deps=['seed', 'core-build'],
     labels=['plugins'],
 )
 
 local_resource(
     'echo-demo',
-    serve_cmd='node tools/dev/local.mjs echo-demo',
+    serve_cmd="sh -c 'rm -f .dev-local/plugins/echo-demo.sock && exec plugins/echo-demo/target/debug/webdock-echo-demo \"$PWD/.dev-local/plugins/echo-demo.json\"'",
     deps=['plugins/echo-demo/target/debug/webdock-echo-demo'],
     resource_deps=['plugin-control', 'echo-demo-build'],
     readiness_probe=probe(exec=exec_action(['test', '-S', '.dev-local/plugins/echo-demo.sock']), period_secs=1),
@@ -77,9 +77,9 @@ local_resource(
 
 local_resource(
     'core',
-    serve_cmd='node tools/dev/local.mjs core',
+    serve_cmd="sh -c 'set -a && . .dev-local/runtime.env && set +a && exec target/debug/webdock-control-plane'",
     # Restarts after every successful rebuild of the binary.
-    deps=['target/debug/webdock-control-plane'],
+    deps=['target/debug/webdock-control-plane', '.dev-local/runtime.env'],
     resource_deps=['seed'],
     readiness_probe=probe(http_get=http_get_action(port=3130, host='127.0.0.1', path='/readyz'), period_secs=2),
     links=[link('http://127.0.0.1:3130/healthz', 'healthz')],

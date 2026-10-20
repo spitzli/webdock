@@ -1,3 +1,5 @@
+import { AuthHeader, Brand, PageFailure, PageProgress, authFrame, authPanel } from "./AuthFrame";
+import { ThemeButton } from "./theme";
 import { formText } from "./form";
 import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -75,14 +77,6 @@ function Feedback({
     </>
   );
 }
-function Brand() {
-  return (
-    <a className="auth-brand" href="/account">
-      <span className="brand-mark">w</span>webdock
-      <span className="brand-product">Account</span>
-    </a>
-  );
-}
 function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
   const api = useApi();
   const [mode, setMode] = useState<"password" | "totp" | "recovery" | "reset">(
@@ -140,9 +134,9 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
     passkey.reset();
   };
   return (
-    <main className="auth-layout">
-      <Brand />
-      <section className="auth-panel">
+    <main className={authFrame}>
+      <AuthHeader product="Account" href="/account" />
+      <section className={authPanel}>
         <h1>
           {mode === "password"
             ? "Sign in to Webdock"
@@ -277,9 +271,9 @@ function PasswordReset() {
     },
   });
   return (
-    <main className="auth-layout">
-      <Brand />
-      <section className="auth-panel">
+    <main className={authFrame}>
+      <AuthHeader product="Account" href="/account" />
+      <section className={authPanel}>
         <h1>Choose a new password</h1>
         {!token ? (
           <p role="alert">
@@ -490,6 +484,16 @@ export function AccountSecurity({
   const [enrolled, setEnrolled] = useState(false);
   const [passkeyName, setPasskeyName] = useState("");
   const ready = !session.user.mustChangePassword && session.user.emailVerified;
+  // Say why adding a passkey is unavailable instead of only disabling the button.
+  const passkeyBlocked = session.user.mustChangePassword
+    ? "Set your own password before adding a passkey."
+    : !session.user.emailVerified
+      ? "Verify your email address before adding a passkey."
+      : !browserSupportsWebAuthn()
+        ? "This browser does not support passkeys."
+        : session.user.role === "operator" && !session.user.twoFactorEnabled
+          ? "Operators set up an authenticator app first, then can add passkeys."
+          : undefined;
   const change = useMutation({
     mutationFn: async (data: FormData) => {
       if (data.get("newPassword") !== data.get("confirmPassword"))
@@ -898,19 +902,14 @@ export function AccountSecurity({
           </label>
           <button
             className="button"
-            disabled={
-              !ready ||
-              !browserSupportsWebAuthn() ||
-              addPasskey.isPending ||
-              (session.user.role === "operator" &&
-                !session.user.twoFactorEnabled)
-            }
+            disabled={Boolean(passkeyBlocked) || addPasskey.isPending}
           >
             {addPasskey.isPending
               ? "Waiting for your device…"
               : "Add a passkey"}
           </button>
         </form>
+        {passkeyBlocked ? <p className="mt-2 text-[13px] text-muted">{passkeyBlocked}</p> : null}
         <Feedback
           error={addPasskey.error ?? removePasskey.error ?? renamePasskey.error}
         />
@@ -1011,7 +1010,7 @@ function ConsentPage() {
     offline_access: "Keep access while you are away",
   };
   return (
-    <section className="auth-panel">
+    <section className={authPanel}>
       <h1>
         Connect{" "}
         {consent.data.client_name?.trim()
@@ -1086,7 +1085,7 @@ function LogoutPage({ session }: { session: Session }) {
     },
   });
   return (
-    <section className="auth-panel">
+    <section className={authPanel}>
       <h1>Sign out of Webdock?</h1>
       <p>You are signed in as {session.user.email}.</p>
       <p className="muted">
@@ -1202,7 +1201,7 @@ function InvitationPage() {
   if (invite.isPending) return <Loading>Loading invitation…</Loading>;
   if (invite.error) return <Failure error={invite.error} />;
   return (
-    <section className="auth-panel">
+    <section className={authPanel}>
       <h1>Join {invite.data.organizationName}</h1>
       <p>You have been invited as {invite.data.role}.</p>
       <Feedback error={answer.error} />
@@ -1403,13 +1402,13 @@ export function AccountApp() {
     if (ready && resume && (!forceLogin || reauthenticated))
       location.replace(resume);
   }, [ready, resume, forceLogin, reauthenticated]);
-  if (!cacheReady) return <Loading>Opening your account…</Loading>;
+  if (!cacheReady) return <PageProgress product="Account">Opening your account…</PageProgress>;
   if (location.pathname === "/reset-password") return <PasswordReset />;
   if (location.pathname === "/auth-error")
     return (
-      <main className="auth-layout">
-        <Brand />
-        <section className="auth-panel">
+      <main className={authFrame}>
+        <AuthHeader product="Account" href="/account" />
+        <section className={authPanel}>
           <h1>This application could not be opened</h1>
           <p>
             Your sign-in request may have expired, or this account may not have
@@ -1425,10 +1424,12 @@ export function AccountApp() {
       </main>
     );
   if (session.isPending || (!session.isFetchedAfterMount && !session.isError))
-    return <Loading>Opening your account…</Loading>;
+    return <PageProgress product="Account">Opening your account…</PageProgress>;
   if (session.error)
     return (
-      <Failure
+      <PageFailure
+        product="Account"
+        title="Account unavailable"
         error={session.error}
         retry={() => {
           void session.refetch();
@@ -1439,7 +1440,7 @@ export function AccountApp() {
   if (!session.data || (forceLogin && !reauthenticated && !ownedSetup))
     return <AccountSignIn onSuccess={signedIn} />;
   if (continuation && ready)
-    return <Loading>Returning to your application…</Loading>;
+    return <PageProgress product="Account">Returning to your application…</PageProgress>;
   const content =
     ready && location.pathname === "/consent" ? (
       <ConsentPage />
@@ -1492,12 +1493,15 @@ export function AccountApp() {
   return (
     <div className="account-layout">
       <header className="account-topbar">
-        <Brand />
-        <nav aria-label="Account">
-          <a href="/account">Security</a>
-          <a href="/sites">Websites</a>
-          <a href="/logout">Sign out</a>
-        </nav>
+        <Brand product="Account" href="/account" />
+        <div className="flex items-center gap-4">
+          <nav aria-label="Account">
+            <a href="/account">Security</a>
+            <a href="/sites">Websites</a>
+            <a href="/logout">Sign out</a>
+          </nav>
+          <ThemeButton />
+        </div>
       </header>
       <main
         className={

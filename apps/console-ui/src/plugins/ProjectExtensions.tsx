@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { useApi, useSession } from "../context";
 import { Failure, Loading } from "../common";
+import { ApiError } from "../api";
 import { PluginPanel } from "./Panel";
 // Discovery is scoped by the Core to current project access and grants; admission is rechecked per call.
 const slotSchema = z.object({ id: z.string(), slot: z.string(), label: z.string(), action: z.string().optional() });
@@ -20,6 +21,8 @@ export function ProjectExtensions({ projectID }: { projectID: string }) {
     queryFn: ({ signal }) => api.get(`/api/console/plugins?projectID=${encodeURIComponent(projectID)}`, viewsSchema, signal),
   });
   if (query.isPending) return <Loading>Loading project extensions…</Loading>;
+  // Installations without a plugin host answer "unavailable"; that is not a page error.
+  if (query.error instanceof ApiError && [404, 503].includes(query.error.status)) return null;
   if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
   const panels: Panel[] = query.data.flatMap((view) => view.manifest.slots
     .filter((slot) => slot.slot === "project.overview.panel" && slot.action)
