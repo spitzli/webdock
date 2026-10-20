@@ -1,7 +1,7 @@
 // Local development helper used by the root Tiltfile. Owned loopback state only; never deployment config.
-// Usage: node tools/dev/local.mjs secrets|init|core
+// Usage: node tools/dev/local.mjs secrets|init|plugin-image|seed|core|plugin-control|plugin-controller|echo-demo
 import { execFileSync, spawn } from "node:child_process";
-import { randomBytes } from "node:crypto";
+import { createHash, generateKeyPairSync, randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -84,9 +84,89 @@ function init(value) {
   console.log(`Local operator: operator@example.test / ${value.operatorPassword} (password change and MFA are required at first sign-in)`);
 }
 
-function core(value) {
+// Local demo plugin: what a reviewed installer would record, plus private co-located Unix sockets.
+const plugins = join(state, "plugins");
+const registry = `127.0.0.1:${process.env.WEBDOCK_DEV_REGISTRY_PORT ?? 5005}`;
+const demo = { customer: "900000000000000101", organization: "900000000000000102", project: "900000000000000103" };
+const pluginFile = (name) => join(plugins, name);
+const uid = process.getuid();
+function psql(sql, variables = {}) {
+  const args = [...compose, "exec", "-T", "postgres", "psql", "-h", "127.0.0.1", "-U", "postgres", "-d", "webdock", "-v", "ON_ERROR_STOP=1", "-tA"];
+  for (const [name, value] of Object.entries(variables)) args.push("-v", `${name}=${value}`);
+  return execFileSync("docker", args, { input: sql, encoding: "utf8" }).trim();
+}
+
+async function pluginImage() {
+  mkdirSync(plugins, { recursive: true, mode: 0o700 });
+  if (existsSync(pluginFile("echo-demo.image"))) {
+    // A reset registry volume no longer holds the recorded digest; rebuild instead of seeding a dangling reference.
+    const digest = readFileSync(pluginFile("echo-demo.image"), "utf8").trim().split("@")[1];
+    const head = await fetch(`http://${registry}/v2/webdock/echo-demo/manifests/${digest}`, {
+      method: "HEAD", headers: { Accept: "application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json" },
+    }).catch(() => null);
+    if (head?.ok) return;
+  }
+  const tag = `${registry}/webdock/echo-demo:dev`;
+  execFileSync("docker", ["build", "-f", "plugins/echo-demo/Dockerfile", "-t", tag, "."], { cwd: root, stdio: "inherit" });
+  execFileSync("docker", ["push", tag], { stdio: "inherit" });
+  const digests = JSON.parse(execFileSync("docker", ["image", "inspect", "--format", "{{json .RepoDigests}}", tag], { encoding: "utf8" }));
+  const pinned = digests.find((value) => value.startsWith(`${registry}/webdock/echo-demo@sha256:`));
+  if (!pinned) throw new Error("Pushed image digest not found");
+  writeFileSync(pluginFile("echo-demo.image"), pinned, { mode: 0o600 });
+}
+
+function seed() {
+  waitForDatabase();
+  mkdirSync(plugins, { recursive: true, mode: 0o700 });
+  if (!existsSync(pluginFile("invocation.key"))) {
+    const keys = generateKeyPairSync("ed25519");
+    const raw = (part) => Buffer.from(keys.privateKey.export({ format: "jwk" })[part], "base64url").toString("hex");
+    writeFileSync(pluginFile("invocation.key"), raw("d"), { mode: 0o600 });
+    writeFileSync(pluginFile("invocation.pub"), raw("x"), { mode: 0o600 });
+    writeFileSync(pluginFile("credential"), secret(), { mode: 0o600 });
+  }
+  // The stored release is authoritative; later image rebuilds never silently rewrite it.
+  let manifest = psql("SELECT manifest_bytes FROM webdock_auth.plugin_release WHERE plugin_id='echo-demo'");
+  if (!manifest) {
+    const value = JSON.parse(readFileSync(join(root, "plugins/echo-demo/manifest.json"), "utf8"));
+    value.image = readFileSync(pluginFile("echo-demo.image"), "utf8").trim();
+    manifest = JSON.stringify(value);
+  }
+  writeFileSync(pluginFile("echo-demo.manifest.json"), manifest, { mode: 0o644 });
+  const credential = createHash("sha256").update(readFileSync(pluginFile("credential"), "utf8")).digest("hex");
+  const image = JSON.parse(manifest).image;
+  psql(`BEGIN;
+SELECT set_config('webdock.organization_allocation', json_build_object('customer_id', :'customer', 'organization_id', :'organization')::text, true);
+INSERT INTO webdock_admin.customers(id,name) SELECT :'customer','Demo customer' WHERE NOT EXISTS(SELECT 1 FROM webdock_admin.customers WHERE id=:'customer');
+INSERT INTO webdock_admin.projects(id,name,customer_id) SELECT :'project','Demo project',:'customer' WHERE NOT EXISTS(SELECT 1 FROM webdock_admin.projects WHERE id=:'project');
+INSERT INTO webdock_auth.plugin_bootstrap(singleton,mode) VALUES(true,'fresh') ON CONFLICT DO NOTHING;
+INSERT INTO webdock_auth.plugin_installation(id,kind,state,desired_state,version,runtime,current_generation) VALUES('echo-demo','external','enabled','enabled','0.1.0','ready',1) ON CONFLICT DO NOTHING;
+INSERT INTO webdock_auth.plugin_release(plugin_id,version,manifest_bytes,manifest_sha256,image,registry_url,signer_key_id) SELECT 'echo-demo','0.1.0',:'manifest',encode(sha256(convert_to(:'manifest','UTF8')),'hex'),:'image',:'registry','local-dev' WHERE NOT EXISTS(SELECT 1 FROM webdock_auth.plugin_release WHERE plugin_id='echo-demo');
+INSERT INTO webdock_auth.plugin_configuration(plugin_id,approved_capabilities,configuration) VALUES('echo-demo','[]','{}') ON CONFLICT DO NOTHING;
+INSERT INTO webdock_auth.plugin_runtime(plugin_id,generation,version,image,status,configuration_revision,credential_hash,namespace,service_name) SELECT 'echo-demo',1,'0.1.0',:'image','ready',0,:'credential','local','echo-demo' WHERE NOT EXISTS(SELECT 1 FROM webdock_auth.plugin_runtime WHERE plugin_id='echo-demo');
+INSERT INTO webdock_auth.plugin_grant(plugin_id,customer_id,project_id,capabilities) SELECT 'echo-demo',:'customer',:'project','[]' WHERE NOT EXISTS(SELECT 1 FROM webdock_auth.plugin_grant WHERE plugin_id='echo-demo' AND project_id=:'project');
+COMMIT;`, { ...demo, manifest, image, credential, registry: `http://${registry}` });
+  const sockets = (name) => pluginFile(name);
+  writeFileSync(pluginFile("host-bindings.json"), JSON.stringify({ runtimes: { "echo-demo": {
+    generation: 1, namespace: "local", service: "echo-demo", credentialSha256: credential, peers: [{ kind: "unix", uid }],
+  } } }), { mode: 0o600 });
+  writeFileSync(pluginFile("connections.json"), JSON.stringify({ runtimes: { "echo-demo": {
+    generation: 1, transport: { kind: "unix", path: sockets("echo-demo.sock") },
+  } } }), { mode: 0o600 });
+  writeFileSync(pluginFile("plugin-config.json"), JSON.stringify({
+    hostBindings: pluginFile("host-bindings.json"), invocationSigningKey: pluginFile("invocation.key"),
+    connections: pluginFile("connections.json"), control: { kind: "unix", path: sockets("control.sock") },
+  }), { mode: 0o600 });
+  writeFileSync(pluginFile("echo-demo.json"), JSON.stringify({
+    manifest: pluginFile("echo-demo.manifest.json"), issuerPublicKeyHex: readFileSync(pluginFile("invocation.pub"), "utf8"),
+    generation: 1, listen: sockets("echo-demo.sock"), core: sockets("control.sock"), corePeers: [{ kind: "unix", uid }],
+  }), { mode: 0o600 });
+  console.log(`Seeded Demo customer ${demo.customer} / Demo project ${demo.project} with the echo-demo extension (${image}).`);
+}
+
+function runtimeEnv(value) {
   const bootstrap = JSON.parse(readFileSync(file("initial-secrets.json"), "utf8"));
-  const env = {
+  return {
     PATH: process.env.PATH, HOME: process.env.HOME, NODE_ENV: "development", RUST_LOG: process.env.RUST_LOG ?? "info",
     ...bootstrap.environment, ...origins,
     WEBDOCK_DATABASE_URL: url("webdock_auth_bootstrap", value.roles.webdock_auth_bootstrap),
@@ -96,14 +176,27 @@ function core(value) {
     WEBDOCK_AUTH_SECRET: value.auth, DATABASE_RLS_SECRET: value.rls,
     WEBDOCK_FEATURES: process.env.WEBDOCK_DEV_FEATURES ?? "{}",
     WEBDOCK_BIND_ADDRESS: "127.0.0.1", PORT: "3130",
+    ...(existsSync(pluginFile("plugin-config.json")) ? { WEBDOCK_NATIVE_PLUGIN_CONFIG: pluginFile("plugin-config.json") } : {}),
   };
-  const child = spawn(join(root, "target/debug/webdock-control-plane"), [], { cwd: root, env, stdio: "inherit" });
+}
+function serve(binary, args, env) {
+  const child = spawn(binary, args, { cwd: root, env, stdio: "inherit" });
   for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => child.kill(signal));
   child.on("exit", (code, signal) => process.exit(code ?? (signal ? 1 : 0)));
 }
 
 const command = process.argv[2];
 const value = secrets();
+const debug = (binary) => join(root, "target/debug", binary);
 if (command === "init") init(value);
-else if (command === "core") core(value);
-else if (command !== "secrets") throw new Error("Use: secrets | init | core");
+else if (command === "plugin-image") await pluginImage();
+else if (command === "seed") seed();
+else if (command === "core") serve(debug("webdock-control-plane"), [], runtimeEnv(value));
+else if (command === "plugin-control") {
+  rmSync(pluginFile("control.sock"), { force: true });
+  serve(debug("webdock-plugin-control"), ["--config", pluginFile("plugin-config.json")], runtimeEnv(value));
+} else if (command === "plugin-controller") serve(debug("webdock-plugin-controller"), ["--config", pluginFile("plugin-config.json")], runtimeEnv(value));
+else if (command === "echo-demo") {
+  rmSync(pluginFile("echo-demo.sock"), { force: true });
+  serve(join(root, "plugins/echo-demo/target/debug/webdock-echo-demo"), [pluginFile("echo-demo.json")], { PATH: process.env.PATH, RUST_LOG: "info" });
+} else if (command !== "secrets") throw new Error("Use: secrets | init | plugin-image | seed | core | plugin-control | plugin-controller | echo-demo");

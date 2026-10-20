@@ -1,3 +1,4 @@
+import { ProjectExtensions } from "./plugins/ProjectExtensions";
 import { formText } from "./form";
 import { useEffect, useState } from "react";
 import { Link, useBlocker } from "@tanstack/react-router";
@@ -351,6 +352,7 @@ export function RegistryDetail({
       ) : (
         <RegistryForm key={id} collection={collection} record={record.data} />
       )}
+      {collection === "projects" ? <ProjectExtensions projectID={id} /> : null}
     </section>
   );
 }
