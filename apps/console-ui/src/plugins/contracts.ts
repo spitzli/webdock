@@ -15,7 +15,8 @@ const field = z
   .object({
     name: key,
     label,
-    type: z.enum(["text", "email", "number", "select"]),
+    // A secret is write-only: never pre-filled and never part of panel data.
+    type: z.enum(["text", "email", "number", "select", "checkbox", "secret", "textarea"]),
     required: z.boolean().optional(),
     options: z
       .array(z.object({ value: z.string().max(160), label }).strict())
@@ -42,13 +43,23 @@ const block = z.discriminatedUnion("kind", [
       kind: z.literal("table"),
       title: label,
       columns: z.array(z.object({ key, label }).strict()).min(1).max(12),
+      // Linked rows carry the resource id they open; it is not shown as a column.
+      rowLink: z.literal("resource").optional(),
       rows: z
         .array(
-          z.record(key, scalar).refine((row) => Object.keys(row).length <= 12),
+          z.record(key, scalar).refine((row) => Object.keys(row).length <= 13),
         )
         .max(200),
     })
-    .strict(),
+    .strict()
+    .refine(
+      (table) =>
+        table.rowLink !== "resource" ||
+        table.rows.every((row) => typeof row.resource_id === "string" && row.resource_id.length > 0),
+      "Linked rows need a resource_id",
+    ),
+  // Credentials stay out of panel data: the value is fetched by a read action on click.
+  z.object({ kind: z.literal("reveal"), label, action: key }).strict(),
   z
     .object({
       kind: z.literal("form"),
@@ -73,13 +84,15 @@ const block = z.discriminatedUnion("kind", [
 ]);
 export const panelSchema = z
   .object({
-    version: z.literal(1),
+    version: z.literal(2),
     title: label,
+    refreshSeconds: z.number().int().min(5).max(300).optional(),
     blocks: z.array(block).max(50),
   })
   .strict();
 export type Panel = z.infer<typeof panelSchema>;
 export type Action = z.infer<typeof action>;
+export const revealSchema = z.object({ value: z.string().max(8000) }).strict();
 export function parsePanel(input: unknown): Panel {
   if (((JSON.stringify(input) as string | undefined)?.length ?? 0) > 262144)
     throw new Error("Panel exceeds size limit");

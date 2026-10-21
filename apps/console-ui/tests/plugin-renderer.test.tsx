@@ -11,7 +11,7 @@ await test("renderer escapes supplied content and exposes table and status seman
   const html = renderToStaticMarkup(
     <PluginPanel
       value={{
-        version: 1,
+        version: 2,
         title: "Panel",
         blocks: [
           { kind: "text", text: "<script>alert(1)</script>" },
@@ -58,7 +58,7 @@ await test("forms submit typed input, require destructive confirmation and disab
   const root = createRoot(host);
   const calls: unknown[] = [];
   const value = {
-    version: 1,
+    version: 2,
     title: "Configure",
     blocks: [
       {

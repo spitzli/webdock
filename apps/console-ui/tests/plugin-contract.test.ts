@@ -6,7 +6,7 @@ import {
   validateActionMessage,
 } from "../src/plugins/contracts";
 const panel = {
-  version: 1,
+  version: 2,
   title: "Storage",
   blocks: [
     {
@@ -120,4 +120,17 @@ await test("core origin comparison normalizes trailing slashes and rejects missi
   };
   assert.throws(() => parseLaunch(launch, ["https://api.example/"]));
   assert.throws(() => parseLaunch(launch, []));
+});
+
+await test("panel v2 rejects version 1 and bounds the refresh interval", () => {
+  assert.throws(() => parsePanel({ ...panel, version: 1 }));
+  assert.equal(parsePanel({ ...panel, refreshSeconds: 30 }).refreshSeconds, 30);
+  assert.throws(() => parsePanel({ ...panel, refreshSeconds: 4 }));
+  assert.throws(() => parsePanel({ ...panel, refreshSeconds: 301 }));
+  assert.throws(() =>
+    parsePanel({
+      ...panel,
+      blocks: [{ kind: "table", title: "Rows", rowLink: "resource", columns: [{ key: "name", label: "Name" }], rows: [{ name: "no id" }] }],
+    }),
+  );
 });

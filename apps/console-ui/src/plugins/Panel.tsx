@@ -1,6 +1,6 @@
 import { formText } from "../form";
 import { useId, useState, type SubmitEvent } from "react";
-import { parsePanel, type Action, type Panel } from "./contracts";
+import { parsePanel, revealSchema, type Action, type Panel } from "./contracts";
 import * as ui from "../ui";
 export type InvokeAction = (
   action: string,
@@ -27,20 +27,29 @@ function ActionForm({
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!active || pending || (action.destructive && !confirmed)) return;
-    const input: Record<string, string | number> = {};
-    const data = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const input: Record<string, string | number | boolean> = {};
+    const data = new FormData(form);
     for (const field of fields) {
       const value = formText(data, field.name);
-      if (field.type === "number" && value) {
-        if (!Number.isFinite(Number(value))) return;
-        input[field.name] = Number(value);
-      } else input[field.name] = value;
+      if (field.type === "checkbox") {
+        input[field.name] = data.has(field.name);
+        continue;
+      }
+      if (field.type !== "number" || !value) {
+        input[field.name] = value;
+        continue;
+      }
+      if (!Number.isFinite(Number(value))) return;
+      input[field.name] = Number(value);
     }
     setPending(true);
     setMessage("");
     setFailed(false);
     try {
       await invoke(action.id, input);
+      // Clear the form so write-only values such as secrets do not stay in the page.
+      form.reset();
       setMessage("Action completed.");
       setConfirmed(false);
     } catch {
@@ -76,12 +85,30 @@ function ActionForm({
                 </option>
               ))}
             </select>
+          ) : field.type === "textarea" ? (
+            <textarea
+              className={ui.cx(ui.input, "min-h-24 py-2")}
+              id={`${prefix}-${field.name}`}
+              name={field.name}
+              required={field.required}
+              maxLength={4000}
+              disabled={pending || !active}
+            />
+          ) : field.type === "checkbox" ? (
+            <input
+              className="size-4 accent-accent"
+              id={`${prefix}-${field.name}`}
+              name={field.name}
+              type="checkbox"
+              disabled={pending || !active}
+            />
           ) : (
             <input
               className={ui.input}
               id={`${prefix}-${field.name}`}
               name={field.name}
-              type={field.type}
+              type={field.type === "secret" ? "password" : field.type}
+              autoComplete={field.type === "secret" ? "new-password" : undefined}
               required={field.required}
               maxLength={4000}
               disabled={pending || !active}
@@ -125,15 +152,63 @@ function ActionForm({
   );
 }
 
+/** Fetches a credential only when asked and keeps it out of any cache; hidden again on unmount. */
+function Reveal({ label, action, invoke, active }: { label: string; action: string; invoke: InvokeAction; active: boolean }) {
+  const [value, setValue] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [pending, setPending] = useState(false);
+  const show = async () => {
+    setPending(true);
+    setFailed(false);
+    try {
+      setValue(revealSchema.parse(await invoke(action, {})).value);
+    } catch {
+      setFailed(true);
+    } finally {
+      setPending(false);
+    }
+  };
+  return (
+    <div className="grid gap-2 text-sm">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="font-medium">{label}</span>
+        {value === null ? (
+          <button type="button" className={ui.button("secondary")} disabled={!active || pending} onClick={() => void show()}>
+            {pending ? "Loading…" : `Show ${label.toLowerCase()}`}
+          </button>
+        ) : (
+          <>
+            <button type="button" className={ui.button("secondary")} onClick={() => void navigator.clipboard.writeText(value)}>
+              Copy
+            </button>
+            <button type="button" className={ui.button("secondary")} onClick={() => { setValue(null); }}>
+              Hide
+            </button>
+          </>
+        )}
+      </div>
+      {value !== null ? <code className={ui.cx(ui.mono, "rounded-md border border-border bg-subtle px-3 py-2 break-all")}>{value}</code> : null}
+      {failed ? <p role="alert" className="text-danger">Could not load {label.toLowerCase()}. Check your access and try again.</p> : null}
+    </div>
+  );
+}
+
 export function PluginPanel({
   value,
-  invoke,
+  invoke: invokeAction,
   active = true,
+  context = {},
+  onOpenResource,
 }: {
   value: unknown;
   invoke: InvokeAction;
   active?: boolean;
+  /** Merged into every action input, e.g. the resource a page shows. */
+  context?: Record<string, string>;
+  onOpenResource?: (id: string) => void;
 }) {
+  const invoke: InvokeAction = (action, input, signal) =>
+    signal ? invokeAction(action, { ...input, ...context }, signal) : invokeAction(action, { ...input, ...context });
   let panel: Panel;
   try {
     panel = parsePanel(value);
@@ -186,15 +261,31 @@ export function PluginPanel({
                   </thead>
                   <tbody>
                     {block.rows.length ? (
-                      block.rows.map((row, rowIndex) => (
-                        <tr key={rowIndex} className={ui.tr}>
-                          {block.columns.map((column) => (
-                            <td key={column.key} className={ui.td}>
-                              {String(row[column.key] ?? "—")}
-                            </td>
-                          ))}
-                        </tr>
-                      ))
+                      block.rows.map((row, rowIndex) => {
+                        const resource = block.rowLink === "resource" && typeof row.resource_id === "string" ? row.resource_id : null;
+                        return (
+                          <tr key={rowIndex} className={resource ? ui.cx(ui.tr, "cursor-pointer") : ui.tr}>
+                            {block.columns.map((column, columnIndex) => (
+                              <td key={column.key} className={ui.td}>
+                                {resource && columnIndex === 0 ? (
+                                  <a
+                                    href="#"
+                                    className={ui.cx(ui.rowLink, "font-medium")}
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      onOpenResource?.(resource);
+                                    }}
+                                  >
+                                    {String(row[column.key] ?? "—")}
+                                  </a>
+                                ) : (
+                                  String(row[column.key] ?? "—")
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr className={ui.tr}>
                         <td colSpan={block.columns.length} className={ui.cx(`${ui.td} text-muted`)}>No records.</td>
@@ -216,6 +307,8 @@ export function PluginPanel({
                 />
               </section>
             );
+          case "reveal":
+            return <Reveal key={index} label={block.label} action={block.action} invoke={invoke} active={active} />;
           case "actions":
             return (
               <div key={index} className="flex flex-wrap gap-3">
