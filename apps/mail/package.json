@@ -4,15 +4,15 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": "24.x"
+    "bun": ">=1.4.3"
   },
   "scripts": {
-    "worker": "node src/worker.ts",
-    "test": "node --test tests/*.test.ts",
-    "test:integration": "node ../../scripts/test-mail.mjs",
-    "test:database": "node --env-file=.env.test.local --test --test-concurrency=1 tests/database/*.test.ts",
+    "worker": "bun src/worker.ts",
+    "test": "bun test --isolate ./tests/*.test.ts",
+    "test:integration": "bun ../../scripts/test-mail.mjs",
+    "test:database": "bun --env-file=.env.test.local test --isolate ./tests/database/*.test.ts",
     "check": "tsc --noEmit",
-    "api": "node src/api/main.ts"
+    "api": "bun src/api/main.ts"
   },
   "dependencies": {
     "@webdock/mail-core": "*",

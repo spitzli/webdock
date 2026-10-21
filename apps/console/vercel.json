@@ -5,5 +5,5 @@
   "git": {
     "deploymentEnabled": false
   },
-  "installCommand": "cd ../.. && npm ci"
+  "installCommand": "cd ../.. && bun install --frozen-lockfile"
 }

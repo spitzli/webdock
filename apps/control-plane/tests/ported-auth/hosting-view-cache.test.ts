@@ -1,9 +1,11 @@
-import test from "node:test";
+import test, { afterEach } from "node:test";
+import { mockMethod, restoreMocks } from "../helpers/node-test";
 import assert from "node:assert/strict";
 import { configureViewCache, ViewCache } from "../../src/cache";
 import { database, authDatabase, closeDatabases } from "../../src/db/runtime";
 import { executeHosting } from "../../src/modules/hosting/service";
 import type { HostingActor } from "@webdock/hosting-contracts";
+afterEach(restoreMocks);
 
 const actor: HostingActor = {
   subject: "alice",
@@ -56,14 +58,14 @@ function fixture(t: test.TestContext) {
     rowCount: items.length,
   });
   // These fixtures model unlinked legacy accounts; provider-link reads use the auth pool.
-  t.mock.method(authDatabase, "query", async (sql: string) => {
+  mockMethod(authDatabase, "query", async (sql: string) => {
     if (sql.includes("to_regclass('webdock_auth.clerk_identity')"))
       return rows([{ present: false }]);
     if (sql.includes("to_regclass('webdock_auth.clerk_organization')"))
       return rows([{ present: false }]);
     throw Error("Unexpected identity query: " + sql);
   });
-  t.mock.method(database, "connect", async () => ({
+  mockMethod(database, "connect", async () => ({
     release() {},
     async query(sql: string, params: unknown[] = []) {
       statements.push(sql);
@@ -376,7 +378,7 @@ test("cluster observations invalidate immediately and time-derived health refres
     "connected",
   );
   const now = Date.now();
-  t.mock.method(Date, "now", () => now + 6_000);
+  mockMethod(Date, "now", () => now + 6_000);
   assert.equal(((await f.call(command)) as { state: string }).state, "stale");
   f.state.lastSeen = Date.now();
   f.bump("webdock_auth.hosting_agent");

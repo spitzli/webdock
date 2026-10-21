@@ -69,7 +69,7 @@ test(
       const target = `127.0.0.1:${port}/webdock_install_test`;
       const run = (values: Record<string, string>) =>
         spawnSync(
-          root + "node_modules/.bin/bun",
+          process.execPath,
           ["--no-env-file", "tools/migrations/install.ts", target],
           { cwd: root, encoding: "utf8", env: values },
         );
@@ -86,7 +86,7 @@ test(
         return copy.href;
       };
       const minimal = spawnSync(
-        root + "node_modules/.bin/bun",
+        process.execPath,
         [
           "--no-env-file",
           "-e",
@@ -158,7 +158,7 @@ test(
         await restricted.end();
       }
       const initializePlugins = (modules: Record<string, unknown>) => spawnSync(
-        root + "node_modules/.bin/bun",
+        process.execPath,
         ["--no-env-file", "tools/plugins/bootstrap.ts", target, "fresh"],
         {cwd:root,encoding:"utf8",env:{...base,DATABASE_URL_UNPOOLED:url.href,WEBDOCK_MODULES:JSON.stringify({configVersion:1,modules})}},
       );
@@ -169,7 +169,7 @@ test(
       assert.deepEqual((await owner.query("SELECT id FROM webdock_auth.plugin_installation WHERE state='enabled' ORDER BY id")).rows,[{id:"storage"}]);
       // Both processes share the actual advisory lock and immutable journal.
       const concurrentUpgrade = () => new Promise<void>((resolve, reject) => {
-        const child = spawn(root + "node_modules/.bin/bun",
+        const child = spawn(process.execPath,
           ["--no-env-file", "tools/migrations/install.ts", target],
           { cwd: root, env: { ...base, DATABASE_URL_UNPOOLED: url.href }, stdio: ["ignore", "pipe", "pipe"] });
         let output = "";

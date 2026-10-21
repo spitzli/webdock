@@ -17,7 +17,7 @@ Run the command on the same machine as your browser. Pass the exact `host:port/d
 
 ```sh
 umask 077
-npm run setup:admin -- db.example.com:5432/webdock /private/initial-operator-secrets.json
+bun run setup:admin -- db.example.com:5432/webdock /private/initial-operator-secrets.json
 ```
 
 Open the private `http://127.0.0.1:…/#…` link printed in the terminal. Treat the entire link as a setup credential. The random capability stays in the URL fragment, is removed from the address bar when the page loads, and authorizes only this temporary local session. The command always binds to `127.0.0.1`; there is no public setup route or configurable public bind address. The session expires after ten minutes. An optional final argument sets an expiry of 60–900 seconds.

@@ -10,10 +10,10 @@ cosign verify-blob --bundle "$out/SHA256SUMS.sigstore.json" \
   --certificate-identity "$RELEASE_CERTIFICATE_IDENTITY" \
   --certificate-oidc-issuer "$RELEASE_CERTIFICATE_OIDC_ISSUER" "$out/SHA256SUMS"
 (cd "$out" && sha256sum --check SHA256SUMS)
-node tools/release/manifest.mjs verify "$out"
+bun tools/release/manifest.mjs verify "$out"
 # Validate the signed companion before any registry writes.
 if [ -f "$out/managed-cms.plugin.json" ]; then
-  node --input-type=module - "$out" "$registry" <<'JS'
+  bun run - "$out" "$registry" <<'JS'
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { validateCMSPlugin } from "./tools/release/manifest.mjs";
@@ -22,8 +22,8 @@ const manifest = JSON.parse(await readFile(join(out, "manifest.json"), "utf8"));
 validateCMSPlugin(JSON.parse(await readFile(join(out, "managed-cms.plugin.json"), "utf8")), manifest.architectureEvidence, registry);
 JS
 fi
-version=$(node --input-type=module -e 'import {readFileSync} from "node:fs"; console.log(JSON.parse(readFileSync(process.argv[1])).version)' "$out/manifest.json")
-revision=$(node --input-type=module -e 'import {readFileSync} from "node:fs"; console.log(JSON.parse(readFileSync(process.argv[1])).revision)' "$out/manifest.json")
+version=$(bun -e 'import {readFileSync} from "node:fs"; console.log(JSON.parse(readFileSync(process.argv[1])).version)' "$out/manifest.json")
+revision=$(bun -e 'import {readFileSync} from "node:fs"; console.log(JSON.parse(readFileSync(process.argv[1])).revision)' "$out/manifest.json")
 test "$(gh api "repos/$repository/commits/v$version" --jq .sha)" = "$revision" || { echo 'Release tag differs from signed source revision' >&2; exit 1; }
 for image in api-core console-core console auth api worker migrate agent mail-runtime; do
   skopeo copy --all --preserve-digests "oci-archive:$out/$image.oci.tar" "docker://$registry/$image:$version"

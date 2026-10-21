@@ -4,13 +4,13 @@ This Compose lab is a disposable integration fixture, not a production deploymen
 
 ## Run
 
-Requires Node 24+, a local Linux Docker engine, Docker Compose and installed workspace dependencies:
+Requires Bun, a local Linux Docker engine, Docker Compose and installed workspace dependencies:
 
 ```sh
-npm ci
-npm test -w @webdock/mail
-npm run check -w @webdock/mail
-npm run test:integration -w @webdock/mail
+bun install --frozen-lockfile
+bun test -w @webdock/mail
+bun run --filter @webdock/mail check
+bun run --filter @webdock/mail test:integration
 ```
 
 The integration command creates a randomly named `webdock-mail-test-*` Compose project, runs the real server tests and removes that project's containers, networks and volumes even when a test fails. Images stay cached. No existing mail service, credential, DNS record or Turbo callback is used. Do not run the test file directly against a persistent deployment.

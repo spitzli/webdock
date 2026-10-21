@@ -22,7 +22,7 @@ async function until(check: () => boolean) {
 }
 function fixture(fetcher: typeof fetch) {
   const browser = new Window({ url: "https://console.example.test/mail/inbox/201?customer=101" });
-  Object.assign(globalThis, { window: browser, self: browser, scrollTo: browser.scrollTo.bind(browser), location: browser.location, document: browser.document, HTMLElement: browser.HTMLElement, HTMLInputElement: browser.HTMLInputElement, HTMLSelectElement: browser.HTMLSelectElement, Event: browser.Event, FormData: browser.FormData, IS_REACT_ACT_ENVIRONMENT: true });
+  Object.assign(globalThis, { window: browser, navigator: browser.navigator, self: browser, scrollTo: browser.scrollTo.bind(browser), location: browser.location, document: browser.document, HTMLElement: browser.HTMLElement, HTMLInputElement: browser.HTMLInputElement, HTMLSelectElement: browser.HTMLSelectElement, Event: browser.Event, FormData: browser.FormData, IS_REACT_ACT_ENVIRONMENT: true });
   const host = document.createElement("div");
   document.body.append(host);
   const root = createRoot(host);

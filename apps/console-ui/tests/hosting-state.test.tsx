@@ -115,7 +115,7 @@ function fixture(fetcher: typeof fetch) {
     url: "https://console.example/hosting/apps/301",
   });
   Object.assign(globalThis, {
-    window: browser,
+    window: browser, navigator: browser.navigator,
     self: browser,
     scrollTo: browser.scrollTo.bind(browser),
     document: browser.document,

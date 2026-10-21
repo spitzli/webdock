@@ -1,5 +1,6 @@
 import { configureFullInstallation } from "../../src/full-installation";
-import test, { mock } from "node:test";
+import test, { afterEach } from "node:test";
+import { mockMethod, restoreMocks } from "../helpers/node-test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import type { ListBlobResult, ListCommandOptions } from "@vercel/blob";
@@ -20,6 +21,7 @@ import {
   normalizeStoragePrefix,
   storageUsageSchemaSQL,
 } from "../../src/modules/platform/storage-usage";
+afterEach(restoreMocks);
 const url = new URL(process.env.DATABASE_URL!);
 if (
   !["localhost", "127.0.0.1"].includes(url.hostname) ||
@@ -362,7 +364,7 @@ test("Storage mappings enforce tenant/operator access, overlap safety, stale sna
 
 test("Scheduled batches reserve disjoint bounded work, skip archived tenants, preserve failures and never resurrect removals", async () => {
   const connection = await database.connect();
-  const query = mock.method(
+  const query = mockMethod(
     database,
     "query",
     connection.query.bind(connection),

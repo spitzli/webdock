@@ -4,13 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 3121",
-    "build": "tsc --noEmit && vite build",
-    "check": "tsc --noEmit",
-    "test": "node --import tsx --test tests/*.test.ts tests/*.test.tsx",
-    "test:browser": "node --import tsx tests/browser.mjs",
-    "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsc --noEmit"
+    "dev": "bun --bun vite --host 127.0.0.1 --port 3121",
+    "build": "bun --bun tsc --noEmit && bun --bun vite build",
+    "check": "bun --bun tsc --noEmit",
+    "test": "bun test --isolate ./tests",
+    "test:browser": "bun tests/browser.mjs && bun tests/account-onboarding-browser.mjs",
+    "lint": "bun --bun eslint . --max-warnings 0",
+    "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
     "@fontsource-variable/inter": "5.3.0",
@@ -43,7 +43,6 @@
     "happy-dom": "20.14.5",
     "playwright": "1.58.2",
     "tailwindcss": "4.3.3",
-    "tsx": "^4.23.15",
     "typescript": "^5",
     "typescript-eslint": "8.71.0",
     "vite": "8.3.4"

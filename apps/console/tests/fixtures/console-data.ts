@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
-import { registerHooks } from "node:module";
 import React from "react";
+// The subset of Bun's runtime plugin API these fixtures use; Bun's global types stay out of the app build.
+type Source = { contents: string; loader: "js" };
+declare const Bun: {
+  plugin(plugin: { name: string; setup(build: { module(name: string, load: () => Source): void; onLoad(options: { filter: RegExp }, load: () => Source): void }): void }): void;
+  resolveSync(specifier: string, from: string): string;
+};
 
 // Exercise React's real server cache; the renderer normally supplies this request scope.
 const internals = (React as unknown as {
@@ -15,18 +20,26 @@ function newRequest() {
     return values.get(factory);
   } };
 }
-registerHooks({ resolve(specifier, context, nextResolve) {
-  if (specifier === "next/navigation") return nextResolve("next/dist/client/components/navigation.react-server.js", context);
-  if (specifier === "next/link") return { url: "data:text/javascript,export default 'a'", shortCircuit: true };
-  if (specifier === "./refresh" && context.parentURL?.endsWith("/hosting/src/ui/project-overview.tsx"))
-    return { url: "data:text/javascript,export function HostingRefresh() { return null; }", shortCircuit: true };
-  const source = specifier === "server-only" ? "export {};" : specifier === "next/headers"
-    ? 'export async function headers() { return new Headers({cookie: "webdock-sso=fixture"}); }'
-    : specifier === "@webdock/i18n/next"
-      ? 'export async function getRequestI18n() { return { t: text => text }; }'
-      : null;
-  return source ? { url: `data:text/javascript,${encodeURIComponent(source)}`, shortCircuit: true } : nextResolve(specifier, context);
-} });
+// Stand-ins for the Next.js request scope; navigation uses Next's real server build.
+const stubs: Record<string, string> = {
+  "next/navigation": `export * from ${JSON.stringify(Bun.resolveSync("next/dist/client/components/navigation.react-server.js", new URL(".", import.meta.url).pathname))};`,
+  "next/link": "export default 'a'",
+  "server-only": "export {};",
+  "next/headers": 'export async function headers() { return new Headers({cookie: "webdock-sso=fixture"}); }',
+  "@webdock/i18n/next": "export async function getRequestI18n() { return { t: text => text }; }",
+};
+Bun.plugin({
+  name: "console-fixture-modules",
+  setup(build) {
+    for (const [name, contents] of Object.entries(stubs))
+      build.module(name, () => ({ contents, loader: "js" }));
+    // The hosting overview's client refresh button has no place in a server render.
+    build.onLoad({ filter: /\/hosting\/src\/ui\/refresh\.tsx$/ }, () => ({
+      contents: "export function HostingRefresh() { return null; }",
+      loader: "js",
+    }));
+  },
+});
 process.env.WEBDOCK_API_ORIGIN = "https://api.example.test";
 const calls: string[] = [];
 let handle: (operation: string, args: unknown[]) => Promise<unknown>;

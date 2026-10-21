@@ -11,6 +11,7 @@ import {
 import { claimOperation } from "../../src/modules/hosting/operations";
 import { nativeClusterDemand } from "@webdock/mail-core/capacity";
 import test from "node:test";
+import { subtest } from "../helpers/node-test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { auth } from "../../src/modules/auth/auth";
@@ -73,7 +74,7 @@ test("database migration, operator catalog and tenant ordering use real transact
   await database.query(databaseSchemaSQL);
   await database.query(serviceBindingSchemaSQL);
   await database.query(databaseSchemaSQL);
-  await t.test(
+  await subtest(
     "runtime grants permit provisioning but preserve order history and schema ownership",
     async () => {
       const role = "wd_test_runtime_" + key();
@@ -142,7 +143,7 @@ test("database migration, operator catalog and tenant ordering use real transact
     terms: "Shared resources and measured storage. Backups are not configured.",
   };
   let planID = "";
-  await t.test(
+  await subtest(
     "tenant cannot publish tariffs and operator publication never provisions",
     async () => {
       await assert.rejects(
@@ -168,7 +169,7 @@ test("database migration, operator catalog and tenant ordering use real transact
       );
     },
   );
-  await t.test(
+  await subtest(
     "foreign tenant and preview cannot accept an offer",
     async () => {
       await assert.rejects(
@@ -199,7 +200,7 @@ test("database migration, operator catalog and tenant ordering use real transact
       );
     },
   );
-  await t.test(
+  await subtest(
     "no accepted order means no database; disabled plans cannot be ordered",
     async () => {
       await assert.rejects(
@@ -233,7 +234,7 @@ test("database migration, operator catalog and tenant ordering use real transact
       );
     },
   );
-  await t.test(
+  await subtest(
     "concurrent order retries provision once and last shared slot cannot be oversold",
     async () => {
       const old = process.env.WEBDOCK_DATABASE_PUBLIC_ENABLED;
@@ -1248,7 +1249,7 @@ test("database migration, operator catalog and tenant ordering use real transact
       }
     },
   );
-  await t.test(
+  await subtest(
     "reusing idempotency key with changed price is rejected",
     async () => {
       const idempotencyKey = key();

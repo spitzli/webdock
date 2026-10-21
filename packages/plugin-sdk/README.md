@@ -3,7 +3,7 @@
 This package currently provides the runtime-neutral `@webdock/plugin-sdk/contracts`
 entry point: strict manifest validation, capability/method metadata, lifecycle
 DTOs and a generated Tabularium extension schema. It builds compiled ESM and TypeScript
-declarations; `npm pack` is tested in an empty directory with an offline install.
+declarations; `bun pm pack` output is tested in an empty directory without a registry.
 
 The server, UI and testing entry points, host services and scaffolding CLI are not
 implemented yet. Method catalog entries describe the planned wire protocol, not
@@ -24,7 +24,7 @@ checksum verification and execution belong to the future verified migration serv
 From the repository root:
 
 ```sh
-npm run build -w @webdock/plugin-sdk
-npm run test:modules
-node --import tsx tools/plugins/generate-schema.ts --check
+bun run --filter @webdock/plugin-sdk build
+bun run test:modules
+bun tools/plugins/generate-schema.ts --check
 ```

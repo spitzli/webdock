@@ -105,7 +105,7 @@ async function flush(action: () => void) {
 function setup() {
   const browser = new Window({ url: "https://console.example/account" });
   Object.assign(globalThis, {
-    window: browser,
+    window: browser, navigator: browser.navigator,
     location: browser.location,
     document: browser.document,
     HTMLElement: browser.HTMLElement,

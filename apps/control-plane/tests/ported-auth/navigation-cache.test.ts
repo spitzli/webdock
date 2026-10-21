@@ -1,6 +1,7 @@
 import { configureFullProducts } from "../../src/full-products";
 configureFullProducts();
-import test from "node:test";
+import test, { afterEach } from "node:test";
+import { mockMethod, restoreMocks } from "../helpers/node-test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { readFile } from "node:fs/promises";
@@ -11,6 +12,7 @@ import { auth } from "../../src/modules/auth/auth";
 import { database, closeDatabases } from "../../src/db/runtime";
 import { listTenants } from "../../src/modules/access/tenants";
 import { ViewCache, configureViewCache } from "../../src/cache";
+afterEach(restoreMocks);
 
 assertTestDatabase(process.env.DATABASE_URL!);
 test.after(closeDatabases);
@@ -110,7 +112,7 @@ test("navigation caches only tenant summaries and invalidates membership, status
     otherHeaders = await headers(otherSession);
   const statements: string[] = [];
   const original = pg.Client.prototype.query;
-  const tracked = t.mock.method(
+  const tracked = mockMethod(
     pg.Client.prototype,
     "query",
     function (this: pg.Client, ...args: any[]) {

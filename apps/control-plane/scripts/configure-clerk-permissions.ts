@@ -104,11 +104,11 @@ export async function configure(provider: Provider, target: Target, apply = fals
 export function cliProvider(target: Target): Provider {
   return {
     async request<T>(path: string, options?: { platform?: boolean; body?: unknown }) {
-      const args = ['-y', 'clerk@latest', 'api', path, '--app', target.app, '--instance', target.instance];
+      const args = ['clerk@latest', 'api', path, '--app', target.app, '--instance', target.instance];
       if (options?.platform) args.push('--platform');
       if (options?.body !== undefined) args.push('-X', 'POST', '-d', JSON.stringify(options.body));
       const run = (extra: string[]) => {
-        const result = spawnSync('npx', [...args, ...extra], { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
+        const result = spawnSync('bunx', [...args, ...extra], { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
         if (result.status !== 0) throw new Error(`Clerk CLI failed for ${path}; inspect with the authenticated CLI (no automatic plan upgrade)`);
         return result.stdout;
       };

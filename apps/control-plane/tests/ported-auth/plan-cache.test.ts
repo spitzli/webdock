@@ -1,9 +1,11 @@
-import test from "node:test";
+import test, { afterEach } from "node:test";
+import { mockMethod, restoreMocks } from "../helpers/node-test";
 import assert from "node:assert/strict";
 import { auth } from "../../src/modules/auth/auth";
 import { database, closeDatabases } from "../../src/db/runtime";
 import { configureViewCache, ViewCache } from "../../src/cache";
 import { getPlans } from "../../src/modules/plans/plans";
+afterEach(restoreMocks);
 
 test.after(async () => { await auth.$context; await closeDatabases(); });
 test("plan catalog caches only after live operator checks and reloads each revision", async t => {
@@ -11,8 +13,8 @@ test("plan catalog caches only after live operator checks and reloads each revis
   const store = new Map<string, string>();
   let revision = "1", name = "Starter", loads = 0, hits = 0, signedIn = true;
   const user = { id: "123", role: "operator", banned: false, emailVerified: true, mustChangePassword: false, twoFactorEnabled: true };
-  t.mock.method(auth.api, "getSession", async () => signedIn ? { user, session: { id: "session-plan-cache" } } : null);
-  t.mock.method(database, "query", async (sql: string, values?: unknown[]) => {
+  mockMethod(auth.api, "getSession", async () => signedIn ? { user, session: { id: "session-plan-cache" } } : null);
+  mockMethod(database, "query", async (sql: string, values?: unknown[]) => {
     if (sql.includes("to_regclass('webdock_auth.clerk_identity')")) return {rows:[{present:false}]};
     if (sql.includes("webdock_cache.version")) {
       assert.deepEqual(values, [["webdock_auth.plan_template"]]);

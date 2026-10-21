@@ -29,14 +29,14 @@ Deleting removes a note from the active document. Host idempotency receipts rema
 Build the packed SDK and install it in the independent plugin repository as described in that repository's README. Build and run its tests:
 
 ```sh
-npm run build
-npm test
+bun run build
+bun test
 ```
 
 In the Webdock checkout, first create the owned local PostgreSQL/RLS fixture and a disposable Redis instance using the repository's fixture workflow. Then:
 
 ```sh
-WEBDOCK_TEST_REDIS_PORT=<local-port> node --import tsx \
+WEBDOCK_TEST_REDIS_PORT=<local-port> bun \
   tools/plugins/project-notes-host.ts \
   /path/to/webdock-extension-project-notes --smoke
 ```

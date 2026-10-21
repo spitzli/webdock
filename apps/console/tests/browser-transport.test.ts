@@ -6,8 +6,6 @@ for (const mode of ["legacy", "adapter", "console"]) {
       process.execPath,
       [
         "--conditions=react-server",
-        "--import",
-        "tsx",
         new URL("./fixtures/browser-transport.ts", import.meta.url).pathname,
         mode,
       ],

@@ -3,7 +3,7 @@
 # Requires Docker, the pinned Rust toolchain and Node 24 on PATH. `tilt down` keeps the database volume;
 # `docker compose -f deploy/dev/compose.yaml down -v` resets it.
 
-local('node tools/dev/local.mjs secrets', quiet=True)
+local('bun tools/dev/local.mjs secrets', quiet=True)
 
 # WEBDOCK_DEV_HTTPS=1 tilt up: Console and account pages over HTTPS (needs mkcert; reset when switching).
 https = os.getenv('WEBDOCK_DEV_HTTPS', '') == '1'
@@ -29,7 +29,7 @@ local_resource(
 # Offline migrations and the one-time operator bootstrap; reruns when migrations change.
 local_resource(
     'database',
-    cmd='node tools/dev/local.mjs init',
+    cmd='bun tools/dev/local.mjs init',
     deps=['crates/persistence/migrations', 'crates/persistence/schema', 'crates/access/migrations', 'crates/registry/migrations', 'tools/dev/local.mjs'],
     resource_deps=['postgres', 'core-build'],
     labels=['infra'],
@@ -38,14 +38,14 @@ local_resource(
 # Demo extension: image pushed to the local registry once, then recorded as an installed release.
 local_resource(
     'echo-demo-image',
-    cmd='node tools/dev/local.mjs plugin-image',
+    cmd='bun tools/dev/local.mjs plugin-image',
     resource_deps=['registry'],
     labels=['plugins'],
 )
 
 local_resource(
     'seed',
-    cmd='node tools/dev/local.mjs seed',
+    cmd='bun tools/dev/local.mjs seed',
     deps=['tools/dev/local.mjs', 'plugins/echo-demo/manifest.json'],
     resource_deps=['database', 'echo-demo-image'],
     labels=['infra'],
@@ -97,7 +97,7 @@ local_resource(
 
 local_resource(
     'console',
-    serve_cmd='npx vite --host 127.0.0.1 --port 3121 --strictPort',
+    serve_cmd='bun --bun vite --host 127.0.0.1 --port 3121 --strictPort',
     serve_dir='apps/console-ui',
     serve_env=tls_env,
     resource_deps=['core'],
@@ -108,7 +108,7 @@ local_resource(
 # Password, MFA and passkey screens run on the canonical auth origin; WebAuthn needs `localhost`.
 local_resource(
     'account',
-    serve_cmd='npx vite --host localhost --port 3125 --strictPort',
+    serve_cmd='bun --bun vite --host localhost --port 3125 --strictPort',
     serve_dir='apps/console-ui',
     serve_env=tls_env,
     resource_deps=['core'],

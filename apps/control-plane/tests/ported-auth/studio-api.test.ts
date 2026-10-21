@@ -1,6 +1,7 @@
 import { configureFullProducts } from "../../src/full-products";
 configureFullProducts();
-import test from "node:test";
+import test, { afterEach } from "node:test";
+import { mockMethod, restoreMocks } from "../helpers/node-test";
 import assert from "node:assert/strict";
 import { randomBytes, createHash } from "node:crypto";
 import { APIError } from "better-call";
@@ -14,6 +15,7 @@ import { currentClaims } from "../../src/modules/auth/authorization";
 import { handleStudioRequest } from "../../src/modules/portal/studio-api";
 import { tenantPreviewSchemaSQL } from "../../src/modules/access/tenant-preview-schema";
 import { nativeMailSchemaSQL } from "@webdock/mail-core/schema";
+afterEach(restoreMocks);
 
 const databaseURL = new URL(process.env.DATABASE_URL!);
 if (
@@ -703,7 +705,7 @@ test("Studio and hosting introspection outages cannot masquerade as expired brow
   ]) {
     const introspect = async () =>
       new Response("private provider error", { status: upstream });
-    const mocked = t.mock.method(auth, "handler", introspect);
+    const mocked = mockMethod(auth, "handler", introspect);
     try {
       const response = await handleStudioRequest(request("session"), {
         introspect,
@@ -767,7 +769,7 @@ test("portal introspects once locally per request and refreshes all authorizatio
   };
   let claims: Record<string, unknown> = { ...validClaims };
   let count = 0;
-  t.mock.method(auth, "handler", async (incoming: Request) => {
+  mockMethod(auth, "handler", async (incoming: Request) => {
     count++;
     assert.equal(incoming.url, origin + "/api/auth/oauth2/introspect");
     assert.equal(incoming.headers.get("cookie"), null);
@@ -848,7 +850,7 @@ test("introspection sharing isolates exact credentials, concurrent requests, fai
   const { introspectToken, withTokenIntrospection } =
     await import("../../src/modules/auth/introspection");
   let count = 0;
-  t.mock.method(auth, "handler", async (request: Request) => {
+  mockMethod(auth, "handler", async (request: Request) => {
     count++;
     const form = await request.formData();
     if (form.get("token") === "unavailable") throw Error("unavailable");
@@ -950,7 +952,7 @@ test("Studio uses fresh native user security fields without signing discarded JW
   assert.equal(sessionResponse.headers.has("set-auth-jwt"), false);
   const sql: string[] = [];
   const query = pg.Client.prototype.query;
-  const tracked = t.mock.method(
+  const tracked = mockMethod(
     pg.Client.prototype,
     "query",
     function (this: pg.Client, ...args: any[]) {

@@ -38,7 +38,7 @@ for(let n=0;;n++){try{await owner.query('SELECT 1');break;}catch{if(n>60)throw E
 const passwords=Object.fromEntries([...runtimeRoles,'webdock_offline_migrate'].map(r=>[r,randomBytes(32).toString('hex')]));
 const base={PATH:process.env.PATH!,HOME:process.env.HOME!,NODE_ENV:'development',DATABASE_URL_UNPOOLED:url.href,DATABASE_CONTEXT_SECRET:randomBytes(48).toString('hex'),BETTER_AUTH_URL:'http://localhost:3465',WEBDOCK_STUDIO_ORIGIN:'http://localhost:3461',WEBDOCK_CONSOLE_ORIGIN:'http://localhost:3460'};
 const target=`127.0.0.1:${port}/webdock_operator_test`;
-const run=(file:string,args:string[],env:object)=>{const r=spawnSync(root+'/node_modules/.bin/bun',['--no-env-file','tools/migrations/'+file,target,...args],{cwd:root,env:{...base,...env},encoding:'utf8'});if(r.status!==0)throw Error(file+' failed: '+r.stderr);};
+const run=(file:string,args:string[],env:object)=>{const r=spawnSync(process.execPath,['--no-env-file','tools/migrations/'+file,target,...args],{cwd:root,env:{...base,...env},encoding:'utf8'});if(r.status!==0)throw Error(file+' failed: '+r.stderr);};
 run('install.ts',[],{WEBDOCK_BOOTSTRAP_EMPTY_DATABASE:'true',MIGRATION_ROLE_PASSWORDS:JSON.stringify(passwords)});
 url.username='webdock_offline_migrate';url.password=passwords.webdock_offline_migrate;
 const operatorPassword=randomBytes(24).toString('base64url'),input=join(dir,'input.json'),output=join(dir,'operator.json');
@@ -57,7 +57,7 @@ await writeFile(join(dir,'private.json'),JSON.stringify({...browserCredentials,e
 async function child(label:string,command:string,args:string[],cwd=root){const log=await open(join(dir,label+'.log'),'a',0o600);const c=spawn(command,args,{cwd,env:label==='api'?env:{...env,NODE_OPTIONS:'--require='+JSON.stringify(root+'/tools/tests/core-browser-no-env.cjs')},stdio:['ignore',log.fd,log.fd]});children.push(c);c.once('exit',()=>{if(!stopping)stop(true);});const started=new Promise<void>((resolve,reject)=>{c.once('spawn',resolve);c.once('error',reject);});await Promise.all([log.close(),started]);return c;}
 const bundle=pluginMode&&process.env.WEBDOCK_BROWSER_CORE_BUNDLE==='true';
 if(bundle){await mkdir(join(dir,'core-api'),{mode:0o700});await copyFile(join(root,'apps/control-plane/dist-core/core.js'),join(dir,'core-api/core.js'));}
-await child('api',root+'/node_modules/.bin/bun',[...(process.env.WEBDOCK_BROWSER_PLUGIN_SOURCES==='true'?['--watch']:[]),'--no-env-file',bundle?join(dir,'core-api/core.js'):pluginMode?'apps/control-plane/src/core.ts':'apps/control-plane/src/index.ts'],bundle?join(dir,'core-api'):root);
+await child('api',process.execPath,[...(process.env.WEBDOCK_BROWSER_PLUGIN_SOURCES==='true'?['--watch']:[]),'--no-env-file',bundle?join(dir,'core-api/core.js'):pluginMode?'apps/control-plane/src/core.ts':'apps/control-plane/src/index.ts'],bundle?join(dir,'core-api'):root);
 for(let n=0;;n++){try{const ready=await fetch('http://localhost:3463/readyz');if(ready.ok)break;}catch{}if(n>=100)throw Error('Fixture API readiness timed out');await new Promise(resolve=>setTimeout(resolve,100));}
 if(!clerkMode)await child('auth',process.env.WEBDOCK_FIXTURE_NODE||'node',[root+'/node_modules/next/dist/bin/next','dev','--hostname','127.0.0.1','--port','3475'],root+'/apps/auth');
 await child('console',process.env.WEBDOCK_FIXTURE_NODE||'node',[root+'/node_modules/next/dist/bin/next','dev',...(coreConsole?['--webpack']:[]),'--hostname','127.0.0.1','--port','3470'],coreConsole?root+'/.core-build/console':root+'/apps/console');

@@ -1,13 +1,13 @@
 # Native quality checks
 
-Run `npm run quality` from the repository with Node24 on `PATH`, the pinned Rust toolchain, `protoc`, and Playwright Chromium installed. This is a check-only gate: it does not format files, change database schemas, publish artifacts or deploy anything. The runner does not explicitly load production environment files; subprocesses inherit the shell environment and retain their normal tool behavior, including Vite's environment-file handling. Use a clean, isolated checkout without production configuration. Every subprocess failure fails the gate.
+Run `bun run quality` from the repository with Bun on `PATH`, the pinned Rust toolchain, `protoc`, and Playwright Chromium installed. This is a check-only gate: it does not format files, change database schemas, publish artifacts or deploy anything. The runner does not explicitly load production environment files; subprocesses inherit the shell environment and retain their normal tool behavior, including Vite's environment-file handling. Use a clean, isolated checkout without production configuration. Every subprocess failure fails the gate.
 
 The checks are also available separately:
 
 ```sh
-npm run quality:contracts
-npm run quality:rust
-npm run quality:frontend
+bun run quality:contracts
+bun run quality:rust
+bun run quality:frontend
 ```
 
 The Rust binary accepts `contracts`, `rust`, `frontend` or `all`, followed by an optional repository root. Relative roots are resolved before constructing subprocess paths. It uses argument arrays rather than shell interpolation.
@@ -37,7 +37,7 @@ The Serde rule recognizes direct/qualified/module-level imported aliases and rec
 
 The Console uses type-aware strict/stylistic TypeScript ESLint presets, React Hooks checks, no inline suppression or TypeScript escape comments, exhaustive switches and bounded depth/complexity. Its compiler additionally checks indexed access, exact optional properties, returns, overrides, unused declarations and casing. See `apps/console-ui/README.md` for details. The gate runs lint, typecheck, unit tests, production build and the local browser fixture.
 
-`.github/workflows/quality.yml` runs on same-repository pushes and explicit manual dispatch using isolated ephemeral EU runners. It receives no deployment secrets, uses read-only repository permissions and does not persist checkout credentials. Fork PR code is not executed on these private runners. Runner provisioning must supply Node24, Rust prerequisites and browser OS libraries; the workflow installs locked npm dependencies and the pinned Playwright browser. GitHub branch protection is separate repository administration and is not changed by this patch.
+`.github/workflows/quality.yml` runs on same-repository pushes and explicit manual dispatch using isolated ephemeral EU runners. It receives no deployment secrets, uses read-only repository permissions and does not persist checkout credentials. Fork PR code is not executed on these private runners. Runner provisioning must supply Rust prerequisites (the workflow installs the pinned Bun) and browser OS libraries; the workflow installs locked npm dependencies and the pinned Playwright browser. GitHub branch protection is separate repository administration and is not changed by this patch.
 
 Run checker regressions directly with:
 

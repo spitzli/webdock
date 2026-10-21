@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, { afterEach } from "node:test";
+import { mockMethod, restoreMocks } from "../helpers/node-test";
 import { toNextJsHandler } from "better-auth/next-js";
 import { lazyAuth } from "../../src/modules/auth/lazy-auth";
+afterEach(restoreMocks);
 
 test("Next.js route registration stays lazy and later requests recover after failed startup", async () => {
   let creations = 0;
@@ -36,7 +38,7 @@ test("handler mocks work through the Next.js adapter and restore the original ha
     handler: async () => new Response("original"),
   }));
   const { GET } = toNextJsHandler(auth);
-  const mock = t.mock.method(
+  const mock = mockMethod(
     auth,
     "handler",
     async () => new Response("fixture"),

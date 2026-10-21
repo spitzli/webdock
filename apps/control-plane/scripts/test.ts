@@ -85,22 +85,18 @@ if (["integration", "ported", "all"].includes(mode)) {
       );
   }
   if (mode === "ported" || mode === "all") {
-    const node = process.env.WEBDOCK_TEST_NODE || "node";
-    const version = spawnSync(node, ["--version"], { encoding: "utf8" }).stdout;
-    if (!/^v24\./.test(version))
-      throw Error("Use Node 24 for the existing regression suites");
     const ported = (await readdir(root + "tests/ported-auth"))
       .filter((name) => name.endsWith(".test.ts"))
       .map((name) => "tests/ported-auth/" + name);
     run(
-      node,
+      process.execPath,
       [
-        "--import",
-        "tsx",
-        "--import",
+        "--no-env-file",
+        "test",
+        // Like node --test, every file gets its own module state (shared pools are ended per file).
+        "--isolate",
+        "--preload",
         "./tests/helpers/no-network.ts",
-        "--test",
-        "--test-concurrency=1",
         ...ported,
         ...(await readdir(root + "tests/ported-admin"))
           .filter((name) => name.endsWith(".test.ts"))
@@ -143,14 +139,13 @@ if (mode === "rls") {
     "mail-rls-postgres",
   ];
   run(
-    process.env.WEBDOCK_TEST_NODE || "node",
+    process.execPath,
     [
-      "--import",
-      "tsx",
-      "--import",
+      "--no-env-file",
+      "test",
+      "--isolate",
+      "--preload",
       "./tests/helpers/no-network.ts",
-      "--test",
-      "--test-concurrency=1",
       ...names.map((name) => "tests/ported-auth/" + name + ".test.ts"),
     ],
     { ...env, DATABASE_URL: env.API_TEST_OWNER_URL },

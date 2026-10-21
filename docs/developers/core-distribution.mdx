@@ -15,13 +15,13 @@ Original Webdock code is AGPL-3.0-only, with separate written commercial/special
 
 ## Build
 
-Use Node 24 and the pinned Bun dependency from the repository.
+Use Bun 1.4.3, the version pinned in `package.json`.
 
 ```sh
-npm ci
-npm run build:core
-npm run build:core:console
-npm run test:core-boundary
+bun install --frozen-lockfile
+bun run build:core
+bun run build:core:console
+bun run test:core-boundary
 ```
 
 The API artifact is `apps/control-plane/dist-core/core.js`; its adjacent manifest records its checksum. It starts with Bun without a source tree or workspace packages. The Console build uses the existing shared pages, layouts and authentication components, with explicit core contributions and a reviewed route inventory. Its standalone server is `.core-build/console/.next/standalone/.core-build/console/server.js`.
@@ -79,7 +79,7 @@ The disposable fixture uses loopback ports and restricted PostgreSQL roles. It c
 WEBDOCK_BROWSER_PLUGINS=true \
 WEBDOCK_BROWSER_CORE_BUNDLE=true \
 WEBDOCK_BROWSER_CORE_CONSOLE=true \
-  node_modules/.bin/bun --no-env-file tools/tests/core-browser-fixture.ts
+  bun --no-env-file tools/tests/core-browser-fixture.ts
 ```
 
 The command prints its private fixture directory and creates a cleanup script there. Do not commit its credentials. Use only owned development Clerk users for external login tests, and remove them after testing.

@@ -45,7 +45,7 @@ The module owns what an operation means; the adapter implements its provider-spe
 | `apps/website` (`@webdock/web`) | Public website and its own CMS |
 | `apps/database-gateway` | Scoped access to isolated native Tabularis runtimes |
 | `agents/kubernetes` | Enrolled execution and reconciliation on authorized clusters |
-| `apps/cms` (`@webdock/cms`) | Archived shared-CMS notice and offline migration tools; excluded from npm workspaces/build |
+| `apps/cms` (`@webdock/cms`) | Archived shared-CMS notice and offline migration tools; excluded from Bun workspaces/build |
 
 Browser authentication can use Clerk or Better Auth. Better Auth uses local roles and memberships; selecting Clerk makes freshly verified Clerk operator roles and organization permissions authoritative. Local immutable IDs and explicit mappings remain, and local bans can deny access but cannot grant Clerk privileges. Identities are never automatically linked by email. Legacy OAuth, MCP and service credentials keep their own contracts. See [authentication adapters](docs/developers/auth-adapters.mdx).
 
@@ -53,17 +53,17 @@ Product selection is installation-wide. `enabled` allows authorized operations, 
 
 ## Development
 
-Use Node 24, the workspace-pinned Bun runtime and the root npm lockfile:
+Use Bun 1.4.3 (the only JavaScript runtime and package manager) and the root `bun.lock`:
 
 ```sh
-npm ci
-npm run dev                 # public website
-npm run dev:admin           # Console, port 3120
-npm run dev:auth            # native Auth frontend
-npm run dev -w @webdock/api # Control Plane
-npm run test:modules
-npm run test:unit -w @webdock/api
-npm run test -w @webdock/admin
+bun install --frozen-lockfile
+bun run dev                 # public website
+bun run dev:admin           # Console, port 3120
+bun run dev:auth            # native Auth frontend
+bun run --filter @webdock/api dev # Control Plane
+bun run test:modules
+bun run --filter @webdock/api test:unit
+bun run --filter @webdock/admin test
 ```
 
 Prepare each app's local configuration before starting it. Consult its environment examples and [local development](docs/developers/local-development.mdx). Never commit production credentials or use customer databases for tests. Runtime configuration supplies origins and module selection; provider secrets remain server-side.
@@ -73,12 +73,12 @@ Prepare each app's local configuration before starting it. Consult its environme
 API integration and restricted-role tests use owned disposable local PostgreSQL fixtures:
 
 ```sh
-npm run test:setup -w @webdock/api
-npm run test:integration -w @webdock/api
-npm run test:ported -w @webdock/api
-npm run test:setup:rls -w @webdock/api
-npm run test:rls -w @webdock/api
-npm run test:teardown -w @webdock/api
+bun run --filter @webdock/api test:setup
+bun run --filter @webdock/api test:integration
+bun run --filter @webdock/api test:ported
+bun run --filter @webdock/api test:setup:rls
+bun run --filter @webdock/api test:rls
+bun run --filter @webdock/api test:teardown
 ```
 
 Follow [self-hosting](docs/developers/self-hosting.mdx) and [initial operator setup](docs/developers/initial-setup.mdx) for the explicit offline migration and bootstrap flow. Container, Compose and Helm artifacts are under `deploy/`; release validation is under `tools/release/`. Runtime roles are restricted, migration credentials are separate, and schema changes never run implicitly from browser requests. A local successful build is not a production deployment or published release.
@@ -99,4 +99,4 @@ Platform-owned IDs use **Snowflake**, selected on 2026-10-03: a 2026-01-01 epoch
 
 Incoming Mail remains explicitly activated per customer and uses an isolated Stalwart Community Edition instance. Outgoing-only Mail does not allocate Stalwart. Suspension retains data; deletion is a separate authorized operation. Existing Studio/OAuth/MCP protocol URLs and local decimal IDs are compatibility contracts, independent of filesystem names.
 
-The product-free Core API and Console have separate build targets: `npm run build:core`, `npm run build:core:console`, and Docker targets `api-core` / `console-core`. See [Core distribution](docs/developers/core-distribution.mdx). Existing full installations retain the full entry until active product resources are resolved.
+The product-free Core API and Console have separate build targets: `bun run build:core`, `bun run build:core:console`, and Docker targets `api-core` / `console-core`. See [Core distribution](docs/developers/core-distribution.mdx). Existing full installations retain the full entry until active product resources are resolved.

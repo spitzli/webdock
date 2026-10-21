@@ -4,15 +4,15 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": "24.x"
+    "bun": ">=1.4.3"
   },
   "scripts": {
-    "dev": "next dev --port 3120",
-    "build": "node ../../scripts/check-tabularis-vendor.mjs && next build",
-    "start": "next start",
+    "dev": "bun --bun next dev --port 3120",
+    "build": "bun ../../scripts/check-tabularis-vendor.mjs && bun --bun next build",
+    "start": "bun --bun next start",
     "lint": "eslint",
     "check": "tsc --noEmit",
-    "test": "node --import tsx --test --test-concurrency=1 tests/*.test.ts"
+    "test": "bun test --isolate ./tests/*.test.ts"
   },
   "dependencies": {
     "@clerk/localizations": "^4.23.0",
@@ -50,7 +50,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "happy-dom": "20.14.5",
-    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

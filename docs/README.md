@@ -8,7 +8,7 @@ Mintlify root: this `docs/` directory. Configure the Mintlify Git connection for
 Use Node.js 24:
 
 ```sh
-npm install -g mint
+bun install -g mint
 cd docs
 mint dev --no-open
 ```

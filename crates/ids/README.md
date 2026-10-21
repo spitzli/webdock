@@ -92,6 +92,6 @@ collision from two uncoordinated producers using the same identity/checkpoint.
 These are in-process simulations of the persistence contract, not a disk or
 cluster crash-safety test; integration tests must verify the actual store.
 
-`node crates/ids/tests/fixtures/packing.mjs --check` verifies the committed decimal
+`bun crates/ids/tests/fixtures/packing.mjs --check` verifies the committed decimal
 fixtures against an independent JavaScript BigInt arithmetic oracle. Rust checks
 those same fixtures, including the `i64::MAX` boundary.

@@ -13,7 +13,8 @@ test('actions runtime requires TLS, bearer identity and action-bound signed invo
  const dir=await mkdtemp(join(tmpdir(),'webdock-runtime-'));
  let server;
  try {
-  const generated=spawnSync('openssl',['req','-x509','-newkey','ed25519','-noenc','-days','1','-subj','/CN=localhost','-addext','subjectAltName=DNS:localhost','-keyout',join(dir,'key.pem'),'-out',join(dir,'cert.pem')],{encoding:'utf8'});
+  // ECDSA P-256 like the certificates the platform issues to plugin runtimes.
+  const generated=spawnSync('openssl',['req','-x509','-newkey','ec','-pkeyopt','ec_paramgen_curve:P-256','-noenc','-days','1','-subj','/CN=localhost','-addext','subjectAltName=DNS:localhost','-keyout',join(dir,'key.pem'),'-out',join(dir,'cert.pem')],{encoding:'utf8'});
   assert.equal(generated.status,0,generated.stderr);
   const cert=await readFile(join(dir,'cert.pem'));
   const key=await readFile(join(dir,'key.pem'));

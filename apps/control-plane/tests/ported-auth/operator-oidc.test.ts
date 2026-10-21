@@ -1,6 +1,7 @@
 import { getCookies } from "better-auth/cookies";
 import { cookiePolicy } from "../../src/modules/auth/cookie-policy";
 import test from "node:test";
+import { subtest } from "../helpers/node-test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { auth } from "../../src/modules/auth/auth";
@@ -256,7 +257,7 @@ test("Operator dashboard wire flow rejects unauthorized tokens and checks live a
     for (const key of ["id_token", "access_token", "refresh_token"])
       assert.equal(response.body[key], undefined);
   };
-  await t.test(
+  await subtest(
     "non-allowlisted operator gets no tokens after code was issued",
     async () => {
       const response = await exchange(() =>
@@ -269,7 +270,7 @@ test("Operator dashboard wire flow rejects unauthorized tokens and checks live a
       }
     },
   );
-  await t.test(
+  await subtest(
     "real TOTP login succeeds with opaque access token",
     async () => {
       const response = await exchange();
@@ -290,7 +291,7 @@ test("Operator dashboard wire flow rejects unauthorized tokens and checks live a
     ["MFA removed", "twoFactorEnabled", false],
     ["customer role", "role", "user"],
   ] as const) {
-    await t.test(
+    await subtest(
       name + " denies exchange and current introspection",
       async () => {
         const valid = await exchange();
@@ -325,7 +326,7 @@ test("Operator dashboard wire flow rejects unauthorized tokens and checks live a
     ["unknown binding", { ...metadata, webdock_binding: "999" }],
     ["invalid marker", { ...metadata, webdock_operator_only: "true" }],
   ] as const) {
-    await t.test(name + " fails closed", async () => {
+    await subtest(name + " fails closed", async () => {
       const valid = await exchange();
       const response = await exchange(() => setMetadata(invalid));
       try {
@@ -339,7 +340,7 @@ test("Operator dashboard wire flow rejects unauthorized tokens and checks live a
       }
     });
   }
-  await t.test(
+  await subtest(
     "disabled binding rejects exchange and existing token",
     async () => {
       const valid = await exchange();
@@ -363,10 +364,10 @@ test("Operator dashboard wire flow rejects unauthorized tokens and checks live a
       }
     },
   );
-  await t.test("omitting openid cannot bypass the issuance gate", async () => {
+  await subtest("omitting openid cannot bypass the issuance gate", async () => {
     denied(await exchange(undefined, "profile email"));
   });
-  await t.test(
+  await subtest(
     "expired session cannot introspect or obtain tokens",
     async () => {
       const valid = await exchange();
@@ -390,7 +391,7 @@ test("Operator dashboard wire flow rejects unauthorized tokens and checks live a
       }
     },
   );
-  await t.test(
+  await subtest(
     "deleted central session does not become sessionless access",
     async () => {
       const valid = await exchange();

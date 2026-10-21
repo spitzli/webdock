@@ -4,22 +4,24 @@ A browser-only React, TypeScript, Vite and Tailwind package. The build produces 
 
 ## Run and verify
 
-From the repository root with Node 24:
+From the repository root with Bun (the only JavaScript runtime and package manager here):
 
 ```sh
-npm run dev -w @webdock/console-ui
-npm run lint -w @webdock/console-ui
-npm run typecheck -w @webdock/console-ui
-npm run build -w @webdock/console-ui
-npm run test -w @webdock/console-ui
-npm run test:browser -w @webdock/console-ui
+bun run --filter @webdock/console-ui dev
+bun run --filter @webdock/console-ui lint
+bun run --filter @webdock/console-ui typecheck
+bun run --filter @webdock/console-ui build
+bun run --filter @webdock/console-ui test
+bun run --filter @webdock/console-ui test:browser
 ```
+
+Scripts call `bun --bun` so ESLint, TypeScript and Vite run on Bun even though their launchers declare Node. Unit tests run with `bun test --isolate`: each test file gets a fresh global object, because the DOM tests install happy-dom globals (including `navigator`, which Bun predefines without `languages`).
 
 The workspace runs type-aware `typescript-eslint` strict/stylistic presets and the React Hooks recommended rules over source and TypeScript tests. CI treats all lint warnings as failures. Inline ESLint overrides and TypeScript suppression comments are forbidden. Unhandled promises, unsafe `any` flows, non-null assertions, non-exhaustive union switches, else-if chains and blocks deeper than three levels fail lint. Cyclomatic complexity is limited to 20 in TypeScript logic and 40 in TSX, where conditional JSX and optional display values also count as branches. These limits are ceilings, not targets.
 
 TypeScript checks indexed access, exact optional properties, unused declarations, implicit returns, override declarations and switch fallthrough in addition to `strict`. Optional UI props explicitly accept `undefined` where callers forward absent query values; wire data still passes through runtime Zod validation. Lint dependencies are pinned because the strict preset may gain rules in minor releases.
 
-The browser check uses Playwright Chromium and starts a test-only Vite server on port 3121. Install the matching Chromium runtime with `npx playwright install chromium` if needed, or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to an existing compatible browser. HTTP fixtures exist only in `tests/preview-server.ts`; they are not included in production builds. That fixture-only check verifies UI behavior. A separate real account browser workflow is described below.
+The browser check uses Playwright Chromium and starts a test-only Vite server on port 3121, or the next free port when a local dev Console already uses it. Install the matching Chromium runtime with `bunx playwright install chromium` if needed, or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to an existing compatible browser. HTTP fixtures exist only in `tests/preview-server.ts`; they are not included in production builds. That fixture-only check verifies UI behavior. A separate real account browser workflow is described below.
 
 ## Runtime integration
 
@@ -78,13 +80,13 @@ This package is an implementation slice, not the completed Console migration. Ac
 
 The same build serves the canonical Auth origin when `/console-config.json` returns `surface: "account"`, its own `apiOrigin`/`authOrigin`, and `consoleOrigin`. Account security, password/reset, authenticator QR/recovery, passkeys, sessions, consent and logout run there. Console uses `sso: true` to navigate through `/api/sso/login`; it never performs a sibling-origin passkey ceremony. The account bundle is loaded separately from Console.
 
-For local real tests, use Auth `http://localhost:3125` (WebAuthn RP `localhost`), Console `http://127.0.0.1:3121`, Studio3120 and Core3130. The explicit fixture helper `cargo run -p webdock-control-plane --example account_browser_fixture` requires the owned restricted local fixture variables; it only replaces its own previously recorded test account/client and writes credentials into a private ignored file. `node crates/control-plane/tests/start-account-browser.mjs` starts the owned Core process using those values without printing them. Run Vite on Console3121 and Auth3125, then `node --import tsx apps/console-ui/tests/account-browser.mjs` from the repository root with Node24. The browser test uses real Core/DB services and a virtual WebAuthn authenticator, not fake API responses; no mail is sent. Never point these helpers at a retained customer database.
+For local real tests, use Auth `http://localhost:3125` (WebAuthn RP `localhost`), Console `http://127.0.0.1:3121`, Studio3120 and Core3130. The explicit fixture helper `cargo run -p webdock-control-plane --example account_browser_fixture` requires the owned restricted local fixture variables; it only replaces its own previously recorded test account/client and writes credentials into a private ignored file. `bun crates/control-plane/tests/start-account-browser.mjs` starts the owned Core process using those values without printing them. Run Vite on Console3121 and Auth3125, then `bun apps/console-ui/tests/account-browser.mjs` from the repository root. The browser test uses real Core/DB services and a virtual WebAuthn authenticator, not fake API responses; no mail is sent. Never point these helpers at a retained customer database.
 
 Set `WEBDOCK_ACCOUNT_FIXTURE=account-browser-session-isolation.json` consistently for the fixture helper, Core starter and browser test to use an independent account profile. The basename is validated; private credentials and cookie output stay profile-specific. This avoids resetting the default account when database acceptance fixtures reference it. Reset is transactional: a dependent-resource refusal leaves the recorded account/client/projection intact. The helper's `--repair` mode is restricted to its exact recorded local fixture and restores only missing matching setup records; it is not customer recovery tooling.
 
 Set `WEBDOCK_ACCOUNT_FORCE_INITIAL=prompt` or `max_age` for the browser test to exercise forced reauthentication during first setup. Each initial-setup run needs a fresh or explicitly reset independent profile and a restarted fixture Core. Successful MFA rotates the real session; recovery codes must remain visible until acknowledged before SSO continues.
 
-For production, package `dist` with Core and configure `WEBDOCK_UI_DIST`; no Vite/Node server is required. Core serves the SPA only on configured Auth/Console/Studio hosts, reserves API paths, and applies explicit frame/connect CSP allowlists for approved plugins and database gateways.
+For production, package `dist` with Core and configure `WEBDOCK_UI_DIST`; no Vite or JavaScript server is required. Core serves the SPA only on configured Auth/Console/Studio hosts, reserves API paths, and applies explicit frame/connect CSP allowlists for approved plugins and database gateways.
 
 
 ## Native database workbench
@@ -112,7 +114,7 @@ All of these queries/mutations remain private under the existing session-cache b
 
 Fixture browser coverage is in `tests/workbench-browser.mjs` and `tests/workbench-fixtures.ts`, invoked by the existing `test:browser` command. It exercises workspace navigation, successive actions without leaving the overview, dirty/conflict preservation, exact uncertain-request retry, operation success/failure, real-shaped log polling, preview denial and extension revision/blocked states. Actual hook/component regressions in `tests/hosting-state.test.tsx` cover delayed application refresh and success-to-denial context changes. These fixtures are not production fallbacks.
 
-For a real native acceptance run, the owning harness supplies a private file through `WEBDOCK_HOSTING_BROWSER_FIXTURE` with `origin`, `cookie: {name,value}`, `customerID`, `customerName`, `projectID`, `projectName`, `appID`, and `appName`. Optional `updateCPU` selects an approved fixture resource amount; optional `expectedLog` identifies known sanitized output. Run `node --import tsx apps/console-ui/tests/hosting-native-browser.mjs` against that owned loopback Core serving built `dist`. The script uses actual HTTP/runtime operations and never provisions or resets fixtures itself. The owning harness controls runtime preparation and cleanup; the script prints only an acceptance summary. Native proof status must be recorded from its actual run, not inferred from fixture-browser success.
+For a real native acceptance run, the owning harness supplies a private file through `WEBDOCK_HOSTING_BROWSER_FIXTURE` with `origin`, `cookie: {name,value}`, `customerID`, `customerName`, `projectID`, `projectName`, `appID`, and `appName`. Optional `updateCPU` selects an approved fixture resource amount; optional `expectedLog` identifies known sanitized output. Run `bun apps/console-ui/tests/hosting-native-browser.mjs` against that owned loopback Core serving built `dist`. The script uses actual HTTP/runtime operations and never provisions or resets fixtures itself. The owning harness controls runtime preparation and cleanup; the script prints only an acceptance summary. Native proof status must be recorded from its actual run, not inferred from fixture-browser success.
 
 
 Native acceptance recorded on 2026-10-20: `native_browser::console_drives_real_native_hosting_and_docker` passed with the built Console, native Core/restricted PostgreSQL, persisted AgentControl and real Docker. It covered restart/stop/start, durable terminal receipts, a sanitized log read, a revision-checked settings update and 320/375/768/1280px layouts without page errors. Installed-extension browser lifecycle currently has isolated HTTP-fixture coverage; this does not claim a real-controller browser run for extensions.
@@ -127,7 +129,7 @@ Lost or ambiguous responses block further lifecycle writes for that customer and
 
 Recorded service state, requested direction, and mailbox requested/applied configuration revisions remain distinct. The directory shows mailbox/domain states and existing grant requests; queued configuration is not labeled ready. The configuration surface now offers verified-domain attachment, mailbox creation on a ready attached domain, explicit grants/revocation, and server-authorized operator retries. Webmail launch remains separate. The native launch response is an exchange code and gateway origin, so a browser token URL is not invented here. The backend configuration executor and full Mail product parity remain separate gates.
 
-Run `node --import tsx tests/mail-browser.mjs` from this directory with Node 24 for the documented controlled HTTP browser check. It owns the same test preview port (3121) as `test:browser`, so run them sequentially. This verifies UI behavior only; it is not a live Mail or production delivery test. Mounted and contract regressions are included in `npm test`.
+Run `bun tests/mail-browser.mjs` from this directory for the documented controlled HTTP browser check. It owns the same test preview port (3121) as `test:browser`, so run them sequentially. This verifies UI behavior only; it is not a live Mail or production delivery test. Mounted and contract regressions are included in `bun run test`.
 
 The separate real acceptance harness is `cargo test -p webdock-agent-control --test native_mail native_console_drives_incoming_mail_activation_and_retained_suspension -- --ignored --nocapture`. It requires the explicitly owned restricted PostgreSQL fixture environment, the already available reviewed `WEBDOCK_MAIL_RUNTIME_IMAGE` digest, both `WEBDOCK_MAIL_NATIVE_DOCKER_TEST=1` and `WEBDOCK_MAIL_BROWSER_TEST=1`, Node24, Chromium and a built Console. It creates a fresh database and isolated engine, serves actual Core HTTP on an ephemeral loopback port, runs the enrolled daemon, and removes only its owned resources afterward. The browser descriptor is private and temporary; no API responses are mocked. Optional `WEBDOCK_MAIL_BROWSER_SCREENSHOT_DIR` captures synthetic fixture screenshots outside tracked source. The actual run on2026-10-20 passed31.69s: explicit activation, agent-confirmed readiness, retained suspension/resume, exact revision-bound requests and responsive navigation. Its synthetic native session is separate from the real SSO acceptance above.
 
@@ -140,4 +142,4 @@ Requests are not automatically repeated. An uncertain creation blocks further pr
 
 Revocation has an independent request lane: `canManage` continues to allow it during draining, blocked provisioning, or an uncertain creation, while `canConfigure` gates additions. Accepted revocation removes gateway authority immediately; remote configuration is separate. Grant/revoke forms require explicit target confirmation, cleared when the selected target changes. No per-grant applied status is invented from a configuration-wide revision. Write denial retires cached service/directory data before checking current authorization; all request ledgers use the shared session cache boundary.
 
-`node --import tsx tests/mail-configuration-browser.mjs` exercises the configuration forms against isolated HTTP fixtures on port 3121, including actual browser polling and responsive widths. Run sequentially with the other browser scripts. Screenshots go to ignored `.runtime-test/mail-configuration-ui-screens/`. This script does not exercise a native mail engine; the separate native lifecycle harness is unchanged.
+`bun tests/mail-configuration-browser.mjs` exercises the configuration forms against isolated HTTP fixtures on port 3121, including actual browser polling and responsive widths. Run sequentially with the other browser scripts. Screenshots go to ignored `.runtime-test/mail-configuration-ui-screens/`. This script does not exercise a native mail engine; the separate native lifecycle harness is unchanged.

@@ -50,7 +50,7 @@ export WEBDOCK_MIGRATE_IMAGE="ghcr.io/spitzli/webdock/migrate@$(jq -r '.artifact
 
 These public packages require no registry login. The migrator is used only during offline administration, not as a running Core service.
 
-For archive import instead, additionally download `api-core.oci.tar`, `console-core.oci.tar`, `auth.oci.tar` and `migrate.oci.tar`, and run the checksum command again before importing. To validate the complete release with `node tools/release/manifest.mjs verify`, download all nine archives and both charts too.
+For archive import instead, additionally download `api-core.oci.tar`, `console-core.oci.tar`, `auth.oci.tar` and `migrate.oci.tar`, and run the checksum command again before importing. To validate the complete release with `bun tools/release/manifest.mjs verify`, download all nine archives and both charts too.
 
 For local Docker import, repeat for each selected image:
 
@@ -70,7 +70,7 @@ docker build -f deploy/docker/Dockerfile --target auth -t webdock-auth:local .
 docker build -f deploy/docker/Dockerfile --target migrate -t webdock-migrate:local .
 ```
 
-Build from the repository root. Node 24.15.0, Bun 1.4.3 and the root npm lockfile define the toolchain. Do not supply deployment secrets or provider credentials during builds. The migration image is an offline tool, not a fourth long-running core service.
+Build from the repository root. Bun 1.4.3 and the root `bun.lock` define the toolchain. Do not supply deployment secrets or provider credentials during builds. The migration image is an offline tool, not a fourth long-running core service.
 
 ## Install the empty database
 
@@ -100,10 +100,10 @@ webdock_cms_archive_runtime
 webdock_offline_migrate
 ```
 
-Store credentials in a secret manager or owner-only files (`0600`), never in source control or build arguments. For the source-based offline commands, install dependencies with `npm ci`, export the private environment explicitly, and pass the exact database hostname, port and database name:
+Store credentials in a secret manager or owner-only files (`0600`), never in source control or build arguments. For the source-based offline commands, install dependencies with `bun install --frozen-lockfile`, export the private environment explicitly, and pass the exact database hostname, port and database name:
 
 ```sh
-./node_modules/.bin/bun --no-env-file tools/migrations/install.ts db.example.com:5432/webdock
+bun --no-env-file tools/migrations/install.ts db.example.com:5432/webdock
 ```
 
 After success, change `DATABASE_URL_UNPOOLED` to the new **`webdock_offline_migrate`** login. Remove `WEBDOCK_BOOTSTRAP_EMPTY_DATABASE` and `MIGRATION_ROLE_PASSWORDS` from the command environment. Keep the same CA and context signing secret. Subsequent schema upgrades use this restricted offline login, never the original administrator.
@@ -112,7 +112,7 @@ Initialize the empty plugin installation state before any API startup. Schema in
 
 ```sh
 export WEBDOCK_MODULES='{"configVersion":1,"modules":{}}'
-./node_modules/.bin/bun --no-env-file tools/plugins/bootstrap.ts db.example.com:5432/webdock fresh
+bun --no-env-file tools/plugins/bootstrap.ts db.example.com:5432/webdock fresh
 ```
 
 Now complete [initial operator setup](/developers/initial-setup) using that offline login. Choose three distinct HTTPS origins for Auth, the Studio protocol identity and Console before running setup. Retain its private output: the API needs the generated OAuth client and cookie secrets. Setup seeds the verified operator address as the default support address and disables the retained CMS setting when no explicit setting exists. Configure your own SMTP sender before sending invitations or recovery mail.
@@ -269,12 +269,12 @@ Neither deployment creates database servers, roles or grants. Managed processes 
 
 
 ```sh
-node --test tools/release/manifest.test.mjs
-node --import tsx tools/release/generate-chart-schema.ts --check
+bun test tools/release/manifest.test.mjs
+bun tools/release/generate-chart-schema.ts --check
 python3 tools/release/check-charts.py
 python3 tools/release/check-compose.py
 tools/release/build.sh 0.1.0-alpha.2 ./release-candidate linux/amd64
-node tools/release/manifest.mjs verify ./release-candidate
+bun tools/release/manifest.mjs verify ./release-candidate
 ```
 
 Release builds require a clean checkout so the recorded revision matches the source. Candidates require native architecture execution of every selected image before the manifest marks that architecture supported. OCI index and image digests, SDK/protocol versions and the exact tested image identities are included. ARM64 has not been verified locally and has no CI runner configured here. The candidate workflow runs only on manually selected, ephemeral EU self-hosted runners. It produces nine OCI image archives, optional verified database artifacts, OCI-compatible chart packages, a source revision manifest, checksums and a Sigstore checksum signature. Publishing is a separate explicit operator action using `tools/release/publish.sh`; public GitHub release assets and any registry publication are separate from deployment. Verify the expected signing workflow identity and issuer before trusting a candidate.

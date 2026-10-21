@@ -17,7 +17,7 @@ Physical promises include paused instances and retained volumes. Shared is reser
 ## Installation sequence
 
 1. Refresh `infra/postgres/inventory.py` and native control-plane reservations. Review deployed source hashes. This branch must not overwrite the separately deployed three-node App storage router or operator SSO changes. Reconcile that baseline first.
-2. Use the explicit owner migration runner: `node --import tsx apps/auth/scripts/migrate-hosting-databases.ts /private/owner.env`. The file supplies `DATABASE_URL_UNPOOLED` (or `DATABASE_URL`) and optional `AUTH_DB_ROLE`. Run after existing Auth/Hosting/Mail schema migrations. It is transactional, adds tables and narrowly scoped runtime grants, and enables no offer. Keep owner credentials offline. Never push schema from HTTP or heartbeats.
+2. Use the explicit owner migration runner: `bun apps/auth/scripts/migrate-hosting-databases.ts /private/owner.env`. The file supplies `DATABASE_URL_UNPOOLED` (or `DATABASE_URL`) and optional `AUTH_DB_ROLE`. Run after existing Auth/Hosting/Mail schema migrations. It is transactional, adds tables and narrowly scoped runtime grants, and enables no offer. Keep owner credentials offline. Never push schema from HTTP or heartbeats.
 3. Verify pinned images in `infra/postgres/versions.env` with upstream signatures. Install the pinned CNPG controller in `cnpg-system`; retain the existing cert-manager. Inspect controller health and CRDs before agent capability activation.
 4. Carve out a separate pool without a capacity gap: lower approved native App storage allowance first, reduce the selected App helper ceiling while preserving all existing allocations, create the separate DB helper pool, observe it, then restore the approved aggregate ceiling and register the DB partition. Never increase either ceiling above measured disk minus host reserve. Preserve at least the existing production host reserve; pilot's smaller reserve is test-only.
 5. Use a root-owned, mode-0600 `/etc/webdock-postgres-storage.json` in the existing storage-v1 configuration shape with its own `root`, `poolID`, node/cluster identity, capacity and reserve. Run `webdock-postgres-storage.service` on the selected DB node with the dedicated socket. Deploy `database_storage.py` alongside a compatible reviewed `storage.py`, `storage_service.py` and `storage_client.py`. The ordinary App service must not get `WEBDOCK_DATABASE_STORAGE=1`. Never substitute local-path requested capacity for an enforced filesystem.
@@ -66,7 +66,7 @@ Local evidence covers SQL/role isolation, direct/pooler TLS, pg/Prisma clients, 
 
 The installed BetterAuth limiter counts until an idle window; continuously polling multiple Studio views can exhaust its shared introspection bucket. The new DB view uses a 75-second interval. Review the broader authentication rate policy before multi-user production qualification; do not weaken authentication or treat an HTTP429 as success.
 
-For the outstanding external Vercel client qualification, installation of the currently absent CLI is recommended (`npm i -g vercel`) to inspect deployments, logs and environment bindings. No Vercel deployment was performed by these local tests.
+For the outstanding external Vercel client qualification, installation of the currently absent CLI is recommended (`bun add -g vercel`) to inspect deployments, logs and environment bindings. No Vercel deployment was performed by these local tests.
 
 ## First production instance: Webdock
 

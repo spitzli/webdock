@@ -23,7 +23,7 @@ try {
   const publicKey = keys.publicKey.export({ type: "spki", format: "pem" }).toString();
   const token = randomBytes(32).toString("hex");
   const localDigest = docker("image", "inspect", image, "--format", "{{.Id}}");
-  const manifest = JSON.parse(execFileSync(process.execPath, ["--import", "tsx", "--input-type=module", "-e",
+  const manifest = JSON.parse(execFileSync(process.execPath, ["-e",
     'import { createManifest } from "./extensions/managed-cms/src/manifest.ts"; process.stdout.write(JSON.stringify(createManifest(process.argv[1])));',
     `ghcr.io/spitzli/webdock/managed-cms@${localDigest}`], { cwd: repo, encoding: "utf8" }));
   // Use the real installer renderer and TLS generator; never construct an alternate launch contract.

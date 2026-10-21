@@ -87,7 +87,7 @@ function button(host: HTMLElement, text: string) {
 function fixture(fetcher: typeof fetch, preview = false) {
   const browser = new Window({ url: "https://console.example/mail" });
   Object.assign(globalThis, {
-    window: browser,
+    window: browser, navigator: browser.navigator,
     document: browser.document,
     HTMLElement: browser.HTMLElement,
     Event: browser.Event,

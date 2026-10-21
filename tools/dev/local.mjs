@@ -1,5 +1,5 @@
 // Local development helper used by the root Tiltfile. Owned loopback state only; never deployment config.
-// Usage: node tools/dev/local.mjs secrets|init|plugin-image|seed
+// Usage: bun tools/dev/local.mjs secrets|init|plugin-image|seed
 import { execFileSync } from "node:child_process";
 import { createHash, generateKeyPairSync, randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";

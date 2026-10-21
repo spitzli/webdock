@@ -87,8 +87,6 @@ test("offline migration is checksummed, repeatable and grants DML without DDL", 
         process.execPath,
         [
           "--env-file=.env.test.local",
-          "--import",
-          "tsx",
           "scripts/migrate-mail-product.ts",
           target,
           role,

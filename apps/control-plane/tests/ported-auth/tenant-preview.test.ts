@@ -1,6 +1,7 @@
 import { configureFullProducts } from "../../src/full-products";
 configureFullProducts();
-import test from "node:test";
+import test, { afterEach } from "node:test";
+import { mockMethod, restoreMocks } from "../helpers/node-test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { auth } from "../../src/modules/auth/auth";
@@ -17,6 +18,7 @@ import { plansSchemaSQL } from "../../src/modules/plans/plans";
 import { storageUsageSchemaSQL } from "../../src/modules/platform/storage-usage";
 import { mailSchemaSQL } from "../../src/modules/mail/tenant-mail";
 import { platformSchemaSQL } from "../../src/modules/platform/platform";
+afterEach(restoreMocks);
 const url = new URL(process.env.DATABASE_URL!);
 if (
   !["localhost", "127.0.0.1"].includes(url.hostname) ||
@@ -454,7 +456,7 @@ test("Preview start works with runtime column grants and a read-only tenant mapp
   ).rows[0];
   const role = "preview_runtime_" + randomBytes(6).toString("hex");
   const connection = await database.connect();
-  let mocked: ReturnType<typeof t.mock.method> | undefined;
+  let mocked: ReturnType<typeof mockMethod> | undefined;
   try {
     await connection.query(`CREATE ROLE "${role}" NOLOGIN NOSUPERUSER`);
     await connection.query(
@@ -492,7 +494,7 @@ test("Preview start works with runtime column grants and a read-only tenant mapp
     );
     // Exercise the actual transaction with restricted grants, holding the borrowed
     // connection until its role has been reset by this test.
-    mocked = t.mock.method(
+    mocked = mockMethod(
       database,
       "connect",
       async () =>

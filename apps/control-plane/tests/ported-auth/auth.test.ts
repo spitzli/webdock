@@ -1,6 +1,7 @@
 import { getCookies } from "better-auth/cookies";
 import { cookiePolicy } from "../../src/modules/auth/cookie-policy";
-import test from "node:test";
+import test, { afterEach } from "node:test";
+import { mockMethod, restoreMocks } from "../helpers/node-test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { auth } from "../../src/modules/auth/auth";
@@ -10,6 +11,7 @@ import {
   registerApplication,
 } from "../../src/modules/auth/bootstrap";
 import { currentClaims } from "../../src/modules/auth/authorization";
+afterEach(restoreMocks);
 const url = new URL(process.env.DATABASE_URL!);
 if (
   !["localhost", "127.0.0.1"].includes(url.hostname) ||
@@ -276,7 +278,7 @@ test("Real Better Auth flow: closed signup, password change, MFA, OIDC and immed
   cookies = originalBrowserCookies;
   // The provider verifies its hint through its public JWKS endpoint. Route that
   // loopback request to the real handler without requiring a running web server.
-  t.mock.method(globalThis, "fetch", async (input: Request | URL | string) => {
+  mockMethod(globalThis, "fetch", async (input: Request | URL | string) => {
     assert.equal(String(input), origin + "/api/auth/jwks");
     return auth.handler(new Request(String(input)));
   });

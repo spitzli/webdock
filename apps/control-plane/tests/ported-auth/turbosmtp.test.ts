@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { jest } from "bun:test";
 import {
   TurboSMTPClient,
   TurboSMTPError,
@@ -242,7 +243,8 @@ test("malformed or oversized provider responses are rejected", async () => {
 });
 
 test("ten second deadline covers both fetch and streamed body", async (t) => {
-  t.mock.timers.enable({ apis: ["setTimeout"] });
+  jest.useFakeTimers();
+  t.after(() => jest.useRealTimers());
   for (const bodyStalls of [false, true]) {
     const client = new TurboSMTPClient(auth, async (_url, init) => {
       if (bodyStalls) return new Response(new ReadableStream({ start() {} }));
@@ -255,7 +257,7 @@ test("ten second deadline covers both fetch and streamed body", async (t) => {
     const pending = client.getSubaccount("123");
     const rejected = assert.rejects(pending, { code: "timeout" });
     await Promise.resolve();
-    t.mock.timers.tick(10_000);
+    jest.advanceTimersByTime(10_000);
     await rejected;
   }
 });

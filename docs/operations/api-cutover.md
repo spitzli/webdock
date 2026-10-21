@@ -4,24 +4,24 @@ The implementation is in `apps/api`; Studio and Auth are HTTP-only Next.js front
 
 ## Reproduce locally
 
-Use Node24 and the workspace-pinned Bun1.4.3. From the repository root:
+Use Bun 1.4.3, the version pinned in `package.json`. From the repository root:
 
 ```sh
-npm ci
-npm run test:setup -w @webdock/api
-npm run test:setup:rls -w @webdock/api
-npm test -w @webdock/api
-npm run test:rls -w @webdock/api
-npm test -w @webdock/admin
-npm test -w @webdock/auth
-npm test -w @webdock/api-client
-npm run build -w @webdock/api
-npm run build -w @webdock/admin
-npm run build -w @webdock/auth
-node_modules/.bin/bun --no-env-file apps/api/scripts/rehearse-cache.ts
+bun install --frozen-lockfile
+bun run --filter @webdock/api test:setup
+bun run --filter @webdock/api test:setup:rls
+bun test -w @webdock/api
+bun run --filter @webdock/api test:rls
+bun test -w @webdock/admin
+bun test -w @webdock/auth
+bun test -w @webdock/api-client
+bun run --filter @webdock/api build
+bun run --filter @webdock/admin build
+bun run --filter @webdock/auth build
+bun --no-env-file apps/api/scripts/rehearse-cache.ts
 ```
 
-The fixture scripts create a labeled, disposable local PostgreSQL18 Docker container and private ignored environment files. Role tests use signed contexts and constrained runtime principals. The harness blocks non-loopback fetches; it never inherits deployment/provider credentials. Four privileged fixture regressions are opt-in in the basic run and run explicitly in `test:rls`. Teardown only removes the owned fixture and checksum-matching files; modified files are preserved. The real Polar sandbox rehearsal uses a separate database and is not part of `npm test`.
+The fixture scripts create a labeled, disposable local PostgreSQL18 Docker container and private ignored environment files. Role tests use signed contexts and constrained runtime principals. The harness blocks non-loopback fetches; it never inherits deployment/provider credentials. Four privileged fixture regressions are opt-in in the basic run and run explicitly in `test:rls`. Teardown only removes the owned fixture and checksum-matching files; modified files are preserved. The real Polar sandbox rehearsal uses a separate database and is not part of `bun test`.
 
 ## Required production evidence
 
@@ -41,9 +41,9 @@ Run offline migrations with a dedicated direct migrator URL, verified CA and exa
 
 ```sh
 # DATABASE_URL_UNPOOLED / DATABASE_CA_CERT come from the private migrator environment.
-npm run migrate -w @webdock/api -- exact-host:5432/exact-database
+bun run --filter @webdock/api migrate -- exact-host:5432/exact-database
 # Explicit private target file; never the API runtime environment:
-node_modules/.bin/bun --no-env-file apps/api/scripts/install-platform-rls.ts /private/rls-target.env
+bun --no-env-file apps/api/scripts/install-platform-rls.ts /private/rls-target.env
 ```
 
 The installer allows only its reviewed target or the explicit local fixture, classifies every table, and refuses unknown unowned schema. It acquires the complete table lock set with NOWAIT before changing grants; drain old writers first, and treat a busy-lock refusal as an incomplete cutover. Rehearse with the dedicated non-superuser migrator, not only the restore owner. Provision a missing registry login with `scripts/provision-registry.ts PRIVATE_ENV EXACT_TARGET NEW_PRIVATE_OUTPUT`; it refuses existing-role password rotation. `scripts/admin/map-operator.ts` maps an existing verified central operator with MFA; it creates no password or independent role authority. Inspect each CLI's argument validation before running it. Old duplicate `scripts/legacy/migrate*.ts`, owner/identity bootstrap, obsolete frontend-env fixtures and hardcoded showcase SSO registration commands fail closed. Existing identities/clients must be reused; new business provisioning goes through the current operator API instead of synthesizing a session from an email address.
@@ -62,7 +62,7 @@ Supply an immutable image digest, the existing controlled ingress network and se
 
 The Traefik file-provider template routes Auth protocol/discovery and Studio SSO/provider/MCP aliases to Bun, UI pages to reviewed immutable UI origins, and the API host exclusively to Bun. Replace the `.invalid` UI upstreams; never use public canonical hosts as upstreams. Direct TLS ingress must discard untrusted forwarded headers, set the canonical host/protocol, and supply the shared ingress secret. Bun also verifies the actual peer CIDR and accepts only a single validated client IP. A chained proxy requires separate normalization testing; do not enable universal header trust.
 
-Reference: [Traefik forwarded-header trust](https://doc.traefik.io/traefik/reference/install-configuration/entrypoints/). Test real TLS before DNS cutover: multiple cookies, native login/MFA/passkey, PKCE/OIDC issuer and redirects, Server Actions origin checks, provider callbacks, raw signed webhook bytes, MCP audience, streaming and cancellation. If immutable Vercel origins cannot preserve these semantics, use the existing UI containers; do not rewrite the UI into a SPA. Vercel CLI is not installed in this environment; installing it with `npm i -g vercel` is strongly recommended for frontend deployment work and enables origin/deployment/env inspection where applicable.
+Reference: [Traefik forwarded-header trust](https://doc.traefik.io/traefik/reference/install-configuration/entrypoints/). Test real TLS before DNS cutover: multiple cookies, native login/MFA/passkey, PKCE/OIDC issuer and redirects, Server Actions origin checks, provider callbacks, raw signed webhook bytes, MCP audience, streaming and cancellation. If immutable Vercel origins cannot preserve these semantics, use the existing UI containers; do not rewrite the UI into a SPA. Vercel CLI is not installed in this environment; installing it with `bun add -g vercel` is strongly recommended for frontend deployment work and enables origin/deployment/env inspection where applicable.
 
 Disable or redact query-string and sensitive-header logging on auth, SSO, billing-return, offer and webhook routes. OAuth codes, provider customer-session tokens, checkout/portal URLs, cookies, raw event bodies and encryption keys must not enter logs. New checkout success URLs target the API-owned `/api/billing/return`; it drops provider tokens and redirects to the correct environment. Existing immutable checkout URLs remain readable. UI form pages use `same-origin` referrer policy, retaining normal Origin/CSRF checks while suppressing cross-origin referrers.
 

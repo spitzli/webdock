@@ -257,24 +257,22 @@ pub fn plan(scope: Scope, standalone_manifests: &[PathBuf]) -> Vec<Check> {
     if matches!(scope, Scope::All | Scope::Frontend) {
         for script in ["lint", "typecheck", "test", "build", "test:browser"] {
             checks.push(Check::new(
-                "npm",
-                &["run", script, "--workspace", "@webdock/console-ui"],
+                "bun",
+                &["run", "--filter", "@webdock/console-ui", script],
             ));
         }
     }
     checks
 }
 pub fn execute(root: &Path, checks: &[Check]) -> Result<(), String> {
-    if checks.iter().any(|check| check.program == "npm") {
-        let node = Command::new("node")
+    if checks.iter().any(|check| check.program == "bun") {
+        // Bun is the only JavaScript runtime and package manager; Node is not used by this gate.
+        let bun = Command::new("bun")
             .arg("--version")
             .output()
-            .map_err(|_| "Node24 is required for Console checks".to_owned())?;
-        if !node.status.success() || !node.stdout.starts_with(b"v24.") {
-            return Err(
-                "Use Node24 for Console checks; no other Node version is accepted by this gate"
-                    .into(),
-            );
+            .map_err(|_| "Bun is required for Console checks".to_owned())?;
+        if !bun.status.success() {
+            return Err("Bun is required for Console checks".into());
         }
     }
     for check in checks {
@@ -306,7 +304,7 @@ mod tests {
         ];
         let checks = plan(Scope::All, &manifests);
         assert_eq!(
-            checks.iter().filter(|check| check.program == "npm").count(),
+            checks.iter().filter(|check| check.program == "bun").count(),
             5
         );
         for path in manifests {
@@ -345,7 +343,7 @@ mod tests {
         assert!(
             plan(Scope::Frontend, &[])
                 .iter()
-                .all(|check| check.program == "npm")
+                .all(|check| check.program == "bun")
         );
         for package in [
             "webdock-agent-protocol",

@@ -45,7 +45,7 @@ await test("renderer escapes supplied content and exposes table and status seman
 await test("forms submit typed input, require destructive confirmation and disable revoked actions", async () => {
   const browser = new Window({ url: "https://console.example" });
   Object.assign(globalThis, {
-    window: browser,
+    window: browser, navigator: browser.navigator,
     document: browser.document,
     HTMLElement: browser.HTMLElement,
     Event: browser.Event,
@@ -112,7 +112,7 @@ await test("custom frame blocks hostile messages and aborts pending work on revo
     settings: { disableIframePageLoading: true },
   });
   Object.assign(globalThis, {
-    window: browser,
+    window: browser, navigator: browser.navigator,
     document: browser.document,
     HTMLElement: browser.HTMLElement,
     Event: browser.Event,

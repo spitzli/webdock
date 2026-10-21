@@ -67,7 +67,7 @@ test("a timed-out mutation is attempted once and remains uncertain", async () =>
 });
 
 test("bounds streamed upstream responses, not only content-length", async () => {
-  const fixture = await server((_req, res) => { res.writeHead(200, { "Transfer-Encoding": "chunked" }); res.end(" ".repeat(1_048_577)); });
+  const fixture = await server((_req, res) => { res.writeHead(200); res.write(" ".repeat(524_289)); res.end(" ".repeat(524_288)); /* no length: chunked */ });
   try {
     const client = new StalwartClient({ url: fixture.url, authorization: "Bearer fixture-only", allowInsecureHttp: true });
     await assert.rejects(client.call("x:Domain/get", { ids: null }), /invalid response/i);

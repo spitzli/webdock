@@ -1,4 +1,5 @@
-import test from "node:test";
+import test, { afterEach } from "node:test";
+import { mockMethod, restoreMocks } from "../helpers/node-test";
 import assert from "node:assert/strict";
 import pg from "pg";
 import { assertTestDatabase } from "../helpers/database";
@@ -6,6 +7,7 @@ import { createSetupFixture } from "../helpers/setup-fixture";
 import { database, closeDatabases } from "../../src/db/runtime";
 import { executeHosting } from "../../src/modules/hosting/service";
 import { HostingError, type ProjectOverview } from "@webdock/hosting-contracts";
+afterEach(restoreMocks);
 
 assertTestDatabase(process.env.DATABASE_URL!);
 test.after(closeDatabases);
@@ -34,7 +36,7 @@ test("project overview uses one authorized transaction, preserves display bounds
     }) as Promise<ProjectOverview>;
   const statements: string[] = [];
   const query = pg.Client.prototype.query;
-  const tracked = t.mock.method(
+  const tracked = mockMethod(
     pg.Client.prototype,
     "query",
     function (this: pg.Client, ...args: any[]) {

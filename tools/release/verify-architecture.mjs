@@ -143,7 +143,7 @@ if(values[0].apiOrigin===values[1].apiOrigin||values[0].modules.modules.mail!=='
     );
     try {
       const code = `(async()=>{const fs=require('node:fs');const f=fs.readdirSync('/app/apps/${app}/.next/static/chunks').find(f=>f.endsWith('.js'));for(let i=0;i<30;i++){try{if((await fetch('http://127.0.0.1:${port}/_next/static/chunks/'+f)).status===200)return;}catch{}await new Promise(r=>setTimeout(r,1000));}process.exit(1)})()`;
-      execFileSync("docker", ["exec", container, "node", "-e", code], {
+      execFileSync("docker", ["exec", container, "bun", "-e", code], {
         stdio: "inherit",
         timeout: 45000,
       });
@@ -162,10 +162,8 @@ if(values[0].apiOrigin===values[1].apiOrigin||values[0].modules.modules.mail!=='
     execFileSync(
       process.execPath,
       [
-        "--import",
-        "tsx",
-        "--test",
-        "apps/database-gateway/tests/managed-real-runtime.test.ts",
+        "test",
+        "./apps/database-gateway/tests/managed-real-runtime.test.ts",
       ],
       {
         stdio: "inherit",

@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
-import test, { type TestContext } from "node:test";
+import test, { type TestContext, afterEach } from "node:test";
+import { mockMethod, restoreMocks } from "../helpers/node-test";
 import { createHash } from "node:crypto";
 import { sealData, unsealData } from "iron-session";
 import { configureGitHub } from "../../src/modules/integrations/github/client";
+afterEach(restoreMocks);
 
 const options = {
   clientID: "Iv1.webdock",
@@ -84,7 +86,7 @@ test("GitHub user tokens remain encrypted, expire, and repository selection rech
   let challenge = "";
   let allowRepository = true;
   let calls = 0;
-  t.mock.method(
+  mockMethod(
     globalThis,
     "fetch",
     async (input: string | URL | Request, init?: RequestInit) => {
@@ -216,7 +218,7 @@ test("GitHub user tokens remain encrypted, expire, and repository selection rech
     }),
   );
   const currentTime = Date.now();
-  const clock = t.mock.method(Date, "now", () => currentTime + 28801 * 1000);
+  const clock = mockMethod(Date, "now", () => currentTime + 28801 * 1000);
   assert.equal(await github.session(headers, actor), null);
   clock.mock.restore();
   const disconnected = github.disconnect(
@@ -259,7 +261,7 @@ async function sourceFixture(t: TestContext, returnTo = "/integrations") {
       Promise.resolve(new Response(new Uint8Array([80, 75, 3, 4]))),
     requests: [] as { url: string; init?: RequestInit }[],
   };
-  t.mock.method(
+  mockMethod(
     globalThis,
     "fetch",
     async (input: string | URL | Request, init?: RequestInit) => {
@@ -707,7 +709,7 @@ test("GitHub rejects PATs, non-expiring tokens and over-permissioned installatio
     metadata: "read",
     contents: "write",
   };
-  t.mock.method(globalThis, "fetch", async (input: Request | URL | string) => {
+  mockMethod(globalThis, "fetch", async (input: Request | URL | string) => {
     if (String(input) === "https://github.com/login/oauth/access_token")
       return Response.json(responseToken);
     if (String(input).startsWith("https://api.github.com/user/installations?"))
@@ -782,7 +784,7 @@ test("GitHub rejects PATs, non-expiring tokens and over-permissioned installatio
 
 test("GitHub callback rejects duplicated parameters, wrong hosts and expired flows before token exchange", async (t) => {
   let exchanges = 0;
-  t.mock.method(globalThis, "fetch", async () => {
+  mockMethod(globalThis, "fetch", async () => {
     exchanges++;
     throw Error("Invalid flow must never exchange a token");
   });
@@ -824,7 +826,7 @@ test("GitHub callback rejects duplicated parameters, wrong hosts and expired flo
     /github=failed$/,
   );
   const currentTime = Date.now();
-  const clock = t.mock.method(Date, "now", () => currentTime + 601_000);
+  const clock = mockMethod(Date, "now", () => currentTime + 601_000);
   assert.match(
     (await github.callback(request(path, flowCookie), actor)).headers.get(
       "location",

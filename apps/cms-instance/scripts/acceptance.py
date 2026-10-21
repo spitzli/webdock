@@ -15,6 +15,7 @@ import time
 ROOT = Path(__file__).resolve().parents[3]
 LABEL = "dev.webdock.cms-acceptance"
 PREFIX = "webdock-cms-acceptance-"
+BUN_IMAGE = "oven/bun:1.4.3-slim@sha256:14a223fa35747ec728bce300ef85888bc5f7958164d15bbba6a54b22b52a3288"
 
 
 def clean_environment(environment):
@@ -127,7 +128,7 @@ def main():
     parser.add_argument("--keep", action="store_true", help="Retain this fixture; use --image for a browser endpoint")
     parser.add_argument("--cleanup", type=Path, help="Remove only resources owned by a retained fixture")
     parser.add_argument("--postgres-image", default="postgres:18-alpine")
-    parser.add_argument("--node-image", help="Node 24 image (defaults to the local Node version)")
+    parser.add_argument("--bun-image", default=BUN_IMAGE, help="Bun runtime image for migrations and tests")
     args = parser.parse_args()
     if args.cleanup:
         manifest = args.cleanup / "fixture.json"
@@ -140,12 +141,6 @@ def main():
         Fixture(directory, state["run_id"], state["resources"]).cleanup(True)
         print("Owned fixture removed.")
         return
-    node = shutil.which("node")
-    if not node:
-        raise RuntimeError("Node 24 must be on PATH")
-    version = subprocess.check_output([node, "--version"], env=clean_environment(os.environ), text=True).strip()
-    if not re.fullmatch(r"v24\.\d+\.\d+", version):
-        raise RuntimeError("Node 24 must be on PATH; inherited application environment is ignored")
     run_id = secrets.token_hex(8)
     directory = Path(tempfile.mkdtemp(prefix=PREFIX))
     exact = directory.with_name(PREFIX + run_id)
@@ -154,16 +149,16 @@ def main():
     fixture = Fixture(exact, run_id)
     completed = False
     try:
-        node_image = args.node_image or f"node:{version[1:]}-bookworm-slim"
+        bun_image = args.bun_image
         resolved_images = {}
-        for image in (args.postgres_image, node_image):
+        for image in (args.postgres_image, bun_image):
             inspected = fixture.run("inspect-image", ["docker", "image", "inspect", image], check=False)
             if inspected.returncode:
                 print(f"Pulling test image {image}…", flush=True)
                 fixture.run("pull-image", ["docker", "pull", image], timeout=600)
                 inspected = fixture.run("inspect-image", ["docker", "image", "inspect", image])
             resolved_images[image] = json.loads(inspected.stdout)[0]["Id"]
-        node_image, postgres_image = resolved_images[node_image], resolved_images[args.postgres_image]
+        bun_image, postgres_image = resolved_images[bun_image], resolved_images[args.postgres_image]
         image_id = None
         if args.image:
             candidate = json.loads(fixture.run("inspect-candidate", ["docker", "image", "inspect", args.image]).stdout)[0]
@@ -173,7 +168,7 @@ def main():
         network = fixture.create("network", PREFIX + run_id, [] if args.keep else ["--internal"])["id"]
         volume = fixture.create("volume", PREFIX + run_id, [])["id"]
         # Check both container runtimes independently of the host PATH version.
-        fixture.job("node-version", node_image, ["node", "-e", "if(process.versions.node.split('.')[0]!=='24')process.exit(1)"], memory="256m")
+        fixture.job("bun-version", bun_image, ["bun", "-e", "if(!Bun.version.startsWith('1.4.'))process.exit(1)"], memory="256m")
         pg_version = fixture.run("postgres-version", ["docker", "run", "--rm", "--label", f"{LABEL}={run_id}", "--entrypoint", "postgres", postgres_image, "--version"]).stdout
         if not re.search(r"PostgreSQL\) 18\.", pg_version):
             raise RuntimeError("PostgreSQL 18 is required")
@@ -184,7 +179,7 @@ def main():
         certs.mkdir(mode=0o755)
         fixture.run("certificate", ["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", str(certs / "server.key"), "-out", str(certs / "server.crt"), "-days", "2", "-subj", "/CN=postgres", "-addext", "subjectAltName=DNS:postgres,DNS:localhost,IP:127.0.0.1"])
         os.chmod(certs / "server.key", 0o600)
-        fixture.job("certificate-owner", node_image, ["sh", "-c", f"chown {pg_uid}:{pg_uid} /tls/server.key && chmod 600 /tls/server.key"], mounts=[f"{certs}:/tls"], user="0", memory="256m")
+        fixture.job("certificate-owner", bun_image, ["sh", "-c", f"chown {pg_uid}:{pg_uid} /tls/server.key && chmod 600 /tls/server.key"], mounts=[f"{certs}:/tls"], user="0", memory="256m")
         passwords = [secrets.token_hex(32) for _ in range(3)]
         fixture.redactions += passwords
         pg_env = fixture.private("postgres.env", f"POSTGRES_PASSWORD={passwords[0]}\nPOSTGRES_INITDB_ARGS=--auth-host=scram-sha-256\n")
@@ -207,20 +202,20 @@ def main():
         def dburl(role, password):
             return f"postgresql://{role}:{password}@postgres:5432/cms?sslmode=verify-full&sslrootcert=/tls/ca.crt"
         migration_env = envfile("migration.env", {**common, "CMS_MIGRATING": "true", "CMS_MIGRATION_DATABASE_URL": dburl("cms_migrate", passwords[1]), "CMS_BOOTSTRAP_SUBJECT": f"bootstrap-{run_id}", "CMS_BOOTSTRAP_ROLE": "admin"})
-        runtime = {**common, "DATABASE_URL": dburl("cms_runtime", passwords[2]), "CMS_ACCEPTANCE_RUN": "true", "TSX_DISABLE_CACHE": "1"}
+        runtime = {**common, "DATABASE_URL": dburl("cms_runtime", passwords[2]), "CMS_ACCEPTANCE_RUN": "true"}
         runtime_env = envfile("runtime.env", runtime)
         mounts = [f"{ROOT}:/app:ro", f"{certs / 'server.crt'}:/tls/ca.crt:ro", f"{volume}:/data"]
-        fixture.job("source-volume-owner", node_image, ["sh", "-c", f"mkdir -p /data/media /data/transfers && chown -R {os.getuid()}:{os.getgid()} /data"], mounts=[f"{volume}:/data"], user="0", memory="256m")
+        fixture.job("source-volume-owner", bun_image, ["sh", "-c", f"mkdir -p /data/media /data/transfers && chown -R {os.getuid()}:{os.getgid()} /data"], mounts=[f"{volume}:/data"], user="0", memory="256m")
         print("Running explicit schema migration with migration-only credentials…", flush=True)
-        migration_image = image_id or node_image
-        migration_command = ["node", "/app/migrate.mjs"] if image_id else ["node", "--import", "tsx", "apps/cms-instance/src/migrate.ts"]
+        migration_image = image_id or bun_image
+        migration_command = ["bun", "/app/migrate.mjs"] if image_id else ["bun", "apps/cms-instance/src/migrate.ts"]
         fixture.job("migrate", migration_image, migration_command, migration_env, mounts if not image_id else [f"{certs / 'server.crt'}:/tls/ca.crt:ro"], network=network)
         fixture.job("migrate-idempotent", migration_image, migration_command, migration_env, mounts if not image_id else [f"{certs / 'server.crt'}:/tls/ca.crt:ro"], network=network)
         print("Running existing source acceptance and editor safety tests with DML-only credentials…", flush=True)
-        fixture.job("source-tests", node_image, ["node", "--import", "tsx", "--test", "apps/cms-instance/tests/acceptance.test.ts", "apps/cms-instance/tests/editor-safety.test.ts", "apps/cms-instance/tests/media-trash.test.ts"], runtime_env, mounts, f"{os.getuid()}:{os.getgid()}", network)
+        fixture.job("source-tests", bun_image, ["sh", "-c", "status=0; for file in acceptance editor-safety media-trash; do bun test ./apps/cms-instance/tests/$file.test.ts || status=1; done; exit $status"], runtime_env, mounts, f"{os.getuid()}:{os.getgid()}", network)
         origin = None
         if image_id:
-            fixture.job("image-volume-owner", node_image, ["sh", "-c", "chown -R 65532:65532 /data"], mounts=[f"{volume}:/data"], user="0", memory="256m")
+            fixture.job("image-volume-owner", bun_image, ["sh", "-c", "chown -R 65532:65532 /data"], mounts=[f"{volume}:/data"], user="0", memory="256m")
             image_env = envfile("image.env", {**runtime, "PORT": "3000", "HOSTNAME": "0.0.0.0", "CMS_IMAGE_TEST_ORIGIN": "http://cms:3000"})
             def start_image(suffix):
                 container = fixture.create("container", f"{PREFIX}{run_id}-cms-{suffix}", ["--network", network, "--network-alias", "cms", "--read-only", "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m", "--env-file", str(image_env), "--memory", "768m", "--memory-swap", "768m", "--cpus", "2", "--pids-limit", "256", *(["--publish", "127.0.0.1::3000"] if args.keep else []), "--volume", f"{certs / 'server.crt'}:/tls/ca.crt:ro", "--volume", f"{volume}:/data", image_id])
@@ -233,7 +228,7 @@ def main():
                     container = start_image("recreated")
                 phase_env = envfile(f"image-{phase}.env", {**runtime, "CMS_IMAGE_TEST_ORIGIN": "http://cms:3000", "CMS_IMAGE_ACCEPTANCE_PHASE": phase})
                 print(f"Running image HTTP {phase} acceptance…", flush=True)
-                fixture.job(f"image-{phase}", node_image, ["node", "--import", "tsx", "--test", "apps/cms-instance/tests/image-acceptance.test.ts"], phase_env, mounts, "65532:65532", network)
+                fixture.job(f"image-{phase}", bun_image, ["bun", "test", "./apps/cms-instance/tests/image-acceptance.test.ts"], phase_env, mounts, "65532:65532", network)
             if args.keep:
                 current = fixture.inspect("container", container["id"])
                 bindings = current["NetworkSettings"]["Ports"].get("3000/tcp")

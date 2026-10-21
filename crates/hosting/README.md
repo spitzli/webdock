@@ -46,7 +46,7 @@ not client-provided namespace or container names.
 ## Native Console acceptance
 
 With the explicitly owned restricted-role fixture environment, the reviewed
-BusyBox image already present in local Docker, Node24/Playwright available and
+BusyBox image already present in local Docker, Bun/Playwright available and
 the Console built, run:
 
 ```sh
@@ -156,7 +156,7 @@ never provisions customer infrastructure or pulls images.
 
 The JSON schemas capture the provider-neutral TypeScript command slice for parity; runtime
 validation and all domain behavior are Rust. Regenerate intentionally with
-`node --import tsx crates/hosting/tools/capture-contracts.mjs`; Rust retains the
+`bun crates/hosting/tools/capture-contracts.mjs`; Rust retains the
 additional cross-field/ID/environment checks that JSON Schema cannot express.
 
 ## Stale native receipt custody

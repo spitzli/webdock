@@ -20,6 +20,6 @@ Cancellation is cooperative; execute implementations must honor AbortSignal and 
 
 ## Verification
 
-`npm run test:plugin-jobs` provisions its own pinned Redis container and verifies Core scheduling/restart/domain ownership, Redis-down startup cleanup, scoped job API, retries, idempotency conflicts, read-only denial, foreign-project denial, delayed/running cancellation and revocation. It also checks packed SDK/CLI in an empty directory and an actual separate plugin process.
+`bun run test:plugin-jobs` provisions its own pinned Redis container and verifies Core scheduling/restart/domain ownership, Redis-down startup cleanup, scoped job API, retries, idempotency conflicts, read-only denial, foreign-project denial, delayed/running cancellation and revocation. It also checks packed SDK/CLI in an empty directory and an actual separate plugin process.
 
 The actual restricted-role `worker.ts` storage profile was run against a new isolated PostgreSQL fixture and real Redis; it completed its business job and exited cleanly on SIGTERM. Production deployment has not been performed.

@@ -1,4 +1,5 @@
-import test from "node:test";
+import test, { afterEach } from "node:test";
+import { mockMethod, restoreMocks } from "../helpers/node-test";
 import assert from "node:assert/strict";
 import { auth } from "../../src/modules/auth/auth";
 import { database } from "../../src/db/runtime";
@@ -9,6 +10,7 @@ import {
   registerApplication,
 } from "../../src/modules/auth/bootstrap";
 import { mcpResource } from "../../src/modules/auth/mcp";
+afterEach(restoreMocks);
 
 const local = new URL(process.env.DATABASE_URL!);
 if (
@@ -53,13 +55,13 @@ test("lifecycle authenticates, binds its preview, isolates deletion and proves r
   let failDelete = false,
     managedHosting = false,
     managedPostgres = false;
-  t.mock.method(auth, "handler", async (request: Request) => {
+  mockMethod(auth, "handler", async (request: Request) => {
     const body = new URLSearchParams(await request.text());
     assert.equal(body.get("client_id"), "123");
     assert.equal(body.get("client_secret"), "secret");
     return Response.json(token, { status: introspectionOK ? 200 : 401 });
   });
-  t.mock.method(database, "query", async (sql: string) => {
+  mockMethod(database, "query", async (sql: string) => {
     // This fixture models an unmigrated legacy identity store.
     if (sql.includes("to_regclass('webdock_auth.clerk_identity')"))
       return { rows: [{ present: false }] };
@@ -69,7 +71,7 @@ test("lifecycle authenticates, binds its preview, isolates deletion and proves r
       return { rows: [{ metadata: { webdock_mcp: mcp } }] };
     throw Error("Unexpected pool query");
   });
-  t.mock.method(database, "connect", async () => ({
+  mockMethod(database, "connect", async () => ({
     release() {},
     async query(sql: string, values: unknown[] = []) {
       statements.push(sql);
@@ -318,7 +320,7 @@ test("lifecycle deletes only a bound website in the disposable PostgreSQL databa
     "INSERT INTO webdock_auth.project_grant(user_id,binding_id,organization_id,role) VALUES($1,$2,$3,'admin')",
     [user.id, site.binding, organization],
   );
-  t.mock.method(auth, "handler", async () =>
+  mockMethod(auth, "handler", async () =>
     Response.json({
       active: true,
       sub: user.id,
@@ -422,7 +424,7 @@ test("native lifecycle operator uses Clerk authority while local suspension stil
   const fixturePool = new Pool({ connectionString: process.env.DATABASE_URL });
   t.after(() => fixturePool.end());
   const connect = fixturePool.connect.bind(fixturePool);
-  t.mock.method(database, "connect", async () => {
+  mockMethod(database, "connect", async () => {
     const connection = await connect();
     const query = connection.query.bind(connection);
     // The legacy fixture lacks Console preview tables; actor locks and authorization use real SQL.

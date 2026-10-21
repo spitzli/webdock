@@ -1,4 +1,5 @@
-import test from "node:test";
+import test, { afterEach } from "node:test";
+import { mockMethod, restoreMocks } from "../helpers/node-test";
 import assert from "node:assert/strict";
 import { createHash, randomBytes } from "node:crypto";
 import { betterAuth } from "better-auth";
@@ -10,6 +11,7 @@ import { database } from "../../src/db/runtime";
 import { mcpResource, currentMCPClaims } from "../../src/modules/auth/mcp";
 import { offlineProvisioning } from "../../src/modules/auth/offline";
 import { POST as introspectMCP } from "../../src/protocols/legacy-auth/api/mcp/introspect/route";
+afterEach(restoreMocks);
 
 const origin = "http://localhost:3125";
 const databaseURL = new URL(process.env.DATABASE_URL!);
@@ -47,7 +49,7 @@ test("MCP OAuth: PKCE, consent, resource audience and live authorization/revocat
     rateLimit: { enabled: false },
     logger: { disabled: true },
   });
-  t.mock.method(database, "query", async (sql: string, values: unknown[]) => {
+  mockMethod(database, "query", async (sql: string, values: unknown[]) => {
     // This fixture models an unmigrated legacy identity store.
     if (sql.includes("to_regclass('webdock_auth.clerk_identity')"))
       return { rows: [{ present: false }] };
@@ -107,7 +109,7 @@ test("MCP OAuth: PKCE, consent, resource audience and live authorization/revocat
     403,
     "Discovery must not enable dynamic client registration",
   );
-  t.mock.method(auth, "handler", fixture.handler);
+  mockMethod(auth, "handler", fixture.handler);
   const ctx = await fixture.$context;
   const user = await ctx.internalAdapter.createUser(
     {

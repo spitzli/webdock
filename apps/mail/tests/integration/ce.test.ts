@@ -21,7 +21,7 @@ import { StalwartClient } from "../../src/stalwart/client.ts";
 
 const composeFile = fileURLToPath(new URL("../../../../infra/mail/compose.test.yml", import.meta.url));
 const project = process.env.MAIL_TEST_PROJECT;
-assert.match(project || "", /^webdock-mail-test-[a-z0-9-]+$/, "Use npm run test:integration -w @webdock/mail.");
+assert.match(project || "", /^webdock-mail-test-[a-z0-9-]+$/, "Use bun run --filter @webdock/mail test:integration.");
 const compose = (...args: string[]) => execFileSync("docker", ["compose", "-p", project!, "-f", composeFile, ...args], { encoding: "utf8", timeout: 30_000 });
 const basic = (user: string, password: string) => `Basic ${Buffer.from(`${user}:${password}`).toString("base64")}`;
 async function eventually<T>(operation: () => Promise<T>): Promise<T> {

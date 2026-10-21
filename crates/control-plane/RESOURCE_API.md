@@ -43,7 +43,7 @@ one returns the retained HTTP `403` scope challenge. Plugin tools keep their
 `plugin__…` namespace and existing authorization behavior.
 
 `resource-registry.schema.json` is captured from the retained first-party
-contracts by `tools/capture-registry-contracts.mjs` (run with Node 24 and
+contracts by `tools/capture-registry-contracts.mjs` (run with Bun and
 `--import tsx`). Native validators remain the runtime authority. No TypeScript
 backend is called by these routes.
 

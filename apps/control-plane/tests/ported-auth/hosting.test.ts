@@ -11,6 +11,7 @@ import {
 import { authorizeHosting } from "../../src/modules/hosting/authorization";
 import { hostingRegistryLockSQL } from "../../src/modules/hosting/registry-access";
 import test from "node:test";
+import { subtest } from "../helpers/node-test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { auth } from "../../src/modules/auth/auth";
@@ -132,7 +133,7 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
     secondClusterID: string = "",
     secondProjectID: string = "";
   try {
-    await t.test(
+    await subtest(
       "workspace context is authorized, names real owners and distinguishes missing hosting",
       async () => {
         const context = (await call(a.actor, {
@@ -171,7 +172,7 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
         assert.ok(overview.docs.length <= 10);
       },
     );
-    await t.test(
+    await subtest(
       "authorization rejects foreign tenants, customer writes and read-only tokens",
       async () => {
         await assert.rejects(
@@ -202,7 +203,7 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
         );
       },
     );
-    await t.test(
+    await subtest(
       "hosting authorization works without tenant-mapping UPDATE privilege",
       async () => {
         const client = await database.connect(),
@@ -248,7 +249,7 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
         }
       },
     );
-    await t.test(
+    await subtest(
       "existing plan snapshots retain new hosting fields on legacy edits",
       async () => {
         const name = "Hosting plan " + key();
@@ -291,7 +292,7 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
         );
       },
     );
-    await t.test(
+    await subtest(
       "registration is idempotent and enrollment is one-time without inventory secrets",
       async () => {
         const input = {
@@ -537,7 +538,7 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
         );
       },
     );
-    await t.test(
+    await subtest(
       "lower caps block growth and preview cannot write",
       async () => {
         await call(root.actor, {
@@ -586,7 +587,7 @@ test("hosting persists real authorization, quotas, enrollment and fenced operati
         );
       },
     );
-    await t.test(
+    await subtest(
       "managed lifecycle reserves deltas and releases only observed resources",
       async () => {
         await database.query(

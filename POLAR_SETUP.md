@@ -7,7 +7,7 @@ API: `https://api.polar.sh`. This configuration uses **live production**, not sa
 
 ## Implementation
 
-The npm monorepo already uses TypeScript, Bun/Elysia in `apps/control-plane`, and `@polar-sh/sdk` 1.0.2. No adapter or additional SDK dependency was installed. The installed SDK's current versioned `createPolar` and async `webhooks.validateEvent` APIs are used directly.
+The Bun monorepo already uses TypeScript, Bun/Elysia in `apps/control-plane`, and `@polar-sh/sdk` 1.0.2. No adapter or additional SDK dependency was installed. The installed SDK's current versioned `createPolar` and async `webhooks.validateEvent` APIs are used directly.
 
 - `apps/control-plane/src/modules/billing/hosted-client.ts`: one reusable SDK client selected by `POLAR_SERVER`.
 - `apps/control-plane/src/protocols/polar-hosted.ts`: `GET /checkout?products=<id>` creates a hosted checkout; `POST /api/webhook/polar` verifies the original signed bytes before acknowledging events.
@@ -45,7 +45,7 @@ A Python urllib probe was rejected by an edge browser-signature rule (403). The 
 
 ## Local development
 
-Use `npm run dev -w @webdock/api` with the existing local database configuration and `WEBDOCK_API_DOMAINS` including `auth,portal,registry,billing`. The full Webdock API also requires its usual DB/auth configuration; the three Polar keys do not replace it. No long-running dev server was started by this setup.
+Use `bun run --filter @webdock/api dev` with the existing local database configuration and `WEBDOCK_API_DOMAINS` including `auth,portal,registry,billing`. The full Webdock API also requires its usual DB/auth configuration; the three Polar keys do not replace it. No long-running dev server was started by this setup.
 
 ## Webdock catalog
 
