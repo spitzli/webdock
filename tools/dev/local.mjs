@@ -146,13 +146,12 @@ function seed() {
     writeFileSync(pluginFile("invocation.pub"), raw("x"), { mode: 0o600 });
     writeFileSync(pluginFile("credential"), secret(), { mode: 0o600 });
   }
-  // The stored release is authoritative; later image rebuilds never silently rewrite it.
-  let manifest = psql("SELECT manifest_bytes FROM webdock_auth.plugin_release WHERE plugin_id='echo-demo'");
-  if (!manifest) {
-    const value = JSON.parse(readFileSync(join(root, "plugins/echo-demo/manifest.json"), "utf8"));
-    value.image = readFileSync(pluginFile("echo-demo.image"), "utf8").trim();
-    manifest = JSON.stringify(value);
-  }
+  // The stored release keeps its image across rebuilds. A changed repository manifest replaces the
+  // local dev release in place: shadow mode has no upgrade path to preserve.
+  const stored = psql("SELECT manifest_bytes FROM webdock_auth.plugin_release WHERE plugin_id='echo-demo'");
+  const value = JSON.parse(readFileSync(join(root, "plugins/echo-demo/manifest.json"), "utf8"));
+  value.image = stored ? JSON.parse(stored).image : readFileSync(pluginFile("echo-demo.image"), "utf8").trim();
+  const manifest = JSON.stringify(value);
   writeFileSync(pluginFile("echo-demo.manifest.json"), manifest, { mode: 0o644 });
   const credential = createHash("sha256").update(readFileSync(pluginFile("credential"), "utf8")).digest("hex");
   const image = JSON.parse(manifest).image;
@@ -162,9 +161,12 @@ INSERT INTO webdock_admin.customers(id,name) SELECT :'customer','Demo customer' 
 INSERT INTO webdock_admin.projects(id,name,customer_id) SELECT :'project','Demo project',:'customer' WHERE NOT EXISTS(SELECT 1 FROM webdock_admin.projects WHERE id=:'project');
 INSERT INTO webdock_auth.plugin_bootstrap(singleton,mode) VALUES(true,'fresh') ON CONFLICT DO NOTHING;
 INSERT INTO webdock_auth.plugin_installation(id,kind,state,desired_state,version,runtime,current_generation) VALUES('echo-demo','external','enabled','enabled','0.1.0','ready',1) ON CONFLICT DO NOTHING;
-INSERT INTO webdock_auth.plugin_release(plugin_id,version,manifest_bytes,manifest_sha256,image,registry_url,signer_key_id) SELECT 'echo-demo','0.1.0',:'manifest',encode(sha256(convert_to(:'manifest','UTF8')),'hex'),:'image',:'registry','local-dev' WHERE NOT EXISTS(SELECT 1 FROM webdock_auth.plugin_release WHERE plugin_id='echo-demo');
+INSERT INTO webdock_auth.plugin_release(plugin_id,version,manifest_bytes,manifest_sha256,image,registry_url,signer_key_id) VALUES('echo-demo','0.1.0',:'manifest',encode(sha256(convert_to(:'manifest','UTF8')),'hex'),:'image',:'registry','local-dev') ON CONFLICT (plugin_id,version) DO UPDATE SET manifest_bytes=EXCLUDED.manifest_bytes,manifest_sha256=EXCLUDED.manifest_sha256 WHERE webdock_auth.plugin_release.manifest_bytes IS DISTINCT FROM EXCLUDED.manifest_bytes;
 INSERT INTO webdock_auth.plugin_configuration(plugin_id,approved_capabilities,configuration) VALUES('echo-demo','[]','{}') ON CONFLICT DO NOTHING;
 INSERT INTO webdock_auth.plugin_runtime(plugin_id,generation,version,image,status,configuration_revision,credential_hash,namespace,service_name) SELECT 'echo-demo',1,'0.1.0',:'image','ready',0,:'credential','local','echo-demo' WHERE NOT EXISTS(SELECT 1 FROM webdock_auth.plugin_runtime WHERE plugin_id='echo-demo');
+-- Local dev shows the self-service flow: the Demo customer may create notes itself.
+INSERT INTO webdock_auth.plugin_feature_policy(plugin_id,feature_id,mode,updated_by) VALUES('echo-demo','create-notes','selected','local-dev') ON CONFLICT DO NOTHING;
+INSERT INTO webdock_auth.plugin_feature_customer(plugin_id,feature_id,customer_id,added_by) VALUES('echo-demo','create-notes',:'customer','local-dev') ON CONFLICT DO NOTHING;
 COMMIT;`, { ...demo, manifest, image, credential, registry: `http://${registry}` });
   const sockets = (name) => pluginFile(name);
   writeFileSync(pluginFile("host-bindings.json"), JSON.stringify({ runtimes: { "echo-demo": {

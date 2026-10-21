@@ -2,7 +2,7 @@
   "name": "echo-demo",
   "version": "0.1.0",
   "kind": "extension",
-  "description": "Echoes a message back for local plugin development",
+  "description": "Reference self-service plugin: echoes messages and keeps demo notes per project",
   "protocolVersion": 2,
   "sdkVersion": 2,
   "dataProtocolVersion": 2,
@@ -44,34 +44,135 @@
       }
     },
     {
-      "name": "demo.panel",
+      "name": "demo.operator",
       "intent": "read",
       "audience": "operator",
+      "capabilities": []
+    },
+    {
+      "name": "notes.create",
+      "intent": "write",
+      "audience": "customer",
       "capabilities": [],
+      "offering": "note",
+      "feature": "create-notes",
+      "resource": "create",
       "input": {
         "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name"
+        ],
         "properties": {
-          "message": {
+          "name": {
             "type": "string",
-            "maxLength": 200
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "Note name"
           }
-        },
-        "additionalProperties": false
+        }
+      }
+    },
+    {
+      "name": "notes.view",
+      "intent": "read",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "note",
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    {
+      "name": "notes.secret",
+      "intent": "read",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "note",
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    {
+      "name": "notes.delete",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "note",
+      "feature": "create-notes",
+      "resource": "delete",
+      "destructive": true,
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
       }
     }
   ],
   "jobs": [],
-  "offerings": [],
+  "offerings": [
+    {
+      "id": "note",
+      "label": "Note"
+    }
+  ],
   "selfService": {
-    "features": []
+    "features": [
+      {
+        "id": "create-notes",
+        "label": "Create notes",
+        "offering": "note",
+        "description": "Add and remove demo notes in a project"
+      }
+    ]
   },
   "areas": {
     "operator": {
       "pages": [
         {
-          "id": "echo",
-          "label": "Echo demo",
-          "action": "demo.panel"
+          "id": "overview",
+          "label": "Overview",
+          "action": "demo.operator"
+        }
+      ]
+    },
+    "selfService": {
+      "pages": [
+        {
+          "id": "note",
+          "label": "Note",
+          "action": "notes.view",
+          "resource": true
         }
       ]
     }
