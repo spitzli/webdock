@@ -1,4 +1,4 @@
--- Native0026 draft: operators can delete an archived customer that owns nothing else.
+-- Native0025 draft: operators can delete an archived customer that owns nothing else.
 ALTER TYPE webdock_admin.enum_audit_events_action ADD VALUE IF NOT EXISTS 'delete';
 -- The tenant link restricts customer deletion. Release it with the customer, and remove the tenant
 -- organization (its members and invitations cascade) unless other records still refer to it.

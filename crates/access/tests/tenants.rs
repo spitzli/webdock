@@ -38,10 +38,6 @@ async fn tenant_invites_roles_and_revocation_preserve_restricted_boundaries() {
         .execute_unprepared(include_str!("../migrations/0001_access_authority.sql"))
         .await
         .unwrap();
-    offline
-        .execute_unprepared(include_str!("../migrations/0002_customer_onboarding.sql"))
-        .await
-        .unwrap();
     let auth_url = guarded("AUTH_DATABASE_URL");
     let auth = Database::connect(auth_url.clone()).await.unwrap();
     let business = Database::connect(guarded("DATABASE_URL")).await.unwrap();

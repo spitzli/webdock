@@ -1,1 +1,0 @@
-../../access/migrations/0002_customer_onboarding.sql
