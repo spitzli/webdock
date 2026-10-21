@@ -3,57 +3,94 @@
   "version": "0.1.0",
   "kind": "extension",
   "description": "Echoes a message back for local plugin development",
-  "protocolVersion": 1,
-  "sdkVersion": 1,
-  "dataProtocolVersion": 1,
+  "protocolVersion": 2,
+  "sdkVersion": 2,
+  "dataProtocolVersion": 2,
   "coreVersion": ">=0.1.0 <1.0.0",
   "image": "127.0.0.1:5005/webdock/echo-demo@sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "dependencies": [],
   "capabilities": [],
   "schemaVersion": 1,
-  "readableSchema": { "min": 1, "max": 1 },
+  "readableSchema": {
+    "min": 1,
+    "max": 1
+  },
   "migrations": [],
   "tables": [],
-  "services": { "required": [], "optional": [] },
-  "configuration": { "type": "object", "properties": {}, "additionalProperties": false },
+  "services": {
+    "required": [],
+    "optional": []
+  },
+  "configuration": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
   "actions": [
     {
       "name": "demo.echo",
       "intent": "read",
+      "audience": "operator",
       "capabilities": [],
       "input": {
         "type": "object",
-        "properties": { "message": { "type": "string", "maxLength": 200 } },
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
         "additionalProperties": false
       }
     },
     {
       "name": "demo.panel",
       "intent": "read",
+      "audience": "operator",
       "capabilities": [],
       "input": {
         "type": "object",
-        "properties": { "message": { "type": "string", "maxLength": 200 } },
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
         "additionalProperties": false
       }
     }
   ],
   "jobs": [],
-  "navigation": [],
-  "slots": [
-    {
-      "id": "echo",
-      "slot": "project.overview.panel",
-      "order": 0,
-      "path": "/ui/echo",
-      "capabilities": [],
-      "label": "Echo demo",
-      "action": "demo.panel"
+  "offerings": [],
+  "selfService": {
+    "features": []
+  },
+  "areas": {
+    "operator": {
+      "pages": [
+        {
+          "id": "echo",
+          "label": "Echo demo",
+          "action": "demo.panel"
+        }
+      ]
     }
-  ],
+  },
   "events": [],
   "secrets": [],
   "httpBindings": [],
-  "api": [{ "method": "POST", "path": "/echo", "action": "demo.echo" }],
-  "mcp": [{ "name": "echo", "description": "Echo a message within the project", "action": "demo.echo" }]
+  "api": [
+    {
+      "method": "POST",
+      "path": "/echo",
+      "action": "demo.echo"
+    }
+  ],
+  "mcp": [
+    {
+      "name": "echo",
+      "description": "Echo a message within the project",
+      "action": "demo.echo"
+    }
+  ]
 }

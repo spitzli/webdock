@@ -46,8 +46,7 @@ pub async fn seed(owner: &DatabaseConnection) {
     .unwrap();
     manifest["name"] = json!(PLUGIN);
     manifest["capabilities"] = json!(["plugin.http.request"]);
-    manifest["actions"] =
-        json!([{"name":"mail.send","intent":"write","capabilities":["plugin.http.request"]}]);
+    manifest["actions"] = json!([{"name":"mail.send","intent":"write","audience":"operator","capabilities":["plugin.http.request"]}]);
     manifest["services"] = json!({"required":[{"name":"http","version":1}],"optional":[]});
     manifest["jobs"] = json!([]);
     manifest["httpBindings"] = json!(["send"]);

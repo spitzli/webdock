@@ -27,7 +27,7 @@ fn manifest_rejects_unsafe_schemas_images_capabilities_and_lifecycle() {
     for (pointer, value) in [
         ("/image", json!("registry.example.com/notes:latest")),
         ("/name", json!("core")),
-        ("/protocolVersion", json!(2)),
+        ("/protocolVersion", json!(1)),
         (
             "/configuration",
             json!({"type":"object","properties":{"x":{"$ref":"https://evil"}}}),
@@ -46,8 +46,8 @@ fn manifest_rejects_unsafe_schemas_images_capabilities_and_lifecycle() {
         ),
         ("/readableSchema", json!({"min":2,"max":1})),
         (
-            "/navigation",
-            json!([{"id":"x","label":"X","path":"/ui/../secrets"}]),
+            "/areas",
+            json!({"operator":{"pages":[{"id":"x","label":"X","action":"missing"}]}}),
         ),
         (
             "/migrations",
@@ -243,7 +243,7 @@ fn required_services_fail_explicitly_but_optional_services_do_not_block() {
 #[test]
 fn integer_valued_json_numbers_follow_javascript_manifest_semantics() {
     let bytes = include_str!("fixtures/project-notes.json")
-        .replace("\"protocolVersion\": 1", "\"protocolVersion\": 1.0");
+        .replace("\"protocolVersion\": 2", "\"protocolVersion\": 2.0");
     assert!(Manifest::parse(bytes.as_bytes()).is_ok());
 }
 
@@ -283,4 +283,162 @@ fn signed_integer_claims_accept_equivalent_json_number_syntax() {
     value["generation"] = json!(1.0);
     value["iat"] = json!(1000.0);
     assert!(verify_invocation(&signed(&value), &key, "project-notes", 1, 1001).is_ok());
+}
+
+/// A v2 product manifest: one offering, one self-service feature and a resource page.
+fn product() -> Value {
+    let mut v = fixture();
+    v["offerings"] = json!([{"id":"note","label":"Note"}]);
+    v["selfService"] =
+        json!({"features":[{"id":"create-notes","label":"Create notes","offering":"note"}]});
+    let resource = json!({"type":"object","additionalProperties":false,"required":["resource_id"],"properties":{"resource_id":{"type":"string","maxLength":128}}});
+    v["actions"] = json!([
+        {"name":"notes.create","intent":"write","audience":"customer","capabilities":[],"offering":"note","feature":"create-notes","resource":"create",
+         "input":{"type":"object","additionalProperties":false,"properties":{"name":{"type":"string","maxLength":80}}}},
+        {"name":"notes.view","intent":"read","audience":"customer","capabilities":[],"offering":"note","resource":"use","input":resource},
+        {"name":"notes.delete","intent":"write","audience":"customer","capabilities":[],"offering":"note","feature":"create-notes","resource":"delete","input":resource},
+        {"name":"notes.operator","intent":"read","audience":"operator","capabilities":[]}
+    ]);
+    v["jobs"] = json!([]);
+    v["areas"] = json!({
+        "operator":{"pages":[{"id":"overview","label":"Overview","action":"notes.operator"}]},
+        "selfService":{"pages":[{"id":"note","label":"Note","action":"notes.view","resource":true}]}
+    });
+    v
+}
+fn parses(v: &Value) -> bool {
+    Manifest::parse(&serde_json::to_vec(v).unwrap()).is_ok()
+}
+
+#[test]
+fn v2_manifest_accepts_reference() {
+    let m = Manifest::parse(&serde_json::to_vec(&product()).unwrap()).unwrap();
+    assert_eq!(m.offering("note").unwrap()["label"], "Note");
+    assert_eq!(m.feature("create-notes").unwrap()["offering"], "note");
+    assert_eq!(m.features().len(), 1);
+    assert_eq!(m.self_service_pages()[0]["id"], "note");
+    assert_eq!(m.operator_pages()[0]["action"], "notes.operator");
+}
+
+#[test]
+fn rejects_v1_protocol() {
+    let mut v = product();
+    v["protocolVersion"] = json!(1);
+    assert!(!parses(&v));
+    let mut v = product();
+    v["slots"] = json!([]);
+    assert!(!parses(&v));
+}
+
+#[test]
+fn customer_action_needs_gate() {
+    let mut v = product();
+    v["actions"][1].as_object_mut().unwrap().remove("resource");
+    assert!(!parses(&v));
+    let mut v = product();
+    v["actions"][3]["audience"] = json!("everyone");
+    assert!(!parses(&v));
+    let mut v = product();
+    v["actions"][3].as_object_mut().unwrap().remove("audience");
+    assert!(!parses(&v));
+}
+
+#[test]
+fn customer_action_needs_self_service_area() {
+    let mut v = product();
+    v["areas"].as_object_mut().unwrap().remove("selfService");
+    assert!(!parses(&v));
+}
+
+#[test]
+fn feature_must_exist_and_be_used() {
+    let mut v = product();
+    v["actions"][0]["feature"] = json!("missing");
+    assert!(!parses(&v));
+    let mut v = product();
+    v["selfService"]["features"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({"id":"unused","label":"Unused"}));
+    assert!(!parses(&v));
+    let mut v = product();
+    v["selfService"]["features"][0]["offering"] = json!("missing");
+    assert!(!parses(&v));
+    let mut v = product();
+    v["actions"][3]["feature"] = json!("create-notes");
+    assert!(!parses(&v), "operator actions are not self-service");
+}
+
+#[test]
+fn create_needs_feature_and_offering() {
+    for key in ["feature", "offering"] {
+        let mut v = product();
+        v["actions"][0].as_object_mut().unwrap().remove(key);
+        assert!(!parses(&v), "{key}");
+    }
+    let mut v = product();
+    v["actions"][0]["input"]["properties"]["resource_id"] =
+        json!({"type":"string","maxLength":128});
+    assert!(!parses(&v), "create must not take a resource id");
+}
+
+#[test]
+fn use_needs_resource_input() {
+    let mut v = product();
+    v["actions"][1].as_object_mut().unwrap().remove("input");
+    assert!(!parses(&v));
+    let mut v = product();
+    v["actions"][1]["input"]["required"] = json!([]);
+    assert!(!parses(&v));
+    let mut v = product();
+    v["actions"][2]["input"]["properties"]["resource_id"]["maxLength"] = json!(129);
+    assert!(!parses(&v));
+    let mut v = product();
+    v["actions"][2]["input"]["properties"]["resource_id"] = json!({"type":"integer"});
+    assert!(!parses(&v));
+}
+
+#[test]
+fn page_action_must_be_read_of_matching_audience() {
+    let mut v = product();
+    v["areas"]["operator"]["pages"][0]["action"] = json!("notes.view");
+    assert!(!parses(&v));
+    let mut v = product();
+    v["areas"]["selfService"]["pages"][0]["action"] = json!("notes.delete");
+    assert!(!parses(&v));
+    let mut v = product();
+    v["areas"]["selfService"]["pages"][0]["resource"] = json!(false);
+    assert!(!parses(&v));
+    let mut v = product();
+    v["areas"]["selfService"]["pages"][0]["action"] = json!("notes.operator");
+    assert!(!parses(&v));
+}
+
+#[test]
+fn product_names_not_reserved() {
+    for name in ["mail", "hosting", "databases", "storage", "cms"] {
+        let mut v = product();
+        v["name"] = json!(name);
+        assert!(parses(&v), "{name}");
+    }
+    let mut v = product();
+    v["name"] = json!("core");
+    assert!(!parses(&v));
+}
+
+#[test]
+fn ids_unique() {
+    let mut v = product();
+    v["offerings"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({"id":"note","label":"Again"}));
+    assert!(!parses(&v));
+    let mut v = product();
+    let page = v["areas"]["operator"]["pages"][0].clone();
+    v["areas"]["operator"]["pages"]
+        .as_array_mut()
+        .unwrap()
+        .push(page);
+    assert!(!parses(&v));
 }

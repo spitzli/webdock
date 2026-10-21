@@ -87,7 +87,7 @@ async fn real_admission_data_cas_receipts_authority_revocation_and_admin() {
     manifest["actions"]
         .as_array_mut()
         .unwrap()
-        .push(json!({"name":"provider.read","intent":"read","capabilities":["plugin.http.read"]}));
+        .push(json!({"name":"provider.read","intent":"read","audience":"operator","capabilities":["plugin.http.read"]}));
     manifest["api"] = json!([{"method":"GET","path":"/notes","action":"notes.read"},{"method":"POST","path":"/notes","action":"notes.write"}]);
     manifest["mcp"] = json!([{"name":"read","description":"Read scoped notes","action":"notes.read"},{"name":"write","description":"Write scoped notes","action":"notes.write"}]);
     for action in manifest["actions"].as_array_mut().unwrap() {

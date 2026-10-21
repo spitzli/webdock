@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "kind": "extension",
   "description": "Scoped project notes",
-  "protocolVersion": 1,
-  "sdkVersion": 1,
-  "dataProtocolVersion": 1,
+  "protocolVersion": 2,
+  "sdkVersion": 2,
+  "dataProtocolVersion": 2,
   "coreVersion": ">=0.1.0 <1.0.0",
   "image": "registry.example.com/plugins/notes@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "dependencies": [],
@@ -41,14 +41,16 @@
       "intent": "read",
       "capabilities": [
         "plugin.data.read"
-      ]
+      ],
+      "audience": "operator"
     },
     {
       "name": "notes.write",
       "intent": "write",
       "capabilities": [
         "plugin.data.write"
-      ]
+      ],
+      "audience": "operator"
     }
   ],
   "jobs": [
@@ -60,9 +62,16 @@
       ]
     }
   ],
-  "navigation": [],
-  "slots": [],
   "events": [],
   "secrets": [],
-  "httpBindings": []
+  "httpBindings": [],
+  "offerings": [],
+  "selfService": {
+    "features": []
+  },
+  "areas": {
+    "operator": {
+      "pages": []
+    }
+  }
 }

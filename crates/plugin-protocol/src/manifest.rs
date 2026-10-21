@@ -7,28 +7,12 @@ use serde_json::{Map, Value};
 use std::{collections::HashSet, fmt};
 const NAME: &str = r"^[a-z][a-z0-9_.-]*$";
 const SLUG: &str = r"^[a-z][a-z0-9-]*$";
-const UI_PATH: &str = r"^/ui/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)?$";
 const SERVICES: &[&str] = &[
     "apps", "project", "data", "db", "cache", "jobs", "events", "storage", "secrets", "http",
     "audit", "log",
 ];
-const SLOTS: &[&str] = &[
-    "project.overview.panel",
-    "project.actions",
-    "operator.plugin.settings",
-];
-const RESERVED: &[&str] = &[
-    "core",
-    "auth",
-    "registry",
-    "plugins",
-    "mail",
-    "hosting",
-    "databases",
-    "cms",
-    "storage",
-    "billing",
-];
+// Product names (mail, hosting, databases, ...) are plugins now; only platform kernel names stay reserved.
+const RESERVED: &[&str] = &["core", "auth", "registry", "plugins", "billing"];
 fn invalid() -> PluginError {
     PluginError::new(ErrorCode::InvalidInput, "Invalid plugin manifest or value")
 }
@@ -289,7 +273,7 @@ fn table(v: &Value) -> Result<()> {
     Ok(())
 }
 
-/// Validated v1 descriptor. Retains exact field values; signatures must use original bytes.
+/// Validated v2 descriptor. Retains exact field values; signatures must use original bytes.
 #[derive(Debug, Clone)]
 pub struct Manifest {
     value: Value,
@@ -337,6 +321,23 @@ impl Manifest {
             .iter()
             .find(|a| a["name"] == name)
     }
+    pub fn offering(&self, id: &str) -> Option<&Value> {
+        find(&self.value["offerings"], "id", id)
+    }
+    pub fn feature(&self, id: &str) -> Option<&Value> {
+        find(&self.value["selfService"]["features"], "id", id)
+    }
+    pub fn features(&self) -> &[Value] {
+        self.value["selfService"]["features"].as_array().unwrap()
+    }
+    pub fn operator_pages(&self) -> &[Value] {
+        self.value["areas"]["operator"]["pages"].as_array().unwrap()
+    }
+    pub fn self_service_pages(&self) -> &[Value] {
+        self.value["areas"]["selfService"]["pages"]
+            .as_array()
+            .map_or(&[], Vec::as_slice)
+    }
     pub fn require_action_only_lifecycle(&self) -> Result<()> {
         if ["dependencies", "tables", "migrations", "jobs"]
             .iter()
@@ -373,8 +374,9 @@ fn validate_manifest(v: &Value) -> Result<()> {
             "configuration",
             "actions",
             "jobs",
-            "navigation",
-            "slots",
+            "offerings",
+            "selfService",
+            "areas",
             "events",
             "secrets",
             "httpBindings",
@@ -401,7 +403,7 @@ fn validate_manifest(v: &Value) -> Result<()> {
     exact_version(&v["version"])?;
     ensure(v["kind"] == "extension")?;
     for k in ["protocolVersion", "sdkVersion", "dataProtocolVersion"] {
-        ensure(v[k] == 1)?;
+        ensure(v[k] == 2)?;
     }
     text(&v["coreVersion"], 1, 120, None)?;
     v["coreVersion"]
@@ -504,42 +506,31 @@ fn validate_manifest(v: &Value) -> Result<()> {
     }
     unique(&services, Some("name"))?;
     schema(&v["configuration"], 0)?;
-    for (key, max) in [("actions", 64), ("jobs", 32), ("slots", 32)] {
+    for (key, max) in [("actions", 64), ("jobs", 32)] {
         let entries = array(&v[key], 0, max)?;
-        unique(entries, Some(if key == "slots" { "id" } else { "name" }))?;
+        unique(entries, Some("name"))?;
         for entry in entries {
             let required = match key {
-                "actions" => vec!["name", "intent", "capabilities"],
-                "jobs" => vec!["name", "capabilities"],
-                _ => vec!["id", "slot", "order", "path", "capabilities"],
+                "actions" => vec!["name", "intent", "audience", "capabilities"],
+                _ => vec!["name", "capabilities"],
             };
             let optional = match key {
-                "actions" => vec!["input", "output", "storage", "httpBinding", "destructive"],
-                "jobs" => vec!["intervalSeconds", "input"],
-                _ => vec!["label", "action"],
+                "actions" => vec![
+                    "input",
+                    "output",
+                    "storage",
+                    "httpBinding",
+                    "destructive",
+                    "offering",
+                    "feature",
+                    "resource",
+                ],
+                _ => vec!["intervalSeconds", "input"],
             };
             let e = object(entry, &required, &optional)?;
             names(&entry["capabilities"], 0, 32, Some(CAPABILITIES))?;
             for c in entry["capabilities"].as_array().unwrap() {
                 ensure(v["capabilities"].as_array().unwrap().contains(c))?;
-            }
-            if key == "slots" {
-                text(&entry["id"], 1, 64, Some(SLUG))?;
-                text(&entry["path"], 1, 240, Some(UI_PATH))?;
-                ensure(entry["slot"].as_str().is_some_and(|s| SLOTS.contains(&s)))?;
-                integer(&entry["order"], -1000, 1000)?;
-                if let Some(l) = e.get("label") {
-                    text(l, 0, 80, None)?;
-                }
-                if let Some(a) = e.get("action") {
-                    text(a, 1, 64, Some(NAME))?;
-                    ensure(
-                        v["actions"]
-                            .as_array()
-                            .is_some_and(|actions| actions.iter().any(|x| x["name"] == *a)),
-                    )?;
-                }
-                continue;
             }
             text(&entry["name"], 1, 64, Some(NAME))?;
             for k in ["input", "output"] {
@@ -595,14 +586,7 @@ fn validate_manifest(v: &Value) -> Result<()> {
             }
         }
     }
-    let nav = array(&v["navigation"], 0, 32)?;
-    unique(nav, Some("id"))?;
-    for n in nav {
-        object(n, &["id", "label", "path"], &[])?;
-        text(&n["id"], 1, 64, Some(SLUG))?;
-        text(&n["label"], 1, 80, None)?;
-        text(&n["path"], 1, 240, Some(UI_PATH))?;
-    }
+    self_service(v)?;
     let events = array(&v["events"], 0, 32)?;
     unique(events, Some("name"))?;
     for e in events {
@@ -708,6 +692,107 @@ fn validate_manifest(v: &Value) -> Result<()> {
         }
         if let Some(url) = o.get("issues_url") {
             display_url(url)?;
+        }
+    }
+    Ok(())
+}
+fn find<'a>(list: &'a Value, key: &str, id: &str) -> Option<&'a Value> {
+    list.as_array()?.iter().find(|item| item[key] == id)
+}
+/// Offerings, self-service features, action audiences/gates and the two UI areas.
+fn self_service(v: &Value) -> Result<()> {
+    let labelled = |list: &Value, max: usize, optional: &[&str]| -> Result<()> {
+        let items = array(list, 0, max)?;
+        unique(items, Some("id"))?;
+        for item in items {
+            let o = object(item, &["id", "label"], optional)?;
+            text(&item["id"], 1, 64, Some(SLUG))?;
+            text(&item["label"], 1, 80, None)?;
+            if let Some(d) = o.get("description") {
+                text(d, 0, 280, None)?;
+            }
+        }
+        Ok(())
+    };
+    labelled(&v["offerings"], 16, &[])?;
+    object(&v["selfService"], &["features"], &[])?;
+    let features = &v["selfService"]["features"];
+    labelled(features, 32, &["offering", "description"])?;
+    for f in features.as_array().unwrap() {
+        if let Some(o) = f.get("offering") {
+            ensure(find(&v["offerings"], "id", o.as_str().ok_or_else(invalid)?).is_some())?;
+        }
+    }
+    let areas = object(&v["areas"], &["operator"], &["selfService"])?;
+    let actions = v["actions"].as_array().unwrap();
+    for a in actions {
+        let customer = match a["audience"].as_str() {
+            Some("customer") => true,
+            Some("operator") => false,
+            _ => return Err(invalid()),
+        };
+        ensure(!customer || areas.contains_key("selfService"))?;
+        let feature = a.get("feature");
+        let resource = a
+            .get("resource")
+            .map(|r| r.as_str().ok_or_else(invalid))
+            .transpose()?;
+        if let Some(o) = a.get("offering") {
+            ensure(find(&v["offerings"], "id", o.as_str().ok_or_else(invalid)?).is_some())?;
+        }
+        if let Some(f) = feature {
+            ensure(customer && find(features, "id", f.as_str().ok_or_else(invalid)?).is_some())?;
+        }
+        ensure(customer == (feature.is_some() || resource.is_some()))?;
+        let id_input = &a["input"]["properties"]["resource_id"];
+        match resource {
+            None => {}
+            Some("create") => {
+                ensure(feature.is_some() && a.get("offering").is_some() && id_input.is_null())?
+            }
+            Some("use" | "delete") => ensure(
+                id_input["type"] == "string"
+                    && id_input["maxLength"].as_i64().is_some_and(|n| n <= 128)
+                    && a["input"]["required"]
+                        .as_array()
+                        .is_some_and(|r| r.contains(&Value::from("resource_id"))),
+            )?,
+            _ => return Err(invalid()),
+        }
+    }
+    for f in features.as_array().unwrap() {
+        ensure(actions.iter().any(|a| a["feature"] == f["id"]))?;
+    }
+    for (area, customer) in [("operator", false), ("selfService", true)] {
+        let Some(area) = areas.get(area) else {
+            continue;
+        };
+        object(area, &["pages"], &[])?;
+        let pages = array(&area["pages"], 0, 16)?;
+        unique(pages, Some("id"))?;
+        for page in pages {
+            object(
+                page,
+                &["id", "label", "action"],
+                if customer { &["resource"] } else { &[] },
+            )?;
+            text(&page["id"], 1, 64, Some(SLUG))?;
+            text(&page["label"], 1, 80, None)?;
+            let action = find(
+                &v["actions"],
+                "name",
+                page["action"].as_str().ok_or_else(invalid)?,
+            )
+            .ok_or_else(invalid)?;
+            ensure(action["intent"] == "read")?;
+            // ponytail: self-service pages are resource pages; project-level lists come from Core.
+            ensure(if customer {
+                page["resource"] == true
+                    && action["audience"] == "customer"
+                    && action["resource"] == "use"
+            } else {
+                action["audience"] == "operator"
+            })?;
         }
     }
     Ok(())
