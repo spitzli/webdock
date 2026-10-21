@@ -346,8 +346,10 @@ impl AccessService {
         }
         preliminary.commit().await?;
         let invitee = if let TenantCommand::Invite { email, name, role } = &command {
-            if *role == MemberRole::Owner {
-                return Err(Error::InvalidInput);
+            // Ownership is given on purpose: operators and owners may invite owners, admins may not.
+            if *role == MemberRole::Owner && !actor.is_operator() && found["member_role"] != "owner"
+            {
+                return Err(Error::Forbidden);
             }
             Some(
                 self.provision_invitee(&valid_email(email)?, &text(name, 160)?)
@@ -557,9 +559,6 @@ impl AccessService {
         email: &str,
         role: MemberRole,
     ) -> Result<String> {
-        if role == MemberRole::Owner {
-            return Err(Error::InvalidInput);
-        }
         if tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT id FROM webdock_auth.invitation WHERE \"organizationId\"=$1 AND lower(email)=lower($2) AND status='pending'",[org.into(),email.into()])).await?.is_some(){return Err(Error::Conflict)}
         let pending:i64=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT count(*) AS count FROM webdock_auth.invitation WHERE \"organizationId\"=$1 AND status='pending'",[org.into()])).await?.ok_or(Error::Conflict)?.try_get("","count")?;
         if pending >= 100 {

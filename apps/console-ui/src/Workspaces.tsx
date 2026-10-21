@@ -4,11 +4,11 @@ import { Link } from "@tanstack/react-router";
 import { useApi, useSession } from "./context";
 import { Failure, Loading } from "./common";
 import * as ui from "./ui";
-export function Workspaces() {
+import { ArrowLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowLeft";
+import { CustomerMembers } from "./CustomerMembers";
+function useTenants() {
   const api = useApi();
-  const session = useSession();
-  const client = useQueryClient();
-  const tenants = useQuery({
+  return useQuery({
     queryKey: ["tenants"],
     queryFn: () =>
       api.get(
@@ -23,6 +23,32 @@ export function Workspaces() {
         ),
       ),
   });
+}
+/** A customer's own members page: owners and admins invite people and owners hand on roles. */
+export function WorkspaceMembers({ id }: { id: string }) {
+  const tenants = useTenants();
+  const name = tenants.data?.find((tenant) => tenant.id === id)?.name;
+  return (
+    <section>
+      <div className={ui.pageHeading}>
+        <div>
+          <Link className={ui.backLink} to="/$collection" params={{ collection: "tenants" }}>
+            <ArrowLeftIcon />
+            Your workspaces
+          </Link>
+          <h1 className={ui.pageTitle}>{name ?? "Workspace members"}</h1>
+          <p className={ui.pageLead}>Who can open this workspace and what they may change.</p>
+        </div>
+      </div>
+      <CustomerMembers customer={id} />
+    </section>
+  );
+}
+export function Workspaces() {
+  const api = useApi();
+  const session = useSession();
+  const client = useQueryClient();
+  const tenants = useTenants();
   const sites = useQuery({
     queryKey: ["sites"],
     queryFn: () =>
@@ -111,6 +137,11 @@ export function Workspaces() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                {!session.user.preview && (t.role === "owner" || t.role === "admin") ? (
+                  <Link className={ui.cx(ui.button("quiet"), "relative z-10")} to="/$collection/$id" params={{ collection: "tenants", id: t.id }}>
+                    Members
+                  </Link>
+                ) : null}
                 {api.config.enabledFeatures.includes("mail") ? (
                   <Link
                     // The whole row opens Applications when hosting is on, otherwise Mail.

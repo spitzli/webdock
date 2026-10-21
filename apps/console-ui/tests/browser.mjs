@@ -35,6 +35,7 @@ try {
   const invite = firstInvite.getByRole('form', { name: 'Invite a person', exact: true });
   assert.equal(await invite.getByRole('textbox', { name: 'Email address', exact: true }).inputValue(), 'new-owner@example.test');
   assert.equal(await invite.getByRole('textbox', { name: 'Full name', exact: true }).inputValue(), 'New owner');
+  assert.equal(await invite.getByRole('combobox', { name: 'Role', exact: true }).inputValue(), 'owner', 'a new customer gets its owner first');
   await invite.getByRole('button', { name: 'Send invitation', exact: true }).click();
   assert.match(await page.getByRole('textbox', { name: 'Invitation link', exact: true }).inputValue(), /\/reset-password\?token=[0-9a-f]{64}&invitation=/);
   await firstInvite.getByRole('button', { name: 'Done', exact: true }).click();
@@ -64,6 +65,19 @@ try {
   await page.waitForURL(/\/customers$/);
   await page.getByRole('link', { name: 'Acceptance customer', exact: true }).waitFor();
   assert.equal(await page.getByRole('link', { name: 'Edited after create', exact: true }).count(), 0, 'the deleted customer leaves the list');
+  // Operators and owners set roles, including handing on ownership, and remove members.
+  await page.goto(previewOrigin + '/customers/101');
+  const graceRole = page.getByRole('combobox', { name: 'Role of Grace Admin', exact: true });
+  await graceRole.selectOption('owner');
+  await page.getByRole('status').filter({ hasText: 'Change saved.' }).waitFor();
+  assert.equal(await graceRole.inputValue(), 'owner', 'ownership can be given to another member');
+  await page.getByRole('region', { name: 'Members', exact: true }).getByRole('listitem').filter({ hasText: 'Grace Admin' }).getByRole('button', { name: 'Remove', exact: true }).click();
+  await graceRole.waitFor({ state: 'detached' });
+  // Customer owners and admins reach the same members management from their workspace list.
+  await page.goto(previewOrigin + '/tenants');
+  await page.getByRole('link', { name: 'Members', exact: true }).first().click();
+  await page.getByRole('heading', { name: 'Acceptance customer', exact: true }).waitFor();
+  await page.getByRole('region', { name: 'Members', exact: true }).waitFor();
   await page.goto(previewOrigin + '/projects');
   for (const width of [320, 375, 414, 768, 1280]) {
     await page.setViewportSize({ width, height: 812 });
@@ -87,5 +101,5 @@ try {
   await page.getByRole('heading', { name: 'Change password', exact: true }).waitFor();
   await workbenchBrowserChecks(page);
   assert.deepEqual(errors, []);
-  console.log('Browser checks passed: edit/create/archive, customer deletion, invitations with copyable link, unsaved navigation, responsive light/dark layout, palette, mobile navigation, hosting and extension lifecycle. Test-only HTTP fixtures; not live auth or tenant acceptance.');
+  console.log('Browser checks passed: edit/create/archive, customer deletion, member roles and ownership, invitations with copyable link, unsaved navigation, responsive light/dark layout, palette, mobile navigation, hosting and extension lifecycle. Test-only HTTP fixtures; not live auth or tenant acceptance.');
 } finally { await browser.close(); await server.close(); }

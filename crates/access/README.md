@@ -54,7 +54,9 @@ The coordinated policy-generator changes are in `apps/control-plane/src/db/datab
 
 ## Invitation onboarding
 
-Register `migrations/0002_customer_onboarding.sql` as native migration 0025. It adds `webdock_admin.customers.onboarding` (`managed` default, or `self-service`), readable by the auth roles and changed only through the operator registry. The invitation read returns `customerID` and `onboarding` so the account page can offer the profile step to self-service owners and admins.
+Ownership is given on purpose: operators and owners may invite a person as `owner`; administrators may not (`Forbidden`). The Console offers the owner role first while a customer has no owner and no pending owner invitation, which covers the step right after creating a customer. Owners and operators can make further members owners; the last-owner guard still applies. The invitation read returns `customerID`, and owners and admins who join a customer workspace confirm the prefilled customer details.
+
+`get_tenant` returns every invitation's progress (invited, email delivered, account set up, joined) read on the auth connection after the manage check, plus the latest activity entries visible to the actor under row security.
 
 Inviting an address without a local account sends a single activation mail whose link (`/reset-password?token=…&invitation=…`) creates the password, signs the person in and continues into the invitation; no separate invitation mail is queued for that person. Existing accounts keep the plain invitation mail. Operators receive the one-use link in `ChangeResult.link` to hand over directly; customer administrators never do.
 

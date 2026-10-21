@@ -408,6 +408,23 @@ async fn tenant_invites_roles_and_revocation_preserve_restricted_boundaries() {
         .await
         .unwrap();
     let recipient_member = accepted["member"]["id"].as_str().unwrap().to_owned();
+    assert!(
+        matches!(
+            access
+                .manage_tenant(
+                    cookie(&cookies[2]),
+                    &customers[0],
+                    TenantCommand::Invite {
+                        email: "would-be-owner@example.invalid".into(),
+                        name: "Would-be owner".into(),
+                        role: MemberRole::Owner,
+                    },
+                )
+                .await,
+            Err(Error::Forbidden)
+        ),
+        "an administrator cannot hand out ownership"
+    );
     assert_eq!(
         access
             .list_tenants(cookie(&cookies[2]))
@@ -582,6 +599,86 @@ async fn tenant_invites_roles_and_revocation_preserve_restricted_boundaries() {
         .await
         .unwrap();
     let operator_cookie = cookie(&operator_session.set_cookie);
+    // An operator invites the first owner on purpose; owners can make others owners.
+    let empty = allocator.allocate().await.unwrap().to_string();
+    offline
+        .execute_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "INSERT INTO webdock_admin.customers(id,name) VALUES($1,'Access first owner')",
+            [empty.clone().into()],
+        ))
+        .await
+        .unwrap();
+    let join = async |email: &str, session: &str, role| {
+        let invitation = access
+            .manage_tenant(
+                operator_cookie,
+                &empty,
+                TenantCommand::Invite {
+                    email: email.into(),
+                    name: "Fixture".into(),
+                    role,
+                },
+            )
+            .await
+            .unwrap()
+            .id
+            .unwrap();
+        access
+            .respond_invitation(cookie(session), &invitation, true)
+            .await
+            .unwrap()["member"]
+            .clone()
+    };
+    let mut fresh_people = vec![];
+    for label in ["first-owner", "second-owner"] {
+        let email = format!(
+            "access-{label}-{}@example.invalid",
+            allocator.allocate().await.unwrap()
+        );
+        let id = identity
+            .create_local_account(&email, "Access fixture", "fixture-password-123", false)
+            .await
+            .unwrap();
+        auth.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.\"user\" SET \"emailVerified\"=true,\"mustChangePassword\"=false WHERE id=$1",[id.into()])).await.unwrap();
+        let PasswordAuthentication::Authenticated(s) = identity
+            .authenticate_password(&email, "fixture-password-123")
+            .await
+            .unwrap()
+        else {
+            panic!("sign in")
+        };
+        fresh_people.push((email, s.set_cookie));
+    }
+    let first = join(&fresh_people[0].0, &fresh_people[0].1, MemberRole::Owner).await;
+    assert_eq!(
+        first["role"], "owner",
+        "an owner invitation makes the invitee owner"
+    );
+    let second = join(&fresh_people[1].0, &fresh_people[1].1, MemberRole::Admin).await;
+    assert_eq!(second["role"], "admin", "members keep their invited role");
+    access
+        .manage_tenant(
+            cookie(&fresh_people[0].1),
+            &empty,
+            TenantCommand::Role {
+                member: second["id"].as_str().unwrap().into(),
+                role: MemberRole::Owner,
+            },
+        )
+        .await
+        .expect("an owner can make another member an owner");
+    access
+        .manage_tenant(
+            cookie(&fresh_people[0].1),
+            &empty,
+            TenantCommand::Role {
+                member: first["id"].as_str().unwrap().into(),
+                role: MemberRole::Admin,
+            },
+        )
+        .await
+        .expect("with a second owner the first owner can step down");
     assert!(
         !access
             .list_access(operator_cookie, "recipent")

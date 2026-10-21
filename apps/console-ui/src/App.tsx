@@ -18,7 +18,7 @@ import { PageFailure, PageProgress } from "./AuthFrame";
 const AccountApp = lazy(() =>
   import("./AccountUI").then((module) => ({ default: module.AccountApp })),
 );
-import { Workspaces } from "./Workspaces";
+import { WorkspaceMembers, Workspaces } from "./Workspaces";
 import { LocaleProvider } from "./Locale";
 import { parseConsoleSearch } from "./search";
 const DatabaseDirectory = lazy(() =>
@@ -132,6 +132,8 @@ function RegistryRoute({ kind }: { kind: "list" | "detail" | "new" }) {
   ).useSearch();
   if (session.user.mustChangePassword)
     return <Navigate to="/account" replace />;
+  if (params.collection === "tenants" && kind === "detail" && params.id && !session.user.preview)
+    return <WorkspaceMembers id={params.id} />;
   if (
     session.user.role !== "operator" ||
     session.user.preview ||

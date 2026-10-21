@@ -34,6 +34,8 @@ const records = {
   ],
   "audit-events": [],
 } satisfies Record<string, z.infer<typeof recordSchema>[]>;
+// Test-only members per customer.
+const members: Record<string, { id: string; role: string; name: string; email: string }[]> = {};
 // Test-only tenant invitations per customer.
 const tenants: Record<string, { id: string; email: string; role: string; status: string; createdAt: string; progress: { emailDelivered: string; accountReady: boolean; joinedAt: null } }[]> = {};
 const activity: Record<string, { id: string; action: string; outcome: string; createdAt: string; actorName: string }[]> = {};
@@ -88,15 +90,30 @@ async function registry(req: IncomingMessage, url: URL) {
   list.push(created);
   return created;
 }
+// The seeded customer already has its owner and one administrator.
+function peopleOf(customer: string) {
+  return (members[customer] ??= customer === "101" ? [
+    { id: "6001", role: "owner", name: "Ada Owner", email: "ada@example.test" },
+    { id: "6002", role: "admin", name: "Grace Admin", email: "grace@example.test" },
+  ] : []);
+}
+function memberChange(people: (typeof members)[string], command: { action: string; member?: string | undefined; role?: string | undefined }) {
+  const person = people.find((row) => row.id === command.member);
+  if (person && command.action === "role") person.role = command.role ?? person.role;
+  if (person && command.action === "remove") people.splice(people.indexOf(person), 1);
+  return { id: command.member, message: "Change saved." };
+}
 async function tenant(req: IncomingMessage, url: URL) {
   const match = /^\/api\/console\/tenant\/([0-9]+)$/.exec(url.pathname);
   if (!match) return undefined;
   const invitations = (tenants[match[1] ?? ""] ??= []);
   const events = (activity[match[1] ?? ""] ??= []);
-  if (req.method !== "POST") return { canManage: true, members: [], invitations, activity: events };
+  const people = peopleOf(match[1] ?? "");
+  if (req.method !== "POST") return { canManage: true, operator: true, tenant: { member_role: null }, members: people, invitations, activity: events };
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(Buffer.from(chunk as Buffer));
-  const command = z.object({ action: z.string(), email: z.string().optional(), role: z.string().optional(), invitation: z.string().optional() }).parse(JSON.parse(Buffer.concat(chunks).toString()));
+  const command = z.object({ action: z.string(), email: z.string().optional(), role: z.string().optional(), invitation: z.string().optional(), member: z.string().optional() }).parse(JSON.parse(Buffer.concat(chunks).toString()));
+  if (command.action === "role" || command.action === "remove") return memberChange(people, command);
   if (command.action === "invite" && command.email) invitations.push({ id: String(5000 + invitations.length), email: command.email, role: command.role ?? "admin", status: "pending", createdAt: new Date().toISOString(), progress: { emailDelivered: "queued", accountReady: false, joinedAt: null } });
   events.unshift({ id: String(7000 + events.length), action: `tenant-${command.action}`, outcome: "succeeded", createdAt: new Date().toISOString(), actorName: "Acceptance operator" });
   const target = command.invitation ?? invitations.at(-1)?.id ?? "0";

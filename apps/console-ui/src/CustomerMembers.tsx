@@ -9,6 +9,8 @@ import * as ui from "./ui";
 
 const tenantSchema = z.object({
   canManage: z.boolean(),
+  operator: z.boolean().default(false),
+  tenant: z.object({ member_role: z.string().nullish() }).default({}),
   members: z.array(z.object({ id: z.string(), role: z.string(), name: z.string(), email: z.string(), mustChangePassword: z.boolean().nullish() })),
   invitations: z.array(z.object({
     id: z.string(), email: z.string(), role: z.string(), status: z.string(), name: z.string().nullish(),
@@ -100,6 +102,11 @@ export function CustomerMembers({ customer, welcome }: { customer: string; welco
   if (tenant.error) return <Failure error={tenant.error} retry={() => { void tenant.refetch(); }} />;
   const result = change.data;
   const busy = !tenant.data.canManage || change.isPending;
+  // Operators and owners manage roles, including ownership; the server keeps at least one owner.
+  const canSetRoles = tenant.data.canManage && (tenant.data.operator || tenant.data.tenant.member_role === "owner");
+  // Until someone owns the workspace (or is invited to), the next invitation offers ownership first.
+  const needsOwner = canSetRoles && !tenant.data.members.some((member) => member.role === "owner")
+    && !tenant.data.invitations.some((invitation) => invitation.role === "owner" && invitation.status === "pending" && !invitation.expired);
   // Everything that still needs attention, plus the ten newest answered invitations; older ones fold away.
   const answered = tenant.data.invitations.filter((invitation) => invitation.status !== "pending");
   const recent = tenant.data.invitations.filter((invitation) => invitation.status === "pending" || answered.indexOf(invitation) < 10);
@@ -136,7 +143,8 @@ export function CustomerMembers({ customer, welcome }: { customer: string; welco
           <label className={ui.field}>Full name<input className={ui.input} name="name" required maxLength={160} autoComplete="off" defaultValue={defaults?.name} disabled={change.isPending} /></label>
           <FieldError className="" message={live.errors.name} />
         </div>
-        <label className={ui.cx(`${ui.field} content-start`)}>Role<select className={ui.input} name="role" defaultValue="admin" disabled={change.isPending}>
+        <label className={ui.cx(`${ui.field} content-start`)}>Role<select className={ui.input} name="role" defaultValue={needsOwner ? "owner" : "admin"} disabled={change.isPending}>
+          {canSetRoles ? <option value="owner">Owner</option> : null}
           <option value="admin">Administrator</option>
           <option value="member">Member</option>
         </select></label>
@@ -164,7 +172,7 @@ export function CustomerMembers({ customer, welcome }: { customer: string; welco
           </ol>
           <h2 className={ui.sectionTitle}>{sent ? "Invitation sent" : "Invite the first person"}</h2>
           <p className="-mt-2 text-sm text-muted">
-            {sent ? "They get one email to set up their account and join. You can follow their progress on this page." : "Usually the contact you just entered. They confirm the customer details after joining."}
+            {sent ? "They get one email to set up their account and join. You can follow their progress on this page." : "Usually the contact you just entered, invited as owner. Owners manage the workspace and confirm the customer details after joining."}
           </p>
         </div>
         {outcome}
@@ -203,16 +211,26 @@ export function CustomerMembers({ customer, welcome }: { customer: string; welco
     <section className={ui.cx(`${ui.card} mt-8`)} aria-label="Members">
       <div className={ui.cardBody}>
         <h2 className={ui.sectionTitle}>Members</h2>
-        <p className="-mt-2 text-sm text-muted">People who can open this customer's workspace. New people get one email to set up their account and join.</p>
+        <p className="-mt-2 text-sm text-muted">People who can open this customer's workspace. New people get one email to set up their account and join. Owners manage everything here, including who else is an owner.</p>
       </div>
       {tenant.data.members.length ? (
         <ul>
           {tenant.data.members.map((member) => (
             <li key={member.id} className={ui.cardRow}>
               <span className="grid min-w-0"><strong className="font-medium">{member.name}</strong><span className="truncate text-[13px] text-muted">{member.email}</span></span>
-              <span className="flex items-center gap-2">
+              <span className="flex flex-wrap items-center gap-2">
                 {member.mustChangePassword ? <span className={ui.badge("warning")}>Setup pending</span> : null}
-                <span className="text-[13px] text-muted capitalize">{member.role}</span>
+                {canSetRoles ? (
+                  <select className={ui.cx(ui.input, "min-h-9 w-auto")} aria-label={`Role of ${member.name}`} value={member.role} disabled={change.isPending}
+                    onChange={(event) => { change.mutate({ action: "role", member: member.id, role: event.target.value }); }}>
+                    <option value="owner">Owner</option>
+                    <option value="admin">Administrator</option>
+                    <option value="member">Member</option>
+                  </select>
+                ) : <span className="text-[13px] text-muted capitalize">{member.role}</span>}
+                {canSetRoles || (tenant.data.canManage && member.role === "member") ? (
+                  <button className={ui.button("quiet")} disabled={change.isPending} onClick={() => { change.mutate({ action: "remove", member: member.id }); }}>Remove</button>
+                ) : null}
               </span>
             </li>
           ))}
