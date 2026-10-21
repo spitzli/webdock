@@ -53,21 +53,26 @@ async function open(browser, label) {
     state.revision += 1;
     return route.fulfill({ json: { revision: String(state.revision) } });
   });
-  await page.route((url) => url.pathname === '/v1/operator/registry/customers', json({ docs: [{ id: '101', name: 'Demo customer', status: 'active' }], page: 1, totalPages: 1, totalDocs: 1, hasNextPage: false, hasPrevPage: false }));
+  await page.route(path('/v1/operator/registry/customers/101'), json({ id: '101', name: 'Demo customer', status: 'active' }));
+  await page.route(path('/api/console/customers/101/self-service'), (route) => route.fulfill({ json: [{ plugin: 'echo-demo', pluginRevision: String(state.revision), feature: 'create-notes', label: 'Create notes', mode: state.mode, allowed: state.customers.includes('101') }] }));
   return { page, context, errors };
 }
 const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } : {}) });
 const errors = [];
 try {
-  // 1. The operator lets selected customers create notes and adds Demo.
+  // 1. The operator lets selected customers create notes, then allows Demo on its customer page.
   let session = await open(browser, 'operator');
   await session.page.goto(previewOrigin + '/extensions/echo-demo');
   const mode = session.page.getByRole('combobox', { name: 'Who can do this themselves' });
   assert.equal(await mode.inputValue(), 'assigned', 'nothing is self-service by default');
   await mode.selectOption('selected');
-  await session.page.getByText('No customers yet.').waitFor();
-  await session.page.getByRole('combobox', { name: 'Add a customer' }).selectOption('101');
-  await session.page.getByRole('button', { name: 'Remove Demo customer' }).waitFor();
+  await session.page.getByText(/No customers yet\./).waitFor();
+  assert.equal(await session.page.getByRole('combobox', { name: 'Add a customer' }).count(), 0, 'customers are chosen on the customer page');
+  await session.page.goto(previewOrigin + '/customers/101');
+  await session.page.getByRole('checkbox', { name: 'Create notes' }).click();
+  await session.page.waitForFunction(() => document.querySelector('[aria-label="Self-service"] input[type=checkbox]')?.checked === true);
+  await session.page.goto(previewOrigin + '/extensions/echo-demo');
+  await session.page.getByText(/Allowed for Demo customer\./).waitFor();
   errors.push(...session.errors);
   await session.context.close();
 
@@ -118,5 +123,5 @@ try {
 
   assert.equal(state.puts.length, 3);
   assert.deepEqual(errors, []);
-  console.log('Self-service checks passed: operator modes and allow list, customer create and reveal, assigned mode keeps resources, member read-only. Test-only HTTP fixtures.');
+  console.log('Self-service checks passed: operator modes, allow list on the customer page, customer create and reveal, assigned mode keeps resources, member read-only. Test-only HTTP fixtures.');
 } finally { await browser.close(); await server.close(); }

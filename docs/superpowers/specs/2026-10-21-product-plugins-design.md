@@ -144,8 +144,8 @@ Product plugins provision real workloads: CNPG clusters, Stalwart instances and 
 ### Operator area
 
 - **Extensions → *plugin*:** the plugin's operator pages, with plugin navigation and declarative panels.
-- **Self-service tab per plugin:** every declared feature with its mode switch (`everyone`, `selected`, `assigned`) and, for `selected`, a customer picker.
-- **Customer page → Self-service:** for one customer, every `selected` feature of every plugin, with a checkbox to add or remove that customer. It edits the same allow list from the other side.
+- **Self-service tab per plugin:** global settings only. Every declared feature has its mode switch (`everyone`, `selected`, `assigned`); for `selected` the tab only lists who is allowed.
+- **Customer page → Self-service:** the place where the operator decides per customer. For one customer, every `selected` feature of every plugin, with a checkbox to add or remove that customer.
 - **Assign:** in the plugin's operator pages, a create form that additionally asks for customer and project. It invokes the same create action with operator authority and a target project.
 
 ### Self-service area
@@ -166,6 +166,10 @@ Extend `apps/console-ui/src/plugins/contracts.ts` (panel v1: text, status, table
 - a **reveal** block for credentials that calls a dedicated read action on click, is audited, and never puts the secret into panel data
 
 Webmail and other editors that cannot be declarative use the existing isolated custom UI mode.
+
+### First-party plugin UI (Rust + React)
+
+The initial plugins (PostgreSQL, mail, hosting, storage, Tabularis) are built like the Core: a Rust backend and a React frontend with the Console's toolchain and design system. Each ships a React package in `plugins/<name>/ui` with its operator and self-service pages. The Console bundles these packages at build time and loads each lazily. A page appears only when the plugin is installed and its manifest declares the page; every call still goes through the plugin action API and its gates. Declarative panels remain for third-party plugins, whose code never runs in the Console origin.
 
 ## Plugins and order
 
