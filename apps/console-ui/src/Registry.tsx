@@ -1,4 +1,4 @@
-import { ProjectExtensions } from "./plugins/ProjectExtensions";
+import { CustomerSelfService } from "./plugins/SelfServicePolicy";
 import { CustomerMembers } from "./CustomerMembers";
 import { formText } from "./form";
 import { useEffect, useState } from "react";
@@ -349,8 +349,15 @@ export function RegistryDetail({
       ) : (
         <RegistryForm key={id} collection={collection} record={record.data} />
       )}
-      {collection === "projects" ? <ProjectExtensions projectID={id} /> : null}
+      {collection === "projects" && record.data.customer ? (
+        <p className="mt-6">
+          <Link className={ui.button()} to="/workspaces/$customer/projects/$id" params={{ customer: record.data.customer, id }}>
+            Open project resources
+          </Link>
+        </p>
+      ) : null}
       {collection === "customers" && record.data.status === "active" && created !== "customers" ? <CustomerMembers customer={id} /> : null}
+      {collection === "customers" && record.data.status === "active" ? <CustomerSelfService customer={id} /> : null}
     </section>
   );
 }

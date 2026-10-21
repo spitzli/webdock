@@ -78,7 +78,13 @@ export function InstalledExtensions() {
               {query.data.map((plugin) => (
                 <tr key={plugin.id} className={ui.tr}>
                   <td className={ui.cx(`${ui.td} min-w-[170px]`)}>
-                    <strong className="font-medium">{plugin.id}</strong>
+                    {plugin.kind === "external" ? (
+                      <Link className="font-medium underline-offset-[3px] hover:underline" to="/extensions/$plugin" params={{ plugin: plugin.id }}>
+                        {plugin.id}
+                      </Link>
+                    ) : (
+                      <strong className="font-medium">{plugin.id}</strong>
+                    )}
                     <span className={ui.cx(`block text-muted ${ui.mono}`)}>
                       {plugin.kind === "builtin" ? "Built-in" : "External"} ·{" "}
                       {plugin.version}

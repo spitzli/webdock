@@ -57,6 +57,18 @@ const InstalledExtensions = lazy(() =>
     default: module.InstalledExtensions,
   })),
 );
+const PluginSettings = lazy(() =>
+  import("./plugins/SelfServicePolicy").then((module) => ({
+    default: module.PluginSettings,
+  })),
+);
+const ResourcePage = lazy(() =>
+  import("./plugins/ResourcePage").then((module) => ({
+    default: module.ResourcePage,
+  })),
+);
+import { WorkspaceProjects } from "./WorkspaceProjects";
+import { ProjectPage } from "./ProjectPage";
 const ExtensionOperation = lazy(() =>
   import("./plugins/ExtensionOperation").then((module) => ({
     default: module.ExtensionOperation,
@@ -311,6 +323,46 @@ const hostingOperationRoute = createRoute({
     );
   },
 });
+const extensionRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/extensions/$plugin",
+  component: () => {
+    const { plugin } = extensionRoute.useParams();
+    return (
+      <Suspense fallback={<Loading>Loading extension…</Loading>}>
+        <PluginSettings key={plugin} plugin={plugin} />
+      </Suspense>
+    );
+  },
+});
+const workspaceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/workspaces/$id",
+  component: () => {
+    const { id } = workspaceRoute.useParams();
+    return <WorkspaceProjects key={id} id={id} />;
+  },
+});
+const projectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/workspaces/$customer/projects/$id",
+  component: () => {
+    const { customer, id } = projectRoute.useParams();
+    return <ProjectPage key={id} customer={customer} id={id} />;
+  },
+});
+const resourceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/workspaces/$customer/projects/$id/resources/$plugin/$resource",
+  component: () => {
+    const { customer, id, plugin, resource } = resourceRoute.useParams();
+    return (
+      <Suspense fallback={<Loading>Loading…</Loading>}>
+        <ResourcePage key={`${plugin}:${resource}`} customer={customer} projectID={id} plugin={plugin} resource={resource} />
+      </Suspense>
+    );
+  },
+});
 const extensionOperationRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/extensions/operations/$operationID",
@@ -377,7 +429,11 @@ const router = createRouter({
     indexRoute,
     accountRoute,
     extensionsRoute,
+    extensionRoute,
     extensionOperationRoute,
+    workspaceRoute,
+    projectRoute,
+    resourceRoute,
     mailRoute,
     inboxRoute,
     hostingRoute,

@@ -105,7 +105,9 @@ export function Workspaces() {
             {tenants.data.map((t) => (
               <li key={t.id} className={ui.cx(ui.cardRow, ui.clickableRow)}>
                 <div>
-                  <strong className="font-medium">{t.name}</strong>
+                  <Link className={ui.cx(ui.rowLink, "font-medium")} to="/workspaces/$id" params={{ id: t.id }}>
+                    {t.name}
+                  </Link>
                   <p className="text-[13px] text-muted">
                     {t.status}
                     {t.role ? ` · ${t.role}` : ""}
@@ -119,8 +121,7 @@ export function Workspaces() {
                 ) : null}
                 {api.config.enabledFeatures.includes("mail") ? (
                   <Link
-                    // The whole row opens Applications when hosting is on, otherwise Mail.
-                    className={ui.cx(ui.button(), api.config.enabledFeatures.includes("hosting") ? "relative z-10" : ui.rowLink)}
+                    className={ui.cx(ui.button(), "relative z-10")}
                     to="/mail"
                     search={{ customer: t.id }}
                   >
@@ -129,7 +130,7 @@ export function Workspaces() {
                 ) : null}
                 {api.config.enabledFeatures.includes("hosting") ? (
                   <Link
-                    className={ui.cx(ui.button(), ui.rowLink)}
+                    className={ui.cx(ui.button(), "relative z-10")}
                     to="/hosting"
                     search={{ customer: t.id }}
                   >

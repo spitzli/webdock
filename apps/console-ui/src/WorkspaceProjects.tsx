@@ -1,0 +1,96 @@
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { z } from "zod";
+import { ArrowLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowLeft";
+import { useApi, useSession } from "./context";
+import { Empty, Failure, Loading } from "./common";
+import { formText } from "./form";
+import * as ui from "./ui";
+
+const tenantsSchema = z.array(z.object({ id: z.string(), name: z.string(), status: z.string(), role: z.string().nullable() }));
+const projectsSchema = z.array(z.object({ id: z.string(), name: z.string(), status: z.string() }));
+
+/** A workspace's projects. Owners, admins and operators start new ones here. */
+export function WorkspaceProjects({ id }: { id: string }) {
+  const api = useApi();
+  const session = useSession();
+  const client = useQueryClient();
+  const navigate = useNavigate();
+  const tenants = useQuery({ queryKey: ["tenants"], queryFn: ({ signal }) => api.get("/api/console/tenants", tenantsSchema, signal) });
+  const projects = useQuery({
+    queryKey: ["workspace-projects", id],
+    queryFn: ({ signal }) => api.get(`/api/console/tenant/${encodeURIComponent(id)}/projects`, projectsSchema, signal),
+  });
+  const [adding, setAdding] = useState(false);
+  const create = useMutation({
+    mutationFn: (name: string) =>
+      api.write(`/api/console/tenant/${encodeURIComponent(id)}/projects`, "POST", { name }, z.object({ id: z.string() })),
+    onSuccess: async (project) => {
+      await client.invalidateQueries({ queryKey: ["workspace-projects", id] });
+      await navigate({ to: "/workspaces/$customer/projects/$id", params: { customer: id, id: project.id } });
+    },
+  });
+  const tenant = tenants.data?.find((t) => t.id === id);
+  const operator = session.user.role === "operator" && !session.user.preview;
+  const canCreate = !session.user.preview && (operator || tenant?.role === "owner" || tenant?.role === "admin");
+  if (projects.isPending) return <Loading>Loading projects…</Loading>;
+  if (projects.error) return <Failure error={projects.error} retry={() => void projects.refetch()} />;
+  return (
+    <section>
+      <div className={ui.pageHeading}>
+        <div>
+          <Link className={ui.backLink} to="/$collection" params={{ collection: "tenants" }}>
+            <ArrowLeftIcon />
+            Your workspaces
+          </Link>
+          <h1 className={ui.pageTitle}>{tenant?.name ?? "Workspace"}</h1>
+          <p className={ui.pageLead}>Projects group the databases, mail and other resources you use together.</p>
+        </div>
+        {canCreate && !adding ? (
+          <button className={ui.button("primary")} onClick={() => { setAdding(true); }}>
+            New project
+          </button>
+        ) : null}
+      </div>
+      {adding ? (
+        <form
+          className={ui.cx(ui.card, ui.cardBody, "mb-6 gap-4")}
+          onSubmit={(event) => {
+            event.preventDefault();
+            create.mutate(formText(new FormData(event.currentTarget), "name"));
+          }}
+        >
+          <label className={ui.field}>
+            Project name
+            <input className={ui.input} name="name" required maxLength={120} autoFocus disabled={create.isPending} />
+          </label>
+          {create.error ? <p role="alert" className="text-sm text-danger">{create.error.message}</p> : null}
+          <div className="flex gap-3">
+            <button className={ui.button("primary")} disabled={create.isPending}>
+              {create.isPending ? "Creating…" : "Create project"}
+            </button>
+            <button type="button" className={ui.button()} onClick={() => { setAdding(false); }} disabled={create.isPending}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : null}
+      {projects.data.length === 0 ? (
+        <Empty title="No projects yet">
+          {canCreate ? "Create a project to start adding resources." : "Your provider adds projects to this workspace for you."}
+        </Empty>
+      ) : (
+        <ul className={ui.card}>
+          {projects.data.map((project) => (
+            <li key={project.id} className={ui.cx(ui.cardRow, ui.clickableRow)}>
+              <Link className={ui.cx(ui.rowLink, "font-medium")} to="/workspaces/$customer/projects/$id" params={{ customer: id, id: project.id }}>
+                {project.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}

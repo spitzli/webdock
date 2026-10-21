@@ -203,7 +203,7 @@ export function Shell() {
           <Link
             to="/$collection"
             params={{ collection: "tenants" }}
-            className={navItem(false)}
+            className={navItem(pathname.startsWith("/workspaces") || pathname.startsWith("/tenants"))}
           >
             <BuildingsIcon size={18} />
             Workspaces
@@ -554,7 +554,7 @@ function sectionTitle(pathname: string): string {
   if (pathname.startsWith("/databases")) return "Databases";
   if (pathname === "/audit-events") return "Audit trail";
   if (pathname === "/account") return "Account";
-  if (pathname.startsWith("/tenants")) return "Workspaces";
+  if (pathname.startsWith("/tenants") || pathname.startsWith("/workspaces")) return "Workspaces";
   return "Extensions";
 }
 
