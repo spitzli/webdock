@@ -29,3 +29,6 @@ apps/control-plane/dist-core/
 
 # Local Tilt development state (generated credentials and database bootstrap output).
 /.dev-local/
+
+# Process core dumps
+core.[0-9]*
