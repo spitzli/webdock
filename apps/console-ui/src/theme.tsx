@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { MonitorIcon } from "@phosphor-icons/react/dist/csr/Monitor";
 import { MoonIcon } from "@phosphor-icons/react/dist/csr/Moon";
 import { SunIcon } from "@phosphor-icons/react/dist/csr/Sun";
+import { button } from "./ui";
 export type ThemePreference = "system" | "light" | "dark";
 const key = "webdock.theme.v1";
 // Absent in some embedded and test environments; the light theme is the safe fallback.
@@ -31,7 +32,7 @@ export function ThemeButton() {
     try { localStorage.setItem(key, preference); } catch { /* Storage can be disabled by browser policy. */ }
   }, [preference]);
   const Icon = preference === "system" ? MonitorIcon : preference === "dark" ? MoonIcon : SunIcon;
-  return <button className="button icon-button quiet" aria-label={`${labels[preference]}. Switch to ${labels[next[preference]].toLowerCase()}`} title={labels[preference]}
+  return <button className={button("quiet", "icon")} aria-label={`${labels[preference]}. Switch to ${labels[next[preference]].toLowerCase()}`} title={labels[preference]}
     onClick={() => { setPreference(next[preference]); }}>
     <Icon size={19} />
   </button>;

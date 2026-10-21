@@ -4,6 +4,7 @@ import { PlugsIcon } from "@phosphor-icons/react/dist/csr/Plugs";
 import { ApiError } from "./api";
 import { ThemeButton } from "./theme";
 import { LocalePicker } from "./Locale";
+import { brandMark, button } from "./ui";
 // Shared frame for sign-in, account and full-page states, before any workspace shell exists.
 export const authFrame = "relative flex min-h-dvh flex-col items-center justify-center gap-5 bg-page px-4 pb-16 pt-28 text-foreground";
 // Global element rules sit outside Tailwind's layers, so spacing uses flex gaps rather than margins.
@@ -13,7 +14,7 @@ export const authPanel =
   "[&_.editor]:mt-5 [&_.text-button]:mx-auto [&_.text-button]:mt-3 [&_.text-button]:text-xs";
 export function Brand({ product, href }: { product?: string | undefined; href?: string | undefined }) {
   const content = <>
-    <span className="brand-mark" aria-hidden>w</span>
+    <span className={brandMark} aria-hidden>w</span>
     <span className="max-[420px]:sr-only">webdock</span>
     {product ? <span className="ml-1 border-l border-outline pl-3 text-[13px] font-normal tracking-normal text-muted max-[700px]:hidden">{product}</span> : null}
   </>;
@@ -54,7 +55,7 @@ export function PageFailure({ product, title = "Page unavailable", error, retry 
       <span className="mb-3 inline-flex size-11 items-center justify-center rounded-full bg-danger-soft text-danger"><PlugsIcon size={22} /></span>
       <h1>{title}</h1>
       <p>{describeFailure(error)}</p>
-      {retry ? <button className="button primary mt-5 self-start" onClick={retry}><ArrowClockwiseIcon />Try again</button> : null}
+      {retry ? <button className={`${button("primary")} mt-5 self-start`} onClick={retry}><ArrowClockwiseIcon />Try again</button> : null}
     </section>
   </main>;
 }

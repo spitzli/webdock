@@ -1,4 +1,10 @@
 @import 'tailwindcss';
+:root { color-scheme: light; --bg: #ffffff; --panel: #ffffff; --sidebar: #fafafa; --ink: #171717; --muted: #666666; --line: #ebebeb; --line-strong: #d6d6d6; --soft: #f2f2f2; --accent: #c2410c; --on-accent: #ffffff; --brand: #e5560f; --focus: #c2511b; --ring: rgb(194 81 27 / .22); --success: #18794e; --success-bg: #e9f8ef; --error: #c62a2f; --error-bg: #fdeced; --warning: #a35200; --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'JetBrains Mono', 'DejaVu Sans Mono', Menlo, Consolas, monospace; font-family: 'Inter Variable', ui-sans-serif, system-ui, sans-serif; font-feature-settings: 'cv11', 'ss03'; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+:root[data-theme='dark'] { color-scheme: dark; --bg: #000000; --panel: #0a0a0a; --sidebar: #000000; --ink: #ededed; --muted: #a1a1a1; --line: #242424; --line-strong: #383838; --soft: #1a1a1a; --accent: #ff7a33; --on-accent: #0a0a0a; --focus: #ff8f52; --ring: rgb(255 143 82 / .28); --success: #4cc38a; --success-bg: #0f2a1d; --error: #ff6369; --error-bg: #2e1215; --warning: #f1a10d; }
+@theme inline { --color-page: var(--bg); --color-surface: var(--panel); --color-subtle: var(--sidebar); --color-foreground: var(--ink); --color-muted: var(--muted); --color-outline: var(--line); --color-outline-strong: var(--line-strong); --color-soft: var(--soft); --color-accent: var(--accent); --color-on-accent: var(--on-accent); --color-brand: var(--brand); --color-focus: var(--focus); --color-ring: var(--ring); --color-success: var(--success); --color-success-soft: var(--success-bg); --color-danger: var(--error); --color-danger-soft: var(--error-bg); --color-warning: var(--warning); --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif; --font-mono: var(--mono); }
+@keyframes page-progress { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+/* Remaining shared classes; utilities always win over this layer. New UI uses ./ui.ts recipes and utilities. */
+@layer components {
 .mail-reader .page-heading { margin-bottom: 18px; }
 .mail-reader-layout { display:grid; grid-template-columns: 160px minmax(220px, .8fr) minmax(280px, 1.4fr); border:1px solid var(--line); background:var(--panel); min-height:620px; border-radius:8px; overflow:hidden; margin-top:18px; }
 .mail-reader-folders { padding:16px 10px; border-right:1px solid var(--line); }
@@ -34,15 +40,12 @@
 .mail-reader > .notice { margin:12px 0; overflow-wrap:anywhere; }
 @media (max-width:1100px) { .mail-reader-layout { grid-template-columns:140px minmax(0,1fr); } .mail-reader-detail { grid-column:1/-1; border-top:1px solid var(--line); } .mail-reader-list { border-right:0; } }
 @media (max-width:600px) { .mail-reader-layout { display:block; } .mail-reader-folders { border-right:0; border-bottom:1px solid var(--line); } .mail-reader-folders nav { display:flex; flex-wrap:wrap; gap:5px; } .mail-folder { width:auto; } .mail-message,.mail-compose { padding:15px; } .mail-reader .page-heading { align-items:flex-start; flex-direction:column; gap:12px; } }
-/* Workbench: monochrome surfaces, hairline borders and one ink-coloured primary action.
-   The brand orange is kept for the mark and focus only. Audience: workspace operators. */
-:root { color-scheme: light; --bg: #ffffff; --panel: #ffffff; --sidebar: #fafafa; --ink: #171717; --muted: #666666; --line: #ebebeb; --line-strong: #d6d6d6; --soft: #f2f2f2; --accent: #171717; --on-accent: #ffffff; --brand: #d9530f; --focus: #c2511b; --ring: rgb(194 81 27 / .22); --success: #18794e; --success-bg: #e9f8ef; --error: #c62a2f; --error-bg: #fdeced; --warning: #a35200; --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'JetBrains Mono', 'DejaVu Sans Mono', Menlo, Consolas, monospace; font-family: 'Inter Variable', ui-sans-serif, system-ui, sans-serif; font-feature-settings: 'cv11', 'ss03'; font-size: 14px; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
-:root[data-theme='dark'] { color-scheme: dark; --bg: #000000; --panel: #0a0a0a; --sidebar: #000000; --ink: #ededed; --muted: #a1a1a1; --line: #242424; --line-strong: #383838; --soft: #1a1a1a; --accent: #ededed; --on-accent: #0a0a0a; --focus: #ff8f52; --ring: rgb(255 143 82 / .28); --success: #4cc38a; --success-bg: #0f2a1d; --error: #ff6369; --error-bg: #2e1215; --warning: #f1a10d; }
-@theme inline { --color-page: var(--bg); --color-surface: var(--panel); --color-foreground: var(--ink); --color-muted: var(--muted); --color-outline: var(--line); --color-soft: var(--soft); --color-accent: var(--accent); --color-on-accent: var(--on-accent); --color-danger: var(--error); --color-danger-soft: var(--error-bg); }
+/* Workbench: monochrome surfaces and hairline borders; Webdock orange marks the brand,
+   primary actions and focus. Audience: workspace operators. */
 * { box-sizing: border-box; }
-body { margin: 0; color: var(--ink); background: var(--bg); line-height: 1.5; }
+body { margin: 0; color: var(--ink); background: var(--bg); font-size: 14px; line-height: 1.5; }
 button, input, select, textarea { font: inherit; }
-input, select, textarea { accent-color: var(--ink); }
+input, select, textarea { accent-color: var(--accent); }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button, a { touch-action: manipulation; }
 button { cursor: pointer; }
@@ -71,7 +74,7 @@ code, kbd { font-family: var(--mono); }
 .app-shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); grid-template-rows: 56px minmax(calc(100dvh - 56px), auto); }
 .topbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; padding: 0 16px; border-bottom: 1px solid var(--line); background: var(--bg); position: sticky; top: 0; z-index: 10; }
 .brand { display: flex; align-items: center; gap: 9px; font-size: 20px; font-weight: 650; letter-spacing: -.7px; }
-.brand-mark { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; background: var(--ink); color: var(--bg); font-size: 21px; font-weight: 750; border-radius: 7px; padding-bottom: 3px; letter-spacing: -2px; padding-right: 2px; flex-shrink: 0; }
+.brand-mark { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; background: var(--brand); color: #fff; font-size: 21px; font-weight: 750; border-radius: 7px; padding-bottom: 3px; letter-spacing: -2px; padding-right: 2px; flex-shrink: 0; }
 a.brand-home:hover { text-decoration: none; }
 .breadcrumb { display: flex; align-items: center; gap: 2px; min-width: 0; font-size: 14px; color: var(--muted); }
 .crumb-sep { color: var(--line-strong); font-size: 22px; font-weight: 300; padding: 0 6px; user-select: none; }
@@ -154,7 +157,7 @@ td:first-child { min-width: 170px; width: 50%; }
 .editor fieldset { border: 0; padding: 0; margin: 0; }
 .editor legend { padding: 0 0 8px; font-size: 14px; font-weight: 600; }
 .choice { display: flex !important; align-items: flex-start; gap: 12px !important; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 8px; cursor: pointer; font-weight: 500; }
-.choice:has(:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.choice:has(:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .choice input { margin-top: 2px; }
 .field-hint { font-size: 12px; color: var(--muted); font-weight: 400; }
 .editor-aside { display: grid; gap: 16px; }
@@ -215,7 +218,6 @@ dialog::backdrop { background: rgb(0 0 0 / .45); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 @media (max-width: 540px) { .account-main { padding: 24px 16px 48px; } .security-list > li { align-items: start; flex-wrap: wrap; } .recovery-codes { gap: 10px; font-size: 12px; } .security-section .button { width: fit-content; } }
 .security-section > .button { justify-self: start; }
-
 /* Security controls share a compact desktop grid; sessions remain a full-width list. */
 .account-main { max-width: 1040px; }
 .account-main .page-heading p { overflow-wrap: anywhere; }
@@ -238,6 +240,6 @@ dialog::backdrop { background: rgb(0 0 0 / .45); }
 /* Keep language, theme and account controls reachable on narrow phones. */
 .environment-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:0 16px; align-items:end; border-top:1px solid var(--line); padding-top:12px; margin-top:12px; } .environment-row .form-actions { grid-column:1/-1; flex-wrap:wrap; gap:8px; }
 @media (max-width:600px) { .environment-row { grid-template-columns:1fr; } }
-@keyframes page-progress { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
 /* Live form checks: native validity after the first interaction, no script required. */
 input:user-invalid, select:user-invalid, textarea:user-invalid { border-color: var(--error); outline-color: var(--error); }
+}

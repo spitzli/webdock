@@ -17,7 +17,7 @@ export function UserMenu({ name, email, consoleHref, accountHref, signOut }: {
 }) {
   const id = useId();
   return <div className="relative">
-    <button className="avatar cursor-pointer" popoverTarget={id} aria-label={`Account menu for ${name}`}>{name.slice(0, 1).toUpperCase()}</button>
+    <button className="ml-1.5 grid size-8 cursor-pointer place-items-center rounded-full border border-outline bg-soft text-xs font-semibold text-foreground" popoverTarget={id} aria-label={`Account menu for ${name}`}>{name.slice(0, 1).toUpperCase()}</button>
     <div id={id} popover="auto" role="menu" aria-label="Account" onToggle={alignBelowTrigger} className={menuPanel}>
       <div className="flex flex-col px-3 pb-2 pt-2.5">
         <strong className="truncate text-[13px]">{name}</strong>

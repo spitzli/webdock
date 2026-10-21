@@ -26,6 +26,12 @@ import { Empty, Failure, Loading, Modal } from "./common";
 import { listSchema, recordSchema, type Session } from "./api";
 import { useMailWorkspace } from "./mail-client";
 import { useHostingContext } from "./hosting-context";
+import * as ui from "./ui";
+const crumbSeparator = "select-none px-1.5 text-[22px] font-light text-outline-strong";
+const paletteItem =
+  "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-foreground hover:bg-soft focus-visible:bg-soft";
+const navItem = (selected: boolean) =>
+  `my-px flex min-h-11 items-center gap-2.5 rounded-md px-2.5 text-sm [overflow-wrap:anywhere] hover:bg-soft hover:text-foreground hover:no-underline md:min-h-[34px] [&_svg]:shrink-0 ${selected ? "bg-soft font-medium text-foreground" : "text-muted"}`;
 const destinations = [
   { collection: "projects", label: "Projects", icon: FolderSimpleIcon },
   { collection: "customers", label: "Customers", icon: BuildingsIcon },
@@ -141,12 +147,12 @@ export function Shell() {
   const navigation = (
     <>
       {hosting.project ? (
-        <div className="nav-group">
-          <p className="nav-label">Current project</p>
+        <div className="mb-[18px]">
+          <p className="px-2.5 py-1.5 text-xs text-muted">Current project</p>
           <Link
             to="/hosting/projects/$projectID"
             params={{ projectID: hosting.project.projectID }}
-            className="nav-item"
+            className={navItem(false)}
           >
             <FolderSimpleIcon size={18} />
             {hosting.project.name}
@@ -155,7 +161,7 @@ export function Shell() {
             <Link
               to="/hosting/apps/$appID"
               params={{ appID: hosting.application.id }}
-              className="nav-item selected"
+              className={navItem(true)}
             >
               {hosting.application.name}
             </Link>
@@ -163,20 +169,20 @@ export function Shell() {
         </div>
       ) : null}
       {!hosting.active && projectId && project.data ? (
-        <div className="nav-group">
-          <p className="nav-label">Current project</p>
+        <div className="mb-[18px]">
+          <p className="px-2.5 py-1.5 text-xs text-muted">Current project</p>
           <Link
             to="/$collection/$id"
             params={{ collection: "projects", id: projectId }}
-            className="nav-item selected"
+            className={navItem(true)}
           >
             <FolderSimpleIcon size={18} />
             {project.data.name}
           </Link>
         </div>
       ) : null}
-      <div className="nav-group">
-        <p className="nav-label">Workspace</p>
+      <div className="mb-[18px]">
+        <p className="px-2.5 py-1.5 text-xs text-muted">Workspace</p>
         {session.user.role === "operator" ? (
           destinations.map(({ collection, label, icon: Icon }) => (
             <Link
@@ -197,20 +203,20 @@ export function Shell() {
           <Link
             to="/$collection"
             params={{ collection: "tenants" }}
-            className="nav-item"
+            className={navItem(false)}
           >
             <BuildingsIcon size={18} />
             Workspaces
           </Link>
         )}
       </div>
-      <div className="nav-group">
-        <p className="nav-label">Manage</p>
+      <div className="mb-[18px]">
+        <p className="px-2.5 py-1.5 text-xs text-muted">Manage</p>
         {api.config.enabledFeatures.includes("hosting") ? (
           <Link
             to="/hosting"
             search={{ customer: customerId }}
-            className={`nav-item ${pathname.startsWith("/hosting") ? "selected" : ""}`}
+            className={navItem(pathname.startsWith("/hosting"))}
           >
             <FolderSimpleIcon size={18} />
             Applications
@@ -220,7 +226,7 @@ export function Shell() {
           <Link
             to="/mail"
             search={{ customer: customerId }}
-            className={`nav-item ${pathname.startsWith("/mail") ? "selected" : ""}`}
+            className={navItem(pathname.startsWith("/mail"))}
           >
             <EnvelopeIcon size={18} />
             Mail
@@ -231,7 +237,7 @@ export function Shell() {
           <Link
             to="/databases"
             search={{ customer: customerId }}
-            className={`nav-item ${pathname.startsWith("/databases") ? "selected" : ""}`}
+            className={navItem(pathname.startsWith("/databases"))}
           >
             <FolderSimpleIcon size={18} />
             Databases
@@ -239,14 +245,14 @@ export function Shell() {
         ) : null}
         <Link
           to="/extensions"
-          className={`nav-item ${pathname.startsWith("/extensions") ? "selected" : ""}`}
+          className={navItem(pathname.startsWith("/extensions"))}
         >
           <PlugsConnectedIcon size={18} />
           Extensions
         </Link>
         <Link
           to="/account"
-          className={`nav-item ${pathname === "/account" ? "selected" : ""}`}
+          className={navItem(pathname === "/account")}
         >
           <UserCircleIcon size={18} />
           Account
@@ -255,33 +261,33 @@ export function Shell() {
     </>
   );
   return (
-    <div className="app-shell">
-      <a className="skip-link" href="#main">
+    <div className="grid min-h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[56px_1fr] md:grid-cols-[210px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]">
+      <a className="fixed -top-24 left-4 z-50 border border-focus bg-surface px-4 py-2.5 focus:top-2.5" href="#main">
         Skip to content
       </a>
-      <header className="topbar">
-        <Link to="/" className="brand-home" aria-label="Webdock Console home">
-          <span className="brand-mark" aria-hidden>
+      <header className="sticky top-0 z-10 col-span-full flex items-center gap-1 border-b border-outline bg-page px-3 md:gap-3 md:px-4">
+        <Link to="/" className="shrink-0 hover:no-underline" aria-label="Webdock Console home">
+          <span className={ui.brandMark} aria-hidden>
             w
           </span>
         </Link>
-        <nav className="breadcrumb" aria-label="Breadcrumb">
-          <span className="crumb-sep" aria-hidden>
+        <nav className="flex min-w-0 items-center gap-0.5 text-sm text-muted [&>span:last-child]:font-medium [&>span:last-child]:text-foreground" aria-label="Breadcrumb">
+          <span className={crumbSeparator} aria-hidden>
             /
           </span>
           <button
-            className="scope-switcher"
+            className="flex h-8 min-w-0 items-center gap-2 rounded-md pr-1.5 pl-1 font-medium text-foreground hover:bg-soft"
             onClick={() => {
               setPalette(true);
             }}
             aria-label="Switch customer or project"
           >
-            <span className="scope-avatar" aria-hidden>
+            <span className="grid size-[22px] shrink-0 place-items-center rounded-full bg-linear-135 from-[#ff9a5a] via-brand to-[#8f2d00] text-[11px] font-semibold text-white" aria-hidden>
               {workspace.label.slice(0, 1).toUpperCase()}
             </span>
             <span className="min-w-0 truncate">{workspace.label}</span>
-            <span className="scope-detail">{workspace.detail}</span>
-            <CaretUpDownIcon size={14} />
+            <span className="rounded-full border border-outline px-1.5 text-xs leading-[18px] font-normal text-muted max-md:hidden">{workspace.detail}</span>
+            <CaretUpDownIcon size={14} className="shrink-0 text-muted" />
           </button>
           {(hosting.active
             ? hosting.breadcrumbs
@@ -290,26 +296,26 @@ export function Shell() {
             .slice(1)
             .map((label, index) => (
               <Fragment key={`${String(index)}:${label}`}>
-                <span className="crumb-sep" aria-hidden>
+                <span className={`${crumbSeparator} max-md:hidden`} aria-hidden>
                   /
                 </span>
-                <span className="crumb min-w-0 truncate" title={label}>
+                <span className="min-w-0 truncate max-md:hidden" title={label}>
                   {label}
                 </span>
               </Fragment>
             ))}
         </nav>
-        <div className="topbar-actions">
+        <div className="ml-auto flex items-center gap-0 md:gap-1">
           <button
-            className="command-trigger"
+            className="flex size-9 items-center justify-center gap-2 rounded-md border border-outline-strong bg-surface text-[13px] text-muted hover:border-muted lg:mr-2 lg:h-8 lg:w-[220px] lg:justify-start lg:px-2"
             aria-label="Find a project or customer"
             onClick={() => {
               setPalette(true);
             }}
           >
             <MagnifyingGlassIcon size={16} />
-            <span>Find…</span>
-            <kbd>
+            <span className="max-lg:hidden">Find…</span>
+            <kbd className="ml-auto inline-flex items-center gap-px rounded border border-outline px-1 font-sans text-[11px] leading-[18px] max-lg:hidden [&_svg]:w-[11px]">
               <CommandIcon />K
             </kbd>
           </button>
@@ -328,7 +334,7 @@ export function Shell() {
             }}
           />
           <button
-            className="button icon-button quiet mobile-nav"
+            className={`${ui.button("quiet", "icon")} md:hidden`}
             aria-label="Open navigation"
             onClick={() => {
               setMobile(true);
@@ -338,16 +344,16 @@ export function Shell() {
           </button>
         </div>
       </header>
-      <aside className="sidebar">
+      <aside className="sticky top-14 flex h-[calc(100dvh-56px)] flex-col self-start overflow-y-auto border-r border-outline bg-subtle px-2 py-3 max-md:hidden">
         <nav aria-label="Primary navigation">{navigation}</nav>
         {logout.isError ? (
-          <p role="alert" className="error mt-auto px-2.5 text-[13px]">
+          <p role="alert" className="mt-auto px-2.5 text-[13px] text-danger">
             {logout.error.message}
           </p>
         ) : null}
       </aside>
-      <div className="workspace-content">
-        <main id="main" tabIndex={-1}>
+      <div className="flex min-w-0 flex-col">
+        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1200px] flex-1 px-4 pt-6 pb-12 outline-none md:px-7 md:pt-8 md:pb-14 lg:px-10 lg:pt-10 lg:pb-16">
           <Outlet />
         </main>
       </div>
@@ -367,7 +373,7 @@ export function Shell() {
             {navigation}
           </nav>
           <button
-            className="button"
+            className={`${ui.button()} mt-3 w-full`}
             onClick={() => {
               logout.mutate();
             }}
@@ -376,7 +382,7 @@ export function Shell() {
             Sign out
           </button>
           {logout.isError ? (
-            <p role="alert" className="error">
+            <p role="alert" className="text-danger">
               {logout.error.message}
             </p>
           ) : null}
@@ -429,9 +435,10 @@ function CommandPalette({ close }: { close: () => void }) {
   });
   return (
     <Modal title="Go to workspace" close={close}>
-      <label className="search-field palette-search">
-        <MagnifyingGlassIcon />
+      <label className="relative block">
+        <MagnifyingGlassIcon size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" />
         <input
+          className={`${ui.input} pl-9`}
           autoFocus
           aria-label="Search projects and customers"
           placeholder="Search by name…"
@@ -442,7 +449,7 @@ function CommandPalette({ close }: { close: () => void }) {
           }}
         />
       </label>
-      <div className="palette-results">
+      <div className="mt-3 max-h-[55dvh] overflow-y-auto">
         {session.user.role === "operator" && search.length >= 2 ? (
           results.isPending ? (
             <Loading>Searching…</Loading>
@@ -457,7 +464,7 @@ function CommandPalette({ close }: { close: () => void }) {
             results.data.map((record) => (
               <button
                 key={`${record.collection}:${record.id}`}
-                className="palette-item"
+                className={paletteItem}
                 onClick={() => {
                   void navigate({
                     to: "/$collection/$id",
@@ -467,7 +474,7 @@ function CommandPalette({ close }: { close: () => void }) {
                 }}
               >
                 <span>{record.name}</span>
-                <span className="muted">
+                <span className="ml-auto text-xs text-muted">
                   {record.collection === "projects" ? "Project" : "Customer"}
                 </span>
               </button>
@@ -481,7 +488,7 @@ function CommandPalette({ close }: { close: () => void }) {
               ? destinations.map((item) => (
                   <button
                     key={item.collection}
-                    className="palette-item"
+                    className={paletteItem}
                     onClick={() => {
                       void navigate({
                         to: "/$collection",
@@ -497,7 +504,7 @@ function CommandPalette({ close }: { close: () => void }) {
               : null}
             {session.user.role !== "operator" ? (
               <button
-                className="palette-item"
+                className={paletteItem}
                 onClick={() => {
                   void navigate({
                     to: "/$collection",
@@ -512,7 +519,7 @@ function CommandPalette({ close }: { close: () => void }) {
             ) : null}
             {api.config.enabledFeatures.includes("hosting") ? (
               <button
-                className="palette-item"
+                className={paletteItem}
                 onClick={() => {
                   void navigate({ to: "/hosting" });
                   close();
@@ -523,7 +530,7 @@ function CommandPalette({ close }: { close: () => void }) {
               </button>
             ) : null}
             <button
-              className="palette-item"
+              className={paletteItem}
               onClick={() => {
                 void navigate({ to: "/account" });
                 close();
@@ -547,6 +554,7 @@ function sectionTitle(pathname: string): string {
   if (pathname.startsWith("/databases")) return "Databases";
   if (pathname === "/audit-events") return "Audit trail";
   if (pathname === "/account") return "Account";
+  if (pathname.startsWith("/tenants")) return "Workspaces";
   return "Extensions";
 }
 

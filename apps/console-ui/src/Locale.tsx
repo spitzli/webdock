@@ -5,6 +5,7 @@ import { I18nProvider, useOptionalI18n } from "@webdock/i18n/react";
 import { resolveLocale, type Preference } from "@webdock/i18n";
 import { ApiContext } from "./context";
 import { alignBelowTrigger, menuPanel } from "./UserMenu";
+import { button } from "./ui";
 export function LocaleProvider({
   preference,
   children,
@@ -58,7 +59,7 @@ export function LocalePicker() {
     ...languages.map((item) => ({ value: item.value, label: item.label, detail: "" })),
   ];
   return <div className="relative">
-    <button className="button quiet gap-1.5 px-2.5 max-[480px]:px-2" popoverTarget={id} disabled={pending} aria-label={`${i18n.t("Language")}: ${active.label}`}>
+    <button className={`${button("quiet")} gap-1.5 px-2.5 max-[480px]:px-2`} popoverTarget={id} disabled={pending} aria-label={`${i18n.t("Language")}: ${active.label}`}>
       <TranslateIcon size={18} aria-hidden />
       <span className="text-xs font-semibold tracking-wide max-[480px]:hidden">{active.short}</span>
     </button>

@@ -18,6 +18,7 @@ import {
 } from "./api";
 import { useApi } from "./context";
 import { Empty, Failure, Loading, Status } from "./common";
+import * as ui from "./ui";
 const names = {
   customers: "Customers",
   projects: "Projects",
@@ -28,6 +29,7 @@ export function isCollection(value: string): value is Collection {
 }
 const path = (collection: Collection, id?: string) =>
   `/v1/operator/registry/${collection}${id ? `/${encodeURIComponent(id)}` : ""}`;
+const backLink = "mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted hover:text-foreground hover:no-underline";
 const displayDate = (value?: string) =>
   value ? new Date(value).toLocaleString() : "—";
 
@@ -67,10 +69,10 @@ export function RegistryList({
   });
   return (
     <section>
-      <div className="page-heading">
+      <div className={ui.pageHeading}>
         <div>
-          <h1>{names[collection]}</h1>
-          <p className="muted">
+          <h1 className={ui.pageTitle}>{names[collection]}</h1>
+          <p className={ui.pageLead}>
             {collection === "customers"
               ? "Manage customer records and their projects."
               : collection === "projects"
@@ -80,7 +82,7 @@ export function RegistryList({
         </div>
         {collection !== "audit-events" ? (
           <Link
-            className="button primary"
+            className={ui.button("primary")}
             to="/$collection/new"
             params={{ collection }}
             search={{ customer }}
@@ -90,10 +92,11 @@ export function RegistryList({
           </Link>
         ) : null}
       </div>
-      <div className="list-toolbar">
-        <label className="search-field">
-          <MagnifyingGlassIcon aria-hidden />
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-[13px]">
+        <label className="relative w-full sm:w-[340px]">
+          <MagnifyingGlassIcon aria-hidden size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" />
           <input
+            className={`${ui.input} min-h-9 pl-9`}
             aria-label={`Search ${names[collection].toLowerCase()}`}
             placeholder={`Search ${names[collection].toLowerCase()}…`}
             value={search}
@@ -105,7 +108,7 @@ export function RegistryList({
         </label>
         {collection !== "audit-events" ? (
           <select
-            className="status-filter"
+            className={`${ui.input} min-h-9 w-auto max-sm:flex-1`}
             aria-label="Filter by record status"
             value={status}
             onChange={(event) => {
@@ -119,7 +122,7 @@ export function RegistryList({
           </select>
         ) : null}
         {records.data ? (
-          <span className="muted">
+          <span className="ml-auto text-muted">
             {records.data.totalDocs}{" "}
             {records.data.totalDocs === 1 ? "record" : "records"}
           </span>
@@ -150,49 +153,49 @@ export function RegistryList({
         </Empty>
       ) : (
         <>
-          <div className="table-scroll">
-            <table className="registry-table">
+          <div className={ui.tableFrame}>
+            <table className={ui.table}>
               <thead>
                 <tr>
-                  <th scope="col">
+                  <th scope="col" className={`${ui.th} w-1/2`}>
                     {collection === "audit-events" ? "Change" : "Name"}
                   </th>
-                  <th scope="col">
+                  <th scope="col" className={ui.th}>
                     {collection === "audit-events" ? "Target" : "Status"}
                   </th>
-                  <th scope="col">
+                  <th scope="col" className={ui.th}>
                     {collection === "audit-events" ? "Recorded" : "Updated"}
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {records.data.docs.map((record) => (
-                  <tr key={record.id}>
-                    <td>
+                  <tr key={record.id} className={ui.tr}>
+                    <td className={`${ui.td} min-w-[170px]`}>
                       <Link
                         to="/$collection/$id"
                         params={{ collection, id: record.id }}
-                        className="record-name"
+                        className="inline-block py-0.5 font-medium"
                       >
                         {record.name ??
                           record.summary ??
                           record.action ??
                           record.id}
                       </Link>
-                      <span className="record-meta">
+                      <span className={`block text-muted ${ui.mono}`}>
                         {collection === "customers"
                           ? (record.contactEmail ?? record.id)
                           : record.id}
                       </span>
                     </td>
-                    <td>
+                    <td className={ui.td}>
                       {collection === "audit-events" ? (
                         (record.targetCollection ?? "—")
                       ) : (
                         <Status status={record.status} />
                       )}
                     </td>
-                    <td className="muted">
+                    <td className={`${ui.td} whitespace-nowrap text-muted`}>
                       {displayDate(
                         collection === "audit-events"
                           ? record.createdAt
@@ -204,14 +207,14 @@ export function RegistryList({
               </tbody>
             </table>
           </div>
-          <div className="pagination">
-            <span className="muted">
+          <div className="flex flex-wrap items-center justify-between gap-3 py-3.5 text-[13px]">
+            <span className="text-muted">
               Page {records.data.page} of {records.data.totalPages}
               {records.isFetching ? " · Updating…" : ""}
             </span>
             <div className="flex gap-2">
               <button
-                className="button quiet"
+                className={ui.button("quiet")}
                 aria-label="Previous page"
                 disabled={!records.data.hasPrevPage}
                 onClick={() => {
@@ -222,7 +225,7 @@ export function RegistryList({
                 Previous
               </button>
               <button
-                className="button quiet"
+                className={ui.button("quiet")}
                 disabled={!records.data.hasNextPage}
                 onClick={() => {
                   setPage(page + 1);
@@ -264,28 +267,28 @@ export function RegistryDetail({
     );
   return (
     <section>
-      <div className="page-heading">
+      <div className={ui.pageHeading}>
         <div>
-          <Link className="back-link" to="/$collection" params={{ collection }}>
+          <Link className={backLink} to="/$collection" params={{ collection }}>
             <ArrowLeftIcon />
             {names[collection]}
           </Link>
-          <h1>{record.data.name ?? record.data.summary ?? "Audit event"}</h1>
-          <p className="muted record-id">{record.data.id}</p>
+          <h1 className={ui.pageTitle}>{record.data.name ?? record.data.summary ?? "Audit event"}</h1>
+          <p className={`mt-1 text-muted ${ui.mono}`}>{record.data.id}</p>
         </div>
         {collection !== "audit-events" ? (
           <Status status={record.data.status} />
         ) : null}
       </div>
       {created === collection ? (
-        <p role="status" className="mb-6 rounded-lg border border-outline bg-surface px-4 py-3 text-[13px]">
+        <p role="status" className={`${ui.notice} mb-6`}>
           {collection === "customers"
             ? "Customer created. Invite the first person below or add a project."
             : "Project created."}
         </p>
       ) : null}
       {collection === "customers" ? (
-        <div className="context-links">
+        <div className="mb-8 flex flex-wrap items-center gap-2 [&>a]:flex [&>a]:items-center [&>a]:gap-2 [&>a]:rounded-full [&>a]:border [&>a]:border-outline-strong [&>a]:px-3 [&>a]:py-1 [&>a]:text-[13px] [&>a]:font-medium [&>a:hover]:bg-soft [&>a:hover]:no-underline">
           <Link
             to="/$collection"
             params={{ collection: "projects" }}
@@ -303,7 +306,7 @@ export function RegistryDetail({
         </div>
       ) : null}
       {collection === "projects" && record.data.customer ? (
-        <div className="context-links">
+        <div className="mb-8 flex flex-wrap items-center gap-2 [&>a]:flex [&>a]:items-center [&>a]:gap-2 [&>a]:rounded-full [&>a]:border [&>a]:border-outline-strong [&>a]:px-3 [&>a]:py-1 [&>a]:text-[13px] [&>a]:font-medium [&>a:hover]:bg-soft [&>a:hover]:no-underline">
           <Link
             to="/$collection/$id"
             params={{ collection: "customers", id: record.data.customer }}
@@ -320,7 +323,7 @@ export function RegistryDetail({
         </div>
       ) : null}
       {collection === "audit-events" ? (
-        <dl className="detail-grid">
+        <dl className="grid gap-4 sm:grid-cols-2">
           {[
             ["Action", record.data.action],
             ["Actor", record.data.actor],
@@ -330,8 +333,8 @@ export function RegistryDetail({
             ["Recorded", displayDate(record.data.createdAt)],
           ].map(([label, value]) => (
             <div key={label}>
-              <dt>{label}</dt>
-              <dd>{value ?? "—"}</dd>
+              <dt className="text-xs text-muted">{label}</dt>
+              <dd className="mt-1 text-sm">{value ?? "—"}</dd>
             </div>
           ))}
         </dl>
@@ -352,14 +355,14 @@ export function RegistryNew({
 }) {
   return (
     <section>
-      <div className="page-heading">
+      <div className={ui.pageHeading}>
         <div>
-          <Link className="back-link" to="/$collection" params={{ collection }}>
+          <Link className={backLink} to="/$collection" params={{ collection }}>
             <ArrowLeftIcon />
             {names[collection]}
           </Link>
-          <h1>New {collection === "customers" ? "customer" : "project"}</h1>
-          <p className="muted">
+          <h1 className={ui.pageTitle}>New {collection === "customers" ? "customer" : "project"}</h1>
+          <p className={ui.pageLead}>
             {collection === "projects"
               ? "Projects belong to one customer workspace."
               : "Add the customer’s name and contact details."}
@@ -441,9 +444,9 @@ function RegistryForm({
   }, [record, createdId, dirty, collection, navigate]);
 
   return (
-    <div className="editor-layout">
+    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
       <form
-        className="editor"
+        className={ui.card}
         {...live.form}
         onChange={() => {
           setDirty(true);
@@ -472,12 +475,14 @@ function RegistryForm({
           write.mutate(input);
         }}
       >
-        <h2>
+        <div className={`${ui.cardBody} gap-5`}>
+        <h2 className={ui.sectionTitle}>
           {collection === "customers" ? "Customer details" : "Project details"}
         </h2>
-        <label>
+        <label className={ui.field}>
           Name
           <input
+            className={ui.input}
             name="name"
             required
             maxLength={160}
@@ -486,25 +491,26 @@ function RegistryForm({
             disabled={write.isPending}
           />
         </label>
-        {live.errors.name ? <FieldError message={live.errors.name} /> : <span className="field-hint -mt-3">How this {collection === "customers" ? "customer" : "project"} appears across Webdock.</span>}
+        {live.errors.name ? <FieldError message={live.errors.name} /> : <span className={`${ui.hint} -mt-3`}>How this {collection === "customers" ? "customer" : "project"} appears across Webdock.</span>}
         {collection === "customers" ? (
           <CustomerFields record={record} pending={write.isPending} errors={live.errors} onboarding />
         ) : (
           <>
             {record ? (
-              <label>
+              <label className={ui.field}>
                 Customer
-                <input readOnly value={record.customer ?? ""} />
-                <span className="field-hint">
+                <input className={ui.input} readOnly value={record.customer ?? ""} />
+                <span className={ui.hint}>
                   Project ownership cannot be changed here.
                 </span>
               </label>
             ) : (
-              <fieldset>
-                <legend>Customer workspace</legend>
-                <label>
+              <fieldset className="grid min-w-0 border-0 p-0 gap-3">
+                <legend className="px-0 pb-2 text-sm font-semibold">Customer workspace</legend>
+                <label className={ui.field}>
                   Find a customer
                   <input
+                    className={ui.input}
                     value={customerSearch}
                     maxLength={160}
                     onChange={(event) => {
@@ -524,9 +530,10 @@ function RegistryForm({
                   />
                 ) : (
                   <>
-                    <label>
+                    <label className={ui.field}>
                       Customer
                       <select
+                        className={ui.input}
                         name="customer"
                         required
                         value={selectedCustomer}
@@ -554,7 +561,7 @@ function RegistryForm({
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        className="button quiet"
+                        className={ui.button("quiet")}
                         disabled={!customers.data.hasPrevPage}
                         onClick={() => {
                           setCustomerPage(customerPage - 1);
@@ -564,7 +571,7 @@ function RegistryForm({
                       </button>
                       <button
                         type="button"
-                        className="button quiet"
+                        className={ui.button("quiet")}
                         disabled={!customers.data.hasNextPage}
                         onClick={() => {
                           setCustomerPage(customerPage + 1);
@@ -577,9 +584,10 @@ function RegistryForm({
                 )}
               </fieldset>
             )}
-            <label>
+            <label className={ui.field}>
               Website URL
               <input
+                className={ui.input}
                 name="url"
                 type="url"
                 pattern="https://.*"
@@ -589,9 +597,10 @@ function RegistryForm({
                 disabled={write.isPending}
               />
             </label>
-            <label>
+            <label className={ui.field}>
               Repository URL
               <input
+                className={ui.input}
                 name="repositoryURL"
                 type="url"
                 pattern="https://.*"
@@ -603,9 +612,10 @@ function RegistryForm({
             </label>
           </>
         )}
-        <label>
+        <label className={ui.field}>
           Notes
           <textarea
+            className={`${ui.input} resize-y`}
             name="notes"
             rows={4}
             maxLength={3000}
@@ -614,21 +624,22 @@ function RegistryForm({
           />
         </label>
         {write.isError ? (
-          <p role="alert" className="error">
+          <p role="alert" className="text-sm text-danger">
             {write.error.message}
           </p>
         ) : null}
         {saved ? (
-          <p role="status" className="success">
+          <p role="status" className="text-sm text-success">
             Saved.{" "}
             <Link to="/$collection/$id" params={{ collection, id: saved.id }}>
               Open record
             </Link>
           </p>
         ) : null}
-        <div className="form-actions">
+        </div>
+        <div className={`${ui.cardFooter} flex-row-reverse`}>
           <button
-            className="button primary"
+            className={ui.button("primary")}
             disabled={
               write.isPending ||
               Boolean(record && !dirty) ||
@@ -641,7 +652,7 @@ function RegistryForm({
                 ? "Save changes"
                 : `Create ${collection === "customers" ? "customer" : "project"}`}
           </button>
-          {dirty ? <span className="muted">Unsaved changes</span> : null}
+          {dirty ? <span>Unsaved changes</span> : null}
         </div>
       </form>
       <RecordInformation
@@ -681,30 +692,31 @@ function RecordInformation({
     },
   });
   return (
-    <aside className="editor-aside">
-      <h2>Record information</h2>
-      <p className="muted">
+    <aside className="grid gap-4 text-[13px] [overflow-wrap:anywhere]">
+      <h2 className="text-sm font-semibold">Record information</h2>
+      <p className="text-muted">
         {record
           ? `Created ${displayDate(record.createdAt)}`
           : "The record will be created when you save."}
       </p>
       {record ? (
         <>
-          <p className="muted">Updated {displayDate(record.updatedAt)}</p>
-          <div className="archive-section">
-            <h3>
+          <p className="text-muted">Updated {displayDate(record.updatedAt)}</p>
+          <div className={`${ui.card} mt-2 grid gap-2.5 p-5`}>
+            <h3 className="text-sm font-semibold">
               {record.status === "archived"
                 ? "Restore record"
                 : "Archive record"}
             </h3>
-            <p className="muted">
+            <p className="text-muted">
               {record.status === "archived"
                 ? "Make this record active again."
                 : "Linked resources can prevent archiving. Stored data is retained."}
             </p>
-            <label className="check">
+            <label className="flex items-center gap-2 py-1.5">
               <input
                 type="checkbox"
+                className="size-4 accent-accent"
                 checked={archiveConfirmed}
                 onChange={(event) => {
                   setArchiveConfirmed(event.target.checked);
@@ -713,7 +725,7 @@ function RecordInformation({
               Confirm {record.status === "archived" ? "restore" : "archive"}
             </label>
             <button
-              className="button"
+              className={`${ui.button()} justify-self-start`}
               disabled={!archiveConfirmed || archive.isPending || dirty}
               onClick={() => {
                 archive.mutate();
@@ -726,19 +738,19 @@ function RecordInformation({
                   : "Archive record"}
             </button>
             {archive.isError ? (
-              <p role="alert" className="error">
+              <p role="alert" className="text-danger">
                 {archive.error.message}
               </p>
             ) : null}
             {archive.isSuccess ? (
-              <p role="status" className="success">
+              <p role="status" className="text-success">
                 Record status updated.
               </p>
             ) : null}
           </div>
         </>
       ) : (
-        <p className="muted">Access and changes are checked by the server.</p>
+        <p className="text-muted">Access and changes are checked by the server.</p>
       )}
     </aside>
   );
