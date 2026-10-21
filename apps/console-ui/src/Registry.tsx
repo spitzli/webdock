@@ -271,7 +271,7 @@ export function RegistryDetail({
             {names[collection]}
           </Link>
           <h1>{record.data.name ?? record.data.summary ?? "Audit event"}</h1>
-          <p className="muted">{record.data.id}</p>
+          <p className="muted record-id">{record.data.id}</p>
         </div>
         {collection !== "audit-events" ? (
           <Status status={record.data.status} />

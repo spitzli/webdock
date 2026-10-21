@@ -15,11 +15,9 @@ import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/csr/MagnifyingGl
 import { ListIcon } from "@phosphor-icons/react/dist/csr/List";
 import { ThemeButton } from "./theme";
 import { UserMenu } from "./UserMenu";
-import { Brand } from "./AuthFrame";
-import { SignOutIcon } from "@phosphor-icons/react/dist/csr/SignOut";
 import { UserCircleIcon } from "@phosphor-icons/react/dist/csr/UserCircle";
 import { CommandIcon } from "@phosphor-icons/react/dist/csr/Command";
-import { CaretRightIcon } from "@phosphor-icons/react/dist/csr/CaretRight";
+import { CaretUpDownIcon } from "@phosphor-icons/react/dist/csr/CaretUpDown";
 import { PlugsConnectedIcon } from "@phosphor-icons/react/dist/csr/PlugsConnected";
 import { useApi, useSession } from "./context";
 import { LocalePicker } from "./Locale";
@@ -150,7 +148,7 @@ export function Shell() {
             params={{ projectID: hosting.project.projectID }}
             className="nav-item"
           >
-            <FolderSimpleIcon size={19} />
+            <FolderSimpleIcon size={18} />
             {hosting.project.name}
           </Link>
           {hosting.application ? (
@@ -172,7 +170,7 @@ export function Shell() {
             params={{ collection: "projects", id: projectId }}
             className="nav-item selected"
           >
-            <FolderSimpleIcon size={19} />
+            <FolderSimpleIcon size={18} />
             {project.data.name}
           </Link>
         </div>
@@ -191,7 +189,7 @@ export function Shell() {
                 pathname.startsWith(`/${collection}`) ? "page" : undefined
               }
             >
-              <Icon size={19} />
+              <Icon size={18} />
               {label}
             </Link>
           ))
@@ -201,7 +199,7 @@ export function Shell() {
             params={{ collection: "tenants" }}
             className="nav-item"
           >
-            <BuildingsIcon size={19} />
+            <BuildingsIcon size={18} />
             Workspaces
           </Link>
         )}
@@ -214,7 +212,7 @@ export function Shell() {
             search={{ customer: customerId }}
             className={`nav-item ${pathname.startsWith("/hosting") ? "selected" : ""}`}
           >
-            <FolderSimpleIcon size={19} />
+            <FolderSimpleIcon size={18} />
             Applications
           </Link>
         ) : null}
@@ -224,7 +222,7 @@ export function Shell() {
             search={{ customer: customerId }}
             className={`nav-item ${pathname.startsWith("/mail") ? "selected" : ""}`}
           >
-            <EnvelopeIcon size={19} />
+            <EnvelopeIcon size={18} />
             Mail
           </Link>
         ) : null}
@@ -235,7 +233,7 @@ export function Shell() {
             search={{ customer: customerId }}
             className={`nav-item ${pathname.startsWith("/databases") ? "selected" : ""}`}
           >
-            <FolderSimpleIcon size={19} />
+            <FolderSimpleIcon size={18} />
             Databases
           </Link>
         ) : null}
@@ -243,14 +241,14 @@ export function Shell() {
           to="/extensions"
           className={`nav-item ${pathname.startsWith("/extensions") ? "selected" : ""}`}
         >
-          <PlugsConnectedIcon size={19} />
+          <PlugsConnectedIcon size={18} />
           Extensions
         </Link>
         <Link
           to="/account"
           className={`nav-item ${pathname === "/account" ? "selected" : ""}`}
         >
-          <UserCircleIcon size={19} />
+          <UserCircleIcon size={18} />
           Account
         </Link>
       </div>
@@ -262,29 +260,59 @@ export function Shell() {
         Skip to content
       </a>
       <header className="topbar">
-        <Brand product="Console" />
-        <button
-          className="button icon-button mobile-nav"
-          aria-label="Open navigation"
-          onClick={() => {
-            setMobile(true);
-          }}
-        >
-          <ListIcon size={21} />
-        </button>
-        <button
-          className="command-trigger"
-          onClick={() => {
-            setPalette(true);
-          }}
-        >
-          <MagnifyingGlassIcon size={18} />
-          <span>Find a project or customer</span>
-          <kbd>
-            <CommandIcon />K
-          </kbd>
-        </button>
+        <Link to="/" className="brand-home" aria-label="Webdock Console home">
+          <span className="brand-mark" aria-hidden>
+            w
+          </span>
+        </Link>
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <span className="crumb-sep" aria-hidden>
+            /
+          </span>
+          <button
+            className="scope-switcher"
+            onClick={() => {
+              setPalette(true);
+            }}
+            aria-label="Switch customer or project"
+          >
+            <span className="scope-avatar" aria-hidden>
+              {workspace.label.slice(0, 1).toUpperCase()}
+            </span>
+            <span className="min-w-0 truncate">{workspace.label}</span>
+            <span className="scope-detail">{workspace.detail}</span>
+            <CaretUpDownIcon size={14} />
+          </button>
+          {(hosting.active
+            ? hosting.breadcrumbs
+            : [customer.data?.name ?? "Workspace", sectionTitle(pathname)]
+          )
+            .slice(1)
+            .map((label, index) => (
+              <Fragment key={`${String(index)}:${label}`}>
+                <span className="crumb-sep" aria-hidden>
+                  /
+                </span>
+                <span className="crumb min-w-0 truncate" title={label}>
+                  {label}
+                </span>
+              </Fragment>
+            ))}
+        </nav>
         <div className="topbar-actions">
+          <button
+            className="command-trigger"
+            aria-label="Find a project or customer"
+            onClick={() => {
+              setPalette(true);
+            }}
+          >
+            <MagnifyingGlassIcon size={16} />
+            <span>Find…</span>
+            <kbd>
+              <CommandIcon />K
+            </kbd>
+          </button>
           <LocalePicker />
           <ThemeButton />
           <UserMenu
@@ -299,67 +327,29 @@ export function Shell() {
               logout.mutate();
             }}
           />
+          <button
+            className="button icon-button quiet mobile-nav"
+            aria-label="Open navigation"
+            onClick={() => {
+              setMobile(true);
+            }}
+          >
+            <ListIcon size={20} />
+          </button>
         </div>
       </header>
       <aside className="sidebar">
-        <button
-          className="workspace-label"
-          onClick={() => {
-            setPalette(true);
-          }}
-          aria-label="Switch customer or project"
-        >
-          <span className="workspace-icon">
-            <BuildingsIcon size={20} />
-          </span>
-          <div>
-            <strong>{workspace.label}</strong>
-            <span className="muted">{workspace.detail}</span>
-          </div>
-        </button>
         <nav aria-label="Primary navigation">{navigation}</nav>
-        <div className="sidebar-footer">
-          <span className="muted account-email">{session.user.email}</span>
-          <button
-            className="button quiet"
-            onClick={() => {
-              logout.mutate();
-            }}
-            disabled={logout.isPending}
-          >
-            <SignOutIcon />
-            {logout.isPending ? "Signing out…" : "Sign out"}
-          </button>
-          {logout.isError ? (
-            <p role="alert" className="error">
-              {logout.error.message}
-            </p>
-          ) : null}
-        </div>
+        {logout.isError ? (
+          <p role="alert" className="error mt-auto px-2.5 text-[13px]">
+            {logout.error.message}
+          </p>
+        ) : null}
       </aside>
       <div className="workspace-content">
-        <nav className="breadcrumb" aria-label="Breadcrumb">
-          {(hosting.active
-            ? hosting.breadcrumbs
-            : [customer.data?.name ?? "Workspace", sectionTitle(pathname)]
-          ).map((label, index) => (
-            <Fragment key={`${String(index)}:${label}`}>
-              {index > 0 ? (
-                <CaretRightIcon size={12} className="shrink-0" />
-              ) : null}
-              <span className="min-w-0 truncate" title={label}>
-                {label}
-              </span>
-            </Fragment>
-          ))}
-        </nav>
         <main id="main" tabIndex={-1}>
           <Outlet />
         </main>
-        <footer className="workspace-footer">
-          <span>Webdock Console</span>
-          <span>Changes are checked against your current access.</span>
-        </footer>
       </div>
       {mobile ? (
         <Modal

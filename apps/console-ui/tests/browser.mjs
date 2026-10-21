@@ -38,7 +38,7 @@ try {
   await page.getByText('new-owner@example.test').waitFor();
   await page.getByRole('button', { name: 'Cancel invitation', exact: true }).click();
   await page.getByText('No one has access yet. Invite the first person below.').waitFor();
-  await page.waitForFunction(() => !document.body.textContent?.includes('Waiting for an answer'));
+  await page.getByRole('list', { name: 'Waiting for an answer', exact: true }).waitFor({ state: 'detached' });
   await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Edited after create');
   await page.getByRole('button', { name: 'Save changes', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Saved.' }).waitFor();

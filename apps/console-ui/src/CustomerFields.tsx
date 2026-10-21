@@ -58,7 +58,7 @@ export function CustomerFields({
     <>
       <fieldset className="flex flex-col gap-3">
         <legend>Customer type</legend>
-        <div className="inline-flex self-start rounded-md border border-outline p-0.5" role="radiogroup" aria-label="Customer type">
+        <div className="inline-flex justify-self-start rounded-md border border-outline p-0.5" role="radiogroup" aria-label="Customer type">
           {(["company", "person"] as const).map((value) => (
             <label key={value} className={`cursor-pointer rounded px-3 py-1.5 text-[13px] font-medium ${type === value ? "bg-soft text-foreground" : "text-muted"}`}>
               <input type="radio" name="customerType" value={value} checked={type === value} onChange={() => { setType(value); }} disabled={pending} className="sr-only" />
@@ -108,15 +108,15 @@ export function CustomerFields({
           </select>
         </label>
       </fieldset>
-      {onboarding ? <fieldset className="flex flex-col gap-2">
+      {onboarding ? <fieldset className="grid gap-2 sm:grid-cols-2">
         <legend>Onboarding</legend>
-        <label className="flex items-start gap-2">
+        <label className="choice">
           <input type="radio" name="onboarding" value="managed" defaultChecked={record?.onboarding !== "self-service"} disabled={pending} />
-          <span>Managed<span className="field-hint block">You prepare the customer details. Invited owners go straight to their workspace.</span></span>
+          <span className="grid gap-0.5">Managed<span className="field-hint">You prepare the customer details. Invited owners go straight to their workspace.</span></span>
         </label>
-        <label className="flex items-start gap-2">
+        <label className="choice">
           <input type="radio" name="onboarding" value="self-service" defaultChecked={record?.onboarding === "self-service"} disabled={pending} />
-          <span>Self-service<span className="field-hint block">Invited owners complete the customer details after they accept.</span></span>
+          <span className="grid gap-0.5">Self-service<span className="field-hint">Invited owners complete the customer details after they accept.</span></span>
         </label>
       </fieldset> : null}
     </>
