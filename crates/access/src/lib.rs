@@ -2,6 +2,7 @@
 mod admin;
 mod contracts;
 mod migration;
+mod projects;
 mod service;
 pub use contracts::*;
 pub use migration::*;

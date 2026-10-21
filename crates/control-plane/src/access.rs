@@ -39,6 +39,11 @@ pub fn routes() -> Router<Arc<ServiceState>> {
             );
     }
     routes
+        .route(
+            "/api/console/tenant/{id}/projects",
+            get(projects).post(create_project),
+        )
+        .route("/api/console/project/{id}", get(project))
         .route("/api/tenant-preview/{action}", post(preview))
         .route("/api/console/tenant-preview/{action}", post(preview))
         .route("/api/portal/studio", post(legacy))
@@ -156,6 +161,53 @@ async fn change_tenant(
                     .await
                     .map_err(failure)?
             ))
+        }
+        .await,
+    )
+}
+async fn projects(
+    State(s): State<Arc<ServiceState>>,
+    h: HeaderMap,
+    Path(id): Path<String>,
+) -> Response {
+    output(
+        async {
+            let (a, p) = actor(&s, &h).await?;
+            Ok(json!(a.list_projects_as(&p, &id).await.map_err(failure)?))
+        }
+        .await,
+    )
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NewProject {
+    name: String,
+}
+async fn create_project(
+    State(s): State<Arc<ServiceState>>,
+    h: HeaderMap,
+    Path(id): Path<String>,
+    Json(command): Json<NewProject>,
+) -> Response {
+    output(
+        async {
+            let (a, p) = actor(&s, &h).await?;
+            a.create_project_as(&p, &id, &command.name)
+                .await
+                .map_err(failure)
+        }
+        .await,
+    )
+}
+async fn project(
+    State(s): State<Arc<ServiceState>>,
+    h: HeaderMap,
+    Path(id): Path<String>,
+) -> Response {
+    output(
+        async {
+            let (a, p) = actor(&s, &h).await?;
+            a.get_project_as(&p, &id).await.map_err(failure)
         }
         .await,
     )

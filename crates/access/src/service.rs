@@ -955,7 +955,11 @@ pub(crate) async fn lock_org(tx: &DatabaseTransaction, org: &str) -> Result<()> 
     .ok_or(Error::NotFound)?;
     Ok(())
 }
-async fn tenant(tx: &DatabaseTransaction, actor: &Principal, customer: &str) -> Result<Value> {
+pub(crate) async fn tenant(
+    tx: &DatabaseTransaction,
+    actor: &Principal,
+    customer: &str,
+) -> Result<Value> {
     let sql = format!(
         "SELECT to_jsonb(profile) AS data FROM (SELECT {PROFILE},t.organization_id,m.role AS member_role FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id LEFT JOIN webdock_auth.member m ON m.\"organizationId\"=t.organization_id AND m.\"userId\"=$2 WHERE c.id=$1 AND ($3 OR $4 OR (c.status='active' AND m.id IS NOT NULL AND webdock_rls.local_organization_authority(t.organization_id)))) profile"
     );
