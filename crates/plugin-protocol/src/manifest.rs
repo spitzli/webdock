@@ -744,6 +744,8 @@ fn self_service(v: &Value) -> Result<()> {
             ensure(customer && find(features, "id", f.as_str().ok_or_else(invalid)?).is_some())?;
         }
         ensure(customer == (feature.is_some() || resource.is_some()))?;
+        // Creating and deleting change state: members and read-only tokens must never reach them.
+        ensure(!matches!(resource, Some("create" | "delete")) || a["intent"] == "write")?;
         let id_input = &a["input"]["properties"]["resource_id"];
         match resource {
             None => {}

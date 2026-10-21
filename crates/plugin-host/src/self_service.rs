@@ -100,12 +100,23 @@ impl HostService {
     /// Index the resource a finished create names, or drop the one a delete acted on. Customer,
     /// project and offering come from the persisted invocation, never from plugin output.
     pub async fn record_resource(&self, handle: &InvocationHandle, output: &Value) -> Result<()> {
-        let (inv, metadata, _) = self.persisted(&handle.claims).await?;
+        // The plugin has already acted. Only confirm this is the authenticated, unrevoked invocation;
+        // a policy change or token expiry since then must not let the index drift from reality.
+        let tx = self.controller().await?;
+        let row = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT to_jsonb(v) AS invocation FROM webdock_auth.plugin_invocation v WHERE id=$1::uuid AND kind='action' AND revoked_at IS NULL AND plugin_id=$2 AND project_id=$3 AND name=$4 AND runtime_generation=$5",[handle.claims.id.clone().into(),handle.claims.plugin_id.clone().into(),handle.claims.project_id.clone().into(),handle.claims.action.clone().into(),(handle.claims.generation as i64).into()])).await.map_err(db_error)?.ok_or_else(PluginError::denied)?;
+        let invocation: Value = row.try_get("", "invocation").map_err(db_error)?;
+        let metadata = self
+            .metadata(
+                &tx,
+                &handle.claims.plugin_id,
+                Some(&handle.claims.project_id),
+            )
+            .await?;
         let action = metadata
             .manifest
             .action(&handle.claims.action)
             .ok_or_else(PluginError::denied)?;
-        let context = &inv.row["session_context"];
+        let context = &invocation["session_context"];
         let (resource, name) = match action["resource"].as_str() {
             Some("create") => {
                 let resource = &output["resource"];
@@ -122,13 +133,12 @@ impl HostService {
             }
             _ => return Ok(()),
         };
-        let tx = self.controller().await?;
         let row = tx
             .query_one_raw(Statement::from_sql_and_values(
                 DbBackend::Postgres,
                 "SELECT webdock_rls.record_plugin_resource($1::uuid,$2,$3,$4) AS recorded",
                 [
-                    inv.id.clone().into(),
+                    handle.claims.id.clone().into(),
                     resource.into(),
                     name.into(),
                     (context["operator"] == true).into(),

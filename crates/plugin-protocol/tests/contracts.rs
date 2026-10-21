@@ -442,3 +442,12 @@ fn ids_unique() {
         .push(page);
     assert!(!parses(&v));
 }
+
+#[test]
+fn create_and_delete_must_be_writes() {
+    for index in [0, 2] {
+        let mut v = product();
+        v["actions"][index]["intent"] = json!("read");
+        assert!(!parses(&v), "{}", v["actions"][index]["name"]);
+    }
+}

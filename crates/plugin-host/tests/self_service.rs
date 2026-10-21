@@ -800,3 +800,30 @@ async fn operator_policy_api() {
     assert!(host.authenticate(peer(), &admitted.token).await.is_err());
     f.cleanup().await;
 }
+
+#[tokio::test]
+#[ignore = "requires local retained-schema restricted roles and signed RLS fixture"]
+async fn index_follows_what_the_plugin_did_even_if_policy_changed_meanwhile() {
+    let f = Fixture::new().await;
+    let host = f.host().await;
+    f.set_mode("everyone", &[]).await;
+    let admitted = host
+        .admit(
+            f.principal("owner"),
+            f.input(0, "notes.create", json!({"name":"late"})),
+        )
+        .await
+        .unwrap();
+    let handle = host.authenticate(peer(), &admitted.token).await.unwrap();
+    // The plugin has created the note; the operator takes creation back before Core records it.
+    f.set_mode("assigned", &[]).await;
+    host.record_resource(&handle, &json!({"resource":{"id":"late-1","name":"late"}}))
+        .await
+        .unwrap();
+    assert_eq!(
+        f.resources().await.len(),
+        1,
+        "the created note stays visible and deletable"
+    );
+    f.cleanup().await;
+}
