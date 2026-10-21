@@ -146,6 +146,7 @@ pub fn safe_return_to(raw: &str) -> Option<String> {
         "/operations",
         "/extensions",
         "/audit-events",
+        "/workspaces",
     ];
     if raw != "/"
         && !allowed

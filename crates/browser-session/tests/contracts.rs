@@ -22,6 +22,8 @@ fn redirect_boundaries_allow_existing_console_paths_and_reject_auth_loops() {
         "/account",
         "/sites",
         "/admin/collections/pages?limit=10",
+        "/workspaces/101/projects/201",
+        "/workspaces/101/projects/201/resources/echo-demo/0000-note",
     ] {
         assert_eq!(safe_return_to(path).as_deref(), Some(path));
     }
