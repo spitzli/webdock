@@ -143,3 +143,211 @@ impl HostService {
         tx.commit().await.map_err(db_error)
     }
 }
+
+type Authority<'a> = Option<&'a webdock_browser_session::StoredAuthority>;
+const MODES: &[&str] = &["everyone", "selected", "assigned"];
+impl HostService {
+    /// Operator view of one plugin's self-service features with modes and allow lists.
+    pub async fn self_service(
+        &self,
+        actor: &Principal,
+        authority: Authority<'_>,
+        plugin: &str,
+    ) -> Result<Value> {
+        if !slug(plugin) {
+            return Err(invalid("Invalid plugin"));
+        }
+        let guard = self.admin_guard(actor, authority, false).await?;
+        let tx = self.operator_tx(actor).await?;
+        let metadata = self.metadata(&tx, plugin, None).await?;
+        let modes = Self::modes(&tx, plugin).await?;
+        let rows = tx.query_all_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT f.feature_id,jsonb_build_object('id',c.id,'name',c.name) AS customer FROM webdock_auth.plugin_feature_customer f JOIN webdock_admin.customers c ON c.id=f.customer_id WHERE f.plugin_id=$1 ORDER BY c.name,c.id",[plugin.into()])).await.map_err(db_error)?;
+        let mut features = Vec::new();
+        for feature in metadata.manifest.features() {
+            let id = string(feature, "id")?;
+            let mut customers = Vec::new();
+            for row in &rows {
+                if row.try_get::<String>("", "feature_id").map_err(db_error)? == id {
+                    customers.push(row.try_get::<Value>("", "customer").map_err(db_error)?);
+                }
+            }
+            let mut view = feature.clone();
+            view["mode"] = json!(modes.get(id).map_or("assigned", String::as_str));
+            view["customers"] = Value::Array(customers);
+            features.push(view);
+        }
+        let revision = integer(&metadata.installation, "policy_revision")?.to_string();
+        self.admin_commit(tx, actor, authority, guard, false)
+            .await?;
+        Ok(json!({"revision": revision, "features": features}))
+    }
+    pub async fn set_feature_mode(
+        &self,
+        actor: &Principal,
+        authority: Authority<'_>,
+        plugin: &str,
+        feature: &str,
+        mode: &str,
+        expected_revision: &str,
+    ) -> Result<Value> {
+        if !MODES.contains(&mode) {
+            return Err(invalid("Unknown self-service mode"));
+        }
+        let (tx, guard) = self
+            .policy_tx(actor, authority, plugin, feature, expected_revision)
+            .await?;
+        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.plugin_feature_policy(plugin_id,feature_id,mode,updated_by) VALUES($1,$2,$3,$4) ON CONFLICT (plugin_id,feature_id) DO UPDATE SET mode=EXCLUDED.mode,updated_by=EXCLUDED.updated_by,updated_at=now()",[plugin.into(),feature.into(),mode.into(),actor.user_id.clone().into()])).await.map_err(db_error)?;
+        self.policy_commit(tx, guard, actor, authority, plugin, "plugin.feature.mode")
+            .await
+    }
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Explicit authority, target and revision inputs keep the policy boundary auditable."
+    )]
+    pub async fn set_feature_customer(
+        &self,
+        actor: &Principal,
+        authority: Authority<'_>,
+        plugin: &str,
+        feature: &str,
+        customer: &str,
+        allowed: bool,
+        expected_revision: &str,
+    ) -> Result<Value> {
+        if customer.is_empty()
+            || customer.len() > 20
+            || !customer.bytes().all(|b| b.is_ascii_digit())
+        {
+            return Err(invalid("Invalid customer"));
+        }
+        let (tx, guard) = self
+            .policy_tx(actor, authority, plugin, feature, expected_revision)
+            .await?;
+        if allowed {
+            let known = tx
+                .query_one_raw(Statement::from_sql_and_values(
+                    DbBackend::Postgres,
+                    "SELECT 1 AS known FROM webdock_admin.customers WHERE id=$1",
+                    [customer.into()],
+                ))
+                .await
+                .map_err(db_error)?;
+            if known.is_none() {
+                return Err(PluginError::new(
+                    webdock_plugin_protocol::ErrorCode::NotFound,
+                    "Customer not found",
+                ));
+            }
+            tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.plugin_feature_customer(plugin_id,feature_id,customer_id,added_by) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",[plugin.into(),feature.into(),customer.into(),actor.user_id.clone().into()])).await.map_err(db_error)?;
+        } else {
+            tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"DELETE FROM webdock_auth.plugin_feature_customer WHERE plugin_id=$1 AND feature_id=$2 AND customer_id=$3",[plugin.into(),feature.into(),customer.into()])).await.map_err(db_error)?;
+        }
+        self.policy_commit(
+            tx,
+            guard,
+            actor,
+            authority,
+            plugin,
+            "plugin.feature.customer",
+        )
+        .await
+    }
+    /// Every feature of every enabled plugin with its mode, and whether this customer is on its list.
+    pub async fn customer_self_service(
+        &self,
+        actor: &Principal,
+        authority: Authority<'_>,
+        customer: &str,
+    ) -> Result<Value> {
+        let guard = self.admin_guard(actor, authority, false).await?;
+        let tx = self.operator_tx(actor).await?;
+        let ids = tx.query_all_raw(Statement::from_string(DbBackend::Postgres,"SELECT id FROM webdock_auth.plugin_installation WHERE kind='external' AND state='enabled' ORDER BY id")).await.map_err(db_error)?;
+        let mut out = Vec::new();
+        for row in ids {
+            let plugin: String = row.try_get("", "id").map_err(db_error)?;
+            let Ok(metadata) = self.metadata(&tx, &plugin, None).await else {
+                continue;
+            };
+            let modes = Self::modes(&tx, &plugin).await?;
+            let listed = tx.query_all_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT feature_id FROM webdock_auth.plugin_feature_customer WHERE plugin_id=$1 AND customer_id=$2",[plugin.clone().into(),customer.into()])).await.map_err(db_error)?
+                .iter().map(|r| r.try_get::<String>("", "feature_id").map_err(db_error)).collect::<Result<Vec<_>>>()?;
+            for feature in metadata.manifest.features() {
+                let id = string(feature, "id")?;
+                out.push(json!({"plugin":plugin,"pluginRevision":integer(&metadata.installation,"policy_revision")?.to_string(),"feature":id,"label":feature["label"],"mode":modes.get(id).map_or("assigned", String::as_str),"allowed":listed.iter().any(|l| l == id)}));
+            }
+        }
+        self.admin_commit(tx, actor, authority, guard, false)
+            .await?;
+        Ok(Value::Array(out))
+    }
+    async fn modes(
+        tx: &DatabaseTransaction,
+        plugin: &str,
+    ) -> Result<std::collections::HashMap<String, String>> {
+        let rows = tx
+            .query_all_raw(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "SELECT feature_id,mode FROM webdock_auth.plugin_feature_policy WHERE plugin_id=$1",
+                [plugin.into()],
+            ))
+            .await
+            .map_err(db_error)?;
+        rows.iter()
+            .map(|r| {
+                Ok((
+                    r.try_get("", "feature_id").map_err(db_error)?,
+                    r.try_get("", "mode").map_err(db_error)?,
+                ))
+            })
+            .collect()
+    }
+    /// Revision CAS and feature existence; the caller applies its change, then `policy_commit`.
+    async fn policy_tx(
+        &self,
+        actor: &Principal,
+        authority: Authority<'_>,
+        plugin: &str,
+        feature: &str,
+        expected_revision: &str,
+    ) -> Result<(DatabaseTransaction, Option<DatabaseTransaction>)> {
+        if !slug(plugin) || !crate::data::revision(expected_revision) {
+            return Err(invalid("Invalid self-service command"));
+        }
+        let guard = self.admin_guard(actor, authority, true).await?;
+        let tx = self.operator_tx(actor).await?;
+        let metadata = self.metadata(&tx, plugin, None).await?;
+        if metadata.manifest.feature(feature).is_none() {
+            return Err(invalid("Unknown self-service feature"));
+        }
+        let current = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT policy_revision::text AS revision FROM webdock_auth.plugin_installation WHERE id=$1 FOR UPDATE",[plugin.into()])).await.map_err(db_error)?.ok_or_else(PluginError::denied)?.try_get::<String>("","revision").map_err(db_error)?;
+        if current != expected_revision {
+            return Err(conflict("Self-service settings changed"));
+        }
+        Ok((tx, guard))
+    }
+    /// Bump the revision (revoking in-flight invocations), audit and commit.
+    async fn policy_commit(
+        &self,
+        tx: DatabaseTransaction,
+        guard: Option<DatabaseTransaction>,
+        actor: &Principal,
+        authority: Authority<'_>,
+        plugin: &str,
+        audit: &str,
+    ) -> Result<Value> {
+        let revision: i64 = tx
+            .query_one_raw(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "SELECT webdock_rls.bump_plugin_policy($1) AS revision",
+                [plugin.into()],
+            ))
+            .await
+            .map_err(db_error)?
+            .ok_or_else(unavailable)?
+            .try_get("", "revision")
+            .map_err(db_error)?;
+        self.audit_admin(&tx, actor, audit, plugin).await?;
+        self.admin_commit(tx, actor, authority, guard, true).await?;
+        Ok(json!({"revision": revision.to_string()}))
+    }
+}

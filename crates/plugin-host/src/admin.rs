@@ -28,7 +28,7 @@ impl HostService {
         }
         Ok(())
     }
-    async fn audit_admin(
+    pub(super) async fn audit_admin(
         &self,
         tx: &DatabaseTransaction,
         actor: &Principal,

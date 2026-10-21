@@ -657,3 +657,146 @@ async fn create_output_requires_valid_resource() {
     assert!(f.resources().await.is_empty());
     f.cleanup().await;
 }
+
+#[tokio::test]
+#[ignore = "requires local retained-schema restricted roles and signed RLS fixture"]
+async fn operator_policy_api() {
+    let f = Fixture::new().await;
+    let host = f.host().await;
+    let op = f.principal("operator");
+    // operator_sets_mode_and_list
+    let view = host.self_service(op, None, &f.plugin).await.unwrap();
+    assert_eq!(view["revision"], "0");
+    assert_eq!(view["features"][0]["id"], "create-notes");
+    assert_eq!(view["features"][0]["mode"], "assigned");
+    assert_eq!(view["features"][0]["offering"], "note");
+    let changed = host
+        .set_feature_mode(op, None, &f.plugin, "create-notes", "selected", "0")
+        .await
+        .unwrap();
+    assert_eq!(changed["revision"], "1");
+    let changed = host
+        .set_feature_customer(
+            op,
+            None,
+            &f.plugin,
+            "create-notes",
+            &f.customers[0],
+            true,
+            "1",
+        )
+        .await
+        .unwrap();
+    assert_eq!(changed["revision"], "2");
+    let view = host.self_service(op, None, &f.plugin).await.unwrap();
+    assert_eq!(view["features"][0]["mode"], "selected");
+    assert_eq!(
+        view["features"][0]["customers"][0]["id"],
+        f.customers[0].as_str()
+    );
+    assert!(
+        host.admit(
+            f.principal("owner"),
+            f.input(0, "notes.create", json!({"name":"a"}))
+        )
+        .await
+        .is_ok()
+    );
+    // stale_revision_conflicts
+    let stale = host
+        .set_feature_mode(op, None, &f.plugin, "create-notes", "everyone", "1")
+        .await
+        .unwrap_err();
+    assert_eq!(stale.code, webdock_plugin_protocol::ErrorCode::Conflict);
+    // unknown_feature_rejected
+    assert!(
+        host.set_feature_mode(op, None, &f.plugin, "missing", "everyone", "2")
+            .await
+            .is_err()
+    );
+    assert!(
+        host.set_feature_mode(op, None, &f.plugin, "create-notes", "public", "2")
+            .await
+            .is_err()
+    );
+    assert!(
+        host.set_feature_customer(op, None, &f.plugin, "create-notes", "999999999", true, "2")
+            .await
+            .is_err()
+    );
+    // customer_cannot_change_policy
+    for who in ["owner", "admin", "preview"] {
+        assert!(
+            host.set_feature_mode(
+                f.principal(who),
+                None,
+                &f.plugin,
+                "create-notes",
+                "everyone",
+                "2"
+            )
+            .await
+            .is_err(),
+            "{who}"
+        );
+        assert!(
+            host.self_service(f.principal(who), None, &f.plugin)
+                .await
+                .is_err(),
+            "{who}"
+        );
+        assert!(
+            host.customer_self_service(f.principal(who), None, &f.customers[0])
+                .await
+                .is_err(),
+            "{who}"
+        );
+    }
+    // customer_view_lists_selected_features
+    let listed = host
+        .customer_self_service(op, None, &f.customers[0])
+        .await
+        .unwrap();
+    let mine: Vec<&Value> = listed
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|v| v["plugin"] == f.plugin.as_str())
+        .collect();
+    assert_eq!(mine.len(), 1);
+    assert_eq!(mine[0]["feature"], "create-notes");
+    assert_eq!(mine[0]["mode"], "selected");
+    assert_eq!(mine[0]["allowed"], true);
+    let other = host
+        .customer_self_service(op, None, &f.customers[1])
+        .await
+        .unwrap();
+    assert!(
+        other
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|v| v["plugin"] == f.plugin.as_str() && v["allowed"] == false)
+    );
+    // Removing the customer revokes its in-flight create.
+    let admitted = host
+        .admit(
+            f.principal("owner"),
+            f.input(0, "notes.create", json!({"name":"b"})),
+        )
+        .await
+        .unwrap();
+    host.set_feature_customer(
+        op,
+        None,
+        &f.plugin,
+        "create-notes",
+        &f.customers[0],
+        false,
+        "2",
+    )
+    .await
+    .unwrap();
+    assert!(host.authenticate(peer(), &admitted.token).await.is_err());
+    f.cleanup().await;
+}

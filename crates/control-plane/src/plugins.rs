@@ -7,10 +7,10 @@ use crate::{
 use axum::{
     Json, Router,
     body::Bytes,
-    extract::{RawQuery, State},
+    extract::{Path, RawQuery, State},
     http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response},
-    routing::{get, post},
+    routing::{get, post, put},
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -268,6 +268,142 @@ pub fn routes() -> Router<Arc<ServiceState>> {
         .route("/api/console/plugins", get(list))
         .route("/api/console/plugins/invoke", post(invoke))
         .route("/api/console/plugins/installed", get(installed).post(admin))
+        .route("/api/console/plugins/{id}/self-service", get(self_service))
+        .route(
+            "/api/console/plugins/{id}/self-service/features/{feature}",
+            put(set_feature_mode),
+        )
+        .route(
+            "/api/console/plugins/{id}/self-service/features/{feature}/customers/{customer}",
+            put(set_feature_customer),
+        )
+        .route(
+            "/api/console/customers/{id}/self-service",
+            get(customer_self_service),
+        )
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ModeCommand {
+    mode: String,
+    expected_revision: String,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct CustomerCommand {
+    allowed: bool,
+    expected_revision: String,
+}
+fn writer(actor: &auth::AuthenticatedActor) -> Result<(), ApiFailure> {
+    if actor.read_only() {
+        return Err(reject(
+            StatusCode::FORBIDDEN,
+            "permission_denied",
+            "Write authority is required.",
+        ));
+    }
+    Ok(())
+}
+fn command<T: serde::de::DeserializeOwned>(
+    body: &[u8],
+    headers: &HeaderMap,
+) -> Result<T, ApiFailure> {
+    serde_json::from_value(json_body(body, headers)?).map_err(|_| {
+        reject(
+            StatusCode::BAD_REQUEST,
+            "invalid_input",
+            "Invalid self-service command.",
+        )
+    })
+}
+async fn self_service(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        let host = &endpoints(&state)?.host;
+        let value = host
+            .self_service(&actor.principal, Some(&actor.authority), &id)
+            .await
+            .map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
+}
+async fn set_feature_mode(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    Path((id, feature)): Path<(String, String)>,
+    body: Bytes,
+) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        writer(&actor)?;
+        let input: ModeCommand = command(&body, &headers)?;
+        let host = &endpoints(&state)?.host;
+        let value = host
+            .set_feature_mode(
+                &actor.principal,
+                Some(&actor.authority),
+                &id,
+                &feature,
+                &input.mode,
+                &input.expected_revision,
+            )
+            .await
+            .map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
+}
+async fn set_feature_customer(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    Path((id, feature, customer)): Path<(String, String, String)>,
+    body: Bytes,
+) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        writer(&actor)?;
+        let input: CustomerCommand = command(&body, &headers)?;
+        let host = &endpoints(&state)?.host;
+        let value = host
+            .set_feature_customer(
+                &actor.principal,
+                Some(&actor.authority),
+                &id,
+                &feature,
+                &customer,
+                input.allowed,
+                &input.expected_revision,
+            )
+            .await
+            .map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
+}
+async fn customer_self_service(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        let host = &endpoints(&state)?.host;
+        let value = host
+            .customer_self_service(&actor.principal, Some(&actor.authority), &id)
+            .await
+            .map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
 }
 async fn list(
     State(state): State<Arc<ServiceState>>,
