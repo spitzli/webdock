@@ -7,6 +7,9 @@ import { useI18n } from "@webdock/i18n/react";
 import { useApi, useSession } from "./context";
 import { Failure, Loading } from "./common";
 import { ManagedDatabases } from "./ManagedDatabases";
+import * as ui from "./ui";
+/** Card list whose first row sits flush against the card border. */
+const list = `${ui.card} [&>li:first-child]:border-t-0`;
 const Workbench = lazy(async () => {
   // The retained workspace's geometry reader expects the standard browser Buffer shim.
   const { Buffer } = await import("buffer/");
@@ -85,15 +88,15 @@ export function DatabaseDirectory({
   if (!api.config.enabledFeatures.includes("databases"))
     return (
       <section>
-        <h1>{i18n.t("Databases")}</h1>
-        <p>{i18n.t("Database access is unavailable.")}</p>
+        <h1 className={ui.pageTitle}>{i18n.t("Databases")}</h1>
+        <p className={ui.pageLead}>{i18n.t("Database access is unavailable.")}</p>
       </section>
     );
   if (session.user.preview)
     return (
       <section>
-        <h1>{i18n.t("Databases")}</h1>
-        <p>{i18n.t("Customer preview is read-only.")}</p>
+        <h1 className={ui.pageTitle}>{i18n.t("Databases")}</h1>
+        <p className={ui.pageLead}>{i18n.t("Customer preview is read-only.")}</p>
       </section>
     );
   if (tenants.isPending) return <Loading>{i18n.t("Loading…")}</Loading>;
@@ -104,16 +107,16 @@ export function DatabaseDirectory({
   const data = directory.data?.data;
   return (
     <section>
-      <div className="page-heading">
+      <div className={ui.pageHeading}>
         <div>
-          <h1>{i18n.t("Databases")}</h1>
-          <p className="muted">
+          <h1 className={ui.pageTitle}>{i18n.t("Databases")}</h1>
+          <p className={ui.pageLead}>
             {i18n.t("Open a database with your assigned access.")}
           </p>
         </div>
         {data?.operator ? (
           <button
-            className="button primary"
+            className={ui.button("primary")}
             onClick={() => {
               setEditing("create");
             }}
@@ -122,9 +125,9 @@ export function DatabaseDirectory({
           </button>
         ) : null}
       </div>
-      <label className="database-workspace-picker">
+      <label className={ui.cx(`${ui.field} mb-6 max-w-[420px]`)}>
         {i18n.t("Workspace")}
-        <select
+        <select className={ui.input}
           aria-label={i18n.t("Workspace")}
           value={customerID ?? ""}
           onChange={(event) =>
@@ -143,7 +146,7 @@ export function DatabaseDirectory({
         </select>
       </label>
       {!customerID ? (
-        <p className="muted">{i18n.t("Choose a workspace.")}</p>
+        <p className="text-muted">{i18n.t("Choose a workspace.")}</p>
       ) : directory.isPending ? (
         <Loading>{i18n.t("Loading…")}</Loading>
       ) : directory.error ? (
@@ -153,7 +156,7 @@ export function DatabaseDirectory({
         />
       ) : null}
       {mutation.error ? (
-        <p className="error" role="alert">
+        <p className="mt-4 text-sm text-danger" role="alert">
           {i18n.error(mutation.error.message)}
         </p>
       ) : null}
@@ -166,21 +169,21 @@ export function DatabaseDirectory({
             operator={data.operator}
           />
           {data.managed.some((database) => database.canOpen) ? (
-            <section className="security-section">
-              <h2>{i18n.t("Database workspace access")}</h2>
+            <section className="mt-8 grid gap-3">
+              <h2 className={ui.sectionTitle}>{i18n.t("Database workspace access")}</h2>
               {data.managed.length ? (
-                <ul className="security-list">
+                <ul className={list}>
                   {data.managed
                     .filter((database) => database.canOpen)
                     .map((database) => (
-                      <li key={database.id}>
-                        <div>
-                          <strong>{database.name}</strong>
-                          <p className="muted">{database.state}</p>
+                      <li key={database.id} className={ui.cardRow}>
+                        <div className="grid min-w-0 gap-1">
+                          <strong className="font-medium">{database.name}</strong>
+                          <span className={ui.cx(`${ui.badge(ui.statusTone(database.state))} justify-self-start`)}>{database.state}</span>
                         </div>
                         {database.canOpen ? (
                           <Link
-                            className="button"
+                            className={ui.button()}
                             to="/databases/$id"
                             params={{ id: database.id }}
                             search={{ managed: true, customer: customerID }}
@@ -192,27 +195,27 @@ export function DatabaseDirectory({
                     ))}
                 </ul>
               ) : (
-                <p className="muted">{i18n.t("No databases available.")}</p>
+                <p className="text-muted">{i18n.t("No databases available.")}</p>
               )}
             </section>
           ) : null}
-          <section className="security-section">
-            <h2>{i18n.t("Database connections")}</h2>
+          <section className="mt-8 grid gap-3">
+            <h2 className={ui.sectionTitle}>{i18n.t("Database connections")}</h2>
             {data.bindings.length ? (
-              <ul className="security-list">
+              <ul className={list}>
                 {data.bindings.map((binding) => (
-                  <li key={binding.id}>
-                    <div>
-                      <strong>{binding.name}</strong>
-                      <p className="muted">
+                  <li key={binding.id} className={ui.cardRow}>
+                    <div className="grid min-w-0 gap-0.5">
+                      <strong className="font-medium">{binding.name}</strong>
+                      <p className="text-[13px] text-muted">
                         {binding.engine} · {binding.environment}
                         {binding.profile ? ` · ${binding.profile}` : ""}
                       </p>
                     </div>
-                    <div className="row-actions">
+                    <div className="flex flex-wrap items-center gap-2">
                       {binding.profile ? (
                         <Link
-                          className="button"
+                          className={ui.button()}
                           to="/databases/$id"
                           params={{ id: binding.id }}
                           search={{ customer: customerID, managed: false }}
@@ -222,7 +225,7 @@ export function DatabaseDirectory({
                       ) : null}
                       {data.operator ? (
                         <button
-                          className="button quiet"
+                          className={ui.button("quiet")}
                           onClick={() => {
                             setEditing(binding.id);
                           }}
@@ -235,19 +238,14 @@ export function DatabaseDirectory({
                 ))}
               </ul>
             ) : (
-              <p className="muted">{i18n.t("No databases available.")}</p>
+              <p className="text-muted">{i18n.t("No databases available.")}</p>
             )}
           </section>
           {data.operator && editing ? (
-            <section className="security-section">
-              <h2>
-                {i18n.t(
-                  editing === "create" ? "Add database" : "Manage access",
-                )}
-              </h2>
+            <section className={ui.cx(`${ui.card} mt-8`)}>
               <form
                 key={editing}
-                className="form-grid"
+                className={ui.cx(`${ui.cardBody} sm:grid-cols-2`)}
                 onSubmit={(event) => {
                   event.preventDefault();
                   const f = new FormData(event.currentTarget);
@@ -274,11 +272,16 @@ export function DatabaseDirectory({
                   mutation.mutate(command);
                 }}
               >
+                <h2 className={ui.cx(`${ui.sectionTitle} sm:col-span-2`)}>
+                  {i18n.t(
+                    editing === "create" ? "Add database" : "Manage access",
+                  )}
+                </h2>
                 {editing === "create" ? (
                   <>
-                    <label>
+                    <label className={ui.field}>
                       {i18n.t("Project")}
-                      <select name="project" required>
+                      <select className={ui.input} name="project" required>
                         {data.projects.map((project) => (
                           <option key={project.id} value={project.id}>
                             {project.name}
@@ -286,20 +289,20 @@ export function DatabaseDirectory({
                         ))}
                       </select>
                     </label>
-                    <label>
+                    <label className={ui.field}>
                       {i18n.t("Name")}
-                      <input name="name" required maxLength={120} />
+                      <input className={ui.input} name="name" required maxLength={120} />
                     </label>
-                    <label>
+                    <label className={ui.field}>
                       {i18n.t("Database engine")}
-                      <select name="engine">
+                      <select className={ui.input} name="engine">
                         <option value="postgresql">PostgreSQL</option>
                         <option value="sqlite">SQLite</option>
                       </select>
                     </label>
-                    <label>
+                    <label className={ui.field}>
                       {i18n.t("Environment")}
-                      <select name="environment">
+                      <select className={ui.input} name="environment">
                         <option value="production">Production</option>
                         <option value="staging">Staging</option>
                         <option value="development">Development</option>
@@ -308,9 +311,9 @@ export function DatabaseDirectory({
                   </>
                 ) : (
                   <>
-                    <label>
+                    <label className={ui.field}>
                       {i18n.t("User")}
-                      <select name="subject" required>
+                      <select className={ui.input} name="subject" required>
                         {data.people.map((person) => (
                           <option key={person.id} value={person.id}>
                             {person.name} · {person.email}
@@ -318,9 +321,9 @@ export function DatabaseDirectory({
                         ))}
                       </select>
                     </label>
-                    <label>
+                    <label className={ui.field}>
                       {i18n.t("Access")}
-                      <select name="profile">
+                      <select className={ui.input} name="profile">
                         <option value="read">{i18n.t("Read only")}</option>
                         <option value="write">
                           {i18n.t("Read and write")}
@@ -330,9 +333,9 @@ export function DatabaseDirectory({
                         </option>
                       </select>
                     </label>
-                    <label>
+                    <label className={ui.field}>
                       {i18n.t("Runtime origin")}
-                      <input
+                      <input className={ui.input}
                         name="runtime"
                         type="url"
                         required
@@ -340,13 +343,13 @@ export function DatabaseDirectory({
                         placeholder="https://database.example.com"
                       />
                     </label>
-                    <label>
+                    <label className={ui.field}>
                       {i18n.t("Connection ID")}
-                      <input name="connection" required maxLength={128} />
+                      <input className={ui.input} name="connection" required maxLength={128} />
                     </label>
-                    <label>
+                    <label className={ui.field}>
                       {i18n.t("Proxy secret")}
-                      <input
+                      <input className={ui.input}
                         name="secret"
                         type="password"
                         autoComplete="new-password"
@@ -355,28 +358,28 @@ export function DatabaseDirectory({
                         maxLength={512}
                       />
                     </label>
-                    <label className="checkbox-label">
-                      <input name="isolation" type="checkbox" required />
+                    <label className="flex items-start gap-2.5 text-[13px] sm:col-span-2">
+                      <input className="mt-0.5 size-4 shrink-0 accent-accent" name="isolation" type="checkbox" required />
                       {i18n.t(
                         "This runtime is isolated for this database user.",
                       )}
                     </label>
-                    <label className="checkbox-label">
-                      <input name="role" type="checkbox" required />
+                    <label className="flex items-start gap-2.5 text-[13px] sm:col-span-2">
+                      <input className="mt-0.5 size-4 shrink-0 accent-accent" name="role" type="checkbox" required />
                       {i18n.t("The database role matches the selected access.")}
                     </label>
                   </>
                 )}
-                <div className="form-actions">
+                <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
                   <button
-                    className="button primary"
+                    className={ui.button("primary")}
                     disabled={mutation.isPending}
                   >
                     {i18n.t("Save")}
                   </button>
                   <button
                     type="button"
-                    className="button"
+                    className={ui.button()}
                     onClick={() => {
                       setEditing(undefined);
                     }}
@@ -386,7 +389,7 @@ export function DatabaseDirectory({
                   {editing !== "create" ? (
                     <button
                       type="button"
-                      className="button"
+                      className={ui.button()}
                       disabled={mutation.isPending}
                       onClick={(event) => {
                         const form = event.currentTarget.closest("form");
@@ -405,8 +408,9 @@ export function DatabaseDirectory({
                 </div>
               </form>
               {editing !== "create" ? (
+                <div className={ui.cx(`${ui.cardFooter} justify-end`)}>
                 <button
-                  className="button danger"
+                  className={ui.button("danger")}
                   disabled={mutation.isPending}
                   onClick={() => {
                     if (
@@ -424,6 +428,7 @@ export function DatabaseDirectory({
                 >
                   {i18n.t("Disable connection")}
                 </button>
+                </div>
               ) : null}
             </section>
           ) : null}
@@ -470,13 +475,14 @@ export function DatabaseViewer({
     [api],
   );
   if (session.user.preview || !api.config.enabledFeatures.includes("databases"))
-    return <p>{i18n.t("Database access is unavailable.")}</p>;
+    return <p className="text-muted">{i18n.t("Database access is unavailable.")}</p>;
   return (
+    // database-view remains as the hook for the module's fixed-height workbench rules.
     <section className="database-view">
-      <div className="page-heading">
-        <h1>{i18n.t("Database workspace")}</h1>
+      <div className={ui.cx(`${ui.pageHeading} mb-6`)}>
+        <h1 className={ui.pageTitle}>{i18n.t("Database workspace")}</h1>
         <Link
-          className="button"
+          className={ui.button()}
           to="/databases"
           search={{ customer: customerID }}
         >

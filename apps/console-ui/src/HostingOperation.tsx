@@ -11,6 +11,7 @@ import {
 } from "./hosting-contracts";
 import { useApi } from "./context";
 import { Failure, Loading } from "./common";
+import * as ui from "./ui";
 function useHostingOperation(id: string) {
   const call = useHostingCommand();
   const query = useQuery({
@@ -44,45 +45,49 @@ export function HostingOperation({ id }: { id: string }) {
     return <Failure error={query.error} retry={() => void query.refetch()} />;
   return (
     <section>
-      <div className="page-heading">
+      <div className={ui.pageHeading}>
         <div>
-          <h1>Hosting operation</h1>
-          <p className="muted">
-            {query.data.action} · {query.data.id}
+          <h1 className={ui.pageTitle}>Hosting operation</h1>
+          <p className={ui.pageLead}>
+            {query.data.action} · <span className={ui.mono}>{query.data.id}</span>
           </p>
         </div>
         <button
-          className="button"
+          className={ui.button()}
           onClick={() => void query.refetch()}
           disabled={query.isFetching}
         >
           Refresh
         </button>
       </div>
-      <dl className="detail-grid">
+      <div className={ui.card}>
+      <dl className={ui.cx(`${ui.cardBody} sm:grid-cols-2`)}>
         <div>
-          <dt>Status</dt>
-          <dd role="status">{query.data.status}</dd>
+          <dt className="text-xs text-muted">Status</dt>
+          <dd className="mt-1 text-sm font-medium" role="status">{query.data.status}</dd>
         </div>
         <div>
-          <dt>Requested</dt>
-          <dd>
+          <dt className="text-xs text-muted">Requested</dt>
+          <dd className="mt-1 text-sm">
             {query.data.createdAt
               ? new Date(query.data.createdAt).toLocaleString()
               : "Not recorded"}
           </dd>
         </div>
       </dl>
-      <p className="muted mt-4">{operationDescription(query.data.status)}</p>
+      <div className={ui.cardFooter}>
+      <span>{operationDescription(query.data.status)}</span>
       {query.data.projectID ? (
         <Link
-          className="button mt-4"
+          className={ui.button()}
           to="/hosting/projects/$projectID"
           params={{ projectID: query.data.projectID }}
         >
           Back to applications
         </Link>
       ) : null}
+      </div>
+      </div>
     </section>
   );
 }
@@ -104,12 +109,12 @@ export function operationDescription(status: string): string {
 }
 export function HostingReceipt({ receipt }: { receipt: Receipt }) {
   return (
-    <div role="status" className="state">
-      <div>
-        <h2>Request recorded</h2>
-        <p>{operationDescription(receipt.status)}</p>
+    <div role="status" className={ui.cx(`${ui.notice} grid gap-2`)}>
+      <div className="grid gap-2">
+        <h2 className="text-sm font-semibold">Request recorded</h2>
+        <p className="text-muted">{operationDescription(receipt.status)}</p>
         <Link
-          className="button"
+          className={ui.cx(`${ui.button()} justify-self-start`)}
           to="/hosting/operations/$operationID"
           params={{ operationID: receipt.id }}
         >
@@ -125,11 +130,12 @@ export function HostingOperationLink({ id }: { id: string }) {
   if (query.error)
     return <Failure error={query.error} retry={() => void query.refetch()} />;
   return (
-    <div className="state mb-4" role="status">
-      <div>
-        <strong>Latest operation: {query.data?.status ?? "Loading…"}</strong>
-        <p>{operationDescription(query.data?.status ?? "")}</p>
+    <div className={ui.cx(`${ui.notice} mb-4`)} role="status">
+      <div className="grid gap-1">
+        <strong className="font-semibold">Latest operation: {query.data?.status ?? "Loading…"}</strong>
+        <p className="text-muted">{operationDescription(query.data?.status ?? "")}</p>
         <Link
+          className="justify-self-start font-medium underline underline-offset-3"
           aria-label="View latest operation"
           to="/hosting/operations/$operationID"
           params={{ operationID: id }}
@@ -171,21 +177,21 @@ export function HostingLogRead({
   if (query.error)
     return <Failure error={query.error} retry={() => void query.refetch()} />;
   return (
-    <section className="security-section" aria-label="Requested log snapshot">
-      <h3>Log request: {query.data.status}</h3>
-      <p role="status">{operationDescription(query.data.status)}</p>
+    <section className={ui.cx(`${ui.notice} grid gap-2`)} aria-label="Requested log snapshot">
+      <h3 className="text-sm font-semibold">Log request: {query.data.status}</h3>
+      <p role="status" className="text-muted">{operationDescription(query.data.status)}</p>
       {query.data.error ? (
-        <p role="alert" className="error">
+        <p role="alert" className="text-danger">
           {query.data.error}
         </p>
       ) : null}
       {query.data.result ? (
         <>
-          <pre className="whitespace-pre-wrap break-all mt-4">
+          <pre className="mt-2 max-h-[60dvh] overflow-auto rounded-md border border-outline bg-surface p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all">
             {query.data.result.logs || "No log output."}
           </pre>
           {query.data.result.truncated ? (
-            <p className="muted">
+            <p className="text-muted">
               This snapshot was truncated to the permitted size.
             </p>
           ) : null}

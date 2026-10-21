@@ -56,7 +56,7 @@ export function Shell() {
     parseConsoleSearch(searchString).customer,
   );
   const mail = useMailWorkspace(
-    pathname === "/mail",
+    pathname === "/mail" || pathname.startsWith("/mail/"),
     parseConsoleSearch(searchString).customer,
   );
   const projectId = /^\/projects\/([1-9][0-9]{0,18})$/.exec(pathname)?.[1];
@@ -190,7 +190,7 @@ export function Shell() {
               to="/$collection"
               params={{ collection }}
               search={collection === "projects" ? { customer: customerId } : {}}
-              className={`nav-item ${pathname.startsWith(`/${collection}`) ? "selected" : ""}`}
+              className={navItem(pathname.startsWith(`/${collection}`))}
               aria-current={
                 pathname.startsWith(`/${collection}`) ? "page" : undefined
               }
@@ -334,7 +334,7 @@ export function Shell() {
             }}
           />
           <button
-            className={`${ui.button("quiet", "icon")} md:hidden`}
+            className={ui.cx(`${ui.button("quiet", "icon")} md:hidden`)}
             aria-label="Open navigation"
             onClick={() => {
               setMobile(true);
@@ -373,7 +373,7 @@ export function Shell() {
             {navigation}
           </nav>
           <button
-            className={`${ui.button()} mt-3 w-full`}
+            className={ui.cx(`${ui.button()} mt-3 w-full`)}
             onClick={() => {
               logout.mutate();
             }}
@@ -438,7 +438,7 @@ function CommandPalette({ close }: { close: () => void }) {
       <label className="relative block">
         <MagnifyingGlassIcon size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" />
         <input
-          className={`${ui.input} pl-9`}
+          className={ui.cx(`${ui.input} pl-9`)}
           autoFocus
           aria-label="Search projects and customers"
           placeholder="Search by name…"

@@ -5,6 +5,7 @@ import { useApi, useSession } from "../context";
 import { Empty, Failure, Loading, Modal } from "../common";
 import { ActionFailure } from "../HostingActionState";
 import { uncertainOutcome } from "../hosting-client";
+import * as ui from "../ui";
 import {
   availability,
   blockerText,
@@ -37,22 +38,22 @@ export function InstalledExtensions() {
     return <Failure error={query.error} retry={() => void query.refetch()} />;
   return (
     <section>
-      <div className="page-heading">
+      <div className={ui.pageHeading}>
         <div>
-          <h1>Installed extensions</h1>
-          <p className="muted">
+          <h1 className={ui.pageTitle}>Installed extensions</h1>
+          <p className={ui.pageLead}>
             Review availability, runtime state and dependencies.
           </p>
         </div>
         <button
-          className="button"
+          className={ui.button()}
           onClick={() => void query.refetch()}
           disabled={query.isFetching}
         >
           Refresh
         </button>
       </div>
-      <p className="muted mb-4">
+      <p className={ui.cx(`${ui.notice} mb-4 max-w-none text-muted`)}>
         Disabling stops new authorized work and may wait for accepted work to
         drain. The current controller retains deployed processes and data; this
         is not an uninstall or process shutdown.
@@ -63,27 +64,27 @@ export function InstalledExtensions() {
           installation is not yet available in this Console.
         </Empty>
       ) : (
-        <div className="table-scroll">
-          <table>
+        <div className={ui.tableFrame}>
+          <table className={ui.table}>
             <thead>
               <tr>
-                <th scope="col">Extension</th>
-                <th scope="col">Availability</th>
-                <th scope="col">Runtime</th>
-                <th scope="col">Actions</th>
+                <th scope="col" className={ui.cx(`${ui.th} w-1/2`)}>Extension</th>
+                <th scope="col" className={ui.th}>Availability</th>
+                <th scope="col" className={ui.th}>Runtime</th>
+                <th scope="col" className={ui.th}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {query.data.map((plugin) => (
-                <tr key={plugin.id}>
-                  <td>
-                    <strong>{plugin.id}</strong>
-                    <span className="record-meta">
+                <tr key={plugin.id} className={ui.tr}>
+                  <td className={ui.cx(`${ui.td} min-w-[170px]`)}>
+                    <strong className="font-medium">{plugin.id}</strong>
+                    <span className={ui.cx(`block text-muted ${ui.mono}`)}>
                       {plugin.kind === "builtin" ? "Built-in" : "External"} ·{" "}
                       {plugin.version}
                     </span>
                     {plugin.dependencies.length ? (
-                      <p className="muted">
+                      <p className="mt-1 text-[13px] text-muted">
                         Requires{" "}
                         {plugin.dependencies
                           .map((value) => value.id)
@@ -91,21 +92,23 @@ export function InstalledExtensions() {
                       </p>
                     ) : null}
                     {plugin.blockers.map((blocker, index) => (
-                      <p key={index} className="error">
+                      <p key={index} className="mt-1 text-[13px] text-danger">
                         {blockerText(blocker)}
                       </p>
                     ))}
                   </td>
-                  <td>
-                    {plugin.state}
-                    <span className="record-meta">
+                  <td className={ui.td}>
+                    <span className={ui.cx(`${ui.badge(ui.statusTone(plugin.state))} normal-case`)}>{plugin.state}</span>
+                    <span className="mt-1 block text-xs text-muted">
                       Requested: {plugin.desiredState}
                     </span>
                   </td>
-                  <td>{plugin.runtime}</td>
-                  <td>
+                  <td className={ui.td}>
+                    <span className={ui.cx(`${ui.badge(ui.statusTone(plugin.runtime))} normal-case`)}>{plugin.runtime}</span>
+                  </td>
+                  <td className={ui.cx(`${ui.td} whitespace-nowrap`)}>
                     <button
-                      className="button"
+                      className={ui.button()}
                       onClick={() => {
                         setSelected(plugin);
                       }}
@@ -178,14 +181,14 @@ function ExtensionStateForm({
   return (
     <Modal title={`Availability: ${plugin.id}`} close={dismiss}>
       {mutation.data ? (
-        <div role="status">
-          <h3>Request recorded: {mutation.data.status}</h3>
-          <p>
+        <div role="status" className="grid gap-2 text-sm">
+          <h3 className="font-semibold">Request recorded: {mutation.data.status}</h3>
+          <p className="text-muted">
             Availability changes only after the controller processes this
             operation.
           </p>
           <Link
-            className="button mt-4"
+            className={ui.cx(`${ui.button()} mt-2 justify-self-start`)}
             to="/extensions/operations/$operationID"
             params={{ operationID: mutation.data.id }}
           >
@@ -194,7 +197,7 @@ function ExtensionStateForm({
         </div>
       ) : (
         <form
-          className="editor"
+          className="grid gap-5 text-sm"
           onSubmit={(event) => {
             event.preventDefault();
             const data = new FormData(event.currentTarget);
@@ -213,9 +216,10 @@ function ExtensionStateForm({
             {plugin.state}; requested: {plugin.desiredState}; runtime:{" "}
             {plugin.runtime}.
           </p>
-          <label>
+          <label className={ui.field}>
             Requested availability
             <select
+              className={ui.input}
               name="desired"
               aria-label="Requested availability"
               defaultValue={plugin.desiredState}
@@ -226,13 +230,14 @@ function ExtensionStateForm({
               <option value="disabled">Disabled</option>
             </select>
           </label>
-          <p>
+          <p className="text-muted">
             Disabling retains deployed processes and stored data. Dependencies
             or accepted work can block the transition.
           </p>
-          <label className="check">
+          <label className="flex items-center gap-2 text-[13px]">
             <input
               type="checkbox"
+              className="size-4 accent-accent"
               checked={confirmed}
               onChange={(event) => {
                 setConfirmed(event.target.checked);
@@ -242,7 +247,7 @@ function ExtensionStateForm({
             I reviewed the requested availability change.
           </label>
           <button
-            className="button primary"
+            className={ui.cx(`${ui.button("primary")} justify-self-start`)}
             disabled={!confirmed || mutation.isPending || uncertain}
           >
             {mutation.isPending ? "Requesting…" : "Request availability change"}

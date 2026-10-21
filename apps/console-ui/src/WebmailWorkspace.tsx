@@ -7,6 +7,7 @@ import { foldersSchema, orderFolders, identitiesSchema, listSchema, lookupSchema
 import { WebmailError, writeMail, type WebmailConnection, type WriteCommand, type WriteOutcome } from "./webmail-client";
 import { blankEditor, editorPayload, replyEditor, type MailEditor } from "./webmail-editor";
 import { MailComposer, MailMessage, MailMessageList, SubmissionNotice } from "./WebmailPanels";
+import * as ui from "./ui";
 
 type WriteLedger = { command: WriteCommand; uncertain: boolean } | null;
 export function WebmailWorkspace({ connection, customerID, mailboxID, name, address, sendingAvailable }: {
@@ -148,35 +149,35 @@ export function WebmailWorkspace({ connection, customerID, mailboxID, name, addr
     setEditor(reply ? replyEditor(reply, identity) : blankEditor(identity));
   };
   const blocked = busy || ledger.data !== null;
-  return <section aria-label="Webmail" className="mail-reader">
-    <header className="page-heading">
-      <div><Link to="/mail" search={{ customer: customerID }} className="muted">Mailboxes</Link><h1>{name}</h1><p className="muted">{address}</p></div>
-      <button className="button" onClick={() => { setRefresh((value) => value + 1); }}>Refresh mailbox</button>
+  return <section aria-label="Webmail" className="grid gap-3">
+    <header className={ui.cx(`${ui.pageHeading} mb-3 max-sm:mb-3`)}>
+      <div className="min-w-0 [overflow-wrap:anywhere]"><Link to="/mail" search={{ customer: customerID }} className="text-[13px] text-muted hover:text-foreground">Mailboxes</Link><h1 className={ui.cx(`${ui.pageTitle} mt-2`)}>{name}</h1><p className={ui.pageLead}>{address}</p></div>
+      <button className={ui.button()} onClick={() => { setRefresh((value) => value + 1); }}>Refresh mailbox</button>
     </header>
-    {error ? <p className="notice error" role="alert">{error}</p> : null}
-    {notice ? <p className="notice" role="status">{notice}</p> : null}
-    {ledger.data ? <section className="notice" role="status">
-      <strong>{busy ? "Mail change in progress" : "Mail change outcome is unknown"}</strong>
+    {error ? <p className={ui.cx(`${ui.notice} text-danger [overflow-wrap:anywhere]`)} role="alert">{error}</p> : null}
+    {notice ? <p className={ui.notice} role="status">{notice}</p> : null}
+    {ledger.data ? <section className={ui.cx(`${ui.notice} grid justify-items-start gap-2`)} role="status">
+      <strong className="font-semibold">{busy ? "Mail change in progress" : "Mail change outcome is unknown"}</strong>
       <p>Review the mailbox before another change. Only this exact saved request can be retried; a retry never creates a new request identifier.</p>
-      <button className="button" disabled={busy} onClick={() => { if (ledger.data) void runWrite(ledger.data.command, true); }}>Retry same request</button>
-      {ledger.data.command.action === "submit" ? <button className="button" disabled={busy} onClick={() => void lookup()}>Check sending status</button> : null}
+      <button className={ui.button()} disabled={busy} onClick={() => { if (ledger.data) void runWrite(ledger.data.command, true); }}>Retry same request</button>
+      {ledger.data.command.action === "submit" ? <button className={ui.button()} disabled={busy} onClick={() => void lookup()}>Check sending status</button> : null}
     </section> : null}
     {submission ? <SubmissionNotice value={submission} blocked={blocked} change={(operation) => void refreshSubmission(operation)} /> : null}
-    <div className="mail-reader-layout">
-      <aside className="mail-reader-folders">
-        <button className="button primary" disabled={blocked || !identity || Boolean(editor)} onClick={() => { openEditor(); }}>New message</button>
-        <nav aria-label="Mail folders">{folders.map((item) => <button key={item.id} className="mail-folder" aria-current={folder === item.id ? "page" : undefined} onClick={() => { setFolder(item.id); setPosition(0); setSelected(""); }}>
-          <span>{item.name}</span><span className="muted">{item.unreadEmails || ""}</span>
+    <div className="mt-1 grid min-h-[620px] grid-cols-[minmax(0,1fr)] overflow-hidden rounded-xl border border-outline bg-surface min-[601px]:grid-cols-[140px_minmax(0,1fr)] min-[1101px]:grid-cols-[160px_minmax(220px,.8fr)_minmax(280px,1.4fr)]">
+      <aside className="border-outline bg-subtle px-2.5 py-4 max-[600px]:border-b min-[601px]:border-r">
+        <button className={ui.cx(`${ui.button("primary")} mb-4 w-full`)} disabled={blocked || !identity || Boolean(editor)} onClick={() => { openEditor(); }}>New message</button>
+        <nav aria-label="Mail folders" className="max-[600px]:flex max-[600px]:flex-wrap max-[600px]:gap-1">{folders.map((item) => <button key={item.id} className="flex w-full justify-between gap-2.5 rounded-md px-2.5 py-2 text-left text-sm text-foreground [overflow-wrap:anywhere] hover:bg-soft aria-[current=page]:bg-soft aria-[current=page]:font-semibold max-[600px]:w-auto" aria-current={folder === item.id ? "page" : undefined} onClick={() => { setFolder(item.id); setPosition(0); setSelected(""); }}>
+          <span>{item.name}</span><span className="text-muted">{item.unreadEmails || ""}</span>
         </button>)}</nav>
       </aside>
-      <div className="mail-reader-list">
-        <form className="mail-search" onSubmit={(event) => { event.preventDefault(); setQuery(search); setPosition(0); setSelected(""); }}>
-          <label className="sr-only" htmlFor="mail-search">Search messages</label><input id="mail-search" value={search} maxLength={500} placeholder="Search messages" onChange={(event) => { setSearch(event.target.value); }} />
-          <button className="button" type="submit">Search</button>
+      <div className="flex min-w-0 flex-col border-outline min-[1101px]:border-r">
+        <form className="flex gap-1.5 border-b border-outline p-3" onSubmit={(event) => { event.preventDefault(); setQuery(search); setPosition(0); setSelected(""); }}>
+          <label className="sr-only" htmlFor="mail-search">Search messages</label><input id="mail-search" className={ui.cx(`${ui.input} min-h-9`)} value={search} maxLength={500} placeholder="Search messages" onChange={(event) => { setSearch(event.target.value); }} />
+          <button className={ui.button()} type="submit">Search</button>
         </form>
         {listing ? <MailMessageList value={listing} selected={selected} select={setSelected} position={position} page={setPosition} /> : <Loading>Loading messages…</Loading>}
       </div>
-      <div className="mail-reader-detail">
+      <div className="min-w-0 border-outline max-[1100px]:col-span-full max-[1100px]:border-t">
         {editor ? <MailComposer value={editor} change={setEditor} save={save} send={send} close={() => { if (!blocked && window.confirm("Close this composer? Unsaved changes will be discarded.")) setEditor(null); }} upload={(files) => void upload(files)} blocked={blocked} saved={saved} sendingAvailable={sendingAvailable} /> :
           <MailMessage message={message} selected={selected} connection={connection} folders={folders} blocked={blocked} reply={identity ? (email) => { openEditor(email); } : undefined} update={(emailId, change) => void runWrite({ action: "update", emailId, change, requestID: crypto.randomUUID() })} report={report} />}
       </div>

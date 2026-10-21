@@ -1,5 +1,8 @@
-// Tailwind recipes shared by every Console surface. Compose with extra utilities:
-// `${button("primary")} w-full`. Colours come from the theme tokens in styles.css.
+// Tailwind recipes shared by every Console surface. Compose with cx(recipe, "extra utilities"):
+// later classes win, so call sites can override a recipe. Colours come from the theme tokens in styles.css.
+import { twMerge } from "tailwind-merge";
+/** Joins class lists; a later utility replaces an earlier one of the same kind (w-full → w-auto). */
+export const cx = (...classes: (string | false | null | undefined)[]) => twMerge(classes);
 const buttonBase =
   "inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border px-3 text-sm font-medium no-underline transition-colors " +
   "hover:no-underline disabled:cursor-not-allowed disabled:opacity-55 [&_svg]:size-4 [&_svg]:shrink-0";
@@ -7,7 +10,7 @@ const buttonVariants = {
   secondary: "border-outline-strong bg-surface text-foreground enabled:hover:bg-soft",
   primary: "border-accent bg-accent text-on-accent enabled:hover:opacity-90",
   quiet: "border-transparent bg-transparent text-foreground enabled:hover:bg-soft",
-  danger: "border-danger bg-danger text-white enabled:hover:opacity-90",
+  danger: "border-danger bg-danger text-on-accent enabled:hover:opacity-90",
 };
 /** Buttons and button-looking links. `icon` makes a square 36px control. */
 export function button(variant: keyof typeof buttonVariants = "secondary", size?: "icon") {
@@ -16,7 +19,7 @@ export function button(variant: keyof typeof buttonVariants = "secondary", size?
 /** Text inputs, selects and textareas. */
 export const input =
   "min-h-10 w-full min-w-0 rounded-md border border-outline-strong bg-surface px-3 py-2 text-sm font-normal text-foreground placeholder:text-muted " +
-  "focus-visible:border-focus focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring read-only:bg-soft disabled:cursor-not-allowed disabled:opacity-55 user-invalid:border-danger";
+  "focus-visible:border-focus focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring [&:is(input,textarea):read-only]:bg-soft disabled:cursor-not-allowed disabled:opacity-55 user-invalid:border-danger";
 /** A label wrapping its control. */
 export const field = "grid gap-1.5 text-[13px] font-medium";
 export const hint = "text-xs font-normal text-muted";
@@ -55,3 +58,7 @@ export const mono = "font-mono text-xs";
 /** The Webdock "w" mark used in every header. */
 export const brandMark =
   "inline-flex size-7 shrink-0 items-center justify-center rounded-[7px] bg-brand pr-0.5 pb-[3px] text-[21px] font-bold tracking-[-2px] text-white";
+export const backLink = "mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted hover:text-foreground hover:no-underline";
+export const legend = "px-0 pb-2 text-sm font-semibold";
+/** Underlined inline action, e.g. "Use a recovery code instead". */
+export const textButton = "mx-auto mt-3 border-0 bg-transparent py-2 text-xs text-foreground underline underline-offset-[3px]";

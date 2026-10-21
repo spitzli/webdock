@@ -4,7 +4,6 @@ import { countryOptions } from "./countries";
 import { FieldError } from "./live-validation";
 import type { RegistryRecord } from "./api";
 import * as ui from "./ui";
-const legend = "px-0 pb-2 text-sm font-semibold";
 const choice = "flex cursor-pointer items-start gap-3 rounded-lg border border-outline-strong px-3.5 py-3 text-sm font-medium has-checked:border-accent has-checked:ring-1 has-checked:ring-accent";
 // Shared by the operator registry and the customer's own onboarding.
 export const customerFields = [
@@ -60,7 +59,7 @@ export function CustomerFields({
   return (
     <>
       <fieldset className="grid min-w-0 border-0 p-0 gap-3">
-        <legend className={legend}>Customer type</legend>
+        <legend className={ui.legend}>Customer type</legend>
         <div className="inline-flex justify-self-start rounded-lg bg-soft p-0.5" role="radiogroup" aria-label="Customer type">
           {(["company", "person"] as const).map((value) => (
             <label key={value} className={`cursor-pointer rounded-md px-3 py-1 text-[13px] font-medium has-focus-visible:outline-2 has-focus-visible:outline-focus ${type === value ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground"}`}>
@@ -80,7 +79,7 @@ export function CustomerFields({
         ))}
       </fieldset>
       <fieldset className="grid min-w-0 border-0 p-0 gap-3 sm:grid-cols-2">
-        <legend className={legend}>Contact</legend>
+        <legend className={ui.legend}>Contact</legend>
         <div className="grid content-start gap-1.5">
           <label className={ui.field}>
             Contact email
@@ -97,7 +96,7 @@ export function CustomerFields({
         </div>
       </fieldset>
       <fieldset className="grid min-w-0 border-0 p-0 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-        <legend className={legend}>Address</legend>
+        <legend className={ui.legend}>Address</legend>
         <div className="sm:col-span-2">{field("addressLine1", "Street and number", "address-line1")}</div>
         <div className="sm:col-span-2">{field("addressLine2", "Address line 2 (optional)", "address-line2")}</div>
         {field("postalCode", "Postal code", "postal-code", { max: 32 })}
@@ -112,14 +111,14 @@ export function CustomerFields({
         </label>
       </fieldset>
       {onboarding ? <fieldset className="grid min-w-0 border-0 p-0 gap-2 sm:grid-cols-2">
-        <legend className={legend}>Onboarding</legend>
+        <legend className={ui.legend}>Onboarding</legend>
         <label className={choice}>
           <input type="radio" name="onboarding" value="managed" defaultChecked={record?.onboarding !== "self-service"} disabled={pending} className="mt-0.5 size-4 shrink-0 accent-accent" />
-          <span className="grid gap-0.5">Managed<span className="field-hint">You prepare the customer details. Invited owners go straight to their workspace.</span></span>
+          <span className="grid gap-0.5">Managed<span className={ui.hint}>You prepare the customer details. Invited owners go straight to their workspace.</span></span>
         </label>
         <label className={choice}>
           <input type="radio" name="onboarding" value="self-service" defaultChecked={record?.onboarding === "self-service"} disabled={pending} className="mt-0.5 size-4 shrink-0 accent-accent" />
-          <span className="grid gap-0.5">Self-service<span className="field-hint">Invited owners complete the customer details after they accept.</span></span>
+          <span className="grid gap-0.5">Self-service<span className={ui.hint}>Invited owners complete the customer details after they accept.</span></span>
         </label>
       </fieldset> : null}
     </>

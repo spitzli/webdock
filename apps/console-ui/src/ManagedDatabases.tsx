@@ -5,6 +5,7 @@ import { useI18n } from "@webdock/i18n/react";
 import { DatabaseCredentialPanelWithActions } from "@webdock/module-databases/ui/database-details";
 import { useApi } from "./context";
 import { Failure, Loading } from "./common";
+import * as ui from "./ui";
 import {
   acceptReviewedOffer,
   catalogSchema,
@@ -47,6 +48,11 @@ const previewSchema = z.object({
   expiresAt: z.string().optional(),
 });
 const key = () => crypto.randomUUID();
+/** Card list whose first row sits flush against the card border. */
+const list = `${ui.card} [&>li:first-child]:border-t-0`;
+const summary =
+  "flex cursor-pointer list-none items-center justify-between gap-3 px-6 py-4 font-semibold hover:bg-subtle max-sm:px-[18px] [&::-webkit-details-marker]:hidden " +
+  "after:text-muted after:content-['+'] group-open/details:after:content-['−']";
 function useManagedCommand() {
   const api = useApi();
   return useCallback(
@@ -104,12 +110,13 @@ export function ManagedDatabases({
     void client.invalidateQueries({ queryKey: ["databases", customerID] });
   };
   return (
-    <section className="security-section database-management">
-      <div className="page-heading">
-        <h2>{t("Managed databases")}</h2>
+    // database-* class names remain as hooks: the module-rendered credential panel and the live browser test use them.
+    <section className="database-management mt-8 grid gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className={ui.sectionTitle}>{t("Managed databases")}</h2>
         {permissions.data?.canWrite ? (
           <button
-            className="button primary"
+            className={ui.button(ordering ? "secondary" : "primary")}
             onClick={() => {
               setOrdering(!ordering);
             }}
@@ -118,9 +125,9 @@ export function ManagedDatabases({
           </button>
         ) : null}
       </div>
-      <label>
+      <label className={ui.cx(`${ui.field} max-w-[420px]`)}>
         {t("Project")}
-        <select
+        <select className={ui.input}
           value={projectID}
           onChange={(event) => {
             setProject(event.target.value);
@@ -140,7 +147,7 @@ export function ManagedDatabases({
         <Failure error={plans.error} retry={() => void plans.refetch()} />
       ) : null}
       {plans.data?.unavailable ? (
-        <p role="status">
+        <p role="status" className={ui.notice}>
           {t(
             "Some database plans are unavailable because their configuration is invalid.",
           )}
@@ -167,17 +174,18 @@ export function ManagedDatabases({
         />
       ) : null}
       {databases.data?.length ? (
-        <ul className="security-list">
+        <ul className={list}>
           {databases.data.map((database) => (
-            <li key={database.id}>
-              <div>
-                <strong>{database.name}</strong>
-                <p className="muted">
-                  PostgreSQL {database.postgresMajor} · {t(database.state)}
-                </p>
+            <li key={database.id} className={ui.cardRow}>
+              <div className="grid min-w-0 gap-0.5">
+                <strong className="font-medium">{database.name}</strong>
+                <span className="flex flex-wrap items-center gap-2 text-[13px] text-muted">
+                  PostgreSQL {database.postgresMajor}
+                  <span className={ui.badge(ui.statusTone(database.state))}>{t(database.state)}</span>
+                </span>
               </div>
               <button
-                className="button"
+                className={ui.button()}
                 onClick={() => {
                   setSelected(database.id);
                 }}
@@ -188,7 +196,7 @@ export function ManagedDatabases({
           ))}
         </ul>
       ) : databases.data ? (
-        <p className="muted">{t("No databases available.")}</p>
+        <p className="text-muted">{t("No databases available.")}</p>
       ) : null}
       {selected ? (
         <DatabaseManagement
@@ -257,10 +265,9 @@ function DatabaseOrder({
       currency: "EUR",
     }).format(cents / 100);
   return (
-    <div className="database-order">
-      <h3>{t(database ? "Upgrade database" : "Order database")}</h3>
+    <div className={ui.cx(`database-order ${ui.card} mt-0 pt-0`)}>
       <form
-        className="form-grid"
+        className={ui.cx(`${ui.cardBody} sm:grid-cols-2`)}
         onChange={() => {
           setOffer(undefined);
         }}
@@ -269,9 +276,10 @@ function DatabaseOrder({
           prepare.mutate(new FormData(event.currentTarget));
         }}
       >
-        <label>
+        <h3 className={ui.cx(`${ui.sectionTitle} sm:col-span-2`)}>{t(database ? "Upgrade database" : "Order database")}</h3>
+        <label className={ui.field}>
           {t("Name")}
-          <input
+          <input className={ui.input}
             name="name"
             required
             maxLength={160}
@@ -279,9 +287,9 @@ function DatabaseOrder({
             readOnly={Boolean(database)}
           />
         </label>
-        <label>
+        <label className={ui.field}>
           {t("Database plan")}
-          <select name="plan" aria-label={t("Database plan")} required>
+          <select className={ui.input} name="plan" aria-label={t("Database plan")} required>
             {plans.map((plan) => (
               <option key={plan.id} value={plan.id}>
                 {plan.plan.name} · {money(plan.plan.monthlyPriceCents)}{" "}
@@ -290,9 +298,9 @@ function DatabaseOrder({
             ))}
           </select>
         </label>
-        <div className="form-actions">
+        <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
           <button
-            className="button"
+            className={ui.button()}
             disabled={prepare.isPending || !plans.length}
           >
             {t("Review paid order")}
@@ -300,28 +308,28 @@ function DatabaseOrder({
         </div>
       </form>
       {!plans.length ? (
-        <p>{t("No database plans are available yet.")}</p>
+        <p className="border-t border-outline px-6 py-3.5 text-sm text-muted max-sm:px-[18px]">{t("No database plans are available yet.")}</p>
       ) : null}
       {prepare.error ? (
-        <p role="alert" className="error">
+        <p role="alert" className="border-t border-outline px-6 py-3.5 text-sm text-danger max-sm:px-[18px]">
           {error(prepare.error.message)}
         </p>
       ) : null}
       {offer ? (
         <form
-          className="database-order-review"
+          className="grid gap-3 border-t border-outline bg-subtle px-6 py-5 text-sm max-sm:px-[18px]"
           onSubmit={(event) => {
             event.preventDefault();
             accept.mutate(new FormData(event.currentTarget));
           }}
         >
-          <h4>{offer.name}</h4>
+          <h4 className="font-semibold">{offer.name}</h4>
           <p>
-            <strong>
+            <strong className="text-base font-semibold">
               {money(offer.snapshot.monthlyPriceCents)} {t("net / month")}
             </strong>
           </p>
-          <p>{offer.snapshot.terms}</p>
+          <p className="whitespace-pre-wrap text-muted">{offer.snapshot.terms}</p>
           <p>
             {t("Backups are not configured. No recovery window is included.")}
           </p>
@@ -330,13 +338,13 @@ function DatabaseOrder({
               "Billing starts after confirmed provisioning. Pausing does not reduce the monthly price.",
             )}
           </p>
-          <label className="checkbox-label">
-            <input name="confirmPrice" type="checkbox" value="yes" required />
+          <label className="flex items-start gap-2.5 text-[13px]">
+            <input className="mt-0.5 size-4 shrink-0 accent-accent" name="confirmPrice" type="checkbox" value="yes" required />
             {t("I accept this monthly price and the displayed terms.")}
           </label>
           {offer.snapshot.requiresInterruption ? (
-            <label className="checkbox-label">
-              <input
+            <label className="flex items-start gap-2.5 text-[13px]">
+              <input className="mt-0.5 size-4 shrink-0 accent-accent"
                 name="confirmInterruption"
                 type="checkbox"
                 value="yes"
@@ -348,11 +356,11 @@ function DatabaseOrder({
             </label>
           ) : null}
           {accept.error ? (
-            <p role="alert" className="error">
+            <p role="alert" className="text-danger">
               {error(accept.error.message)}
             </p>
           ) : null}
-          <button className="button primary" disabled={accept.isPending}>
+          <button className={ui.cx(`${ui.button("primary")} justify-self-start whitespace-normal`)} disabled={accept.isPending}>
             {t(
               accept.isPending
                 ? "Ordering…"
@@ -459,24 +467,25 @@ function DatabaseManagement({
   const ready = ["ready", "degraded"].includes(d.state);
   const pending = mutate.isPending || prepare.isPending;
   return (
-    <section className="database-details">
-      <div className="page-heading">
+    <section className={ui.cx(`database-details ${ui.card} mt-0 block pt-0`)}>
+      <div className={ui.cardBody}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3>{d.name}</h3>
-          <p>
-            {t(d.state)} ·{" "}
+          <h3 className={ui.sectionTitle}>{d.name}</h3>
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-muted">
+            <span className={ui.badge(ui.statusTone(d.state))}>{t(d.state)}</span>
             {t(d.kind === "shared" ? "Shared" : "Dedicated instance")}
           </p>
         </div>
-        <button className="button quiet" onClick={close}>
+        <button className={ui.button("quiet")} onClick={close}>
           {t("Close")}
         </button>
       </div>
-      <dl className="database-facts">
+      <dl className="grid gap-4 sm:grid-cols-2 [&_dd]:mt-1 [&_dd]:text-sm [&_dd]:[overflow-wrap:anywhere] [&_dt]:text-xs [&_dt]:text-muted">
         <div>
           <dt>{t("Database")}</dt>
           <dd>
-            <code>{d.databaseName}</code>
+            <code className={ui.mono}>{d.databaseName}</code>
           </dd>
         </div>
         <div>
@@ -507,18 +516,18 @@ function DatabaseManagement({
           </div>
         ) : null}
       </dl>
-      <p>{t("Backups are not configured. No recovery window is included.")}</p>
+      <p className={ui.notice}>{t("Backups are not configured. No recovery window is included.")}</p>
       {mutate.error || prepare.error ? (
-        <p role="alert" className="error">
+        <p role="alert" className="text-sm text-danger">
           {error((mutate.error ?? prepare.error)?.message)}
         </p>
       ) : null}
       {canWrite ? (
         <>
-          <div className="row-actions">
+          <div className="flex flex-wrap items-center gap-2">
             {ready ? (
               <button
-                className="button"
+                className={ui.button()}
                 disabled={pending}
                 onClick={() => {
                   action("pause");
@@ -529,7 +538,7 @@ function DatabaseManagement({
             ) : null}
             {d.state === "paused" ? (
               <button
-                className="button"
+                className={ui.button()}
                 disabled={pending}
                 onClick={() => {
                   action("resume");
@@ -540,7 +549,7 @@ function DatabaseManagement({
             ) : null}
             {ready && d.kind === "dedicated" ? (
               <button
-                className="button"
+                className={ui.button()}
                 disabled={pending}
                 onClick={() => {
                   if (
@@ -559,7 +568,7 @@ function DatabaseManagement({
             {d.state === "ready" ? (
               <>
                 <button
-                  className="button"
+                  className={ui.button()}
                   disabled={pending}
                   onClick={() => {
                     if (
@@ -575,7 +584,7 @@ function DatabaseManagement({
                   {t("Rotate credentials")}
                 </button>
                 <button
-                  className="button"
+                  className={ui.button()}
                   onClick={() => {
                     setUpgrade(!upgrade);
                   }}
@@ -586,7 +595,7 @@ function DatabaseManagement({
             ) : null}
             {!d.cancellationRequestedAt ? (
               <button
-                className="button"
+                className={ui.button()}
                 disabled={pending}
                 onClick={() => {
                   if (
@@ -600,12 +609,12 @@ function DatabaseManagement({
                 {t("Request cancellation")}
               </button>
             ) : (
-              <span>{t("Cancellation requested")}</span>
+              <span className={ui.badge("warning")}>{t("Cancellation requested")}</span>
             )}
             {operator ? (
               <>
                 <button
-                  className="button danger"
+                  className={ui.button("danger")}
                   disabled={pending || ["retained", "purged"].includes(d.state)}
                   onClick={() => {
                     prepare.mutate("delete");
@@ -615,7 +624,7 @@ function DatabaseManagement({
                 </button>
                 {d.state === "retained" ? (
                   <button
-                    className="button danger"
+                    className={ui.button("danger")}
                     disabled={pending}
                     onClick={() => {
                       prepare.mutate("purge");
@@ -626,7 +635,7 @@ function DatabaseManagement({
                 ) : null}
                 {d.state === "needs-reconciliation" ? (
                   <button
-                    className="button"
+                    className={ui.button()}
                     disabled={pending}
                     onClick={() => {
                       action("reconcile");
@@ -640,7 +649,7 @@ function DatabaseManagement({
           </div>
           {preview ? (
             <form
-              className="database-order-review"
+              className="grid gap-3 rounded-lg border border-danger/40 bg-danger-soft/40 p-5 text-sm"
               onSubmit={(event) => {
                 event.preventDefault();
                 const form = new FormData(event.currentTarget);
@@ -654,7 +663,7 @@ function DatabaseManagement({
                 });
               }}
             >
-              <h4>
+              <h4 className="font-semibold">
                 {t(
                   preview.kind === "delete"
                     ? "Delete database"
@@ -674,22 +683,22 @@ function DatabaseManagement({
                   {new Date(preview.value.retainedUntil).toLocaleString(locale)}
                 </p>
               ) : null}
-              <label>
+              <label className={ui.field}>
                 {t("Confirm database name")}
-                <input
+                <input className={ui.input}
                   name="confirmName"
                   required
                   autoComplete="off"
                   placeholder={preview.value.name}
                 />
               </label>
-              <div className="form-actions">
-                <button className="button danger" disabled={pending}>
+              <div className="flex flex-wrap items-center gap-2">
+                <button className={ui.button("danger")} disabled={pending}>
                   {t("Confirm deletion")}
                 </button>
                 <button
                   type="button"
-                  className="button"
+                  className={ui.button()}
                   onClick={() => {
                     setPreview(undefined);
                   }}
@@ -719,6 +728,7 @@ function DatabaseManagement({
           ) : null}
         </>
       ) : null}
+      </div>
     </section>
   );
 }
@@ -749,20 +759,20 @@ function PlanCatalog({
     onSuccess: refresh,
   });
   return (
-    <details className="database-catalog">
-      <summary>{t("Database plans")}</summary>
+    <details className={ui.cx(`database-catalog ${ui.card} group/details mt-0 pt-0`)}>
+      <summary className={summary}>{t("Database plans")}</summary>
       {mutation.error || create.error ? (
-        <p className="error" role="alert">
+        <p className="border-t border-outline px-6 py-3.5 text-sm text-danger max-sm:px-[18px]" role="alert">
           {error((mutation.error ?? create.error)?.message)}
         </p>
       ) : null}
-      <ul className="security-list">
+      <ul className="max-h-80 overflow-auto">
         {plans.map((plan) => (
-          <li key={plan.id}>
-            <strong>{plan.plan.name}</strong>
-            <label>
+          <li key={plan.id} className={ui.cardRow}>
+            <strong className="font-medium">{plan.plan.name}</strong>
+            <label className={ui.cx(`${ui.field} min-w-[150px] max-sm:min-w-[120px]`)}>
               {t("Availability")}
-              <select
+              <select className={ui.input}
                 aria-label={`${plan.plan.name} ${t("Availability")}`}
                 value={plan.availability}
                 disabled={mutation.isPending}
@@ -784,21 +794,21 @@ function PlanCatalog({
           </li>
         ))}
       </ul>
-      <h3>{t("Create disabled plan")}</h3>
       <form
-        className="form-grid"
+        className={ui.cx(`${ui.cardBody} border-t border-outline sm:grid-cols-2`)}
         onSubmit={(event) => {
           event.preventDefault();
           create.mutate(new FormData(event.currentTarget));
         }}
       >
-        <label>
+        <h3 className={ui.cx(`${ui.sectionTitle} sm:col-span-2`)}>{t("Create disabled plan")}</h3>
+        <label className={ui.field}>
           {t("Name")}
-          <input name="name" required maxLength={160} />
+          <input className={ui.input} name="name" required maxLength={160} />
         </label>
-        <label>
+        <label className={ui.field}>
           {t("Database kind")}
-          <select
+          <select className={ui.input}
             name="kind"
             value={kind}
             onChange={(event) => {
@@ -809,22 +819,22 @@ function PlanCatalog({
             <option value="shared">{t("Shared")}</option>
           </select>
         </label>
-        <label>
+        <label className={ui.field}>
           {t("Monthly net price (EUR)")}
-          <input
+          <input className={ui.input}
             name="monthlyPrice"
             inputMode="decimal"
             required
             placeholder="12.50"
           />
         </label>
-        <label>
+        <label className={ui.field}>
           {t(
             kind === "shared"
               ? "Logical storage allowance (GiB)"
               : "Filesystem size (GiB)",
           )}
-          <input
+          <input className={ui.input}
             name="volume"
             type="number"
             min="1"
@@ -835,9 +845,9 @@ function PlanCatalog({
         </label>
         {kind === "dedicated" ? (
           <>
-            <label>
+            <label className={ui.field}>
               {t("CPU (millicores)")}
-              <input
+              <input className={ui.input}
                 name="cpu"
                 type="number"
                 min="100"
@@ -846,9 +856,9 @@ function PlanCatalog({
                 defaultValue="500"
               />
             </label>
-            <label>
+            <label className={ui.field}>
               {t("Memory (GiB)")}
-              <input
+              <input className={ui.input}
                 name="memory"
                 type="number"
                 min="0.125"
@@ -859,12 +869,12 @@ function PlanCatalog({
             </label>
           </>
         ) : null}
-        <label className="database-wide">
+        <label className={ui.cx(`${ui.field} sm:col-span-2`)}>
           {t("Contract terms")}
-          <textarea name="terms" required minLength={40} maxLength={6000} />
+          <textarea className={ui.cx(`${ui.input} min-h-24 resize-y`)} name="terms" required minLength={40} maxLength={6000} />
         </label>
-        <div className="form-actions">
-          <button className="button" disabled={create.isPending}>
+        <div className="flex flex-wrap items-center gap-3 text-[13px] text-muted sm:col-span-2">
+          <button className={ui.button()} disabled={create.isPending}>
             {t("Create disabled plan")}
           </button>
           {create.isSuccess ? (
@@ -951,23 +961,24 @@ function DatabaseCapacity() {
       bytes / 1073741824,
     ) + " GiB";
   return (
-    <details className="database-catalog database-infrastructure">
-      <summary>{t("Database infrastructure")}</summary>
+    <details className={ui.cx(`database-catalog database-infrastructure ${ui.card} group/details mt-0 pt-0`)}>
+      <summary className={summary}>{t("Database infrastructure")}</summary>
+      <div className={ui.cx(`${ui.cardBody} border-t border-outline`)}>
       {capacity.isPending ? (
         <Loading />
       ) : capacity.error ? (
         <Failure error={capacity.error} retry={() => void capacity.refetch()} />
       ) : null}
       {mutation.error ? (
-        <p role="alert" className="error">
+        <p role="alert" className="text-sm text-danger">
           {error(mutation.error.message)}
         </p>
       ) : null}
       {capacity.data?.length ? (
         <>
-          <label>
+          <label className={ui.cx(`${ui.field} max-w-[420px]`)}>
             {t("Cluster")}
-            <select
+            <select className={ui.input}
               aria-label={t("Cluster")}
               value={cluster?.id ?? ""}
               onChange={(event) => {
@@ -991,23 +1002,23 @@ function DatabaseCapacity() {
                 )}
               </p>
               <button
-                className="button"
+                className={ui.cx(`${ui.button()} justify-self-start`)}
                 onClick={() => void capacity.refetch()}
               >
                 {t("Refresh")}
               </button>
-              <ul className="security-list">
+              <ul className={list}>
                 {cluster.pools.map((pool) => (
-                  <li key={pool.poolID}>
-                    <div>
-                      <strong>{pool.node}</strong>
-                      <p className="muted">
+                  <li key={pool.poolID} className={ui.cardRow}>
+                    <div className="grid min-w-0 gap-0.5">
+                      <strong className="font-medium">{pool.node}</strong>
+                      <p className="text-[13px] text-muted">
                         {size(pool.availableBytes)} {t("available")} /{" "}
                         {size(pool.capacityBytes)}
                       </p>
                     </div>
                     <button
-                      className="button"
+                      className={ui.button()}
                       disabled={mutation.isPending || !pool.ready}
                       onClick={() => {
                         if (pool.registered) {
@@ -1053,12 +1064,12 @@ function DatabaseCapacity() {
           ) : null}
           {installations.error ? <Failure error={installations.error} /> : null}
           {installations.data?.length ? (
-            <ul className="security-list">
+            <ul className={list}>
               {installations.data.map((i) => (
-                <li key={i.id}>
-                  <div>
-                    <strong>{i.host}</strong>
-                    <p className="muted">
+                <li key={i.id} className={ui.cardRow}>
+                  <div className="grid min-w-0 gap-0.5">
+                    <strong className="font-medium [overflow-wrap:anywhere]">{i.host}</strong>
+                    <p className="text-[13px] text-muted">
                       {i.node} ·{" "}
                       {t(
                         i.kind === "shared-pool"
@@ -1068,7 +1079,7 @@ function DatabaseCapacity() {
                       · {t(i.state)}
                     </p>
                   </div>
-                  <span>
+                  <span className="text-[13px] text-muted">
                     {t("Revision")} {i.observedRevision} / {i.revision}
                   </span>
                 </li>
@@ -1077,8 +1088,9 @@ function DatabaseCapacity() {
           ) : null}
         </>
       ) : capacity.data ? (
-        <p>{t("No database clusters are available.")}</p>
+        <p className="text-muted">{t("No database clusters are available.")}</p>
       ) : null}
+      </div>
     </details>
   );
 }

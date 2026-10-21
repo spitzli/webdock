@@ -4,6 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApi, useSession } from "../context";
 import { Empty, Failure, Loading } from "../common";
 import { extensionOperation, extensionPolling } from "./lifecycle-contracts";
+import { backLink } from "../ui";
+import * as ui from "../ui";
 export function ExtensionOperation({ id }: { id: string }) {
   const api = useApi();
   const session = useSession();
@@ -40,36 +42,37 @@ export function ExtensionOperation({ id }: { id: string }) {
     return <Failure error={query.error} retry={() => void query.refetch()} />;
   return (
     <section>
-      <div className="page-heading">
+      <div className={ui.pageHeading}>
         <div>
-          <Link className="back-link" to="/extensions">
+          <Link className={backLink} to="/extensions">
             Installed extensions
           </Link>
-          <h1>Extension operation</h1>
-          <p className="muted">
-            {query.data.pluginID} · {query.data.id}
+          <h1 className={ui.pageTitle}>Extension operation</h1>
+          <p className={ui.pageLead}>
+            {query.data.pluginID} · <span className={ui.mono}>{query.data.id}</span>
           </p>
         </div>
         <button
-          className="button"
+          className={ui.button()}
           disabled={query.isFetching}
           onClick={() => void query.refetch()}
         >
           Refresh
         </button>
       </div>
-      <dl className="detail-grid">
+      <div className={ui.card}>
+      <dl className={ui.cx(`${ui.cardBody} sm:grid-cols-3`)}>
         <div>
-          <dt>Status</dt>
-          <dd role="status">{query.data.status}</dd>
+          <dt className="text-xs text-muted">Status</dt>
+          <dd className="mt-1 text-sm font-medium" role="status">{query.data.status}</dd>
         </div>
         <div>
-          <dt>Phase</dt>
-          <dd>{query.data.phase}</dd>
+          <dt className="text-xs text-muted">Phase</dt>
+          <dd className="mt-1 text-sm">{query.data.phase}</dd>
         </div>
         <div>
-          <dt>Generation</dt>
-          <dd>{query.data.generation}</dd>
+          <dt className="text-xs text-muted">Generation</dt>
+          <dd className="mt-1 text-sm">{query.data.generation}</dd>
         </div>
       </dl>
       {query.data.condition ? (
@@ -79,12 +82,13 @@ export function ExtensionOperation({ id }: { id: string }) {
               ? "alert"
               : "status"
           }
-          className="state mt-4"
+          className={ui.cx(`${ui.cardRow} block`)}
         >
           {query.data.condition}
         </p>
       ) : null}
-      <p className="muted mt-4">{extensionDescription(query.data.status)}</p>
+      <p className={ui.cardFooter}>{extensionDescription(query.data.status)}</p>
+      </div>
     </section>
   );
 }

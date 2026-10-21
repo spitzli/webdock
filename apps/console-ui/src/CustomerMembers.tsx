@@ -36,7 +36,7 @@ export function CustomerMembers({ customer }: { customer: string }) {
   const pending = tenant.data.invitations.filter((invitation) => invitation.status === "pending");
   const result = change.data;
   return (
-    <section className={`${ui.card} mt-8`} aria-label="Members">
+    <section className={ui.cx(`${ui.card} mt-8`)} aria-label="Members">
       <div className={ui.cardBody}>
         <h2 className={ui.sectionTitle}>Members</h2>
         <p className="-mt-2 text-sm text-muted">People who can open this customer's workspace. New people get one email to set up their account and join.</p>
@@ -53,7 +53,7 @@ export function CustomerMembers({ customer }: { customer: string }) {
             </li>
           ))}
         </ul>
-      ) : <div className={`${ui.cardRow} text-muted`}>No one has access yet. Invite the first person below.</div>}
+      ) : <div className={ui.cx(`${ui.cardRow} text-muted`)}>No one has access yet. Invite the first person below.</div>}
       {pending.length ? (
         <ul aria-label="Waiting for an answer">
           {pending.map((invitation) => (
@@ -69,12 +69,12 @@ export function CustomerMembers({ customer }: { customer: string }) {
         </ul>
       ) : null}
       {result || change.error ? (
-        <div role={change.error ? "alert" : "status"} className={`${ui.cardRow} grid justify-stretch text-[13px]`}>
+        <div role={change.error ? "alert" : "status"} className={ui.cx(`${ui.cardRow} grid justify-stretch text-[13px]`)}>
           {change.error ? <p className="text-danger">{change.error.message}</p> : null}
           {result ? <p>{result.message} {deliveryText[result.delivery ?? ""] ?? ""}</p> : null}
           {result?.link ? (
             <div className="flex flex-wrap gap-2">
-              <input className={`${ui.input} min-h-9 flex-1 font-mono text-xs`} readOnly value={result.link} aria-label="Invitation link" onFocus={(event) => { event.currentTarget.select(); }} />
+              <input className={ui.cx(`${ui.input} min-h-9 flex-1 font-mono text-xs`)} readOnly value={result.link} aria-label="Invitation link" onFocus={(event) => { event.currentTarget.select(); }} />
               <button className={ui.button()} onClick={() => { void navigator.clipboard.writeText(result.link ?? "").then(() => { setCopied(true); }); }}>{copied ? "Copied" : "Copy link"}</button>
             </div>
           ) : null}
@@ -98,7 +98,7 @@ export function CustomerMembers({ customer }: { customer: string }) {
               <label className={ui.field}>Full name<input className={ui.input} name="name" required maxLength={160} autoComplete="off" disabled={change.isPending} /></label>
               <FieldError className="" message={live.errors.name} />
             </div>
-            <label className={`${ui.field} content-start`}>Role<select className={ui.input} name="role" defaultValue="admin" disabled={change.isPending}>
+            <label className={ui.cx(`${ui.field} content-start`)}>Role<select className={ui.input} name="role" defaultValue="admin" disabled={change.isPending}>
               <option value="admin">Administrator</option>
               <option value="member">Member</option>
             </select></label>

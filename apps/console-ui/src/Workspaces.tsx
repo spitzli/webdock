@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Link } from "@tanstack/react-router";
 import { useApi, useSession } from "./context";
 import { Failure, Loading } from "./common";
+import * as ui from "./ui";
 export function Workspaces() {
   const api = useApi();
   const session = useSession();
@@ -68,12 +69,12 @@ export function Workspaces() {
     );
   return (
     <section>
-      <div className="page-heading">
+      <div className={ui.pageHeading}>
         <div>
-          <h1>
+          <h1 className={ui.pageTitle}>
             {session.user.preview ? "Customer preview" : "Your workspaces"}
           </h1>
-          <p className="muted">
+          <p className={ui.pageLead}>
             {session.user.preview
               ? "You are viewing this customer with read-only access."
               : "Customer workspaces and websites shared with your account."}
@@ -81,7 +82,7 @@ export function Workspaces() {
         </div>
         {session.user.preview ? (
           <button
-            className="button"
+            className={ui.button()}
             onClick={() => {
               exit.mutate();
             }}
@@ -92,26 +93,27 @@ export function Workspaces() {
         ) : null}
       </div>
       {exit.error ? (
-        <p className="error" role="alert">
+        <p className="mb-4 text-sm text-danger" role="alert">
           {exit.error.message}
         </p>
       ) : null}
-      <section className="security-section">
-        <h2>Workspaces</h2>
+      <section className={ui.card}>
+        <h2 className={ui.cx(`${ui.sectionTitle} px-6 py-4 max-sm:px-[18px]`)}>Workspaces</h2>
         {tenants.data.length ? (
-          <ul className="security-list">
+          <ul>
             {tenants.data.map((t) => (
-              <li key={t.id}>
+              <li key={t.id} className={ui.cardRow}>
                 <div>
-                  <strong>{t.name}</strong>
-                  <p className="muted">
+                  <strong className="font-medium">{t.name}</strong>
+                  <p className="text-[13px] text-muted">
                     {t.status}
                     {t.role ? ` · ${t.role}` : ""}
                   </p>
                 </div>
+                <div className="flex flex-wrap gap-2">
                 {api.config.enabledFeatures.includes("mail") ? (
                   <Link
-                    className="button"
+                    className={ui.button()}
                     to="/mail"
                     search={{ customer: t.id }}
                   >
@@ -120,32 +122,33 @@ export function Workspaces() {
                 ) : null}
                 {api.config.enabledFeatures.includes("hosting") ? (
                   <Link
-                    className="button"
+                    className={ui.button()}
                     to="/hosting"
                     search={{ customer: t.id }}
                   >
                     Applications
                   </Link>
                 ) : null}
+                </div>
               </li>
             ))}
           </ul>
         ) : (
-          <p>No customer workspace has been shared with this account.</p>
+          <p className={ui.cx(`${ui.cardRow} text-muted`)}>No customer workspace has been shared with this account.</p>
         )}
       </section>
-      <section className="security-section">
-        <h2>Websites</h2>
+      <section className={ui.cx(`${ui.card} mt-6`)}>
+        <h2 className={ui.cx(`${ui.sectionTitle} px-6 py-4 max-sm:px-[18px]`)}>Websites</h2>
         {sites.data.length ? (
-          <ul className="security-list">
+          <ul>
             {sites.data.map((site) => (
-              <li key={site.id}>
+              <li key={site.id} className={ui.cardRow}>
                 <div>
-                  <strong>{site.name}</strong>
-                  <p className="muted">{site.role}</p>
+                  <strong className="font-medium">{site.name}</strong>
+                  <p className="text-[13px] text-muted">{site.role}</p>
                 </div>
                 {!session.user.preview ? (
-                  <a className="button" href={site.url}>
+                  <a className={ui.button()} href={site.url}>
                     Open website
                   </a>
                 ) : null}
@@ -153,7 +156,7 @@ export function Workspaces() {
             ))}
           </ul>
         ) : (
-          <p>No websites have been shared with this account.</p>
+          <p className={ui.cx(`${ui.cardRow} text-muted`)}>No websites have been shared with this account.</p>
         )}
       </section>
     </section>

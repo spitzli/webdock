@@ -1,6 +1,7 @@
 import { formText } from "../form";
 import { useId, useState, type SubmitEvent } from "react";
 import { parsePanel, type Action, type Panel } from "./contracts";
+import * as ui from "../ui";
 export type InvokeAction = (
   action: string,
   input: Record<string, string | number | boolean | null>,
@@ -51,16 +52,17 @@ function ActionForm({
   };
   return (
     <form
-      className="editor"
+      className="grid gap-4 text-sm"
       onSubmit={(event) => {
         void submit(event);
       }}
     >
       {fields.map((field) => (
-        <label key={field.name} htmlFor={`${prefix}-${field.name}`}>
+        <label key={field.name} htmlFor={`${prefix}-${field.name}`} className={ui.field}>
           {field.label}
           {field.type === "select" ? (
             <select
+              className={ui.input}
               id={`${prefix}-${field.name}`}
               name={field.name}
               required={field.required}
@@ -76,6 +78,7 @@ function ActionForm({
             </select>
           ) : (
             <input
+              className={ui.input}
               id={`${prefix}-${field.name}`}
               name={field.name}
               type={field.type}
@@ -87,9 +90,10 @@ function ActionForm({
         </label>
       ))}
       {action.destructive ? (
-        <label className="check">
+        <label className="flex items-center gap-2 text-[13px]">
           <input
             type="checkbox"
+            className="size-4 accent-accent"
             checked={confirmed}
             onChange={(event) => {
               setConfirmed(event.target.checked);
@@ -101,7 +105,7 @@ function ActionForm({
       ) : null}
       <div>
         <button
-          className="button"
+          className={ui.button()}
           disabled={
             !active || pending || Boolean(action.destructive && !confirmed)
           }
@@ -112,7 +116,7 @@ function ActionForm({
       {message ? (
         <p
           role={failed ? "alert" : "status"}
-          className={failed ? "error" : "success"}
+          className={failed ? "text-danger" : "text-success"}
         >
           {message}
         </p>
@@ -135,16 +139,16 @@ export function PluginPanel({
     panel = parsePanel(value);
   } catch {
     return (
-      <p role="alert" className="error">
+      <p role="alert" className="text-danger">
         This extension returned an unsupported panel.
       </p>
     );
   }
   return (
-    <section aria-label={panel.title} className="plugin-panel">
-      <h2>{panel.title}</h2>
+    <section aria-label={panel.title} className={ui.cx(`${ui.card} ${ui.cardBody} gap-5`)}>
+      <h2 className={ui.sectionTitle}>{panel.title}</h2>
       {!active ? (
-        <p role="status">
+        <p role="status" className={ui.notice}>
           Extension access is unavailable. Actions are disabled.
         </p>
       ) : null}
@@ -152,29 +156,29 @@ export function PluginPanel({
         switch (block.kind) {
           case "text":
             return (
-              <p key={index} className="whitespace-pre-wrap">
+              <p key={index} className="text-sm whitespace-pre-wrap">
                 {block.text}
               </p>
             );
           case "status":
             return (
-              <dl key={index} className="status-line">
-                <dt>{block.label}</dt>
+              <dl key={index} className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
+                <dt className="text-muted">{block.label}</dt>
                 <dd>
-                  <span className={`badge ${block.state}`}>{block.state}</span>{" "}
+                  <span className={ui.cx(`${ui.badge(ui.statusTone(block.state))} normal-case`)}>{block.state}</span>{" "}
                   {block.text}
                 </dd>
               </dl>
             );
           case "table":
             return (
-              <div key={index} className="table-scroll">
-                <table>
+              <div key={index} className={ui.tableFrame}>
+                <table className={ui.cx(`${ui.table} [&>caption]:px-5 [&>caption]:py-3 [&>caption]:text-left [&>caption]:font-semibold`)}>
                   <caption>{block.title}</caption>
                   <thead>
                     <tr>
                       {block.columns.map((column) => (
-                        <th scope="col" key={column.key}>
+                        <th scope="col" key={column.key} className={ui.th}>
                           {column.label}
                         </th>
                       ))}
@@ -183,17 +187,17 @@ export function PluginPanel({
                   <tbody>
                     {block.rows.length ? (
                       block.rows.map((row, rowIndex) => (
-                        <tr key={rowIndex}>
+                        <tr key={rowIndex} className={ui.tr}>
                           {block.columns.map((column) => (
-                            <td key={column.key}>
+                            <td key={column.key} className={ui.td}>
                               {String(row[column.key] ?? "—")}
                             </td>
                           ))}
                         </tr>
                       ))
                     ) : (
-                      <tr>
-                        <td colSpan={block.columns.length}>No records.</td>
+                      <tr className={ui.tr}>
+                        <td colSpan={block.columns.length} className={ui.cx(`${ui.td} text-muted`)}>No records.</td>
                       </tr>
                     )}
                   </tbody>
@@ -202,8 +206,8 @@ export function PluginPanel({
             );
           case "form":
             return (
-              <section key={index}>
-                <h3>{block.title}</h3>
+              <section key={index} className="grid gap-3">
+                <h3 className="text-sm font-semibold">{block.title}</h3>
                 <ActionForm
                   action={block.action}
                   fields={block.fields}

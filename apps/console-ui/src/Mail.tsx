@@ -15,6 +15,7 @@ import {
 } from "./mail-contracts";
 import { MailConfiguration } from "./MailConfiguration";
 import { MailDirectoryView } from "./MailDirectory";
+import * as ui from "./ui";
 export function Mail({ customerID }: { customerID?: string | undefined }) {
   const api = useApi();
   const navigate = useNavigate();
@@ -42,17 +43,18 @@ export function Mail({ customerID }: { customerID?: string | undefined }) {
   const selected = tenants.data.some((tenant) => tenant.id === customerID);
   return (
     <section>
-      <div className="page-heading">
+      <div className={ui.pageHeading}>
         <div>
-          <h1>Mail</h1>
-          <p className="muted">
+          <h1 className={ui.pageTitle}>Mail</h1>
+          <p className={ui.pageLead}>
             Incoming mail is activated explicitly for each workspace.
           </p>
         </div>
       </div>
-      <label className="database-workspace-picker">
+      <label className={ui.cx(`${ui.field} mb-6 max-w-[420px]`)}>
         Workspace
         <select
+          className={ui.input}
           aria-label="Workspace"
           value={selected ? customerID : ""}
           onChange={(event) => {
@@ -259,41 +261,45 @@ export function MailCustomer({ customerID }: { customerID: string }) {
     service.isFetching ||
     directory.isFetching;
   return (
-    <div>
-      <div className="page-heading">
-        <div>
-          <h2>Incoming mail</h2>
-          <p className="muted">
-            Outgoing-only mail does not require an incoming mail instance.
-          </p>
+    <div className="grid gap-6">
+      <section className={ui.card}>
+        <div className={ui.cardBody}>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className={ui.sectionTitle}>Incoming mail</h2>
+              <p className="mt-1 text-sm text-muted">
+                Outgoing-only mail does not require an incoming mail instance.
+              </p>
+            </div>
+            <button
+              className={ui.button()}
+              disabled={service.isFetching || directory.isFetching}
+              onClick={() => void refresh()}
+            >
+              Refresh Mail
+            </button>
+          </div>
+          {session.user.preview ? (
+            <p className={ui.notice}>Customer preview is read-only.</p>
+          ) : null}
+          <ServiceSummary value={service.data} />
+          {ledger.data ? <RequestNotice kind={ledger.data.kind} /> : null}
         </div>
-        <button
-          className="button"
-          disabled={service.isFetching || directory.isFetching}
-          onClick={() => void refresh()}
-        >
-          Refresh Mail
-        </button>
-      </div>
-      {session.user.preview ? (
-        <p className="notice">Customer preview is read-only.</p>
-      ) : null}
-      <ServiceSummary value={service.data} />
-      {ledger.data ? <RequestNotice kind={ledger.data.kind} /> : null}
-      <div className="flex flex-wrap gap-2">
-        {actions.map(({ action, label }) => (
-          <button
-            key={action}
-            className="button"
-            disabled={blocked || !permitted(service.data, action)}
-            onClick={() => {
-              setConfirm(action);
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+        <div className={ui.cx(`${ui.cardFooter} justify-end`)}>
+          {actions.map(({ action, label }) => (
+            <button
+              key={action}
+              className={ui.button()}
+              disabled={blocked || !permitted(service.data, action)}
+              onClick={() => {
+                setConfirm(action);
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </section>
       {directory.data && service.data.mailboxesAvailable ? (
         <>
           <MailDirectoryView value={directory.data} />
@@ -318,13 +324,13 @@ export function MailCustomer({ customerID }: { customerID: string }) {
             setConfirm(null);
           }}
         >
-          <p>
+          <p className="mb-5 text-sm">
             {confirm === "suspend"
               ? "Incoming mail will stop. Mailboxes, messages, credentials and storage are retained. Suspension does not delete customer data."
               : "This requests a change to the incoming mail service. The recorded state changes only after the agent reports its result."}
           </p>
           <button
-            className="button primary"
+            className={ui.button("primary")}
             disabled={blocked || !permitted(service.data, confirm)}
             onClick={() => {
               mutation.mutate({
@@ -361,23 +367,23 @@ function permitted(service: MailService, action: MailAction): boolean {
 }
 function ServiceSummary({ value }: { value: MailService }) {
   return (
-    <section className="security-section">
+    <section className="grid gap-4">
       <dl className="grid gap-4 sm:grid-cols-3">
         <div>
-          <dt className="muted">Recorded state</dt>
-          <dd>{value.service.state.replaceAll("_", " ")}</dd>
+          <dt className="text-xs text-muted">Recorded state</dt>
+          <dd className="mt-1 text-sm">{value.service.state.replaceAll("_", " ")}</dd>
         </div>
         <div>
-          <dt className="muted">Requested direction</dt>
-          <dd>{value.service.enabled ? "Enabled" : "Suspended / disabled"}</dd>
+          <dt className="text-xs text-muted">Requested direction</dt>
+          <dd className="mt-1 text-sm">{value.service.enabled ? "Enabled" : "Suspended / disabled"}</dd>
         </div>
         <div>
-          <dt className="muted">Desired revision</dt>
-          <dd>{value.service.revision}</dd>
+          <dt className="text-xs text-muted">Desired revision</dt>
+          <dd className={ui.cx(`mt-1 ${ui.mono}`)}>{value.service.revision}</dd>
         </div>
       </dl>
       {value.pendingReview ? (
-        <p role="alert" className="error">
+        <p role="alert" className="text-sm text-danger">
           An earlier operation needs review. A requested direction is not proof
           of readiness.
         </p>
@@ -407,9 +413,9 @@ function RequestNotice({ kind }: { kind: NonNullable<RequestState>["kind"] }) {
   };
   const message = messages[kind];
   return (
-    <section className="security-section" role="status">
-      <h3>{message[0]}</h3>
-      <p>{message[1]}</p>
+    <section className={ui.notice} role="status">
+      <h3 className="text-sm font-semibold">{message[0]}</h3>
+      <p className="mt-1 text-muted">{message[1]}</p>
     </section>
   );
 }

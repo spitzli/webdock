@@ -29,7 +29,6 @@ export function isCollection(value: string): value is Collection {
 }
 const path = (collection: Collection, id?: string) =>
   `/v1/operator/registry/${collection}${id ? `/${encodeURIComponent(id)}` : ""}`;
-const backLink = "mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted hover:text-foreground hover:no-underline";
 const displayDate = (value?: string) =>
   value ? new Date(value).toLocaleString() : "—";
 
@@ -96,7 +95,7 @@ export function RegistryList({
         <label className="relative w-full sm:w-[340px]">
           <MagnifyingGlassIcon aria-hidden size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" />
           <input
-            className={`${ui.input} min-h-9 pl-9`}
+            className={ui.cx(`${ui.input} min-h-9 pl-9`)}
             aria-label={`Search ${names[collection].toLowerCase()}`}
             placeholder={`Search ${names[collection].toLowerCase()}…`}
             value={search}
@@ -108,7 +107,7 @@ export function RegistryList({
         </label>
         {collection !== "audit-events" ? (
           <select
-            className={`${ui.input} min-h-9 w-auto max-sm:flex-1`}
+            className={ui.cx(`${ui.input} min-h-9 w-auto max-sm:flex-1`)}
             aria-label="Filter by record status"
             value={status}
             onChange={(event) => {
@@ -157,7 +156,7 @@ export function RegistryList({
             <table className={ui.table}>
               <thead>
                 <tr>
-                  <th scope="col" className={`${ui.th} w-1/2`}>
+                  <th scope="col" className={ui.cx(`${ui.th} w-1/2`)}>
                     {collection === "audit-events" ? "Change" : "Name"}
                   </th>
                   <th scope="col" className={ui.th}>
@@ -171,7 +170,7 @@ export function RegistryList({
               <tbody>
                 {records.data.docs.map((record) => (
                   <tr key={record.id} className={ui.tr}>
-                    <td className={`${ui.td} min-w-[170px]`}>
+                    <td className={ui.cx(`${ui.td} min-w-[170px]`)}>
                       <Link
                         to="/$collection/$id"
                         params={{ collection, id: record.id }}
@@ -182,7 +181,7 @@ export function RegistryList({
                           record.action ??
                           record.id}
                       </Link>
-                      <span className={`block text-muted ${ui.mono}`}>
+                      <span className={ui.cx(`block text-muted ${ui.mono}`)}>
                         {collection === "customers"
                           ? (record.contactEmail ?? record.id)
                           : record.id}
@@ -195,7 +194,7 @@ export function RegistryList({
                         <Status status={record.status} />
                       )}
                     </td>
-                    <td className={`${ui.td} whitespace-nowrap text-muted`}>
+                    <td className={ui.cx(`${ui.td} whitespace-nowrap text-muted`)}>
                       {displayDate(
                         collection === "audit-events"
                           ? record.createdAt
@@ -269,19 +268,19 @@ export function RegistryDetail({
     <section>
       <div className={ui.pageHeading}>
         <div>
-          <Link className={backLink} to="/$collection" params={{ collection }}>
+          <Link className={ui.backLink} to="/$collection" params={{ collection }}>
             <ArrowLeftIcon />
             {names[collection]}
           </Link>
           <h1 className={ui.pageTitle}>{record.data.name ?? record.data.summary ?? "Audit event"}</h1>
-          <p className={`mt-1 text-muted ${ui.mono}`}>{record.data.id}</p>
+          <p className={ui.cx(`mt-1 text-muted ${ui.mono}`)}>{record.data.id}</p>
         </div>
         {collection !== "audit-events" ? (
           <Status status={record.data.status} />
         ) : null}
       </div>
       {created === collection ? (
-        <p role="status" className={`${ui.notice} mb-6`}>
+        <p role="status" className={ui.cx(`${ui.notice} mb-6`)}>
           {collection === "customers"
             ? "Customer created. Invite the first person below or add a project."
             : "Project created."}
@@ -357,7 +356,7 @@ export function RegistryNew({
     <section>
       <div className={ui.pageHeading}>
         <div>
-          <Link className={backLink} to="/$collection" params={{ collection }}>
+          <Link className={ui.backLink} to="/$collection" params={{ collection }}>
             <ArrowLeftIcon />
             {names[collection]}
           </Link>
@@ -475,7 +474,7 @@ function RegistryForm({
           write.mutate(input);
         }}
       >
-        <div className={`${ui.cardBody} gap-5`}>
+        <div className={ui.cx(`${ui.cardBody} gap-5`)}>
         <h2 className={ui.sectionTitle}>
           {collection === "customers" ? "Customer details" : "Project details"}
         </h2>
@@ -491,7 +490,7 @@ function RegistryForm({
             disabled={write.isPending}
           />
         </label>
-        {live.errors.name ? <FieldError message={live.errors.name} /> : <span className={`${ui.hint} -mt-3`}>How this {collection === "customers" ? "customer" : "project"} appears across Webdock.</span>}
+        {live.errors.name ? <FieldError message={live.errors.name} /> : <span className={ui.cx(`${ui.hint} -mt-3`)}>How this {collection === "customers" ? "customer" : "project"} appears across Webdock.</span>}
         {collection === "customers" ? (
           <CustomerFields record={record} pending={write.isPending} errors={live.errors} onboarding />
         ) : (
@@ -615,7 +614,7 @@ function RegistryForm({
         <label className={ui.field}>
           Notes
           <textarea
-            className={`${ui.input} resize-y`}
+            className={ui.cx(`${ui.input} resize-y`)}
             name="notes"
             rows={4}
             maxLength={3000}
@@ -637,7 +636,7 @@ function RegistryForm({
           </p>
         ) : null}
         </div>
-        <div className={`${ui.cardFooter} flex-row-reverse`}>
+        <div className={ui.cx(`${ui.cardFooter} flex-row-reverse`)}>
           <button
             className={ui.button("primary")}
             disabled={
@@ -702,7 +701,7 @@ function RecordInformation({
       {record ? (
         <>
           <p className="text-muted">Updated {displayDate(record.updatedAt)}</p>
-          <div className={`${ui.card} mt-2 grid gap-2.5 p-5`}>
+          <div className={ui.cx(`${ui.card} mt-2 grid gap-2.5 p-5`)}>
             <h3 className="text-sm font-semibold">
               {record.status === "archived"
                 ? "Restore record"
@@ -725,7 +724,7 @@ function RecordInformation({
               Confirm {record.status === "archived" ? "restore" : "archive"}
             </label>
             <button
-              className={`${ui.button()} justify-self-start`}
+              className={ui.cx(`${ui.button()} justify-self-start`)}
               disabled={!archiveConfirmed || archive.isPending || dirty}
               onClick={() => {
                 archive.mutate();

@@ -28,7 +28,7 @@ export function ProjectExtensions({ projectID }: { projectID: string }) {
     .filter((slot) => slot.slot === "project.overview.panel" && slot.action)
     .map((slot) => ({ plugin: view.manifest.name, slot: slot.id, label: slot.label, action: slot.action ?? "", active: view.state === "enabled" && view.runtime === "ready" && !session.user.preview })));
   if (!panels.length) return null;
-  return <section aria-label="Project extensions" className="mt-6">
+  return <section aria-label="Project extensions" className="mt-6 grid gap-6">
     {panels.map((panel) => <ExtensionPanel key={`${panel.plugin}:${panel.slot}`} projectID={projectID} panel={panel} />)}
   </section>;
 }
@@ -44,7 +44,7 @@ function ExtensionPanel({ projectID, panel }: { projectID: string; panel: Panel 
     queryFn: ({ signal }) => invoke(panel.action, {}, signal),
     enabled: panel.active, retry: false,
   });
-  if (!panel.active) return <p className="muted">{panel.label}: extension is unavailable.</p>;
+  if (!panel.active) return <p className="text-sm text-muted">{panel.label}: extension is unavailable.</p>;
   if (initial.isPending) return <Loading>Loading {panel.label}…</Loading>;
   if (initial.error) return <Failure error={initial.error} retry={() => void initial.refetch()} />;
   return <PluginPanel value={value ?? initial.data} active={panel.active} invoke={async (action, input, signal) => {

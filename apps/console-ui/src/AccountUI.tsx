@@ -25,6 +25,11 @@ import { useApi } from "./context";
 import { type RegistryRecord, type Session } from "./api";
 import { sessionCacheScope, useSessionCacheIsolation } from "./session-cache";
 import { Failure, Loading, Modal } from "./common";
+import * as ui from "./ui";
+const panelForm = "mt-5 grid gap-5";
+const buttonRow = "mt-5 flex flex-wrap gap-3";
+const sectionHeading = `${ui.sectionTitle} flex items-center gap-2 [&>svg]:shrink-0 [&>svg]:text-muted`;
+const disclosure = "group rounded-lg border border-outline [&>summary]:cursor-pointer [&>summary]:px-4 [&>summary]:py-2.5 [&>summary]:text-sm [&>summary]:font-medium";
 import {
   authorizationContinuation,
   nativeSessionSchema,
@@ -63,9 +68,10 @@ function PasswordField({
   };
   return (
     <>
-    <label>
+    <label className={ui.field}>
       {label}
       <input
+        className={ui.input}
         name={name}
         type="password"
         required
@@ -76,7 +82,7 @@ function PasswordField({
         onInput={(event) => { if (touched || name === "confirmPassword") check(event.currentTarget); }}
       />
     </label>
-      {fresh && name !== "confirmPassword" && !(touched && message) ? <span className="field-hint -mt-3">At least 12 characters.</span> : null}
+      {fresh && name !== "confirmPassword" && !(touched && message) ? <span className={ui.cx(`${ui.hint} -mt-3`)}>At least 12 characters.</span> : null}
       <FieldError message={touched ? message : undefined} />
     </>
   );
@@ -91,12 +97,12 @@ function Feedback({
   return (
     <>
       {error ? (
-        <p className="error" role="alert">
+        <p className="text-sm text-danger" role="alert">
           {error.message}
         </p>
       ) : null}
       {message ? (
-        <p className="success" role="status">
+        <p className="text-sm text-success" role="status">
           {message}
         </p>
       ) : null}
@@ -170,7 +176,7 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
               ? "Reset your password"
               : "Verify your identity"}
         </h1>
-        <p className="muted">
+        <p>
           {mode === "password"
             ? "One account for your workspaces and services."
             : mode === "reset"
@@ -180,15 +186,16 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
                 : "Enter one of your unused recovery codes."}
         </p>
         <form
-          className="editor"
+          className={panelForm}
           onSubmit={(event) => {
             signIn.mutate(form(event));
           }}
         >
           {mode === "password" || mode === "reset" ? (
-            <label>
+            <label className={ui.field}>
               Email
               <input
+                className={ui.input}
                 name="email"
                 type="email"
                 required
@@ -198,9 +205,10 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
               />
             </label>
           ) : (
-            <label>
+            <label className={ui.field}>
               {mode === "totp" ? "Authentication code" : "Recovery code"}
               <input
+                className={ui.input}
                 name="code"
                 required
                 inputMode={mode === "totp" ? "numeric" : "text"}
@@ -221,7 +229,7 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
             }
           />
           <button
-            className="button primary"
+            className={ui.cx(`${ui.button("primary")} w-full`)}
             disabled={signIn.isPending || passkey.isPending}
           >
             {signIn.isPending
@@ -236,7 +244,7 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
         {mode === "password" ? (
           <>
             <button
-              className="button passkey-button"
+              className={ui.cx(`${ui.button()} mt-3.5 w-full`)}
               onClick={() => {
                 passkey.mutate();
               }}
@@ -247,7 +255,7 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
                 : "Sign in with a passkey"}
             </button>
             <button
-              className="text-button"
+              className={ui.textButton}
               onClick={() => {
                 choose("reset");
               }}
@@ -257,7 +265,7 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
           </>
         ) : mode === "reset" ? (
           <button
-            className="text-button"
+            className={ui.textButton}
             onClick={() => {
               choose("password");
             }}
@@ -266,7 +274,7 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
           </button>
         ) : (
           <button
-            className="text-button"
+            className={ui.textButton}
             onClick={() => {
               choose(mode === "totp" ? "recovery" : "totp");
             }}
@@ -313,7 +321,7 @@ function PasswordReset() {
       <AuthHeader product="Account" href="/account" />
       <section className={authPanel}>
         <h1>{invitation ? "Create your account" : "Choose a new password"}</h1>
-        {invitation ? <p className="muted">Choose a password for your new account. You can add a passkey next.</p> : null}
+        {invitation ? <p>Choose a password for your new account. You can add a passkey next.</p> : null}
         {!token ? (
           <p role="alert">
             This link is incomplete.{" "}
@@ -322,13 +330,13 @@ function PasswordReset() {
         ) : reset.isSuccess && !invitation ? (
           <p role="status">
             Your password is ready.{" "}
-            <a className="text-button" href="/login">
+            <a className="underline underline-offset-[3px]" href="/login">
               Sign in
             </a>
           </p>
         ) : (
           <form
-            className="editor"
+            className={panelForm}
             onSubmit={(event) => {
               reset.mutate(form(event));
             }}
@@ -339,11 +347,11 @@ function PasswordReset() {
               label={invitation ? "Confirm password" : "Confirm new password"}
               fresh
             />
-            <p className="field-hint">
+            <p className={ui.hint}>
               {invitation ? "Use at least 12 characters." : "Use at least 12 characters. Previous sessions will be signed out."}
             </p>
             <Feedback error={reset.error} />
-            <button className="button primary" disabled={reset.isPending || reset.isSuccess}>
+            <button className={ui.cx(`${ui.button("primary")} w-full`)} disabled={reset.isPending || reset.isSuccess}>
               {reset.isPending || reset.isSuccess ? (invitation ? "Creating…" : "Saving…") : invitation ? "Create account" : "Save password"}
             </button>
           </form>
@@ -382,7 +390,7 @@ function RecoveryCodes({ codes, account, done }: { codes: string[]; account: str
           Keep these somewhere private, such as your password manager. Each code
           signs you in once if you lose your authenticator.
         </p>
-        <ul className="recovery-codes" aria-label="Recovery codes">
+        <ul className="recovery-codes grid max-w-[460px] list-none grid-cols-2 gap-x-6 gap-y-2.5 rounded-lg bg-soft p-4 font-mono text-[13px] [&_code]:select-all max-sm:gap-x-3 max-sm:text-xs" aria-label="Recovery codes">
           {codes.map((code) => (
             <li key={code}>
               <code>{code}</code>
@@ -390,11 +398,11 @@ function RecoveryCodes({ codes, account, done }: { codes: string[]; account: str
           ))}
         </ul>
         <div className="flex flex-wrap gap-2">
-          <button className="button" onClick={copy}>Copy codes</button>
-          <button className="button" onClick={download}>Download codes</button>
+          <button className={ui.button()} onClick={copy}>Copy codes</button>
+          <button className={ui.button()} onClick={download}>Download codes</button>
         </div>
         <p role="status" className="min-h-5 text-[13px] text-muted">{status || "Copy or download the codes to continue."}</p>
-        <button className="button primary self-start" disabled={!kept} onClick={done}>
+        <button className={ui.cx(`${ui.button("primary")} self-start`)} disabled={!kept} onClick={done}>
           I saved my recovery codes
         </button>
       </div>
@@ -729,19 +737,9 @@ export function AccountSecurity({
     ? new URL(enrollment.totpURI).searchParams.get("secret")
     : null;
   return (
-    <div className="security-stack">
-      <section className="security-section security-password">
-        <h2>
-          <PasswordIcon size={20} aria-hidden />
-          Change password
-        </h2>
-        {session.user.mustChangePassword ? (
-          <p className="security-notice" role="status">
-            Set your own password to continue.
-          </p>
-        ) : null}
+    <div className="grid items-start gap-6 lg:grid-cols-2">
+      <section className={ui.cx(`security-password ${ui.card} col-auto row-auto lg:row-span-2`)}>
         <form
-          className="editor security-form"
           onSubmit={(event) => {
             const data = form(event);
             const target = event.currentTarget;
@@ -752,162 +750,178 @@ export function AccountSecurity({
             });
           }}
         >
-          <PasswordField name="currentPassword" label="Current password" />
-          <PasswordField name="newPassword" label="New password" fresh />
-          <PasswordField
-            name="confirmPassword"
-            label="Confirm new password"
-            fresh
-          />
-          <p className="field-hint">Other sessions will be signed out.</p>
-          <Feedback
-            error={change.error}
-            message={feedback.passwordUpdated ? "Password updated." : undefined}
-          />
-          <div>
-            <button className="button" disabled={change.isPending}>
+          <div className={ui.cx(`${ui.cardBody} gap-5`)}>
+            <h2 className={sectionHeading}>
+              <PasswordIcon size={20} aria-hidden />
+              Change password
+            </h2>
+            {session.user.mustChangePassword ? (
+              <p className={ui.notice} role="status">
+                Set your own password to continue.
+              </p>
+            ) : null}
+            <PasswordField name="currentPassword" label="Current password" />
+            <PasswordField name="newPassword" label="New password" fresh />
+            <PasswordField
+              name="confirmPassword"
+              label="Confirm new password"
+              fresh
+            />
+            <Feedback
+              error={change.error}
+              message={feedback.passwordUpdated ? "Password updated." : undefined}
+            />
+          </div>
+          <div className={ui.cardFooter}>
+            <span>Other sessions will be signed out.</span>
+            <button className={ui.button()} disabled={change.isPending}>
               {change.isPending ? "Saving…" : "Update password"}
             </button>
           </div>
         </form>
       </section>
-      <section className="security-section security-mfa">
-        <h2>
-          <ShieldCheckIcon size={20} aria-hidden />
-          Two-factor authentication
-        </h2>
-        {session.user.role === "operator" && !session.user.twoFactorEnabled ? (
-          <p className="security-notice">
-            Protect your operator account with an authenticator before
-            continuing.
-          </p>
-        ) : null}
-        {feedback.confirmationError ? (
-          <p className="error" role="alert">
-            {feedback.confirmationError}
-          </p>
-        ) : null}
-        {codes ? (
-          <RecoveryCodes codes={codes} account={session.user.email} done={completeCodes} />
-        ) : enrollment ? (
-          <Modal title="Set up authenticator" close={() => { setEnrollment(null); confirm.reset(); enable.reset(); }}>
-          <form
-            className="editor"
-            onSubmit={(event) => {
-              confirm.mutate(formText(form(event), "code"));
-            }}
-          >
-            <p>
-              Scan this code with your authenticator, then enter its six-digit
-              code.
+      <section className={ui.card}>
+        <div className={ui.cardBody}>
+          <h2 className={sectionHeading}>
+            <ShieldCheckIcon size={20} aria-hidden />
+            Two-factor authentication
+          </h2>
+          {session.user.role === "operator" && !session.user.twoFactorEnabled ? (
+            <p className={ui.notice}>
+              Protect your operator account with an authenticator before
+              continuing.
             </p>
-            <div className="totp-qr">
-              <QRCodeSVG
-                value={enrollment.totpURI}
-                size={196}
-                marginSize={3}
-                title="Authenticator setup code"
-              />
-            </div>
-            <details>
-              <summary>Enter a setup key instead</summary>
-              <code className="setup-key">{secret}</code>
-            </details>
-            <label>
-              Authentication code
-              <input
-                name="code"
-                inputMode="numeric"
-                pattern="[0-9]{6}"
-                autoComplete="one-time-code"
-                required
-              />
-            </label>
-            <Feedback error={confirm.error} />
-            <div>
-              <button className="button primary" disabled={confirm.isPending}>
-                Verify and enable
-              </button>
-            </div>
-          </form>
-          </Modal>
-        ) : session.user.twoFactorEnabled || enrolled ? (
-          <>
-            <p>Your authenticator protects this account.</p>
-            <details className="security-details">
-              <summary>Replace recovery codes</summary>
-              <form
-                className="editor security-form"
-                onSubmit={(event) => {
-                  recover.mutate(formText(form(event), "password"));
-                }}
-              >
-                <p>New codes replace all existing recovery codes.</p>
-                <PasswordField />
-                <Feedback error={recover.error} />
-                <div>
-                  <button className="button" disabled={recover.isPending}>
-                    Generate new recovery codes
-                  </button>
-                </div>
-              </form>
-            </details>
-            <details className="security-details">
-              <summary>Turn off two-factor authentication</summary>
-              <form
-                className="editor security-form"
-                onSubmit={(event) => {
-                  disable.mutate(formText(form(event), "password"));
-                }}
-              >
-                <p>
-                  {session.user.role === "operator"
-                    ? "Operator access pauses until you set up an authenticator again."
-                    : "Your password will remain required to sign in."}
-                </p>
-                <PasswordField />
-                <Feedback error={disable.error} />
-                <div>
-                  <button className="button" disabled={disable.isPending}>
-                    Turn off two-factor authentication
-                  </button>
-                </div>
-              </form>
-            </details>
-          </>
-        ) : (
-          <form
-            className="editor security-form"
-            onSubmit={(event) => {
-              enable.mutate(formText(form(event), "password"));
-            }}
-          >
-            <p>Add an authenticator for a second sign-in check.</p>
-            <PasswordField />
-            <Feedback error={enable.error} />
-            <div>
-              <button
-                className="button primary"
-                disabled={!ready || enable.isPending}
-              >
-                Set up authenticator
-              </button>
-            </div>
-          </form>
-        )}
+          ) : null}
+          {feedback.confirmationError ? (
+            <p className="text-sm text-danger" role="alert">
+              {feedback.confirmationError}
+            </p>
+          ) : null}
+          {codes ? (
+            <RecoveryCodes codes={codes} account={session.user.email} done={completeCodes} />
+          ) : enrollment ? (
+            <Modal title="Set up authenticator" close={() => { setEnrollment(null); confirm.reset(); enable.reset(); }}>
+            <form
+              className="grid gap-5"
+              onSubmit={(event) => {
+                confirm.mutate(formText(form(event), "code"));
+              }}
+            >
+              <p>
+                Scan this code with your authenticator, then enter its six-digit
+                code.
+              </p>
+              <div className="w-fit rounded-lg bg-white p-2">
+                <QRCodeSVG
+                  value={enrollment.totpURI}
+                  size={196}
+                  marginSize={3}
+                  title="Authenticator setup code"
+                />
+              </div>
+              <details className={disclosure}>
+                <summary>Enter a setup key instead</summary>
+                <code className="setup-key block px-4 pb-3 font-mono text-[13px] [overflow-wrap:anywhere] select-all">{secret}</code>
+              </details>
+              <label className={ui.field}>
+                Authentication code
+                <input
+                  className={ui.input}
+                  name="code"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  autoComplete="one-time-code"
+                  required
+                />
+              </label>
+              <Feedback error={confirm.error} />
+              <div>
+                <button className={ui.button("primary")} disabled={confirm.isPending}>
+                  Verify and enable
+                </button>
+              </div>
+            </form>
+            </Modal>
+          ) : session.user.twoFactorEnabled || enrolled ? (
+            <>
+              <p className="flex items-center gap-2 text-sm"><span className={ui.badge("success")}>Enabled</span>Your authenticator protects this account.</p>
+              <details className={disclosure}>
+                <summary>Replace recovery codes</summary>
+                <form
+                  className="grid gap-4 px-4 pb-4"
+                  onSubmit={(event) => {
+                    recover.mutate(formText(form(event), "password"));
+                  }}
+                >
+                  <p className="text-sm text-muted">New codes replace all existing recovery codes.</p>
+                  <PasswordField />
+                  <Feedback error={recover.error} />
+                  <div>
+                    <button className={ui.button()} disabled={recover.isPending}>
+                      Generate new recovery codes
+                    </button>
+                  </div>
+                </form>
+              </details>
+              <details className={disclosure}>
+                <summary>Turn off two-factor authentication</summary>
+                <form
+                  className="grid gap-4 px-4 pb-4"
+                  onSubmit={(event) => {
+                    disable.mutate(formText(form(event), "password"));
+                  }}
+                >
+                  <p className="text-sm text-muted">
+                    {session.user.role === "operator"
+                      ? "Operator access pauses until you set up an authenticator again."
+                      : "Your password will remain required to sign in."}
+                  </p>
+                  <PasswordField />
+                  <Feedback error={disable.error} />
+                  <div>
+                    <button className={ui.button()} disabled={disable.isPending}>
+                      Turn off two-factor authentication
+                    </button>
+                  </div>
+                </form>
+              </details>
+            </>
+          ) : (
+            <form
+              className="grid gap-4"
+              onSubmit={(event) => {
+                enable.mutate(formText(form(event), "password"));
+              }}
+            >
+              <p className="text-sm text-muted">Add an authenticator for a second sign-in check.</p>
+              <PasswordField />
+              <Feedback error={enable.error} />
+              <div>
+                <button
+                  className={ui.button("primary")}
+                  disabled={!ready || enable.isPending}
+                >
+                  Set up authenticator
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </section>
-      <section className="security-section security-passkeys">
-        <h2>
-          <KeyIcon size={20} aria-hidden />
-          Passkeys
-        </h2>
-        <p>Use a device screen lock or security key to sign in.</p>
-        {passkeys.error ? <Feedback error={passkeys.error} /> : null}
+      <section className={ui.cx(`security-passkeys ${ui.card} col-auto row-auto`)}>
+        <div className={ui.cardBody}>
+          <h2 className={sectionHeading}>
+            <KeyIcon size={20} aria-hidden />
+            Passkeys
+          </h2>
+          <p className="-mt-2 text-sm text-muted">Use a device screen lock or security key to sign in.</p>
+          {passkeys.error ? <Feedback error={passkeys.error} /> : null}
+        </div>
         <ul className="security-list">
           {passkeys.data?.map((passkey) => (
-            <li key={passkey.id}>
+            <li key={passkey.id} className={ui.cx(`${ui.cardRow} border-b-0`)}>
               <form
-                className="inline-editor"
+                className="flex min-w-0 flex-1 items-center gap-2"
                 onSubmit={(event) => {
                   renamePasskey.mutate({
                     id: passkey.id,
@@ -916,12 +930,13 @@ export function AccountSecurity({
                 }}
               >
                 <label
-                  className="visually-hidden"
+                  className="sr-only"
                   htmlFor={`passkey-${passkey.id}`}
                 >
                   Passkey name
                 </label>
                 <input
+                  className={ui.cx(`${ui.input} min-h-9 max-w-64`)}
                   id={`passkey-${passkey.id}`}
                   name="name"
                   defaultValue={passkey.name ?? "Passkey"}
@@ -929,14 +944,14 @@ export function AccountSecurity({
                   required
                 />
                 <button
-                  className="button quiet"
+                  className={ui.button("quiet")}
                   disabled={renamePasskey.isPending}
                 >
                   Rename
                 </button>
               </form>
               <button
-                className="button quiet"
+                className={ui.button("quiet")}
                 onClick={() => {
                   if (window.confirm("Remove this passkey?"))
                     removePasskey.mutate(passkey.id);
@@ -949,18 +964,19 @@ export function AccountSecurity({
           ))}
         </ul>
         {passkeys.data?.length === 0 ? (
-          <p className="muted">No passkeys yet.</p>
+          <p className={ui.cx(`${ui.cardRow} text-muted`)}>No passkeys yet.</p>
         ) : null}
         <form
-          className="inline-editor"
+          className={ui.cx(`${ui.cardFooter} items-end`)}
           onSubmit={(event) => {
             event.preventDefault();
             addPasskey.mutate();
           }}
         >
-          <label>
+          <label className={ui.cx(`${ui.field} min-w-0 flex-1 text-foreground`)}>
             New passkey name
             <input
+              className={ui.cx(`${ui.input} min-h-9`)}
               value={passkeyName}
               onChange={(event) => {
                 setPasskeyName(event.target.value);
@@ -970,34 +986,36 @@ export function AccountSecurity({
             />
           </label>
           <button
-            className="button"
+            className={ui.button()}
             disabled={Boolean(passkeyBlocked) || addPasskey.isPending}
           >
             {addPasskey.isPending
               ? "Waiting for your device…"
               : "Add a passkey"}
           </button>
+          {passkeyBlocked ? <p className="w-full text-[13px] text-muted">{passkeyBlocked}</p> : null}
+          <Feedback
+            error={addPasskey.error ?? removePasskey.error ?? renamePasskey.error}
+          />
         </form>
-        {passkeyBlocked ? <p className="mt-2 text-[13px] text-muted">{passkeyBlocked}</p> : null}
-        <Feedback
-          error={addPasskey.error ?? removePasskey.error ?? renamePasskey.error}
-        />
       </section>
-      <section className="security-section security-sessions">
-        <h2>
-          <DevicesIcon size={20} aria-hidden />
-          Sessions
-        </h2>
-        <p>Sign out sessions you no longer use.</p>
-        {sessions.error ? <Feedback error={sessions.error} /> : null}
-        <ul className="security-list">
+      <section className={ui.cx(`security-section ${ui.card} gap-0 p-0 lg:col-span-2`)}>
+        <div className={ui.cardBody}>
+          <h2 className={sectionHeading}>
+            <DevicesIcon size={20} aria-hidden />
+            Sessions
+          </h2>
+          <p className="-mt-2 text-sm text-muted">Sign out sessions you no longer use.</p>
+          {sessions.error ? <Feedback error={sessions.error} /> : null}
+        </div>
+        <ul>
           {sessions.data?.map((item) => (
-            <li key={item.id}>
+            <li key={item.id} className={ui.cardRow}>
               <div>
-                <strong>
+                <strong className="flex items-center gap-2 font-medium">
                   {item.current ? "This session" : "Other session"}
                 </strong>
-                <p className="muted">
+                <p className="text-[13px] text-muted">
                   Started {new Date(item.createdAt).toLocaleString()}
                   <br />
                   Expires {new Date(item.expiresAt).toLocaleString()}
@@ -1005,7 +1023,7 @@ export function AccountSecurity({
               </div>
               {!item.current ? (
                 <button
-                  className="button"
+                  className={ui.button()}
                   disabled={revoke.isPending}
                   onClick={() => {
                     revoke.mutate(item.id);
@@ -1017,16 +1035,18 @@ export function AccountSecurity({
             </li>
           ))}
         </ul>
-        <button
-          className="button"
-          disabled={revoke.isPending}
-          onClick={() => {
-            revoke.mutate(null);
-          }}
-        >
-          Sign out other sessions
-        </button>
-        <Feedback error={revoke.error} />
+        <div className={ui.cardFooter}>
+          <Feedback error={revoke.error} />
+          <button
+            className={ui.cx(`${ui.button()} ml-auto`)}
+            disabled={revoke.isPending}
+            onClick={() => {
+              revoke.mutate(null);
+            }}
+          >
+            Sign out other sessions
+          </button>
+        </div>
       </section>
     </div>
   );
@@ -1088,18 +1108,18 @@ function ConsentPage() {
         ?
       </h1>
       <p>This application is requesting access to your account.</p>
-      <ul className="permission-list">
+      <ul className="my-4 list-disc space-y-1.5 pl-5 text-sm">
         {consent.data.scopes.map((scope) => (
           <li key={scope}>{labels[scope] ?? scope}</li>
         ))}
       </ul>
       {consent.data.resources.length ? (
-        <p className="muted">Services: {consent.data.resources.join(", ")}</p>
+        <p>Services: {consent.data.resources.join(", ")}</p>
       ) : null}
       <Feedback error={answer.error} />
-      <div className="button-row">
+      <div className={buttonRow}>
         <button
-          className="button"
+          className={ui.button()}
           onClick={() => {
             answer.mutate(false);
           }}
@@ -1108,7 +1128,7 @@ function ConsentPage() {
           Cancel
         </button>
         <button
-          className="button primary"
+          className={ui.button("primary")}
           onClick={() => {
             answer.mutate(true);
           }}
@@ -1157,13 +1177,13 @@ function LogoutPage({ session }: { session: Session }) {
     <section className={authPanel}>
       <h1>Sign out of Webdock?</h1>
       <p>You are signed in as {session.user.email}.</p>
-      <p className="muted">
+      <p>
         This ends the current account session and connected application access.
       </p>
       <Feedback error={details.error ?? answer.error} />
-      <div className="button-row">
+      <div className={buttonRow}>
         <button
-          className="button"
+          className={ui.button()}
           onClick={() => {
             answer.mutate(false);
           }}
@@ -1172,7 +1192,7 @@ function LogoutPage({ session }: { session: Session }) {
           Stay signed in
         </button>
         <button
-          className="button primary"
+          className={ui.button("primary")}
           onClick={() => {
             answer.mutate(true);
           }}
@@ -1214,24 +1234,26 @@ function SitesPage() {
       />
     );
   return (
-    <section className="security-section">
-      <h1>Your websites</h1>
+    <section>
+      <div className={ui.pageHeading}>
+        <h1 className={ui.pageTitle}>Your websites</h1>
+      </div>
       {sites.data.length ? (
-        <ul className="security-list">
+        <ul className={ui.card}>
           {sites.data.map((site) => (
-            <li key={site.id}>
+            <li key={site.id} className={ui.cx(`${ui.cardRow} first:border-t-0`)}>
               <div>
-                <strong>{site.name}</strong>
-                <p className="muted">{site.role}</p>
+                <strong className="font-medium">{site.name}</strong>
+                <p className="text-[13px] text-muted capitalize">{site.role}</p>
               </div>
-              <a className="button" href={site.url}>
+              <a className={ui.button()} href={site.url}>
                 Open website
               </a>
             </li>
           ))}
         </ul>
       ) : (
-        <p>No websites have been shared with this account yet.</p>
+        <p className="rounded-xl border border-outline bg-surface px-7 py-10 text-muted max-sm:px-[18px] max-sm:py-6">No websites have been shared with this account yet.</p>
       )}
     </section>
   );
@@ -1291,9 +1313,9 @@ function InvitationPage() {
       <h1>Join {invite.data.organizationName}</h1>
       <p>You have been invited as {invite.data.role}.</p>
       <Feedback error={answer.error} />
-      <div className="button-row">
+      <div className={buttonRow}>
         <button
-          className="button"
+          className={ui.button()}
           onClick={() => {
             answer.mutate(false);
           }}
@@ -1302,7 +1324,7 @@ function InvitationPage() {
           Decline
         </button>
         <button
-          className="button primary"
+          className={ui.button("primary")}
           onClick={() => {
             answer.mutate(true);
           }}
@@ -1338,13 +1360,13 @@ function CustomerOnboarding({ customer, done }: { customer: string; done: () => 
   return (
     <section className={authPanel}>
       <h1>Your customer details</h1>
-      <p className="muted">These details appear on your account and invoices. You can change them later.</p>
-      <form className="editor" {...live.form} onSubmit={(event) => { event.preventDefault(); save.mutate(new FormData(event.currentTarget)); }}>
+      <p>These details appear on your account and invoices. You can change them later.</p>
+      <form className={panelForm} {...live.form} onSubmit={(event) => { event.preventDefault(); save.mutate(new FormData(event.currentTarget)); }}>
         <CustomerFields record={record} pending={save.isPending} errors={live.errors} />
         <Feedback error={save.error} />
-        <div className="button-row">
-          <button type="button" className="button" disabled={save.isPending} onClick={done}>Later</button>
-          <button className="button primary" disabled={save.isPending}>{save.isPending ? "Saving…" : "Save details"}</button>
+        <div className="flex flex-wrap gap-3">
+          <button type="button" className={ui.button()} disabled={save.isPending} onClick={done}>Later</button>
+          <button className={ui.button("primary")} disabled={save.isPending}>{save.isPending ? "Saving…" : "Save details"}</button>
         </div>
       </form>
     </section>
@@ -1370,9 +1392,9 @@ function WelcomePasskey({ done }: { done: () => void }) {
       <h1>Add a passkey</h1>
       <p>Sign in with your fingerprint, face or device PIN instead of typing your password.</p>
       <Feedback error={add.error} />
-      <div className="button-row">
-        <button className="button" disabled={add.isPending} onClick={done}>Not now</button>
-        <button className="button primary" disabled={add.isPending} onClick={() => { add.mutate(); }}>{add.isPending ? "Waiting for your device…" : "Add passkey"}</button>
+      <div className={buttonRow}>
+        <button className={ui.button()} disabled={add.isPending} onClick={done}>Not now</button>
+        <button className={ui.button("primary")} disabled={add.isPending} onClick={() => { add.mutate(); }}>{add.isPending ? "Waiting for your device…" : "Add passkey"}</button>
       </div>
     </section>
   );
@@ -1563,10 +1585,10 @@ export function AccountApp() {
             Your sign-in request may have expired, or this account may not have
             access.
           </p>
-          <a className="button primary" href="/account">
+          <a className={ui.cx(`${ui.button("primary")} mt-5 w-full`)} href="/account">
             Open your account
           </a>
-          <a className="text-button" href="/logout">
+          <a className={ui.textButton} href="/logout">
             Sign out to use another account
           </a>
         </section>
@@ -1601,14 +1623,14 @@ export function AccountApp() {
       <InvitationPage />
     ) : (
       <>
-        <div className="page-heading">
+        <div className={ui.pageHeading}>
           <div>
-            <h1>Account security</h1>
-            <p className="muted">{session.data.user.email}</p>
+            <h1 className={ui.pageTitle}>Account security</h1>
+            <p className={ui.cx(`${ui.pageLead} [overflow-wrap:anywhere]`)}>{session.data.user.email}</p>
           </div>
           {ready && api.config.consoleOrigin ? (
             <a
-              className="button primary"
+              className={ui.button("primary")}
               href={`${api.config.consoleOrigin}/api/sso/login`}
             >
               Open Console
@@ -1616,18 +1638,22 @@ export function AccountApp() {
           ) : null}
         </div>
         {session.data.user.preview ? (
-          <section className="security-section">
-            <h2>Customer preview is read-only</h2>
-            <p>
-              Exit your customer preview in Console before changing account
-              security.
-            </p>
-            <a
-              className="button"
-              href={`${api.config.consoleOrigin ?? ""}/projects`}
-            >
-              Return to Console
-            </a>
+          <section className={ui.card}>
+            <div className={ui.cardBody}>
+              <h2 className={ui.sectionTitle}>Customer preview is read-only</h2>
+              <p className="text-muted">
+                Exit your customer preview in Console before changing account
+                security.
+              </p>
+            </div>
+            <div className={ui.cx(`${ui.cardFooter} justify-end`)}>
+              <a
+                className={ui.button()}
+                href={`${api.config.consoleOrigin ?? ""}/projects`}
+              >
+                Return to Console
+              </a>
+            </div>
           </section>
         ) : (
           <AccountSecurity
@@ -1656,13 +1682,13 @@ function AccountShell({ session, consoleLink, children }: { session: Session; co
         <div className="w-full max-w-[540px]">{children}</div>
       </main>
     ) : (
-      <div className="app-shell">
-        <a className="skip-link" href="#main">
+      <div className="grid min-h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[56px_1fr] md:grid-cols-[210px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]">
+        <a className="fixed -top-24 left-4 z-50 border border-focus bg-surface px-4 py-2.5 focus:top-2.5" href="#main">
           Skip to content
         </a>
-        <header className="topbar">
+        <header className="sticky top-0 z-10 col-span-full flex items-center gap-1 border-b border-outline bg-page px-3 md:gap-3 md:px-4">
           <Brand product="Account" href="/account" />
-          <div className="topbar-actions ml-auto">
+          <div className="ml-auto flex items-center gap-0 md:gap-1">
             <LocalePicker />
             <ThemeButton />
             <UserMenu
@@ -1677,7 +1703,7 @@ function AccountShell({ session, consoleLink, children }: { session: Session; co
             />
           </div>
         </header>
-        <aside className="sidebar">
+        <aside className="sticky top-14 flex h-[calc(100dvh-56px)] flex-col self-start overflow-y-auto border-r border-outline bg-subtle px-2 py-3 max-md:hidden">
           <nav aria-label="Account">
             {[
               { href: "/account", label: "Security", Icon: ShieldCheckIcon },
@@ -1686,7 +1712,7 @@ function AccountShell({ session, consoleLink, children }: { session: Session; co
               <a
                 key={href}
                 href={href}
-                className={`nav-item${location.pathname === href ? " selected" : ""}`}
+                className={`my-px flex min-h-[34px] items-center gap-2.5 rounded-md px-2.5 text-sm hover:bg-soft hover:text-foreground hover:no-underline [&_svg]:shrink-0 ${location.pathname === href ? "bg-soft font-medium text-foreground" : "text-muted"}`}
                 aria-current={location.pathname === href ? "page" : undefined}
               >
                 <Icon size={18} aria-hidden />
@@ -1695,10 +1721,10 @@ function AccountShell({ session, consoleLink, children }: { session: Session; co
             ))}
           </nav>
         </aside>
-        <main id="main" className="account-main w-full">
-          <nav aria-label="Account sections" className="mb-6 flex gap-2 min-[701px]:hidden">
-            <a className="button" href="/account">Security</a>
-            <a className="button" href="/sites">Websites</a>
+        <main id="main" className="mx-auto w-full max-w-[1040px] px-4 pt-6 pb-12 outline-none md:px-7 md:pt-8 md:pb-14 lg:px-10 lg:pt-10 lg:pb-16">
+          <nav aria-label="Account sections" className="mb-6 flex gap-2 md:hidden">
+            <a className={ui.button()} href="/account">Security</a>
+            <a className={ui.button()} href="/sites">Websites</a>
           </nav>
           {children}
         </main>

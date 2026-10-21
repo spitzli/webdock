@@ -12,6 +12,9 @@ import {
   tenantsSchema,
 } from "./hosting-contracts";
 import { Empty, Failure, Loading } from "./common";
+import * as ui from "./ui";
+const recordLink = "inline-block py-0.5 font-medium";
+const recordMeta = `block text-muted ${ui.mono}`;
 export function HostingDirectory({
   customerID,
 }: {
@@ -52,17 +55,18 @@ export function HostingDirectory({
     );
   return (
     <section>
-      <div className="page-heading">
+      <div className={ui.pageHeading}>
         <div>
-          <h1>Applications</h1>
-          <p className="muted">
+          <h1 className={ui.pageTitle}>Applications</h1>
+          <p className={ui.pageLead}>
             Choose a workspace and project to manage its applications.
           </p>
         </div>
       </div>
-      <label className="database-workspace-picker">
+      <label className={ui.cx(`${ui.field} mb-6 max-w-[420px]`)}>
         Workspace
         <select
+          className={ui.input}
           aria-label="Workspace"
           value={customerID ?? ""}
           onChange={(event) => {
@@ -108,36 +112,36 @@ export function HostingDirectory({
             </Empty>
           ) : (
             <>
-              <div className="table-scroll">
-                <table>
+              <div className={ui.tableFrame}>
+                <table className={ui.table}>
                   <thead>
                     <tr>
-                      <th scope="col">Project</th>
-                      <th scope="col">Management</th>
-                      <th scope="col">Cluster</th>
+                      <th scope="col" className={ui.cx(`${ui.th} w-1/2`)}>Project</th>
+                      <th scope="col" className={ui.th}>Management</th>
+                      <th scope="col" className={ui.th}>Cluster</th>
                     </tr>
                   </thead>
                   <tbody>
                     {projects.data.docs.map((project) => (
-                      <tr key={project.projectID}>
-                        <td>
+                      <tr key={project.projectID} className={ui.tr}>
+                        <td className={ui.cx(`${ui.td} min-w-[170px]`)}>
                           <Link
-                            className="record-name"
+                            className={recordLink}
                             to="/hosting/projects/$projectID"
                             params={{ projectID: project.projectID }}
                           >
                             {project.name}
                           </Link>
-                          <span className="record-meta">
+                          <span className={recordMeta}>
                             {project.projectID}
                           </span>
                         </td>
-                        <td>
+                        <td className={ui.td}>
                           {project.mode === "managed"
                             ? "Managed"
                             : "Self-service"}
                         </td>
-                        <td>{project.clusterName ?? "No cluster assigned"}</td>
+                        <td className={ui.cx(`${ui.td} text-muted`)}>{project.clusterName ?? "No cluster assigned"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -191,20 +195,20 @@ export function HostingProject({ projectID }: { projectID: string }) {
     );
   return (
     <section>
-      <div className="page-heading">
+      <div className={ui.pageHeading}>
         <div>
           <Link
-            className="back-link"
+            className={ui.backLink}
             to="/hosting"
             search={{ customer: project.data.customerID }}
           >
             {project.data.customerName}
           </Link>
-          <h1>{project.data.name}</h1>
-          <p className="muted">Applications in this project.</p>
+          <h1 className={ui.pageTitle}>{project.data.name}</h1>
+          <p className={ui.pageLead}>Applications in this project.</p>
         </div>
         <button
-          className="button"
+          className={ui.button()}
           disabled={apps.isFetching}
           onClick={() => {
             void project.refetch();
@@ -244,36 +248,36 @@ export function HostingProject({ projectID }: { projectID: string }) {
             </Empty>
           ) : (
             <>
-              <div className="table-scroll">
-                <table>
+              <div className={ui.tableFrame}>
+                <table className={ui.table}>
                   <thead>
                     <tr>
-                      <th scope="col">Application</th>
-                      <th scope="col">Recorded state</th>
-                      <th scope="col">Configured resources</th>
+                      <th scope="col" className={ui.cx(`${ui.th} w-1/2`)}>Application</th>
+                      <th scope="col" className={ui.th}>Recorded state</th>
+                      <th scope="col" className={ui.th}>Configured resources</th>
                     </tr>
                   </thead>
                   <tbody>
                     {apps.data.docs.map((app) => (
-                      <tr key={app.id}>
-                        <td>
+                      <tr key={app.id} className={ui.tr}>
+                        <td className={ui.cx(`${ui.td} min-w-[170px]`)}>
                           <Link
-                            className="record-name"
+                            className={recordLink}
                             to="/hosting/apps/$appID"
                             params={{ appID: app.id }}
                           >
                             {app.name}
                           </Link>
-                          <span className="record-meta">{app.id}</span>
+                          <span className={recordMeta}>{app.id}</span>
                         </td>
-                        <td>
-                          {app.status}
-                          <span className="record-meta">
+                        <td className={ui.td}>
+                          <span className={ui.cx(`${ui.badge(ui.statusTone(app.status))} normal-case`)}>{app.status}</span>
+                          <span className="mt-1 block text-xs text-muted">
                             Observed revision {app.observedRevision} / desired{" "}
                             {app.revision}
                           </span>
                         </td>
-                        <td>
+                        <td className={ui.cx(`${ui.td} text-muted`)}>
                           {app.spec.replicas} replicas ·{" "}
                           {formatResource("memoryBytes", app.spec.memoryBytes)}
                         </td>
@@ -303,15 +307,16 @@ function HostingSearch({
 }) {
   return (
     <form
-      className="list-toolbar"
+      className="mb-4 flex flex-wrap items-center gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         const value = new FormData(event.currentTarget).get("search");
         if (typeof value === "string") onSearch(value.trim());
       }}
     >
-      <label className="search-field">
+      <label className="w-full sm:w-[340px]">
         <input
+          className={ui.cx(`${ui.input} min-h-9`)}
           key={search}
           name="search"
           aria-label="Search by name"
@@ -320,7 +325,7 @@ function HostingSearch({
           placeholder="Search by name…"
         />
       </label>
-      <button className="button">Search</button>
+      <button className={ui.button()}>Search</button>
     </form>
   );
 }
@@ -334,13 +339,13 @@ export function HostingPagination({
   onPage: (page: number) => void;
 }) {
   return (
-    <div className="pagination">
-      <span className="muted">
+    <div className="flex flex-wrap items-center justify-between gap-3 py-3.5 text-[13px]">
+      <span className="text-muted">
         Page {page} of {Math.max(1, totalPages)}
       </span>
       <div className="flex gap-2">
         <button
-          className="button quiet"
+          className={ui.button("quiet")}
           disabled={page <= 1}
           onClick={() => {
             onPage(page - 1);
@@ -349,7 +354,7 @@ export function HostingPagination({
           Previous
         </button>
         <button
-          className="button quiet"
+          className={ui.button("quiet")}
           disabled={page >= totalPages}
           onClick={() => {
             onPage(page + 1);

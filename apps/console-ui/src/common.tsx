@@ -25,7 +25,7 @@ export function Failure({
         <strong className="font-semibold">Unable to load</strong>
         <p className="mt-1.5">{error.message}</p>
         {retry ? (
-          <button className={`${ui.button()} mt-4`} onClick={retry}>
+          <button className={ui.cx(`${ui.button()} mt-4`)} onClick={retry}>
             <ArrowClockwiseIcon />
             Try again
           </button>

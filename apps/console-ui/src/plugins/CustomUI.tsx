@@ -27,7 +27,7 @@ export function CustomPluginUI({
     ]);
   } catch {
     return (
-      <p role="alert" className="error">
+      <p role="alert" className="text-danger">
         This extension cannot open a secure view.
       </p>
     );
@@ -107,7 +107,7 @@ function IsolatedFrame({
     <iframe
       ref={ref}
       title="Extension view"
-      className="plugin-frame"
+      className="min-h-[480px] w-full rounded-xl border border-outline bg-surface"
       src={launch.url}
       sandbox="allow-scripts allow-same-origin"
       referrerPolicy="no-referrer"

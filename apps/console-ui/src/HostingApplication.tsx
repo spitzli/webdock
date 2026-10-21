@@ -21,6 +21,9 @@ import {
 import { HostingSettings } from "./HostingSettings";
 import { HostingDeletion } from "./HostingDeletion";
 import { ActionFailure } from "./HostingActionState";
+import * as ui from "./ui";
+const tab =
+  "-mb-px border-b-2 border-transparent px-1 pb-2.5 text-sm text-muted hover:text-foreground hover:no-underline aria-[current=page]:border-foreground aria-[current=page]:font-medium aria-[current=page]:text-foreground";
 const labels = {
   "apps.start": "Start application",
   "apps.stop": "Stop application",
@@ -56,30 +59,38 @@ export function HostingApplication({
     return <Failure error={app.error} retry={() => void app.refetch()} />;
   return (
     <section>
-      <div className="page-heading">
+      <div className={ui.pageHeading}>
         <div>
           <Link
-            className="back-link"
+            className={ui.backLink}
             to="/hosting/projects/$projectID"
             params={{ projectID: app.data.projectID }}
           >
             Project applications
           </Link>
-          <h1>{app.data.name}</h1>
-          <p className="muted">
-            {app.data.id} · Recorded state: {app.data.status}
+          <h1 className={ui.pageTitle}>{app.data.name}</h1>
+          <p className={ui.cx(`${ui.pageLead} flex flex-wrap items-center gap-2`)}>
+            <span className={ui.mono}>{app.data.id}</span>
+            <span className={ui.cx(`${ui.badge(ui.statusTone(app.data.status))} normal-case`)}>
+              Recorded state: {app.data.status}
+            </span>
           </p>
         </div>
         <button
-          className="button"
+          className={ui.button()}
           disabled={app.isFetching}
           onClick={() => void app.refetch()}
         >
           Refresh application
         </button>
       </div>
-      <nav className="context-links" aria-label="Application">
+      <nav
+        className="mb-8 flex gap-6 overflow-x-auto border-b border-outline"
+        aria-label="Application"
+      >
         <Link
+          className={tab}
+          activeOptions={{ exact: true }}
           to="/hosting/apps/$appID"
           params={{ appID }}
           aria-current={view === "overview" ? "page" : undefined}
@@ -87,6 +98,8 @@ export function HostingApplication({
           Overview
         </Link>
         <Link
+          className={tab}
+          activeOptions={{ exact: true }}
           to="/hosting/apps/$appID/logs"
           params={{ appID }}
           aria-current={view === "logs" ? "page" : undefined}
@@ -94,6 +107,8 @@ export function HostingApplication({
           Logs
         </Link>
         <Link
+          className={tab}
+          activeOptions={{ exact: true }}
           to="/hosting/apps/$appID/settings"
           params={{ appID }}
           aria-current={view === "settings" ? "page" : undefined}
@@ -102,13 +117,13 @@ export function HostingApplication({
         </Link>
       </nav>
       {session.user.preview ? (
-        <p className="state" role="status">
+        <p className={ui.cx(`${ui.notice} mb-4`)} role="status">
           Customer preview is read-only. Live log requests and application
           changes are unavailable.
         </p>
       ) : null}
       {app.data.lastError ? (
-        <p className="error mb-4" role="alert">
+        <p className="mb-4 rounded-lg border border-danger/40 bg-danger-soft px-4 py-3 text-[13px] text-danger" role="alert">
           Last recorded error: {app.data.lastError}
         </p>
       ) : null}
@@ -131,7 +146,7 @@ export function HostingApplication({
                   <HostingDeletion key={`delete-${appID}`} app={app.data} />
                 </>
               ) : (
-                <p className="muted mt-4">
+                <p className="mt-4 text-muted">
                   Application changes are unavailable with your current access
                   or application state.
                 </p>
@@ -158,9 +173,10 @@ export function HostingApplication({
 }
 function ApplicationSummary({ app }: { app: HostingApp }) {
   return (
-    <section className="security-section">
-      <h2>Configured resources</h2>
-      <dl className="detail-grid grid-cols-2 md:grid-cols-3">
+    <section className={ui.card}>
+      <div className={ui.cardBody}>
+      <h2 className={ui.sectionTitle}>Configured resources</h2>
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-3">
         {[
           ["Desired revision", String(app.revision)],
           ["Observed revision", String(app.observedRevision)],
@@ -176,23 +192,24 @@ function ApplicationSummary({ app }: { app: HostingApp }) {
           ],
         ].map(([name, value]) => (
           <div key={name}>
-            <dt>{name}</dt>
-            <dd>{value}</dd>
+            <dt className="text-xs text-muted">{name}</dt>
+            <dd className="mt-1 text-sm font-medium">{value}</dd>
           </div>
         ))}
       </dl>
       {app.observedRevision < app.revision ? (
-        <p role="status">
+        <p role="status" className={ui.notice}>
           The runtime has not confirmed the desired revision. Review the latest
           operation.
         </p>
       ) : null}
       {app.status === "deleted" ? (
-        <p>
+        <p className="text-sm text-muted">
           Application resources are deleted. Any retained storage remains a
           separate resource.
         </p>
       ) : null}
+      </div>
     </section>
   );
 }
@@ -223,13 +240,14 @@ function ApplicationControls({ app }: { app: HostingApp }) {
     "apps.scale",
   ];
   return (
-    <section className="security-section mt-6">
-      <h2>Application controls</h2>
-      <div className="flex flex-wrap gap-2 mt-4">
+    <section className={ui.cx(`${ui.card} mt-6`)}>
+      <div className={ui.cardBody}>
+      <h2 className={ui.sectionTitle}>Application controls</h2>
+      <div className="flex flex-wrap gap-2">
         {actions.map((action) => (
           <button
             key={action}
-            className="button"
+            className={ui.button()}
             disabled={pending}
             onClick={() => {
               mutation.reset();
@@ -247,6 +265,7 @@ function ApplicationControls({ app }: { app: HostingApp }) {
         pending={mutation.isPending}
       />
       {mutation.data ? <HostingReceipt receipt={mutation.data} /> : null}
+      </div>
       {review ? (
         <Modal
           title={labels[review.action]}
@@ -255,7 +274,7 @@ function ApplicationControls({ app }: { app: HostingApp }) {
           }}
         >
           <form
-            className="editor"
+            className="grid gap-5 text-sm"
             onSubmit={(event) => {
               event.preventDefault();
               const value = new FormData(event.currentTarget).get("replicas");
@@ -275,9 +294,10 @@ function ApplicationControls({ app }: { app: HostingApp }) {
               may be interrupted. The assigned runtime must confirm completion.
             </p>
             {review.action === "apps.scale" ? (
-              <label>
+              <label className={ui.field}>
                 Replicas
                 <input
+                  className={ui.input}
                   name="replicas"
                   type="number"
                   min={0}
@@ -288,7 +308,7 @@ function ApplicationControls({ app }: { app: HostingApp }) {
                 />
               </label>
             ) : null}
-            <button className="button primary">
+            <button className={ui.cx(`${ui.button("primary")} justify-self-start`)}>
               Confirm {labels[review.action].toLowerCase()}
             </button>
           </form>
@@ -304,14 +324,18 @@ function ApplicationLogs({ app }: { app: HostingApp }) {
   const allowed =
     app.canRequestLogs && !session.user.preview && app.status !== "deleted";
   return (
-    <section className="security-section">
-      <h2>Recorded logs</h2>
-      <p className="muted">
+    <section className={ui.card}>
+      <div className={ui.cardBody}>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div>
+      <h2 className={ui.sectionTitle}>Recorded logs</h2>
+      <p className="mt-1 text-sm text-muted">
         This is the last stored, sanitized log snapshot. A refresh queues a new
         read; it is not a live stream.
       </p>
+      </div>
       <button
-        className="button mt-4"
+        className={ui.button()}
         disabled={
           !allowed ||
           mutation.isPending ||
@@ -331,8 +355,9 @@ function ApplicationLogs({ app }: { app: HostingApp }) {
       >
         {mutation.isPending ? "Requesting…" : "Request fresh logs"}
       </button>
+      </div>
       {!allowed ? (
-        <p className="muted mt-4">
+        <p className="text-sm text-muted">
           A live log request requires current access and an observed runtime. No
           current log-read capability is available.
         </p>
@@ -346,11 +371,12 @@ function ApplicationLogs({ app }: { app: HostingApp }) {
       {mutation.data ? (
         <HostingLogRead id={mutation.data.id} onTerminal={setCompleted} />
       ) : null}
-      <div className="state mt-4">
+      </div>
+      <div className="border-t border-outline bg-subtle px-6 py-5 max-sm:px-[18px]">
         {app.logs === null ? (
-          <p>No log snapshot has been recorded.</p>
+          <p className="text-sm text-muted">No log snapshot has been recorded.</p>
         ) : (
-          <pre className="whitespace-pre-wrap break-all">
+          <pre className="max-h-[60dvh] overflow-auto font-mono text-xs leading-relaxed whitespace-pre-wrap break-all">
             {app.logs || "The recorded snapshot contains no output."}
           </pre>
         )}

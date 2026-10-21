@@ -7,6 +7,9 @@ import {
   type MailboxCommand,
 } from "./mail-contracts";
 import { useConfigurationAction } from "./mail-configuration-client";
+import * as ui from "./ui";
+const check = "flex items-center gap-2 text-[13px] font-medium";
+const checkbox = "size-4 shrink-0 accent-accent";
 export function MailConfiguration({
   value,
   readAt,
@@ -26,9 +29,9 @@ export function MailConfiguration({
   const disabled =
     preview || !value.canConfigure || provisioningBlocked || configure.blocked;
   return (
-    <section className="security-section">
-      <h2>Configure incoming mail</h2>
-      <p className="muted">
+    <section className={ui.cx(`${ui.card} ${ui.cardBody}`)}>
+      <h2 className={ui.sectionTitle}>Configure incoming mail</h2>
+      <p className="-mt-2 text-sm text-muted">
         Configuration requests are queued. Delivery and remote mailbox access
         depend on the recorded applied revision.
       </p>
@@ -57,14 +60,14 @@ export function MailConfiguration({
       </div>
       <RequestNotice action={revoke} />
       {value.operator && value.canRetryConfiguration && value.configuration ? (
-        <div className="mt-6">
+        <div className={ui.cx(`${ui.notice} grid justify-items-start gap-3`)}>
           <p>
             Configuration revision {value.configuration.revision} has unapplied
             changes. A retry records fresh authorization and a new requested
             revision.
           </p>
           <button
-            className="button"
+            className={ui.button()}
             disabled={disabled}
             onClick={() => {
               if (value.configuration)
@@ -102,9 +105,9 @@ function AttachDomain({ value, disabled, submit }: WriteProps) {
         submit({ action: "domain.attach", senderDomainID });
       }}
     >
-      <label>
+      <label className={ui.field}>
         Verified sending domain
-        <select name="senderDomainID" required defaultValue="">
+        <select className={ui.input} name="senderDomainID" required defaultValue="">
           <option value="">Choose a verified domain</option>
           {available.map((domain) => (
             <option key={domain.id} value={domain.id}>
@@ -113,7 +116,7 @@ function AttachDomain({ value, disabled, submit }: WriteProps) {
           ))}
         </select>
       </label>
-      <p className="muted">
+      <p className={ui.hint}>
         Only domains whose ownership is verified for this workspace are offered.
         Attaching queues incoming configuration.
       </p>
@@ -149,9 +152,9 @@ function CreateMailbox({ value, disabled, submit }: WriteProps) {
         submit(input);
       }}
     >
-      <label>
+      <label className={ui.field}>
         Incoming domain
-        <select name="domainID" required defaultValue="">
+        <select className={ui.input} name="domainID" required defaultValue="">
           <option value="">Choose a ready domain</option>
           {domains.map((domain) => (
             <option key={domain.id} value={domain.id}>
@@ -160,9 +163,10 @@ function CreateMailbox({ value, disabled, submit }: WriteProps) {
           ))}
         </select>
       </label>
-      <label>
+      <label className={ui.field}>
         Local part
         <input
+          className={ui.input}
           name="localPart"
           required
           maxLength={64}
@@ -171,13 +175,14 @@ function CreateMailbox({ value, disabled, submit }: WriteProps) {
           title="Use lowercase letters and numbers, optionally separated by dots, underscores, plus signs or hyphens."
         />
       </label>
-      <label>
+      <label className={ui.field}>
         Mailbox name
-        <input name="name" required maxLength={80} />
+        <input className={ui.input} name="name" required maxLength={80} />
       </label>
-      <label>
+      <label className={ui.field}>
         Quota in bytes
         <input
+          className={ui.input}
           name="quotaBytes"
           required
           inputMode="numeric"
@@ -185,7 +190,7 @@ function CreateMailbox({ value, disabled, submit }: WriteProps) {
           defaultValue="1073741824"
         />
       </label>
-      <p className="muted">
+      <p className={ui.hint}>
         Quota: 1048576–8589934592 bytes. Total workspace capacity is checked by
         the server.
       </p>
@@ -222,9 +227,9 @@ function GrantAccess({ value, disabled, submit }: WriteProps) {
         submit({ action: "grant", mailboxID, subject });
       }}
     >
-      <label>
+      <label className={ui.field}>
         Mailbox
-        <select name="mailboxID" required defaultValue="">
+        <select className={ui.input} name="mailboxID" required defaultValue="">
           <option value="">Choose a mailbox</option>
           {mailboxes.map((mailbox) => (
             <option key={mailbox.id} value={mailbox.id}>
@@ -233,9 +238,9 @@ function GrantAccess({ value, disabled, submit }: WriteProps) {
           ))}
         </select>
       </label>
-      <label>
+      <label className={ui.field}>
         Person
-        <select name="subject" required defaultValue="">
+        <select className={ui.input} name="subject" required defaultValue="">
           <option value="">Choose an eligible person</option>
           {value.people.map((person) => (
             <option key={person.id} value={person.id}>
@@ -244,11 +249,11 @@ function GrantAccess({ value, disabled, submit }: WriteProps) {
           ))}
         </select>
       </label>
-      <label className="check">
-        <input type="checkbox" name="confirm" value="yes" required />
+      <label className={check}>
+        <input className={checkbox} type="checkbox" name="confirm" value="yes" required />
         Confirm access to this mailbox’s content
       </label>
-      <p className="muted">
+      <p className={ui.hint}>
         Eligible members and operators are supplied by the server. Operator
         status alone never grants access. A recorded grant does not mean remote
         access is applied.
@@ -276,9 +281,9 @@ function RevokeAccess({ value, disabled, submit }: WriteProps) {
         });
       }}
     >
-      <label>
+      <label className={ui.field}>
         Existing access
-        <select name="grant" required defaultValue="">
+        <select className={ui.input} name="grant" required defaultValue="">
           <option value="">Choose an access grant</option>
           {grants.map((grant) => (
             <option
@@ -294,11 +299,11 @@ function RevokeAccess({ value, disabled, submit }: WriteProps) {
           ))}
         </select>
       </label>
-      <label className="check">
-        <input type="checkbox" name="confirm" value="yes" required />
+      <label className={check}>
+        <input className={checkbox} type="checkbox" name="confirm" value="yes" required />
         Confirm access revocation
       </label>
-      <p className="muted">
+      <p className={ui.hint}>
         After the server accepts revocation, the Webdock gateway denies this
         access immediately. Remote configuration is applied separately.
         Revocation stays available while provisioning is blocked.
@@ -320,7 +325,7 @@ function ConfigurationForm({
   const [error, setError] = useState<string | null>(null);
   return (
     <form
-      className="editor min-w-0"
+      className="grid min-w-0 content-start gap-3 rounded-lg border border-outline p-5 max-sm:p-4"
       aria-label={title}
       onChange={(event) => {
         if (!(event.target instanceof HTMLSelectElement)) return;
@@ -348,15 +353,15 @@ function ConfigurationForm({
         }
       }}
     >
-      <fieldset disabled={disabled} className="grid gap-3">
-        <legend className="mb-3 font-semibold">{title}</legend>
+      <fieldset disabled={disabled} className="m-0 grid min-w-0 gap-3 border-0 p-0">
+        <legend className="px-0 pb-3 text-sm font-semibold">{title}</legend>
         {children}
-        <button className="button" type="submit">
+        <button className={ui.cx(`${ui.button()} justify-self-start`)} type="submit">
           {title}
         </button>
       </fieldset>
       {error ? (
-        <p role="alert" className="error">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       ) : null}
@@ -377,15 +382,15 @@ function RequestNotice({
     denied: "Configuration access changed",
   };
   return (
-    <div role="status" className="security-section">
-      <h3>{messages[action.state]}</h3>
-      <p>
+    <div role="status" className={ui.cx(`${ui.notice} grid justify-items-start gap-2`)}>
+      <h3 className="text-sm font-semibold">{messages[action.state]}</h3>
+      <p className="text-muted">
         Refresh to verify the current directory. Changes are not resubmitted
         automatically. An unknown creation remains blocked until its exact
         requested resource is recorded.
       </p>
       <button
-        className="button"
+        className={ui.button()}
         disabled={action.state === "pending"}
         onClick={() => void action.review()}
       >

@@ -4,6 +4,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { useApi, useSession } from "./context";
 import { AuthHeader, PageProgress, authFrame, authPanel } from "./AuthFrame";
+import * as ui from "./ui";
+const panelForm = "mt-5 grid gap-5";
 const authResult = z.object({
   twoFactorRedirect: z.boolean().optional(),
   status: z.boolean().optional(),
@@ -69,7 +71,7 @@ export function SignIn() {
               ? "Reset your password"
               : "Welcome back"}
         </h1>
-        <p className="muted">
+        <p>
           {mode === "totp"
             ? "Enter the code from your authenticator."
             : mode === "reset"
@@ -77,16 +79,17 @@ export function SignIn() {
               : "Sign in to your Webdock account."}
         </p>
         <form
-          className="editor"
+          className={panelForm}
           onSubmit={(event) => {
             event.preventDefault();
             login.mutate(new FormData(event.currentTarget));
           }}
         >
           {mode === "totp" ? (
-            <label>
+            <label className={ui.field}>
               Authentication code
               <input
+                className={ui.input}
                 name="code"
                 inputMode="numeric"
                 pattern="[0-9]{6}"
@@ -96,9 +99,10 @@ export function SignIn() {
               />
             </label>
           ) : (
-            <label>
+            <label className={ui.field}>
               Email
               <input
+                className={ui.input}
                 type="email"
                 name="email"
                 autoComplete="username"
@@ -109,9 +113,10 @@ export function SignIn() {
             </label>
           )}
           {mode === "signin" ? (
-            <label>
+            <label className={ui.field}>
               Password
               <input
+                className={ui.input}
                 type="password"
                 name="password"
                 autoComplete="current-password"
@@ -121,16 +126,16 @@ export function SignIn() {
             </label>
           ) : null}
           {login.isError ? (
-            <p role="alert" className="error">
+            <p role="alert" className="text-sm text-danger">
               {login.error.message}
             </p>
           ) : null}
           {message ? (
-            <p role="status" className="success">
+            <p role="status" className="text-sm text-success">
               {message}
             </p>
           ) : null}
-          <button className="button primary" disabled={login.isPending}>
+          <button className={ui.cx(`${ui.button("primary")} w-full`)} disabled={login.isPending}>
             {login.isPending
               ? "Working…"
               : mode === "signin"
@@ -142,7 +147,7 @@ export function SignIn() {
         </form>
         {mode !== "totp" ? (
           <button
-            className="text-button"
+            className={ui.textButton}
             onClick={() => {
               login.reset();
               setMessage("");
@@ -186,7 +191,7 @@ export function ResetPassword() {
           </p>
         ) : (
           <form
-            className="editor"
+            className={panelForm}
             onSubmit={(event) => {
               event.preventDefault();
               reset.mutate(
@@ -194,9 +199,10 @@ export function ResetPassword() {
               );
             }}
           >
-            <label>
+            <label className={ui.field}>
               New password
               <input
+                className={ui.input}
                 name="newPassword"
                 type="password"
                 autoComplete="new-password"
@@ -206,11 +212,11 @@ export function ResetPassword() {
               />
             </label>
             {reset.isError ? (
-              <p role="alert" className="error">
+              <p role="alert" className="text-sm text-danger">
                 {reset.error.message}
               </p>
             ) : null}
-            <button className="button primary" disabled={reset.isPending}>
+            <button className={ui.cx(`${ui.button("primary")} w-full`)} disabled={reset.isPending}>
               {reset.isPending ? "Updating…" : "Update password"}
             </button>
           </form>
@@ -243,38 +249,42 @@ export function Account() {
   if (api.config.sso)
     return (
       <section>
-        <div className="page-heading">
+        <div className={ui.pageHeading}>
           <div>
-            <h1>Account</h1>
-            <p className="muted">{session.user.email}</p>
+            <h1 className={ui.pageTitle}>Account</h1>
+            <p className={ui.pageLead}>{session.user.email}</p>
           </div>
         </div>
-        <section className="security-section">
-          <h2>Account security</h2>
-          <p>
-            Manage your password, authenticator, passkeys, and sessions in your
-            Webdock account.
-          </p>
+        <section className={ui.card}>
+          <div className={ui.cardBody}>
+            <h2 className={ui.sectionTitle}>Account security</h2>
+            <p className="text-muted">
+              Manage your password, authenticator, passkeys, and sessions in your
+              Webdock account.
+            </p>
+          </div>
+          <div className={ui.cx(`${ui.cardFooter} justify-end`)}>
           <a
-            className="button primary"
+            className={ui.button("primary")}
             href={new URL("/account", api.config.authOrigin).href}
           >
             Open account security
           </a>
+          </div>
         </section>
       </section>
     );
   return (
     <section>
-      <div className="page-heading">
+      <div className={ui.pageHeading}>
         <div>
-          <h1>Account</h1>
-          <p className="muted">Manage your sign-in and account security.</p>
+          <h1 className={ui.pageTitle}>Account</h1>
+          <p className={ui.pageLead}>Manage your sign-in and account security.</p>
         </div>
       </div>
-      <div className="editor-layout">
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
         <form
-          className="editor"
+          className={ui.card}
           onSubmit={(event) => {
             event.preventDefault();
             const form = event.currentTarget;
@@ -285,13 +295,15 @@ export function Account() {
             });
           }}
         >
-          <h2>Change password</h2>
+          <div className={ui.cx(`${ui.cardBody} gap-5`)}>
+          <h2 className={ui.sectionTitle}>Change password</h2>
           {session.user.mustChangePassword ? (
-            <p role="alert">Update your password before continuing.</p>
+            <p role="alert" className={ui.notice}>Update your password before continuing.</p>
           ) : null}
-          <label>
+          <label className={ui.field}>
             Current password
             <input
+                className={ui.input}
               name="currentPassword"
               type="password"
               required
@@ -299,9 +311,10 @@ export function Account() {
               maxLength={1024}
             />
           </label>
-          <label>
+          <label className={ui.field}>
             New password
             <input
+                className={ui.input}
               name="newPassword"
               type="password"
               required
@@ -310,27 +323,28 @@ export function Account() {
               maxLength={1024}
             />
           </label>
-          <p className="field-hint">Other sessions will be signed out.</p>
           {change.isError ? (
-            <p role="alert" className="error">
+            <p role="alert" className="text-sm text-danger">
               {change.error.message}
             </p>
           ) : null}
           {change.isSuccess ? (
-            <p role="status" className="success">
+            <p role="status" className="text-sm text-success">
               Password updated.
             </p>
           ) : null}
-          <div>
-            <button className="button primary" disabled={change.isPending}>
+          </div>
+          <div className={ui.cardFooter}>
+            <span>Other sessions will be signed out.</span>
+            <button className={ui.button("primary")} disabled={change.isPending}>
               {change.isPending ? "Updating…" : "Update password"}
             </button>
           </div>
         </form>
-        <aside className="editor-aside">
-          <h2>{session.user.name}</h2>
-          <p>{session.user.email}</p>
-          <dl className="detail-grid">
+        <aside className="grid gap-1 text-[13px] [overflow-wrap:anywhere]">
+          <h2 className="text-sm font-semibold">{session.user.name}</h2>
+          <p className="text-muted">{session.user.email}</p>
+          <dl className="mt-4 grid gap-4 [&_dd]:mt-1 [&_dd]:text-sm [&_dt]:text-xs [&_dt]:text-muted">
             <div>
               <dt>Email</dt>
               <dd>
@@ -370,7 +384,7 @@ function SignInRedirect() {
     <section className={authPanel} role="alert">
       <h1>Sign-in was not completed</h1>
       <p>Your sign-in request expired or was cancelled. Start again to open your workspace.</p>
-      <a className="button primary mt-5 w-full" href={href}>Sign in again</a>
+      <a className={ui.cx(`${ui.button("primary")} mt-5 w-full`)} href={href}>Sign in again</a>
     </section>
   </main>;
 }

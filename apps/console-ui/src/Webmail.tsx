@@ -79,7 +79,8 @@ export function ConnectedWebmail({ connection, customerID, mailboxID, name, addr
     };
     const unsubscribe = connection.onDenied(retire);
     const timer = setTimeout(retire, Math.max(0, connection.expiresAt - Date.now()));
-    return () => { clearTimeout(timer); unsubscribe(); connection.close(); };
+    // MailboxSession owns the connection and closes it; closing here would break the StrictMode remount.
+    return () => { clearTimeout(timer); unsubscribe(); };
   }, [connection, client, customerID, mailboxID, session.session.id]);
   if (failure || connection.isClosed()) return <Failure error={failure ?? new Error("Mail access expired or was revoked.")} />;
   return <WebmailWorkspace connection={connection} customerID={customerID} mailboxID={mailboxID} name={name} address={address} sendingAvailable={sendingAvailable} />;
