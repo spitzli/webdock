@@ -82,7 +82,7 @@ function Steps({ invitation }: { invitation: Invitation }) {
 }
 
 /** After creating a customer: invite the first person, prefilled from the contact just entered. */
-export type FirstInvite = { email: string; name: string; done: () => void };
+export interface FirstInvite { email: string; name: string; done: () => void }
 
 /** People with access to this customer, their invitations and what happened to them. */
 export function CustomerMembers({ customer, welcome }: { customer: string; welcome?: FirstInvite | undefined }) {
