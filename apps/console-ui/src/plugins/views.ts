@@ -104,3 +104,4 @@ export function useProject(projectID: string) {
     queryFn: ({ signal }) => api.get(`/api/console/project/${encodeURIComponent(projectID)}`, projectSchema, signal),
   });
 }
+export const revisionSchema = z.object({ revision: z.string() });

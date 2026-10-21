@@ -1,4 +1,4 @@
-import { CustomerSelfService } from "./plugins/SelfServicePolicy";
+import { CustomerSelfService } from "./plugins/CustomerSelfService";
 import { CustomerMembers } from "./CustomerMembers";
 import { formText } from "./form";
 import { useEffect, useState } from "react";
