@@ -1,6 +1,6 @@
 # Product plugins with operator and self-service areas
 
-Date: 2026-10-21. Status: approved by the owner on 2026-10-21; implementation of steps 1 and 2 starts.
+Date: 2026-10-21. Status: approved by the owner on 2026-10-21. Step 1 (self-service framework) implemented per `docs/superpowers/plans/2026-10-21-plugin-self-service-framework.md`; plugin databases, workload access and installation-scoped operator actions move to the PostgreSQL plan.
 
 ## Intent
 
@@ -93,7 +93,7 @@ Rules:
 - `audience: "operator"`: only operators may invoke.
 - `audience: "customer"`: operators and customer members may invoke. It declares at least one gate, and both may be combined (my call):
   - `feature`: the customer needs the feature's access mode to allow them (below).
-  - `resource: true`: the input names a resource id. The Core checks that the resource belongs to the invoking project.
+  - `resource: "create" | "use" | "delete"`: for use/delete the input carries `resource_id` (lowercase, as the schema validator requires). The Core checks that the resource belongs to the invoking project.
   - Create actions use `feature` only. Changes to an existing resource that the operator should be able to switch off (resize, pause/resume, rotate) use `feature` plus `resource`. Use actions (view, connection details, open browser) use `resource` only.
 - `scope`: `project` (default) or `installation`. Operator actions such as `pools.register` have no project and use `installation`; only `audience: "operator"` may use it (my call).
 - Operators are the existing platform operator role. They may invoke customer actions on any project; the invocation and the audit entry record "operator acting for customer X" (my call).
