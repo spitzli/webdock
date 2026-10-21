@@ -165,7 +165,6 @@ INSERT INTO webdock_auth.plugin_installation(id,kind,state,desired_state,version
 INSERT INTO webdock_auth.plugin_release(plugin_id,version,manifest_bytes,manifest_sha256,image,registry_url,signer_key_id) SELECT 'echo-demo','0.1.0',:'manifest',encode(sha256(convert_to(:'manifest','UTF8')),'hex'),:'image',:'registry','local-dev' WHERE NOT EXISTS(SELECT 1 FROM webdock_auth.plugin_release WHERE plugin_id='echo-demo');
 INSERT INTO webdock_auth.plugin_configuration(plugin_id,approved_capabilities,configuration) VALUES('echo-demo','[]','{}') ON CONFLICT DO NOTHING;
 INSERT INTO webdock_auth.plugin_runtime(plugin_id,generation,version,image,status,configuration_revision,credential_hash,namespace,service_name) SELECT 'echo-demo',1,'0.1.0',:'image','ready',0,:'credential','local','echo-demo' WHERE NOT EXISTS(SELECT 1 FROM webdock_auth.plugin_runtime WHERE plugin_id='echo-demo');
-INSERT INTO webdock_auth.plugin_grant(plugin_id,customer_id,project_id,capabilities) SELECT 'echo-demo',:'customer',:'project','[]' WHERE NOT EXISTS(SELECT 1 FROM webdock_auth.plugin_grant WHERE plugin_id='echo-demo' AND project_id=:'project');
 COMMIT;`, { ...demo, manifest, image, credential, registry: `http://${registry}` });
   const sockets = (name) => pluginFile(name);
   writeFileSync(pluginFile("host-bindings.json"), JSON.stringify({ runtimes: { "echo-demo": {

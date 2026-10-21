@@ -29,9 +29,10 @@ The public flow is:
 `request_state` writes desired installation state, a durable pending operation and
 an audit event atomically. It retains revision CAS, idempotent command replay,
 dependency blockers, and draining admission. It does not pretend that requesting a
-transition completed runtime reconciliation. `update_grant` requires a current
-operator and preserves project ownership, capability ceilings and grant revision
-CAS. New operation/audit IDs use the coordinated Rust allocator.
+transition completed runtime reconciliation. Grants are an admission cache: the
+Core fills one per project on first use with the operator's capability ceiling and
+the installation's self-service policy revision, so a policy change invalidates
+in-flight invocations. New operation/audit IDs use the coordinated Rust allocator.
 
 Documents use SeaORM entities on `plugin_document` and
 `plugin_document_receipt`. Advisory locks serialize document CAS and operation

@@ -375,18 +375,13 @@ async fn real_admission_data_cas_receipts_authority_revocation_and_admin() {
                 vec![plugin.clone().into()],
             )
             .await;
-            let result = host
-                .update_grant(
-                    &principal,
-                    &plugin,
-                    &pid,
-                    "0",
-                    vec!["plugin.data.read".into()],
-                    false,
-                )
-                .await
-                .unwrap();
-            assert_eq!(result["revision"], "1");
+            // A self-service policy change bumps every grant revision of the plugin.
+            sql(
+                &owner,
+                "UPDATE webdock_auth.plugin_grant SET revision=revision+1 WHERE plugin_id=$1",
+                vec![plugin.clone().into()],
+            )
+            .await;
             assert!(host.revalidate(&reader).await.is_err());
             let fresh = host
                 .admit(

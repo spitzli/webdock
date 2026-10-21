@@ -182,6 +182,13 @@ impl PluginEndpoints {
                 return Err(PluginError::denied());
             }
             self.host.revalidate(&handle).await?;
+            // Create/delete actions update the Core resource index before the token is revoked.
+            if manifest
+                .action(&admitted.claims.action)
+                .is_some_and(|a| a.get("resource").is_some_and(|r| r != "use"))
+            {
+                self.host.record_resource(&handle, &result).await?;
+            }
             Ok(result)
         }
         .await;
@@ -359,15 +366,6 @@ enum AdminCommand {
         expected_revision: String,
         idempotency_key: String,
     },
-    Grant {
-        #[serde(rename = "pluginID")]
-        plugin: String,
-        #[serde(rename = "projectID")]
-        project: String,
-        expected_revision: String,
-        capabilities: Vec<String>,
-        revoked: bool,
-    },
 }
 async fn admin(
     State(state): State<Arc<ServiceState>>,
@@ -406,24 +404,6 @@ async fn admin(
                     &desired,
                     &expected_revision,
                     &idempotency_key,
-                )
-                .await
-            }
-            AdminCommand::Grant {
-                plugin,
-                project,
-                expected_revision,
-                capabilities,
-                revoked,
-            } => {
-                host.update_grant_with_authority(
-                    &actor.principal,
-                    &actor.authority,
-                    &plugin,
-                    &project,
-                    &expected_revision,
-                    capabilities,
-                    revoked,
                 )
                 .await
             }

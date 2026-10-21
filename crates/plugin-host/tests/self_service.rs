@@ -135,6 +135,7 @@ impl Fixture {
             ("admin", "user", Some((0, "admin"))),
             ("member", "user", Some((0, "member"))),
             ("foreign", "user", Some((1, "owner"))),
+            ("preview", "operator", None),
         ] {
             let uid = format!("{nonce}-{label}");
             let sid = format!("{uid}-session");
@@ -146,6 +147,9 @@ impl Fixture {
             }
             if let Some((index, member_role)) = org {
                 sql(&owner, "INSERT INTO webdock_auth.member(id,\"organizationId\",\"userId\",role,\"createdAt\") VALUES($1,$2,$3,$4,now())", vec![format!("{uid}-member").into(), orgs[index].clone().into(), uid.clone().into(), member_role.into()]).await;
+            }
+            if label == "preview" {
+                sql(&owner, "INSERT INTO webdock_auth.studio_tenant_preview(session_id,actor_id,customer_id,organization_id) VALUES($1,$2,$3,$4)", vec![format!("{uid}-session").into(), uid.clone().into(), customers[0].clone().into(), orgs[0].clone().into()]).await;
             }
             let cookie = format!("{}={}", cookies.name(), cookies.sign(&token).unwrap());
             principals.insert(
@@ -200,6 +204,14 @@ impl Fixture {
     }
     pub async fn cleanup(self) {
         let o = &self.owner;
+        for uid in &self.users {
+            sql(
+                o,
+                "DELETE FROM webdock_auth.studio_tenant_preview WHERE actor_id=$1",
+                vec![uid.clone().into()],
+            )
+            .await;
+        }
         for table in [
             "plugin_resource",
             "plugin_feature_customer",
@@ -341,5 +353,307 @@ async fn self_service_tables_enforce_rls() {
         "the resource index is written only by the plugin controller"
     );
     tx.rollback().await.unwrap();
+    f.cleanup().await;
+}
+
+use webdock_plugin_host::{AdmissionInput, FileBindings, HostService};
+use webdock_plugin_runtime::PeerIdentity;
+
+impl Fixture {
+    pub async fn host(&self) -> std::sync::Arc<HostService> {
+        std::sync::Arc::new(
+            HostService::new(
+                db("DATABASE_URL").await,
+                db("WEBDOCK_PLUGIN_WORKER_DATABASE_URL").await,
+                std::env::var("DATABASE_RLS_SECRET").unwrap(),
+                std::sync::Arc::new(webdock_persistence::IdAllocator::new(
+                    db("DATABASE_URL").await,
+                    webdock_ids::Identity::platform(0, 2).unwrap(),
+                )),
+                std::sync::Arc::new(FileBindings::new(
+                    self.bindings.path().join("bindings.json"),
+                )),
+                ed25519_dalek::SigningKey::from_bytes(&[23; 32]),
+            )
+            .await
+            .unwrap(),
+        )
+    }
+    /// Operators change policy through the API (Task 4); tests write rows and bump the revision directly.
+    pub async fn set_mode(&self, mode: &str, listed: &[usize]) {
+        let o = &self.owner;
+        sql(o, "INSERT INTO webdock_auth.plugin_feature_policy(plugin_id,feature_id,mode,updated_by) VALUES($1,'create-notes',$2,'fixture') ON CONFLICT (plugin_id,feature_id) DO UPDATE SET mode=EXCLUDED.mode", vec![self.plugin.clone().into(), mode.into()]).await;
+        sql(
+            o,
+            "DELETE FROM webdock_auth.plugin_feature_customer WHERE plugin_id=$1",
+            vec![self.plugin.clone().into()],
+        )
+        .await;
+        for i in listed {
+            sql(o, "INSERT INTO webdock_auth.plugin_feature_customer(plugin_id,feature_id,customer_id,added_by) VALUES($1,'create-notes',$2,'fixture')", vec![self.plugin.clone().into(), self.customers[*i].clone().into()]).await;
+        }
+        sql(o, "UPDATE webdock_auth.plugin_installation SET policy_revision=policy_revision+1 WHERE id=$1", vec![self.plugin.clone().into()]).await;
+        sql(o, "UPDATE webdock_auth.plugin_grant SET revision=(SELECT policy_revision FROM webdock_auth.plugin_installation WHERE id=$1) WHERE plugin_id=$1", vec![self.plugin.clone().into()]).await;
+    }
+    pub fn input(&self, project: usize, action: &str, input: Value) -> AdmissionInput {
+        serde_json::from_value(json!({"pluginID":self.plugin,"projectID":self.projects[project],"action":action,"input":input,"idempotencyKey":uuid::Uuid::new_v4().to_string()})).unwrap()
+    }
+    pub async fn resources(&self) -> Vec<(String, String, String)> {
+        self.owner
+            .query_all_raw(Statement::from_sql_and_values(DbBackend::Postgres, "SELECT resource_id,project_id,created_via FROM webdock_auth.plugin_resource WHERE plugin_id=$1 ORDER BY resource_id", [self.plugin.clone().into()]))
+            .await
+            .unwrap()
+            .iter()
+            .map(|r| (r.try_get("", "resource_id").unwrap(), r.try_get("", "project_id").unwrap(), r.try_get("", "created_via").unwrap()))
+            .collect()
+    }
+}
+fn peer() -> PeerIdentity {
+    PeerIdentity::Unix {
+        uid: rustix::process::geteuid().as_raw(),
+    }
+}
+/// Admit, authenticate and record a create; returns the new resource id.
+async fn create(f: &Fixture, host: &HostService, who: &str, project: usize, id: &str) -> String {
+    let admitted = host
+        .admit(
+            f.principal(who),
+            f.input(project, "notes.create", json!({"name":id})),
+        )
+        .await
+        .unwrap();
+    let handle = host.authenticate(peer(), &admitted.token).await.unwrap();
+    host.record_resource(&handle, &json!({"resource":{"id":id,"name":id}}))
+        .await
+        .unwrap();
+    host.revoke(&handle).await.unwrap();
+    id.into()
+}
+
+#[tokio::test]
+#[ignore = "requires local retained-schema restricted roles and signed RLS fixture"]
+async fn policy_matrix_for_create() {
+    let f = Fixture::new().await;
+    let host = f.host().await;
+    // (mode, listed customers) → which actors may create on customer A's project.
+    let cases: [(&str, &[usize], &[&str]); 4] = [
+        ("everyone", &[], &["operator", "owner", "admin"]),
+        ("selected", &[0], &["operator", "owner", "admin"]),
+        ("selected", &[1], &["operator"]),
+        ("assigned", &[], &["operator"]),
+    ];
+    for (mode, listed, allowed) in cases {
+        f.set_mode(mode, listed).await;
+        for who in ["operator", "owner", "admin", "member", "foreign", "preview"] {
+            let result = host
+                .admit(
+                    f.principal(who),
+                    f.input(0, "notes.create", json!({"name":"x"})),
+                )
+                .await;
+            assert_eq!(
+                result.is_ok(),
+                allowed.contains(&who),
+                "{mode} {listed:?} {who}"
+            );
+        }
+    }
+    f.cleanup().await;
+}
+
+#[tokio::test]
+#[ignore = "requires local retained-schema restricted roles and signed RLS fixture"]
+async fn audience_and_resource_gates() {
+    let f = Fixture::new().await;
+    let host = f.host().await;
+    f.set_mode("everyone", &[]).await;
+    // operator_assigns_resource: operator creates on A, the A owner then uses it.
+    let assigned = create(&f, &host, "operator", 0, "assigned-1").await;
+    let foreign = create(&f, &host, "foreign", 1, "foreign-1").await;
+    let mine = create(&f, &host, "owner", 0, "mine-1").await;
+    assert_eq!(
+        f.resources().await,
+        vec![
+            (assigned.clone(), f.projects[0].clone(), "operator".into()),
+            (
+                foreign.clone(),
+                f.projects[1].clone(),
+                "self-service".into()
+            ),
+            (mine.clone(), f.projects[0].clone(), "self-service".into()),
+        ]
+    );
+    let view = |r: &str| json!({"resource_id": r});
+    assert!(
+        host.admit(
+            f.principal("owner"),
+            f.input(0, "notes.view", view(&assigned))
+        )
+        .await
+        .is_ok()
+    );
+    // member_cannot_create but may read resources of its customer.
+    assert!(
+        host.admit(f.principal("member"), f.input(0, "notes.view", view(&mine)))
+            .await
+            .is_ok()
+    );
+    assert!(
+        host.admit(
+            f.principal("member"),
+            f.input(0, "notes.create", json!({"name":"m"}))
+        )
+        .await
+        .is_err()
+    );
+    // resource_gate_rejects_foreign_resource: never by project mix-up, not even for operators.
+    assert!(
+        host.admit(
+            f.principal("owner"),
+            f.input(0, "notes.view", view(&foreign))
+        )
+        .await
+        .is_err()
+    );
+    assert!(
+        host.admit(
+            f.principal("owner"),
+            f.input(1, "notes.view", view(&foreign))
+        )
+        .await
+        .is_err()
+    );
+    assert!(
+        host.admit(
+            f.principal("operator"),
+            f.input(0, "notes.view", view(&foreign))
+        )
+        .await
+        .is_err()
+    );
+    assert!(
+        host.admit(
+            f.principal("owner"),
+            f.input(0, "notes.view", view("missing"))
+        )
+        .await
+        .is_err()
+    );
+    // Operator-only actions.
+    assert!(
+        host.admit(
+            f.principal("owner"),
+            f.input(0, "notes.operator", json!({}))
+        )
+        .await
+        .is_err()
+    );
+    assert!(
+        host.admit(
+            f.principal("operator"),
+            f.input(0, "notes.operator", json!({}))
+        )
+        .await
+        .is_ok()
+    );
+    // removed_customer_keeps_resources: use stays, create and feature-gated changes stop.
+    f.set_mode("selected", &[1]).await;
+    assert!(
+        host.admit(f.principal("owner"), f.input(0, "notes.view", view(&mine)))
+            .await
+            .is_ok()
+    );
+    assert!(
+        host.admit(
+            f.principal("owner"),
+            f.input(0, "notes.rename", view(&mine))
+        )
+        .await
+        .is_err()
+    );
+    assert!(
+        host.admit(
+            f.principal("owner"),
+            f.input(0, "notes.create", json!({"name":"y"}))
+        )
+        .await
+        .is_err()
+    );
+    assert!(
+        host.admit(
+            f.principal("operator"),
+            f.input(0, "notes.rename", view(&mine))
+        )
+        .await
+        .is_ok()
+    );
+    // Deleting through the feature removes the index row.
+    f.set_mode("everyone", &[]).await;
+    let admitted = host
+        .admit(
+            f.principal("owner"),
+            f.input(0, "notes.delete", view(&mine)),
+        )
+        .await
+        .unwrap();
+    let handle = host.authenticate(peer(), &admitted.token).await.unwrap();
+    host.record_resource(&handle, &json!({})).await.unwrap();
+    assert!(f.resources().await.iter().all(|(id, _, _)| id != &mine));
+    f.cleanup().await;
+}
+
+#[tokio::test]
+#[ignore = "requires local retained-schema restricted roles and signed RLS fixture"]
+async fn policy_change_revokes_inflight_invocation() {
+    let f = Fixture::new().await;
+    let host = f.host().await;
+    f.set_mode("everyone", &[]).await;
+    let admitted = host
+        .admit(
+            f.principal("owner"),
+            f.input(0, "notes.create", json!({"name":"z"})),
+        )
+        .await
+        .unwrap();
+    f.set_mode("assigned", &[]).await;
+    assert!(host.authenticate(peer(), &admitted.token).await.is_err());
+    f.cleanup().await;
+}
+
+#[tokio::test]
+#[ignore = "requires local retained-schema restricted roles and signed RLS fixture"]
+async fn create_output_requires_valid_resource() {
+    let f = Fixture::new().await;
+    let host = f.host().await;
+    f.set_mode("everyone", &[]).await;
+    for output in [
+        json!({}),
+        json!({"resource":{"id":"a/b","name":"x"}}),
+        json!({"resource":{"id":"ok","name":""}}),
+        json!({"resource":{"id":"ok"}}),
+    ] {
+        let admitted = host
+            .admit(
+                f.principal("owner"),
+                f.input(0, "notes.create", json!({"name":"x"})),
+            )
+            .await
+            .unwrap();
+        let handle = host.authenticate(peer(), &admitted.token).await.unwrap();
+        assert!(
+            host.record_resource(&handle, &output).await.is_err(),
+            "{output}"
+        );
+    }
+    // A create action must not take a resource id from the caller.
+    assert!(
+        host.admit(
+            f.principal("owner"),
+            f.input(0, "notes.create", json!({"name":"x","resource_id":"r"}))
+        )
+        .await
+        .is_err()
+    );
+    assert!(f.resources().await.is_empty());
     f.cleanup().await;
 }

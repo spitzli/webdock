@@ -382,6 +382,7 @@ impl HostService {
         timeouts(&session).await?;
         let tx = self.controller().await?;
         fence(&tx, false).await?;
+        self_service::ensure_grant(&tx, &input.plugin_id, &input.project_id).await?;
         let metadata = self
             .metadata(&tx, &input.plugin_id, Some(&input.project_id))
             .await?;
@@ -409,6 +410,18 @@ impl HostService {
         if metadata.grant["customer_id"] != customer {
             return denied();
         }
+        let operator = actor.is_operator();
+        let resource = self_service::resource_input(&input.input).map(str::to_owned);
+        self_service::gate(
+            &tx,
+            operator,
+            action,
+            &input.plugin_id,
+            &customer,
+            &input.project_id,
+            resource.as_deref(),
+        )
+        .await?;
         validate_value(action.get("input"), &input.input)?;
         let mut configuration = metadata.configuration["configuration"]
             .as_object()
@@ -458,7 +471,7 @@ impl HostService {
             exp: now + 60,
         };
         let snapshot = Self::admission_snapshot(&metadata, &binding, &configuration)?;
-        let stored_scope = json!({"kind":"session","authProvider":"better-auth","subject":actor.user_id,"sessionID":actor.session_id,"nativeAdmission":snapshot,"authority":authority});
+        let stored_scope = json!({"kind":"session","authProvider":"better-auth","subject":actor.user_id,"sessionID":actor.session_id,"nativeAdmission":snapshot,"authority":authority,"operator":operator,"resourceID":resource});
         tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.plugin_invocation(id,plugin_id,customer_id,project_id,runtime_generation,grant_revision,kind,name,intent,actor_id,session_id,operation_id,capabilities,expires_at,session_context,request_hash) VALUES($1::uuid,$2,$3,$4,$5,$6,'action',$7,$8,$9,$10,$11,$12,to_timestamp($13),$14,$15)",[claims.id.clone().into(),input.plugin_id.into(),customer.into(),input.project_id.clone().into(),(claims.generation as i64).into(),integer(&metadata.grant,"revision")?.into(),claims.action.clone().into(),string(action,"intent")?.into(),actor.user_id.clone().into(),actor.session_id.clone().into(),operation.into(),action["capabilities"].clone().into(),claims.exp.into(),stored_scope.into(),request_hash.into()])).await.map_err(db_error)?;
         Self::project(&session, &input.project_id, write).await?;
         if let (Some(auth_tx), Some(authority)) = (&auth_tx, authority) {
@@ -565,6 +578,16 @@ impl HostService {
         if action["intent"] != row["intent"] || action["capabilities"] != row["capabilities"] {
             return denied();
         }
+        self_service::gate(
+            &tx,
+            row["session_context"]["operator"] == true,
+            action,
+            &claims.plugin_id,
+            string(&row, "customer_id")?,
+            &claims.project_id,
+            row["session_context"]["resourceID"].as_str(),
+        )
+        .await?;
         tx.commit().await.map_err(db_error)?;
         Ok((
             PersistedInvocation {
@@ -958,6 +981,8 @@ pub(crate) async fn fence(tx: &DatabaseTransaction, exclusive: bool) -> Result<(
 mod admin;
 #[path = "controller.rs"]
 mod controller;
+#[path = "self_service.rs"]
+mod self_service;
 pub use controller::{
     OperationSnapshot, OperationStatus, RuntimeDescription, StateLease, StateProbe,
 };
@@ -1071,6 +1096,10 @@ pub struct PluginView {
     pub generation: u64,
     pub manifest_sha256: String,
     pub launch_links: Vec<Value>,
+    /// Self-service features this actor may use in the project; operators get all of them.
+    pub features: Vec<String>,
+    /// The project's resources of this plugin from the Core index.
+    pub resources: Vec<Value>,
 }
 impl HostService {
     /// Public metadata scoped by a current project permission and current installation/grant.
@@ -1144,17 +1173,53 @@ impl HostService {
             .map_err(|_| PluginError::denied())?;
         timeouts(&session).await?;
         let customer = Self::project(&session, project, false).await?;
+        let writer = session
+            .query_one_raw(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "SELECT webdock_rls.customer_allowed($1,true) AS writer",
+                [customer.clone().into()],
+            ))
+            .await
+            .map_err(db_error)?
+            .ok_or_else(PluginError::denied)?
+            .try_get::<bool>("", "writer")
+            .map_err(db_error)?;
+        let operator = actor.is_operator();
         let tx = self.controller().await?;
         fence(&tx, false).await?;
-        let ids=tx.query_all_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT p.id FROM webdock_auth.plugin_installation p JOIN webdock_auth.plugin_grant g ON g.plugin_id=p.id WHERE p.kind='external' AND p.state='enabled' AND p.runtime='ready' AND g.project_id=$1 AND g.customer_id=$2 AND g.revoked_at IS NULL ORDER BY p.id",[project.into(),customer.clone().into()])).await.map_err(db_error)?;
+        let ids=tx.query_all_raw(Statement::from_string(DbBackend::Postgres,"SELECT id FROM webdock_auth.plugin_installation WHERE kind='external' AND state='enabled' AND runtime='ready' ORDER BY id")).await.map_err(db_error)?;
         let mut views = Vec::new();
         for id in ids {
             let id: String = id.try_get("", "id").map_err(db_error)?;
-            let metadata = self.metadata(&tx, &id, Some(project)).await?;
-            let binding = self.binding(&id, &metadata).await?;
+            self_service::ensure_grant(&tx, &id, project).await?;
+            // An installation this Core cannot run (no runtime binding, unreadable release) is not
+            // listed; it must not hide the others. Admission rechecks everything per call.
+            let Ok(metadata) = self.metadata(&tx, &id, Some(project)).await else {
+                continue;
+            };
+            let Ok(binding) = self.binding(&id, &metadata).await else {
+                continue;
+            };
             if metadata.grant["customer_id"] != customer || !metadata.grant["revoked_at"].is_null()
             {
                 return denied();
+            }
+            let features = if operator {
+                metadata
+                    .manifest
+                    .features()
+                    .iter()
+                    .map(|f| string(f, "id").map(str::to_owned))
+                    .collect::<Result<_>>()?
+            } else if writer {
+                self_service::usable_features(&tx, &metadata.manifest, &id, &customer).await?
+            } else {
+                vec![]
+            };
+            let resources = self_service::project_resources(&tx, &id, project).await?;
+            // Customers only see plugins they can do something with in this project.
+            if !operator && features.is_empty() && resources.is_empty() {
+                continue;
             }
             views.push(PluginView {
                 state: string(&metadata.installation, "state")?.into(),
@@ -1163,6 +1228,8 @@ impl HostService {
                 generation: binding.generation,
                 manifest_sha256: string(&metadata.release, "manifest_sha256")?.into(),
                 launch_links: vec![],
+                features,
+                resources,
             });
         }
         Self::project(&session, project, false).await?;
@@ -1199,8 +1266,13 @@ impl HostService {
         let mut views = Vec::new();
         for row in ids {
             let plugin: String = row.try_get("", "id").map_err(db_error)?;
-            let metadata = self.metadata(&tx, &plugin, None).await?;
-            let binding = self.binding(&plugin, &metadata).await?;
+            // Same rule as project discovery: skip installations this Core cannot run.
+            let Ok(metadata) = self.metadata(&tx, &plugin, None).await else {
+                continue;
+            };
+            let Ok(binding) = self.binding(&plugin, &metadata).await else {
+                continue;
+            };
             views.push(PluginView {
                 state: "enabled".into(),
                 runtime: "ready".into(),
@@ -1208,6 +1280,8 @@ impl HostService {
                 generation: binding.generation,
                 manifest_sha256: string(&metadata.release, "manifest_sha256")?.into(),
                 launch_links: vec![],
+                features: vec![],
+                resources: vec![],
             });
         }
         verifier
