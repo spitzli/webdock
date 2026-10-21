@@ -42,7 +42,6 @@ pub fn customer_input(mut value: Value) -> Result<Value> {
         match key.as_str() {
             "name" => text(value, 160, true)?,
             "customerType" if matches!(value.as_str(), Some("person" | "company")) => (),
-            "onboarding" if matches!(value.as_str(), Some("managed" | "self-service")) => (),
             "firstName" | "lastName" | "companyName" | "contactName" | "addressLine1"
             | "addressLine2" | "city" | "region" => text(value, 160, false)?,
             "notes" => text(value, 3000, false)?,

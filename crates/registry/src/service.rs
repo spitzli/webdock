@@ -194,7 +194,6 @@ impl RegistryService {
                 "city",
                 "region",
                 "country",
-                "onboarding",
             ],
             _ => vec![
                 "name",
@@ -261,7 +260,7 @@ impl RegistryService {
         let mut updated = match &before {
             Some(old) => old.clone(),
             None => {
-                json!({"id":self.allocator.allocate(&tx).await?,"status":"active","customerType":"company","onboarding":"managed","createdAt":chrono::Utc::now(),"updatedAt":chrono::Utc::now()})
+                json!({"id":self.allocator.allocate(&tx).await?,"status":"active","customerType":"company","createdAt":chrono::Utc::now(),"updatedAt":chrono::Utc::now()})
             }
         };
         updated
@@ -441,6 +440,61 @@ impl RegistryService {
         self.audit(&tx, &local, collection, Some(&before), &after)
             .await?;
         self.finish(tx, after).await
+    }
+    /// Permanently removes an archived customer without projects. The tenant link is released
+    /// by the customer delete trigger; hosting, billing, mail and database records keep their
+    /// restricting foreign keys, so a customer that still owns any of them is refused.
+    pub async fn delete_customer(&self, actor: &Principal, key: &str) -> Result<Value> {
+        contracts::record_id(key)?;
+        let (tx, local) = self.begin(actor, true).await?;
+        let old = customer::Entity::find_by_id(key)
+            .lock_exclusive()
+            .one(&tx)
+            .await?
+            .ok_or(RegistryError::NotFound("Customer unavailable."))?;
+        if old.status != entities::CustomerStatus::Archived {
+            return Err(RegistryError::Conflict(
+                "Archive this customer before deleting it.",
+            ));
+        }
+        if project::Entity::find()
+            .filter(project::Column::Customer.eq(key))
+            .one(&tx)
+            .await?
+            .is_some()
+        {
+            return Err(RegistryError::Conflict(
+                "This customer still has projects. Delete or move them first.",
+            ));
+        }
+        customer::Entity::delete_by_id(key)
+            .exec(&tx)
+            .await
+            .map_err(|error| {
+                if matches!(
+                    error.sql_err(),
+                    Some(SqlErr::ForeignKeyConstraintViolation(_))
+                ) {
+                    RegistryError::Conflict(
+                        "Hosting, billing, mail, database or preview records still belong to this customer.",
+                    )
+                } else {
+                    error.into()
+                }
+            })?;
+        audit::ActiveModel {
+            id: Set(self.allocator.allocate(&tx).await?),
+            actor: Set(local),
+            action: Set(entities::AuditAction::Delete),
+            target_collection: Set("customers".into()),
+            target_id: Set(key.into()),
+            summary: Set(format!("Deleted {}", old.name)),
+            changed_fields: Set(None),
+            ..Default::default()
+        }
+        .insert(&tx)
+        .await?;
+        self.finish(tx, json!({"id":key,"deleted":true})).await
     }
     pub async fn patch_repository(&self, actor: &Principal, key: &str, url: &str) -> Result<Value> {
         contracts::record_id(key)?;

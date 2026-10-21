@@ -176,7 +176,7 @@ export function ManagedDatabases({
       {databases.data?.length ? (
         <ul className={list}>
           {databases.data.map((database) => (
-            <li key={database.id} className={ui.cardRow}>
+            <li key={database.id} className={ui.cx(ui.cardRow, ui.clickableRow)}>
               <div className="grid min-w-0 gap-0.5">
                 <strong className="font-medium">{database.name}</strong>
                 <span className="flex flex-wrap items-center gap-2 text-[13px] text-muted">
@@ -185,7 +185,7 @@ export function ManagedDatabases({
                 </span>
               </div>
               <button
-                className={ui.button()}
+                className={ui.cx(ui.button(), ui.rowLink)}
                 onClick={() => {
                   setSelected(database.id);
                 }}

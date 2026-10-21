@@ -16,6 +16,7 @@ import {
   type Collection,
   type RegistryRecord,
 } from "./api";
+import { z } from "zod";
 import { useApi } from "./context";
 import { Empty, Failure, Loading, Status } from "./common";
 import * as ui from "./ui";
@@ -174,7 +175,7 @@ export function RegistryList({
                       <Link
                         to="/$collection/$id"
                         params={{ collection, id: record.id }}
-                        className="inline-block py-0.5 font-medium"
+                        className={ui.cx(`inline-block py-0.5 font-medium ${ui.rowLink}`)}
                       >
                         {record.name ??
                           record.summary ??
@@ -377,7 +378,6 @@ type RegistryInput = Pick<
   | "name"
   | "notes"
   | "customerType"
-  | "onboarding"
   | "contactEmail"
   | "phone"
   | "customer"
@@ -462,7 +462,6 @@ function RegistryForm({
             for (const field of customerFields)
               input[field.key] = formText(data, field.key).trim() || null;
             input.customerType = formText(data, "customerType");
-            input.onboarding = formText(data, "onboarding");
             input.contactEmail = formText(data, "contactEmail").trim() || null;
             input.phone = formText(data, "phone").trim() || null;
           } else {
@@ -492,7 +491,7 @@ function RegistryForm({
         </label>
         {live.errors.name ? <FieldError message={live.errors.name} /> : <span className={ui.cx(`${ui.hint} -mt-3`)}>How this {collection === "customers" ? "customer" : "project"} appears across Webdock.</span>}
         {collection === "customers" ? (
-          <CustomerFields record={record} pending={write.isPending} errors={live.errors} onboarding />
+          <CustomerFields record={record} pending={write.isPending} errors={live.errors} />
         ) : (
           <>
             {record ? (
@@ -674,7 +673,20 @@ function RecordInformation({
 }) {
   const api = useApi();
   const client = useQueryClient();
+  const navigate = useNavigate();
   const [archiveConfirmed, setArchiveConfirmed] = useState(false);
+  const [deleteName, setDeleteName] = useState("");
+  const remove = useMutation({
+    mutationFn: () => {
+      if (!record) throw Error("Save the record before deleting it.");
+      return api.request(path(collection, record.id), z.object({ deleted: z.literal(true) }), { method: "DELETE" });
+    },
+    onSuccess: () => {
+      if (record) client.removeQueries({ queryKey: ["registry", collection, record.id] });
+      void client.invalidateQueries({ queryKey: ["registry"] });
+      void navigate({ to: "/$collection", params: { collection } });
+    },
+  });
   const archive = useMutation({
     mutationFn: () => {
       if (!record) throw Error("Save the record before changing its status.");
@@ -747,6 +759,36 @@ function RecordInformation({
               </p>
             ) : null}
           </div>
+          {collection === "customers" && record.status === "archived" ? (
+            <form
+              aria-label="Delete customer"
+              className={ui.cx(`${ui.card} grid gap-2.5 border-danger/40 p-5`)}
+              onSubmit={(event) => {
+                event.preventDefault();
+                remove.mutate();
+              }}
+            >
+              <h3 className="text-sm font-semibold text-danger">Delete customer</h3>
+              <p className="text-muted">
+                Removes this customer, its workspace members and pending invitations for good. Only possible without projects, hosting, billing, mail or database records.
+              </p>
+              <label className={ui.field}>
+                Type {record.name} to confirm
+                <input className={ui.input} value={deleteName} autoComplete="off" onChange={(event) => { setDeleteName(event.target.value); }} />
+              </label>
+              <button
+                className={ui.cx(`${ui.button("danger")} justify-self-start`)}
+                disabled={deleteName !== record.name || remove.isPending || dirty}
+              >
+                {remove.isPending ? "Deleting…" : "Delete customer"}
+              </button>
+              {remove.isError ? (
+                <p role="alert" className="text-danger">
+                  {remove.error.message}
+                </p>
+              ) : null}
+            </form>
+          ) : null}
         </>
       ) : (
         <p className="text-muted">Access and changes are checked by the server.</p>

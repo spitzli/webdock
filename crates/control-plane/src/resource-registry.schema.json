@@ -15,13 +15,6 @@
           "company"
         ]
       },
-      "onboarding": {
-        "type": "string",
-        "enum": [
-          "managed",
-          "self-service"
-        ]
-      },
       "firstName": {
         "anyOf": [
           {

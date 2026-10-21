@@ -35,7 +35,8 @@ const records = {
   "audit-events": [],
 } satisfies Record<string, z.infer<typeof recordSchema>[]>;
 // Test-only tenant invitations per customer.
-const tenants: Record<string, { id: string; email: string; role: string; status: string }[]> = {};
+const tenants: Record<string, { id: string; email: string; role: string; status: string; createdAt: string; progress: { emailDelivered: string; accountReady: boolean; joinedAt: null } }[]> = {};
+const activity: Record<string, { id: string; action: string; outcome: string; createdAt: string; actorName: string }[]> = {};
 const bodySchema = recordSchema
   .omit({ id: true })
   .extend({ archived: z.boolean().optional() });
@@ -55,6 +56,13 @@ async function registry(req: IncomingMessage, url: URL) {
           hasNextPage: false,
           hasPrevPage: false,
         };
+  if (req.method === "DELETE") {
+    // Like Core: only archived customers can be deleted.
+    const index = list.findIndex((row) => row.id === id && row.status === "archived");
+    if (collection !== "customers" || index < 0) return undefined;
+    list.splice(index, 1);
+    return { id, deleted: true };
+  }
   const chunks: Buffer[] = [];
   for await (const chunk of req) {
     const value: unknown = chunk;
@@ -84,11 +92,13 @@ async function tenant(req: IncomingMessage, url: URL) {
   const match = /^\/api\/console\/tenant\/([0-9]+)$/.exec(url.pathname);
   if (!match) return undefined;
   const invitations = (tenants[match[1] ?? ""] ??= []);
-  if (req.method !== "POST") return { canManage: true, members: [], invitations };
+  const events = (activity[match[1] ?? ""] ??= []);
+  if (req.method !== "POST") return { canManage: true, members: [], invitations, activity: events };
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(Buffer.from(chunk as Buffer));
   const command = z.object({ action: z.string(), email: z.string().optional(), role: z.string().optional(), invitation: z.string().optional() }).parse(JSON.parse(Buffer.concat(chunks).toString()));
-  if (command.action === "invite" && command.email) invitations.push({ id: String(5000 + invitations.length), email: command.email, role: command.role ?? "admin", status: "pending" });
+  if (command.action === "invite" && command.email) invitations.push({ id: String(5000 + invitations.length), email: command.email, role: command.role ?? "admin", status: "pending", createdAt: new Date().toISOString(), progress: { emailDelivered: "queued", accountReady: false, joinedAt: null } });
+  events.unshift({ id: String(7000 + events.length), action: `tenant-${command.action}`, outcome: "succeeded", createdAt: new Date().toISOString(), actorName: "Acceptance operator" });
   const target = command.invitation ?? invitations.at(-1)?.id ?? "0";
   if (command.action === "cancel") invitations.forEach((row) => { if (row.id === target) row.status = "canceled"; });
   return { id: target, message: "Invitation saved and queued. Access starts after acceptance.", delivery: "queued", ...(command.action === "cancel" ? {} : { link: `${url.origin}/reset-password?token=${"a".repeat(64)}&invitation=${target}` }) };

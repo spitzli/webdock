@@ -43,7 +43,7 @@ export function MailDirectoryView({ value }: { value: MailDirectory }) {
         {value.mailboxes.length ? (
           <ul>
             {value.mailboxes.map((mailbox) => (
-              <li key={mailbox.id} className={ui.cardRow}>
+              <li key={mailbox.id} className={ui.cx(ui.cardRow, webmail && mailbox.canOpen && ui.clickableRow)}>
                 <div className="min-w-0">
                   <strong className="font-medium">{mailbox.name}</strong>
                   <p className="text-[13px]">{mailbox.address}</p>
@@ -52,7 +52,7 @@ export function MailDirectoryView({ value }: { value: MailDirectory }) {
                     {mailbox.enabled ? "Enabled" : "Disabled"} · Quota{" "}
                     {mailbox.quotaBytes} bytes
                   </p>
-                  {webmail && mailbox.canOpen ? <Link className={ui.cx(`${ui.button()} mt-2`)} to="/mail/inbox/$mailboxID" params={{ mailboxID: mailbox.id }} search={{ customer: value.customerID }}>Open mailbox</Link> : null}
+                  {webmail && mailbox.canOpen ? <Link className={ui.cx(`${ui.button()} mt-2`, ui.rowLink)} to="/mail/inbox/$mailboxID" params={{ mailboxID: mailbox.id }} search={{ customer: value.customerID }}>Open mailbox</Link> : null}
                 </div>
               </li>
             ))}

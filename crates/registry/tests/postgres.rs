@@ -81,6 +81,10 @@ impl Allocator for RevokeOnAudit {
 #[ignore = "requires explicit local retained-schema RLS fixture environment"]
 async fn operator_crud_atomic_audit_retained_guard_and_revocation() {
     let owner = connect("WEBDOCK_TEST_MIGRATION_DATABASE_URL").await;
+    owner
+        .execute_unprepared(include_str!("../migrations/0001_customer_deletion.sql"))
+        .await
+        .unwrap();
     let runtime = connect("WEBDOCK_REGISTRY_DATABASE_URL").await;
     let auth = connect("AUTH_DATABASE_URL").await;
     let nonce = format!(
@@ -351,6 +355,13 @@ async fn operator_crud_atomic_audit_retained_guard_and_revocation() {
                 .await
                 .unwrap();
             assert!(
+                matches!(
+                    service.delete_customer(&principal, cid).await,
+                    Err(RegistryError::Conflict(_))
+                ),
+                "an archived customer with a project is kept"
+            );
+            assert!(
                 service
                     .archive(&principal, "projects", pid, false)
                     .await
@@ -370,6 +381,62 @@ async fn operator_crud_atomic_audit_retained_guard_and_revocation() {
                     .await
                     .unwrap()["repositoryURL"],
                 "https://example.invalid/repo"
+            );
+            let spare = service
+                .save_customer(&principal, None, json!({"name":format!("{nonce}-delete")}))
+                .await
+                .unwrap();
+            let spare = spare["id"].as_str().unwrap();
+            let tenant: String = owner
+                .query_one_raw(Statement::from_sql_and_values(
+                    DbBackend::Postgres,
+                    "SELECT organization_id FROM webdock_auth.tenant_customer WHERE customer_id=$1",
+                    [spare.into()],
+                ))
+                .await
+                .unwrap()
+                .unwrap()
+                .try_get("", "organization_id")
+                .unwrap();
+            assert!(
+                matches!(
+                    service.delete_customer(&principal, spare).await,
+                    Err(RegistryError::Conflict(_))
+                ),
+                "an active customer is kept"
+            );
+            service
+                .archive(&principal, "customers", spare, true)
+                .await
+                .unwrap();
+            assert_eq!(
+                service.delete_customer(&principal, spare).await.unwrap()["deleted"],
+                true
+            );
+            for (table, column, id) in [
+                ("webdock_admin.customers", "id", spare),
+                ("webdock_auth.tenant_customer", "customer_id", spare),
+                ("webdock_auth.organization", "id", tenant.as_str()),
+            ] {
+                assert_eq!(
+                    scalar(
+                        &owner,
+                        &format!("SELECT count(*) AS n FROM {table} WHERE {column}=$1"),
+                        vec![id.into()]
+                    )
+                    .await,
+                    0,
+                    "{table} row removed"
+                );
+            }
+            assert_eq!(
+                scalar(
+                    &owner,
+                    "SELECT count(*) AS n FROM webdock_admin.audit_events WHERE target_i_d=$1 AND action='delete'",
+                    vec![spare.into()]
+                )
+                .await,
+                1
             );
             let leaked = runtime
                 .query_one_raw(Statement::from_string(
@@ -417,11 +484,15 @@ async fn operator_crud_atomic_audit_retained_guard_and_revocation() {
         vec![nonce.clone().into()],
     )
     .await;
-    sql(&owner,"DELETE FROM webdock_auth.tenant_customer WHERE customer_id IN (SELECT id FROM webdock_admin.customers WHERE name=$1 OR name=$2)",vec![nonce.clone().into(),format!("{nonce}-rollback").into()]).await;
+    sql(&owner,"DELETE FROM webdock_auth.tenant_customer WHERE customer_id IN (SELECT id FROM webdock_admin.customers WHERE name IN ($1,$2,$3))",vec![nonce.clone().into(),format!("{nonce}-rollback").into(),format!("{nonce}-delete").into()]).await;
     sql(
         &owner,
-        "DELETE FROM webdock_admin.customers WHERE name=$1 OR name=$2",
-        vec![nonce.clone().into(), format!("{nonce}-rollback").into()],
+        "DELETE FROM webdock_admin.customers WHERE name IN ($1,$2,$3)",
+        vec![
+            nonce.clone().into(),
+            format!("{nonce}-rollback").into(),
+            format!("{nonce}-delete").into(),
+        ],
     )
     .await;
     sql(

@@ -30,7 +30,7 @@ local_resource(
 local_resource(
     'database',
     cmd='node tools/dev/local.mjs init',
-    deps=['crates/persistence/migrations', 'crates/persistence/schema', 'crates/access/migrations', 'tools/dev/local.mjs'],
+    deps=['crates/persistence/migrations', 'crates/persistence/schema', 'crates/access/migrations', 'crates/registry/migrations', 'tools/dev/local.mjs'],
     resource_deps=['postgres', 'core-build'],
     labels=['infra'],
 )

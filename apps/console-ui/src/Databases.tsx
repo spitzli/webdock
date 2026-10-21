@@ -176,14 +176,14 @@ export function DatabaseDirectory({
                   {data.managed
                     .filter((database) => database.canOpen)
                     .map((database) => (
-                      <li key={database.id} className={ui.cardRow}>
+                      <li key={database.id} className={ui.cx(ui.cardRow, ui.clickableRow)}>
                         <div className="grid min-w-0 gap-1">
                           <strong className="font-medium">{database.name}</strong>
                           <span className={ui.cx(`${ui.badge(ui.statusTone(database.state))} justify-self-start`)}>{database.state}</span>
                         </div>
                         {database.canOpen ? (
                           <Link
-                            className={ui.button()}
+                            className={ui.cx(ui.button(), ui.rowLink)}
                             to="/databases/$id"
                             params={{ id: database.id }}
                             search={{ managed: true, customer: customerID }}
@@ -204,7 +204,7 @@ export function DatabaseDirectory({
             {data.bindings.length ? (
               <ul className={list}>
                 {data.bindings.map((binding) => (
-                  <li key={binding.id} className={ui.cardRow}>
+                  <li key={binding.id} className={ui.cx(ui.cardRow, binding.profile && ui.clickableRow)}>
                     <div className="grid min-w-0 gap-0.5">
                       <strong className="font-medium">{binding.name}</strong>
                       <p className="text-[13px] text-muted">
@@ -215,7 +215,7 @@ export function DatabaseDirectory({
                     <div className="flex flex-wrap items-center gap-2">
                       {binding.profile ? (
                         <Link
-                          className={ui.button()}
+                          className={ui.cx(ui.button(), ui.rowLink)}
                           to="/databases/$id"
                           params={{ id: binding.id }}
                           search={{ customer: customerID, managed: false }}
@@ -225,7 +225,7 @@ export function DatabaseDirectory({
                       ) : null}
                       {data.operator ? (
                         <button
-                          className={ui.button("quiet")}
+                          className={ui.cx(ui.button("quiet"), "relative z-10")}
                           onClick={() => {
                             setEditing(binding.id);
                           }}

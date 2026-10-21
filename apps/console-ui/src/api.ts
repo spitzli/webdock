@@ -52,7 +52,6 @@ export const recordSchema = z.object({
   status: z.string().optional(),
   customer: z.string().optional(),
   customerType: z.string().nullish(),
-  onboarding: z.string().nullish(),
   contactEmail: z.string().nullish(),
   firstName: z.string().nullish(),
   lastName: z.string().nullish(),
@@ -129,7 +128,7 @@ export class ApiClient {
       headers,
     });
     if (!response.ok)
-      throw new ApiError(response.status, errorMessage(response.status, auth));
+      throw new ApiError(response.status, response.status === 409 ? await conflictMessage(response) : errorMessage(response.status, auth));
     const text = await response.text();
     if (text.length > 1048576)
       throw new Error("The response exceeds the supported size.");
@@ -177,6 +176,11 @@ function facadePath(path: string, auth: boolean): string {
   if (auth && path.startsWith("/api/auth/"))
     return path.replace("/api/auth/", "/api/console/auth/");
   return path;
+}
+/** Conflicts carry a fixed, human-written reason from the server (for example why a delete is refused). */
+async function conflictMessage(response: Response): Promise<string> {
+  const body = z.object({ error: z.object({ message: z.string().min(1).max(300) }) }).safeParse(await response.json().catch(() => null));
+  return body.success ? body.data.error.message : errorMessage(409, false);
 }
 function errorMessage(status: number, auth: boolean): string {
   switch (status) {

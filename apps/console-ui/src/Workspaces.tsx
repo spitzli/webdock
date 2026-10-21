@@ -102,7 +102,7 @@ export function Workspaces() {
         {tenants.data.length ? (
           <ul>
             {tenants.data.map((t) => (
-              <li key={t.id} className={ui.cardRow}>
+              <li key={t.id} className={ui.cx(ui.cardRow, ui.clickableRow)}>
                 <div>
                   <strong className="font-medium">{t.name}</strong>
                   <p className="text-[13px] text-muted">
@@ -113,7 +113,8 @@ export function Workspaces() {
                 <div className="flex flex-wrap gap-2">
                 {api.config.enabledFeatures.includes("mail") ? (
                   <Link
-                    className={ui.button()}
+                    // The whole row opens Applications when hosting is on, otherwise Mail.
+                    className={ui.cx(ui.button(), api.config.enabledFeatures.includes("hosting") ? "relative z-10" : ui.rowLink)}
                     to="/mail"
                     search={{ customer: t.id }}
                   >
@@ -122,7 +123,7 @@ export function Workspaces() {
                 ) : null}
                 {api.config.enabledFeatures.includes("hosting") ? (
                   <Link
-                    className={ui.button()}
+                    className={ui.cx(ui.button(), ui.rowLink)}
                     to="/hosting"
                     search={{ customer: t.id }}
                   >
@@ -142,13 +143,13 @@ export function Workspaces() {
         {sites.data.length ? (
           <ul>
             {sites.data.map((site) => (
-              <li key={site.id} className={ui.cardRow}>
+              <li key={site.id} className={ui.cx(ui.cardRow, !session.user.preview && ui.clickableRow)}>
                 <div>
                   <strong className="font-medium">{site.name}</strong>
                   <p className="text-[13px] text-muted">{site.role}</p>
                 </div>
                 {!session.user.preview ? (
-                  <a className={ui.button()} href={site.url}>
+                  <a className={ui.cx(ui.button(), ui.rowLink)} href={site.url}>
                     Open website
                   </a>
                 ) : null}

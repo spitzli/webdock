@@ -10,8 +10,14 @@ import * as ui from "./ui";
 const tenantSchema = z.object({
   canManage: z.boolean(),
   members: z.array(z.object({ id: z.string(), role: z.string(), name: z.string(), email: z.string(), mustChangePassword: z.boolean().nullish() })),
-  invitations: z.array(z.object({ id: z.string(), email: z.string(), role: z.string(), status: z.string() })),
+  invitations: z.array(z.object({
+    id: z.string(), email: z.string(), role: z.string(), status: z.string(), name: z.string().nullish(),
+    createdAt: z.string().nullish(), expired: z.boolean().nullish(),
+    progress: z.object({ emailDelivered: z.string().nullish(), accountReady: z.boolean().nullish(), joinedAt: z.string().nullish() }).nullish(),
+  })),
+  activity: z.array(z.object({ id: z.string(), action: z.string(), outcome: z.string(), createdAt: z.string(), actorName: z.string().nullish(), actorEmail: z.string().nullish() })).default([]),
 });
+type Invitation = z.infer<typeof tenantSchema>["invitations"][number];
 const changeSchema = z.object({ message: z.string(), delivery: z.string().nullish(), link: z.string().nullish() });
 const deliveryText: Record<string, string> = {
   queued: "The email is on its way.",
@@ -19,7 +25,63 @@ const deliveryText: Record<string, string> = {
   "invitation-queued-activation-unavailable": "The invitation is saved, but the setup email could not be queued.",
 };
 
-/** People with access to this customer, and the invitations still waiting for an answer. */
+const actionText: Record<string, string> = {
+  "tenant-invite": "Invited",
+  "tenant-resend": "Resent invitation",
+  "tenant-cancel": "Canceled invitation",
+  "accept-invitation": "Joined",
+  "reject-invitation": "Declined",
+  "tenant-role": "Changed role",
+  "tenant-remove": "Removed member",
+  "tenant-profile": "Updated customer details",
+};
+const relative = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+function ago(value: string) {
+  const seconds = (new Date(value).getTime() - Date.now()) / 1000;
+  for (const [unit, size] of [["year", 31536000], ["month", 2592000], ["day", 86400], ["hour", 3600], ["minute", 60]] as const)
+    if (Math.abs(seconds) >= size) return relative.format(Math.round(seconds / size), unit);
+  return "just now";
+}
+function statusOf(invitation: Invitation): [string, Parameters<typeof ui.badge>[0]] {
+  if (invitation.status === "accepted") return ["Joined", "success"];
+  if (invitation.status === "canceled") return ["Canceled", "neutral"];
+  if (invitation.status === "rejected") return ["Declined", "neutral"];
+  return invitation.expired ? ["Expired", "danger"] : ["Pending", "warning"];
+}
+/** Invited → Email delivered → Account set up → Joined; a later step implies the earlier ones. */
+function Steps({ invitation }: { invitation: Invitation }) {
+  const progress = invitation.progress ?? {};
+  const joined = invitation.status === "accepted";
+  const ready = joined || Boolean(progress.accountReady);
+  const delivered = ready || progress.emailDelivered === "delivered";
+  const open = invitation.status === "pending" && !invitation.expired;
+  const steps = [
+    { label: "Invited", done: true, time: invitation.createdAt },
+    { label: "Email delivered", done: delivered, failed: !delivered && progress.emailDelivered === "failed" },
+    { label: "Account set up", done: ready },
+    { label: "Joined", done: joined, time: progress.joinedAt },
+  ];
+  const current = open ? steps.findIndex((step) => !step.done) : -1;
+  return (
+    <ol aria-label={`Progress of ${invitation.email}`} className="flex w-full flex-wrap items-center gap-x-1 gap-y-1 text-xs">
+      {steps.map((step, index) => {
+        const state = step.done ? "done" : step.failed ? "failed" : index === current ? "current" : "pending";
+        return (
+          <li key={step.label} data-step={step.label} data-state={state} title={step.time ? new Date(step.time).toLocaleString() : undefined}
+            className={`flex items-center gap-1.5 ${state === "pending" ? "text-muted" : "text-foreground"}`}>
+            {index > 0 ? <span aria-hidden className={`h-px w-4 ${steps[index - 1]?.done ? "bg-success" : "bg-outline-strong"}`} /> : null}
+            <span aria-hidden className={`size-2 shrink-0 rounded-full ${{ done: "bg-success", failed: "bg-danger", current: "bg-accent ring-3 ring-ring", pending: "border border-outline-strong" }[state]}`} />
+            {step.label}
+            {step.time ? <span className="text-muted max-lg:hidden">{ago(step.time)}</span> : null}
+            <span className="sr-only">{{ done: "(done)", failed: "(failed)", current: "(current step)", pending: "(not yet)" }[state]}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** People with access to this customer, their invitations and what happened to them. */
 export function CustomerMembers({ customer }: { customer: string }) {
   const api = useApi();
   const client = useQueryClient();
@@ -33,9 +95,34 @@ export function CustomerMembers({ customer }: { customer: string }) {
   });
   if (tenant.isPending) return <Loading>Loading members…</Loading>;
   if (tenant.error) return <Failure error={tenant.error} retry={() => { void tenant.refetch(); }} />;
-  const pending = tenant.data.invitations.filter((invitation) => invitation.status === "pending");
   const result = change.data;
+  const busy = !tenant.data.canManage || change.isPending;
+  // Everything that still needs attention, plus the ten newest answered invitations; older ones fold away.
+  const answered = tenant.data.invitations.filter((invitation) => invitation.status !== "pending");
+  const recent = tenant.data.invitations.filter((invitation) => invitation.status === "pending" || answered.indexOf(invitation) < 10);
+  const earlier = answered.slice(10);
+  // A later invitation to the same address replaces the offer to invite again.
+  const superseded = (invitation: Invitation) => tenant.data.invitations.some((other) => other.email.toLowerCase() === invitation.email.toLowerCase() && ["pending", "accepted"].includes(other.status));
+  const row = (invitation: Invitation) => {
+    const [label, tone] = statusOf(invitation);
+    return (
+      <li key={invitation.id} className={ui.cardRow}>
+        <span className="grid min-w-0"><span className="truncate">{invitation.email}</span><span className="text-[13px] text-muted">Invited as {invitation.role}</span></span>
+        <span className="flex flex-wrap items-center gap-2">
+          <span className={ui.badge(tone)}>{label}</span>
+          {invitation.status === "pending" ? <>
+            <button className={ui.button()} disabled={busy} onClick={() => { change.mutate({ action: "resend", invitation: invitation.id }); }}>Resend</button>
+            <button className={ui.button("quiet")} disabled={busy} onClick={() => { change.mutate({ action: "cancel", invitation: invitation.id }); }}>Cancel invitation</button>
+          </> : (invitation.status === "canceled" || invitation.status === "rejected") && !superseded(invitation) ? (
+            <button className={ui.button()} disabled={busy} onClick={() => { change.mutate({ action: "invite", email: invitation.email, role: invitation.role, name: invitation.name ?? invitation.email.split("@")[0] }); }}>Invite again</button>
+          ) : null}
+        </span>
+        <Steps invitation={invitation} />
+      </li>
+    );
+  };
   return (
+    <>
     <section className={ui.cx(`${ui.card} mt-8`)} aria-label="Members">
       <div className={ui.cardBody}>
         <h2 className={ui.sectionTitle}>Members</h2>
@@ -54,20 +141,6 @@ export function CustomerMembers({ customer }: { customer: string }) {
           ))}
         </ul>
       ) : <div className={ui.cx(`${ui.cardRow} text-muted`)}>No one has access yet. Invite the first person below.</div>}
-      {pending.length ? (
-        <ul aria-label="Waiting for an answer">
-          {pending.map((invitation) => (
-            <li key={invitation.id} className={ui.cardRow}>
-              <span className="grid min-w-0"><span className="truncate">{invitation.email}</span><span className="text-[13px] text-muted">Invited as {invitation.role}</span></span>
-              <span className="flex items-center gap-2">
-                <span className={ui.badge("warning")}>Pending</span>
-                <button className={ui.button()} disabled={!tenant.data.canManage || change.isPending} onClick={() => { change.mutate({ action: "resend", invitation: invitation.id }); }}>Resend</button>
-                <button className={ui.button("quiet")} disabled={!tenant.data.canManage || change.isPending} onClick={() => { change.mutate({ action: "cancel", invitation: invitation.id }); }}>Cancel invitation</button>
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
       {result || change.error ? (
         <div role={change.error ? "alert" : "status"} className={ui.cx(`${ui.cardRow} grid justify-stretch text-[13px]`)}>
           {change.error ? <p className="text-danger">{change.error.message}</p> : null}
@@ -110,5 +183,40 @@ export function CustomerMembers({ customer }: { customer: string }) {
         </form>
       ) : null}
     </section>
+    {tenant.data.invitations.length ? (
+      <section className={ui.cx(`${ui.card} mt-6`)} aria-label="Invitations">
+        <div className={ui.cardBody}>
+          <h2 className={ui.sectionTitle}>Invitations</h2>
+          <p className="-mt-2 text-sm text-muted">Where each invited person is: invited, email delivered, account set up, joined.</p>
+        </div>
+        <ul aria-label="Invitation list">{recent.map(row)}</ul>
+        {earlier.length ? (
+          <details className="border-t border-outline">
+            <summary className="cursor-pointer px-6 py-3 text-[13px] text-muted hover:text-foreground max-sm:px-[18px]">Show earlier invitations ({earlier.length})</summary>
+            <ul>{earlier.map(row)}</ul>
+          </details>
+        ) : null}
+      </section>
+    ) : null}
+    {tenant.data.activity.length ? (
+      <section className={ui.cx(`${ui.card} mt-6`)} aria-label="Activity">
+        <div className={ui.cardBody}>
+          <h2 className={ui.sectionTitle}>Activity</h2>
+        </div>
+        <ul>
+          {tenant.data.activity.map((event) => (
+            <li key={event.id} className={ui.cx(`${ui.cardRow} text-[13px]`)}>
+              <span className="flex min-w-0 flex-wrap items-center gap-x-2">
+                <span className="font-medium">{actionText[event.action] ?? event.action}</span>
+                {event.outcome === "failed" ? <span className={ui.badge("danger")}>Failed</span> : null}
+                <span className="truncate text-muted">{event.actorName ?? event.actorEmail ?? "Unknown person"}</span>
+              </span>
+              <time dateTime={event.createdAt} title={new Date(event.createdAt).toLocaleString()} className="text-muted">{ago(event.createdAt)}</time>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null}
+    </>
   );
 }

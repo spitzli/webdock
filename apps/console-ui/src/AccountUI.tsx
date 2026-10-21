@@ -1243,12 +1243,12 @@ function SitesPage() {
       {sites.data.length ? (
         <ul className={ui.card}>
           {sites.data.map((site) => (
-            <li key={site.id} className={ui.cx(`${ui.cardRow} first:border-t-0`)}>
+            <li key={site.id} className={ui.cx(`${ui.cardRow} first:border-t-0`, ui.clickableRow)}>
               <div>
                 <strong className="font-medium">{site.name}</strong>
                 <p className="text-[13px] text-muted capitalize">{site.role}</p>
               </div>
-              <a className={ui.button()} href={site.url}>
+              <a className={ui.cx(ui.button(), ui.rowLink)} href={site.url}>
                 Open website
               </a>
             </li>
@@ -1279,7 +1279,6 @@ function InvitationPage() {
           role: z.string(),
           status: z.string(),
           customerID: z.string().nullish(),
-          onboarding: z.string().nullish(),
         }),
         {},
         true,
@@ -1301,7 +1300,7 @@ function InvitationPage() {
     onSuccess: (_, accept) => {
       const data = invite.data;
       if (!accept) { location.assign("/sites"); return; }
-      if (data?.customerID && data.onboarding === "self-service" && ["owner", "admin"].includes(data.role)) setStep("details");
+      if (data?.customerID && ["owner", "admin"].includes(data.role)) setStep("details");
       else finish();
     },
   });
@@ -1338,7 +1337,7 @@ function InvitationPage() {
     </section>
   );
 }
-/** Self-service onboarding: the new owner completes the customer details the operator left open. */
+/** After joining, an owner or administrator confirms the customer details or fills in what is missing. */
 function CustomerOnboarding({ customer, done }: { customer: string; done: () => void }) {
   const api = useApi();
   const live = useLiveValidation();
@@ -1361,14 +1360,14 @@ function CustomerOnboarding({ customer, done }: { customer: string; done: () => 
   const record = { id: customer, ...Object.fromEntries(profileKeys.map((key) => [camel(key), tenant.data.tenant[key] ?? null])) } as RegistryRecord;
   return (
     <section className={authPanel}>
-      <h1>Your customer details</h1>
-      <p>These details appear on your account and invoices. You can change them later.</p>
+      <h1>Confirm your customer details</h1>
+      <p>These details appear on your account and invoices. Fill in anything missing; you can change them later.</p>
       <form className={panelForm} {...live.form} onSubmit={(event) => { event.preventDefault(); save.mutate(new FormData(event.currentTarget)); }}>
         <CustomerFields record={record} pending={save.isPending} errors={live.errors} />
         <Feedback error={save.error} />
         <div className="flex flex-wrap gap-3">
           <button type="button" className={ui.button()} disabled={save.isPending} onClick={done}>Later</button>
-          <button className={ui.button("primary")} disabled={save.isPending}>{save.isPending ? "Saving…" : "Save details"}</button>
+          <button className={ui.button("primary")} disabled={save.isPending}>{save.isPending ? "Saving…" : "Confirm details"}</button>
         </div>
       </form>
     </section>

@@ -22,7 +22,7 @@ pub fn routes() -> Router<Arc<ServiceState>> {
             .route(&format!("{prefix}/{{collection}}"), get(list).post(create))
             .route(
                 &format!("{prefix}/{{collection}}/{{id}}"),
-                get(record).put(save).patch(archive),
+                get(record).put(save).patch(archive).delete(remove),
             );
     }
     router
@@ -227,6 +227,30 @@ async fn archive(
             })?;
         registry
             .archive(&actor, &collection, &id, archived)
+            .await
+            .map(Json)
+            .map(IntoResponse::into_response)
+            .map_err(failure)
+    }
+    .await;
+    result.unwrap_or_else(|response| response.into_response())
+}
+async fn remove(
+    State(state): State<Arc<ServiceState>>,
+    Path((collection, id)): Path<(String, String)>,
+    headers: HeaderMap,
+) -> Response {
+    let result = async {
+        let (registry, actor) = authorized(&state, &headers).await?;
+        if collection != "customers" {
+            return Err(error(
+                StatusCode::METHOD_NOT_ALLOWED,
+                "invalid_input",
+                "Only customers can be deleted here.",
+            ));
+        }
+        registry
+            .delete_customer(&actor, &id)
             .await
             .map(Json)
             .map(IntoResponse::into_response)

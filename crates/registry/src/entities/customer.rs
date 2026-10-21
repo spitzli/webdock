@@ -44,8 +44,6 @@ pub struct Model {
     pub region: Option<String>,
     #[serde(rename = "country")]
     pub country: Option<String>,
-    #[serde(rename = "onboarding")]
-    pub onboarding: String,
 }
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {}

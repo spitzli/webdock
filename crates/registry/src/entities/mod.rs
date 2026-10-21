@@ -59,6 +59,8 @@ pub enum AuditAction {
     Create,
     #[sea_orm(string_value = "update")]
     Update,
+    #[sea_orm(string_value = "delete")]
+    Delete,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]

@@ -225,7 +225,41 @@ async fn tenant_invites_roles_and_revocation_preserve_restricted_boundaries() {
         separate, 0,
         "the activation mail replaces the invitation mail"
     );
+    let progress = |tenant: &serde_json::Value, id: &str| {
+        tenant["invitations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["id"] == id)
+            .cloned()
+            .unwrap()
+    };
+    let before = access
+        .get_tenant(cookie(&cookies[0]), &customers[0])
+        .await
+        .unwrap();
+    let step = progress(&before, &fresh_invitation);
+    assert_eq!(step["progress"]["emailDelivered"], "queued");
+    assert_eq!(step["progress"]["accountReady"], false);
+    assert!(step["progress"]["joinedAt"].is_null());
+    assert!(
+        before["activity"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|event| event["action"] == "tenant-invite"
+                && event["actorEmail"] == users[0].1.as_str()),
+        "the inviting owner sees their own invitation in the activity log"
+    );
     identity.dispatch_delivery_jobs(100).await.unwrap();
+    let mailed = access
+        .get_tenant(cookie(&cookies[0]), &customers[0])
+        .await
+        .unwrap();
+    assert_eq!(
+        progress(&mailed, &fresh_invitation)["progress"]["emailDelivered"],
+        "delivered"
+    );
     let setup = setup_mail
         .0
         .lock()
@@ -260,7 +294,13 @@ async fn tenant_invites_roles_and_revocation_preserve_restricted_boundaries() {
         .await
         .unwrap();
     assert_eq!(joined["customerID"], customers[0].as_str());
-    assert_eq!(joined["onboarding"], "managed");
+    let ready = access
+        .get_tenant(cookie(&cookies[0]), &customers[0])
+        .await
+        .unwrap();
+    let step = progress(&ready, &fresh_invitation);
+    assert_eq!(step["progress"]["accountReady"], true);
+    assert!(step["progress"]["joinedAt"].is_null());
     access
         .respond_invitation(
             cookie(&newcomer_session.set_cookie),
@@ -269,6 +309,91 @@ async fn tenant_invites_roles_and_revocation_preserve_restricted_boundaries() {
         )
         .await
         .unwrap();
+    let after = access
+        .get_tenant(cookie(&cookies[0]), &customers[0])
+        .await
+        .unwrap();
+    let step = progress(&after, &fresh_invitation);
+    assert_eq!(step["status"], "accepted");
+    assert!(step["progress"]["joinedAt"].is_string());
+    // An expired invitation can be resent; a canceled one can be sent again to the same address.
+    let late = format!(
+        "access-late-{}@example.invalid",
+        allocator.allocate().await.unwrap()
+    );
+    let late_invitation = access
+        .manage_tenant(
+            cookie(&cookies[0]),
+            &customers[0],
+            TenantCommand::Invite {
+                email: late.clone(),
+                name: "Late".into(),
+                role: MemberRole::Member,
+            },
+        )
+        .await
+        .unwrap()
+        .id
+        .unwrap();
+    offline
+        .execute_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "UPDATE webdock_auth.invitation SET \"expiresAt\"=now()-interval '1 hour' WHERE id=$1",
+            [late_invitation.clone().into()],
+        ))
+        .await
+        .unwrap();
+    let expired = access
+        .get_tenant(cookie(&cookies[0]), &customers[0])
+        .await
+        .unwrap();
+    assert_eq!(progress(&expired, &late_invitation)["expired"], true);
+    access
+        .manage_tenant(
+            cookie(&cookies[0]),
+            &customers[0],
+            TenantCommand::Resend {
+                invitation: late_invitation.clone(),
+            },
+        )
+        .await
+        .unwrap();
+    let renewed = access
+        .get_tenant(cookie(&cookies[0]), &customers[0])
+        .await
+        .unwrap();
+    assert_eq!(progress(&renewed, &late_invitation)["expired"], false);
+    access
+        .manage_tenant(
+            cookie(&cookies[0]),
+            &customers[0],
+            TenantCommand::Cancel {
+                invitation: late_invitation.clone(),
+            },
+        )
+        .await
+        .unwrap();
+    let again = access
+        .manage_tenant(
+            cookie(&cookies[0]),
+            &customers[0],
+            TenantCommand::Invite {
+                email: late.clone(),
+                name: "Late".into(),
+                role: MemberRole::Member,
+            },
+        )
+        .await
+        .unwrap()
+        .id
+        .unwrap();
+    assert_ne!(again, late_invitation);
+    let repeated = access
+        .get_tenant(cookie(&cookies[0]), &customers[0])
+        .await
+        .unwrap();
+    assert_eq!(progress(&repeated, &late_invitation)["status"], "canceled");
+    assert_eq!(progress(&repeated, &again)["status"], "pending");
     assert!(
         access
             .list_tenants(cookie(&cookies[2]))

@@ -39,7 +39,12 @@ export const tableFrame = "overflow-x-auto rounded-xl border border-outline bg-s
 export const table = "w-full border-collapse text-left text-sm";
 export const th = "border-b border-outline bg-subtle px-5 py-2.5 text-xs font-medium text-muted max-sm:px-3.5";
 export const td = "border-b border-outline px-5 py-3.5 [overflow-wrap:anywhere] group-last:border-b-0 max-sm:px-3.5";
-export const tr = "group transition-colors hover:bg-subtle";
+export const tr = "group relative transition-colors hover:bg-subtle";
+/** Makes a row's primary link cover the whole row (table row or card row). Other controls in the
+ *  row need `relative z-10` to stay clickable on top of it. */
+export const rowLink = "after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-[inherit] focus-visible:after:ring-2 focus-visible:after:ring-focus";
+/** A card row that is clickable as a whole; pair with rowLink on its primary link. */
+export const clickableRow = "relative cursor-pointer transition-colors hover:bg-subtle";
 const tones = { neutral: "before:bg-muted", success: "before:bg-success", danger: "before:bg-danger", warning: "before:bg-warning", accent: "before:bg-accent" };
 /** Status pill with a coloured dot. */
 export function badge(tone: keyof typeof tones = "neutral") {

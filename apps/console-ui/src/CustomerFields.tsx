@@ -4,7 +4,6 @@ import { countryOptions } from "./countries";
 import { FieldError } from "./live-validation";
 import type { RegistryRecord } from "./api";
 import * as ui from "./ui";
-const choice = "flex cursor-pointer items-start gap-3 rounded-lg border border-outline-strong px-3.5 py-3 text-sm font-medium has-checked:border-accent has-checked:ring-1 has-checked:ring-accent";
 // Shared by the operator registry and the customer's own onboarding.
 export const customerFields = [
   { key: "firstName", label: "First name", autoComplete: "given-name" },
@@ -35,13 +34,10 @@ export function CustomerFields({
   record,
   pending,
   errors,
-  onboarding = false,
 }: {
   record: RegistryRecord | undefined;
   pending: boolean;
   errors: Record<string, string>;
-  /** Operator-only choice of how invited owners finish this profile. */
-  onboarding?: boolean;
 }) {
   const i18n = useI18n();
   const [type, setType] = useState(record?.customerType === "person" ? "person" : "company");
@@ -110,17 +106,6 @@ export function CustomerFields({
           </select>
         </label>
       </fieldset>
-      {onboarding ? <fieldset className="grid min-w-0 border-0 p-0 gap-2 sm:grid-cols-2">
-        <legend className={ui.legend}>Onboarding</legend>
-        <label className={choice}>
-          <input type="radio" name="onboarding" value="managed" defaultChecked={record?.onboarding !== "self-service"} disabled={pending} className="mt-0.5 size-4 shrink-0 accent-accent" />
-          <span className="grid gap-0.5">Managed<span className={ui.hint}>You prepare the customer details. Invited owners go straight to their workspace.</span></span>
-        </label>
-        <label className={choice}>
-          <input type="radio" name="onboarding" value="self-service" defaultChecked={record?.onboarding === "self-service"} disabled={pending} className="mt-0.5 size-4 shrink-0 accent-accent" />
-          <span className="grid gap-0.5">Self-service<span className={ui.hint}>Invited owners complete the customer details after they accept.</span></span>
-        </label>
-      </fieldset> : null}
     </>
   );
 }

@@ -170,15 +170,24 @@ impl AccessService {
         } else {
             vec![]
         };
-        let invitations = if can_manage {
-            json_rows(&tx,"SELECT jsonb_build_object('id',id,'email',email,'role',role,'status',status,'expiresAt',\"expiresAt\") AS data FROM webdock_auth.invitation WHERE \"organizationId\"=$1 ORDER BY \"createdAt\" DESC,id LIMIT 100",vec![org.into()]).await?
+        // Operators see every event; customer administrators only what row security allows them.
+        let activity = if can_manage {
+            json_rows(&tx,"SELECT jsonb_build_object('id',e.id,'action',e.action,'outcome',e.outcome,'createdAt',e.created_at,'actorName',u.name,'actorEmail',u.email) AS data FROM webdock_auth.access_event e LEFT JOIN webdock_auth.\"user\" u ON u.id=e.actor_id WHERE e.target_id=$1 OR e.target_id IN (SELECT id FROM webdock_auth.invitation WHERE \"organizationId\"=$2) ORDER BY e.created_at DESC,e.id DESC LIMIT 50",vec![customer.into(),org.into()]).await?
         } else {
             vec![]
         };
         let sites = self.sites_in(&tx, &actor, Some(org)).await?;
+        let org = org.to_owned();
         tx.commit().await?;
+        // Delivery and account state live in identity tables that only the auth connection reads;
+        // the domain transaction above has already established that this actor may manage the tenant.
+        let invitations = if can_manage {
+            json_rows(&self.auth, INVITATION_PROGRESS, vec![org.into()]).await?
+        } else {
+            vec![]
+        };
         Ok(
-            json!({"tenant":tenant,"canManage":can_manage,"operator":actor.is_operator(),"localAuthority":local,"members":members,"invitations":invitations,"sites":sites}),
+            json!({"tenant":tenant,"canManage":can_manage,"operator":actor.is_operator(),"localAuthority":local,"members":members,"invitations":invitations,"activity":activity,"sites":sites}),
         )
     }
     pub async fn account_sites(&self, cookie: &str) -> Result<Vec<Value>> {
@@ -673,7 +682,7 @@ impl AccessService {
             .authenticate_session_in(&tx, &actor.user_id, &actor.session_id)
             .await?
             .ok_or(Error::Unauthorized)?;
-        let rows=json_rows(&tx,"SELECT to_jsonb(i)||jsonb_build_object('organizationName',o.name,'organizationSlug',o.slug,'customerID',c.id,'onboarding',c.onboarding) AS data FROM webdock_auth.invitation i JOIN webdock_auth.organization o ON o.id=i.\"organizationId\" LEFT JOIN webdock_auth.tenant_customer t ON t.organization_id=o.id LEFT JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE i.id=$1 AND lower(i.email)=lower($2) AND (c.id IS NULL OR c.status='active') AND webdock_rls.local_organization_authority(o.id)",vec![id(invitation)?.into(),actor.email.into()]).await?;
+        let rows=json_rows(&tx,"SELECT to_jsonb(i)||jsonb_build_object('organizationName',o.name,'organizationSlug',o.slug,'customerID',c.id) AS data FROM webdock_auth.invitation i JOIN webdock_auth.organization o ON o.id=i.\"organizationId\" LEFT JOIN webdock_auth.tenant_customer t ON t.organization_id=o.id LEFT JOIN webdock_admin.customers c ON c.id=t.customer_id WHERE i.id=$1 AND lower(i.email)=lower($2) AND (c.id IS NULL OR c.status='active') AND webdock_rls.local_organization_authority(o.id)",vec![id(invitation)?.into(),actor.email.into()]).await?;
         tx.commit().await?;
         rows.into_iter().next().ok_or(Error::NotFound)
     }
@@ -893,6 +902,9 @@ impl AccessService {
         result
     }
 }
+/// Each invitation with the step its invitee has reached. Mail state comes from the invitation
+/// mail, or for new accounts from the activation mail that carries the invitation.
+const INVITATION_PROGRESS: &str = "SELECT jsonb_build_object('id',i.id,'email',i.email,'role',i.role,'status',i.status,'createdAt',i.\"createdAt\",'expiresAt',i.\"expiresAt\",'expired',i.status='pending' AND i.\"expiresAt\"<=statement_timestamp(),'name',u.name,'progress',jsonb_build_object('invited',i.\"createdAt\",'emailDelivered',CASE WHEN bool_or(m.delivered) THEN 'delivered' WHEN bool_or(m.waiting) THEN 'queued' WHEN count(m.delivered)>0 THEN 'failed' END,'accountReady',coalesce(NOT u.\"mustChangePassword\",false),'joinedAt',max(j.\"createdAt\"))) AS data FROM (SELECT * FROM webdock_auth.invitation WHERE \"organizationId\"=$1 ORDER BY \"createdAt\" DESC,id LIMIT 100) i LEFT JOIN webdock_auth.access_invitation_state s ON s.invitation_id=i.id LEFT JOIN webdock_auth.\"user\" u ON u.id=s.user_id LEFT JOIN LATERAL (SELECT state='delivered' AS delivered,state='queued' AND attempts<5 AS waiting FROM webdock_auth.access_delivery_job WHERE invitation_id=i.id AND state<>'canceled' UNION ALL SELECT d.delivered_at IS NOT NULL,d.delivered_at IS NULL AND d.attempts<5 FROM webdock_auth.identity_delivery_job d JOIN webdock_auth.identity_recovery_token r ON r.token_hash=d.token_hash WHERE r.user_id=s.user_id AND r.kind='activation') m ON true LEFT JOIN webdock_auth.member j ON i.status='accepted' AND j.\"organizationId\"=i.\"organizationId\" AND j.\"userId\"=s.user_id GROUP BY i.id,i.email,i.role,i.status,i.\"createdAt\",i.\"expiresAt\",u.name,u.\"mustChangePassword\" ORDER BY i.\"createdAt\" DESC,i.id";
 pub(crate) async fn local_org<C: ConnectionTrait>(db: &C, org: &str) -> Result<bool> {
     Ok(db
         .query_one_raw(Statement::from_sql_and_values(

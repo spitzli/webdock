@@ -126,7 +126,7 @@ export function HostingDirectory({
                       <tr key={project.projectID} className={ui.tr}>
                         <td className={ui.cx(`${ui.td} min-w-[170px]`)}>
                           <Link
-                            className={recordLink}
+                            className={`${recordLink} ${ui.rowLink}`}
                             to="/hosting/projects/$projectID"
                             params={{ projectID: project.projectID }}
                           >
@@ -262,7 +262,7 @@ export function HostingProject({ projectID }: { projectID: string }) {
                       <tr key={app.id} className={ui.tr}>
                         <td className={ui.cx(`${ui.td} min-w-[170px]`)}>
                           <Link
-                            className={recordLink}
+                            className={`${recordLink} ${ui.rowLink}`}
                             to="/hosting/apps/$appID"
                             params={{ appID: app.id }}
                           >

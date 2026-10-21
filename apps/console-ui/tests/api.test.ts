@@ -134,3 +134,17 @@ await test("caller Headers and tuple headers survive defaults", async () => {
     );
   }
 });
+await test("conflicts show the server's reason, other failures keep generic text", async () => {
+  const replies = [
+    Response.json({ error: { code: "registry_error", message: "Archive this customer before deleting it." } }, { status: 409 }),
+    new Response("not json", { status: 409 }),
+    Response.json({ error: { code: "x", message: "internal detail" } }, { status: 500 }),
+  ];
+  const client = new ApiClient(config, () => Promise.resolve(replies.shift() ?? new Response(null, { status: 500 })));
+  const messages = [];
+  for (let i = 0; i < 3; i++)
+    messages.push(await client.get("/v1/operator/registry/customers/1", recordSchema).then(() => "", (error: unknown) => (error instanceof Error ? error.message : "")));
+  assert.equal(messages[0], "Archive this customer before deleting it.");
+  assert.match(messages[1] ?? "", /changed or has linked resources/);
+  assert.doesNotMatch(messages[2] ?? "", /internal detail/);
+});
