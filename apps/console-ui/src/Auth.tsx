@@ -78,7 +78,9 @@ export function SignIn() {
               ? "We’ll send a reset link to your account email."
               : "Sign in to your Webdock account."}
         </p>
+        {/* A new form per step: password managers must not reuse the email field for the code. */}
         <form
+          key={mode}
           className={panelForm}
           onSubmit={(event) => {
             event.preventDefault();

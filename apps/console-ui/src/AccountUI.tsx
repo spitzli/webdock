@@ -185,7 +185,9 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
                 ? "Enter the six-digit code from your authenticator."
                 : "Enter one of your unused recovery codes."}
         </p>
+        {/* A new form per step: password managers must not reuse the email field for the code. */}
         <form
+          key={mode}
           className={panelForm}
           onSubmit={(event) => {
             signIn.mutate(form(event));
