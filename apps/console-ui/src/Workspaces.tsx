@@ -49,21 +49,6 @@ export function Workspaces() {
   const session = useSession();
   const client = useQueryClient();
   const tenants = useTenants();
-  const sites = useQuery({
-    queryKey: ["sites"],
-    queryFn: () =>
-      api.get(
-        "/api/console/sites",
-        z.array(
-          z.object({
-            id: z.string(),
-            name: z.string(),
-            url: z.url(),
-            role: z.string(),
-          }),
-        ),
-      ),
-  });
   const exit = useMutation({
     mutationFn: () =>
       api.write("/api/console/tenant-preview/exit", "POST", {}, z.object({})),
@@ -72,7 +57,7 @@ export function Workspaces() {
       location.assign("/projects");
     },
   });
-  if (tenants.isPending || sites.isPending)
+  if (tenants.isPending)
     return <Loading>Opening your workspaces…</Loading>;
   if (tenants.error)
     return (
@@ -80,16 +65,6 @@ export function Workspaces() {
         error={tenants.error}
         retry={() => {
           void tenants.refetch();
-          void sites.refetch();
-        }}
-      />
-    );
-  if (sites.error)
-    return (
-      <Failure
-        error={sites.error}
-        retry={() => {
-          void sites.refetch();
         }}
       />
     );
@@ -103,7 +78,7 @@ export function Workspaces() {
           <p className={ui.pageLead}>
             {session.user.preview
               ? "You are viewing this customer with read-only access."
-              : "Customer workspaces and websites shared with your account."}
+              : "Organizations you belong to. Open one to see its projects, applications and databases."}
           </p>
         </div>
         {session.user.preview ? (
@@ -167,28 +142,6 @@ export function Workspaces() {
           </ul>
         ) : (
           <p className={ui.cx(`${ui.cardRow} text-muted`)}>No customer workspace has been shared with this account.</p>
-        )}
-      </section>
-      <section className={ui.cx(`${ui.card} mt-6`)}>
-        <h2 className={ui.cx(`${ui.sectionTitle} px-6 py-4 max-sm:px-[18px]`)}>Websites</h2>
-        {sites.data.length ? (
-          <ul>
-            {sites.data.map((site) => (
-              <li key={site.id} className={ui.cx(ui.cardRow, !session.user.preview && ui.clickableRow)}>
-                <div>
-                  <strong className="font-medium">{site.name}</strong>
-                  <p className="text-[13px] text-muted">{site.role}</p>
-                </div>
-                {!session.user.preview ? (
-                  <a className={ui.cx(ui.button(), ui.rowLink)} href={site.url}>
-                    Open website
-                  </a>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className={ui.cx(`${ui.cardRow} text-muted`)}>No websites have been shared with this account.</p>
         )}
       </section>
     </section>

@@ -14,7 +14,8 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import { PasswordIcon } from "@phosphor-icons/react/dist/csr/Password";
 import { ShieldCheckIcon } from "@phosphor-icons/react/dist/csr/ShieldCheck";
-import { GlobeIcon } from "@phosphor-icons/react/dist/csr/Globe";
+import { BuildingsIcon } from "@phosphor-icons/react/dist/csr/Buildings";
+import { FingerprintIcon } from "@phosphor-icons/react/dist/csr/Fingerprint";
 import { UserMenu } from "./UserMenu";
 import { FieldError, useLiveValidation } from "./live-validation";
 import { CustomerFields } from "./CustomerFields";
@@ -1206,68 +1207,136 @@ function LogoutPage({ session }: { session: Session }) {
     </section>
   );
 }
-function SitesPage() {
+/** Opens Console at a path through single sign-on; undefined when this installation has no Console. */
+function useConsoleHref() {
   const api = useApi();
-  const sites = useQuery({
-    queryKey: ["account-sites"],
-    queryFn: () =>
-      api.request(
-        "/api/sites",
-        z.array(
-          z.object({
-            id: z.string(),
-            name: z.string(),
-            url: z.url(),
-            role: z.string(),
-          }),
-        ),
-        {},
-        true,
-      ),
+  return (path: string) => api.config.consoleOrigin ? `${api.config.consoleOrigin}/api/sso/login?returnTo=${encodeURIComponent(path)}` : undefined;
+}
+const roleText: Record<string, string> = {
+  owner: "Owners manage everything in the workspace, including members, roles and billing.",
+  admin: "Administrators manage projects, members and customer details.",
+  member: "Members work in the projects they are given access to.",
+};
+function WorkspaceAvatar({ name, size = "size-9 text-sm" }: { name: string; size?: string }) {
+  return <span aria-hidden className={`grid shrink-0 place-items-center rounded-lg bg-linear-135 from-[#ff9a5a] via-brand to-[#8f2d00] font-semibold text-white ${size}`}>{name.slice(0, 1).toUpperCase()}</span>;
+}
+/** The organizations this account belongs to; their projects, apps, databases and sites live in Console. */
+function WorkspacesPage() {
+  const api = useApi();
+  const consoleHref = useConsoleHref();
+  const tenants = useQuery({
+    queryKey: ["account-tenants"],
+    queryFn: () => api.request("/api/tenants", z.array(z.object({ id: z.string(), name: z.string(), status: z.string(), role: z.string().nullable() })), {}, true),
   });
-  if (sites.isPending) return <Loading>Loading websites…</Loading>;
-  if (sites.error)
-    return (
-      <Failure
-        error={sites.error}
-        retry={() => {
-          void sites.refetch();
-        }}
-      />
-    );
+  const invitations = useQuery({
+    queryKey: ["account-invitations"],
+    queryFn: () => api.request("/api/invitations", z.array(z.object({ id: z.string(), role: z.string(), name: z.string() })), {}, true),
+  });
+  if (tenants.isPending || invitations.isPending) return <Loading>Loading your workspaces…</Loading>;
+  const retry = () => { void tenants.refetch(); void invitations.refetch(); };
+  if (tenants.error) return <Failure error={tenants.error} retry={retry} />;
+  if (invitations.error) return <Failure error={invitations.error} retry={retry} />;
   return (
     <section>
       <div className={ui.pageHeading}>
-        <h1 className={ui.pageTitle}>Your websites</h1>
+        <div>
+          <h1 className={ui.pageTitle}>Workspaces</h1>
+          <p className={ui.pageLead}>Organizations you belong to. Their projects, applications, databases and websites are managed in Console.</p>
+        </div>
       </div>
-      {sites.data.length ? (
-        <ul className={ui.card}>
-          {sites.data.map((site) => (
-            <li key={site.id} className={ui.cx(`${ui.cardRow} first:border-t-0`, ui.clickableRow)}>
-              <div>
-                <strong className="font-medium">{site.name}</strong>
-                <p className="text-[13px] text-muted capitalize">{site.role}</p>
-              </div>
-              <a className={ui.cx(ui.button(), ui.rowLink)} href={site.url}>
-                Open website
-              </a>
-            </li>
-          ))}
+      {invitations.data.length ? (
+        <section aria-label="Invitations" className={ui.cx(ui.card, "mb-6 border-accent/40")}>
+          <h2 className={ui.cx(ui.sectionTitle, "px-6 pt-5 pb-3 max-sm:px-[18px]")}>Waiting for you</h2>
+          <ul>
+            {invitations.data.map((invitation) => (
+              <li key={invitation.id} className={ui.cx(ui.cardRow, ui.clickableRow)}>
+                <span className="flex min-w-0 items-center gap-3">
+                  <WorkspaceAvatar name={invitation.name} />
+                  <span className="grid min-w-0"><strong className="truncate font-medium">{invitation.name}</strong><span className="text-[13px] text-muted">Invited as <span className="capitalize">{invitation.role}</span></span></span>
+                </span>
+                <a className={ui.cx(ui.button("primary"), ui.rowLink)} href={`/invitation?id=${encodeURIComponent(invitation.id)}`}>Review invitation</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {tenants.data.length ? (
+        <ul className={ui.card} aria-label="Your workspaces">
+          {tenants.data.map((tenant) => {
+            const href = consoleHref(tenant.role === "owner" || tenant.role === "admin" ? `/tenants/${tenant.id}` : "/tenants");
+            return (
+              <li key={tenant.id} className={ui.cx(ui.cardRow, "first:border-t-0", href && ui.clickableRow)}>
+                <span className="flex min-w-0 items-center gap-3">
+                  <WorkspaceAvatar name={tenant.name} />
+                  <span className="grid min-w-0"><strong className="truncate font-medium">{tenant.name}</strong><span className="text-[13px] text-muted capitalize">{tenant.role ?? "Member"}</span></span>
+                </span>
+                <span className="flex items-center gap-2">
+                  {tenant.status !== "active" ? <span className={ui.badge(ui.statusTone(tenant.status))}>{tenant.status}</span> : null}
+                  {href ? <a className={ui.cx(ui.button(), ui.rowLink)} href={href}>Open in Console</a> : null}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       ) : (
-        <p className="rounded-xl border border-outline bg-surface px-7 py-10 text-muted max-sm:px-[18px] max-sm:py-6">No websites have been shared with this account yet.</p>
+        <div className={ui.cx(ui.card, "px-7 py-10 max-sm:px-[18px] max-sm:py-6")}>
+          <h2 className={ui.sectionTitle}>No workspaces yet</h2>
+          <p className="mt-1.5 text-muted">When someone invites you to their organization, it appears here.</p>
+        </div>
       )}
     </section>
   );
 }
 const profileKeys = ["customer_type", "name", "first_name", "last_name", "company_name", "contact_name", "contact_email", "phone", "address_line1", "address_line2", "postal_code", "city", "region", "country"] as const;
 const camel = (key: string) => key.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
+type OnboardingStep = "join" | "details" | "passkey" | "done";
+const stepLabels: Record<OnboardingStep, string> = { join: "Join", details: "Customer details", passkey: "Passkey", done: "Done" };
+/** Where the person is in joining: a new account has already chosen its password. */
+function OnboardingProgress({ steps, current, account }: { steps: OnboardingStep[]; current: OnboardingStep; account: boolean }) {
+  const all = [...(account ? ["account" as const] : []), ...steps];
+  const position = all.indexOf(current);
+  const label = (step: (typeof all)[number]) => (step === "account" ? "Account" : stepLabels[step]);
+  return (
+    <>
+    <p className="mb-4 text-center text-xs text-muted sm:hidden">Step {position + 1} of {all.length}: <span className="font-medium text-foreground">{label(current)}</span></p>
+    <ol aria-label="Setup progress" className="mb-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-xs max-sm:hidden">
+      {all.map((step, index) => {
+        // Reaching the last step completes the whole journey.
+        const state = index < position || current === "done" ? "done" : index === position ? "current" : "pending";
+        return (
+          <li key={step} data-state={state} aria-current={state === "current" ? "step" : undefined} className={`flex items-center gap-2 ${state === "pending" ? "text-muted" : "text-foreground"}`}>
+            {index > 0 ? <span aria-hidden className={`h-px w-6 ${state === "pending" ? "bg-outline-strong" : "bg-success"}`} /> : null}
+            <span aria-hidden className={`grid size-5 place-items-center rounded-full text-[11px] font-semibold ${{ done: "bg-success text-white", current: "bg-accent text-on-accent", pending: "border border-outline-strong" }[state]}`}>{state === "done" ? "✓" : index + 1}</span>
+            <span className={state === "current" ? "font-medium" : undefined}>{label(step)}</span>
+          </li>
+        );
+      })}
+    </ol>
+    </>
+  );
+}
+/** One focused step: a card with its own footer for the decision. */
+function StepCard({ title, lead, children, footer, wide = false }: { title: ReactNode; lead?: ReactNode; children?: ReactNode; footer: ReactNode; wide?: boolean }) {
+  return (
+    <section className={ui.cx(ui.card, "mx-auto w-full shadow-sm", wide ? "max-w-[720px]" : "max-w-[520px]")}>
+      <div className={ui.cx(ui.cardBody, "gap-5 p-8 max-sm:p-6")}>
+        <div className="grid gap-2">
+          <h1 className="text-2xl font-semibold tracking-[-0.02em]">{title}</h1>
+          {lead ? <p className="text-sm leading-relaxed text-muted">{lead}</p> : null}
+        </div>
+        {children}
+      </div>
+      <div className={ui.cx(ui.cardFooter, "px-8 max-sm:px-6")}>{footer}</div>
+    </section>
+  );
+}
 function InvitationPage() {
   const api = useApi();
+  const consoleHref = useConsoleHref();
   const query = new URLSearchParams(location.search);
   const id = query.get("id");
   const welcome = query.get("welcome") === "1";
-  const [step, setStep] = useState<"join" | "details" | "passkey">("join");
+  const [step, setStep] = useState<OnboardingStep>("join");
   const invite = useQuery({
     queryKey: ["invitation", id],
     queryFn: () =>
@@ -1284,61 +1353,61 @@ function InvitationPage() {
         true,
       ),
   });
-  const finish = () => {
-    if (welcome && browserSupportsWebAuthn()) setStep("passkey");
-    else location.assign("/sites");
-  };
   const answer = useMutation({
     mutationFn: (accept: boolean) =>
-      api.write(
-        `/api/invitation/${encodeURIComponent(id ?? "")}`,
-        "POST",
-        { accept },
-        z.object({}),
-        true,
-      ),
+      api.write(`/api/invitation/${encodeURIComponent(id ?? "")}`, "POST", { accept }, z.object({}), true),
     onSuccess: (_, accept) => {
-      const data = invite.data;
-      if (!accept) { location.assign("/sites"); return; }
-      if (data?.customerID && ["owner", "admin"].includes(data.role)) setStep("details");
-      else finish();
+      if (!accept) { location.assign("/workspaces"); return; }
+      setStep(steps[1] ?? "done");
     },
   });
   if (invite.isPending) return <Loading>Loading invitation…</Loading>;
   if (invite.error) return <Failure error={invite.error} />;
-  if (step === "details" && invite.data.customerID)
-    return <CustomerOnboarding customer={invite.data.customerID} done={finish} />;
-  if (step === "passkey") return <WelcomePasskey done={() => { location.assign("/sites"); }} />;
+  const data = invite.data;
+  const manages = Boolean(data.customerID) && ["owner", "admin"].includes(data.role);
+  const steps: OnboardingStep[] = ["join", ...(manages ? ["details" as const] : []), ...(welcome && browserSupportsWebAuthn() ? ["passkey" as const] : []), "done"];
+  const next = () => { setStep(steps[steps.indexOf(step) + 1] ?? "done"); };
+  const open = consoleHref(manages && data.customerID ? `/tenants/${data.customerID}` : "/tenants");
   return (
-    <section className={authPanel}>
-      <h1>Join {invite.data.organizationName}</h1>
-      <p>You have been invited as {invite.data.role}.</p>
-      <Feedback error={answer.error} />
-      <div className={buttonRow}>
-        <button
-          className={ui.button()}
-          onClick={() => {
-            answer.mutate(false);
-          }}
-          disabled={answer.isPending || invite.data.status !== "pending"}
+    <>
+      <OnboardingProgress steps={steps} current={step} account={welcome} />
+      {step === "details" && data.customerID ? (
+        <CustomerOnboarding customer={data.customerID} organization={data.organizationName} done={next} />
+      ) : step === "passkey" ? (
+        <WelcomePasskey done={next} />
+      ) : step === "done" ? (
+        <StepCard
+          title="You're all set"
+          lead={<>You are now {data.role === "admin" ? "an administrator" : `a${data.role === "owner" ? "n" : ""} ${data.role}`} of <strong className="font-medium text-foreground">{data.organizationName}</strong>. Its projects, applications and databases are waiting in Console.</>}
+          footer={<>
+            <a className={ui.button("quiet")} href="/account">Account settings</a>
+            {open ? <a className={ui.button("primary")} href={open}>Open Console</a> : <a className={ui.button("primary")} href="/workspaces">Your workspaces</a>}
+          </>}
+        />
+      ) : (
+        <StepCard
+          title={<span className="flex items-center gap-3"><WorkspaceAvatar name={data.organizationName} size="size-11 text-lg" /><span className="min-w-0 [overflow-wrap:anywhere]">Join {data.organizationName}</span></span>}
+          lead={<>You were invited as <strong className="font-medium text-foreground">{data.email}</strong>.</>}
+          footer={data.status === "pending" ? <>
+            <button className={ui.button("quiet")} onClick={() => { answer.mutate(false); }} disabled={answer.isPending}>Decline</button>
+            <button className={ui.button("primary")} onClick={() => { answer.mutate(true); }} disabled={answer.isPending}>{answer.isPending ? "Joining…" : "Accept invitation"}</button>
+          </> : <>
+            <span>This invitation is {data.status === "accepted" ? "already accepted" : "no longer open"}.</span>
+            <a className={ui.button()} href="/workspaces">Your workspaces</a>
+          </>}
         >
-          Decline
-        </button>
-        <button
-          className={ui.button("primary")}
-          onClick={() => {
-            answer.mutate(true);
-          }}
-          disabled={answer.isPending || invite.data.status !== "pending"}
-        >
-          Accept invitation
-        </button>
-      </div>
-    </section>
+          <div className="flex items-start gap-3 rounded-lg border border-outline bg-subtle px-4 py-3">
+            <span className={ui.cx(ui.badge("accent"), "mt-0.5")}>{data.role}</span>
+            <p className="text-[13px] text-muted">{roleText[data.role] ?? "You get the access this role allows."}</p>
+          </div>
+          <Feedback error={answer.error} />
+        </StepCard>
+      )}
+    </>
   );
 }
 /** After joining, an owner or administrator confirms the customer details or fills in what is missing. */
-function CustomerOnboarding({ customer, done }: { customer: string; done: () => void }) {
+function CustomerOnboarding({ customer, organization, done }: { customer: string; organization: string; done: () => void }) {
   const api = useApi();
   const live = useLiveValidation();
   const tenant = useQuery({
@@ -1359,18 +1428,22 @@ function CustomerOnboarding({ customer, done }: { customer: string; done: () => 
   if (tenant.error) return <Failure error={tenant.error} />;
   const record = { id: customer, ...Object.fromEntries(profileKeys.map((key) => [camel(key), tenant.data.tenant[key] ?? null])) } as RegistryRecord;
   return (
-    <section className={authPanel}>
-      <h1>Confirm your customer details</h1>
-      <p>These details appear on your account and invoices. Fill in anything missing; you can change them later.</p>
-      <form className={panelForm} {...live.form} onSubmit={(event) => { event.preventDefault(); save.mutate(new FormData(event.currentTarget)); }}>
-        <CustomerFields record={record} pending={save.isPending} errors={live.errors} />
-        <Feedback error={save.error} />
-        <div className="flex flex-wrap gap-3">
-          <button type="button" className={ui.button()} disabled={save.isPending} onClick={done}>Later</button>
+    <form className="contents" {...live.form} onSubmit={(event) => { event.preventDefault(); save.mutate(new FormData(event.currentTarget)); }}>
+      <StepCard
+        wide
+        title="Confirm your customer details"
+        lead={<>These details belong to <strong className="font-medium text-foreground">{organization}</strong> and appear on invoices. Check what was prepared for you and fill in anything missing; you can change them later.</>}
+        footer={<>
+          <button type="button" className={ui.button("quiet")} disabled={save.isPending} onClick={done}>Later</button>
           <button className={ui.button("primary")} disabled={save.isPending}>{save.isPending ? "Saving…" : "Confirm details"}</button>
+        </>}
+      >
+        <div className="grid gap-6">
+          <CustomerFields record={record} pending={save.isPending} errors={live.errors} />
         </div>
-      </form>
-    </section>
+        <Feedback error={save.error} />
+      </StepCard>
+    </form>
   );
 }
 function WelcomePasskey({ done }: { done: () => void }) {
@@ -1389,15 +1462,20 @@ function WelcomePasskey({ done }: { done: () => void }) {
     onSuccess: done,
   });
   return (
-    <section className={authPanel}>
-      <h1>Add a passkey</h1>
-      <p>Sign in with your fingerprint, face or device PIN instead of typing your password.</p>
-      <Feedback error={add.error} />
-      <div className={buttonRow}>
-        <button className={ui.button()} disabled={add.isPending} onClick={done}>Not now</button>
+    <StepCard
+      title={<span className="flex items-center gap-3"><span aria-hidden className="grid size-11 shrink-0 place-items-center rounded-full bg-soft text-foreground"><FingerprintIcon size={24} /></span>Add a passkey</span>}
+      lead="Sign in with your fingerprint, face or device PIN instead of typing your password."
+      footer={<>
+        <button className={ui.button("quiet")} disabled={add.isPending} onClick={done}>Not now</button>
         <button className={ui.button("primary")} disabled={add.isPending} onClick={() => { add.mutate(); }}>{add.isPending ? "Waiting for your device…" : "Add passkey"}</button>
-      </div>
-    </section>
+      </>}
+    >
+      <ul className="grid gap-2 text-[13px] text-muted">
+        <li className="flex gap-2"><ShieldCheckIcon size={18} aria-hidden className="shrink-0 text-success" />Phishing-resistant: it only works on this site.</li>
+        <li className="flex gap-2"><DevicesIcon size={18} aria-hidden className="shrink-0 text-success" />Stays on your device; add more devices later in Account security.</li>
+      </ul>
+      <Feedback error={add.error} />
+    </StepCard>
   );
 }
 export function AccountApp() {
@@ -1618,8 +1696,9 @@ export function AccountApp() {
       <ConsentPage />
     ) : location.pathname === "/logout" ? (
       <LogoutPage session={session.data} />
-    ) : ready && location.pathname === "/sites" ? (
-      <SitesPage />
+    ) : ready && (location.pathname === "/workspaces" || location.pathname === "/sites") ? (
+      // Older mails link to /sites; websites now live inside a workspace's projects.
+      <WorkspacesPage />
     ) : ready && location.pathname === "/invitation" ? (
       <InvitationPage />
     ) : (
@@ -1680,7 +1759,7 @@ function AccountShell({ session, consoleLink, children }: { session: Session; co
     ["/consent", "/logout", "/invitation"].includes(location.pathname) ? (
       <main className={authFrame}>
         <AuthHeader product="Account" href="/account" />
-        <div className="w-full max-w-[540px]">{children}</div>
+        <div className={location.pathname === "/invitation" ? "w-full max-w-[760px]" : "w-full max-w-[540px]"}>{children}</div>
       </main>
     ) : (
       <div className="grid min-h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[56px_1fr] md:grid-cols-[210px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]">
@@ -1708,7 +1787,7 @@ function AccountShell({ session, consoleLink, children }: { session: Session; co
           <nav aria-label="Account">
             {[
               { href: "/account", label: "Security", Icon: ShieldCheckIcon },
-              { href: "/sites", label: "Websites", Icon: GlobeIcon },
+              { href: "/workspaces", label: "Workspaces", Icon: BuildingsIcon },
             ].map(({ href, label, Icon }) => (
               <a
                 key={href}
@@ -1725,7 +1804,7 @@ function AccountShell({ session, consoleLink, children }: { session: Session; co
         <main id="main" className="mx-auto w-full max-w-[1040px] px-4 pt-6 pb-12 outline-none md:px-7 md:pt-8 md:pb-14 lg:px-10 lg:pt-10 lg:pb-16">
           <nav aria-label="Account sections" className="mb-6 flex gap-2 md:hidden">
             <a className={ui.button()} href="/account">Security</a>
-            <a className={ui.button()} href="/sites">Websites</a>
+            <a className={ui.button()} href="/workspaces">Workspaces</a>
           </nav>
           {children}
         </main>
