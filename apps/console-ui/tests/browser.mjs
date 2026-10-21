@@ -25,14 +25,20 @@ try {
   assert.ok(page.url().endsWith('/customers/new'), 'invalid customer is not submitted');
   await page.getByRole('textbox', { name: 'Company name', exact: true }).fill('Created Company GmbH');
   await page.getByRole('combobox', { name: 'Country', exact: true }).selectOption('DE');
+  await page.getByRole('textbox', { name: 'Contact person', exact: true }).fill('New owner');
+  await page.getByRole('textbox', { name: 'Contact email', exact: true }).fill('new-owner@example.test');
   await page.getByRole('button', { name: 'Create customer', exact: true }).click();
-  await page.getByRole('status').filter({ hasText: 'Customer created.' }).waitFor();
+  // Creating a customer continues with inviting the first person, prefilled from the contact.
+  const firstInvite = page.getByRole('region', { name: 'Invite the first person', exact: true });
+  await firstInvite.waitFor();
   assert.match(page.url(), /\/customers\/[0-9]+$/, 'creation opens the new customer');
-  const invite = page.getByRole('form', { name: 'Invite a person', exact: true });
-  await invite.getByRole('textbox', { name: 'Email address', exact: true }).fill('new-owner@example.test');
-  await invite.getByRole('textbox', { name: 'Full name', exact: true }).fill('New owner');
+  const invite = firstInvite.getByRole('form', { name: 'Invite a person', exact: true });
+  assert.equal(await invite.getByRole('textbox', { name: 'Email address', exact: true }).inputValue(), 'new-owner@example.test');
+  assert.equal(await invite.getByRole('textbox', { name: 'Full name', exact: true }).inputValue(), 'New owner');
   await invite.getByRole('button', { name: 'Send invitation', exact: true }).click();
   assert.match(await page.getByRole('textbox', { name: 'Invitation link', exact: true }).inputValue(), /\/reset-password\?token=[0-9a-f]{64}&invitation=/);
+  await firstInvite.getByRole('button', { name: 'Done', exact: true }).click();
+  await firstInvite.waitFor({ state: 'detached' });
   await page.getByText('new-owner@example.test').waitFor();
   // The invitation shows which step the invitee has reached.
   const steps = page.getByRole('list', { name: 'Progress of new-owner@example.test', exact: true });

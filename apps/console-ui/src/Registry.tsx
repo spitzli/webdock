@@ -250,6 +250,7 @@ export function RegistryDetail({
 }) {
   const api = useApi();
   const created = useRouterState({ select: (state) => state.location.state.created });
+  const navigate = useNavigate();
   const record = useQuery({
     queryKey: ["registry", collection, id],
     queryFn: ({ signal }) =>
@@ -280,12 +281,19 @@ export function RegistryDetail({
           <Status status={record.data.status} />
         ) : null}
       </div>
-      {created === collection ? (
-        <p role="status" className={ui.cx(`${ui.notice} mb-6`)}>
-          {collection === "customers"
-            ? "Customer created. Invite the first person below or add a project."
-            : "Project created."}
-        </p>
+      {created === "projects" && collection === "projects" ? (
+        <p role="status" className={ui.cx(`${ui.notice} mb-6`)}>Project created.</p>
+      ) : null}
+      {created === "customers" && collection === "customers" ? (
+        // Second step of creating a customer; leaving it (Done or Skip) drops the step from history.
+        <CustomerMembers
+          customer={id}
+          welcome={{
+            email: record.data.contactEmail ?? "",
+            name: record.data.contactName ?? ([record.data.firstName, record.data.lastName].filter(Boolean).join(" ") || ""),
+            done: () => { void navigate({ to: "/$collection/$id", params: { collection, id }, replace: true, state: {} }); },
+          }}
+        />
       ) : null}
       {collection === "customers" ? (
         <div className="mb-8 flex flex-wrap items-center gap-2 [&>a]:flex [&>a]:items-center [&>a]:gap-2 [&>a]:rounded-full [&>a]:border [&>a]:border-outline-strong [&>a]:px-3 [&>a]:py-1 [&>a]:text-[13px] [&>a]:font-medium [&>a:hover]:bg-soft [&>a:hover]:no-underline">
@@ -342,7 +350,7 @@ export function RegistryDetail({
         <RegistryForm key={id} collection={collection} record={record.data} />
       )}
       {collection === "projects" ? <ProjectExtensions projectID={id} /> : null}
-      {collection === "customers" && record.data.status === "active" ? <CustomerMembers customer={id} /> : null}
+      {collection === "customers" && record.data.status === "active" && created !== "customers" ? <CustomerMembers customer={id} /> : null}
     </section>
   );
 }
@@ -365,7 +373,7 @@ export function RegistryNew({
           <p className={ui.pageLead}>
             {collection === "projects"
               ? "Projects belong to one customer workspace."
-              : "Add the customer’s name and contact details."}
+              : "Add the customer’s name and contact details. Next, you invite the first person."}
           </p>
         </div>
       </div>
@@ -759,7 +767,7 @@ function RecordInformation({
               </p>
             ) : null}
           </div>
-          {collection === "customers" && record.status === "archived" ? (
+          {collection === "customers" ? (
             <form
               aria-label="Delete customer"
               className={ui.cx(`${ui.card} grid gap-2.5 border-danger/40 p-5`)}
@@ -772,13 +780,14 @@ function RecordInformation({
               <p className="text-muted">
                 Removes this customer, its workspace members and pending invitations for good. Only possible without projects, hosting, billing, mail or database records.
               </p>
+              {record.status !== "archived" ? <p className="font-medium">Archive this customer first.</p> : null}
               <label className={ui.field}>
                 Type {record.name} to confirm
-                <input className={ui.input} value={deleteName} autoComplete="off" onChange={(event) => { setDeleteName(event.target.value); }} />
+                <input className={ui.input} value={deleteName} autoComplete="off" disabled={record.status !== "archived"} onChange={(event) => { setDeleteName(event.target.value); }} />
               </label>
               <button
                 className={ui.cx(`${ui.button("danger")} justify-self-start`)}
-                disabled={deleteName !== record.name || remove.isPending || dirty}
+                disabled={record.status !== "archived" || deleteName !== record.name || remove.isPending || dirty}
               >
                 {remove.isPending ? "Deleting…" : "Delete customer"}
               </button>

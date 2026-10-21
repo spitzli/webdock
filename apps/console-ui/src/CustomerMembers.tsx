@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { useApi } from "./context";
@@ -81,8 +81,11 @@ function Steps({ invitation }: { invitation: Invitation }) {
   );
 }
 
+/** After creating a customer: invite the first person, prefilled from the contact just entered. */
+export type FirstInvite = { email: string; name: string; done: () => void };
+
 /** People with access to this customer, their invitations and what happened to them. */
-export function CustomerMembers({ customer }: { customer: string }) {
+export function CustomerMembers({ customer, welcome }: { customer: string; welcome?: FirstInvite | undefined }) {
   const api = useApi();
   const client = useQueryClient();
   const live = useLiveValidation();
@@ -103,6 +106,80 @@ export function CustomerMembers({ customer }: { customer: string }) {
   const earlier = answered.slice(10);
   // A later invitation to the same address replaces the offer to invite again.
   const superseded = (invitation: Invitation) => tenant.data.invitations.some((other) => other.email.toLowerCase() === invitation.email.toLowerCase() && ["pending", "accepted"].includes(other.status));
+  const outcome = result || change.error ? (
+    <div role={change.error ? "alert" : "status"} className={ui.cx(`${ui.cardRow} grid justify-stretch text-[13px]`)}>
+      {change.error ? <p className="text-danger">{change.error.message}</p> : null}
+      {result ? <p>{result.message} {deliveryText[result.delivery ?? ""] ?? ""}</p> : null}
+      {result?.link ? (
+        <div className="flex flex-wrap gap-2">
+          <input className={ui.cx(`${ui.input} min-h-9 flex-1 font-mono text-xs`)} readOnly value={result.link} aria-label="Invitation link" onFocus={(event) => { event.currentTarget.select(); }} />
+          <button className={ui.button()} onClick={() => { void navigator.clipboard.writeText(result.link ?? "").then(() => { setCopied(true); }); }}>{copied ? "Copied" : "Copy link"}</button>
+        </div>
+      ) : null}
+      {result?.link ? <p className={ui.hint}>Anyone with this link can set up the invited account. Share it only with the invited person.</p> : null}
+    </div>
+  ) : null;
+  const inviteForm = (footer: ReactNode, defaults?: FirstInvite) => (
+    <form aria-label="Invite a person" {...live.form} onSubmit={(event) => {
+      event.preventDefault();
+      const data = new FormData(event.currentTarget);
+      change.mutate({ action: "invite", email: formText(data, "email").trim(), name: formText(data, "name").trim(), role: formText(data, "role") });
+      if (!defaults) event.currentTarget.reset();
+    }}>
+      <div className="grid gap-3 border-t border-outline px-6 py-5 sm:grid-cols-[2fr_2fr_1fr] max-sm:px-[18px]">
+        {defaults ? null : <h3 className="text-sm font-semibold sm:col-span-3">Invite a person</h3>}
+        <div className="grid content-start gap-1.5">
+          <label className={ui.field}>Email address<input className={ui.input} type="email" name="email" required maxLength={254} autoComplete="off" defaultValue={defaults?.email} disabled={change.isPending} /></label>
+          <FieldError className="" message={live.errors.email} />
+        </div>
+        <div className="grid content-start gap-1.5">
+          <label className={ui.field}>Full name<input className={ui.input} name="name" required maxLength={160} autoComplete="off" defaultValue={defaults?.name} disabled={change.isPending} /></label>
+          <FieldError className="" message={live.errors.name} />
+        </div>
+        <label className={ui.cx(`${ui.field} content-start`)}>Role<select className={ui.input} name="role" defaultValue="admin" disabled={change.isPending}>
+          <option value="admin">Administrator</option>
+          <option value="member">Member</option>
+        </select></label>
+      </div>
+      <div className={ui.cardFooter}>{footer}</div>
+    </form>
+  );
+  if (welcome && tenant.data.canManage) {
+    const sent = change.isSuccess;
+    const steps = ["Customer created", "Invite the first person", "Done"];
+    return (
+      <section className={ui.cx(`${ui.card} mb-8 border-accent/40`)} aria-label="Invite the first person">
+        <div className={ui.cardBody}>
+          <ol aria-label="Customer setup" className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            {steps.map((label, index) => {
+              const state = index === 0 || (index === 1 && sent) ? "done" : index === (sent ? 2 : 1) ? "current" : "pending";
+              return (
+                <li key={label} data-state={state} className={`flex items-center gap-1.5 ${state === "pending" ? "text-muted" : "text-foreground"}`}>
+                  {index > 0 ? <span aria-hidden className={`h-px w-5 ${state === "pending" ? "bg-outline-strong" : "bg-success"}`} /> : null}
+                  <span aria-hidden className={`grid size-5 place-items-center rounded-full text-[11px] font-semibold ${{ done: "bg-success text-white", current: "bg-accent text-on-accent", pending: "border border-outline-strong" }[state]}`}>{state === "done" ? "✓" : index + 1}</span>
+                  {label}
+                </li>
+              );
+            })}
+          </ol>
+          <h2 className={ui.sectionTitle}>{sent ? "Invitation sent" : "Invite the first person"}</h2>
+          <p className="-mt-2 text-sm text-muted">
+            {sent ? "They get one email to set up their account and join. You can follow their progress on this page." : "Usually the contact you just entered. They confirm the customer details after joining."}
+          </p>
+        </div>
+        {outcome}
+        {sent ? (
+          <div className={ui.cardFooter}>
+            <span>Invite more people any time under Members.</span>
+            <button className={ui.button("primary")} onClick={welcome.done}>Done</button>
+          </div>
+        ) : inviteForm(<>
+          <button type="button" className={ui.button("quiet")} onClick={welcome.done}>Skip for now</button>
+          <button className={ui.button("primary")} disabled={change.isPending}>{change.isPending ? "Sending…" : "Send invitation"}</button>
+        </>, welcome)}
+      </section>
+    );
+  }
   const row = (invitation: Invitation) => {
     const [label, tone] = statusOf(invitation);
     return (
@@ -141,47 +218,11 @@ export function CustomerMembers({ customer }: { customer: string }) {
           ))}
         </ul>
       ) : <div className={ui.cx(`${ui.cardRow} text-muted`)}>No one has access yet. Invite the first person below.</div>}
-      {result || change.error ? (
-        <div role={change.error ? "alert" : "status"} className={ui.cx(`${ui.cardRow} grid justify-stretch text-[13px]`)}>
-          {change.error ? <p className="text-danger">{change.error.message}</p> : null}
-          {result ? <p>{result.message} {deliveryText[result.delivery ?? ""] ?? ""}</p> : null}
-          {result?.link ? (
-            <div className="flex flex-wrap gap-2">
-              <input className={ui.cx(`${ui.input} min-h-9 flex-1 font-mono text-xs`)} readOnly value={result.link} aria-label="Invitation link" onFocus={(event) => { event.currentTarget.select(); }} />
-              <button className={ui.button()} onClick={() => { void navigator.clipboard.writeText(result.link ?? "").then(() => { setCopied(true); }); }}>{copied ? "Copied" : "Copy link"}</button>
-            </div>
-          ) : null}
-          {result?.link ? <p className={ui.hint}>Anyone with this link can set up the invited account. Share it only with the invited person.</p> : null}
-        </div>
-      ) : null}
-      {tenant.data.canManage ? (
-        <form aria-label="Invite a person" {...live.form} onSubmit={(event) => {
-          event.preventDefault();
-          const data = new FormData(event.currentTarget);
-          change.mutate({ action: "invite", email: formText(data, "email").trim(), name: formText(data, "name").trim(), role: formText(data, "role") });
-          event.currentTarget.reset();
-        }}>
-          <div className="grid gap-3 border-t border-outline px-6 py-5 sm:grid-cols-[2fr_2fr_1fr] max-sm:px-[18px]">
-            <h3 className="text-sm font-semibold sm:col-span-3">Invite a person</h3>
-            <div className="grid content-start gap-1.5">
-              <label className={ui.field}>Email address<input className={ui.input} type="email" name="email" required maxLength={254} autoComplete="off" disabled={change.isPending} /></label>
-              <FieldError className="" message={live.errors.email} />
-            </div>
-            <div className="grid content-start gap-1.5">
-              <label className={ui.field}>Full name<input className={ui.input} name="name" required maxLength={160} autoComplete="off" disabled={change.isPending} /></label>
-              <FieldError className="" message={live.errors.name} />
-            </div>
-            <label className={ui.cx(`${ui.field} content-start`)}>Role<select className={ui.input} name="role" defaultValue="admin" disabled={change.isPending}>
-              <option value="admin">Administrator</option>
-              <option value="member">Member</option>
-            </select></label>
-          </div>
-          <div className={ui.cardFooter}>
-            <span>Administrators can invite others and change customer details.</span>
-            <button className={ui.button("primary")} disabled={change.isPending}>{change.isPending ? "Sending…" : "Send invitation"}</button>
-          </div>
-        </form>
-      ) : null}
+      {outcome}
+      {tenant.data.canManage ? inviteForm(<>
+        <span>Administrators can invite others and change customer details.</span>
+        <button className={ui.button("primary")} disabled={change.isPending}>{change.isPending ? "Sending…" : "Send invitation"}</button>
+      </>) : null}
     </section>
     {tenant.data.invitations.length ? (
       <section className={ui.cx(`${ui.card} mt-6`)} aria-label="Invitations">
