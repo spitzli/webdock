@@ -1,0 +1,241 @@
+{
+  "name": "postgres",
+  "version": "0.1.0",
+  "kind": "extension",
+  "description": "Managed PostgreSQL: databases on shared servers and dedicated instances",
+  "protocolVersion": 2,
+  "sdkVersion": 2,
+  "dataProtocolVersion": 2,
+  "coreVersion": ">=0.1.0 <1.0.0",
+  "image": "127.0.0.1:5005/webdock/postgres@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "dependencies": [],
+  "capabilities": [],
+  "schemaVersion": 1,
+  "readableSchema": {
+    "min": 1,
+    "max": 1
+  },
+  "migrations": [],
+  "tables": [],
+  "services": {
+    "required": [],
+    "optional": []
+  },
+  "configuration": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "actions": [
+    {
+      "name": "databases.create",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "shared",
+      "feature": "create-shared",
+      "resource": "create",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 63,
+            "description": "Name"
+          }
+        }
+      }
+    },
+    {
+      "name": "instances.create",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "dedicated",
+      "feature": "create-dedicated",
+      "resource": "create",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "version"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 63,
+            "description": "Name"
+          },
+          "version": {
+            "type": "string",
+            "enum": [
+              "18",
+              "17"
+            ],
+            "description": "PostgreSQL version"
+          }
+        }
+      }
+    },
+    {
+      "name": "databases.view",
+      "intent": "read",
+      "audience": "customer",
+      "capabilities": [],
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    {
+      "name": "databases.credentials",
+      "intent": "read",
+      "audience": "customer",
+      "capabilities": [],
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    {
+      "name": "databases.rotate",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    {
+      "name": "databases.delete",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "shared",
+      "feature": "create-shared",
+      "resource": "delete",
+      "destructive": true,
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    {
+      "name": "instances.delete",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "dedicated",
+      "feature": "create-dedicated",
+      "resource": "delete",
+      "destructive": true,
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    }
+  ],
+  "jobs": [],
+  "offerings": [
+    {
+      "id": "shared",
+      "label": "Shared database"
+    },
+    {
+      "id": "dedicated",
+      "label": "Dedicated instance"
+    }
+  ],
+  "selfService": {
+    "features": [
+      {
+        "id": "create-shared",
+        "label": "Create shared databases",
+        "offering": "shared",
+        "description": "Create and delete databases on a shared PostgreSQL server"
+      },
+      {
+        "id": "create-dedicated",
+        "label": "Create dedicated instances",
+        "offering": "dedicated",
+        "description": "Create and delete PostgreSQL instances of their own"
+      }
+    ]
+  },
+  "areas": {
+    "operator": {
+      "pages": []
+    },
+    "selfService": {
+      "pages": [
+        {
+          "id": "database",
+          "label": "Database",
+          "action": "databases.view",
+          "resource": true
+        }
+      ]
+    }
+  },
+  "events": [],
+  "secrets": [],
+  "httpBindings": [],
+  "api": [],
+  "mcp": []
+}
