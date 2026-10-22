@@ -91,15 +91,87 @@ fn safe_pod(spec: &Value) -> Result<()> {
     }
     Ok(())
 }
+use webdock_plugin_protocol::{MIB, MILLI, quantity};
+/// Memory (limit) and CPU (request, or the limit Kubernetes would default it to) one container or
+/// one CloudNativePG instance takes. Both must be stated.
+fn resources(resources: &Value) -> Result<(u64, u64)> {
+    let memory = quantity(&resources["limits"]["memory"], MIB)
+        .ok_or_else(|| invalid("Every container states a memory limit"))?;
+    let cpu = quantity(&resources["requests"]["cpu"], MILLI)
+        .or_else(|| quantity(&resources["limits"]["cpu"], MILLI))
+        .ok_or_else(|| invalid("Every container states a CPU request"))?;
+    Ok((memory, cpu))
+}
+/// Containers run side by side; init containers one after another before them.
+fn pod(spec: &Value) -> Result<(u64, u64)> {
+    let (mut memory, mut cpu, mut init_memory, mut init_cpu) = (0u64, 0u64, 0u64, 0u64);
+    for container in spec["containers"].as_array().into_iter().flatten() {
+        let (m, c) = resources(&container["resources"])?;
+        memory = memory.saturating_add(m);
+        cpu = cpu.saturating_add(c);
+    }
+    for container in spec["initContainers"].as_array().into_iter().flatten() {
+        let (m, c) = resources(&container["resources"])?;
+        init_memory = init_memory.max(m);
+        init_cpu = init_cpu.max(c);
+    }
+    Ok((memory.max(init_memory), cpu.max(init_cpu)))
+}
+fn storage(value: &Value) -> Result<u64> {
+    quantity(value, MIB).ok_or_else(|| invalid("Every volume states its size"))
+}
+/// What one unit's objects take from the customer's plan: memory and storage in MiB, CPU in
+/// millicores. Stopped workloads keep their storage.
+pub fn allocation(objects: &[Value]) -> Result<Value> {
+    let (mut memory, mut cpu, mut disk) = (0u64, 0u64, 0u64);
+    for object in objects {
+        let spec = &object["spec"];
+        let count = |key: &str| spec[key].as_u64().unwrap_or(1);
+        match object["kind"].as_str().unwrap_or_default() {
+            kind @ ("Deployment" | "StatefulSet") => {
+                let replicas = count("replicas");
+                let (m, c) = pod(&spec["template"]["spec"])?;
+                memory = memory.saturating_add(m.saturating_mul(replicas));
+                cpu = cpu.saturating_add(c.saturating_mul(replicas));
+                if kind == "StatefulSet" {
+                    for claim in spec["volumeClaimTemplates"]
+                        .as_array()
+                        .into_iter()
+                        .flatten()
+                    {
+                        let size = storage(&claim["spec"]["resources"]["requests"]["storage"])?;
+                        disk = disk.saturating_add(size.saturating_mul(replicas.max(1)));
+                    }
+                }
+            }
+            "PersistentVolumeClaim" => {
+                disk = disk.saturating_add(storage(&spec["resources"]["requests"]["storage"])?);
+            }
+            "Cluster" if object["apiVersion"] == "postgresql.cnpg.io/v1" => {
+                let instances = count("instances");
+                let (m, c) = resources(&spec["resources"])?;
+                let mut size = storage(&spec["storage"]["size"])?;
+                if !spec["walStorage"].is_null() {
+                    size = size.saturating_add(storage(&spec["walStorage"]["size"])?);
+                }
+                memory = memory.saturating_add(m.saturating_mul(instances));
+                cpu = cpu.saturating_add(c.saturating_mul(instances));
+                disk = disk.saturating_add(size.saturating_mul(instances));
+            }
+            _ => {}
+        }
+    }
+    Ok(json!({"memory": memory, "cpu": cpu, "storage": disk}))
+}
 /// Checks and pins one unit's objects. Returns them with namespace and owner labels set and
-/// service account tokens switched off.
+/// service account tokens switched off, and what they allocate.
 pub fn pin(
     manifest: &Manifest,
     plugin: &str,
     project: &str,
     unit: &str,
     objects: &Value,
-) -> Result<(String, Vec<Value>)> {
+) -> Result<(String, Vec<Value>, Value)> {
     if !dns_label(unit) {
         return Err(invalid("Invalid workload unit"));
     }
@@ -194,7 +266,8 @@ pub fn pin(
         }
         pinned.push(object);
     }
-    Ok((namespace, pinned))
+    let allocation = allocation(&pinned)?;
+    Ok((namespace, pinned, allocation))
 }
 
 #[derive(Deserialize)]
@@ -203,6 +276,9 @@ struct Apply {
     project: String,
     unit: String,
     objects: Value,
+    /// The plugin resource this unit belongs to, so usage can show its name.
+    #[serde(default)]
+    resource: Option<String>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -244,18 +320,35 @@ impl HostService {
                     .workload_cluster
                     .clone()
                     .ok_or_else(|| unsupported("No cluster is assigned to this plugin"))?;
-                let (namespace, objects) = pin(
+                let (namespace, objects, allocation) = pin(
                     &metadata.manifest,
                     plugin,
                     &input.project,
                     &input.unit,
                     &input.objects,
                 )?;
+                if input.resource.as_deref().is_some_and(|r| {
+                    !(1..=128).contains(&r.len())
+                        || !r
+                            .bytes()
+                            .all(|b| b.is_ascii_alphanumeric() || b"_.:-".contains(&b))
+                }) {
+                    return Err(invalid("Invalid resource"));
+                }
+                let checked = super::limits::checked(&tx, &input.project).await?;
+                let previous = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
+                    "SELECT allocation FROM webdock_auth.plugin_workload WHERE plugin_id=$1 AND unit=$2 AND project_id=$3",
+                    [plugin.into(), input.unit.clone().into(), input.project.clone().into()])).await.map_err(db_error)?
+                    .map(|r| r.try_get::<Value>("", "allocation")).transpose().map_err(db_error)?
+                    .unwrap_or_else(|| json!({}));
+                if let Some(message) = super::limits::exceeded(&checked, &previous, &allocation) {
+                    return Err(conflict(&message));
+                }
                 let row = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
-                    "INSERT INTO webdock_auth.plugin_workload(plugin_id,unit,project_id,cluster_id,namespace,objects) VALUES($1,$2,$3,$4,$5,$6) \
-                     ON CONFLICT (plugin_id,unit) DO UPDATE SET objects=EXCLUDED.objects,removing=false,revision=webdock_auth.plugin_workload.revision+1,updated_at=now() \
+                    "INSERT INTO webdock_auth.plugin_workload(plugin_id,unit,project_id,cluster_id,namespace,objects,allocation,resource_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8) \
+                     ON CONFLICT (plugin_id,unit) DO UPDATE SET objects=EXCLUDED.objects,allocation=EXCLUDED.allocation,resource_id=EXCLUDED.resource_id,removing=false,revision=webdock_auth.plugin_workload.revision+1,updated_at=now() \
                      WHERE webdock_auth.plugin_workload.project_id=EXCLUDED.project_id RETURNING revision",
-                    [plugin.into(), input.unit.into(), input.project.into(), cluster.into(), namespace.clone().into(), Value::Array(objects).into()])).await.map_err(db_error)?
+                    [plugin.into(), input.unit.into(), input.project.into(), cluster.into(), namespace.clone().into(), Value::Array(objects).into(), allocation.into(), input.resource.into()])).await.map_err(db_error)?
                     .ok_or_else(|| conflict("This unit belongs to another project"))?;
                 json!({"revision": row.try_get::<i64>("", "revision").map_err(db_error)?, "namespace": namespace})
             }
@@ -274,7 +367,7 @@ impl HostService {
                 let input: Unit =
                     serde_json::from_value(input).map_err(|_| invalid("Invalid workload"))?;
                 tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,
-                    "UPDATE webdock_auth.plugin_workload SET removing=true,objects='[]'::jsonb,revision=revision+1,updated_at=now() WHERE plugin_id=$1 AND unit=$2 AND NOT removing",
+                    "UPDATE webdock_auth.plugin_workload SET removing=true,objects='[]'::jsonb,allocation='{}'::jsonb,revision=revision+1,updated_at=now() WHERE plugin_id=$1 AND unit=$2 AND NOT removing",
                     [plugin.into(), input.unit.into()])).await.map_err(db_error)?;
                 json!({})
             }
@@ -297,7 +390,7 @@ mod tests {
         v["capabilities"] = json!(["plugin.workloads"]);
         v["services"]["required"] = json!([]);
         v["jobs"] = json!([]);
-        v["workloads"] = json!({"kinds": ["apps/v1/Deployment", "v1/Service", "v1/Secret", "cert-manager.io/v1/Certificate"]});
+        v["workloads"] = json!({"kinds": ["apps/v1/Deployment", "v1/Service", "v1/Secret", "cert-manager.io/v1/Certificate", "postgresql.cnpg.io/v1/Cluster"]});
         for action in v["actions"].as_array_mut().unwrap() {
             action["capabilities"] = json!([]);
         }
@@ -309,9 +402,9 @@ mod tests {
     }
     #[test]
     fn objects_are_pinned_to_the_installation_namespace_with_owner_labels() {
-        let objects = json!([deployment(json!({"containers":[{"name":"web","image":"nginx:stable-alpine"}]})),
+        let objects = json!([deployment(json!({"containers":[{"name":"web","image":"nginx:stable-alpine","resources":sized()}]})),
                              {"apiVersion":"v1","kind":"Service","metadata":{"name":"web"},"spec":{"ports":[{"port":80}]}}]);
-        let (namespace, pinned) = pin(&manifest(), "hosting", "201", "app-1", &objects).unwrap();
+        let (namespace, pinned, _) = pin(&manifest(), "hosting", "201", "app-1", &objects).unwrap();
         assert_eq!(namespace, "wd-hosting-201");
         assert_eq!(pinned[0]["metadata"]["namespace"], "wd-hosting-201");
         assert_eq!(pinned[0]["metadata"]["labels"]["webdock.dev/unit"], "app-1");
@@ -328,6 +421,74 @@ mod tests {
             pinned[1]["metadata"]["labels"]["webdock.dev/project-id"],
             "201"
         );
+    }
+    fn sized() -> Value {
+        json!({"limits":{"memory":"256Mi"},"requests":{"memory":"256Mi","cpu":"50m"}})
+    }
+    #[test]
+    fn allocation_counts_replicas_instances_and_volumes() {
+        let pods = json!({"replicas":2,"template":{"spec":{
+            "initContainers":[{"name":"i","resources":{"limits":{"memory":"1Gi"},"requests":{"cpu":"1"}}}],
+            "containers":[{"name":"a","resources":sized()},{"name":"b","resources":{"limits":{"memory":"128Mi","cpu":"200m"}}}]}}});
+        let mut stopped = json!({"apiVersion":"apps/v1","kind":"Deployment","spec":pods.clone()});
+        stopped["spec"]["replicas"] = json!(0);
+        let mut set = json!({"apiVersion":"apps/v1","kind":"StatefulSet","spec":pods.clone()});
+        set["spec"]["volumeClaimTemplates"] =
+            json!([{"spec":{"resources":{"requests":{"storage":"2Gi"}}}}]);
+        let cases = [
+            // Init containers run before the others: 1 GiB and one core outweigh 384 MiB and 250m.
+            (
+                json!([{"apiVersion":"apps/v1","kind":"Deployment","spec":pods}]),
+                json!({"memory":2048,"cpu":2000,"storage":0}),
+            ),
+            (json!([stopped]), json!({"memory":0,"cpu":0,"storage":0})),
+            (
+                json!([set]),
+                json!({"memory":2048,"cpu":2000,"storage":4096}),
+            ),
+            (
+                json!([{"apiVersion":"v1","kind":"PersistentVolumeClaim","spec":{"resources":{"requests":{"storage":"2Gi"}}}}]),
+                json!({"memory":0,"cpu":0,"storage":2048}),
+            ),
+            (
+                json!([{"apiVersion":"postgresql.cnpg.io/v1","kind":"Cluster","spec":{"instances":2,"storage":{"size":"1Gi"},"walStorage":{"size":"512Mi"},
+                "resources":{"limits":{"memory":"512Mi"},"requests":{"memory":"512Mi","cpu":"100m"}}}}]),
+                json!({"memory":1024,"cpu":200,"storage":3072}),
+            ),
+            (
+                json!([{"apiVersion":"v1","kind":"Secret"},{"apiVersion":"v1","kind":"Service"}]),
+                json!({"memory":0,"cpu":0,"storage":0}),
+            ),
+        ];
+        for (objects, expected) in cases {
+            assert_eq!(
+                allocation(objects.as_array().unwrap()).unwrap(),
+                expected,
+                "{objects}"
+            );
+        }
+    }
+    #[test]
+    fn workloads_state_memory_cpu_and_volume_sizes() {
+        let cases = [
+            deployment(json!({"containers":[{"name":"a","image":"x"}]})),
+            deployment(
+                json!({"containers":[{"name":"a","image":"x","resources":{"limits":{"memory":"256Mi"}}}]}),
+            ),
+            deployment(
+                json!({"containers":[{"name":"a","image":"x","resources":{"requests":{"cpu":"50m","memory":"256Mi"}}}]}),
+            ),
+            deployment(
+                json!({"initContainers":[{"name":"i","image":"x"}],"containers":[{"name":"a","image":"x","resources":sized()}]}),
+            ),
+            json!({"apiVersion":"postgresql.cnpg.io/v1","kind":"Cluster","metadata":{"name":"db"},"spec":{"instances":1,"resources":{"limits":{"memory":"512Mi"},"requests":{"cpu":"100m"}}}}),
+        ];
+        for object in cases {
+            assert!(
+                pin(&manifest(), "hosting", "201", "app-1", &json!([object])).is_err(),
+                "{object}"
+            );
+        }
     }
     #[test]
     fn certificates_are_for_servers_only() {

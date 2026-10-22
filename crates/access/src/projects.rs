@@ -47,7 +47,8 @@ impl AccessService {
                     id(customer)?.into(),
                 ],
             ))
-            .await?
+            .await
+            .map_err(project_limit)?
             .ok_or(Error::Forbidden)?
             .try_get("", "created")?;
         if !created {
@@ -75,4 +76,17 @@ impl AccessService {
             json!({"id": row["id"], "name": row["name"], "customer": {"id": customer, "name": profile["name"]}, "role": role}),
         )
     }
+}
+
+/// The plan's project limit (SQLSTATE WD429 from the projects trigger) as its own error.
+pub(crate) fn project_limit(error: sea_orm::DbErr) -> Error {
+    if let sea_orm::DbErr::Query(sea_orm::RuntimeErr::SqlxError(e))
+    | sea_orm::DbErr::Exec(sea_orm::RuntimeErr::SqlxError(e)) = &error
+        && e.as_database_error()
+            .and_then(|e| e.code())
+            .is_some_and(|code| code == "WD429")
+    {
+        return Error::ProjectLimit;
+    }
+    Error::Database(error)
 }

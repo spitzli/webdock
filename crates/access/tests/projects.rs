@@ -158,9 +158,11 @@ async fn customer_projects() {
             .list_projects_as(p("member"), &customers[0])
             .await
             .unwrap();
-        assert_eq!(listed.len(), 1);
-        assert_eq!(listed[0]["id"], existing.as_str());
-        assert_eq!(listed[0]["name"], "Existing");
+        // Every customer starts with a Default project; lists sort by name.
+        assert_eq!(listed.len(), 2);
+        assert_eq!(listed[0]["name"], "Default");
+        assert_eq!(listed[1]["id"], existing.as_str());
+        assert_eq!(listed[1]["name"], "Existing");
         // admin_creates_project
         let created = access
             .create_project_as(p("admin"), &customers[0], "  Shop  ")
@@ -174,7 +176,7 @@ async fn customer_projects() {
                 .await
                 .unwrap()
                 .len(),
-            2
+            3
         );
         let detail = access.get_project_as(p("member"), &shop).await.unwrap();
         assert_eq!(detail["customer"]["id"], customers[0].as_str());
@@ -224,6 +226,14 @@ async fn customer_projects() {
                 .await
                 .is_ok()
         );
+        // The plan's project limit counts what exists, for operators too.
+        sql(&owner, "INSERT INTO webdock_auth.customer_plan(customer_id,overrides,updated_by) VALUES($1,$2,'fixture')", vec![customers[1].clone().into(), serde_json::json!({"projects": 1}).into()]).await;
+        assert!(matches!(
+            access
+                .create_project_as(p("operator"), &customers[1], "Over")
+                .await,
+            Err(webdock_access::Error::ProjectLimit)
+        ));
     }
     .await;
     for uid in &users {

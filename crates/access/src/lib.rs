@@ -24,6 +24,8 @@ pub enum Error {
     LastAdministrator,
     #[error("This organization or account requires reviewed local-authority activation.")]
     ActivationRequired,
+    #[error("The plan allows no more projects.")]
+    ProjectLimit,
     #[error("Access persistence is unavailable.")]
     Database(#[from] sea_orm::DbErr),
     #[error("Identity operation is unavailable.")]
@@ -40,7 +42,10 @@ impl Error {
             Self::Unauthorized => 401,
             Self::Forbidden => 403,
             Self::NotFound => 404,
-            Self::Conflict | Self::LastAdministrator | Self::ActivationRequired => 409,
+            Self::Conflict
+            | Self::LastAdministrator
+            | Self::ActivationRequired
+            | Self::ProjectLimit => 409,
             Self::InvalidInput => 400,
             _ => 503,
         }

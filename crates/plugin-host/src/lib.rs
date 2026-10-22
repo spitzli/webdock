@@ -6,6 +6,7 @@ mod entities;
 pub mod http;
 mod scope;
 mod session_authority;
+pub use authority::limits::{CustomerPlanInput, PlanInput};
 pub use authority::workloads;
 pub use authority::{
     AdmissionInput, AdmittedInvocation, AppsAdapter, HostService, InvocationHandle,

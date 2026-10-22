@@ -7,7 +7,7 @@ use kube::{
     core::{ApiResource, GroupVersionKind},
 };
 use serde_json::{Value, json};
-use webdock_plugin_protocol::WORKLOAD_KINDS;
+use webdock_plugin_protocol::{MILLI, WORKLOAD_KINDS, quantity};
 
 const MANAGER: &str = "webdock-workloads";
 const OWNER: &str = "webdock.dev/";
@@ -333,7 +333,38 @@ impl WorkloadExecutor {
                 }
             }
         }
-        Ok(json!({"ready": ready, "objects": states, "problems": problems, "logs": logs}))
+        let mut observed =
+            json!({"ready": ready, "objects": states, "problems": problems, "logs": logs});
+        if let Some(usage) = self.usage(namespace, plugin, unit).await {
+            observed["usage"] = usage;
+        }
+        Ok(observed)
+    }
+    /// What the unit's pods use right now, from the metrics API: CPU in millicores, memory in MiB.
+    /// None when the cluster has no metrics; no pods (stopped) use nothing.
+    async fn usage(&self, namespace: &str, plugin: &str, unit: &str) -> Option<Value> {
+        let resource = ApiResource {
+            group: "metrics.k8s.io".into(),
+            version: "v1beta1".into(),
+            api_version: "metrics.k8s.io/v1beta1".into(),
+            kind: "PodMetrics".into(),
+            plural: "pods".into(),
+        };
+        let api: Api<DynamicObject> =
+            Api::namespaced_with(self.client.clone(), namespace, &resource);
+        let list = api
+            .list(&ListParams::default().labels(&selector(plugin, unit)))
+            .await
+            .ok()?;
+        let (mut cpu, mut memory) = (0u64, 0u128);
+        for pod in &list.items {
+            for container in pod.data["containers"].as_array().into_iter().flatten() {
+                cpu = cpu.saturating_add(quantity(&container["usage"]["cpu"], MILLI).unwrap_or(0));
+                // Bytes first: rounding each container up to a MiB would overstate small ones.
+                memory += u128::from(quantity(&container["usage"]["memory"], (1, 1)).unwrap_or(0));
+            }
+        }
+        Some(json!({"cpu": cpu, "memory": memory.div_ceil(1 << 20)}))
     }
 }
 

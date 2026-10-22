@@ -104,3 +104,71 @@ pub const READ_CAPABILITIES: &[&str] = &[
     "plugin.jobs.read",
     "plugin.secrets.read",
 ];
+
+/// A Kubernetes quantity in `unit`s of its base, rounded up: `(1 << 20, 1)` turns "512Mi" into MiB,
+/// `(1, 1000)` turns "250m" or "0.5" into millicores.
+pub fn quantity(value: &serde_json::Value, unit: (u128, u128)) -> Option<u64> {
+    let text = match value {
+        serde_json::Value::String(s) => s.clone(),
+        serde_json::Value::Number(n) => n.to_string(),
+        _ => return None,
+    };
+    let split = text
+        .find(|c: char| !(c.is_ascii_digit() || c == '.'))
+        .unwrap_or(text.len());
+    let (number, suffix) = text.split_at(split);
+    let (whole, fraction) = number.split_once('.').unwrap_or((number, ""));
+    if (whole.is_empty() && fraction.is_empty()) || whole.len() + fraction.len() > 18 {
+        return None;
+    }
+    let digits: u128 = format!("{whole}{fraction}").parse().ok()?;
+    let (multiply, divide): (u128, u128) = match suffix {
+        "" => (1, 1),
+        "n" => (1, 1_000_000_000),
+        "u" => (1, 1_000_000),
+        "m" => (1, 1000),
+        "k" => (1000, 1),
+        "M" => (1_000_000, 1),
+        "G" => (1_000_000_000, 1),
+        "T" => (1_000_000_000_000, 1),
+        "Ki" => (1 << 10, 1),
+        "Mi" => (1 << 20, 1),
+        "Gi" => (1 << 30, 1),
+        "Ti" => (1 << 40, 1),
+        _ => return None,
+    };
+    let denominator = 10u128.pow(u32::try_from(fraction.len()).ok()?) * divide * unit.0;
+    u64::try_from((digits * multiply * unit.1).div_ceil(denominator)).ok()
+}
+/// Quantity units: MiB of bytes, millicores of cores.
+pub const MIB: (u128, u128) = (1 << 20, 1);
+pub const MILLI: (u128, u128) = (1, 1000);
+
+#[cfg(test)]
+mod quantity_tests {
+    use super::*;
+    use serde_json::json;
+    #[test]
+    fn quantities_round_up_to_whole_units() {
+        assert_eq!(quantity(&json!("512Mi"), MIB), Some(512));
+        assert_eq!(quantity(&json!("1Gi"), MIB), Some(1024));
+        assert_eq!(quantity(&json!("1G"), MIB), Some(954));
+        assert_eq!(quantity(&json!("1.5Gi"), MIB), Some(1536));
+        assert_eq!(quantity(&json!("250m"), MILLI), Some(250));
+        assert_eq!(quantity(&json!("0.5"), MILLI), Some(500));
+        assert_eq!(quantity(&json!(2), MILLI), Some(2000));
+        assert_eq!(quantity(&json!("1"), MIB), Some(1));
+        assert_eq!(quantity(&json!("2500000n"), MILLI), Some(3));
+        assert_eq!(quantity(&json!("10240Ki"), MIB), Some(10));
+        for bad in [
+            json!("1e3"),
+            json!("-1Gi"),
+            json!("Mi"),
+            json!(""),
+            json!(null),
+            json!("1Xi"),
+        ] {
+            assert_eq!(quantity(&bad, MIB), None, "{bad}");
+        }
+    }
+}

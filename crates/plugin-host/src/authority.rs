@@ -422,6 +422,7 @@ impl HostService {
             resource.as_deref(),
         )
         .await?;
+        self_service::room(&tx, action, &input.plugin_id, &input.project_id).await?;
         validate_value(action.get("input"), &input.input)?;
         let mut configuration = metadata.configuration["configuration"]
             .as_object()
@@ -981,6 +982,8 @@ pub(crate) async fn fence(tx: &DatabaseTransaction, exclusive: bool) -> Result<(
 mod admin;
 #[path = "controller.rs"]
 mod controller;
+#[path = "limits.rs"]
+pub mod limits;
 #[path = "self_service.rs"]
 mod self_service;
 #[path = "workloads.rs"]

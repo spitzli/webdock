@@ -26,10 +26,11 @@ services:
       retries: 30
   # Local Kubernetes for plugin workloads: k3s with its bundled Traefik. Apps answer on
   # http://<name>.apps.localhost:55480. `local.mjs kubeconfig` copies the admin config to .dev-local/k3s.
-  # The node keeps the IP of its first start; if the container is recreated, reset the k3s volume.
+  # A fixed node name keeps pods and local volumes on the same node when the container is recreated.
+  # metrics-server comes from webdock-metrics-server.yaml, configured for the container's kubelet.
   k3s:
     image: rancher/k3s:v1.36.5-k3s1
-    command: [server, --disable=metrics-server, --tls-san=127.0.0.1, --write-kubeconfig-mode=600]
+    command: [server, --node-name=webdock-dev, --disable=metrics-server, --tls-san=127.0.0.1, --write-kubeconfig-mode=600]
     privileged: true
     tmpfs: [/run, /var/run]
     volumes:
@@ -37,6 +38,7 @@ services:
       - ./k3s/cnpg.yaml:/var/lib/rancher/k3s/server/manifests/webdock-cnpg.yaml:ro
       - ./k3s/traefik.yaml:/var/lib/rancher/k3s/server/manifests/webdock-traefik.yaml:ro
       - ./k3s/cert-manager.yaml:/var/lib/rancher/k3s/server/manifests/webdock-cert-manager.yaml:ro
+      - ./k3s/metrics-server.yaml:/var/lib/rancher/k3s/server/manifests/webdock-metrics-server.yaml:ro
     ports:
       - '127.0.0.1:${WEBDOCK_DEV_K3S_API_PORT:-56443}:6443'
       - '127.0.0.1:${WEBDOCK_DEV_K3S_HTTP_PORT:-55480}:80'

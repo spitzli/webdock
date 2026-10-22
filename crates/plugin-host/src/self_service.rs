@@ -63,6 +63,25 @@ async fn feature_allowed(
     let row = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT EXISTS(SELECT 1 FROM webdock_auth.plugin_feature_policy p WHERE p.plugin_id=$1 AND p.feature_id=$2 AND (p.mode='everyone' OR (p.mode='selected' AND EXISTS(SELECT 1 FROM webdock_auth.plugin_feature_customer c WHERE c.plugin_id=$1 AND c.feature_id=$2 AND c.customer_id=$3)))) AS allowed",[plugin.into(),feature.into(),customer.into()])).await.map_err(db_error)?.ok_or_else(PluginError::denied)?;
     row.try_get("", "allowed").map_err(db_error)
 }
+/// A create must leave room under the plan's count for its offering. Checked once, at admission:
+/// by revalidation the plugin may already have made it.
+pub(crate) async fn room(
+    tx: &DatabaseTransaction,
+    action: &Value,
+    plugin: &str,
+    project: &str,
+) -> Result<()> {
+    if action["resource"] == "create"
+        && let Some(offering) = action["offering"].as_str()
+    {
+        let checked = super::limits::checked(tx, project).await?;
+        let wanted = json!({ format!("{plugin}.{offering}"): 1 });
+        if let Some(message) = super::limits::exceeded(&checked, &json!({}), &wanted) {
+            return Err(conflict(&message));
+        }
+    }
+    Ok(())
+}
 /// Feature ids this customer may use themselves right now.
 pub(crate) async fn usable_features(
     tx: &DatabaseTransaction,

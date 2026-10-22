@@ -105,6 +105,28 @@ async fn applies_prunes_observes_and_removes_a_unit() {
         logged.observed
     );
 
+    // What the pods use comes from the metrics API once it has sampled them.
+    let mut measured = logged;
+    for _ in 0..90 {
+        if measured.observed["usage"]["memory"]
+            .as_u64()
+            .is_some_and(|m| m > 0)
+        {
+            break;
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+        measured = executor
+            .handle("fixture", unit, &namespace, &both, false)
+            .await;
+    }
+    assert!(
+        measured.observed["usage"]["memory"]
+            .as_u64()
+            .is_some_and(|m| m > 0),
+        "{}",
+        measured.observed
+    );
+
     // Dropping the service from the unit prunes it.
     let only = serde_json::to_vec(&json!([deployment])).unwrap();
     assert_eq!(

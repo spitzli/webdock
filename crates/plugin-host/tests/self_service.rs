@@ -986,3 +986,287 @@ async fn workloads_are_pinned_and_stored_for_the_runtime() {
     .await;
     f.cleanup().await;
 }
+
+/// Approve workloads for the fixture plugin on a fresh fixture cluster; returns the cluster id.
+async fn enable_workloads(f: &Fixture) -> String {
+    let o = &f.owner;
+    let mut manifest = product_manifest(&f.plugin);
+    manifest["capabilities"] = json!(["plugin.workloads"]);
+    manifest["workloads"] = json!({"kinds": ["apps/v1/Deployment", "v1/Service"]});
+    let raw = manifest.to_string();
+    sql(o, "UPDATE webdock_auth.plugin_release SET manifest_bytes=$2,manifest_sha256=$3 WHERE plugin_id=$1", vec![f.plugin.clone().into(), raw.clone().into(), hex::encode(Sha256::digest(raw.as_bytes())).into()]).await;
+    sql(o, "UPDATE webdock_auth.plugin_configuration SET approved_capabilities='[\"plugin.workloads\"]' WHERE plugin_id=$1", vec![f.plugin.clone().into()]).await;
+    let cluster = id(o).await;
+    sql(o, "INSERT INTO webdock_auth.hosting_cluster(id,name,provider,region,location_evidence) VALUES($1,$2,'k3s','eu-central','fixture')", vec![cluster.clone().into(), format!("{}-cluster", f.nonce).into()]).await;
+    let path = f.bindings.path().join("bindings.json");
+    let mut bindings: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    bindings["runtimes"][&f.plugin]["workloadCluster"] = json!(cluster);
+    std::fs::write(&path, bindings.to_string()).unwrap();
+    cluster
+}
+fn sized(memory: &str, replicas: u64) -> Value {
+    json!([{"apiVersion":"apps/v1","kind":"Deployment","metadata":{"name":"web"},
+        "spec":{"replicas":replicas,"selector":{"matchLabels":{"app":"web"}},"template":{"metadata":{"labels":{"app":"web"}},
+        "spec":{"containers":[{"name":"web","image":"nginx:stable-alpine","resources":{"limits":{"memory":memory},"requests":{"cpu":"50m"}}}]}}}}])
+}
+
+#[tokio::test]
+#[ignore = "requires local retained-schema restricted roles and signed RLS fixture"]
+async fn plans_limit_creates_workloads_and_projects() {
+    let f = Fixture::new().await;
+    let o = &f.owner;
+    f.set_mode("everyone", &[]).await;
+    let cluster = enable_workloads(&f).await;
+    let host = f.host().await;
+    let meter = format!("{}.note", f.plugin);
+    let input = |limits: Value| {
+        serde_json::from_value::<webdock_plugin_host::PlanInput>(
+            json!({"name": format!("{}-plan", f.nonce), "limits": limits}),
+        )
+        .unwrap()
+    };
+    // Only operators manage plans; limits are whole numbers.
+    assert!(
+        host.save_plan(f.principal("owner"), None, None, input(json!({})))
+            .await
+            .is_err()
+    );
+    assert_eq!(
+        host.save_plan(
+            f.principal("operator"),
+            None,
+            None,
+            input(json!({"memory": -1}))
+        )
+        .await
+        .unwrap_err()
+        .message,
+        "Limits are whole numbers of zero or more"
+    );
+    let plan = host
+        .save_plan(
+            f.principal("operator"),
+            None,
+            None,
+            input(json!({meter.clone(): 1, "memory": 512, "projects": 2})),
+        )
+        .await
+        .unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let listed = host.plans(f.principal("operator"), None).await.unwrap();
+    assert!(
+        listed["plans"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|p| p["id"] == plan.as_str())
+    );
+    assert!(
+        listed["meters"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|m| m["id"] == meter.as_str() && m["label"] == "Note")
+    );
+    let assign = |overrides: Value| {
+        serde_json::from_value::<webdock_plugin_host::CustomerPlanInput>(
+            json!({"planId": plan, "overrides": overrides}),
+        )
+        .unwrap()
+    };
+    assert!(
+        host.set_customer_plan(
+            f.principal("owner"),
+            None,
+            &f.customers[0],
+            assign(json!({}))
+        )
+        .await
+        .is_err()
+    );
+    host.set_customer_plan(
+        f.principal("operator"),
+        None,
+        &f.customers[0],
+        assign(json!({})),
+    )
+    .await
+    .unwrap();
+    // A plan with customers stays.
+    assert_eq!(
+        host.delete_plan(f.principal("operator"), None, &plan)
+            .await
+            .unwrap_err()
+            .message,
+        "Customers are still on this plan"
+    );
+
+    // Counts: one note is allowed, the second is refused at admission, for operators too.
+    create(&f, &host, "owner", 0, "note-1").await;
+    for who in ["owner", "operator"] {
+        let refused = host
+            .admit(
+                f.principal(who),
+                f.input(0, "notes.create", json!({"name":"x"})),
+            )
+            .await
+            .err()
+            .unwrap();
+        assert_eq!(
+            refused.message, "Your plan allows 1 of these and 1 are in use.",
+            "{who}"
+        );
+    }
+    // Customer B has no plan and no default plan exists: unlimited.
+    create(&f, &host, "foreign", 1, "note-b1").await;
+    create(&f, &host, "foreign", 1, "note-b2").await;
+
+    // Memory: 300 MiB fits, a second 300 MiB unit does not; resizing the first within 512 does.
+    let apply = |unit: &str, objects: Value| json!({"project": f.projects[0], "unit": unit, "objects": objects, "resource": "note-1"});
+    host.workloads(
+        &peer(),
+        &f.plugin,
+        1,
+        "apply",
+        apply("web-1", sized("300Mi", 1)),
+    )
+    .await
+    .unwrap();
+    let refused = host
+        .workloads(
+            &peer(),
+            &f.plugin,
+            1,
+            "apply",
+            apply("web-2", sized("300Mi", 1)),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(
+        refused.message,
+        "Your plan allows 512 MiB memory; 300 MiB are in use and this needs 300 MiB."
+    );
+    host.workloads(
+        &peer(),
+        &f.plugin,
+        1,
+        "apply",
+        apply("web-1", sized("512Mi", 1)),
+    )
+    .await
+    .unwrap();
+    // A plan downgrade leaves the customer over; stopping still works, growing does not.
+    sql(
+        o,
+        "UPDATE webdock_auth.plan SET limits=limits||'{\"memory\":256}' WHERE id=$1",
+        vec![plan.clone().into()],
+    )
+    .await;
+    host.workloads(
+        &peer(),
+        &f.plugin,
+        1,
+        "apply",
+        apply("web-1", sized("512Mi", 0)),
+    )
+    .await
+    .unwrap();
+    assert!(
+        host.workloads(
+            &peer(),
+            &f.plugin,
+            1,
+            "apply",
+            apply("web-1", sized("512Mi", 1))
+        )
+        .await
+        .is_err()
+    );
+    // An override lifts the limit for this customer only.
+    host.set_customer_plan(
+        f.principal("operator"),
+        None,
+        &f.customers[0],
+        assign(json!({"memory": null})),
+    )
+    .await
+    .unwrap();
+    host.workloads(
+        &peer(),
+        &f.plugin,
+        1,
+        "apply",
+        apply("web-1", sized("512Mi", 2)),
+    )
+    .await
+    .unwrap();
+
+    // Projects: the Default project and the fixture project already make two.
+    let third = id(o).await;
+    let error = o
+        .execute_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "INSERT INTO webdock_admin.projects(id,name,customer_id) VALUES($1,'Third',$2)",
+            [third.into(), f.customers[0].clone().into()],
+        ))
+        .await
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("The plan allows 2 projects."), "{error}");
+
+    // Members read their own usage: limits, what is allocated and each unit with its resource.
+    let usage = host
+        .usage(f.principal("member"), &f.customers[0])
+        .await
+        .unwrap();
+    assert_eq!(usage["plan"]["id"], plan.as_str());
+    // The override lifted memory; 256 stays on the plan.
+    assert_eq!(usage["limits"], json!({meter.clone(): 1, "projects": 2}));
+    assert_eq!(usage["overrides"], json!({"memory": null}));
+    assert_eq!(usage["allocated"]["memory"], 1024);
+    assert_eq!(usage["allocated"][&meter], 1);
+    assert_eq!(usage["units"][0]["resource"]["name"], "note-1");
+    assert!(
+        host.usage(f.principal("foreign"), &f.customers[0])
+            .await
+            .is_err()
+    );
+    // Nobody else does.
+    let foreign = f.session("foreign").await;
+    assert!(
+        foreign
+            .query_one_raw(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "SELECT webdock_rls.customer_usage($1) AS u",
+                [f.customers[0].clone().into()]
+            ))
+            .await
+            .is_err()
+    );
+    foreign.rollback().await.unwrap();
+
+    sql(
+        o,
+        "DELETE FROM webdock_auth.plugin_workload WHERE plugin_id=$1",
+        vec![f.plugin.clone().into()],
+    )
+    .await;
+    sql(
+        o,
+        "DELETE FROM webdock_auth.hosting_cluster WHERE id=$1",
+        vec![cluster.into()],
+    )
+    .await;
+    sql(
+        o,
+        "DELETE FROM webdock_auth.customer_plan WHERE plan_id=$1",
+        vec![plan.clone().into()],
+    )
+    .await;
+    host.delete_plan(f.principal("operator"), None, &plan)
+        .await
+        .unwrap();
+    f.cleanup().await;
+}

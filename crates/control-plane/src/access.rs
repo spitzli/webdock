@@ -68,6 +68,9 @@ fn failure(error: webdock_access::Error) -> ApiFailure {
                     "This record changed. Refresh and review it before trying again."
                 }
                 webdock_access::Error::NotFound => "Record unavailable.",
+                webdock_access::Error::ProjectLimit => {
+                    "Your plan allows no more projects. Ask your provider for a larger plan."
+                }
                 _ => "Check the entered values.",
             }
         },

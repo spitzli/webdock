@@ -282,6 +282,13 @@ pub fn routes() -> Router<Arc<ServiceState>> {
             "/api/console/customers/{id}/self-service",
             get(customer_self_service),
         )
+        .route("/api/console/plans", get(plans).post(create_plan))
+        .route(
+            "/api/console/plans/{id}",
+            put(save_plan).delete(delete_plan),
+        )
+        .route("/api/console/customers/{id}/plan", put(customer_plan))
+        .route("/api/console/customers/{id}/usage", get(usage))
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -313,7 +320,7 @@ fn command<T: serde::de::DeserializeOwned>(
         reject(
             StatusCode::BAD_REQUEST,
             "invalid_input",
-            "Invalid self-service command.",
+            "Check the request and try again.",
         )
     })
 }
@@ -641,4 +648,105 @@ mod operations;
 
 pub(crate) fn credential_endpoint(path: &str) -> bool {
     exposure::credential_endpoint(path)
+}
+
+async fn plans(State(state): State<Arc<ServiceState>>, headers: HeaderMap) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        let host = &endpoints(&state)?.host;
+        let value = host
+            .plans(&actor.principal, Some(&actor.authority))
+            .await
+            .map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
+}
+async fn write_plan(
+    state: &ServiceState,
+    headers: &HeaderMap,
+    id: Option<&str>,
+    body: &[u8],
+) -> Result<Response, ApiFailure> {
+    let actor = actor(state, headers).await?;
+    writer(&actor)?;
+    let input: webdock_plugin_host::PlanInput = command(body, headers)?;
+    let host = &endpoints(state)?.host;
+    let value = host
+        .save_plan(&actor.principal, Some(&actor.authority), id, input)
+        .await
+        .map_err(failure)?;
+    Ok(Json(value).into_response())
+}
+async fn create_plan(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    write_plan(&state, &headers, None, &body)
+        .await
+        .unwrap_or_else(IntoResponse::into_response)
+}
+async fn save_plan(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+    body: Bytes,
+) -> Response {
+    write_plan(&state, &headers, Some(&id), &body)
+        .await
+        .unwrap_or_else(IntoResponse::into_response)
+}
+async fn delete_plan(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        writer(&actor)?;
+        let host = &endpoints(&state)?.host;
+        let value = host
+            .delete_plan(&actor.principal, Some(&actor.authority), &id)
+            .await
+            .map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
+}
+async fn customer_plan(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+    body: Bytes,
+) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        writer(&actor)?;
+        let input: webdock_plugin_host::CustomerPlanInput = command(&body, &headers)?;
+        let host = &endpoints(&state)?.host;
+        let value = host
+            .set_customer_plan(&actor.principal, Some(&actor.authority), &id, input)
+            .await
+            .map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
+}
+async fn usage(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        let host = &endpoints(&state)?.host;
+        let value = host.usage(&actor.principal, &id).await.map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
 }
