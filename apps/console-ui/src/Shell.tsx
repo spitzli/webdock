@@ -18,6 +18,7 @@ import { UserMenu } from "./UserMenu";
 import { UserCircleIcon } from "@phosphor-icons/react/dist/csr/UserCircle";
 import { CommandIcon } from "@phosphor-icons/react/dist/csr/Command";
 import { CaretUpDownIcon } from "@phosphor-icons/react/dist/csr/CaretUpDown";
+import { GaugeIcon } from "@phosphor-icons/react/dist/csr/Gauge";
 import { PlugsConnectedIcon } from "@phosphor-icons/react/dist/csr/PlugsConnected";
 import { useApi, useSession } from "./context";
 import { LocalePicker } from "./Locale";
@@ -255,6 +256,12 @@ export function Shell() {
           >
             <PlugsConnectedIcon size={18} />
             Extensions
+          </Link>
+        ) : null}
+        {session.user.role === "operator" ? (
+          <Link to="/plans" className={navItem(pathname.startsWith("/plans"))}>
+            <GaugeIcon size={18} />
+            Plans
           </Link>
         ) : null}
         <Link

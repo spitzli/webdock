@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { HouseIcon } from "@phosphor-icons/react/dist/csr/House";
 import { UsersIcon } from "@phosphor-icons/react/dist/csr/Users";
+import { GaugeIcon } from "@phosphor-icons/react/dist/csr/Gauge";
 import { useApi, useSession } from "./context";
 import { pluginNav, useWorkspacePlugins } from "./plugins/workspace";
 
@@ -21,6 +22,7 @@ function section(pathname: string): string {
   if (plugin) return pluginNav(plugin).label;
   if (pathname.includes("/projects/")) return "Projects";
   if (pathname.startsWith("/tenants/")) return "Members";
+  if (pathname.endsWith("/usage")) return "Plan and usage";
   return "Overview";
 }
 /** Inside a customer workspace the header names it and the section, like the sidebar does. */
@@ -61,6 +63,10 @@ export function WorkspaceNav({ customer, item }: { customer: string; item: (acti
           </Link>
         );
       })}
+      <Link to="/workspaces/$id/usage" params={{ id: customer }} className={item(pathname === `/workspaces/${customer}/usage`)} aria-current={pathname === `/workspaces/${customer}/usage` ? "page" : undefined}>
+        <GaugeIcon size={18} />
+        Plan and usage
+      </Link>
       {manager ? (
         <Link to="/$collection/$id" params={{ collection: "tenants", id: customer }} className={item(pathname === `/tenants/${customer}`)}>
           <UsersIcon size={18} />

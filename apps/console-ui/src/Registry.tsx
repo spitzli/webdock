@@ -1,4 +1,5 @@
 import { CustomerSelfService } from "./plugins/CustomerSelfService";
+import { CustomerPlan } from "./Usage";
 import { CustomerMembers } from "./CustomerMembers";
 import { formText } from "./form";
 import { useEffect, useState } from "react";
@@ -358,6 +359,7 @@ export function RegistryDetail({
       ) : null}
       {collection === "customers" && record.data.status === "active" && created !== "customers" ? <CustomerMembers customer={id} /> : null}
       {collection === "customers" && record.data.status === "active" ? <CustomerSelfService customer={id} /> : null}
+      {collection === "customers" ? <CustomerPlan customer={id} /> : null}
     </section>
   );
 }

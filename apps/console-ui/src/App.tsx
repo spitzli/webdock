@@ -70,6 +70,7 @@ const ResourcePage = lazy(() =>
 import { WorkspaceProjects } from "./WorkspaceProjects";
 import { useTenants } from "./WorkspaceNav";
 import { ProductPage } from "./plugins/ProductPage";
+import { Plans, WorkspaceUsage } from "./Usage";
 import { ProjectPage } from "./ProjectPage";
 const ExtensionOperation = lazy(() =>
   import("./plugins/ExtensionOperation").then((module) => ({
@@ -345,6 +346,19 @@ const extensionRoute = createRoute({
     );
   },
 });
+const plansRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/plans",
+  component: Plans,
+});
+const usageRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/workspaces/$id/usage",
+  component: () => {
+    const { id } = usageRoute.useParams();
+    return <WorkspaceUsage key={id} id={id} />;
+  },
+});
 const workspaceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/workspaces/$id",
@@ -449,6 +463,8 @@ const router = createRouter({
     extensionsRoute,
     extensionRoute,
     extensionOperationRoute,
+    plansRoute,
+    usageRoute,
     workspaceRoute,
     projectRoute,
     productRoute,
