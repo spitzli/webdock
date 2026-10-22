@@ -75,7 +75,9 @@ try {
   await session.context.close();
   session = await open(browser, 'member', []);
   await page().goto(previewOrigin + `/workspaces/101/projects/201/resources/hosting/${appID}`);
-  await page().getByRole('region', { name: 'Logs' }).waitFor();
+  await page().getByRole('region', { name: 'Status' }).waitFor();
+  // Logs often carry configuration values, so only owners and admins read them.
+  assert.equal(await page().getByRole('region', { name: 'Logs' }).count(), 0);
   for (const name of ['Stop', 'Deploy', 'Replace variables', 'Delete app']) assert.equal(await page().getByRole('button', { name }).count(), 0, name);
   await page().setViewportSize({ width: 390, height: 844 });
   assert.ok(await page().evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'no horizontal scroll at phone width');

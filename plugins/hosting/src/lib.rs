@@ -20,7 +20,7 @@ pub const PLUGIN_ID: &str = "hosting";
 const ACTIONS: &[(&str, &str)] = &[
     ("apps.create", "write"),
     ("apps.view", "read"),
-    ("apps.logs", "read"),
+    ("apps.logs", "write"),
     ("apps.deploy", "write"),
     ("apps.env", "write"),
     ("apps.power", "write"),
@@ -131,7 +131,6 @@ struct NewApp {
     name: String,
     image: String,
     port: i64,
-    memory_mb: i64,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -163,6 +162,8 @@ struct Resize {
     resource_id: String,
     memory_mb: i64,
 }
+/// New apps start with this much memory; changing it is the separate `resize-apps` feature.
+pub const DEFAULT_MEMORY_MB: i32 = 256;
 
 pub struct Settings {
     /// Production requires digest-pinned images; local dev accepts tags.
@@ -173,7 +174,26 @@ pub struct Plugin {
     sealer: seal::Sealer,
     placement: placement::Placement,
     settings: Settings,
-    deploying: Mutex<HashSet<Uuid>>,
+    busy: Mutex<HashSet<Uuid>>,
+}
+/// Exclusive use of one app: every change, power action, deployment and delete holds it, so
+/// they never interleave. Released when dropped.
+pub struct Slot {
+    plugin: Arc<Plugin>,
+    id: Uuid,
+}
+impl Drop for Slot {
+    fn drop(&mut self) {
+        if let Ok(mut busy) = self.plugin.busy.lock() {
+            busy.remove(&self.id);
+        }
+    }
+}
+fn busy() -> PluginError {
+    PluginError::new(
+        ErrorCode::Conflict,
+        "The app is busy with another change; try again shortly",
+    )
 }
 impl Plugin {
     pub fn new(
@@ -187,13 +207,29 @@ impl Plugin {
             sealer,
             placement,
             settings,
-            deploying: Mutex::new(HashSet::new()),
+            busy: Mutex::new(HashSet::new()),
+        })
+    }
+    fn claim(self: &Arc<Self>, id: Uuid) -> Result<Slot> {
+        if !self
+            .busy
+            .lock()
+            .map_err(|_| unavailable("lock", "poisoned"))?
+            .insert(id)
+        {
+            return Err(busy());
+        }
+        Ok(Slot {
+            plugin: Arc::clone(self),
+            id,
         })
     }
     /// Finish deployments interrupted by a restart.
     pub async fn resume(self: &Arc<Self>) -> std::result::Result<(), store::Error> {
         for app in self.store.deploying().await? {
-            let _ = self.deploy(app);
+            if let Ok(slot) = self.claim(app.id) {
+                self.deploy(app, slot);
+            }
         }
         Ok(())
     }
@@ -204,29 +240,18 @@ impl Plugin {
             .ok_or_else(|| unavailable("unseal", app.id))?;
         environment(&raw)
     }
-    async fn target(&self, claims: &InvocationClaims, id: &str) -> Result<store::App> {
-        let id = Uuid::parse_str(id).map_err(|_| invalid("Invalid app"))?;
+    async fn target(&self, claims: &InvocationClaims, id: &Uuid) -> Result<store::App> {
         self.store
-            .get(&claims.project_id, &id)
+            .get(&claims.project_id, id)
             .await
             .map_err(store_error)?
             .ok_or_else(missing)
     }
-    /// Runs detached: pulling an image outlasts an invocation. One deployment per app at a time.
-    fn deploy(self: &Arc<Self>, app: store::App) -> Result<()> {
-        if !self
-            .deploying
-            .lock()
-            .map_err(|_| unavailable("lock", "poisoned"))?
-            .insert(app.id)
-        {
-            return Err(PluginError::new(
-                ErrorCode::Conflict,
-                "A deployment of this app is in progress",
-            ));
-        }
+    /// Runs detached with the app's slot: pulling an image outlasts an invocation.
+    fn deploy(self: &Arc<Self>, app: store::App, slot: Slot) {
         let plugin = Arc::clone(self);
         tokio::spawn(async move {
+            let _slot = slot;
             let outcome = async {
                 let env = plugin.env(&app).map_err(|e| e.message)?;
                 let spec = placement::Spec {
@@ -254,11 +279,7 @@ impl Plugin {
             {
                 eprintln!("hosting_plugin_store: {error}");
             }
-            if let Ok(mut deploying) = plugin.deploying.lock() {
-                deploying.remove(&app.id);
-            }
         });
-        Ok(())
     }
     async fn create(self: &Arc<Self>, claims: &InvocationClaims, input: Value) -> Result<Value> {
         let input: NewApp = parse(input)?;
@@ -269,22 +290,22 @@ impl Plugin {
             name: display_name(&input.name)?,
             image: image_reference(&input.image, self.settings.require_digest)?,
             port: i32::from(port(input.port)?),
-            memory_mb: i32::try_from(memory(input.memory_mb)?)
-                .map_err(|_| invalid("Invalid memory size"))?,
+            memory_mb: DEFAULT_MEMORY_MB,
             env_sealed: self.sealer.seal(&id, ""),
             running: true,
             state: "deploying".into(),
             error: None,
             created_at: String::new(),
         };
+        let slot = self.claim(id)?;
         self.store.insert(&app).await.map_err(store_error)?;
         let name = app.name.clone();
-        self.deploy(app)?;
+        self.deploy(app, slot);
         Ok(json!({"resource":{"id":id.to_string(),"name":name}}))
     }
     async fn view(&self, claims: &InvocationClaims, input: Value) -> Result<Value> {
         let target: Target = parse(input)?;
-        let app = self.target(claims, &target.resource_id).await?;
+        let app = self.target(claims, &uuid(&target.resource_id)?).await?;
         let observed = self
             .placement
             .observe(&app.id)
@@ -312,23 +333,68 @@ impl Plugin {
             "url": url, "env": keys, "error": app.error, "restarts": observed.map(|o| o.restarts), "createdAt": app.created_at,
         }))
     }
-    /// Stores the changed app and redeploys it.
-    async fn change(self: &Arc<Self>, app: store::App) -> Result<Value> {
-        if self
-            .deploying
-            .lock()
-            .map_err(|_| unavailable("lock", "poisoned"))?
-            .contains(&app.id)
-        {
-            return Err(PluginError::new(
-                ErrorCode::Conflict,
-                "A deployment of this app is in progress",
-            ));
-        }
+    /// Claims the app, applies `edit` to the row as stored now, saves it and redeploys.
+    async fn change(
+        self: &Arc<Self>,
+        claims: &InvocationClaims,
+        id: &str,
+        edit: impl FnOnce(&mut store::App) -> Result<()>,
+    ) -> Result<Value> {
+        let id = uuid(id)?;
+        let slot = self.claim(id)?;
+        let mut app = self.target(claims, &id).await?;
+        edit(&mut app)?;
         self.store.update(&app).await.map_err(store_error)?;
-        self.deploy(app)?;
+        self.deploy(app, slot);
         Ok(json!({"status":"deploying"}))
     }
+    async fn power(self: &Arc<Self>, claims: &InvocationClaims, input: Value) -> Result<Value> {
+        let input: Power = parse(input)?;
+        if !["start", "stop", "restart"].contains(&input.action.as_str()) {
+            return Err(invalid("Unknown power action"));
+        }
+        let id = uuid(&input.resource_id)?;
+        let _slot = self.claim(id)?;
+        let app = self.target(claims, &id).await?;
+        if app.state != "ready" {
+            return Err(PluginError::new(
+                ErrorCode::Conflict,
+                "The app is not deployed",
+            ));
+        }
+        self.placement
+            .power(&app.id, &input.action)
+            .await
+            .map_err(|e| unavailable("power", e))?;
+        self.store
+            .running(&app.id, input.action != "stop")
+            .await
+            .map_err(store_error)?;
+        Ok(json!({}))
+    }
+    async fn delete(self: &Arc<Self>, claims: &InvocationClaims, input: Value) -> Result<Value> {
+        let target: Target = parse(input)?;
+        let id = uuid(&target.resource_id)?;
+        let _slot = self.claim(id)?;
+        // The Core proved ownership; an app already gone here is simply done.
+        let Some(app) = self
+            .store
+            .get(&claims.project_id, &id)
+            .await
+            .map_err(store_error)?
+        else {
+            return Ok(json!({}));
+        };
+        self.placement
+            .remove(&app.id)
+            .await
+            .map_err(|e| unavailable("remove", e))?;
+        self.store.delete(&app.id).await.map_err(store_error)?;
+        Ok(json!({}))
+    }
+}
+fn uuid(raw: &str) -> Result<Uuid> {
+    Uuid::parse_str(raw).map_err(|_| invalid("Invalid app"))
 }
 
 pub struct Handler(pub Arc<Plugin>);
@@ -350,7 +416,7 @@ impl ActionHandler for Handler {
             "apps.view" => plugin.view(claims, input).await,
             "apps.logs" => {
                 let target: Target = parse(input)?;
-                let app = plugin.target(claims, &target.resource_id).await?;
+                let app = plugin.target(claims, &uuid(&target.resource_id)?).await?;
                 let lines = plugin
                     .placement
                     .logs(&app.id, 200)
@@ -360,71 +426,39 @@ impl ActionHandler for Handler {
             }
             "apps.deploy" => {
                 let input: Deploy = parse(input)?;
-                let mut app = plugin.target(claims, &input.resource_id).await?;
-                app.image = image_reference(&input.image, plugin.settings.require_digest)?;
-                app.port = i32::from(port(input.port)?);
-                plugin.change(app).await
+                let image = image_reference(&input.image, plugin.settings.require_digest)?;
+                let port = i32::from(port(input.port)?);
+                plugin
+                    .change(claims, &input.resource_id, |app| {
+                        app.image = image;
+                        app.port = port;
+                        Ok(())
+                    })
+                    .await
             }
             "apps.env" => {
                 let input: Env = parse(input)?;
-                let mut app = plugin.target(claims, &input.resource_id).await?;
                 environment(&input.env)?;
-                app.env_sealed = plugin.sealer.seal(&app.id, &input.env);
-                plugin.change(app).await
+                plugin
+                    .change(claims, &input.resource_id, |app| {
+                        app.env_sealed = plugin.sealer.seal(&app.id, &input.env);
+                        Ok(())
+                    })
+                    .await
             }
             "apps.resize" => {
                 let input: Resize = parse(input)?;
-                let mut app = plugin.target(claims, &input.resource_id).await?;
-                app.memory_mb = i32::try_from(memory(input.memory_mb)?)
+                let memory = i32::try_from(memory(input.memory_mb)?)
                     .map_err(|_| invalid("Invalid memory size"))?;
-                plugin.change(app).await
-            }
-            "apps.power" => {
-                let input: Power = parse(input)?;
-                let app = plugin.target(claims, &input.resource_id).await?;
-                if !["start", "stop", "restart"].contains(&input.action.as_str()) {
-                    return Err(invalid("Unknown power action"));
-                }
-                if app.state != "ready" {
-                    return Err(PluginError::new(
-                        ErrorCode::Conflict,
-                        "The app is not deployed",
-                    ));
-                }
                 plugin
-                    .placement
-                    .power(&app.id, &input.action)
+                    .change(claims, &input.resource_id, |app| {
+                        app.memory_mb = memory;
+                        Ok(())
+                    })
                     .await
-                    .map_err(|e| unavailable("power", e))?;
-                plugin
-                    .store
-                    .running(&app.id, input.action != "stop")
-                    .await
-                    .map_err(store_error)?;
-                Ok(json!({}))
             }
-            "apps.delete" => {
-                let target: Target = parse(input)?;
-                let app = plugin.target(claims, &target.resource_id).await?;
-                if plugin
-                    .deploying
-                    .lock()
-                    .map_err(|_| unavailable("lock", "poisoned"))?
-                    .contains(&app.id)
-                {
-                    return Err(PluginError::new(
-                        ErrorCode::Conflict,
-                        "A deployment of this app is in progress",
-                    ));
-                }
-                plugin
-                    .placement
-                    .remove(&app.id)
-                    .await
-                    .map_err(|e| unavailable("remove", e))?;
-                plugin.store.delete(&app.id).await.map_err(store_error)?;
-                Ok(json!({}))
-            }
+            "apps.power" => plugin.power(claims, input).await,
+            "apps.delete" => plugin.delete(claims, input).await,
             _ => Err(PluginError::new(
                 ErrorCode::NotSupported,
                 "Hosting action unavailable",

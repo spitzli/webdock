@@ -86,8 +86,9 @@ for name, plugin in plugins.items():
     )
     local_resource(
         'plugin-' + name,
-        # The seed restarts plugin-control too; wait for its socket instead of failing on a restart race.
-        serve_cmd="sh -c 'for i in $(seq 100); do [ -S .dev-local/plugins/control.sock ] && break; sleep 0.2; done; rm -f .dev-local/plugins/%s.sock && exec plugins/%s/target/debug/%s \"$PWD/.dev-local/plugins/%s.json\"'" % (name, name, plugin['binary'], name),
+        # The seed restarts plugin-control too; a plugin that starts before Core's socket is back
+        # exits, so retry for a while instead of failing on the restart race.
+        serve_cmd="sh -c 'for i in $(seq 30); do rm -f .dev-local/plugins/%s.sock; plugins/%s/target/debug/%s \"$PWD/.dev-local/plugins/%s.json\" && break; sleep 1; done'" % (name, name, plugin['binary'], name),
         deps=['plugins/%s/target/debug/%s' % (name, plugin['binary']), '.dev-local/plugins/%s.json' % name],
         resource_deps=['plugin-control', name + '-build'] + plugin['deps'],
         readiness_probe=probe(exec=exec_action(['test', '-S', '.dev-local/plugins/%s.sock' % name]), period_secs=1),

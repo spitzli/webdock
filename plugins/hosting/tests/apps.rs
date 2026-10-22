@@ -185,18 +185,8 @@ fn image_references_and_environment_are_bounded() {
 async fn app_lifecycle() {
     let f = fixture().await;
     for (input, why) in [
-        (
-            json!({"name":"x","image":"Bad Image","port":80,"memory_mb":128}),
-            "image",
-        ),
-        (
-            json!({"name":"x","image":IMAGE,"port":0,"memory_mb":128}),
-            "port",
-        ),
-        (
-            json!({"name":"x","image":IMAGE,"port":80,"memory_mb":100}),
-            "memory",
-        ),
+        (json!({"name":"x","image":"Bad Image","port":80}), "image"),
+        (json!({"name":"x","image":IMAGE,"port":0}), "port"),
     ] {
         assert_eq!(
             f.code("101", "apps.create", input).await,
@@ -208,7 +198,7 @@ async fn app_lifecycle() {
         .ok(
             "101",
             "apps.create",
-            json!({"name":"Website","image":IMAGE,"port":80,"memory_mb":128}),
+            json!({"name":"Website","image":IMAGE,"port":80}),
         )
         .await["resource"]["id"]
         .as_str()
@@ -312,5 +302,69 @@ async fn app_lifecycle() {
         ErrorCode::NotFound
     );
     assert!(http(&url).await.is_none(), "the container is gone");
+    f.cleanup().await;
+}
+
+#[tokio::test]
+#[ignore = "requires a disposable local PostgreSQL server and Docker"]
+async fn changes_never_interleave_and_deletes_repeat() {
+    let f = fixture().await;
+    let app = f
+        .ok(
+            "101",
+            "apps.create",
+            json!({"name":"Race","image":IMAGE,"port":80}),
+        )
+        .await["resource"]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    // While the first deployment runs, every other change and the delete wait their turn.
+    assert_eq!(
+        f.code("101", "apps.env", json!({"resource_id": app, "env": "A=1"}))
+            .await,
+        ErrorCode::Conflict
+    );
+    assert_eq!(
+        f.code("101", "apps.delete", json!({"resource_id": app}))
+            .await,
+        ErrorCode::Conflict
+    );
+    let view = f.settled(&app).await;
+    assert_eq!(
+        (view["status"].as_str(), view["memoryMb"].as_i64()),
+        (Some("running"), Some(256)),
+        "new apps start at 256 MB"
+    );
+    let (env, resize) = tokio::join!(
+        f.call("101", "apps.env", json!({"resource_id": app, "env": "A=1"})),
+        f.call(
+            "101",
+            "apps.resize",
+            json!({"resource_id": app, "memory_mb": 512})
+        )
+    );
+    assert_eq!(
+        [&env, &resize].iter().filter(|r| r.is_ok()).count(),
+        1,
+        "{env:?} {resize:?}"
+    );
+    let view = f.settled(&app).await;
+    // The stored app is exactly what the winning change asked for.
+    if env.is_ok() {
+        assert_eq!(
+            (view["env"].clone(), view["memoryMb"].as_i64()),
+            (json!(["A"]), Some(256))
+        );
+    } else {
+        assert_eq!(
+            (view["env"].clone(), view["memoryMb"].as_i64()),
+            (json!([]), Some(512))
+        );
+    }
+    f.ok("101", "apps.delete", json!({"resource_id": app}))
+        .await;
+    f.ok("101", "apps.delete", json!({"resource_id": app}))
+        .await;
     f.cleanup().await;
 }

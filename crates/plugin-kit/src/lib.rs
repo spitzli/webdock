@@ -31,10 +31,22 @@ pub fn read_file(path: &Path, private: bool) -> Result<Vec<u8>, Error> {
     file.take(262145).read_to_end(&mut bytes)?;
     Ok(bytes)
 }
-/// Without TLS a plugin only talks to databases on this machine.
+/// Without TLS a plugin only talks to databases on this machine. Checks every host the driver
+/// would try, including `host=`/`hostaddr=` query parameters, not just the URL authority.
 pub fn loopback(url: &str) -> Result<(), Error> {
-    let parsed = url::Url::parse(url)?;
-    if !matches!(parsed.host_str(), Some("127.0.0.1" | "localhost" | "[::1]")) {
+    let config: tokio_postgres::Config = url.parse()?;
+    let local = |host: &str| matches!(host, "127.0.0.1" | "localhost" | "::1" | "[::1]");
+    let hosts_ok = !config.get_hosts().is_empty()
+        && config.get_hosts().iter().all(|host| match host {
+            tokio_postgres::config::Host::Tcp(name) => local(name),
+            tokio_postgres::config::Host::Unix(_) => false,
+        });
+    if !hosts_ok
+        || config
+            .get_hostaddrs()
+            .iter()
+            .any(|address| !address.is_loopback())
+    {
         return Err("database URLs must be loopback until TLS is configured".into());
     }
     Ok(())
@@ -81,4 +93,25 @@ pub async fn storage(
         .execute("SELECT pg_advisory_unlock(hashtext($1))", &[&lock])
         .await?;
     Ok(client)
+}
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn loopback_checks_every_host_the_driver_would_try() {
+        for good in [
+            "postgresql://u:p@127.0.0.1:5432/db",
+            "postgresql://u:p@localhost/db",
+            "postgresql://u:p@[::1]:5432/db",
+        ] {
+            assert!(super::loopback(good).is_ok(), "{good}");
+        }
+        for bad in [
+            "postgresql://u:p@db.example.com/db",
+            "postgresql://u:p@127.0.0.1:1/db?host=db.example.com",
+            "postgresql://u:p@127.0.0.1/db?hostaddr=192.0.2.1",
+            "postgresql://u:p@127.0.0.1,db.example.com/db",
+        ] {
+            assert!(super::loopback(bad).is_err(), "{bad}");
+        }
+    }
 }

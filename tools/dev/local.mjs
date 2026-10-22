@@ -190,7 +190,8 @@ async function pluginImage(id) {
 
 function storage(id, password) {
   const name = `webdock_plugin_${id.replaceAll("-", "_")}`;
-  // The role reaches only its own database; it has no rights in the platform database.
+  // The role owns only its own database. It can still open the platform database (PUBLIC keeps
+  // CONNECT there in local dev) but holds no grants on its schemas or tables.
   psql(`SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', :'name', :'password') WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname=:'name') \\gexec
 SELECT format('ALTER ROLE %I PASSWORD %L', :'name', :'password') \\gexec
 SELECT format('CREATE DATABASE %I OWNER %I', :'name', :'name') WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname=:'name') \\gexec

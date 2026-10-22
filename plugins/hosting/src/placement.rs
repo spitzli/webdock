@@ -62,7 +62,10 @@ impl Placement {
     }
     /// Replaces the container with one for this specification. Pulls the image when missing.
     pub async fn deploy(&self, id: &Uuid, spec: &Spec<'_>) -> Result<(), Error> {
-        if self.docker.inspect_image(spec.image).await.is_err() {
+        // A tag can move, so it is pulled every time; a digest only when it is missing. A failed
+        // pull fails the deployment, so images that exist only on this host never run by name.
+        if !spec.image.contains("@sha256:") || self.docker.inspect_image(spec.image).await.is_err()
+        {
             self.docker
                 .create_image(
                     Some(
@@ -77,6 +80,15 @@ impl Placement {
                 .await?;
         }
         self.remove(id).await?;
+        // Each app gets its own network: apps cannot reach each other or other workloads directly.
+        self.docker
+            .create_network(NetworkCreateRequest {
+                name: name(id),
+                driver: Some("bridge".into()),
+                labels: Some(HashMap::from([("webdock.plugin".into(), "hosting".into())])),
+                ..Default::default()
+            })
+            .await?;
         let exposed = format!("{}/tcp", spec.port);
         let memory = i64::from(spec.memory_mb) * 1_048_576;
         let body = ContainerCreateBody {
@@ -95,6 +107,7 @@ impl Placement {
                         host_port: Some(String::new()),
                     }]),
                 )])),
+                network_mode: Some(name(id)),
                 memory: Some(memory),
                 memory_swap: Some(memory),
                 pids_limit: Some(512),
@@ -227,15 +240,26 @@ impl Placement {
             Err(_) => Ok(out),
         }
     }
+    /// Removes the container, its anonymous volumes and its network.
     pub async fn remove(&self, id: &Uuid) -> Result<(), Error> {
         match self
             .docker
             .remove_container(
                 &name(id),
-                Some(RemoveContainerOptionsBuilder::default().force(true).build()),
+                Some(
+                    RemoveContainerOptionsBuilder::default()
+                        .force(true)
+                        .v(true)
+                        .build(),
+                ),
             )
             .await
         {
+            Ok(()) => {}
+            Err(error) if absent(&error) => {}
+            Err(error) => return Err(error.into()),
+        }
+        match self.docker.remove_network(&name(id)).await {
             Ok(()) => Ok(()),
             Err(error) if absent(&error) => Ok(()),
             Err(error) => Err(error.into()),

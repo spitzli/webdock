@@ -204,7 +204,7 @@ function Resource(context: ResourceProps) {
       </section>
       {context.writable ? <Deploy context={context} app={app} /> : null}
       {context.writable ? <Environment context={context} app={app} /> : null}
-      <Logs context={context} />
+      {context.writable ? <Logs context={context} /> : null}
       {context.writable ? <Remove context={context} /> : null}
     </div>
   );

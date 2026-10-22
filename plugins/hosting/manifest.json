@@ -41,8 +41,7 @@
         "required": [
           "name",
           "image",
-          "port",
-          "memory_mb"
+          "port"
         ],
         "properties": {
           "name": {
@@ -62,17 +61,6 @@
             "minimum": 1,
             "maximum": 65535,
             "description": "Port the app listens on"
-          },
-          "memory_mb": {
-            "type": "integer",
-            "enum": [
-              128,
-              256,
-              512,
-              1024,
-              2048
-            ],
-            "description": "Memory (MB)"
           }
         }
       }
@@ -99,7 +87,7 @@
     },
     {
       "name": "apps.logs",
-      "intent": "read",
+      "intent": "write",
       "audience": "customer",
       "capabilities": [],
       "resource": "use",
