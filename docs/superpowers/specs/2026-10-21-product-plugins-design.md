@@ -1,6 +1,6 @@
 # Product plugins with operator and self-service areas
 
-Date: 2026-10-21. Status: approved by the owner on 2026-10-21. Step 1 (self-service framework) implemented per `docs/superpowers/plans/2026-10-21-plugin-self-service-framework.md`; step 2 (PostgreSQL plugin, local placement) per `docs/superpowers/plans/2026-10-22-postgres-plugin.md`; plugin databases, workload access and installation-scoped operator actions move to the PostgreSQL plan.
+Date: 2026-10-21. Status: approved by the owner on 2026-10-21. Step 1 (self-service framework) implemented per `docs/superpowers/plans/2026-10-21-plugin-self-service-framework.md`; step 2 (PostgreSQL plugin, local placement) per `docs/superpowers/plans/2026-10-22-postgres-plugin.md`; mail (sending, BYOK turboSMTP) and hosting (apps) plugins with local placement followed on 2026-10-22; plugin databases, workload access and installation-scoped operator actions move to the PostgreSQL plan.
 
 ## Intent
 
