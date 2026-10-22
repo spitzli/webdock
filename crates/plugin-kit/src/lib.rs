@@ -1,5 +1,6 @@
 //! Building blocks of standalone product plugins. No Core authority or domain code lives here.
 pub mod seal;
+pub mod workloads;
 
 use std::{
     io::Read,

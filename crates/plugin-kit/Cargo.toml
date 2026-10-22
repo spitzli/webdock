@@ -11,6 +11,10 @@ publish = false
 aes-gcm = "0.10"
 getrandom = "0.2"
 hex = "0.4"
+serde_json = "1"
+tonic = "0.14.6"
+webdock-plugin-protocol = { path = "../plugin-protocol" }
+webdock-plugin-runtime = { path = "../plugin-runtime" }
 rustix = { version = "1", features = ["process", "fs"] }
 tokio = { version = "1", features = ["rt"] }
 tokio-postgres = "0.7"

@@ -6,25 +6,7 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 use webdock_plugin_protocol::PluginError;
 
-/// The host call, so tests can stand in for Core.
-#[tonic::async_trait]
-pub trait Workloads: Send + Sync + 'static {
-    async fn call(&self, method: &str, input: Value) -> Result<Value, PluginError>;
-}
-/// The plugin runtime's own `plugin.workloads` calls to Core.
-pub struct HostWorkloads {
-    pub client: webdock_plugin_runtime::HostClient,
-    pub plugin: String,
-    pub generation: u64,
-}
-#[tonic::async_trait]
-impl Workloads for HostWorkloads {
-    async fn call(&self, method: &str, input: Value) -> Result<Value, PluginError> {
-        self.client
-            .workloads(&self.plugin, self.generation, method, input)
-            .await
-    }
-}
+pub use webdock_plugin_kit::workloads::{HostWorkloads, Workloads};
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
