@@ -266,10 +266,40 @@ impl WorkloadExecutor {
             &ApiResource::from_gvk(&GroupVersionKind::gvk("", "v1", "Pod")),
         );
         let mut problems = Vec::new();
+        let mut logs = Vec::new();
         if let Ok(list) = pods
             .list(&ListParams::default().labels(&selector(plugin, unit)))
             .await
         {
+            let typed: Api<k8s_openapi::api::core::v1::Pod> =
+                Api::namespaced(self.client.clone(), namespace);
+            if let Some(name) = list.items.iter().find_map(|p| p.metadata.name.clone())
+                && let Ok(text) = typed
+                    .logs(
+                        &name,
+                        &kube::api::LogParams {
+                            tail_lines: Some(100),
+                            timestamps: true,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+            {
+                // The newest lines, at most 24 KiB, without control characters.
+                let mut budget = 24 * 1024;
+                for line in text.lines().rev() {
+                    let clean: String = line
+                        .chars()
+                        .filter(|c| !c.is_control() || *c == '\t')
+                        .collect();
+                    if clean.len() > budget {
+                        break;
+                    }
+                    budget -= clean.len();
+                    logs.push(clean);
+                }
+                logs.reverse();
+            }
             for pod in list.items {
                 for container in pod.data["status"]["containerStatuses"]
                     .as_array()
@@ -285,7 +315,7 @@ impl WorkloadExecutor {
                 }
             }
         }
-        Ok(json!({"ready": ready, "objects": states, "problems": problems}))
+        Ok(json!({"ready": ready, "objects": states, "problems": problems, "logs": logs}))
     }
 }
 

@@ -83,6 +83,27 @@ async fn applies_prunes_observes_and_removes_a_unit() {
             .await;
     }
     assert_eq!(outcome.observed["ready"], true, "{}", outcome.observed);
+    // Recent pod output travels with the observation.
+    let mut logged = outcome;
+    for _ in 0..20 {
+        if logged.observed["logs"]
+            .as_array()
+            .is_some_and(|l| !l.is_empty())
+        {
+            break;
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+        logged = executor
+            .handle("fixture", unit, &namespace, &both, false)
+            .await;
+    }
+    assert!(
+        logged.observed["logs"]
+            .as_array()
+            .is_some_and(|l| !l.is_empty()),
+        "{}",
+        logged.observed
+    );
 
     // Dropping the service from the unit prunes it.
     let only = serde_json::to_vec(&json!([deployment])).unwrap();
