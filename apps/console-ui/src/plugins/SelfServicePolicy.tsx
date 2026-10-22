@@ -6,6 +6,7 @@ import { useApi, useSession } from "../context";
 import { Empty, Failure, Loading } from "../common";
 import { revisionSchema } from "./views";
 import * as ui from "../ui";
+import { OperatorResources } from "./OperatorResources";
 
 const modes = [
   { value: "everyone", label: "Everyone" },
@@ -53,9 +54,12 @@ export function PluginSettings({ plugin }: { plugin: string }) {
             Installed extensions
           </Link>
           <h1 className={ui.pageTitle}>{plugin}</h1>
-          <p className={ui.pageLead}>Choose what customers can do themselves. With "Selected customers", you allow each customer on their customer page.</p>
+          <p className={ui.pageLead}>What customers use, and what they can do themselves.</p>
         </div>
       </div>
+      <OperatorResources plugin={plugin} />
+      <h2 className={ui.cx(ui.sectionTitle, "mb-1")}>Self-service</h2>
+      <p className="mb-4 text-[13px] text-muted">Choose what customers can do themselves. With “Selected customers”, you allow each customer on their customer page.</p>
       {change.error ? <p role="alert" className="mb-4 text-sm text-danger">{change.error.message}</p> : null}
       {features.length === 0 ? (
         <Empty title="No self-service features">This extension is managed by operators only.</Empty>

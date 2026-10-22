@@ -847,6 +847,7 @@ async fn operator_lists_resources_across_customers() {
     assert_eq!(row["project"]["id"], f.projects[0].as_str());
     assert!(row["project"]["name"].is_string() && row["customer"]["name"].is_string());
     assert_eq!(row["offering"], "note");
+    assert_eq!(row["offeringLabel"], "Note");
     assert_eq!(row["createdVia"], "self-service");
     assert!(rows.iter().any(|r| r["id"] == b.as_str()));
     for who in ["owner", "admin", "member", "foreign", "preview"] {

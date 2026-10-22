@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwind from '@tailwindcss/vite';
@@ -7,6 +8,11 @@ const cert = process.env.WEBDOCK_DEV_TLS_CERT;
 const key = process.env.WEBDOCK_DEV_TLS_KEY;
 export default defineConfig({
   plugins: [react(), tailwind()],
+  // First-party plugin UIs live in plugins/<id>/ui and share the Console's React and SDK.
+  resolve: {
+    alias: { '@webdock/plugin-ui': fileURLToPath(new URL('./src/plugins/sdk.ts', import.meta.url)) },
+    dedupe: ['react', 'react-dom', '@tanstack/react-query', 'zod'],
+  },
   build: { target: 'es2022' },
   server: {
     host: '127.0.0.1', port: 3120, strictPort: true,

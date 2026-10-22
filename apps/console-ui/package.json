@@ -9,7 +9,7 @@
     "check": "bun --bun tsc --noEmit",
     "test": "bun test --isolate ./tests",
     "test:browser": "bun tests/browser.mjs && bun tests/account-onboarding-browser.mjs && bun tests/self-service-browser.mjs",
-    "lint": "bun --bun eslint . --max-warnings 0",
+    "lint": "bun --bun eslint . --max-warnings 0 && cd ../.. && bun --bun eslint -c apps/console-ui/eslint.config.mjs plugins/*/ui/*.tsx --max-warnings 0",
     "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {

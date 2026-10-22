@@ -304,9 +304,17 @@ impl HostService {
         let tx = self.operator_tx(actor).await?;
         // ponytail: newest 1000; paginate when an installation outgrows it.
         let rows = tx.query_all_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT jsonb_build_object('id',r.resource_id,'offering',r.offering_id,'name',r.name,'createdVia',r.created_via,'createdAt',r.created_at,'customer',jsonb_build_object('id',c.id,'name',c.name),'project',jsonb_build_object('id',p.id,'name',p.name)) AS value FROM webdock_auth.plugin_resource r JOIN webdock_admin.projects p ON p.id=r.project_id JOIN webdock_admin.customers c ON c.id=r.customer_id WHERE r.plugin_id=$1 ORDER BY r.created_at DESC,r.resource_id LIMIT 1000",[plugin.into()])).await.map_err(db_error)?;
+        let metadata = self.metadata(&tx, plugin, None).await?;
         let rows = rows
             .iter()
-            .map(|r| r.try_get("", "value").map_err(db_error))
+            .map(|r| {
+                let mut row: Value = r.try_get("", "value").map_err(db_error)?;
+                row["offeringLabel"] = metadata
+                    .manifest
+                    .offering(row["offering"].as_str().unwrap_or_default())
+                    .map_or(Value::Null, |o| o["label"].clone());
+                Ok(row)
+            })
             .collect::<Result<Vec<Value>>>()?;
         self.admin_commit(tx, actor, authority, guard, false)
             .await?;
