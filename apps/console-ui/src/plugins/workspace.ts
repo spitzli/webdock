@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import type { ComponentType } from "react";
 import { z } from "zod";
 import { DatabaseIcon } from "@phosphor-icons/react/dist/csr/Database";
@@ -36,23 +35,6 @@ export function useWorkspaceProjects(customer: string) {
     queryKey: ["workspace-projects", customer],
     queryFn: ({ signal }) => api.get(`/api/console/tenant/${encodeURIComponent(customer)}/projects`, workspaceProjectsSchema, signal),
   });
-}
-/** A workspace without projects gets a "Default" one the first time someone who may create
- *  projects opens it, so resources never wait for a project to be set up. Further projects are
- *  optional, for teams or environments. */
-export function useDefaultProject(customer: string, canCreate: boolean) {
-  const api = useApi();
-  const client = useQueryClient();
-  const projects = useWorkspaceProjects(customer);
-  const create = useMutation({
-    mutationFn: () => api.write(`/api/console/tenant/${encodeURIComponent(customer)}/projects`, "POST", { name: "Default" }, z.object({ id: z.string() })),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["workspace-projects", customer] }),
-  });
-  const missing = canCreate && projects.data?.length === 0;
-  const { mutate, isIdle } = create;
-  useEffect(() => {
-    if (missing && isIdle) mutate();
-  }, [missing, isIdle, mutate]);
 }
 /** Every plugin with a self-service area, merged across the workspace's projects.
  *  ponytail: one discovery call per project; a workspace-level endpoint when workspaces hold many projects. */

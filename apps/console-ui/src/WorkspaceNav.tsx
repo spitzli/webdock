@@ -4,7 +4,7 @@ import { z } from "zod";
 import { HouseIcon } from "@phosphor-icons/react/dist/csr/House";
 import { UsersIcon } from "@phosphor-icons/react/dist/csr/Users";
 import { useApi, useSession } from "./context";
-import { pluginNav, useDefaultProject, useWorkspacePlugins } from "./plugins/workspace";
+import { pluginNav, useWorkspacePlugins } from "./plugins/workspace";
 
 const tenantsSchema = z.array(z.object({ id: z.string(), name: z.string(), status: z.string(), role: z.string().nullable() }));
 export function useTenants() {
@@ -41,7 +41,6 @@ export function WorkspaceNav({ customer, item }: { customer: string; item: (acti
   const workspace = useWorkspacePlugins(customer);
   const tenant = tenants.data?.find((t) => t.id === customer);
   const manager = !session.user.preview && (session.user.role === "operator" || tenant?.role === "owner" || tenant?.role === "admin");
-  useDefaultProject(customer, manager);
   const visible = workspace.plugins.filter((p) => p.features.length || p.resources.length);
   const overview = pathname === `/workspaces/${customer}` || pathname.startsWith(`/workspaces/${customer}/projects/`) && !pathname.includes("/resources/");
   return (

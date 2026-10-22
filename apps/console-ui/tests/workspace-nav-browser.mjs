@@ -72,13 +72,13 @@ try {
   errors.push(...session.errors);
   await session.context.close();
 
-  // 4. An empty workspace gets its Default project when an owner opens it; with one project the
-  // project level stays out of sight.
-  const single = [];
+  // 4. A workspace holds the Default project the server created with it; with one project the
+  // project level stays out of sight and the console creates nothing.
+  const single = [{ id: '209', name: 'Default', status: 'active' }];
   session = await open(browser, 'owner', single);
   await session.page.goto(previewOrigin + '/workspaces/101');
   await session.page.getByText('Everything lives in one project for now.').waitFor();
-  assert.deepEqual(session.created, ['Default'], 'exactly one Default project is created');
+  assert.deepEqual(session.created, [], 'the console creates no project');
   await session.page.getByRole('button', { name: 'Add a project' }).waitFor();
   await session.page.goto(previewOrigin + '/workspaces/101/products/postgres');
   await session.page.getByRole('heading', { name: 'Databases', exact: true }).waitFor();
@@ -87,5 +87,5 @@ try {
   await session.context.close();
 
   assert.deepEqual(errors, []);
-  console.log('Workspace navigation checks passed: single workspace landing, product sidebar with counts, cross-project product page, offering help, create into a chosen project, member read-only, lazy Default project, single-project view. Test-only HTTP fixtures.');
+  console.log('Workspace navigation checks passed: single workspace landing, product sidebar with counts, cross-project product page, offering help, create into a chosen project, member read-only, single-project view without console-created projects. Test-only HTTP fixtures.');
 } finally { await browser.close(); await server.close(); }
