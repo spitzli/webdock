@@ -10,7 +10,7 @@ import { createRequire } from "node:module";
 import { Pool } from "pg";
 import { createServer } from "node:net";
 import { once } from "node:events";
-import { initializePluginState } from "../../apps/control-plane/src/modules/plugins/bootstrap";
+import { initializePluginState } from "../../legacy/control-plane/src/modules/plugins/bootstrap";
 import { runtimeRoles } from "./config";
 import { oauthSecretHash } from "./operator-provision";
 import { startOperatorSetup } from "./operator-setup";
@@ -184,7 +184,7 @@ test(
       assert.equal(settings?.supportEmail, "operator@example.test", "Fresh support address belongs to the installation owner");
       assert.equal(settings?.cmsEnabled, false, "Removed CMS is not enabled by initial setup");
       const require = createRequire(
-        new URL("../../apps/control-plane/package.json", import.meta.url),
+        new URL("../../legacy/control-plane/package.json", import.meta.url),
       );
       const crypto = await import(require.resolve("better-auth/crypto"));
       assert.equal(
@@ -346,7 +346,7 @@ test(
         }
         const child = spawn(
           process.execPath,
-          ["--no-env-file", "apps/control-plane/src/core.ts"],
+          ["--no-env-file", "legacy/control-plane/src/core.ts"],
           {
             cwd: root,
             env: runtimeEnv,

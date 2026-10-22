@@ -11,8 +11,47 @@ at action admission (resource counts), at workload pinning (memory, CPU, storage
 database (projects). Measurement comes from the cluster's agent (metrics API) into hourly samples.
 Console reads one usage view per customer.
 
-**Tech stack:** Rust (plugin-host, agent, control-plane), PostgreSQL with RLS, React console-ui,
+**Tech stack:** Rust (plugin-host, agent, control-plane), PostgreSQL with RLS, React Console (`apps/console`),
 Kubernetes metrics API (metrics-server).
+
+### Review and native runtime retirement (2026-10-22)
+
+All six phases have implementation commits. Review found and reproduced five defects: restartable
+init containers were undercounted, the first apply could read a stale project placement, expired
+logs remained readable for quiet units, timestamp-only paging lost tied log lines, and domain
+removal could race with an apply publishing a host. Regression tests cover each; migrations 0036
+and 0037 add serialized placement, independent history pruning and stable log cursors. Workload
+domain checks and removal now share the customer allocation lock.
+
+The owner selected Rust as the sole active platform API, with the retired TypeScript applications
+preserved under `legacy/`. The React Console/account UI is now `apps/console` (`@webdock/console`).
+The root scripts and native deployment candidates use `crates/control-plane`; the old API,
+Next.js frontends, standalone TypeScript Mail and their release workflow are archived. The old
+plans/billing system is not an active second source of limits; native plans remain price-free.
+Retained migration SQL remains a checksummed build input, not an executable legacy runtime.
+
+An independent review also identified and closed missing API Host headers on native Helm probes,
+CNPG-generated pods missing from logs/metrics selection, a remaining Bun deployment path under
+`infra/api`, and an unusable API-token example URL. The chart's rendered requests are tested against
+the real Rust router; an isolated real CNPG/metrics-server test covers database logs and nonzero
+memory without propagating the agent's pruning ownership to generated resources. The remaining
+old infra/runbook is archived, and Console configuration exposes the canonical workspace API origin.
+
+Verification: `cargo fmt --all`, `bun run quality`, `cargo test --workspace --locked` and
+`bun run test:distribution` passed. Restricted local fixtures passed plugin-host self-service
+(14 tests), Access projects (1) and agent reporting (1). Both real local k3s workload tests passed,
+including CNPG logs and nonzero metrics without inherited ownership. The built native container
+started non-root with a read-only filesystem against the restricted fixture, passed readiness,
+served Console HTML and advertised distinct browser/workspace API origins. Live sign-in navigation,
+Mintlify strict validation/broken links and the retained OpenAPI snapshot check passed. No real
+mail was sent. `audience_and_resource_gates` returned a transient Unavailable once under concurrent
+build load; its isolated rerun and complete serial suite rerun passed. This fixture instability
+was not hidden by changing production behavior.
+
+Ruling: native runtime selection does not claim retained-data/product parity or a production
+cutover. The public website/CMS remains a separate TypeScript application. Billing, Git builds,
+S3 and other plugin ideas stay outside this completed Core plan. Existing retained-data and
+production acceptance gaps remain tracked in the parity inventory.
 
 ## Global constraints
 

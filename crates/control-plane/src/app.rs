@@ -323,6 +323,18 @@ impl Hooks for WebdockApp {
         } else {
             None
         };
+        if let Some(plugins) = &plugins {
+            let host = plugins.host.clone();
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(std::time::Duration::from_secs(3600));
+                loop {
+                    interval.tick().await;
+                    if host.prune_history().await.is_err() {
+                        tracing::warn!("Plugin history retention unavailable; will retry");
+                    }
+                }
+            });
+        }
         // Notices about units that need attention go out with the account mail.
         if let (Some(mail), Some(plugins)) = (&account_mail, &plugins) {
             let (mail, host) = (mail.clone(), plugins.host.clone());

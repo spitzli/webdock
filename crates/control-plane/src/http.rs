@@ -195,6 +195,7 @@ async fn ready(State(state): State<Arc<ServiceState>>) -> Response {
 #[serde(rename_all = "camelCase")]
 struct PublicConsoleConfiguration {
     api_origin: String,
+    workspace_api_origin: String,
     auth_origin: String,
     enabled_features: Vec<String>,
     locale_preference: &'static str,
@@ -218,6 +219,7 @@ fn public_console_configuration(
 ) -> PublicConsoleConfiguration {
     let mut result = PublicConsoleConfiguration {
         api_origin: config.api_origin.clone(),
+        workspace_api_origin: config.api_origin.clone(),
         auth_origin: config.auth_origin.clone(),
         enabled_features: config.features.visible(),
         locale_preference,
@@ -490,6 +492,7 @@ mod tests {
         let value = serde_json::to_value(console).unwrap();
         assert_eq!(value["mailGatewayOrigin"], GATEWAY);
         assert_eq!(value["apiOrigin"], "http://localhost:3120");
+        assert_eq!(value["workspaceApiOrigin"], enabled.api_origin);
         assert_eq!(value["browserFacade"], true);
         assert_eq!(value["sso"], true);
         for (config, host, origin) in [

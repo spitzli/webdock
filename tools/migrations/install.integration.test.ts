@@ -90,7 +90,7 @@ test(
         [
           "--no-env-file",
           "-e",
-          `const {verifyModuleShutdown}=await import('./apps/control-plane/src/module-preflight');const {databasePools}=await import('./apps/control-plane/src/db/runtime');try{await verifyModuleShutdown()}finally{await databasePools.close()}`,
+          `const {verifyModuleShutdown}=await import('./legacy/control-plane/src/module-preflight');const {databasePools}=await import('./legacy/control-plane/src/db/runtime');try{await verifyModuleShutdown()}finally{await databasePools.close()}`,
         ],
         {
           cwd: root,
@@ -126,7 +126,7 @@ test(
       // Fresh bootstrap already journals every migration as postgres. Exercise a
       // genuinely new function under the restricted upgrade login as well.
       const provisioningSQL = await readFile(
-        new URL("../../apps/control-plane/drizzle/0048_plugin_app_provisioning.sql", import.meta.url),
+        new URL("../../legacy/control-plane/drizzle/0048_plugin_app_provisioning.sql", import.meta.url),
         "utf8",
       );
       const restricted = new Pool({ connectionString: url.href, max: 1 });

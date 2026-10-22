@@ -5,7 +5,7 @@ use sqlx::Row;
 use std::collections::BTreeMap;
 
 static LEGACY: include_dir::Dir<'_> =
-    include_dir::include_dir!("$CARGO_MANIFEST_DIR/../../apps/control-plane/drizzle");
+    include_dir::include_dir!("$CARGO_MANIFEST_DIR/../../legacy/control-plane/drizzle");
 const NATIVE_BASELINE: &str = include_str!("../schema/baseline.sql");
 const RETAINED_BASELINE_SHA256: &str = include_str!("../../../tools/migrations/baseline.sha256");
 

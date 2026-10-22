@@ -11,5 +11,5 @@ fn main() {
     println!("cargo:rerun-if-changed=../databases/migrations");
     println!("cargo:rerun-if-changed=../mail/migrations");
     println!("cargo:rerun-if-changed=../plugin-host/migrations");
-    println!("cargo:rerun-if-changed=../../apps/control-plane/drizzle");
+    println!("cargo:rerun-if-changed=../../legacy/control-plane/drizzle");
 }

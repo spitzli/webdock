@@ -196,9 +196,14 @@ async fn agents_poll_their_cluster_and_report() {
     );
     // Reports also carry log lines, usage and problems: Core appends only new lines, samples usage
     // and opens a notice.
+    let at = chrono::Utc::now() - chrono::Duration::seconds(10);
+    let stamp = |millis| {
+        (at + chrono::Duration::milliseconds(millis))
+            .to_rfc3339_opts(chrono::SecondsFormat::Micros, true)
+    };
     let mut detailed = report(2, false);
     detailed.observed_json = serde_json::to_vec(&json!({"ready": false,
-        "logs": ["2026-10-22T10:00:00.000001Z first", "2026-10-22T10:00:01Z second", "not a log line"],
+        "logs": [format!("{} first", stamp(0)), format!("{} second", stamp(1000)), "not a log line"],
         "usage": {"cpu": 12, "memory": 40}, "problems": [{"reason": "CrashLoopBackOff"}]})).unwrap();
     assert!(
         client
@@ -209,7 +214,7 @@ async fn agents_poll_their_cluster_and_report() {
             .accepted
     );
     detailed.observed_json = serde_json::to_vec(&json!({"ready": false,
-        "logs": ["2026-10-22T10:00:01Z second", "2026-10-22T10:00:02.5Z third"],
+        "logs": [format!("{} second", stamp(1000)), format!("{} third", stamp(2500))],
         "usage": {"cpu": 20, "memory": 60}, "problems": [{"reason": "CrashLoopBackOff"}]}))
     .unwrap();
     assert!(

@@ -10,7 +10,7 @@ async function open(browser, member) {
   page.on('pageerror', (error) => errors.push(error.message));
   const json = (body) => (route) => route.fulfill({ json: body });
   const path = (p) => (url) => url.pathname === p;
-  await page.route(path('/console-config.json'), json({ apiOrigin: previewOrigin + '/', authOrigin: previewOrigin, enabledFeatures: [] }));
+  await page.route(path('/console-config.json'), json({ apiOrigin: previewOrigin, workspaceApiOrigin: 'https://api.example.test', authOrigin: previewOrigin, enabledFeatures: [] }));
   await page.route(path('/v1/auth/session'), json({ data: { user: { id: '2', name: 'Ada', email: 'ada@example.test', role: 'user', emailVerified: true }, session: { id: 's', userId: '2', expiresAt: '2026-12-01T10:00:00Z' } } }));
   await page.route(path('/api/console/tenants'), json([{ id: '101', name: 'Demo customer', status: 'active', role: member }]));
   await page.route(path('/api/console/tenant/101/projects'), json([{ id: '201', name: 'Demo project', status: 'active' }]));
@@ -41,6 +41,7 @@ try {
   await session.page.getByRole('combobox', { name: 'Expires after' }).selectOption('30');
   await session.page.getByRole('button', { name: 'Create token' }).click();
   await session.page.getByText('wdk_' + 'f'.repeat(64)).waitFor();
+  assert.equal(await session.page.getByRole('status').locator('code').last().textContent(), 'https://api.example.test/v1/api/projects', 'scripts must use the canonical API host, with a slash before v1');
   assert.deepEqual(state.posts[0], { name: 'CI deploy', canWrite: true, days: 30 });
   await session.page.getByText(/Read and change, by Ada/).waitFor();
   // After a reload the secret is gone for good.

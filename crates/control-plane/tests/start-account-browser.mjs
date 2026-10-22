@@ -2,7 +2,7 @@
 import { readFileSync, writeFileSync, readlinkSync, openSync } from 'node:fs';
 import { parseEnv } from 'node:util';
 import { spawn } from 'node:child_process';
-import { accountFixture } from '../../../apps/console-ui/tests/account-fixture.mjs';
+import { accountFixture } from '../../../apps/console/tests/account-fixture.mjs';
 const e=parseEnv(readFileSync('.runtime-test/identity-restricted.env','utf8'));
 for(const key of ['AUTH_DATABASE_URL','DATABASE_URL','WEBDOCK_REGISTRY_DATABASE_URL']){const u=new URL(e[key]);if(u.hostname!=='127.0.0.1'||u.pathname!=='/webdock_rls_test'||u.search||u.hash)throw Error('Owned loopback test database required');}
 const fixture=JSON.parse(readFileSync(accountFixture,'utf8'));
@@ -14,5 +14,5 @@ if(process.env.WEBDOCK_BROWSER_DATABASES==='true'){
   if(process.env.WEBDOCK_BROWSER_MANAGEMENT==='true'){const managed=JSON.parse(readFileSync('.runtime-test/database-management-browser.json','utf8'));env.WEBDOCK_DATABASE_CLUSTER_ID=managed.clusterID;env.WEBDOCK_DATABASE_DOMAIN='database.example.invalid';}
   env.WEBDOCK_WORKER_DATABASE_URL=worker.toString();env.WEBDOCK_FEATURES=JSON.stringify({databases:'enabled'});env.WEBDOCK_DATABASE_GATEWAY_ORIGIN=database.gatewayOrigin;env.WEBDOCK_DATABASE_GATEWAY_SECRET=database.gatewaySecret;
 }
-if(process.env.WEBDOCK_BROWSER_STATIC==='true'){env.WEBDOCK_UI_DIST=process.cwd()+'/apps/console-ui/dist';env.WEBDOCK_UI_CONNECT_ORIGINS=JSON.stringify(['http://localhost:3125',...(process.env.WEBDOCK_BROWSER_DATABASES==='true'?['http://127.0.0.1:3150']:[])]);}
+if(process.env.WEBDOCK_BROWSER_STATIC==='true'){env.WEBDOCK_UI_DIST=process.cwd()+'/apps/console/dist';env.WEBDOCK_UI_CONNECT_ORIGINS=JSON.stringify(['http://localhost:3125',...(process.env.WEBDOCK_BROWSER_DATABASES==='true'?['http://127.0.0.1:3150']:[])]);}
 const log=openSync('.runtime-test/account-api.log','a',0o600);const child=spawn('./target/debug/webdock-control-plane',[],{env,stdio:['ignore',log,log],detached:true});child.unref();writeFileSync('.runtime-test/api.pid',String(child.pid),{mode:0o600});console.log('Owned local account API started.');

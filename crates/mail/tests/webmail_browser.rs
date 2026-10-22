@@ -75,7 +75,7 @@ async fn console_opens_a_granted_mailbox_through_the_real_gateway_and_engine() {
         .join("../..")
         .canonicalize()
         .unwrap();
-    let dist = root.join("apps/console-ui/dist");
+    let dist = root.join("apps/console/dist");
     assert!(
         dist.join("index.html").is_file(),
         "Build the Console before acceptance"
@@ -311,7 +311,7 @@ async fn run(
     let output = tokio::time::timeout(
         Duration::from_secs(180),
         tokio::process::Command::new("node")
-            .arg(root.join("apps/console-ui/tests/webmail-native-browser.mjs"))
+            .arg(root.join("apps/console/tests/webmail-native-browser.mjs"))
             .env("WEBDOCK_WEBMAIL_BROWSER_FIXTURE", &descriptor)
             .current_dir(root)
             .kill_on_drop(true)

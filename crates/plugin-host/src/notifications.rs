@@ -4,6 +4,17 @@ use super::*;
 use webdock_identity::{Delivery, DeliveryKind, DeliveryRequest};
 
 impl HostService {
+    /// Retention also runs when units are quiet or gone, and when mail is not configured.
+    pub async fn prune_history(&self) -> Result<()> {
+        let tx = self.controller().await?;
+        tx.execute_raw(Statement::from_string(
+            DbBackend::Postgres,
+            "SELECT webdock_rls.prune_plugin_history()",
+        ))
+        .await
+        .map_err(db_error)?;
+        tx.commit().await.map_err(db_error)
+    }
     /// Mails notices that have lasted long enough; each recipient gets a fixed text and a link to
     /// sign in. Returns how many notices were handled.
     pub async fn dispatch_notifications(
@@ -98,7 +109,7 @@ impl HostService {
         if search.chars().count() > 200
             || resource.len() > 128
             || !slug(plugin)
-            || before.is_some_and(|b| chrono::DateTime::parse_from_rfc3339(b).is_err())
+            || before.is_some_and(|b| !b.parse::<i64>().is_ok_and(|n| n > 0))
         {
             return Err(invalid("Invalid log query"));
         }
@@ -111,7 +122,7 @@ impl HostService {
         let value: Value = tx
             .query_one_raw(Statement::from_sql_and_values(
                 DbBackend::Postgres,
-                "SELECT webdock_rls.resource_logs($1,$2,$3,$4,$5::timestamptz) AS value",
+                "SELECT webdock_rls.resource_logs($1,$2,$3,$4,$5::bigint) AS value",
                 [
                     project.into(),
                     plugin.into(),

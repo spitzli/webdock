@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useApi } from "../context";
 import * as ui from "../ui";
 
-const lineSchema = z.object({ at: z.string(), unit: z.string(), line: z.string() });
+const lineSchema = z.object({ id: z.string(), at: z.string(), unit: z.string(), line: z.string() });
 /** The last 3 days of a resource's logs as Core stored them, newest first, searchable. Logs often
  *  carry configuration values, so only owners, admins and operators see them. */
 export function LogHistory({ viewer, ...props }: { projectID: string; plugin: string; resource: string; viewer: { role?: string | null } | undefined }) {
@@ -21,7 +21,7 @@ function History({ projectID, plugin, resource }: { projectID: string; plugin: s
       const params = new URLSearchParams({ search: query, ...(pageParam ? { before: pageParam } : {}) });
       return api.get(`/api/console/projects/${projectID}/plugins/${plugin}/resources/${encodeURIComponent(resource)}/logs?${params.toString()}`, z.array(lineSchema), signal);
     },
-    getNextPageParam: (last) => (last.length === 500 ? last.at(-1)?.at : undefined),
+    getNextPageParam: (last) => (last.length === 500 ? last.at(-1)?.id : undefined),
   });
   const lines = logs.data?.pages.flat() ?? [];
   if (!query && logs.isSuccess && !lines.length) return null;
@@ -45,8 +45,8 @@ function History({ projectID, plugin, resource }: { projectID: string; plugin: s
       </form>
       {logs.isError ? <p role="alert" className="px-6 pb-4 text-sm text-danger">{logs.error.message}</p> : null}
       <ol className="max-h-[32rem] overflow-auto border-t border-outline bg-subtle px-6 py-3 font-mono text-xs leading-5 max-sm:px-[18px]">
-        {lines.map((l, i) => (
-          <li key={`${l.at}-${String(i)}`} className="flex gap-3 [overflow-wrap:anywhere]">
+        {lines.map((l) => (
+          <li key={l.id} className="flex gap-3 [overflow-wrap:anywhere]">
             <time className="shrink-0 text-muted" dateTime={l.at}>{new Date(l.at).toLocaleString()}</time>
             <span>{l.line}</span>
           </li>

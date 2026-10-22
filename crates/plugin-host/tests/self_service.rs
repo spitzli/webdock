@@ -1608,14 +1608,14 @@ async fn log_history_is_for_owners_and_admins_and_searchable() {
     let f = Fixture::new().await;
     let o = &f.owner;
     for (at, line) in [
-        ("2026-10-22T10:00:00Z", "GET / 200"),
-        ("2026-10-22T10:00:01Z", "ERROR database unreachable"),
-        ("2026-10-22T10:00:02Z", "GET /health 200"),
+        ("2 seconds", "GET / 200"),
+        ("1 second", "ERROR database unreachable"),
+        ("0 seconds", "GET /health 200"),
     ] {
-        sql(o, "INSERT INTO webdock_auth.workload_log(plugin_id,unit,project_id,resource_id,at,line) VALUES($1,'web-1',$2,'note-1',$3::timestamptz,$4)", vec![f.plugin.clone().into(), f.projects[0].clone().into(), at.into(), line.into()]).await;
+        sql(o, "INSERT INTO webdock_auth.workload_log(plugin_id,unit,project_id,resource_id,at,line) VALUES($1,'web-1',$2,'note-1',date_trunc('minute',now())-$3::interval,$4)", vec![f.plugin.clone().into(), f.projects[0].clone().into(), at.into(), line.into()]).await;
     }
     let host = f.host().await;
-    let read = |who: &'static str, search: &'static str, before: Option<&'static str>| {
+    let read = |who: &'static str, search: &'static str, before: Option<String>| {
         let host = host.clone();
         let (f, project) = (&f, f.projects[0].clone());
         async move {
@@ -1625,7 +1625,7 @@ async fn log_history_is_for_owners_and_admins_and_searchable() {
                 &f.plugin,
                 "note-1",
                 search,
-                before,
+                before.as_deref(),
             )
             .await
         }
@@ -1645,11 +1645,16 @@ async fn log_history_is_for_owners_and_admins_and_searchable() {
         lines(read("admin", "error", None).await.unwrap()),
         ["ERROR database unreachable"]
     );
+    let first = read("owner", "", None).await.unwrap();
     assert_eq!(
         lines(
-            read("operator", "", Some("2026-10-22T10:00:01Z"))
-                .await
-                .unwrap()
+            read(
+                "operator",
+                "",
+                Some(first[1]["id"].as_str().unwrap().to_owned())
+            )
+            .await
+            .unwrap()
         ),
         ["GET / 200"]
     );
@@ -1658,7 +1663,36 @@ async fn log_history_is_for_owners_and_admins_and_searchable() {
     for who in ["member", "foreign"] {
         assert!(read(who, "", None).await.is_err(), "{who}");
     }
-    assert!(read("owner", "", Some("yesterday")).await.is_err());
+    assert!(
+        read("owner", "", Some("yesterday".to_owned()))
+            .await
+            .is_err()
+    );
+    // Expired logs of a quiet or removed unit must not remain visible until another log arrives.
+    sql(o, "INSERT INTO webdock_auth.workload_log(plugin_id,unit,project_id,resource_id,at,line) VALUES($1,'removed-unit',$2,'note-1',now()-interval '4 days','expired')", vec![f.plugin.clone().into(), f.projects[0].clone().into()]).await;
+    assert_eq!(
+        lines(read("owner", "expired", None).await.unwrap()),
+        Vec::<String>::new()
+    );
+    host.prune_history().await.unwrap();
+    let expired: i64 = o.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
+        "SELECT count(*) AS n FROM webdock_auth.workload_log WHERE plugin_id=$1 AND line='expired'", [f.plugin.clone().into()]))
+        .await.unwrap().unwrap().try_get("", "n").unwrap();
+    assert_eq!(
+        expired, 0,
+        "retention removes stored logs without a new report"
+    );
+    // Several units can produce more than one page at the same timestamp.
+    sql(o, "INSERT INTO webdock_auth.workload_log(plugin_id,unit,project_id,resource_id,at,line) SELECT $1,'burst-unit',$2,'note-1',date_trunc('minute',now()),'burst '||n FROM generate_series(1,501) n", vec![f.plugin.clone().into(), f.projects[0].clone().into()]).await;
+    let page = read("owner", "burst", None).await.unwrap();
+    assert_eq!(page.as_array().unwrap().len(), 500);
+    let before = page[499]["id"].as_str().unwrap().to_owned();
+    let older = read("owner", "burst", Some(before)).await.unwrap();
+    assert_eq!(
+        older.as_array().unwrap().len(),
+        1,
+        "paging must not drop tied timestamps"
+    );
     sql(
         o,
         "DELETE FROM webdock_auth.workload_log WHERE plugin_id=$1",
@@ -1702,6 +1736,58 @@ async fn projects_choose_offered_clusters_while_empty() {
         .unwrap();
     assert_eq!(names(&a), [clusters[0].clone()]);
     assert!(a["cluster"].is_null() && a["movable"] == true);
+    // A first apply that overlaps an uncommitted placement change must use the new cluster.
+    let choosing = f.session("owner").await;
+    let pid: i32 = choosing
+        .query_one_raw(Statement::from_string(
+            DbBackend::Postgres,
+            "SELECT pg_backend_pid() AS pid",
+        ))
+        .await
+        .unwrap()
+        .unwrap()
+        .try_get("", "pid")
+        .unwrap();
+    sql(
+        &choosing,
+        "SELECT webdock_rls.set_project_cluster($1,$2)",
+        vec![f.projects[0].clone().into(), clusters[0].clone().into()],
+    )
+    .await;
+    let apply_host = host.clone();
+    let (apply_plugin, apply_project) = (f.plugin.clone(), f.projects[0].clone());
+    let applying =
+        tokio::spawn(async move {
+            apply_host.workloads(&peer(), &apply_plugin, 1, "apply",
+            json!({"project":apply_project,"unit":"overlapping","objects":sized("128Mi",1)})).await
+        });
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        loop {
+            let waiting: bool = o.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
+                "SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE $1=ANY(pg_blocking_pids(pid))) AS waiting", [pid.into()]))
+                .await.unwrap().unwrap().try_get("", "waiting").unwrap();
+            if waiting { break; }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+    }).await.expect("apply reached the placement transaction's lock");
+    choosing.commit().await.unwrap();
+    applying.await.unwrap().unwrap();
+    let placed: String = o.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
+        "SELECT cluster_id FROM webdock_auth.plugin_workload WHERE plugin_id=$1 AND unit='overlapping'", [f.plugin.clone().into()]))
+        .await.unwrap().unwrap().try_get("", "cluster_id").unwrap();
+    sql(
+        o,
+        "DELETE FROM webdock_auth.plugin_workload WHERE plugin_id=$1 AND unit='overlapping'",
+        vec![f.plugin.clone().into()],
+    )
+    .await;
+    host.place(f.principal("owner"), &f.projects[0], None)
+        .await
+        .unwrap();
+    assert_eq!(
+        placed, clusters[0],
+        "first apply must read the committed placement under the project lock"
+    );
     assert_eq!(
         names(
             &host

@@ -20,7 +20,7 @@ async function open(browser, member, features) {
   await page.route(path('/api/console/plugins'), (route) => route.fulfill({ json: [{ state: 'enabled', runtime: 'ready', manifest, generation: 1, manifestSha256: 'a'.repeat(64), launchLinks: [], features, resources: state.deleted ? [] : [{ id: appID, offering: 'app', name: 'Website', createdVia: 'self-service' }] }] }));
   await page.route(path(`/api/console/projects/201/plugins/hosting/resources/${appID}/logs`), (route) => {
     const search = new URL(route.request().url()).searchParams.get('search') ?? '';
-    const lines = [{ at: '2026-10-22T10:00:02Z', unit: 'app-1', line: 'ERROR cache miss storm' }, { at: '2026-10-22T10:00:01Z', unit: 'app-1', line: 'GET /stored 200' }];
+    const lines = [{ id: '2', at: '2026-10-22T10:00:02Z', unit: 'app-1', line: 'ERROR cache miss storm' }, { id: '1', at: '2026-10-22T10:00:01Z', unit: 'app-1', line: 'GET /stored 200' }];
     return route.fulfill({ json: lines.filter((l) => l.line.toLowerCase().includes(search.toLowerCase())) });
   });
   await page.route(path('/api/console/plugins/invoke'), (route) => {

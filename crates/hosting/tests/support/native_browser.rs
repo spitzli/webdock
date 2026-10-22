@@ -174,7 +174,7 @@ async fn console_drives_real_native_hosting_and_docker() {
         .unwrap()
         .parent()
         .unwrap();
-    let dist = root.join("apps/console-ui/dist");
+    let dist = root.join("apps/console/dist");
     assert!(dist.join("index.html").is_file(), "Build the Console first");
     let engine = bollard::Docker::connect_with_unix(
         "/var/run/docker.sock",
@@ -372,7 +372,7 @@ async fn run_browser(
     let output = tokio::time::timeout(
         Duration::from_secs(300),
         tokio::process::Command::new("node")
-            .arg(root.join("apps/console-ui/tests/hosting-native-browser.mjs"))
+            .arg(root.join("apps/console/tests/hosting-native-browser.mjs"))
             .env("WEBDOCK_HOSTING_BROWSER_FIXTURE", &descriptor)
             .current_dir(root)
             .kill_on_drop(true)

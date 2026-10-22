@@ -29,10 +29,14 @@ jobs:
           bun --version
           cargo --version
           protoc --version
+          helm version --short
+          python3 -c 'import yaml'
       - name: Install locked frontend dependencies
         run: bun install --frozen-lockfile --ignore-scripts
       - name: Install browser for isolated UI fixtures
-        working-directory: apps/console-ui
+        working-directory: apps/console
         run: bunx playwright install chromium
       - name: Enforce native quality and local tests
         run: bun run quality
+      - name: Verify native deployment manifests and probe routing
+        run: bun run test:distribution

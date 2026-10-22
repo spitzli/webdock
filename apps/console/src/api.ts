@@ -13,6 +13,7 @@ const origin = z.url().refine((value) => {
 export const runtimeConfigSchema = z
   .object({
     apiOrigin: origin,
+    workspaceApiOrigin: origin.optional(),
     authOrigin: origin,
     enabledFeatures: z.array(z.string().max(80)).max(64),
     browserFacade: z.boolean().optional(),

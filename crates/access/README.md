@@ -50,7 +50,7 @@ No account is matched, merged or rebound by email. Repeated activation and stale
 
 Register `migrations/0001_access_authority.sql` as native migration 0010. It adds four FORCE-RLS tables (`access_invitation_state`, `access_delivery_job`, `local_identity_activation`, `local_organization_activation`), narrow audit/preview helpers, exact-binding authority helpers, and guards retained native actor/organization/customer/membership policies. Runtime roles cannot modify activation ledgers or read their archives. Never run migrations at API startup.
 
-The coordinated policy-generator changes are in `apps/control-plane/src/db/database-rls-schema.ts` and the native fallback of `apps/control-plane/src/db/clerk-rls.ts`; reinstalling policies preserves the guards and table classifications. Native scopes cannot reuse externally projected users/organizations. During overlap, the existing separately verified external-proof branches remain intact. OAuth additionally checks the same organization authority for bound clients and Console membership admission, including every token/refresh revalidation.
+The coordinated policy-generator changes are in `legacy/control-plane/src/db/database-rls-schema.ts` and the native fallback of `legacy/control-plane/src/db/clerk-rls.ts`; reinstalling policies preserves the guards and table classifications. Native scopes cannot reuse externally projected users/organizations. During overlap, the existing separately verified external-proof branches remain intact. OAuth additionally checks the same organization authority for bound clients and Console membership admission, including every token/refresh revalidation.
 
 ## Invitation onboarding
 

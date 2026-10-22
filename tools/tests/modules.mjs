@@ -5,5 +5,5 @@ const walk=directory=>readdirSync(directory,{withFileTypes:true}).flatMap(entry=
 const sdk=spawnSync(process.execPath,['run','--filter','@webdock/plugin-sdk','build'],{stdio:'inherit'});
 if(sdk.status!==0)process.exit(sdk.status??1);
 const files=['packages/module-sdk','packages/plugin-sdk/tests','packages/core','packages/auth-better-auth','packages/auth-clerk','packages/auth-configuration','packages/platform-db','packages/hosting-provider-contracts','packages/console-kit','modules','adapters','integrations'].flatMap(walk).sort();
-const result=spawnSync(process.execPath,['test','--preload','./apps/control-plane/tests/helpers/no-network.ts',...files.map(file=>'./'+file)],{stdio:'inherit'});
+const result=spawnSync(process.execPath,['test','--preload','./legacy/control-plane/tests/helpers/no-network.ts',...files.map(file=>'./'+file)],{stdio:'inherit'});
 process.exitCode=result.status??1;

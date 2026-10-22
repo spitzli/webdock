@@ -26,7 +26,7 @@ pub async fn run(f: Fixture<'_>) {
         .join("../..")
         .canonicalize()
         .unwrap();
-    let dist = root.join("apps/console-ui/dist");
+    let dist = root.join("apps/console/dist");
     assert!(
         dist.join("index.html").is_file(),
         "Build the Console before acceptance"
@@ -97,7 +97,7 @@ pub async fn run(f: Fixture<'_>) {
     let result = tokio::time::timeout(
         Duration::from_secs(if f.configure { 300 } else { 180 }),
         tokio::process::Command::new("node")
-            .arg(root.join("apps/console-ui/tests/mail-native-browser.mjs"))
+            .arg(root.join("apps/console/tests/mail-native-browser.mjs"))
             .env("WEBDOCK_MAIL_BROWSER_FIXTURE", descriptor)
             .current_dir(&root)
             .kill_on_drop(true)

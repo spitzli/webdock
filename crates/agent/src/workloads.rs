@@ -7,6 +7,7 @@ use kube::{
     core::{ApiResource, GroupVersionKind},
 };
 use serde_json::{Value, json};
+use std::collections::BTreeMap;
 use webdock_plugin_protocol::{MILLI, WORKLOAD_KINDS, quantity};
 
 const MANAGER: &str = "webdock-workloads";
@@ -30,6 +31,36 @@ fn resource(kind: &str) -> Option<ApiResource> {
 }
 fn selector(plugin: &str, unit: &str) -> String {
     format!("{OWNER}plugin={plugin},{OWNER}unit={unit}")
+}
+/// CNPG owns its generated objects; its pods do not inherit Core's pruning labels.
+fn pod_selectors(plugin: &str, unit: &str, wanted: &[(String, String)]) -> Vec<String> {
+    let mut selectors = vec![selector(plugin, unit)];
+    selectors.extend(
+        wanted
+            .iter()
+            .filter(|(kind, _)| kind == "postgresql.cnpg.io/v1/Cluster")
+            .map(|(_, name)| format!("cnpg.io/cluster={name}")),
+    );
+    selectors
+}
+/// A pod may match both Core and CNPG labels. Count it only once.
+async fn selected_pods(
+    api: &Api<DynamicObject>,
+    selectors: &[String],
+) -> Result<Vec<DynamicObject>, kube::Error> {
+    let mut pods = BTreeMap::new();
+    for selector in selectors {
+        for pod in api
+            .list(&ListParams::default().labels(selector))
+            .await?
+            .items
+        {
+            if let Some(name) = &pod.metadata.name {
+                pods.insert(name.clone(), pod);
+            }
+        }
+    }
+    Ok(pods.into_values().collect())
 }
 /// Whether one object is ready, and a short word on why not.
 fn readiness(kind: &str, exists: bool, spec: &Value, status: &Value) -> (bool, String) {
@@ -285,13 +316,11 @@ impl WorkloadExecutor {
         );
         let mut problems = Vec::new();
         let mut logs = Vec::new();
-        if let Ok(list) = pods
-            .list(&ListParams::default().labels(&selector(plugin, unit)))
-            .await
-        {
+        let selectors = pod_selectors(plugin, unit, wanted);
+        if let Ok(list) = selected_pods(&pods, &selectors).await {
             let typed: Api<k8s_openapi::api::core::v1::Pod> =
                 Api::namespaced(self.client.clone(), namespace);
-            if let Some(name) = list.items.iter().find_map(|p| p.metadata.name.clone())
+            if let Some(name) = list.iter().find_map(|p| p.metadata.name.clone())
                 && let Ok(text) = typed
                     .logs(
                         &name,
@@ -318,7 +347,7 @@ impl WorkloadExecutor {
                 }
                 logs.reverse();
             }
-            for pod in list.items {
+            for pod in list {
                 for container in pod.data["status"]["containerStatuses"]
                     .as_array()
                     .into_iter()
@@ -335,14 +364,14 @@ impl WorkloadExecutor {
         }
         let mut observed =
             json!({"ready": ready, "objects": states, "problems": problems, "logs": logs});
-        if let Some(usage) = self.usage(namespace, plugin, unit).await {
+        if let Some(usage) = self.usage(namespace, &selectors).await {
             observed["usage"] = usage;
         }
         Ok(observed)
     }
     /// What the unit's pods use right now, from the metrics API: CPU in millicores, memory in MiB.
     /// None when the cluster has no metrics; no pods (stopped) use nothing.
-    async fn usage(&self, namespace: &str, plugin: &str, unit: &str) -> Option<Value> {
+    async fn usage(&self, namespace: &str, selectors: &[String]) -> Option<Value> {
         let resource = ApiResource {
             group: "metrics.k8s.io".into(),
             version: "v1beta1".into(),
@@ -352,12 +381,9 @@ impl WorkloadExecutor {
         };
         let api: Api<DynamicObject> =
             Api::namespaced_with(self.client.clone(), namespace, &resource);
-        let list = api
-            .list(&ListParams::default().labels(&selector(plugin, unit)))
-            .await
-            .ok()?;
+        let list = selected_pods(&api, selectors).await.ok()?;
         let (mut cpu, mut memory) = (0u64, 0u128);
-        for pod in &list.items {
+        for pod in &list {
             for container in pod.data["containers"].as_array().into_iter().flatten() {
                 cpu = cpu.saturating_add(quantity(&container["usage"]["cpu"], MILLI).unwrap_or(0));
                 // Bytes first: rounding each container up to a MiB would overstate small ones.

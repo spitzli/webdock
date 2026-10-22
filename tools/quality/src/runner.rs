@@ -258,7 +258,7 @@ pub fn plan(scope: Scope, standalone_manifests: &[PathBuf]) -> Vec<Check> {
         for script in ["lint", "typecheck", "test", "build", "test:browser"] {
             checks.push(Check::new(
                 "bun",
-                &["run", "--filter", "@webdock/console-ui", script],
+                &["run", "--filter", "@webdock/console", script],
             ));
         }
     }

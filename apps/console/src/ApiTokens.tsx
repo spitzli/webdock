@@ -86,7 +86,7 @@ export function WorkspaceApiTokens({ id }: { id: string }) {
           <strong>Copy this token now. It will not be shown again.</strong>
           <code className={ui.cx(ui.mono, "select-all [overflow-wrap:anywhere]")}>{secret}</code>
           <span className="text-muted">
-            Use it as <code className={ui.mono}>Authorization: Bearer …</code> against <code className={ui.mono}>{api.config.apiOrigin}v1/api/projects</code>.
+            Use it as <code className={ui.mono}>Authorization: Bearer …</code> against <code className={ui.mono}>{new URL("/v1/api/projects", api.config.workspaceApiOrigin ?? api.config.apiOrigin).href}</code>.
           </span>
         </div>
       ) : null}

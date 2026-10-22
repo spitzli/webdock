@@ -1,5 +1,7 @@
 //! Customers list and create projects in their own workspace, against the retained local fixture.
-use sea_orm::{ConnectionTrait, Database, DatabaseConnection, DbBackend, Statement};
+use sea_orm::{
+    ConnectionTrait, Database, DatabaseConnection, DbBackend, Statement, TransactionTrait,
+};
 use std::{collections::BTreeMap, sync::Arc};
 use webdock_access::*;
 use webdock_identity::{CookiePolicy, IdentityService, Principal, RlsSigner, SecretKeys};
@@ -11,7 +13,7 @@ fn guarded(key: &str) -> String {
     assert_eq!(u.path(), "/webdock_rls_test");
     raw
 }
-async fn sql(db: &DatabaseConnection, text: &str, values: Vec<sea_orm::Value>) {
+async fn sql(db: &impl ConnectionTrait, text: &str, values: Vec<sea_orm::Value>) {
     db.execute_raw(Statement::from_sql_and_values(
         DbBackend::Postgres,
         text,
@@ -274,6 +276,26 @@ async fn customer_projects() {
         ));
         access.remove_domain_as(p("owner"), &customers[0], "shop.example.invalid").await.unwrap();
         assert!(access.list_domains_as(p("owner"), &customers[0]).await.unwrap().is_empty());
+
+        // An apply holding the customer lock may be about to commit a host for this domain.
+        // Removing the domain must wait and then see that committed use.
+        access.add_domain_as(p("owner"), &customers[0], "race.example.invalid").await.unwrap();
+        let cluster = id(&owner).await;
+        let plugin = format!("domain-{nonce}");
+        sql(&owner, "INSERT INTO webdock_auth.hosting_cluster(id,name,provider,region,location_evidence) VALUES($1,$1,'fixture','eu','fixture')", vec![cluster.clone().into()]).await;
+        sql(&owner, "INSERT INTO webdock_auth.plugin_installation(id,kind,state,desired_state,version,runtime,current_generation) VALUES($1,'external','enabled','enabled','1.0.0','ready',1)", vec![plugin.clone().into()]).await;
+        let applying = owner.begin().await.unwrap();
+        sql(&applying, "SELECT pg_advisory_xact_lock(hashtext('webdock-limits:'||$1))", vec![customers[0].clone().into()]).await;
+        sql(&applying, "INSERT INTO webdock_auth.plugin_workload(plugin_id,unit,project_id,cluster_id,namespace,objects,hosts) VALUES($1,'race',$2,$3,'wd-fixture','[]',ARRAY['race.example.invalid'])", vec![plugin.clone().into(), shop.clone().into(), cluster.clone().into()]).await;
+        let removal = access.remove_domain_as(p("owner"), &customers[0], "race.example.invalid");
+        tokio::pin!(removal);
+        assert!(tokio::time::timeout(std::time::Duration::from_millis(200), &mut removal).await.is_err(), "domain removal must wait for the pending apply");
+        applying.commit().await.unwrap();
+        assert!(matches!(removal.await, Err(Error::DomainInUse)));
+        sql(&owner, "DELETE FROM webdock_auth.plugin_workload WHERE plugin_id=$1", vec![plugin.clone().into()]).await;
+        sql(&owner, "DELETE FROM webdock_auth.plugin_installation WHERE id=$1", vec![plugin.into()]).await;
+        sql(&owner, "DELETE FROM webdock_auth.hosting_cluster WHERE id=$1", vec![cluster.into()]).await;
+        access.remove_domain_as(p("owner"), &customers[0], "race.example.invalid").await.unwrap();
 
         // API tokens: owners and admins make them; the secret is shown once and acts as its maker.
         let made = access

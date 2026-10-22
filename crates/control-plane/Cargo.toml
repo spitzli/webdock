@@ -54,6 +54,7 @@ governor = "0.10.4"
 clap = { version = "4", features = ["derive"] }
 
 [dev-dependencies]
+serde-saphyr = "0.0.29"
 tempfile = "3"
 webdock-secrets = { path = "../secrets" }
 http-body-util = "0.1"

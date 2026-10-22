@@ -35,7 +35,7 @@ The Serde rule recognizes direct/qualified/module-level imported aliases and rec
 
 ## Frontend and CI
 
-The Console uses type-aware strict/stylistic TypeScript ESLint presets, React Hooks checks, no inline suppression or TypeScript escape comments, exhaustive switches and bounded depth/complexity. Its compiler additionally checks indexed access, exact optional properties, returns, overrides, unused declarations and casing. See `apps/console-ui/README.md` for details. The gate runs lint, typecheck, unit tests, production build and the local browser fixture.
+The Console uses type-aware strict/stylistic TypeScript ESLint presets, React Hooks checks, no inline suppression or TypeScript escape comments, exhaustive switches and bounded depth/complexity. Its compiler additionally checks indexed access, exact optional properties, returns, overrides, unused declarations and casing. See `apps/console/README.md` for details. The gate runs lint, typecheck, unit tests, production build and the local browser fixture.
 
 `.github/workflows/quality.yml` runs on same-repository pushes and explicit manual dispatch using isolated ephemeral EU runners. It receives no deployment secrets, uses read-only repository permissions and does not persist checkout credentials. Fork PR code is not executed on these private runners. Runner provisioning must supply Rust prerequisites (the workflow installs the pinned Bun) and browser OS libraries; the workflow installs locked npm dependencies and the pinned Playwright browser. GitHub branch protection is separate repository administration and is not changed by this patch.
 
@@ -44,3 +44,7 @@ Run checker regressions directly with:
 ```sh
 cargo test --manifest-path tools/quality/Cargo.toml --locked
 ```
+
+Native deployment checks run separately with `bun run test:distribution` and in CI. They require
+Docker Compose, Helm and Python with PyYAML. They render disposable configurations and send the
+rendered Helm probe host/path through the actual Core router; no cluster or database is contacted.

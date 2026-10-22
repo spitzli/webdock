@@ -102,9 +102,10 @@ fn resources(resources: &Value) -> Result<(u64, u64)> {
         .ok_or_else(|| invalid("Every container states a CPU request"))?;
     Ok((memory, cpu))
 }
-/// Containers run side by side; init containers one after another before them.
+/// Restartable init containers keep running beside later init containers and the app.
 fn pod(spec: &Value) -> Result<(u64, u64)> {
     let (mut memory, mut cpu, mut init_memory, mut init_cpu) = (0u64, 0u64, 0u64, 0u64);
+    let (mut sidecar_memory, mut sidecar_cpu) = (0u64, 0u64);
     for container in spec["containers"].as_array().into_iter().flatten() {
         let (m, c) = resources(&container["resources"])?;
         memory = memory.saturating_add(m);
@@ -112,10 +113,17 @@ fn pod(spec: &Value) -> Result<(u64, u64)> {
     }
     for container in spec["initContainers"].as_array().into_iter().flatten() {
         let (m, c) = resources(&container["resources"])?;
-        init_memory = init_memory.max(m);
-        init_cpu = init_cpu.max(c);
+        init_memory = init_memory.max(sidecar_memory.saturating_add(m));
+        init_cpu = init_cpu.max(sidecar_cpu.saturating_add(c));
+        if container["restartPolicy"] == "Always" {
+            sidecar_memory = sidecar_memory.saturating_add(m);
+            sidecar_cpu = sidecar_cpu.saturating_add(c);
+        }
     }
-    Ok((memory.max(init_memory), cpu.max(init_cpu)))
+    Ok((
+        memory.saturating_add(sidecar_memory).max(init_memory),
+        cpu.saturating_add(sidecar_cpu).max(init_cpu),
+    ))
 }
 fn storage(value: &Value) -> Result<u64> {
     quantity(value, MIB).ok_or_else(|| invalid("Every volume states its size"))
@@ -476,6 +484,7 @@ impl HostService {
                     &input.unit,
                     &input.objects,
                 )?;
+                let checked = super::limits::checked(&tx, &input.project).await?;
                 // Hosts under the plugin's own route domains are its to hand out; anything else
                 // must be a domain the project's customer verified.
                 let foreign: Vec<&String> = hosts
@@ -516,7 +525,6 @@ impl HostService {
                 }) {
                     return Err(invalid("Invalid resource"));
                 }
-                let checked = super::limits::checked(&tx, &input.project).await?;
                 let previous = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
                     "SELECT allocation FROM webdock_auth.plugin_workload WHERE plugin_id=$1 AND unit=$2 AND project_id=$3",
                     [plugin.into(), input.unit.clone().into(), input.project.clone().into()])).await.map_err(db_error)?
@@ -609,6 +617,44 @@ mod tests {
     }
     fn sized() -> Value {
         json!({"limits":{"memory":"256Mi"},"requests":{"memory":"256Mi","cpu":"50m"}})
+    }
+    #[test]
+    fn allocation_counts_sidecars_during_startup_and_steady_state() {
+        let container = |memory: &str, cpu: &str, sidecar: bool| {
+            let mut value = json!({"name":"fixture","resources":{"limits":{"memory":memory},"requests":{"cpu":cpu}}});
+            if sidecar {
+                value["restartPolicy"] = json!("Always");
+            }
+            value
+        };
+        for (init, memory, cpu) in [
+            (vec![container("128Mi", "100m", true)], 384, 150),
+            (
+                vec![
+                    container("128Mi", "100m", true),
+                    container("512Mi", "1", false),
+                    container("64Mi", "25m", true),
+                ],
+                640,
+                1100,
+            ),
+            (
+                vec![
+                    container("512Mi", "1", false),
+                    container("128Mi", "100m", true),
+                ],
+                512,
+                1000,
+            ),
+        ] {
+            let objects = json!([deployment(
+                json!({"containers":[{"name":"app","resources":sized()}],"initContainers":init})
+            )]);
+            assert_eq!(
+                allocation(objects.as_array().unwrap()).unwrap(),
+                json!({"memory":memory,"cpu":cpu,"storage":0})
+            );
+        }
     }
     #[test]
     fn allocation_counts_replicas_instances_and_volumes() {

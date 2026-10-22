@@ -1,6 +1,7 @@
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { mailOpenAPI } from '../../apps/control-plane/src/modules/mail/product/openapi';
+// Retained TypeScript Mail contract; this does not establish native Rust endpoint parity.
+import { mailOpenAPI } from '../../legacy/control-plane/src/modules/mail/product/openapi';
 
 const target = new URL('../openapi/mail.json', import.meta.url);
 const spec = mailOpenAPI();

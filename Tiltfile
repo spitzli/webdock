@@ -147,7 +147,7 @@ local_resource(
 local_resource(
     'console',
     serve_cmd='bun --bun vite --host 127.0.0.1 --port 3121 --strictPort',
-    serve_dir='apps/console-ui',
+    serve_dir='apps/console',
     serve_env=tls_env,
     # The plugin UI glob is resolved at start; a new plugin restarts the dev server once.
     deps=['plugins/%s/manifest.json' % name for name in plugins],
@@ -160,7 +160,7 @@ local_resource(
 local_resource(
     'account',
     serve_cmd='bun --bun vite --host localhost --port 3125 --strictPort',
-    serve_dir='apps/console-ui',
+    serve_dir='apps/console',
     serve_env=tls_env,
     # The plugin UI glob is resolved at start; a new plugin restarts the dev server once.
     deps=['plugins/%s/manifest.json' % name for name in plugins],

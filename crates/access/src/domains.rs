@@ -145,6 +145,13 @@ impl AccessService {
     ) -> Result<()> {
         let (actor, tx) = self.domain_writer(actor, customer).await?;
         let domain = domain_name(domain)?;
+        // Applies check ownership and publish their hosts under this same customer lock.
+        tx.execute_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "SELECT pg_advisory_xact_lock(hashtext('webdock-limits:'||$1))",
+            [id(customer)?.into()],
+        ))
+        .await?;
         let row = self.domain_row(&tx, customer, &domain).await?;
         if row["usedBy"].as_array().is_some_and(|u| !u.is_empty()) {
             return Err(Error::DomainInUse);

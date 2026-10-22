@@ -48,11 +48,11 @@ bun docs/scripts/export-mail-openapi.ts
 bun docs/scripts/export-mail-openapi.ts --check
 ```
 
-The exporter calls `mailOpenAPI()` from `apps/control-plane`, adds readable operation titles
+The exporter calls the retained `mailOpenAPI()` contract from `legacy/control-plane`, adds readable operation titles
 and groups, and resolves the relative server URL to `https://api.webdock.dev/api/mail/v1`.
 Paths, authentication, parameters and schemas remain unchanged. Review the JSON change with the source
 contract change. The documentation playground is disabled; no live send is part
-of documentation validation.
+of documentation validation. This retained reference does not establish native Rust endpoint parity.
 
 The imported starter's MIT notice remains in `LICENSE`. The site now uses the
 existing Webdock logo and icon. Follow `AGENTS.md` and the public documentation
@@ -60,8 +60,9 @@ maintenance page when adding pages.
 
 ## Content sources
 
-Public guides were checked against the current `apps/control-plane` services and the
-Console navigation, with these internal records used for rollout boundaries:
+Native setup, distribution and local-development guides describe `crates/control-plane` and
+`apps/console`. Remaining product guides retain their historical TypeScript contract until native
+acceptance is recorded. These internal records define the rollout boundaries:
 
 - `verification/2026-10-14-console-domain.md`: browser vs. protocol origins.
 - `verification/2026-10-14-api-production.md`: API and frontend ownership.

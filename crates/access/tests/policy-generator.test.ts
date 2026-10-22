@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { buildDatabaseRls } from "../../../apps/control-plane/src/db/database-rls-schema";
+import { buildDatabaseRls } from "../../../legacy/control-plane/src/db/database-rls-schema";
 
 test("native authority guards coexist with signed external proof branches", () => {
   const plan=buildDatabaseRls([

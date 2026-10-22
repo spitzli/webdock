@@ -9,10 +9,10 @@ const fixture = await mkdtemp(join(tmpdir(), 'webdock-static-core-'));
 try {
   const entry = join(fixture, 'entry.ts');
   await writeFile(entry, `
-import { createApp } from ${JSON.stringify(resolve(root, 'apps/control-plane/src/app.ts'))};
-import { registryProtocol } from ${JSON.stringify(resolve(root, 'apps/control-plane/src/protocols/registry.ts'))};
-import { readConfig } from ${JSON.stringify(resolve(root, 'apps/control-plane/src/config.ts'))};
-import { closeDatabases } from ${JSON.stringify(resolve(root, 'apps/control-plane/src/db/runtime.ts'))};
+import { createApp } from ${JSON.stringify(resolve(root, 'legacy/control-plane/src/app.ts'))};
+import { registryProtocol } from ${JSON.stringify(resolve(root, 'legacy/control-plane/src/protocols/registry.ts'))};
+import { readConfig } from ${JSON.stringify(resolve(root, 'legacy/control-plane/src/config.ts'))};
+import { closeDatabases } from ${JSON.stringify(resolve(root, 'legacy/control-plane/src/db/runtime.ts'))};
 const config = readConfig(process.env);
 const registry = await registryProtocol(config);
 const paths = registry.app.routes.map(route => route.method + ' ' + route.path);

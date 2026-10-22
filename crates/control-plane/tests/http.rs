@@ -117,7 +117,7 @@ async fn console_configuration_never_leaks_backend_credentials() {
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(
         json,
-        serde_json::json!({"apiOrigin":"http://localhost:3130","authOrigin":"http://localhost:3125","enabledFeatures":[],"localePreference":"system"})
+        serde_json::json!({"apiOrigin":"http://localhost:3130","workspaceApiOrigin":"http://localhost:3130","authOrigin":"http://localhost:3125","enabledFeatures":[],"localePreference":"system"})
     );
 }
 
@@ -187,6 +187,7 @@ async fn console_origin_uses_only_the_same_origin_facade() {
     let config: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(config["browserFacade"], true);
     assert_eq!(config["apiOrigin"], "http://localhost:3120");
+    assert_eq!(config["workspaceApiOrigin"], "http://localhost:3130");
     assert_eq!(config["authOrigin"], "http://localhost:3125");
 }
 

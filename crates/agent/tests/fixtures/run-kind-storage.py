@@ -90,8 +90,8 @@ attached_database = None
 if args.domain:
     import hashlib
     import urllib.parse
-    metadata = json.loads(pathlib.Path('apps/control-plane/.api-fixture.json').read_text())
-    original = pathlib.Path('apps/control-plane/.env.test.local').read_bytes()
+    metadata = json.loads(pathlib.Path('legacy/control-plane/.api-fixture.json').read_text())
+    original = pathlib.Path('legacy/control-plane/.env.test.local').read_bytes()
     assert hashlib.sha256(original).hexdigest() == metadata['envHash']
     assert re.fullmatch(r'webdock-api-fixture-[a-f0-9]{12}', metadata['name'])
     pg = json.loads(docker('inspect', metadata['name']).stdout)[0]
@@ -101,7 +101,7 @@ if args.domain:
     node24 = pathlib.Path.home() / '.nvm/versions/node/v24.21.0/bin/node'
     parse = 'process.stdout.write(JSON.stringify(require("node:util").parseEnv(require("node:fs").readFileSync(process.argv[1], "utf8"))))'
     private = json.loads(subprocess.check_output([str(node24), '-e', parse, str(env_file)]))
-    source = json.loads(subprocess.check_output([str(node24), '-e', parse, str(pathlib.Path('apps/control-plane/.env.test.local').resolve())]))
+    source = json.loads(subprocess.check_output([str(node24), '-e', parse, str(pathlib.Path('legacy/control-plane/.env.test.local').resolve())]))
     owner = urllib.parse.urlsplit(private['WEBDOCK_TEST_MIGRATION_DATABASE_URL'])
     original_url = urllib.parse.urlsplit(source['API_TEST_DATABASE_URL'])
     assert owner.hostname == '127.0.0.1' and owner.path == '/webdock_rls_test' and not owner.query

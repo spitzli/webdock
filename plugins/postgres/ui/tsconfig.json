@@ -1,4 +1,4 @@
 {
-  "extends": "../../../apps/console-ui/tsconfig.json",
+  "extends": "../../../apps/console/tsconfig.json",
   "include": ["."]
 }
