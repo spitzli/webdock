@@ -76,6 +76,12 @@ impl wire::plugin_host_server::PluginHost for Host {
         }
         Ok(Response::new(wire::HostAuthorityResponse { active: true }))
     }
+    async fn workloads(
+        &self,
+        _: Request<wire::HostWorkloadRequest>,
+    ) -> Result<Response<wire::HostCallResponse>, Status> {
+        Err(Status::unimplemented("not used by this plugin"))
+    }
     async fn call(
         &self,
         request: Request<wire::HostCallRequest>,

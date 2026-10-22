@@ -108,6 +108,32 @@ impl wire::plugin_host_server::PluginHost for HostRpc {
             .map_err(failure)?;
         Ok(Response::new(wire::HostAuthorityResponse { active: true }))
     }
+    async fn workloads(
+        &self,
+        request: Request<wire::HostWorkloadRequest>,
+    ) -> std::result::Result<Response<wire::HostCallResponse>, Status> {
+        let _permit = self
+            .permits
+            .try_acquire()
+            .map_err(|_| Status::resource_exhausted("Plugin host is busy"))?;
+        let peer = authenticated_peer(&request)?;
+        let request = request.into_inner();
+        let input = json(&request.input_json, 262144 + 4096).map_err(failure)?;
+        let value = self
+            .host
+            .workloads(
+                &peer,
+                &request.plugin_id,
+                request.generation,
+                &request.method,
+                input,
+            )
+            .await
+            .map_err(failure)?;
+        let bytes =
+            serde_json::to_vec(&value).map_err(|_| Status::unavailable("Invalid host result"))?;
+        Ok(Response::new(wire::HostCallResponse { output_json: bytes }))
+    }
     async fn call(
         &self,
         request: Request<wire::HostCallRequest>,

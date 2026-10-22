@@ -214,6 +214,7 @@ impl Fixture {
             .await;
         }
         for table in [
+            "plugin_workload",
             "plugin_resource",
             "plugin_feature_customer",
             "plugin_feature_policy",
@@ -859,5 +860,129 @@ async fn operator_lists_resources_across_customers() {
             "{who}"
         );
     }
+    f.cleanup().await;
+}
+
+#[tokio::test]
+#[ignore = "requires local retained-schema restricted roles and signed RLS fixture"]
+async fn workloads_are_pinned_and_stored_for_the_runtime() {
+    let f = Fixture::new().await;
+    let o = &f.owner;
+    let mut manifest = product_manifest(&f.plugin);
+    manifest["capabilities"] = json!(["plugin.workloads"]);
+    manifest["workloads"] = json!({"kinds": ["apps/v1/Deployment", "v1/Service"]});
+    let raw = manifest.to_string();
+    sql(o, "UPDATE webdock_auth.plugin_release SET manifest_bytes=$2,manifest_sha256=$3 WHERE plugin_id=$1", vec![f.plugin.clone().into(), raw.clone().into(), hex::encode(Sha256::digest(raw.as_bytes())).into()]).await;
+    let cluster = id(o).await;
+    sql(o, "INSERT INTO webdock_auth.hosting_cluster(id,name,provider,region,location_evidence) VALUES($1,$2,'k3s','eu-central','fixture')", vec![cluster.clone().into(), format!("{}-cluster", f.nonce).into()]).await;
+    let host = f.host().await;
+    let service = json!([{"apiVersion":"v1","kind":"Service","metadata":{"name":"web"},"spec":{"ports":[{"port":80}]}}]);
+    let apply = |project: usize| json!({"project": f.projects[project], "unit": "web-1", "objects": service});
+    // Not approved yet: the capability is the operator's ceiling.
+    assert!(
+        host.workloads(&peer(), &f.plugin, 1, "apply", apply(0))
+            .await
+            .is_err()
+    );
+    sql(o, "UPDATE webdock_auth.plugin_configuration SET approved_capabilities='[\"plugin.workloads\"]' WHERE plugin_id=$1", vec![f.plugin.clone().into()]).await;
+    // Approved, but no cluster assigned in the runtime binding.
+    assert!(
+        host.workloads(&peer(), &f.plugin, 1, "apply", apply(0))
+            .await
+            .is_err()
+    );
+    let path = f.bindings.path().join("bindings.json");
+    let mut bindings: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    bindings["runtimes"][&f.plugin]["workloadCluster"] = json!(cluster);
+    std::fs::write(&path, bindings.to_string()).unwrap();
+
+    let first = host
+        .workloads(&peer(), &f.plugin, 1, "apply", apply(0))
+        .await
+        .unwrap();
+    assert_eq!(first["revision"], 1);
+    let namespace = first["namespace"].as_str().unwrap().to_owned();
+    assert!(namespace.starts_with("wd-") && namespace.ends_with(&f.projects[0]));
+    assert_eq!(
+        host.workloads(&peer(), &f.plugin, 1, "apply", apply(0))
+            .await
+            .unwrap()["revision"],
+        2
+    );
+    let stored: Value = o.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres, "SELECT objects,cluster_id FROM webdock_auth.plugin_workload WHERE plugin_id=$1 AND unit='web-1'", [f.plugin.clone().into()])).await.unwrap().unwrap().try_get("", "objects").unwrap();
+    assert_eq!(stored[0]["metadata"]["namespace"], namespace.as_str());
+    assert_eq!(stored[0]["metadata"]["labels"]["webdock.dev/unit"], "web-1");
+    // A unit stays in its project; other runtimes and other peers are refused.
+    assert!(
+        host.workloads(&peer(), &f.plugin, 1, "apply", apply(1))
+            .await
+            .is_err()
+    );
+    assert!(
+        host.workloads(
+            &PeerIdentity::Unix { uid: 0 },
+            &f.plugin,
+            1,
+            "apply",
+            apply(0)
+        )
+        .await
+        .is_err()
+    );
+    assert!(
+        host.workloads(&peer(), &f.plugin, 2, "observe", json!({"unit":"web-1"}))
+            .await
+            .is_err()
+    );
+    let observed = host
+        .workloads(&peer(), &f.plugin, 1, "observe", json!({"unit":"web-1"}))
+        .await
+        .unwrap();
+    assert_eq!(
+        (
+            observed["revision"].as_i64(),
+            observed["appliedRevision"].as_i64()
+        ),
+        (Some(2), Some(0))
+    );
+    host.workloads(&peer(), &f.plugin, 1, "remove", json!({"unit":"web-1"}))
+        .await
+        .unwrap();
+    let removing = host
+        .workloads(&peer(), &f.plugin, 1, "observe", json!({"unit":"web-1"}))
+        .await
+        .unwrap();
+    assert_eq!(
+        (
+            removing["removing"].as_bool(),
+            removing["revision"].as_i64()
+        ),
+        (Some(true), Some(3))
+    );
+    // The agent reports only through its own scope; the owner session cannot fake it.
+    let reported: bool = o
+        .query_one_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "SELECT webdock_rls.report_plugin_workload($1,'web-1',3,NULL,NULL,true) AS ok",
+            [f.plugin.clone().into()],
+        ))
+        .await
+        .unwrap()
+        .unwrap()
+        .try_get("", "ok")
+        .unwrap();
+    assert!(!reported);
+    sql(
+        o,
+        "DELETE FROM webdock_auth.plugin_workload WHERE plugin_id=$1",
+        vec![f.plugin.clone().into()],
+    )
+    .await;
+    sql(
+        o,
+        "DELETE FROM webdock_auth.hosting_cluster WHERE id=$1",
+        vec![cluster.into()],
+    )
+    .await;
     f.cleanup().await;
 }

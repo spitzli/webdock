@@ -42,6 +42,8 @@ service PluginHost {
   rpc AuthorizeInvocation(HostInvocationRequest) returns (HostAuthorityResponse);
   rpc AuthorizeRequest(HostPayloadRequest) returns (HostAuthorityResponse);
   rpc Call(HostCallRequest) returns (HostCallResponse);
+  // plugin.workloads, as the authenticated plugin runtime rather than one invocation.
+  rpc Workloads(HostWorkloadRequest) returns (HostCallResponse);
 }
 message HostPeerRequest { string plugin_id = 1; uint64 generation = 2; }
 message HostInvocationRequest { bytes claims_json = 1; }
@@ -54,3 +56,9 @@ message HostCallRequest {
   bytes input_json = 4;
 }
 message HostCallResponse { bytes output_json = 1; }
+message HostWorkloadRequest {
+  string plugin_id = 1;
+  uint64 generation = 2;
+  string method = 3;
+  bytes input_json = 4;
+}

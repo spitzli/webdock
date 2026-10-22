@@ -103,6 +103,38 @@ impl HostClient {
         serde_json::from_slice(&response.output_json)
             .map_err(|_| PluginError::new(ErrorCode::Unavailable, "Invalid host result"))
     }
+    /// `plugin.workloads` (`apply`, `observe`, `remove`) as this plugin runtime; the host checks
+    /// the connection's peer against the runtime binding for `plugin_id` and `generation`.
+    pub async fn workloads(
+        &self,
+        plugin_id: &str,
+        generation: u64,
+        method: &str,
+        input: Value,
+    ) -> Result<Value, PluginError> {
+        let bytes = serde_json::to_vec(&input).map_err(|_| PluginError::denied())?;
+        if bytes.len() > 262144 + 4096 {
+            return Err(PluginError::new(
+                ErrorCode::InvalidInput,
+                "Host request limit",
+            ));
+        }
+        let response = tokio::time::timeout(
+            Duration::from_secs(20),
+            self.client.clone().workloads(wire::HostWorkloadRequest {
+                plugin_id: plugin_id.into(),
+                generation,
+                method: method.into(),
+                input_json: bytes,
+            }),
+        )
+        .await
+        .map_err(|_| PluginError::new(ErrorCode::DeadlineExceeded, "Host deadline exceeded"))?
+        .map_err(map_status)?
+        .into_inner();
+        serde_json::from_slice(&response.output_json)
+            .map_err(|_| PluginError::new(ErrorCode::Unavailable, "Invalid host result"))
+    }
 }
 fn map_status(status: Status) -> PluginError {
     let code = match status.code() {

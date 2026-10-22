@@ -983,6 +983,8 @@ mod admin;
 mod controller;
 #[path = "self_service.rs"]
 mod self_service;
+#[path = "workloads.rs"]
+pub mod workloads;
 pub use controller::{
     OperationSnapshot, OperationStatus, RuntimeDescription, StateLease, StateProbe,
 };

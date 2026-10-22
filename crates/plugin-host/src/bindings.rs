@@ -35,6 +35,9 @@ pub struct RuntimeBinding {
     pub public_customer_configuration: BTreeMap<String, Value>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub customers: BTreeMap<String, BTreeMap<String, HttpBinding>>,
+    /// The enrolled cluster this plugin's workloads run on (`plugin.workloads`), chosen by the operator.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workload_cluster: Option<String>,
 }
 impl RuntimeBinding {
     pub(crate) fn permits(&self, peer: &PeerIdentity) -> bool {
@@ -129,6 +132,7 @@ mod tests {
             projects: BTreeMap::new(),
             public_customer_configuration: BTreeMap::new(),
             customers: BTreeMap::new(),
+            workload_cluster: None,
         };
         assert!(!binding.permits(&PeerIdentity::MutualTls {
             certificates: vec![cert.der().to_vec()]
