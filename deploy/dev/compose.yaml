@@ -24,6 +24,19 @@ services:
       interval: 2s
       timeout: 3s
       retries: 30
+  # Local Kubernetes for plugin workloads: k3s with its bundled Traefik. Apps answer on
+  # http://<name>.apps.localhost:55480. `local.mjs kubeconfig` copies the admin config to .dev-local/k3s.
+  # The node keeps the IP of its first start; if the container is recreated, reset the k3s volume.
+  k3s:
+    image: rancher/k3s:v1.36.5-k3s1
+    command: [server, --disable=metrics-server, --tls-san=127.0.0.1, --write-kubeconfig-mode=600]
+    privileged: true
+    tmpfs: [/run, /var/run]
+    volumes: [k3s:/var/lib/rancher/k3s]
+    ports:
+      - '127.0.0.1:${WEBDOCK_DEV_K3S_API_PORT:-56443}:6443'
+      - '127.0.0.1:${WEBDOCK_DEV_K3S_HTTP_PORT:-55480}:80'
+      - '127.0.0.1:${WEBDOCK_DEV_K3S_HTTPS_PORT:-55481}:443'
   # Local OCI registry for plugin images; plain HTTP is accepted by Docker only on loopback.
   registry:
     image: registry:3
@@ -34,6 +47,7 @@ services:
     image: axllent/mailpit:v1.27.11
     ports: ['127.0.0.1:${WEBDOCK_DEV_SMTP_PORT:-55025}:1025', '127.0.0.1:${WEBDOCK_DEV_MAILPIT_PORT:-55026}:8025']
 volumes:
+  k3s:
   postgres:
   shared-postgres:
   registry:

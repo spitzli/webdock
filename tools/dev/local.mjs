@@ -1,5 +1,5 @@
 // Local development helper used by the root Tiltfile. Owned loopback state only; never deployment config.
-// Usage: bun tools/dev/local.mjs secrets|init|plugin-image <id>|seed
+// Usage: bun tools/dev/local.mjs secrets|init|plugin-image <id>|seed|kubeconfig
 import { execFileSync } from "node:child_process";
 import { createHash, generateKeyPairSync, randomBytes, scryptSync } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -243,6 +243,20 @@ INSERT INTO webdock_auth.member(id,"organizationId","userId",role,"createdAt") V
 COMMIT;`, { email, hash, organization });
 }
 
+// The local cluster's admin kubeconfig, readable by this user, pointing at the published API port.
+function kubeconfig() {
+  const dir = file("k3s");
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  let raw = "";
+  for (let attempt = 0; attempt < 120 && !raw.includes("server:"); attempt++) {
+    try { raw = execFileSync("docker", [...compose, "exec", "-T", "k3s", "cat", "/etc/rancher/k3s/k3s.yaml"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); }
+    catch { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1000); }
+  }
+  if (!raw.includes("server:")) throw new Error("Local k3s did not write its kubeconfig");
+  const api = process.env.WEBDOCK_DEV_K3S_API_PORT ?? 56443;
+  writeFileSync(join(dir, "kubeconfig.yaml"), raw.replace("https://127.0.0.1:6443", `https://127.0.0.1:${api}`).replaceAll(": default", ": webdock-dev"), { mode: 0o600 });
+}
+
 function seed() {
   waitForDatabase();
   mkdirSync(plugins, { recursive: true, mode: 0o700 });
@@ -304,4 +318,5 @@ const value = secrets();
 if (command === "init") init(value);
 else if (command === "plugin-image") await pluginImage(process.argv[3] ?? "echo-demo");
 else if (command === "seed") { seed(); writeEnv(value); }
-else if (command !== "secrets") throw new Error("Use: secrets | init | plugin-image | seed");
+else if (command === "kubeconfig") kubeconfig();
+else if (command !== "secrets" && command !== "kubeconfig") throw new Error("Use: secrets | init | plugin-image | seed | kubeconfig");

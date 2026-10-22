@@ -18,6 +18,14 @@ dc_resource('postgres', labels=['infra'])
 dc_resource('registry', labels=['infra'], links=[link('http://127.0.0.1:5005/v2/_catalog', 'catalog')])
 dc_resource('mailpit', labels=['infra'], links=[link('http://127.0.0.1:55026', 'Mailpit')])
 dc_resource('shared-postgres', labels=['infra'])
+dc_resource('k3s', labels=['infra'])
+local_resource(
+    'kubeconfig',
+    cmd='bun tools/dev/local.mjs kubeconfig',
+    deps=['tools/dev/local.mjs'],
+    resource_deps=['k3s'],
+    labels=['infra'],
+)
 
 local_resource(
     'core-build',
