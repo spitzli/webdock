@@ -5,6 +5,7 @@ import { HouseIcon } from "@phosphor-icons/react/dist/csr/House";
 import { UsersIcon } from "@phosphor-icons/react/dist/csr/Users";
 import { GaugeIcon } from "@phosphor-icons/react/dist/csr/Gauge";
 import { GlobeIcon } from "@phosphor-icons/react/dist/csr/Globe";
+import { KeyIcon } from "@phosphor-icons/react/dist/csr/Key";
 import { useApi, useSession } from "./context";
 import { pluginNav, useWorkspacePlugins } from "./plugins/workspace";
 
@@ -25,6 +26,7 @@ function section(pathname: string): string {
   if (pathname.startsWith("/tenants/")) return "Members";
   if (pathname.endsWith("/usage")) return "Plan and usage";
   if (pathname.endsWith("/domains")) return "Domains";
+  if (pathname.endsWith("/api-tokens")) return "API tokens";
   return "Overview";
 }
 /** Inside a customer workspace the header names it and the section, like the sidebar does. */
@@ -73,6 +75,12 @@ export function WorkspaceNav({ customer, item }: { customer: string; item: (acti
         <GaugeIcon size={18} />
         Plan and usage
       </Link>
+      {manager ? (
+        <Link to="/workspaces/$id/api-tokens" params={{ id: customer }} className={item(pathname === `/workspaces/${customer}/api-tokens`)} aria-current={pathname === `/workspaces/${customer}/api-tokens` ? "page" : undefined}>
+          <KeyIcon size={18} />
+          API tokens
+        </Link>
+      ) : null}
       {manager ? (
         <Link to="/$collection/$id" params={{ collection: "tenants", id: customer }} className={item(pathname === `/tenants/${customer}`)}>
           <UsersIcon size={18} />

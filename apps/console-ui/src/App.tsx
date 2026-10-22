@@ -72,6 +72,7 @@ import { useTenants } from "./WorkspaceNav";
 import { ProductPage } from "./plugins/ProductPage";
 import { Plans, WorkspaceUsage } from "./Usage";
 import { WorkspaceDomains } from "./Domains";
+import { WorkspaceApiTokens } from "./ApiTokens";
 import { ProjectPage } from "./ProjectPage";
 const ExtensionOperation = lazy(() =>
   import("./plugins/ExtensionOperation").then((module) => ({
@@ -368,6 +369,14 @@ const domainsRoute = createRoute({
     return <WorkspaceDomains key={id} id={id} />;
   },
 });
+const apiTokensRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/workspaces/$id/api-tokens",
+  component: () => {
+    const { id } = apiTokensRoute.useParams();
+    return <WorkspaceApiTokens key={id} id={id} />;
+  },
+});
 const workspaceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/workspaces/$id",
@@ -475,6 +484,7 @@ const router = createRouter({
     plansRoute,
     usageRoute,
     domainsRoute,
+    apiTokensRoute,
     workspaceRoute,
     projectRoute,
     productRoute,
