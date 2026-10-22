@@ -1,0 +1,15 @@
+# A PostgreSQL entry point on the bundled Traefik: instances are routed by TLS server name.
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    ports:
+      postgres:
+        port: 5432
+        exposedPort: 5432
+        protocol: TCP
+        expose:
+          default: true
