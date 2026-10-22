@@ -45,7 +45,7 @@ export const pluginViewSchema = z.object({
   manifest: z.object({
     name: z.string(),
     description: z.string().optional(),
-    offerings: z.array(labelled).max(16),
+    offerings: z.array(labelled.extend({ description: z.string().optional(), highlights: z.array(z.string()).max(6).optional() })).max(16),
     selfService: z.object({ features: z.array(labelled.extend({ offering: z.string().optional(), description: z.string().optional() })).max(32) }),
     actions: z.array(actionSchema).max(64),
     areas: z.object({

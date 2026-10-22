@@ -2,7 +2,7 @@
   "name": "mail",
   "version": "0.1.0",
   "kind": "extension",
-  "description": "Mail: sending domains, mailboxes, delivery through the platform or your own turboSMTP account",
+  "description": "Mail for your domains: send from your apps and the console, give people mailboxes, or route sending through your own turboSMTP account.",
   "protocolVersion": 2,
   "sdkVersion": 2,
   "dataProtocolVersion": 2,
@@ -365,15 +365,36 @@
   "offerings": [
     {
       "id": "domain",
-      "label": "Sending domain"
+      "label": "Sending domain",
+      "description": "A domain you send mail from. Add it, prove you own it with one DNS record, then send from any address at that domain.",
+      "highlights": [
+        "Needed before sending or creating mailboxes",
+        "Shows every DNS record to add at your DNS provider",
+        "Send from the console, the API or the send_email MCP tool",
+        "Keeps a log of recent messages"
+      ]
     },
     {
       "id": "relay",
-      "label": "Own turboSMTP account"
+      "label": "Own turboSMTP account",
+      "description": "Your own turboSMTP account for sending, instead of the platform's. Useful if you already have a turboSMTP contract, sending volume or reputation.",
+      "highlights": [
+        "All mail of the project goes through your account",
+        "Keys are stored encrypted and never shown again",
+        "Uses the turboSMTP EU endpoint",
+        "Remove it any time to send through the platform again"
+      ]
     },
     {
       "id": "mailbox",
-      "label": "Mailbox"
+      "label": "Mailbox",
+      "description": "An inbox at one of your domains, for a person or a team. Read and write it with any mail app over IMAP and SMTP.",
+      "highlights": [
+        "Address at your own domain, such as hello@example.com",
+        "Works with Outlook, Apple Mail, Thunderbird and phones",
+        "Password shown on request and rotatable",
+        "1 GB of storage"
+      ]
     }
   ],
   "selfService": {

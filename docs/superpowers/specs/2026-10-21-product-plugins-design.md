@@ -167,6 +167,10 @@ Extend `apps/console-ui/src/plugins/contracts.ts` (panel v1: text, status, table
 
 Webmail and other editors that cannot be declarative use the existing isolated custom UI mode.
 
+### Help in every plugin
+
+Every offering carries a `description` (required, up to 280 characters: what it is and when to choose it) and optional `highlights` (up to six short points: what it brings). The Console shows them as cards on an empty product page, under "Which one do I need?" below the list, in the create menu, above the create form and on each resource page. Texts promise only what the plugin does today.
+
 ### First-party plugin UI (Rust + React)
 
 The initial plugins (PostgreSQL, mail, hosting, storage, Tabularis) are built like the Core: a Rust backend and a React frontend with the Console's toolchain and design system. Each ships a React package in `plugins/<name>/ui` with its operator and self-service pages. The Console bundles these packages at build time and loads each lazily. A page appears only when the plugin is installed and its manifest declares the page; every call still goes through the plugin action API and its gates. Declarative panels remain for third-party plugins, whose code never runs in the Console origin.

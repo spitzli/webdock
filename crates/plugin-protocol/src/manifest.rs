@@ -714,7 +714,16 @@ fn self_service(v: &Value) -> Result<()> {
         }
         Ok(())
     };
-    labelled(&v["offerings"], 16, &[])?;
+    // Offerings explain themselves to customers: what it is (description) and what it brings (highlights).
+    labelled(&v["offerings"], 16, &["description", "highlights"])?;
+    for o in v["offerings"].as_array().unwrap() {
+        text(o.get("description").ok_or_else(invalid)?, 1, 280, None)?;
+        if let Some(h) = o.get("highlights") {
+            for item in array(h, 1, 6)? {
+                text(item, 1, 140, None)?;
+            }
+        }
+    }
     object(&v["selfService"], &["features"], &[])?;
     let features = &v["selfService"]["features"];
     labelled(features, 32, &["offering", "description"])?;

@@ -46,7 +46,8 @@ pub fn product_manifest(name: &str) -> Value {
     v["capabilities"] = json!([]);
     v["services"]["required"] = json!([]);
     v["jobs"] = json!([]);
-    v["offerings"] = json!([{"id":"note","label":"Note"}]);
+    v["offerings"] =
+        json!([{"id":"note","label":"Note","description":"A short note kept with the project."}]);
     v["selfService"] =
         json!({"features":[{"id":"create-notes","label":"Create notes","offering":"note"}]});
     v["actions"] = json!([

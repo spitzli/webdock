@@ -143,7 +143,12 @@
   "offerings": [
     {
       "id": "note",
-      "label": "Note"
+      "label": "Note",
+      "description": "A demo resource to try self-service: create a note, reveal its code, delete it.",
+      "highlights": [
+        "Nothing is stored outside the project index",
+        "Safe to create and delete"
+      ]
     }
   ],
   "selfService": {

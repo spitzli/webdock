@@ -6,6 +6,7 @@ import { Empty, Failure, Loading } from "../common";
 import { ChosenCreate } from "../ProjectPage";
 import { creatable } from "./views";
 import { pluginNav, useWorkspacePlugins } from "./workspace";
+import { Offerings } from "./Offerings";
 import * as ui from "../ui";
 
 /** One product of a workspace, e.g. Databases: everything of that plugin across the workspace's
@@ -38,7 +39,7 @@ export function ProductPage({ customer, plugin }: { customer: string; plugin: st
               <PlusIcon />
               {operator ? "Assign" : "Create"}
             </summary>
-            <ul className={ui.cx(ui.card, "absolute right-0 z-20 mt-2 w-64 p-1.5 shadow-lg")} aria-label="Create">
+            <ul className={ui.cx(ui.card, "absolute right-0 z-20 mt-2 w-80 p-1.5 shadow-lg")} aria-label="Create">
               {options.map((option) => (
                 <li key={option.action.name}>
                   <button
@@ -49,7 +50,8 @@ export function ProductPage({ customer, plugin }: { customer: string; plugin: st
                       setAdding(option.action.name);
                     }}
                   >
-                    {option.offering.label}
+                    <span className="block font-medium">{option.offering.label}</span>
+                    {option.offering.description ? <span className="mt-0.5 line-clamp-2 text-[13px] text-muted">{option.offering.description}</span> : null}
                   </button>
                 </li>
               ))}
@@ -59,6 +61,7 @@ export function ProductPage({ customer, plugin }: { customer: string; plugin: st
       </div>
       {chosen && entry && target ? (
         <div className="mb-6 grid gap-3">
+          {chosen.offering.description ? <p className={ui.notice}>{chosen.offering.description}</p> : null}
           {projects.length > 1 ? (
             <label className={ui.cx(ui.field, "max-w-sm")}>
               Project
@@ -84,9 +87,15 @@ export function ProductPage({ customer, plugin }: { customer: string; plugin: st
         </Empty>
       ) : !entry?.resources.length ? (
         !chosen ? (
-          <Empty title={`No ${label.toLowerCase()} yet`}>
-            {options.length ? `Use “${operator ? "Assign" : "Create"}” to add the first one.` : "Your provider adds these for you."}
-          </Empty>
+          <div className="grid gap-4">
+            <p className="text-sm text-muted">
+              {options.length ? `No ${label.toLowerCase()} yet. Pick what fits:` : `No ${label.toLowerCase()} yet. Your provider adds these for you; this is what they can be:`}
+            </p>
+            <Offerings offerings={offerings} create={(id) => {
+              const option = options.find((o) => o.offering.id === id);
+              return option ? () => { setAdding(option.action.name); } : undefined;
+            }} />
+          </div>
         ) : null
       ) : (
         <div className={ui.tableFrame}>
@@ -119,6 +128,12 @@ export function ProductPage({ customer, plugin }: { customer: string; plugin: st
           </table>
         </div>
       )}
+      {entry?.resources.length && offerings.some((o) => o.description) ? (
+        <details className="mt-8">
+          <summary className="cursor-pointer text-sm font-medium">Which one do I need?</summary>
+          <div className="mt-4"><Offerings offerings={offerings} /></div>
+        </details>
+      ) : null}
     </section>
   );
 }

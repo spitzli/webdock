@@ -42,8 +42,12 @@ try {
   await sidebar.click();
   await session.page.getByRole('heading', { name: 'Databases', exact: true }).waitFor();
   for (const text of ['orders', 'analytics', 'Shop', 'Blog', 'added by your provider']) await session.page.getByText(text, { exact: true }).waitFor();
+  // Every plugin explains its offerings: below the list, in the create menu and above the form.
+  await session.page.getByText('Which one do I need?').click();
+  await session.page.getByText('Own database and login, invisible to other customers').waitFor();
   await session.page.getByText('Create', { exact: true }).click();
-  await session.page.getByRole('button', { name: 'Shared database' }).click();
+  await session.page.getByRole('button', { name: /^Shared database A database of your own/ }).click();
+  await session.page.getByRole('paragraph').filter({ hasText: /^A database of your own on a PostgreSQL server/ }).first().waitFor();
   await session.page.getByRole('combobox', { name: 'Project' }).selectOption('202');
   await session.page.getByRole('textbox', { name: 'Name' }).waitFor();
   errors.push(...session.errors);
@@ -61,5 +65,5 @@ try {
   await session.context.close();
 
   assert.deepEqual(errors, []);
-  console.log('Workspace navigation checks passed: single workspace landing, product sidebar with counts, cross-project product page, create into a chosen project, member read-only. Test-only HTTP fixtures.');
+  console.log('Workspace navigation checks passed: single workspace landing, product sidebar with counts, cross-project product page, offering help, create into a chosen project, member read-only. Test-only HTTP fixtures.');
 } finally { await browser.close(); await server.close(); }

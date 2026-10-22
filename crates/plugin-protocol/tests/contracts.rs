@@ -288,7 +288,8 @@ fn signed_integer_claims_accept_equivalent_json_number_syntax() {
 /// A v2 product manifest: one offering, one self-service feature and a resource page.
 fn product() -> Value {
     let mut v = fixture();
-    v["offerings"] = json!([{"id":"note","label":"Note"}]);
+    v["offerings"] =
+        json!([{"id":"note","label":"Note","description":"A short note kept with the project."}]);
     v["selfService"] =
         json!({"features":[{"id":"create-notes","label":"Create notes","offering":"note"}]});
     let resource = json!({"type":"object","additionalProperties":false,"required":["resource_id"],"properties":{"resource_id":{"type":"string","maxLength":128}}});
@@ -432,7 +433,7 @@ fn ids_unique() {
     v["offerings"]
         .as_array_mut()
         .unwrap()
-        .push(json!({"id":"note","label":"Again"}));
+        .push(json!({"id":"note","label":"Again","description":"Same id twice."}));
     assert!(!parses(&v));
     let mut v = product();
     let page = v["areas"]["operator"]["pages"][0].clone();
@@ -449,5 +450,33 @@ fn create_and_delete_must_be_writes() {
         let mut v = product();
         v["actions"][index]["intent"] = json!("read");
         assert!(!parses(&v), "{}", v["actions"][index]["name"]);
+    }
+}
+
+#[test]
+fn offerings_explain_themselves() {
+    let mut v = product();
+    v["offerings"][0]["description"] = json!("A short note kept with the project.");
+    v["offerings"][0]["highlights"] = json!(["Ready at once", "Visible to every member"]);
+    assert!(parses(&v));
+    // Every offering must say what it is.
+    v["offerings"][0]
+        .as_object_mut()
+        .unwrap()
+        .remove("description");
+    assert!(!parses(&v));
+    for bad in [
+        json!({"description": "x".repeat(281)}),
+        json!({"highlights": ["x".repeat(141)]}),
+        json!({"highlights": ["a", "b", "c", "d", "e", "f", "g"]}),
+        json!({"highlights": [""]}),
+        json!({"highlights": "not a list"}),
+        json!({"description": ""}),
+    ] {
+        let mut v = product();
+        for (key, value) in bad.as_object().unwrap() {
+            v["offerings"][0][key] = value.clone();
+        }
+        assert!(!parses(&v), "{bad}");
     }
 }

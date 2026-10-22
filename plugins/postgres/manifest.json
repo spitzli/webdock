@@ -2,7 +2,7 @@
   "name": "postgres",
   "version": "0.1.0",
   "kind": "extension",
-  "description": "Managed PostgreSQL: databases on shared servers and dedicated instances",
+  "description": "Managed PostgreSQL: the server runs on our side, you only connect. Pick a shared database to start small or a dedicated instance for production.",
   "protocolVersion": 2,
   "sdkVersion": 2,
   "dataProtocolVersion": 2,
@@ -195,11 +195,25 @@
   "offerings": [
     {
       "id": "shared",
-      "label": "Shared database"
+      "label": "Shared database",
+      "description": "A database of your own on a PostgreSQL server that several customers use. Quick to create and the most economical choice for small apps, staging and side projects.",
+      "highlights": [
+        "Own database and login, invisible to other customers",
+        "Ready in a few seconds",
+        "Server capacity is shared, so speed can vary under load",
+        "Connect with any PostgreSQL client or framework"
+      ]
     },
     {
       "id": "dedicated",
-      "label": "Dedicated instance"
+      "label": "Dedicated instance",
+      "description": "A complete PostgreSQL server only you use. Choose it for production workloads that need predictable performance, more connections or full control.",
+      "highlights": [
+        "Own server process and storage",
+        "Choose the PostgreSQL version (17 or 18)",
+        "Full admin rights inside your instance",
+        "Starts in about a minute"
+      ]
     }
   ],
   "selfService": {

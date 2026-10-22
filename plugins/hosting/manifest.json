@@ -2,7 +2,7 @@
   "name": "hosting",
   "version": "0.1.0",
   "kind": "extension",
-  "description": "Hosting: run apps from a container image with environment, logs and power controls",
+  "description": "Run web apps and services from a container image. You choose the image, the port and the settings; Webdock starts, restarts and watches it.",
   "protocolVersion": 2,
   "sdkVersion": 2,
   "dataProtocolVersion": 2,
@@ -256,7 +256,14 @@
   "offerings": [
     {
       "id": "app",
-      "label": "App"
+      "label": "App",
+      "description": "A web app or service running from a container image, such as nginx:stable-alpine or your own image from a registry.",
+      "highlights": [
+        "Starts with 256 MB of memory; more if your provider allows it",
+        "Environment variables are stored encrypted",
+        "Logs, restart, stop and start in the console",
+        "Deploy a new image or port at any time"
+      ]
     }
   ],
   "selfService": {

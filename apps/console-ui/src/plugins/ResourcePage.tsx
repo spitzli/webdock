@@ -62,6 +62,9 @@ export function ResourcePage({ customer, projectID, plugin, resource }: { custom
               {view.manifest.offerings.find((o) => o.id === indexed.offering)?.label} in{" "}
               <Link to="/workspaces/$customer/projects/$id" params={{ customer, id: projectID }}>{project.data?.name ?? "its project"}</Link>
             </p>
+            {view.manifest.offerings.find((o) => o.id === indexed.offering)?.description ? (
+              <p className="mt-1 max-w-[76ch] text-[13px] text-muted">{view.manifest.offerings.find((o) => o.id === indexed.offering)?.description}</p>
+            ) : null}
           </div>
         </div>
         <Native
