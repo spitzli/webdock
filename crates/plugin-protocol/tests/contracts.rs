@@ -480,3 +480,37 @@ fn offerings_explain_themselves() {
         assert!(!parses(&v), "{bad}");
     }
 }
+
+#[test]
+fn workloads_are_declared_kinds_with_the_capability() {
+    let mut v = product();
+    v["capabilities"] = json!(["plugin.workloads"]);
+    v["workloads"] =
+        json!({"kinds": ["apps/v1/Deployment", "v1/Service", "traefik.io/v1alpha1/IngressRoute"]});
+    let m = Manifest::parse(&serde_json::to_vec(&v).unwrap()).unwrap();
+    assert!(m.workload_kind("apps/v1", "Deployment"));
+    assert!(!m.workload_kind("v1", "Pod"));
+    for (capabilities, workloads) in [
+        (json!(["plugin.workloads"]), Value::Null),
+        (json!([]), json!({"kinds": ["v1/Service"]})),
+        (json!(["plugin.workloads"]), json!({"kinds": ["v1/Pod"]})),
+        (
+            json!(["plugin.workloads"]),
+            json!({"kinds": ["rbac.authorization.k8s.io/v1/ClusterRole"]}),
+        ),
+        (json!(["plugin.workloads"]), json!({"kinds": []})),
+        (
+            json!(["plugin.workloads"]),
+            json!({"kinds": ["v1/Service"], "namespace": "kube-system"}),
+        ),
+    ] {
+        let mut v = product();
+        v["capabilities"] = capabilities.clone();
+        if workloads.is_null() {
+            v.as_object_mut().unwrap().remove("workloads");
+        } else {
+            v["workloads"] = workloads.clone();
+        }
+        assert!(!parses(&v), "{capabilities} {workloads}");
+    }
+}

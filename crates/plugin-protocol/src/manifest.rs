@@ -1,4 +1,6 @@
-use crate::{CAPABILITIES, ErrorCode, MANIFEST_BYTES, PluginError, READ_CAPABILITIES, Result};
+use crate::{
+    CAPABILITIES, ErrorCode, MANIFEST_BYTES, PluginError, READ_CAPABILITIES, Result, WORKLOAD_KINDS,
+};
 use serde::{
     Deserialize, Deserializer,
     de::{self, MapAccess, SeqAccess, Visitor},
@@ -333,6 +335,13 @@ impl Manifest {
     pub fn operator_pages(&self) -> &[Value] {
         self.value["areas"]["operator"]["pages"].as_array().unwrap()
     }
+    /// Whether the manifest declares this Kubernetes kind for its workloads.
+    pub fn workload_kind(&self, api_version: &str, kind: &str) -> bool {
+        let wanted = format!("{api_version}/{kind}");
+        self.value["workloads"]["kinds"]
+            .as_array()
+            .is_some_and(|kinds| kinds.iter().any(|k| k == wanted.as_str()))
+    }
     pub fn self_service_pages(&self) -> &[Value] {
         self.value["areas"]["selfService"]["pages"]
             .as_array()
@@ -396,8 +405,25 @@ fn validate_manifest(v: &Value) -> Result<()> {
             "min_runtime_version",
             "api",
             "mcp",
+            "workloads",
         ],
     )?;
+    // Workloads: a declared, bounded set of namespaced kinds, together with the capability.
+    let declares = v["capabilities"]
+        .as_array()
+        .is_some_and(|c| c.contains(&Value::from("plugin.workloads")));
+    match o.get("workloads") {
+        Some(w) => {
+            ensure(declares)?;
+            object(w, &["kinds"], &[])?;
+            let kinds = array(&w["kinds"], 1, WORKLOAD_KINDS.len())?;
+            unique(kinds, None)?;
+            for kind in kinds {
+                ensure(kind.as_str().is_some_and(|k| WORKLOAD_KINDS.contains(&k)))?;
+            }
+        }
+        None => ensure(!declares)?,
+    }
     text(&v["name"], 1, 64, Some(SLUG))?;
     ensure(!RESERVED.contains(&v["name"].as_str().unwrap()))?;
     exact_version(&v["version"])?;

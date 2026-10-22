@@ -73,6 +73,23 @@ pub const CAPABILITIES: &[&str] = &[
     "plugin.http.read",
     "plugin.http.request",
     "plugin.audit.emit",
+    "plugin.workloads",
+];
+/// Kubernetes kinds (`apiVersion/Kind`) a plugin may declare for its workloads. Everything is
+/// namespaced; Core pins the namespace and owner labels, and the agent checks the same list.
+pub const WORKLOAD_KINDS: &[&str] = &[
+    "apps/v1/Deployment",
+    "apps/v1/StatefulSet",
+    "v1/Service",
+    "v1/Secret",
+    "v1/ConfigMap",
+    "v1/PersistentVolumeClaim",
+    "networking.k8s.io/v1/NetworkPolicy",
+    "networking.k8s.io/v1/Ingress",
+    "traefik.io/v1alpha1/IngressRoute",
+    "traefik.io/v1alpha1/Middleware",
+    "postgresql.cnpg.io/v1/Cluster",
+    "postgresql.cnpg.io/v1/Pooler",
 ];
 pub const READ_CAPABILITIES: &[&str] = &[
     "plugin.apps.read",
