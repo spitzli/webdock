@@ -41,6 +41,7 @@ local_resource(
 plugins = {
     'echo-demo': {'binary': 'webdock-echo-demo', 'deps': []},
     'postgres': {'binary': 'webdock-postgres', 'deps': ['shared-postgres']},
+    'mail': {'binary': 'webdock-mail', 'deps': ['mailpit']},
 }
 for name in plugins:
     local_resource(
@@ -84,7 +85,8 @@ for name, plugin in plugins.items():
     )
     local_resource(
         'plugin-' + name,
-        serve_cmd="sh -c 'rm -f .dev-local/plugins/%s.sock && exec plugins/%s/target/debug/%s \"$PWD/.dev-local/plugins/%s.json\"'" % (name, name, plugin['binary'], name),
+        # The seed restarts plugin-control too; wait for its socket instead of failing on a restart race.
+        serve_cmd="sh -c 'for i in $(seq 100); do [ -S .dev-local/plugins/control.sock ] && break; sleep 0.2; done; rm -f .dev-local/plugins/%s.sock && exec plugins/%s/target/debug/%s \"$PWD/.dev-local/plugins/%s.json\"'" % (name, name, plugin['binary'], name),
         deps=['plugins/%s/target/debug/%s' % (name, plugin['binary']), '.dev-local/plugins/%s.json' % name],
         resource_deps=['plugin-control', name + '-build'] + plugin['deps'],
         readiness_probe=probe(exec=exec_action(['test', '-S', '.dev-local/plugins/%s.sock' % name]), period_secs=1),
@@ -107,6 +109,8 @@ local_resource(
     serve_cmd='bun --bun vite --host 127.0.0.1 --port 3121 --strictPort',
     serve_dir='apps/console-ui',
     serve_env=tls_env,
+    # The plugin UI glob is resolved at start; a new plugin restarts the dev server once.
+    deps=['plugins/%s/manifest.json' % name for name in plugins],
     resource_deps=['core'],
     links=[link(scheme + '://127.0.0.1:3121', 'Console')],
     labels=['ui'],
@@ -118,6 +122,8 @@ local_resource(
     serve_cmd='bun --bun vite --host localhost --port 3125 --strictPort',
     serve_dir='apps/console-ui',
     serve_env=tls_env,
+    # The plugin UI glob is resolved at start; a new plugin restarts the dev server once.
+    deps=['plugins/%s/manifest.json' % name for name in plugins],
     resource_deps=['core'],
     links=[link(scheme + '://localhost:3125/account', 'Account')],
     labels=['ui'],

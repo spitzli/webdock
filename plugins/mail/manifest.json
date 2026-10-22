@@ -1,0 +1,305 @@
+{
+  "name": "mail",
+  "version": "0.1.0",
+  "kind": "extension",
+  "description": "Mail: sending domains, delivery through the platform or your own turboSMTP account",
+  "protocolVersion": 2,
+  "sdkVersion": 2,
+  "dataProtocolVersion": 2,
+  "coreVersion": ">=0.1.0 <1.0.0",
+  "image": "127.0.0.1:5005/webdock/mail@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "dependencies": [],
+  "capabilities": [],
+  "schemaVersion": 1,
+  "readableSchema": {
+    "min": 1,
+    "max": 1
+  },
+  "migrations": [],
+  "tables": [],
+  "services": {
+    "required": [],
+    "optional": []
+  },
+  "configuration": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "actions": [
+    {
+      "name": "domains.create",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "domain",
+      "feature": "add-domains",
+      "resource": "create",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "domain"
+        ],
+        "properties": {
+          "domain": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 253,
+            "description": "Domain"
+          }
+        }
+      }
+    },
+    {
+      "name": "domains.view",
+      "intent": "read",
+      "audience": "customer",
+      "capabilities": [],
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    {
+      "name": "domains.verify",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    {
+      "name": "domains.delete",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "domain",
+      "feature": "add-domains",
+      "resource": "delete",
+      "destructive": true,
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    {
+      "name": "mail.send",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id",
+          "from",
+          "to",
+          "subject",
+          "text"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Sending domain"
+          },
+          "from": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Sender name before the @"
+          },
+          "from_name": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "Sender display name"
+          },
+          "to": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 2000,
+            "description": "Recipients, comma-separated"
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Subject"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30000,
+            "description": "Plain-text body"
+          }
+        }
+      }
+    },
+    {
+      "name": "relay.connect",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "relay",
+      "feature": "byok-turbosmtp",
+      "resource": "create",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "consumer_key",
+          "consumer_secret"
+        ],
+        "properties": {
+          "consumer_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512,
+            "description": "turboSMTP consumer key"
+          },
+          "consumer_secret": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512,
+            "description": "turboSMTP consumer secret"
+          }
+        }
+      }
+    },
+    {
+      "name": "relay.view",
+      "intent": "read",
+      "audience": "customer",
+      "capabilities": [],
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    {
+      "name": "relay.delete",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "relay",
+      "feature": "byok-turbosmtp",
+      "resource": "delete",
+      "destructive": true,
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    }
+  ],
+  "jobs": [],
+  "offerings": [
+    {
+      "id": "domain",
+      "label": "Sending domain"
+    },
+    {
+      "id": "relay",
+      "label": "Own turboSMTP account"
+    }
+  ],
+  "selfService": {
+    "features": [
+      {
+        "id": "add-domains",
+        "label": "Add sending domains",
+        "offering": "domain",
+        "description": "Add and remove domains to send mail from"
+      },
+      {
+        "id": "byok-turbosmtp",
+        "label": "Connect own turboSMTP account",
+        "offering": "relay",
+        "description": "Send through the customer's own turboSMTP account instead of the platform's"
+      }
+    ]
+  },
+  "areas": {
+    "operator": {
+      "pages": []
+    },
+    "selfService": {
+      "pages": [
+        {
+          "id": "resource",
+          "label": "Mail",
+          "action": "domains.view",
+          "resource": true
+        }
+      ]
+    }
+  },
+  "events": [],
+  "secrets": [],
+  "httpBindings": [],
+  "api": [
+    {
+      "method": "POST",
+      "path": "/send",
+      "action": "mail.send"
+    }
+  ],
+  "mcp": [
+    {
+      "name": "send_email",
+      "description": "Send a plain-text email from a verified sending domain of the project",
+      "action": "mail.send"
+    }
+  ]
+}

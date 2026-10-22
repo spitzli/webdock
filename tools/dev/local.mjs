@@ -132,6 +132,16 @@ const PLUGINS = {
       dedicated: { dockerSocket: "/var/run/docker.sock", bindHost: "127.0.0.1" },
     }),
   },
+  // Every message goes to the local Mailpit catcher; nothing leaves this machine.
+  mail: {
+    storage: true,
+    policy: { "add-domains": "selected", "byok-turbosmtp": "selected" },
+    config: (secrets) => ({
+      secretKeyHex: secrets.sealKey,
+      platformTransport: { kind: "smtp", host: "127.0.0.1", port: Number(process.env.WEBDOCK_DEV_SMTP_PORT ?? 55025) },
+      trustUnverifiedDomains: true,
+    }),
+  },
 };
 function readEnv(name) {
   return Object.fromEntries(readFileSync(file(name), "utf8").trim().split("\n").map((line) => line.split(/=(.*)/s).slice(0, 2)));

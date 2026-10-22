@@ -190,7 +190,9 @@ function CreateForm({ view, action, title, customer, projectID, onCancel }: { vi
             <input
               className={ui.input}
               name={name}
-              type={field.type === "integer" || field.type === "number" ? "number" : "text"}
+              // Inputs named like a secret are write-only fields: masked and never autofilled.
+              type={field.type === "integer" || field.type === "number" ? "number" : /(^|_)(secret|password)$/.test(name) ? "password" : "text"}
+              autoComplete={/(^|_)(secret|password)$/.test(name) ? "new-password" : undefined}
               required={required.has(name)}
               minLength={field.minLength}
               maxLength={field.maxLength}
