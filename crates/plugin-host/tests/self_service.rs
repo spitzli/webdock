@@ -1667,3 +1667,152 @@ async fn log_history_is_for_owners_and_admins_and_searchable() {
     .await;
     f.cleanup().await;
 }
+
+#[tokio::test]
+#[ignore = "requires local retained-schema restricted roles and signed RLS fixture"]
+async fn projects_choose_offered_clusters_while_empty() {
+    let f = Fixture::new().await;
+    let o = &f.owner;
+    let default = enable_workloads(&f).await;
+    let host = f.host().await;
+    let mut clusters = Vec::new();
+    for (label, offered, dedicated) in [
+        ("offered", true, None),
+        ("dedicated", false, Some(1)),
+        ("hidden", false, None),
+    ] {
+        let cluster = id(o).await;
+        let dedicated: Option<String> = dedicated.map(|i: usize| f.customers[i].clone());
+        sql(o, "INSERT INTO webdock_auth.hosting_cluster(id,name,provider,region,location_evidence,verified,offered,dedicated_customer_id) VALUES($1,$2,'k3s','eu-central','fixture',true,$3,$4)", vec![cluster.clone().into(), format!("{}-{label}", f.nonce).into(), offered.into(), dedicated.into()]).await;
+        clusters.push(cluster);
+    }
+    let names = |v: &Value| {
+        v["options"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|c| c["name"].as_str().unwrap().starts_with(&f.nonce))
+            .map(|c| c["id"].as_str().unwrap().to_owned())
+            .collect::<Vec<_>>()
+    };
+    // Customer A sees the offered cluster, B also the one dedicated to it; nobody sees the hidden one.
+    let a = host
+        .placement(f.principal("member"), &f.projects[0])
+        .await
+        .unwrap();
+    assert_eq!(names(&a), [clusters[0].clone()]);
+    assert!(a["cluster"].is_null() && a["movable"] == true);
+    assert_eq!(
+        names(
+            &host
+                .placement(f.principal("foreign"), &f.projects[1])
+                .await
+                .unwrap()
+        )
+        .len(),
+        2
+    );
+    assert!(
+        host.placement(f.principal("foreign"), &f.projects[0])
+            .await
+            .is_err()
+    );
+    // Owners choose; members cannot; unavailable clusters are refused in words.
+    assert!(
+        host.place(f.principal("member"), &f.projects[0], Some(&clusters[0]))
+            .await
+            .is_err()
+    );
+    for refused in [&clusters[1], &clusters[2]] {
+        assert_eq!(
+            host.place(f.principal("owner"), &f.projects[0], Some(refused))
+                .await
+                .unwrap_err()
+                .message,
+            "This cluster is not available to this workspace."
+        );
+    }
+    assert_eq!(
+        host.place(f.principal("owner"), &f.projects[0], Some(&clusters[0]))
+            .await
+            .unwrap()["cluster"],
+        clusters[0].as_str()
+    );
+    // New units follow the project, not the plugin's default.
+    host.workloads(
+        &peer(),
+        &f.plugin,
+        1,
+        "apply",
+        json!({"project": f.projects[0], "unit": "web-1", "objects": sized("128Mi", 1)}),
+    )
+    .await
+    .unwrap();
+    let placed: String = o.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres, "SELECT cluster_id FROM webdock_auth.plugin_workload WHERE plugin_id=$1 AND unit='web-1'", [f.plugin.clone().into()])).await.unwrap().unwrap().try_get("", "cluster_id").unwrap();
+    assert_eq!(placed, clusters[0]);
+    assert_ne!(placed, default);
+    // With services running the project stays put.
+    assert_eq!(
+        host.place(f.principal("owner"), &f.projects[0], None)
+            .await
+            .unwrap_err()
+            .message,
+        "Services already run in this project; it stays on its cluster."
+    );
+    assert_eq!(
+        host.placement(f.principal("owner"), &f.projects[0])
+            .await
+            .unwrap()["movable"],
+        false
+    );
+    // Operators see every cluster and choose what they offer.
+    let listed = host.clusters(f.principal("operator"), None).await.unwrap();
+    assert!(
+        listed
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|c| c["id"] == clusters[0].as_str() && c["projects"] == 1)
+    );
+    assert!(host.clusters(f.principal("owner"), None).await.is_err());
+    host.offer_cluster(f.principal("operator"), None, &clusters[2], true)
+        .await
+        .unwrap();
+    assert_eq!(
+        names(
+            &host
+                .placement(f.principal("member"), &f.projects[0])
+                .await
+                .unwrap()
+        )
+        .len(),
+        2
+    );
+    assert!(
+        host.offer_cluster(f.principal("owner"), None, &clusters[2], false)
+            .await
+            .is_err()
+    );
+
+    sql(
+        o,
+        "DELETE FROM webdock_auth.plugin_workload WHERE plugin_id=$1",
+        vec![f.plugin.clone().into()],
+    )
+    .await;
+    sql(
+        o,
+        "UPDATE webdock_admin.projects SET cluster_id=NULL WHERE id=$1",
+        vec![f.projects[0].clone().into()],
+    )
+    .await;
+    for cluster in clusters.into_iter().chain([default]) {
+        sql(
+            o,
+            "DELETE FROM webdock_auth.hosting_cluster WHERE id=$1",
+            vec![cluster.into()],
+        )
+        .await;
+    }
+    f.cleanup().await;
+}

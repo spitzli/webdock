@@ -148,3 +148,11 @@ wrong: a unit that logs more than 100 lines between two reports loses the overfl
 ## Phase F: placement
 
 - Projects choose a cluster from the clusters an operator allows; workloads follow the project.
+
+### Status (2026-10-22)
+
+Done: `projects.cluster_id` and `hosting_cluster.offered` (`0035_project_cluster`), new units placed
+on the project's cluster before the plugin's default, the operator Clusters page and the "Runs on"
+choice on projects. Ruling: a project changes cluster only while no unit exists in it; moving running
+services (volumes, databases) is a separate migration feature. Ruling: a cluster dedicated to a
+customer is that customer's choice without being offered.

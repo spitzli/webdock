@@ -986,6 +986,8 @@ mod controller;
 pub mod limits;
 #[path = "notifications.rs"]
 mod notifications;
+#[path = "placement.rs"]
+mod placement;
 #[path = "self_service.rs"]
 mod self_service;
 #[path = "workloads.rs"]

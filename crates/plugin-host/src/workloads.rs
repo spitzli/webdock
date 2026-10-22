@@ -448,9 +448,21 @@ impl HostService {
             "apply" => {
                 let input: Apply =
                     serde_json::from_value(input).map_err(|_| invalid("Invalid workload"))?;
-                let cluster = binding
-                    .workload_cluster
-                    .clone()
+                // The project's chosen cluster, else the plugin's default. A unit that exists keeps
+                // the cluster it was placed on.
+                let chosen: Option<String> = tx
+                    .query_one_raw(Statement::from_sql_and_values(
+                        DbBackend::Postgres,
+                        "SELECT webdock_rls.project_cluster($1) AS cluster",
+                        [input.project.clone().into()],
+                    ))
+                    .await
+                    .map_err(db_error)?
+                    .ok_or_else(unavailable)?
+                    .try_get("", "cluster")
+                    .map_err(db_error)?;
+                let cluster = chosen
+                    .or_else(|| binding.workload_cluster.clone())
                     .ok_or_else(|| unsupported("No cluster is assigned to this plugin"))?;
                 let Pinned {
                     namespace,

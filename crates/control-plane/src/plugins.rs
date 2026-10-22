@@ -312,6 +312,12 @@ pub fn routes() -> Router<Arc<ServiceState>> {
             "/api/console/projects/{project}/plugins/{plugin}/resources/{resource}/logs",
             get(logs),
         )
+        .route(
+            "/api/console/projects/{project}/placement",
+            get(placement).put(place),
+        )
+        .route("/api/console/clusters", get(clusters))
+        .route("/api/console/clusters/{id}", put(offer_cluster))
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -827,6 +833,87 @@ async fn logs(
                 &search,
                 before.as_deref(),
             )
+            .await
+            .map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
+}
+
+async fn placement(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    Path(project): Path<String>,
+) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        let value = endpoints(&state)?
+            .host
+            .placement(&actor.principal, &project)
+            .await
+            .map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct Place {
+    cluster_id: Option<String>,
+}
+async fn place(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    Path(project): Path<String>,
+    body: Bytes,
+) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        writer(&actor)?;
+        let input: Place = command(&body, &headers)?;
+        let value = endpoints(&state)?
+            .host
+            .place(&actor.principal, &project, input.cluster_id.as_deref())
+            .await
+            .map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
+}
+async fn clusters(State(state): State<Arc<ServiceState>>, headers: HeaderMap) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        let value = endpoints(&state)?
+            .host
+            .clusters(&actor.principal, Some(&actor.authority))
+            .await
+            .map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct Offer {
+    offered: bool,
+}
+async fn offer_cluster(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+    body: Bytes,
+) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        writer(&actor)?;
+        let input: Offer = command(&body, &headers)?;
+        let value = endpoints(&state)?
+            .host
+            .offer_cluster(&actor.principal, Some(&actor.authority), &id, input.offered)
             .await
             .map_err(failure)?;
         Ok(Json(value).into_response())

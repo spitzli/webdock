@@ -13,4 +13,5 @@ pieces from `deploy/dev/k3s`.
 
 Each plugin's runtime binding names its cluster (`workloadCluster`) and the domains its units may route
 without a customer verifying them (`routeDomains`, e.g. `apps.example.eu`). Customers' own domains need
-their TXT verification in the console.
+their TXT verification in the console. Operators mark clusters as offered on the Clusters page; a
+project then chooses one while nothing runs in it, otherwise each plugin's cluster applies.
