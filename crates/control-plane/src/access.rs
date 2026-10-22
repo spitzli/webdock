@@ -43,6 +43,14 @@ pub fn routes() -> Router<Arc<ServiceState>> {
             "/api/console/tenant/{id}/projects",
             get(projects).post(create_project),
         )
+        .route(
+            "/api/console/tenant/{id}/domains",
+            get(domains).post(add_domain),
+        )
+        .route(
+            "/api/console/tenant/{id}/domains/{domain}",
+            post(verify_domain).delete(remove_domain),
+        )
         .route("/api/console/project/{id}", get(project))
         .route("/api/tenant-preview/{action}", post(preview))
         .route("/api/console/tenant-preview/{action}", post(preview))
@@ -68,6 +76,12 @@ fn failure(error: webdock_access::Error) -> ApiFailure {
                     "This record changed. Refresh and review it before trying again."
                 }
                 webdock_access::Error::NotFound => "Record unavailable.",
+                webdock_access::Error::DomainTaken => {
+                    "Another customer already verified this domain."
+                }
+                webdock_access::Error::DomainInUse => {
+                    "Something still uses this domain. Remove it there first."
+                }
                 webdock_access::Error::ProjectLimit => {
                     "Your plan allows no more projects. Ask your provider for a larger plan."
                 }
@@ -177,6 +191,70 @@ async fn projects(
         async {
             let (a, p) = actor(&s, &h).await?;
             Ok(json!(a.list_projects_as(&p, &id).await.map_err(failure)?))
+        }
+        .await,
+    )
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NewDomain {
+    domain: String,
+}
+async fn domains(
+    State(s): State<Arc<ServiceState>>,
+    h: HeaderMap,
+    Path(id): Path<String>,
+) -> Response {
+    output(
+        async {
+            let (a, p) = actor(&s, &h).await?;
+            Ok(json!(a.list_domains_as(&p, &id).await.map_err(failure)?))
+        }
+        .await,
+    )
+}
+async fn add_domain(
+    State(s): State<Arc<ServiceState>>,
+    h: HeaderMap,
+    Path(id): Path<String>,
+    Json(command): Json<NewDomain>,
+) -> Response {
+    output(
+        async {
+            let (a, p) = actor(&s, &h).await?;
+            a.add_domain_as(&p, &id, &command.domain)
+                .await
+                .map_err(failure)
+        }
+        .await,
+    )
+}
+/// Checks the domain's TXT record now.
+async fn verify_domain(
+    State(s): State<Arc<ServiceState>>,
+    h: HeaderMap,
+    Path((id, domain)): Path<(String, String)>,
+) -> Response {
+    output(
+        async {
+            let (a, p) = actor(&s, &h).await?;
+            a.verify_domain_as(&p, &id, &domain).await.map_err(failure)
+        }
+        .await,
+    )
+}
+async fn remove_domain(
+    State(s): State<Arc<ServiceState>>,
+    h: HeaderMap,
+    Path((id, domain)): Path<(String, String)>,
+) -> Response {
+    output(
+        async {
+            let (a, p) = actor(&s, &h).await?;
+            a.remove_domain_as(&p, &id, &domain)
+                .await
+                .map_err(failure)?;
+            Ok(json!({}))
         }
         .await,
     )

@@ -234,6 +234,46 @@ async fn customer_projects() {
                 .await,
             Err(webdock_access::Error::ProjectLimit)
         ));
+
+        // Domains: owners add one and get the TXT record to publish; members only read.
+        let added = access
+            .add_domain_as(p("owner"), &customers[0], " Shop.Example.Invalid. ")
+            .await
+            .unwrap();
+        assert_eq!(added["domain"], "shop.example.invalid");
+        assert_eq!(added["verified"], false);
+        assert_eq!(added["record"]["name"], "_webdock-challenge.shop.example.invalid");
+        assert_eq!(added["record"]["value"].as_str().unwrap().len(), 32);
+        assert!(matches!(
+            access.add_domain_as(p("owner"), &customers[0], "shop.example.invalid").await,
+            Err(Error::Conflict)
+        ));
+        assert!(matches!(
+            access.add_domain_as(p("member"), &customers[0], "other.example.invalid").await,
+            Err(Error::Forbidden)
+        ));
+        assert!(access.add_domain_as(p("owner"), &customers[0], "*.example.invalid").await.is_err());
+        assert_eq!(access.list_domains_as(p("member"), &customers[0]).await.unwrap().len(), 1);
+        assert!(access.list_domains_as(p("foreign"), &customers[0]).await.is_err());
+        // Without the record the domain stays unverified, and local names need DNS here too.
+        let checked = access
+            .verify_domain_as(p("admin"), &customers[0], "shop.example.invalid")
+            .await
+            .unwrap();
+        assert_eq!(checked["verified"], false);
+        assert!(!checked["checkedAt"].is_null());
+        access.add_domain_as(p("owner"), &customers[0], "shop.localhost").await.unwrap();
+        assert_eq!(
+            access.verify_domain_as(p("owner"), &customers[0], "shop.localhost").await.unwrap()["verified"],
+            false
+        );
+        access.remove_domain_as(p("owner"), &customers[0], "shop.localhost").await.unwrap();
+        assert!(matches!(
+            access.remove_domain_as(p("member"), &customers[0], "shop.example.invalid").await,
+            Err(Error::Forbidden)
+        ));
+        access.remove_domain_as(p("owner"), &customers[0], "shop.example.invalid").await.unwrap();
+        assert!(access.list_domains_as(p("owner"), &customers[0]).await.unwrap().is_empty());
     }
     .await;
     for uid in &users {

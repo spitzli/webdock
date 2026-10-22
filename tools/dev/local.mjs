@@ -123,6 +123,7 @@ const PLUGINS = {
   postgres: {
     storage: true,
     capabilities: ["plugin.workloads"],
+    routeDomains: ["db.localhost"],
     policy: { "create-shared": "selected", "create-dedicated": "selected" },
     config: (secrets) => ({
       secretKeyHex: secrets.sealKey,
@@ -138,6 +139,7 @@ const PLUGINS = {
   mail: {
     storage: true,
     capabilities: ["plugin.workloads"],
+    routeDomains: ["mail.localhost", "mail-admin.localhost"],
     policy: { "add-domains": "selected", "byok-turbosmtp": "selected", "create-mailboxes": "selected" },
     config: (secrets) => ({
       secretKeyHex: secrets.sealKey,
@@ -158,6 +160,7 @@ const PLUGINS = {
   hosting: {
     storage: true,
     capabilities: ["plugin.workloads"],
+    routeDomains: ["apps.localhost"],
     policy: { "create-apps": "selected", "resize-apps": "selected" },
     config: (secrets) => ({
       secretKeyHex: secrets.sealKey,
@@ -371,6 +374,7 @@ COMMIT;`, demo);
   writeFileSync(pluginFile("host-bindings.json"), JSON.stringify({ runtimes: runtimes((id) => ({
     generation: 1, namespace: "local", service: id, credentialSha256: credential, peers: [{ kind: "unix", uid }],
     ...(PLUGINS[id].capabilities?.includes("plugin.workloads") ? { workloadCluster: cluster } : {}),
+    ...(PLUGINS[id].routeDomains ? { routeDomains: PLUGINS[id].routeDomains } : {}),
   })) }), { mode: 0o600 });
   writeFileSync(pluginFile("connections.json"), JSON.stringify({ runtimes: runtimes((id) => ({
     generation: 1, transport: { kind: "unix", path: pluginFile(`${id}.sock`) },

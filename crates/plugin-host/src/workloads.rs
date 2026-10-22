@@ -163,15 +163,143 @@ pub fn allocation(objects: &[Value]) -> Result<Value> {
     }
     Ok(json!({"memory": memory, "cpu": cpu, "storage": disk}))
 }
-/// Checks and pins one unit's objects. Returns them with namespace and owner labels set and
-/// service account tokens switched off, and what they allocate.
+/// A host a route or certificate may name: a lower-case DNS name of at least two labels, no wildcard.
+fn host_name(value: &str) -> Option<String> {
+    let host = value.to_ascii_lowercase();
+    let labels: Vec<&str> = host.split('.').collect();
+    (host.len() <= 253 && labels.len() >= 2 && labels.iter().all(|l| dns_label(l))).then_some(host)
+}
+/// The hosts of one Traefik rule. The rule must start with its host matchers: one `Host(`a`)`, or
+/// `Host(`a`) || Host(`b`)` alone or in parentheses, optionally followed by `&& <narrowing>` without
+/// `||` or further host matchers. Anything else could match hosts the unit does not own.
+fn rule_hosts(rule: &str, matcher: &str) -> Result<Vec<String>> {
+    let refuse = || invalid("Routes start with the hosts they serve");
+    let rule = rule.trim();
+    let (part, rest) = match rule.strip_prefix('(') {
+        Some(inner) => {
+            // Hosts hold no backticks or parentheses, so the group ends at the first "`))".
+            let close = inner.find("`))").ok_or_else(refuse)? + 2;
+            (&inner[..close], Some(inner[close + 1..].trim()))
+        }
+        None => match rule.find("&&") {
+            Some(at) => (rule[..at].trim(), Some(rule[at..].trim())),
+            None => (rule, None),
+        },
+    };
+    if let Some(rest) = rest.filter(|r| !r.is_empty()) {
+        let narrowing = rest.strip_prefix("&&").ok_or_else(refuse)?;
+        if narrowing.contains("||") || narrowing.contains("Host") {
+            return Err(refuse());
+        }
+    }
+    let mut hosts = Vec::new();
+    for alternative in part.split("||") {
+        let inner = alternative
+            .trim()
+            .strip_prefix(matcher)
+            .and_then(|m| m.strip_prefix("(`"))
+            .and_then(|m| m.strip_suffix("`)"))
+            .filter(|m| !m.contains('`'))
+            .ok_or_else(refuse)?;
+        hosts
+            .push(host_name(inner).ok_or_else(|| invalid("Routes name hosts by their full name"))?);
+    }
+    Ok(hosts)
+}
+/// Every host the unit's routes answer for or its certificates name.
+pub fn hosts(objects: &[Value]) -> Result<Vec<String>> {
+    let mut hosts = Vec::new();
+    let names = |value: &Value| -> Result<Vec<String>> {
+        value
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|h| {
+                h.as_str()
+                    .and_then(host_name)
+                    .ok_or_else(|| invalid("Routes name hosts by their full name"))
+            })
+            .collect()
+    };
+    for object in objects {
+        let spec = &object["spec"];
+        match object["kind"].as_str().unwrap_or_default() {
+            kind @ ("IngressRoute" | "IngressRouteTCP") => {
+                let matcher = if kind == "IngressRoute" {
+                    "Host"
+                } else {
+                    "HostSNI"
+                };
+                for route in spec["routes"].as_array().into_iter().flatten() {
+                    let rule = route["match"]
+                        .as_str()
+                        .ok_or_else(|| invalid("Routes need a rule"))?;
+                    hosts.extend(rule_hosts(rule, matcher)?);
+                }
+            }
+            "Ingress" => {
+                for rule in spec["rules"].as_array().into_iter().flatten() {
+                    hosts.push(
+                        rule["host"]
+                            .as_str()
+                            .and_then(host_name)
+                            .ok_or_else(|| invalid("Routes name hosts by their full name"))?,
+                    );
+                }
+                if spec["rules"].as_array().is_none_or(Vec::is_empty)
+                    || !spec["defaultBackend"].is_null()
+                {
+                    return Err(invalid("Routes start with the hosts they serve"));
+                }
+                for tls in spec["tls"].as_array().into_iter().flatten() {
+                    hosts.extend(names(&tls["hosts"])?);
+                }
+            }
+            "Certificate" => {
+                for key in ["ipAddresses", "uris", "emailAddresses", "otherNames"] {
+                    if !spec[key].is_null() {
+                        return Err(invalid("Certificates name hosts only"));
+                    }
+                }
+                hosts.extend(names(&spec["dnsNames"])?);
+                if let Some(common) = spec["commonName"].as_str() {
+                    hosts.push(
+                        host_name(common).ok_or_else(|| invalid("Certificates name hosts only"))?,
+                    );
+                }
+            }
+            _ => {}
+        }
+    }
+    hosts.sort();
+    hosts.dedup();
+    if hosts.len() > 64 {
+        return Err(invalid("A unit serves at most 64 hosts"));
+    }
+    Ok(hosts)
+}
+/// Whether `host` is `domain` or one of its subdomains.
+pub fn under(host: &str, domain: &str) -> bool {
+    host == domain || host.strip_suffix(domain).is_some_and(|p| p.ends_with('.'))
+}
+/// One unit's objects as Core stores them.
+pub struct Pinned {
+    pub namespace: String,
+    /// With namespace and owner labels set and service account tokens switched off.
+    pub objects: Vec<Value>,
+    /// What they take from the customer's plan.
+    pub allocation: Value,
+    /// Every host they route or certify.
+    pub hosts: Vec<String>,
+}
+/// Checks and pins one unit's objects.
 pub fn pin(
     manifest: &Manifest,
     plugin: &str,
     project: &str,
     unit: &str,
     objects: &Value,
-) -> Result<(String, Vec<Value>, Value)> {
+) -> Result<Pinned> {
     if !dns_label(unit) {
         return Err(invalid("Invalid workload unit"));
     }
@@ -266,8 +394,12 @@ pub fn pin(
         }
         pinned.push(object);
     }
-    let allocation = allocation(&pinned)?;
-    Ok((namespace, pinned, allocation))
+    Ok(Pinned {
+        allocation: allocation(&pinned)?,
+        hosts: hosts(&pinned)?,
+        namespace,
+        objects: pinned,
+    })
 }
 
 #[derive(Deserialize)]
@@ -320,13 +452,50 @@ impl HostService {
                     .workload_cluster
                     .clone()
                     .ok_or_else(|| unsupported("No cluster is assigned to this plugin"))?;
-                let (namespace, objects, allocation) = pin(
+                let Pinned {
+                    namespace,
+                    objects,
+                    allocation,
+                    hosts,
+                } = pin(
                     &metadata.manifest,
                     plugin,
                     &input.project,
                     &input.unit,
                     &input.objects,
                 )?;
+                // Hosts under the plugin's own route domains are its to hand out; anything else
+                // must be a domain the project's customer verified.
+                let foreign: Vec<&String> = hosts
+                    .iter()
+                    .filter(|h| !binding.route_domains.iter().any(|d| under(h, d)))
+                    .collect();
+                if !foreign.is_empty() {
+                    let row = tx
+                        .query_one_raw(Statement::from_sql_and_values(
+                            DbBackend::Postgres,
+                            "SELECT webdock_rls.project_unverified_host($1,$2) AS host",
+                            [
+                                input.project.clone().into(),
+                                foreign
+                                    .iter()
+                                    .map(|h| (*h).clone())
+                                    .collect::<Vec<_>>()
+                                    .into(),
+                            ],
+                        ))
+                        .await
+                        .map_err(db_error)?
+                        .ok_or_else(unavailable)?;
+                    if let Some(host) = row
+                        .try_get::<Option<String>>("", "host")
+                        .map_err(db_error)?
+                    {
+                        return Err(conflict(&format!(
+                            "Verify the domain of {host} before using it."
+                        )));
+                    }
+                }
                 if input.resource.as_deref().is_some_and(|r| {
                     !(1..=128).contains(&r.len())
                         || !r
@@ -345,10 +514,10 @@ impl HostService {
                     return Err(conflict(&message));
                 }
                 let row = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
-                    "INSERT INTO webdock_auth.plugin_workload(plugin_id,unit,project_id,cluster_id,namespace,objects,allocation,resource_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8) \
-                     ON CONFLICT (plugin_id,unit) DO UPDATE SET objects=EXCLUDED.objects,allocation=EXCLUDED.allocation,resource_id=EXCLUDED.resource_id,removing=false,revision=webdock_auth.plugin_workload.revision+1,updated_at=now() \
+                    "INSERT INTO webdock_auth.plugin_workload(plugin_id,unit,project_id,cluster_id,namespace,objects,allocation,resource_id,hosts) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) \
+                     ON CONFLICT (plugin_id,unit) DO UPDATE SET objects=EXCLUDED.objects,allocation=EXCLUDED.allocation,resource_id=EXCLUDED.resource_id,hosts=EXCLUDED.hosts,removing=false,revision=webdock_auth.plugin_workload.revision+1,updated_at=now() \
                      WHERE webdock_auth.plugin_workload.project_id=EXCLUDED.project_id RETURNING revision",
-                    [plugin.into(), input.unit.into(), input.project.into(), cluster.into(), namespace.clone().into(), Value::Array(objects).into(), allocation.into(), input.resource.into()])).await.map_err(db_error)?
+                    [plugin.into(), input.unit.into(), input.project.into(), cluster.into(), namespace.clone().into(), Value::Array(objects).into(), allocation.into(), input.resource.into(), hosts.into()])).await.map_err(db_error)?
                     .ok_or_else(|| conflict("This unit belongs to another project"))?;
                 json!({"revision": row.try_get::<i64>("", "revision").map_err(db_error)?, "namespace": namespace})
             }
@@ -367,7 +536,7 @@ impl HostService {
                 let input: Unit =
                     serde_json::from_value(input).map_err(|_| invalid("Invalid workload"))?;
                 tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,
-                    "UPDATE webdock_auth.plugin_workload SET removing=true,objects='[]'::jsonb,allocation='{}'::jsonb,revision=revision+1,updated_at=now() WHERE plugin_id=$1 AND unit=$2 AND NOT removing",
+                    "UPDATE webdock_auth.plugin_workload SET removing=true,objects='[]'::jsonb,allocation='{}'::jsonb,hosts='{}',revision=revision+1,updated_at=now() WHERE plugin_id=$1 AND unit=$2 AND NOT removing",
                     [plugin.into(), input.unit.into()])).await.map_err(db_error)?;
                 json!({})
             }
@@ -404,7 +573,11 @@ mod tests {
     fn objects_are_pinned_to_the_installation_namespace_with_owner_labels() {
         let objects = json!([deployment(json!({"containers":[{"name":"web","image":"nginx:stable-alpine","resources":sized()}]})),
                              {"apiVersion":"v1","kind":"Service","metadata":{"name":"web"},"spec":{"ports":[{"port":80}]}}]);
-        let (namespace, pinned, _) = pin(&manifest(), "hosting", "201", "app-1", &objects).unwrap();
+        let Pinned {
+            namespace,
+            objects: pinned,
+            ..
+        } = pin(&manifest(), "hosting", "201", "app-1", &objects).unwrap();
         assert_eq!(namespace, "wd-hosting-201");
         assert_eq!(pinned[0]["metadata"]["namespace"], "wd-hosting-201");
         assert_eq!(pinned[0]["metadata"]["labels"]["webdock.dev/unit"], "app-1");
@@ -489,6 +662,76 @@ mod tests {
                 "{object}"
             );
         }
+    }
+    #[test]
+    fn rules_start_with_the_hosts_they_serve() {
+        let ok = [
+            ("Host(`a.apps.localhost`)", vec!["a.apps.localhost"]),
+            (
+                "Host(`A.Shop.Example`) && PathPrefix(`/api`)",
+                vec!["a.shop.example"],
+            ),
+            (
+                "Host(`a.example`) || Host(`b.example`)",
+                vec!["a.example", "b.example"],
+            ),
+            (
+                "(Host(`a.example`) || Host(`b.example`) || Host(`c.example`)) && PathPrefix(`/`)",
+                vec!["a.example", "b.example", "c.example"],
+            ),
+        ];
+        for (rule, hosts) in ok {
+            assert_eq!(rule_hosts(rule, "Host").unwrap(), hosts, "{rule}");
+        }
+        for rule in [
+            "PathPrefix(`/`)",
+            "PathPrefix(`/`) && Host(`a.example`)",
+            "Host(`a.example`) || PathPrefix(`/`)",
+            "Host(`a.example`) && Path(`/`) || Host(`b.example`)",
+            "Host(`a.example`) && (Path(`/a`) || Path(`/b`))",
+            "HostRegexp(`.+`)",
+            "Host(`*.example`)",
+            "Host(`localhost`)",
+            "Host(`a.example`,`b.example`)",
+            "!Host(`a.example`)",
+            "(Host(`a.example`) || PathPrefix(`/`))",
+        ] {
+            assert!(rule_hosts(rule, "Host").is_err(), "{rule}");
+        }
+        assert_eq!(
+            rule_hosts("HostSNI(`pg-1.db.localhost`)", "HostSNI").unwrap(),
+            ["pg-1.db.localhost"]
+        );
+        assert!(rule_hosts("HostSNI(`*`)", "HostSNI").is_err());
+    }
+    #[test]
+    fn hosts_come_from_routes_ingresses_and_certificates() {
+        let objects = json!([
+            {"apiVersion":"traefik.io/v1alpha1","kind":"IngressRoute","spec":{"routes":[{"match":"Host(`b.example`)"},{"match":"Host(`a.example`)"}]}},
+            {"apiVersion":"traefik.io/v1alpha1","kind":"IngressRouteTCP","spec":{"routes":[{"match":"HostSNI(`db.example`)"}]}},
+            {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","spec":{"rules":[{"host":"c.example"}],"tls":[{"hosts":["c.example"]}]}},
+            {"apiVersion":"cert-manager.io/v1","kind":"Certificate","spec":{"dnsNames":["a.example","www.a.example"],"commonName":"a.example"}},
+        ]);
+        assert_eq!(
+            hosts(objects.as_array().unwrap()).unwrap(),
+            [
+                "a.example",
+                "b.example",
+                "c.example",
+                "db.example",
+                "www.a.example"
+            ]
+        );
+        for bad in [
+            json!({"apiVersion":"networking.k8s.io/v1","kind":"Ingress","spec":{"defaultBackend":{"service":{"name":"x"}},"rules":[{"host":"c.example"}]}}),
+            json!({"apiVersion":"networking.k8s.io/v1","kind":"Ingress","spec":{"rules":[{"http":{}}]}}),
+            json!({"apiVersion":"cert-manager.io/v1","kind":"Certificate","spec":{"ipAddresses":["10.0.0.1"]}}),
+            json!({"apiVersion":"traefik.io/v1alpha1","kind":"IngressRoute","spec":{"routes":[{"kind":"Rule"}]}}),
+        ] {
+            assert!(hosts(std::slice::from_ref(&bad)).is_err(), "{bad}");
+        }
+        assert!(under("shop.example", "shop.example") && under("www.shop.example", "shop.example"));
+        assert!(!under("evilshop.example", "shop.example") && !under("example", "shop.example"));
     }
     #[test]
     fn certificates_are_for_servers_only() {

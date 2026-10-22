@@ -38,6 +38,10 @@ pub struct RuntimeBinding {
     /// The enrolled cluster this plugin's workloads run on (`plugin.workloads`), chosen by the operator.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workload_cluster: Option<String>,
+    /// Domains whose hosts this plugin's units may route and certify without a customer verifying
+    /// them, e.g. `apps.example.eu` for `<app>.apps.example.eu`. Chosen by the operator.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub route_domains: Vec<String>,
 }
 impl RuntimeBinding {
     pub(crate) fn permits(&self, peer: &PeerIdentity) -> bool {
@@ -133,6 +137,7 @@ mod tests {
             public_customer_configuration: BTreeMap::new(),
             customers: BTreeMap::new(),
             workload_cluster: None,
+            route_domains: Vec::new(),
         };
         assert!(!binding.permits(&PeerIdentity::MutualTls {
             certificates: vec![cert.der().to_vec()]

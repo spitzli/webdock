@@ -1,6 +1,7 @@
 //! Retained tenant, invitation and account administration using live identity and signed RLS.
 mod admin;
 mod contracts;
+pub mod domains;
 mod migration;
 mod projects;
 mod service;
@@ -26,6 +27,10 @@ pub enum Error {
     ActivationRequired,
     #[error("The plan allows no more projects.")]
     ProjectLimit,
+    #[error("Another customer already verified this domain.")]
+    DomainTaken,
+    #[error("Something still uses this domain.")]
+    DomainInUse,
     #[error("Access persistence is unavailable.")]
     Database(#[from] sea_orm::DbErr),
     #[error("Identity operation is unavailable.")]
@@ -45,7 +50,9 @@ impl Error {
             Self::Conflict
             | Self::LastAdministrator
             | Self::ActivationRequired
-            | Self::ProjectLimit => 409,
+            | Self::ProjectLimit
+            | Self::DomainTaken
+            | Self::DomainInUse => 409,
             Self::InvalidInput => 400,
             _ => 503,
         }

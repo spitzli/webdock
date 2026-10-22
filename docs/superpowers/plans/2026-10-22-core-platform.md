@@ -93,6 +93,18 @@ Cost if wrong: such a unit shows 0 reserved until then. Ruling: the dev k3s node
   whether a host is usable. Production ACME ClusterIssuer (HTTP-01) for verified hosts.
 - Hosting: add and remove own domains per app.
 
+### Status (2026-10-22)
+
+Done: `customer_domain` with TXT tokens (`0031_customer_domains`), host extraction for IngressRoute,
+IngressRouteTCP, Ingress and Certificate in `pin()`, route domains per runtime binding, the
+`webdock_rls.project_unverified_host` check, the customer API and Domains page, own domains in
+hosting, `deploy/cluster` with the ACME issuer. Customer-facing plugin and host errors (invalid input,
+conflict, not found) now cross process boundaries as one sanitised line; other errors keep fixed texts.
+Ruling: Traefik rules must start with their host matchers and may only narrow afterwards (`&&`, no
+`||`). Cost if wrong: a plugin with an unusual rule shape must rewrite it. Ruling: in development,
+`.localhost` domains verify without DNS. Ruling: verification is checked once; re-checking ownership
+later is open. Cost if wrong: a domain that changes hands stays usable by the first customer.
+
 ## Phase C: API access
 
 - Customers create scoped API tokens for a workspace (OAuth client credentials on the existing

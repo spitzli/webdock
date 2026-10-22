@@ -1270,3 +1270,153 @@ async fn plans_limit_creates_workloads_and_projects() {
         .unwrap();
     f.cleanup().await;
 }
+
+#[tokio::test]
+#[ignore = "requires local retained-schema restricted roles and signed RLS fixture"]
+async fn units_route_only_their_domains_and_verified_ones() {
+    let f = Fixture::new().await;
+    let o = &f.owner;
+    let cluster = enable_workloads(&f).await;
+    let mut manifest = product_manifest(&f.plugin);
+    manifest["capabilities"] = json!(["plugin.workloads"]);
+    manifest["workloads"] =
+        json!({"kinds": ["traefik.io/v1alpha1/IngressRoute", "cert-manager.io/v1/Certificate"]});
+    let raw = manifest.to_string();
+    sql(o, "UPDATE webdock_auth.plugin_release SET manifest_bytes=$2,manifest_sha256=$3 WHERE plugin_id=$1", vec![f.plugin.clone().into(), raw.clone().into(), hex::encode(Sha256::digest(raw.as_bytes())).into()]).await;
+    let path = f.bindings.path().join("bindings.json");
+    let mut bindings: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    bindings["runtimes"][&f.plugin]["routeDomains"] = json!(["apps.localhost"]);
+    std::fs::write(&path, bindings.to_string()).unwrap();
+    let host = f.host().await;
+    let route = |project: usize, hosts: &[&str]| {
+        let rule = hosts
+            .iter()
+            .map(|h| format!("Host(`{h}`)"))
+            .collect::<Vec<_>>()
+            .join(" || ");
+        json!({"project": f.projects[project], "unit": format!("web-{project}"), "objects": [
+            {"apiVersion":"traefik.io/v1alpha1","kind":"IngressRoute","metadata":{"name":"web"},"spec":{"routes":[{"kind":"Rule","match":rule,"services":[{"name":"web","port":80}]}]}},
+            {"apiVersion":"cert-manager.io/v1","kind":"Certificate","metadata":{"name":"web"},"spec":{"secretName":"web","dnsNames":hosts,"issuerRef":{"name":"ca","kind":"ClusterIssuer"}}}]})
+    };
+    // The plugin's own route domain needs nobody's verification.
+    host.workloads(
+        &peer(),
+        &f.plugin,
+        1,
+        "apply",
+        route(0, &["shop-1.apps.localhost"]),
+    )
+    .await
+    .unwrap();
+    // A customer's domain needs that customer's verification first.
+    let refused = host
+        .workloads(
+            &peer(),
+            &f.plugin,
+            1,
+            "apply",
+            route(0, &["shop-1.apps.localhost", "www.shop.example.test"]),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(
+        refused.message,
+        "Verify the domain of www.shop.example.test before using it."
+    );
+    let claim = |customer: usize, verified: bool| {
+        let customer = f.customers[customer].clone();
+        async move {
+            let domain_id = id(o).await;
+            sql(o, &format!("INSERT INTO webdock_auth.customer_domain(id,customer_id,domain,token,created_by,verified_at) VALUES($1,$2,'shop.example.test',$3,'fixture',{})", if verified { "now()" } else { "NULL" }), vec![domain_id.into(), customer.into(), "0".repeat(32).into()]).await;
+        }
+    };
+    claim(0, false).await;
+    assert!(
+        host.workloads(
+            &peer(),
+            &f.plugin,
+            1,
+            "apply",
+            route(0, &["www.shop.example.test"])
+        )
+        .await
+        .is_err(),
+        "claimed is not verified"
+    );
+    // Verified by customer B: still not customer A's.
+    claim(1, true).await;
+    assert!(
+        host.workloads(
+            &peer(),
+            &f.plugin,
+            1,
+            "apply",
+            route(0, &["www.shop.example.test"])
+        )
+        .await
+        .is_err()
+    );
+    host.workloads(
+        &peer(),
+        &f.plugin,
+        1,
+        "apply",
+        route(1, &["www.shop.example.test", "shop.example.test"]),
+    )
+    .await
+    .unwrap();
+    let stored: Vec<String> = o
+        .query_one_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "SELECT hosts FROM webdock_auth.plugin_workload WHERE plugin_id=$1 AND unit='web-1'",
+            [f.plugin.clone().into()],
+        ))
+        .await
+        .unwrap()
+        .unwrap()
+        .try_get("", "hosts")
+        .unwrap();
+    assert_eq!(stored, ["shop.example.test", "www.shop.example.test"]);
+    // Customer B's members see which unit uses the domain.
+    let session = f.session("foreign").await;
+    let users: Value = session
+        .query_one_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "SELECT webdock_rls.domain_users($1,'shop.example.test') AS u",
+            [f.customers[1].clone().into()],
+        ))
+        .await
+        .unwrap()
+        .unwrap()
+        .try_get("", "u")
+        .unwrap();
+    assert_eq!(users[0]["unit"], "web-1");
+    session.rollback().await.unwrap();
+    // A lookalike domain is not a subdomain.
+    assert!(
+        host.workloads(
+            &peer(),
+            &f.plugin,
+            1,
+            "apply",
+            route(1, &["evilshop.example.test"])
+        )
+        .await
+        .is_err()
+    );
+
+    sql(o, "DELETE FROM webdock_auth.customer_domain WHERE domain='shop.example.test' AND customer_id = ANY($1)", vec![vec![f.customers[0].clone(), f.customers[1].clone()].into()]).await;
+    sql(
+        o,
+        "DELETE FROM webdock_auth.plugin_workload WHERE plugin_id=$1",
+        vec![f.plugin.clone().into()],
+    )
+    .await;
+    sql(
+        o,
+        "DELETE FROM webdock_auth.hosting_cluster WHERE id=$1",
+        vec![cluster.into()],
+    )
+    .await;
+    f.cleanup().await;
+}
