@@ -8,6 +8,7 @@ import { Empty, Failure, Loading } from "./common";
 import { formText } from "./form";
 import * as ui from "./ui";
 import { pluginNav, useWorkspacePlugins } from "./plugins/workspace";
+import { Attention } from "./Notices";
 
 const tenantsSchema = z.array(z.object({ id: z.string(), name: z.string(), status: z.string(), role: z.string().nullable() }));
 const projectsSchema = z.array(z.object({ id: z.string(), name: z.string(), status: z.string() }));
@@ -55,6 +56,7 @@ export function WorkspaceProjects({ id }: { id: string }) {
           </button>
         ) : null}
       </div>
+      <Attention customer={id} />
       {adding ? (
         <form
           className={ui.cx(ui.card, ui.cardBody, "mb-6 gap-4")}
