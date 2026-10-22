@@ -4,7 +4,7 @@ import { chromium } from 'playwright';
 import { server, previewOrigin } from './preview-server.ts';
 import manifest from '@plugins/hosting/manifest.json' with { type: 'json' };
 const appID = '00000000-0000-4000-8000-0000000000a1';
-const state = { status: 'running', env: ['GREETING'], memory: 128, calls: [], deleted: false };
+const state = { status: 'running', env: ['GREETING'], memory: 128, domains: [], calls: [], deleted: false };
 async function open(browser, member, features) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
@@ -23,11 +23,15 @@ async function open(browser, member, features) {
     state.calls.push(body);
     const ok = (value = {}) => route.fulfill({ json: value });
     switch (body.action) {
-      case 'apps.view': return ok({ name: 'Website', status: state.status, image: 'nginx:stable-alpine', port: 80, memoryMb: state.memory, url: state.status === 'running' ? 'http://website-0123abcd.apps.localhost:55480' : null, env: state.env, error: null, createdAt: '2026-10-22 10:00:00+00' });
+      case 'apps.view': return ok({ name: 'Website', status: state.status, image: 'nginx:stable-alpine', port: 80, memoryMb: state.memory, url: state.status === 'running' ? 'http://website-0123abcd.apps.localhost:55480' : null, env: state.env, error: null, createdAt: '2026-10-22 10:00:00+00', host: 'website-0123abcd.apps.localhost', domains: state.domains });
       case 'apps.logs': return ok({ lines: ['2026-10-22T10:00:00Z GET / 200'] });
       case 'apps.power': state.status = body.input.action === 'stop' ? 'stopped' : 'running'; return ok();
       case 'apps.env': state.env = body.input.env.split('\n').map((line) => line.split('=')[0]); return ok({ status: 'deploying' });
       case 'apps.resize': state.memory = body.input.memory_mb; return ok({ status: 'deploying' });
+      case 'apps.domains':
+        if (body.input.domains.includes('unverified')) return route.fulfill({ status: 409, json: { error: { code: 'conflict', message: 'Verify the domain of shop.unverified.test before using it.' } } });
+        state.domains = body.input.domains.split('\n').filter(Boolean);
+        return ok({ status: 'deploying' });
       case 'apps.delete': state.deleted = true; return ok();
       default: return route.fulfill({ status: 404, json: {} });
     }
@@ -55,6 +59,15 @@ try {
   await page().getByText('API_TOKEN', { exact: true }).waitFor();
   assert.equal(await page().getByText('s3cret').count(), 0);
 
+  // 2b. Own domains: Core's refusal reaches the customer in its own words; a verified one is listed.
+  await page().getByRole('button', { name: 'Change domains' }).click();
+  await page().getByRole('textbox', { name: 'Own domains, one per line' }).fill('shop.unverified.test');
+  await page().getByRole('button', { name: 'Save and redeploy' }).click();
+  await page().getByText('Verify the domain of shop.unverified.test before using it.').waitFor();
+  await page().getByRole('textbox', { name: 'Own domains, one per line' }).fill('shop.example.test');
+  await page().getByRole('button', { name: 'Save and redeploy' }).click();
+  await page().getByRole('list', { name: 'Domains' }).getByText('shop.example.test').waitFor();
+
   // 3. Memory and delete.
   await page().getByRole('combobox', { name: 'Memory' }).selectOption('512');
   await page().waitForFunction(() => document.querySelector('select')?.value === '512');
@@ -78,12 +91,12 @@ try {
   await page().getByRole('region', { name: 'Status' }).waitFor();
   // Logs often carry configuration values, so only owners and admins read them.
   assert.equal(await page().getByRole('region', { name: 'Logs' }).count(), 0);
-  for (const name of ['Stop', 'Deploy', 'Replace variables', 'Delete app']) assert.equal(await page().getByRole('button', { name }).count(), 0, name);
+  for (const name of ['Stop', 'Deploy', 'Replace variables', 'Change domains', 'Delete app']) assert.equal(await page().getByRole('button', { name }).count(), 0, name);
   await page().setViewportSize({ width: 390, height: 844 });
   assert.ok(await page().evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'no horizontal scroll at phone width');
   errors.push(...session.errors);
   await session.context.close();
 
   assert.deepEqual(errors, []);
-  console.log('Hosting plugin UI checks passed: URL and logs, power, variables never shown, memory gated by feature, delete, member read-only. Test-only HTTP fixtures.');
+  console.log('Hosting plugin UI checks passed: URL and logs, power, variables never shown, own domains with the refusal from Core, memory gated by feature, delete, member read-only. Test-only HTTP fixtures.');
 } finally { await browser.close(); await server.close(); }
