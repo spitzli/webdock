@@ -56,7 +56,7 @@ pub fn routes() -> Router<Arc<ServiceState>> {
         .route("/api/console/tenant-preview/{action}", post(preview))
         .route("/api/portal/studio", post(legacy))
 }
-fn failure(error: webdock_access::Error) -> ApiFailure {
+pub(crate) fn failure(error: webdock_access::Error) -> ApiFailure {
     reject(
         StatusCode::from_u16(error.status()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
         "access_error",

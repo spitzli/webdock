@@ -160,7 +160,7 @@ impl AccessService {
         tx.commit().await?;
         Ok(())
     }
-    async fn domain_writer(
+    pub(crate) async fn domain_writer(
         &self,
         actor: &Principal,
         customer: &str,

@@ -278,6 +278,20 @@ impl IdentityService {
             set_cookie,
         })
     }
+    /// A session only an API token reaches: its own token is random and never leaves this call,
+    /// so no cookie can carry it. Returns the session id.
+    pub async fn issue_api_session(&self, user_id: &str, label: &str, days: i64) -> Result<String> {
+        if !(1..=366).contains(&days) || label.is_empty() || label.len() > 120 {
+            return Err(IdentityError::InvalidInput);
+        }
+        let tx = self.db.begin().await?;
+        let id = self.allocate_id(&tx).await?;
+        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,
+            "INSERT INTO webdock_auth.session(id,token,\"userId\",\"expiresAt\",\"updatedAt\",\"userAgent\") VALUES($1,$2,$3,statement_timestamp()+make_interval(days=>$4::int),statement_timestamp(),$5)",
+            [id.clone().into(), hex::encode(random::<32>()?).into(), user_id.into(), (days as i32).into(), label.into()])).await?;
+        tx.commit().await?;
+        Ok(id)
+    }
     pub async fn revoke_session(&self, user_id: &str, session_id: &str) -> Result<bool> {
         Ok(self
             .db

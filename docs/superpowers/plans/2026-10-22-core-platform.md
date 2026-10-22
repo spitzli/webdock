@@ -107,8 +107,16 @@ later is open. Cost if wrong: a domain that changes hands stays usable by the fi
 
 ## Phase C: API access
 
-- Customers create scoped API tokens for a workspace (OAuth client credentials on the existing
-  authorization server), listed and revocable in the console. Plugin actions accept them.
+- Customers create scoped API tokens for a workspace, listed and revocable in the console. Plugin
+  actions accept them.
+
+### Status (2026-10-22)
+
+Done: `api_token` (`0032_api_tokens`), the `/v1/api` surface (projects, plugins, actions, usage), the
+console page and `docs/workspace-api.md`. Ruling: a token is its own session of the member who made
+it instead of an OAuth client, so RLS, roles and admission apply unchanged and the token loses access
+with its member. Cost if wrong: tokens show up as sessions of that member, and "sign out everywhere"
+also ends them. Ruling: no CLI yet; curl against the documented API covers CI.
 
 ## Phase D: notifications
 

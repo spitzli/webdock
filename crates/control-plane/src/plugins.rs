@@ -42,6 +42,15 @@ impl PluginEndpoints {
         actor: &auth::AuthenticatedActor,
         input: AdmissionInput,
     ) -> Result<Value, PluginError> {
+        self.invoke_as(actor, input, !actor.read_only()).await
+    }
+    /// As `invoke`, with writes allowed only when `can_write` (an API token may only read).
+    pub async fn invoke_as(
+        &self,
+        actor: &auth::AuthenticatedActor,
+        input: AdmissionInput,
+        can_write: bool,
+    ) -> Result<Value, PluginError> {
         let view = self
             .host
             .project_plugins_with_authority(&actor.principal, &input.project_id, &actor.authority)
@@ -59,12 +68,7 @@ impl PluginEndpoints {
         let plugin = input.plugin_id.clone();
         let admitted = self
             .host
-            .admit_with_authority(
-                &actor.principal,
-                input,
-                !actor.read_only(),
-                &actor.authority,
-            )
+            .admit_with_authority(&actor.principal, input, can_write, &actor.authority)
             .await?;
         self.invoke_admitted(plugin, view, connection, admitted)
             .await
@@ -273,6 +277,7 @@ fn json_body(body: &[u8], headers: &HeaderMap) -> Result<Value, ApiFailure> {
 }
 pub fn routes() -> Router<Arc<ServiceState>> {
     Router::new()
+        .merge(api::routes())
         .merge(exposure::routes())
         .merge(operations::routes())
         .route("/api/console/plugins", get(list))
@@ -651,6 +656,8 @@ impl PluginEndpoints {
     }
 }
 
+#[path = "api.rs"]
+pub(crate) mod api;
 #[path = "plugin_exposure.rs"]
 mod exposure;
 #[path = "plugin_operations.rs"]

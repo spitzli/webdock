@@ -274,6 +274,39 @@ async fn customer_projects() {
         ));
         access.remove_domain_as(p("owner"), &customers[0], "shop.example.invalid").await.unwrap();
         assert!(access.list_domains_as(p("owner"), &customers[0]).await.unwrap().is_empty());
+
+        // API tokens: owners and admins make them; the secret is shown once and acts as its maker.
+        let made = access
+            .create_api_token_as(p("admin"), &customers[0], "CI deploy", false, 30)
+            .await
+            .unwrap();
+        let token = made["token"].as_str().unwrap().to_owned();
+        assert!(token.starts_with("wdk_") && token.len() == 68);
+        assert_eq!(made["canWrite"], false);
+        assert!(matches!(
+            access.create_api_token_as(p("member"), &customers[0], "No", true, 30).await,
+            Err(Error::Forbidden)
+        ));
+        assert!(access.create_api_token_as(p("owner"), &customers[0], "Too long", true, 400).await.is_err());
+        let listed = access.list_api_tokens_as(p("owner"), &customers[0]).await.unwrap();
+        assert_eq!(listed.len(), 1);
+        assert!(listed[0].get("token").is_none(), "the secret is never listed");
+        assert!(access.list_api_tokens_as(p("member"), &customers[0]).await.is_err());
+        let actor = access.api_actor(&token).await.unwrap();
+        assert_eq!(actor.customer, customers[0]);
+        assert!(!actor.can_write);
+        assert_eq!(
+            access.list_projects_as(&actor.principal, &customers[0]).await.unwrap().len(),
+            3
+        );
+        for wrong in [format!("{token}0"), token.replace("wdk_", "wdx_"), "wdk_".to_owned() + &"0".repeat(64)] {
+            assert!(access.api_actor(&wrong).await.is_err(), "{wrong}");
+        }
+        access
+            .revoke_api_token_as(p("owner"), &customers[0], made["id"].as_str().unwrap())
+            .await
+            .unwrap();
+        assert!(access.api_actor(&token).await.is_err(), "a revoked token stops working");
     }
     .await;
     for uid in &users {

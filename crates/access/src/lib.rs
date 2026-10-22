@@ -1,5 +1,6 @@
 //! Retained tenant, invitation and account administration using live identity and signed RLS.
 mod admin;
+pub mod api_tokens;
 mod contracts;
 pub mod domains;
 mod migration;

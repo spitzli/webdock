@@ -390,6 +390,7 @@ fn admit_request(config: &PlatformConfig, ui: bool, request: &Request) -> Result
         || crate::resource_auth::protocol_path(path)
         || crate::build::credential_endpoint(path)
         || crate::plugins::credential_endpoint(path)
+        || crate::plugins::api::credential_endpoint(path)
         || ["/api/databases/gateway", "/api/mail/gateway"].contains(&path);
     if origin.is_none() && credential_endpoint {
         return Ok(());
