@@ -1420,3 +1420,184 @@ async fn units_route_only_their_domains_and_verified_ones() {
     .await;
     f.cleanup().await;
 }
+
+struct Mails(std::sync::Mutex<Vec<webdock_identity::DeliveryRequest>>);
+#[async_trait::async_trait]
+impl webdock_identity::Delivery for Mails {
+    async fn deliver(
+        &self,
+        request: &webdock_identity::DeliveryRequest,
+    ) -> Result<(), webdock_identity::DeliveryError> {
+        // Account mail accepts record ids only (they become its idempotency keys).
+        if !(1..=19).contains(&request.id.len()) || !request.id.bytes().all(|b| b.is_ascii_digit())
+        {
+            return Err(webdock_identity::DeliveryError::Unavailable);
+        }
+        self.0.lock().unwrap().push(request.clone());
+        Ok(())
+    }
+}
+
+#[tokio::test]
+#[ignore = "requires local retained-schema restricted roles and signed RLS fixture"]
+async fn reports_open_and_resolve_notices_mailed_once() {
+    let f = Fixture::new().await;
+    let o = &f.owner;
+    let cluster = enable_workloads(&f).await;
+    let host = f.host().await;
+    host.workloads(
+        &peer(),
+        &f.plugin,
+        1,
+        "apply",
+        json!({"project": f.projects[0], "unit": "web-1", "objects": sized("128Mi", 1)}),
+    )
+    .await
+    .unwrap();
+    // The agent's report, as the database sees it (the agent role is tested with the agent transport).
+    let report = |state: Value, failure: Option<&str>| {
+        let (plugin, failure) = (f.plugin.clone(), failure.map(str::to_owned));
+        async move {
+            sql(o, "SELECT webdock_auth.notice(w, webdock_auth.attention($2,$3)) FROM webdock_auth.plugin_workload w WHERE w.plugin_id=$1 AND w.unit='web-1'", vec![plugin.into(), state.into(), failure.into()]).await;
+        }
+    };
+    let open = || async {
+        o.query_all_raw(Statement::from_sql_and_values(DbBackend::Postgres, "SELECT kind FROM webdock_auth.notification WHERE plugin_id=$1 AND resolved_at IS NULL ORDER BY kind", [f.plugin.clone().into()]))
+            .await
+            .unwrap()
+            .iter()
+            .map(|r| r.try_get::<String>("", "kind").unwrap())
+            .collect::<Vec<_>>()
+    };
+    let crash = json!({"ready": false, "problems": [{"reason": "CrashLoopBackOff"}],
+        "objects": [{"kind": "cert-manager.io/v1/Certificate", "ready": false}]});
+    report(crash.clone(), None).await;
+    report(crash, None).await;
+    assert_eq!(
+        open().await,
+        ["certificate", "crashing"],
+        "one notice per kind, however often reported"
+    );
+    report(
+        json!({"ready": false, "problems": [{"reason": "ImagePullBackOff"}]}),
+        Some("denied"),
+    )
+    .await;
+    assert_eq!(
+        open().await,
+        ["image", "refused"],
+        "what the report no longer shows resolves"
+    );
+
+    assert_eq!(
+        host.notifications(f.principal("member"), &f.customers[0])
+            .await
+            .unwrap(),
+        json!([]),
+        "fresh notices stay quiet"
+    );
+    // Due after two minutes: owners and admins get one fixed mail each, members do not.
+    let mails = Mails(Default::default());
+    // Notices other fixtures left behind go out first.
+    while host
+        .dispatch_notifications(&mails, "http://127.0.0.1:1/")
+        .await
+        .unwrap()
+        > 0
+    {}
+    mails.0.lock().unwrap().clear();
+    assert_eq!(
+        host.dispatch_notifications(&mails, "http://127.0.0.1:1/")
+            .await
+            .unwrap(),
+        0,
+        "not yet due"
+    );
+    sql(o, "UPDATE webdock_auth.notification SET opened_at=now()-interval '3 minutes' WHERE plugin_id=$1", vec![f.plugin.clone().into()]).await;
+    assert_eq!(
+        host.dispatch_notifications(&mails, "http://127.0.0.1:1/")
+            .await
+            .unwrap(),
+        2
+    );
+    let mut to: Vec<String> = mails
+        .0
+        .lock()
+        .unwrap()
+        .iter()
+        .map(|m| m.email.clone())
+        .collect();
+    to.sort();
+    to.dedup();
+    assert_eq!(
+        to,
+        [
+            format!("{}-admin@example.invalid", f.nonce),
+            format!("{}-owner@example.invalid", f.nonce)
+        ]
+    );
+    assert!(
+        mails
+            .0
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|m| m.kind == webdock_identity::DeliveryKind::Notice)
+    );
+    assert_eq!(
+        host.dispatch_notifications(&mails, "http://127.0.0.1:1/")
+            .await
+            .unwrap(),
+        0,
+        "mailed once"
+    );
+
+    // Members read them once they lasted long enough, newest open first; other customers do not.
+    let listed = host
+        .notifications(f.principal("member"), &f.customers[0])
+        .await
+        .unwrap();
+    let kinds: Vec<&str> = listed
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|n| n["resolvedAt"].is_null())
+        .map(|n| n["kind"].as_str().unwrap())
+        .collect();
+    assert_eq!(kinds.len(), 2);
+    assert!(
+        listed
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|n| n["kind"] == "crashing" && !n["resolvedAt"].is_null())
+    );
+    assert!(
+        host.notifications(f.principal("foreign"), &f.customers[0])
+            .await
+            .is_err()
+    );
+    // Healthy again: everything resolves.
+    report(json!({"ready": true, "problems": [], "objects": [{"kind": "cert-manager.io/v1/Certificate", "ready": true}]}), None).await;
+    assert!(open().await.is_empty());
+
+    sql(
+        o,
+        "DELETE FROM webdock_auth.notification WHERE plugin_id=$1",
+        vec![f.plugin.clone().into()],
+    )
+    .await;
+    sql(
+        o,
+        "DELETE FROM webdock_auth.plugin_workload WHERE plugin_id=$1",
+        vec![f.plugin.clone().into()],
+    )
+    .await;
+    sql(
+        o,
+        "DELETE FROM webdock_auth.hosting_cluster WHERE id=$1",
+        vec![cluster.into()],
+    )
+    .await;
+    f.cleanup().await;
+}

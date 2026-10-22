@@ -120,8 +120,17 @@ also ends them. Ruling: no CLI yet; curl against the documented API covers CI.
 
 ## Phase D: notifications
 
-- Core events (deploy failed, crash loop, certificate not ready, limit reached) go to the
-  workspace's owners by mail (dev: Mailpit only) and to optional webhooks, deduplicated.
+- Core events (deploy failed, crash loop, certificate not ready) go to the workspace's owners and
+  admins by mail (dev: Mailpit only), deduplicated, and show in the console.
+
+### Status (2026-10-22)
+
+Done: `notification` (`0033_notifications`) opened and resolved from each agent report of the current
+revision (crashing, image, refused, certificate), the mail loop with a fixed text and a sign-in link,
+the console section on the workspace overview. Ruling: notices count only after 2 minutes
+(certificates 15), in mail and console alike. Ruling: no webhooks yet; they need an outbound guard
+against internal addresses first. Ruling: plan limits are not notified; the refusal already tells the
+person who hit it. Cost if wrong: an owner learns of a limit only when someone hits it.
 
 ## Phase E: log history
 

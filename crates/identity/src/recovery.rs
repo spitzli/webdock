@@ -15,6 +15,8 @@ pub enum DeliveryKind {
     Activation,
     Invitation,
     WebsiteAccess,
+    /// Something in a workspace needs attention; the details are in the console.
+    Notice,
 }
 impl DeliveryKind {
     pub fn as_str(self) -> &'static str {
@@ -23,6 +25,7 @@ impl DeliveryKind {
             Self::Activation => "activation",
             Self::Invitation => "invitation",
             Self::WebsiteAccess => "website-access",
+            Self::Notice => "notice",
         }
     }
 }

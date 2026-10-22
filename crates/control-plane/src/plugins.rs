@@ -304,6 +304,10 @@ pub fn routes() -> Router<Arc<ServiceState>> {
         )
         .route("/api/console/customers/{id}/plan", put(customer_plan))
         .route("/api/console/customers/{id}/usage", get(usage))
+        .route(
+            "/api/console/customers/{id}/notifications",
+            get(notifications),
+        )
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -762,6 +766,24 @@ async fn usage(
         let actor = actor(&state, &headers).await?;
         let host = &endpoints(&state)?.host;
         let value = host.usage(&actor.principal, &id).await.map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
+}
+
+async fn notifications(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        let host = &endpoints(&state)?.host;
+        let value = host
+            .notifications(&actor.principal, &id)
+            .await
+            .map_err(failure)?;
         Ok(Json(value).into_response())
     }
     .await;

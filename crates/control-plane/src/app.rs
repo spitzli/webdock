@@ -323,6 +323,19 @@ impl Hooks for WebdockApp {
         } else {
             None
         };
+        // Notices about units that need attention go out with the account mail.
+        if let (Some(mail), Some(plugins)) = (&account_mail, &plugins) {
+            let (mail, host) = (mail.clone(), plugins.host.clone());
+            let sign_in = format!("{}/", config.auth_origin.trim_end_matches('/'));
+            tokio::spawn(async move {
+                loop {
+                    if host.dispatch_notifications(&*mail, &sign_in).await.is_err() {
+                        tracing::warn!("Notice mail unavailable; notices stay due");
+                    }
+                    tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+                }
+            });
+        }
         let build = if config.features.state("hosting")
             != webdock_core::features::FeatureState::Disabled
             && let Some(hosting) = &hosting

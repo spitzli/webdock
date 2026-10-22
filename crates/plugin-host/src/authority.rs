@@ -984,6 +984,8 @@ mod admin;
 mod controller;
 #[path = "limits.rs"]
 pub mod limits;
+#[path = "notifications.rs"]
+mod notifications;
 #[path = "self_service.rs"]
 mod self_service;
 #[path = "workloads.rs"]

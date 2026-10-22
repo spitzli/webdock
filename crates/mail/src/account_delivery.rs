@@ -291,6 +291,12 @@ impl MailDelivery {
                 }
                 "/sites"
             }
+            DeliveryKind::Notice => {
+                if !query.is_empty() {
+                    return Err(DeliveryError::Unavailable);
+                }
+                "/"
+            }
         };
         let mut expected = self.account_origin.join(path).map_err(unavailable)?;
         for (name, value) in &query {
@@ -317,6 +323,13 @@ impl MailDelivery {
             DeliveryKind::Invitation => (
                 "Invitation to Webdock",
                 format!("You have been invited to Webdock.\n{}", request.url),
+            ),
+            DeliveryKind::Notice => (
+                "A service in your Webdock workspace needs attention",
+                format!(
+                    "A service in one of your Webdock workspaces has needed attention for a few minutes, for example because it keeps stopping or its image cannot be pulled. Sign in to see which one and why:\n{}",
+                    request.url
+                ),
             ),
             DeliveryKind::WebsiteAccess => (
                 "Your Webdock website access",
