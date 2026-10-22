@@ -137,13 +137,21 @@ const PLUGINS = {
   // Every message goes to the local Mailpit catcher; nothing leaves this machine.
   mail: {
     storage: true,
+    capabilities: ["plugin.workloads"],
     policy: { "add-domains": "selected", "byok-turbosmtp": "selected", "create-mailboxes": "selected" },
     config: (secrets) => ({
       secretKeyHex: secrets.sealKey,
       platformTransport: { kind: "smtp", host: "127.0.0.1", port: Number(process.env.WEBDOCK_DEV_SMTP_PORT ?? 55025) },
       trustUnverifiedDomains: true,
-      // One Stalwart CE server per project on an internal Docker network: no route out of this machine.
-      mailboxes: { dockerSocket: "/var/run/docker.sock", image: "docker.io/stalwartlabs/stalwart@sha256:74e5a7d55303ba525d939c6bf97ed4e010df7521f52d80afc22a815b66bd53f3" },
+      // One Stalwart CE server per project on the local k3s, egress denied; IMAP and submission through
+      // Traefik by TLS server name, management over its own route on the HTTP entry point.
+      mailboxes: {
+        image: "docker.io/stalwartlabs/stalwart@sha256:74e5a7d55303ba525d939c6bf97ed4e010df7521f52d80afc22a815b66bd53f3",
+        domain: "mail.localhost",
+        imapPort: Number(process.env.WEBDOCK_DEV_K3S_IMAPS_PORT ?? 55993),
+        submissionPort: Number(process.env.WEBDOCK_DEV_K3S_SUBMISSIONS_PORT ?? 55465),
+        admin: { origin: `http://127.0.0.1:${process.env.WEBDOCK_DEV_K3S_HTTP_PORT ?? 55480}`, domain: "mail-admin.localhost", entryPoints: ["web"] },
+      },
     }),
   },
   hosting: {

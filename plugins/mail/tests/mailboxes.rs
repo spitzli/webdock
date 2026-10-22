@@ -1,14 +1,144 @@
-//! A real Stalwart CE engine through the local Docker socket (`WEBDOCK_MAIL_PLUGIN_TEST_DOCKER=1`),
-//! on an internal network without a route out, and plugin storage on a disposable local PostgreSQL
-//! (`WEBDOCK_MAIL_PLUGIN_TEST_ADMIN_URL`, loopback).
+//! A real Stalwart CE engine on the local dev k3s (`WEBDOCK_WORKLOAD_TEST_KUBECONFIG`, context
+//! `webdock-dev`) behind its Traefik, and plugin storage on a disposable local PostgreSQL
+//! (`WEBDOCK_MAIL_PLUGIN_TEST_ADMIN_URL`, loopback). A stand-in for Core and the cluster's agent
+//! applies the engine's objects with kubectl in a namespace of the test's own.
 use serde_json::{Value, json};
-use std::time::Duration;
+use std::{process::Command, sync::Mutex, time::Duration};
 use tokio_postgres::NoTls;
 use webdock_mail::{Dns, Handler, Plugin, Settings, engine, seal::Sealer, store::Store, transport};
 use webdock_plugin_protocol::{ErrorCode, InvocationClaims, PluginError};
 use webdock_plugin_runtime::ActionHandler;
 
 const IMAGE: &str = "docker.io/stalwartlabs/stalwart@sha256:74e5a7d55303ba525d939c6bf97ed4e010df7521f52d80afc22a815b66bd53f3";
+
+const ORIGIN: &str = "http://127.0.0.1:55480";
+fn config() -> engine::EngineConfig {
+    engine::EngineConfig {
+        image: IMAGE.into(),
+        domain: "mail.localhost".into(),
+        imap_port: 55993,
+        submission_port: 55465,
+        admin: engine::AdminRoute {
+            origin: ORIGIN.into(),
+            domain: "mail-admin.localhost".into(),
+            entry_points: vec!["web".into()],
+        },
+    }
+}
+
+/// Applies, prunes and removes like the agent, in one namespace, through kubectl.
+struct Kube {
+    namespace: String,
+    applied: Mutex<Vec<(String, String)>>,
+}
+fn kubectl(args: &[&str], input: Option<&Value>) -> std::process::Output {
+    let kubeconfig =
+        std::env::var("WEBDOCK_WORKLOAD_TEST_KUBECONFIG").expect("local dev kubeconfig");
+    let mut command = Command::new("kubectl");
+    command
+        .args(["--kubeconfig", &kubeconfig, "--context", "webdock-dev"])
+        .args(args)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+    let mut child = command.spawn().unwrap();
+    if let Some(input) = input {
+        use std::io::Write;
+        child
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(input.to_string().as_bytes())
+            .unwrap();
+    }
+    drop(child.stdin.take());
+    child.wait_with_output().unwrap()
+}
+fn resource(object: &Value) -> (String, String) {
+    let api = object["apiVersion"].as_str().unwrap();
+    let kind = object["kind"].as_str().unwrap().to_ascii_lowercase();
+    let kind = match api.rsplit_once('/') {
+        Some((group, _)) => format!("{kind}.{group}"),
+        None => kind,
+    };
+    (
+        kind,
+        object["metadata"]["name"].as_str().unwrap().to_owned(),
+    )
+}
+#[tonic::async_trait]
+impl engine::Workloads for Kube {
+    async fn call(&self, method: &str, input: Value) -> Result<Value, PluginError> {
+        let ns = self.namespace.as_str();
+        Ok(match method {
+            "apply" => {
+                let exists = kubectl(&["get", "namespace", ns], None).status.success();
+                if !exists {
+                    let created = kubectl(&["create", "namespace", ns], None);
+                    assert!(created.status.success(), "{created:?}");
+                    kubectl(
+                        &[
+                            "label",
+                            "namespace",
+                            ns,
+                            "pod-security.kubernetes.io/enforce=baseline",
+                        ],
+                        None,
+                    );
+                }
+                let mut objects = input["objects"].as_array().unwrap().clone();
+                for object in &mut objects {
+                    object["metadata"]["namespace"] = json!(ns);
+                }
+                let out = kubectl(
+                    &[
+                        "apply",
+                        "--server-side",
+                        "--force-conflicts",
+                        "--field-manager",
+                        "webdock-test",
+                        "-f",
+                        "-",
+                    ],
+                    Some(&json!({"apiVersion": "v1", "kind": "List", "items": objects})),
+                );
+                assert!(
+                    out.status.success(),
+                    "{}",
+                    String::from_utf8_lossy(&out.stderr)
+                );
+                let wanted: Vec<_> = objects.iter().map(resource).collect();
+                let mut applied = self.applied.lock().unwrap();
+                for (kind, name) in applied.iter().filter(|r| !wanted.contains(r)) {
+                    kubectl(
+                        &["delete", "-n", ns, kind, name, "--ignore-not-found"],
+                        None,
+                    );
+                }
+                *applied = wanted;
+                json!({})
+            }
+            "remove" => {
+                kubectl(
+                    &[
+                        "delete",
+                        "namespace",
+                        ns,
+                        "--ignore-not-found",
+                        "--wait=true",
+                    ],
+                    None,
+                );
+                self.applied.lock().unwrap().clear();
+                json!({})
+            }
+            _ if !kubectl(&["get", "namespace", ns], None).status.success() => {
+                json!({"removed": true})
+            }
+            _ => json!({"observed": {}}),
+        })
+    }
+}
 
 fn admin_url() -> url::Url {
     let url = url::Url::parse(
@@ -63,12 +193,17 @@ impl Fixture {
             .code
     }
 }
-async fn session(view: &Value, user: &str, password: &str) -> u16 {
-    reqwest::Client::new()
-        .get(format!(
-            "http://{}:8080/jmap/session",
-            view["host"].as_str().unwrap()
-        ))
+/// A JMAP session through the engine's route, as the mailbox's user.
+async fn session(project: &str, user: &str, password: &str) -> u16 {
+    reqwest::Client::builder()
+        .no_proxy()
+        .build()
+        .unwrap()
+        .get(format!("{ORIGIN}/jmap/session"))
+        .header(
+            reqwest::header::HOST,
+            format!("p{project}.mail-admin.localhost"),
+        )
         .basic_auth(user, Some(password))
         .send()
         .await
@@ -77,13 +212,76 @@ async fn session(view: &Value, user: &str, password: &str) -> u16 {
         .as_u16()
 }
 
-#[tokio::test]
-#[ignore = "requires a disposable local PostgreSQL server and Docker"]
-async fn mailbox_lifecycle() {
+#[test]
+fn engines_have_no_egress_and_drop_the_setup_administrator() {
+    struct Nowhere;
+    #[tonic::async_trait]
+    impl engine::Workloads for Nowhere {
+        async fn call(&self, _: &str, _: Value) -> Result<Value, PluginError> {
+            unreachable!()
+        }
+    }
+    let engines = engine::Engines::new(Box::new(Nowhere), config()).unwrap();
+    let kinds = |objects: &Value| -> Vec<String> {
+        objects
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|o| format!("{}/{}", o["kind"], o["metadata"]["name"]))
+            .collect()
+    };
+    let setup = engines.objects("7", Some("pw"), "a");
+    assert!(kinds(&setup).contains(&r#""Secret"/"engine-recovery""#.to_owned()));
+    let ready = engines.objects("7", None, "b");
+    assert!(!kinds(&ready).iter().any(|k| k.contains("Secret")));
+    let deployment = ready
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|o| o["kind"] == "Deployment")
+        .unwrap();
     assert_eq!(
-        std::env::var("WEBDOCK_MAIL_PLUGIN_TEST_DOCKER").as_deref(),
-        Ok("1")
+        deployment["spec"]["template"]["spec"]["containers"][0]["envFrom"],
+        json!([])
     );
+    let policy = ready
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|o| o["kind"] == "NetworkPolicy")
+        .unwrap();
+    assert_eq!(
+        (
+            policy["spec"]["policyTypes"].clone(),
+            policy["spec"]["egress"].clone()
+        ),
+        (json!(["Egress"]), json!([]))
+    );
+    let imaps = ready
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|o| o["metadata"]["name"] == "engine-imaps")
+        .unwrap();
+    assert_eq!(
+        imaps["spec"]["routes"][0]["match"],
+        "HostSNI(`p7.mail.localhost`)"
+    );
+    assert!(
+        engine::Engines::new(
+            Box::new(Nowhere),
+            engine::EngineConfig {
+                image: "stalwart:latest".into(),
+                ..config()
+            }
+        )
+        .is_err()
+    );
+}
+
+#[tokio::test]
+#[ignore = "requires a disposable local PostgreSQL server and the local dev k3s"]
+async fn mailbox_lifecycle() {
     let storage = format!("mailbox_test_{}", uuid::Uuid::new_v4().simple());
     admin()
         .await
@@ -92,9 +290,11 @@ async fn mailbox_lifecycle() {
         .unwrap();
     let mut url = admin_url();
     url.set_path(&storage);
-    let config = engine::EngineConfig {
-        docker_socket: "/var/run/docker.sock".into(),
-        image: IMAGE.into(),
+    let project = format!("9{}", std::process::id());
+    let namespace = format!("wd-mailtest-{project}");
+    let kube = || Kube {
+        namespace: namespace.clone(),
+        applied: Mutex::new(Vec::new()),
     };
     let plugin = Plugin::new(
         Store::connect(url.as_str()).await.unwrap(),
@@ -108,9 +308,8 @@ async fn mailbox_lifecycle() {
             },
             trust_unverified_domains: true,
         },
-        Some(engine::Engines::new(&config).unwrap()),
+        Some(engine::Engines::new(Box::new(kube()), config()).unwrap()),
     );
-    let project = format!("9{}", std::process::id());
     let f = Fixture {
         handler: Handler(plugin),
         storage,
@@ -164,7 +363,7 @@ async fn mailbox_lifecycle() {
     );
 
     let mut view = Value::Null;
-    for _ in 0..180 {
+    for _ in 0..600 {
         view = f
             .ok("mailboxes.view", json!({"resource_id": mailbox}))
             .await;
@@ -188,10 +387,13 @@ async fn mailbox_lifecycle() {
         .unwrap()
         .to_owned();
     assert_eq!(
-        session(&view, "anna@shop.example.test", &password).await,
+        session(&f.project, "anna@shop.example.test", &password).await,
         200
     );
-    assert_eq!(session(&view, "anna@shop.example.test", "wrong").await, 401);
+    assert_eq!(
+        session(&f.project, "anna@shop.example.test", "wrong").await,
+        401
+    );
 
     // The domain shows its DKIM record once mailboxes use it, and cannot be removed under them.
     let domain_view = f.ok("domains.view", json!({"resource_id": domain})).await;
@@ -216,7 +418,7 @@ async fn mailbox_lifecycle() {
     f.ok("mailboxes.rotate", json!({"resource_id": mailbox}))
         .await;
     assert_eq!(
-        session(&view, "anna@shop.example.test", &password).await,
+        session(&f.project, "anna@shop.example.test", &password).await,
         401
     );
     let rotated = f
@@ -226,21 +428,21 @@ async fn mailbox_lifecycle() {
         .unwrap()
         .to_owned();
     assert_eq!(
-        session(&view, "anna@shop.example.test", &rotated).await,
+        session(&f.project, "anna@shop.example.test", &rotated).await,
         200
     );
 
     f.ok("mailboxes.delete", json!({"resource_id": mailbox}))
         .await;
     assert_eq!(
-        session(&view, "anna@shop.example.test", &rotated).await,
+        session(&f.project, "anna@shop.example.test", &rotated).await,
         401
     );
     f.ok("mailboxes.delete", json!({"resource_id": mailbox}))
         .await;
     f.ok("domains.delete", json!({"resource_id": domain})).await;
 
-    engine::Engines::new(&config)
+    engine::Engines::new(Box::new(kube()), config())
         .unwrap()
         .destroy(&f.project)
         .await

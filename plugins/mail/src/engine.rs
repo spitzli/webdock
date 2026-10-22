@@ -1,32 +1,46 @@
-//! Mailbox engines, local-dev placement: one Stalwart Community Edition server per project in its
-//! own internal Docker network. The network has no route out, so nothing a mailbox sends can leave
-//! this machine; the host still reaches the server for IMAP, SMTP submission and management.
-// ponytail: Docker on the plugin host is for local dev only; production placement (Kubernetes,
-// relay-only egress, public ingress) goes through `plugin.workloads` and replaces this module.
-use bollard::{Docker, models::*, query_parameters::*};
-use futures_util::TryStreamExt;
+//! Mailbox engines on the cluster through `plugin.workloads`: one Stalwart Community Edition
+//! server per project with its own volume. A NetworkPolicy denies all egress, so nothing a mailbox
+//! sends leaves the cluster. Customers reach IMAP and submission through Traefik by TLS server
+//! name; the plugin manages the engine over Stalwart's HTTP API on its own route.
+// ponytail: the management route shares Traefik's HTTP entry point, guarded only by the engine's
+// admin password; give production an internal entry point (or run the plugin in the cluster).
 use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::{Value, json};
-use std::{collections::HashMap, net::IpAddr, path::PathBuf, time::Duration};
+use std::{collections::HashMap, time::Duration};
+pub use webdock_plugin_kit::workloads::{HostWorkloads, Workloads};
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct EngineConfig {
-    pub docker_socket: PathBuf,
     /// Stalwart CE, pinned by digest.
     pub image: String,
+    /// Customers connect to `p<project>.<domain>`.
+    pub domain: String,
+    /// The public ports of Traefik's `imaps` and `submissions` entry points.
+    pub imap_port: u16,
+    pub submission_port: u16,
+    pub admin: AdminRoute,
+}
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AdminRoute {
+    /// Where the plugin reaches Traefik, e.g. `http://127.0.0.1:55480`.
+    pub origin: String,
+    /// Engines' management hosts are `p<project>.<domain>`.
+    pub domain: String,
+    pub entry_points: Vec<String>,
 }
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
-pub const IMAP_PORT: u16 = 1993;
-pub const SUBMISSION_PORT: u16 = 2465;
+const IMAP_PORT: u16 = 1993;
+const SUBMISSION_PORT: u16 = 2465;
 const DATA: &str = "/var/lib/stalwart";
 
 pub struct Engines {
-    docker: Docker,
-    image: String,
+    workloads: Box<dyn Workloads>,
+    config: EngineConfig,
 }
-fn name(project: &str) -> String {
-    format!("webdock-mail-{project}")
+pub fn unit(project: &str) -> String {
+    format!("engine-{project}")
 }
 fn hostname(project: &str) -> String {
     format!("mail.p{project}.webdock.internal")
@@ -34,25 +48,18 @@ fn hostname(project: &str) -> String {
 fn admin_user(project: &str) -> String {
     format!("webdock-admin@{}", hostname(project))
 }
-fn absent(error: &bollard::errors::Error) -> bool {
-    matches!(
-        error,
-        bollard::errors::Error::DockerResponseServerError {
-            status_code: 404,
-            ..
-        }
-    )
-}
 
 /// Management calls over Stalwart's JMAP endpoint.
 pub struct Client {
     http: reqwest::Client,
     origin: String,
+    /// Traefik routes management calls by this host.
+    host: String,
     user: String,
     password: String,
 }
 impl Client {
-    fn new(ip: IpAddr, user: &str, password: &str) -> Self {
+    fn new(origin: &str, host: String, user: &str, password: &str) -> Self {
         Self {
             http: reqwest::Client::builder()
                 .no_proxy()
@@ -60,7 +67,8 @@ impl Client {
                 .timeout(Duration::from_secs(10))
                 .build()
                 .expect("static HTTP client configuration"),
-            origin: format!("http://{ip}:8080"),
+            origin: origin.trim_end_matches('/').into(),
+            host,
             user: user.into(),
             password: password.into(),
         }
@@ -69,6 +77,7 @@ impl Client {
         let response: Value = self
             .http
             .post(format!("{}/jmap", self.origin))
+            .header(reqwest::header::HOST, &self.host)
             .basic_auth(&self.user, Some(&self.password))
             .json(&json!({"using":["urn:ietf:params:jmap:core","urn:stalwart:jmap"],"methodCalls":[[method,args,"w"]]}))
             .send()
@@ -116,123 +125,103 @@ pub struct Dkim {
 }
 
 impl Engines {
-    pub fn new(config: &EngineConfig) -> Result<Self, Error> {
+    pub fn new(workloads: Box<dyn Workloads>, config: EngineConfig) -> Result<Self, Error> {
         if !config.image.contains("@sha256:") {
             return Err("the mail engine image must be pinned by digest".into());
         }
-        let socket = config
-            .docker_socket
-            .to_str()
-            .ok_or("invalid Docker socket")?;
-        Ok(Self {
-            docker: Docker::connect_with_unix(socket, 120, bollard::API_DEFAULT_VERSION)?,
-            image: config.image.clone(),
-        })
+        Ok(Self { workloads, config })
     }
-    async fn address(&self, project: &str) -> Result<Option<(IpAddr, bool)>, Error> {
-        let container = match self
-            .docker
-            .inspect_container(&name(project), None::<InspectContainerOptions>)
-            .await
-        {
-            Ok(container) => container,
-            Err(error) if absent(&error) => return Ok(None),
-            Err(error) => return Err(error.into()),
-        };
-        let ip = container
-            .network_settings
-            .and_then(|n| n.networks)
-            .and_then(|n| n.get(&name(project)).and_then(|e| e.ip_address.clone()))
-            .and_then(|ip| ip.parse().ok());
-        let recovery = container
-            .config
-            .and_then(|c| c.env)
-            .is_some_and(|env| env.iter().any(|v| v.starts_with("STALWART_RECOVERY")));
-        Ok(ip.map(|ip| (ip, recovery)))
+    /// Where customers' mail clients connect.
+    pub fn host(&self, project: &str) -> String {
+        format!("p{project}.{}", self.config.domain)
     }
-    /// The engine's address for clients, if it runs.
-    pub async fn ip(&self, project: &str) -> Result<Option<IpAddr>, Error> {
-        Ok(self
-            .address(project)
-            .await?
-            .filter(|(_, recovery)| !recovery)
-            .map(|(ip, _)| ip))
+    pub fn ports(&self) -> (u16, u16) {
+        (self.config.imap_port, self.config.submission_port)
     }
-    pub async fn client(&self, project: &str, admin_password: &str) -> Result<Client, Error> {
-        let ip = self
-            .ip(project)
-            .await?
-            .ok_or("mail engine is not running")?;
-        Ok(Client::new(ip, &admin_user(project), admin_password))
+    fn admin_host(&self, project: &str) -> String {
+        format!("p{project}.{}", self.config.admin.domain)
     }
-    async fn run(&self, project: &str, recovery: Option<&str>) -> Result<(), Error> {
-        let mut env = Vec::new();
-        if let Some(password) = recovery {
-            env.push("STALWART_RECOVERY_MODE=1".to_owned());
-            env.push(format!("STALWART_RECOVERY_ADMIN=admin:{password}"));
+    fn connect(&self, project: &str, user: &str, password: &str) -> Client {
+        Client::new(
+            &self.config.admin.origin,
+            self.admin_host(project),
+            user,
+            password,
+        )
+    }
+    pub fn client(&self, project: &str, admin_password: &str) -> Client {
+        self.connect(project, &admin_user(project), admin_password)
+    }
+    /// The engine's objects. With `recovery` it starts with a temporary administrator for setup;
+    /// a new `restart` value rolls the pod.
+    pub fn objects(&self, project: &str, recovery: Option<&str>, restart: &str) -> Value {
+        let app = json!({"app": "engine"});
+        let mut objects = vec![
+            json!({"apiVersion": "v1", "kind": "PersistentVolumeClaim", "metadata": {"name": "engine-data"},
+                   "spec": {"accessModes": ["ReadWriteOnce"], "resources": {"requests": {"storage": "2Gi"}}}}),
+            json!({"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"name": "engine", "labels": app},
+                   "spec": {"replicas": 1, "strategy": {"type": "Recreate"}, "selector": {"matchLabels": app},
+                    "template": {"metadata": {"labels": app, "annotations": {"restarted": restart}},
+                     "spec": {"containers": [{"name": "stalwart", "image": self.config.image,
+                       "args": ["--config", format!("{DATA}/config.json")],
+                       "envFrom": if recovery.is_some() { json!([{"secretRef": {"name": "engine-recovery"}}]) } else { json!([]) },
+                       "ports": [{"containerPort": 8080}, {"containerPort": IMAP_PORT}, {"containerPort": SUBMISSION_PORT}],
+                       "volumeMounts": [{"name": "data", "mountPath": DATA}],
+                       "resources": {"limits": {"memory": "512Mi"}, "requests": {"memory": "512Mi", "cpu": "50m"}},
+                       // The binary carries this file capability and refuses to exec without it.
+                       "securityContext": {"allowPrivilegeEscalation": false, "capabilities": {"drop": ["ALL"], "add": ["NET_BIND_SERVICE"]}}}],
+                      "volumes": [{"name": "data", "persistentVolumeClaim": {"claimName": "engine-data"}}]}}}}),
+            json!({"apiVersion": "networking.k8s.io/v1", "kind": "NetworkPolicy", "metadata": {"name": "engine-no-egress"},
+                   "spec": {"podSelector": {"matchLabels": app}, "policyTypes": ["Egress"], "egress": []}}),
+            json!({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "engine"},
+                   "spec": {"selector": app, "ports": [{"name": "http", "port": 8080}, {"name": "imaps", "port": IMAP_PORT}, {"name": "submissions", "port": SUBMISSION_PORT}]}}),
+            json!({"apiVersion": "traefik.io/v1alpha1", "kind": "IngressRoute", "metadata": {"name": "engine-admin"},
+                   "spec": {"entryPoints": self.config.admin.entry_points, "routes": [{"kind": "Rule",
+                    "match": format!("Host(`{}`)", self.admin_host(project)), "services": [{"name": "engine", "port": 8080}]}]}}),
+        ];
+        for (name, port) in [("imaps", IMAP_PORT), ("submissions", SUBMISSION_PORT)] {
+            objects.push(json!({"apiVersion": "traefik.io/v1alpha1", "kind": "IngressRouteTCP", "metadata": {"name": format!("engine-{name}")},
+                "spec": {"entryPoints": [name], "routes": [{"match": format!("HostSNI(`{}`)", self.host(project)),
+                 "services": [{"name": "engine", "port": port}]}], "tls": {"passthrough": true}}}));
         }
-        let body = ContainerCreateBody {
-            image: Some(self.image.clone()),
-            cmd: Some(vec!["--config".into(), format!("{DATA}/config.json")]),
-            env: Some(env),
-            labels: Some(HashMap::from([
-                ("webdock.plugin".into(), "mail".into()),
-                ("webdock.project".into(), project.into()),
-            ])),
-            host_config: Some(HostConfig {
-                network_mode: Some(name(project)),
-                mounts: Some(vec![Mount {
-                    target: Some(DATA.into()),
-                    source: Some(format!("{}-data", name(project))),
-                    typ: Some(MountType::VOLUME),
-                    ..Default::default()
-                }]),
-                memory: Some(536_870_912),
-                pids_limit: Some(256),
-                cap_drop: Some(vec!["ALL".into()]),
-                // The binary carries this file capability and refuses to exec without it.
-                cap_add: Some(vec!["NET_BIND_SERVICE".into()]),
-                security_opt: Some(vec!["no-new-privileges:true".into()]),
-                restart_policy: Some(RestartPolicy {
-                    name: Some(RestartPolicyNameEnum::UNLESS_STOPPED),
-                    ..Default::default()
-                }),
-                ..Default::default()
-            }),
-            ..Default::default()
-        };
-        self.docker
-            .create_container(
-                Some(
-                    CreateContainerOptionsBuilder::default()
-                        .name(&name(project))
-                        .build(),
-                ),
-                body,
+        if let Some(password) = recovery {
+            objects.push(json!({"apiVersion": "v1", "kind": "Secret", "metadata": {"name": "engine-recovery"}, "type": "Opaque",
+                "stringData": {"STALWART_RECOVERY_MODE": "1", "STALWART_RECOVERY_ADMIN": format!("admin:{password}")}}));
+        }
+        Value::Array(objects)
+    }
+    async fn apply(
+        &self,
+        project: &str,
+        recovery: Option<&str>,
+        restart: &str,
+    ) -> Result<(), Error> {
+        let objects = self.objects(project, recovery, restart);
+        self.workloads
+            .call(
+                "apply",
+                json!({"project": project, "unit": unit(project), "objects": objects}),
             )
-            .await?;
-        self.docker
-            .start_container(&name(project), None::<StartContainerOptions>)
             .await?;
         Ok(())
     }
+    /// Polls until `method` succeeds (or, with `works: false`, fails) for this user.
     async fn wait(
         &self,
         project: &str,
-        user: &str,
-        password: &str,
+        (user, password): (&str, &str),
         method: &str,
+        works: bool,
     ) -> Result<Client, Error> {
-        for _ in 0..120 {
-            if let Some((ip, _)) = self.address(project).await? {
-                let client = Client::new(ip, user, password);
-                if client
-                    .call::<Value>(method, json!({"ids":null}))
-                    .await
-                    .is_ok()
-                {
-                    return Ok(client);
-                }
+        let client = self.connect(project, user, password);
+        for _ in 0..360 {
+            if client
+                .call::<Value>(method, json!({"ids":null}))
+                .await
+                .is_ok()
+                == works
+            {
+                return Ok(client);
             }
             tokio::time::sleep(Duration::from_millis(500)).await;
         }
@@ -241,51 +230,27 @@ impl Engines {
     /// Creates and configures the project's engine from scratch. A half-configured engine holds no
     /// mailboxes yet, so it is discarded and rebuilt rather than resumed.
     pub async fn provision(&self, project: &str, admin_password: &str) -> Result<(), Error> {
-        if let Ok(client) = self.client(project, admin_password).await
-            && client
-                .call::<Value>("x:Domain/get", json!({"ids":null}))
-                .await
-                .is_ok()
+        if self
+            .client(project, admin_password)
+            .call::<Value>("x:Domain/get", json!({"ids":null}))
+            .await
+            .is_ok()
         {
             return Ok(());
         }
         self.destroy(project).await?;
-        if self.docker.inspect_image(&self.image).await.is_err() {
-            self.docker
-                .create_image(
-                    Some(
-                        CreateImageOptionsBuilder::default()
-                            .from_image(&self.image)
-                            .build(),
-                    ),
-                    None,
-                    None,
-                )
-                .try_collect::<Vec<_>>()
-                .await?;
-        }
-        self.docker
-            .create_network(NetworkCreateRequest {
-                name: name(project),
-                internal: Some(true),
-                driver: Some("bridge".into()),
-                labels: Some(HashMap::from([("webdock.plugin".into(), "mail".into())])),
-                ..Default::default()
-            })
-            .await?;
         let bootstrap = hex::encode(webdock_plugin_kit::seal::random::<16>());
-        self.run(project, Some(&bootstrap)).await?;
+        let recovery = ("admin", bootstrap.as_str());
+        self.apply(project, Some(&bootstrap), "setup").await?;
         let admin = self
-            .wait(project, "admin", &bootstrap, "x:Bootstrap/get")
+            .wait(project, recovery, "x:Bootstrap/get", true)
             .await?;
         let host = hostname(project);
         let _: Value = admin.call("x:Bootstrap/set", json!({"update":{"singleton":{"serverHostname":host,"defaultDomain":host,"requestTlsCertificate":false,"generateDkimKeys":false,"dataStore":{"@type":"RocksDb","path":format!("{DATA}/store")},"tracer":{"@type":"Stdout","level":"warn"}}}})).await?;
-        self.docker
-            .restart_container(&name(project), None::<RestartContainerOptions>)
+        // Only the restarted server answers Domain/get.
+        self.apply(project, Some(&bootstrap), "bootstrapped")
             .await?;
-        let admin = self
-            .wait(project, "admin", &bootstrap, "x:Domain/get")
-            .await?;
+        let admin = self.wait(project, recovery, "x:Domain/get", true).await?;
         let accounts: Rows<Named> = admin
             .call(
                 "x:Account/get",
@@ -305,7 +270,7 @@ impl Engines {
             .call("x:NetworkListener/set", json!({"create":listeners}))
             .await?;
         let rcgen::CertifiedKey { cert, signing_key } =
-            rcgen::generate_simple_self_signed(vec![host.clone()])?;
+            rcgen::generate_simple_self_signed(vec![self.host(project), host])?;
         let created: Created = admin.call("x:Certificate/set", json!({"create":{"c":{"certificate":{"@type":"Text","value":cert.pem()},"privateKey":{"@type":"Text","secret":signing_key.serialize_pem()}}}})).await?;
         let certificate = &created
             .created
@@ -319,49 +284,33 @@ impl Engines {
             )
             .await?;
         // Without the recovery variables the temporary administrator no longer exists.
-        self.docker
-            .remove_container(
-                &name(project),
-                Some(RemoveContainerOptionsBuilder::default().force(true).build()),
-            )
-            .await?;
-        self.run(project, None).await?;
+        self.apply(project, None, "ready").await?;
+        self.wait(project, recovery, "x:Domain/get", false).await?;
         self.wait(
             project,
-            &admin_user(project),
-            admin_password,
+            (&admin_user(project), admin_password),
             "x:Domain/get",
+            true,
         )
         .await?;
         Ok(())
     }
+    /// Removes the engine with its volume and waits until the cluster has let go of it.
     pub async fn destroy(&self, project: &str) -> Result<(), Error> {
-        let name = name(project);
-        match self
-            .docker
-            .remove_container(
-                &name,
-                Some(RemoveContainerOptionsBuilder::default().force(true).build()),
-            )
-            .await
-        {
-            Ok(()) => {}
-            Err(error) if absent(&error) => {}
-            Err(error) => return Err(error.into()),
-        }
-        for result in [
-            self.docker
-                .remove_volume(&format!("{name}-data"), None::<RemoveVolumeOptions>)
-                .await,
-            self.docker.remove_network(&name).await,
-        ] {
-            match result {
-                Ok(()) => {}
-                Err(error) if absent(&error) => {}
-                Err(error) => return Err(error.into()),
+        let unit = unit(project);
+        self.workloads.call("remove", json!({"unit": unit})).await?;
+        for _ in 0..240 {
+            if self
+                .workloads
+                .call("observe", json!({"unit": unit}))
+                .await?["removed"]
+                == true
+            {
+                return Ok(());
             }
+            tokio::time::sleep(Duration::from_millis(500)).await;
         }
-        Ok(())
+        Err("mail engine was not removed".into())
     }
 }
 

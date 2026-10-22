@@ -52,7 +52,7 @@ impl Plugin {
             .sealer
             .open(&engine.id, &engine.admin_sealed)
             .ok_or_else(|| unavailable("unseal", engine.id))?;
-        Ok(engines.client(project, &admin).await.ok())
+        Ok(Some(engines.client(project, &admin)))
     }
     pub(crate) async fn create_mailbox(
         self: &Arc<Self>,
@@ -122,10 +122,7 @@ impl Plugin {
                     .engine_state(&mailbox.project_id, "ready")
                     .await
                     .map_err(|e| e.to_string())?;
-                let client = engines
-                    .client(&mailbox.project_id, &admin)
-                    .await
-                    .map_err(|e| e.to_string())?;
+                let client = engines.client(&mailbox.project_id, &admin);
                 let domain = client
                     .domain(&mailbox.domain)
                     .await
@@ -182,18 +179,12 @@ impl Plugin {
         input: Value,
     ) -> Result<Value> {
         let m = self.mailbox(claims, input).await?.ok_or_else(missing)?;
-        let host = match self.engines.as_ref() {
-            Some(engines) => engines
-                .ip(&m.project_id)
-                .await
-                .map_err(|e| unavailable("engine", e))?
-                .map(|ip| ip.to_string()),
-            None => None,
-        };
+        let engines = self.engines()?;
+        let (imap, submission) = engines.ports();
         Ok(json!({
             "address": format!("{}@{}", m.local_part, m.domain), "name": m.display_name, "state": m.state, "error": m.error,
-            "host": host, "imapPort": engine::IMAP_PORT, "smtpPort": engine::SUBMISSION_PORT, "username": format!("{}@{}", m.local_part, m.domain),
-            "quotaMb": m.quota_mb, "createdAt": m.created_at, "tls": "Implicit TLS, self-signed certificate (local development)",
+            "host": engines.host(&m.project_id), "imapPort": imap, "smtpPort": submission, "username": format!("{}@{}", m.local_part, m.domain),
+            "quotaMb": m.quota_mb, "createdAt": m.created_at, "tls": "Implicit TLS, self-signed certificate",
         }))
     }
     async fn ready_mailbox(

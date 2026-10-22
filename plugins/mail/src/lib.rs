@@ -506,7 +506,7 @@ impl ActionHandler for Handler {
 pub fn validate_manifest(manifest: &Manifest) -> Result<()> {
     let value = manifest.as_json();
     if manifest.id() != PLUGIN_ID
-        || value["capabilities"] != json!([])
+        || value["capabilities"] != json!(["plugin.workloads"])
         || value["httpBindings"] != json!([])
         || value["actions"]
             .as_array()

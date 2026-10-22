@@ -43,6 +43,18 @@ async fn run() -> Result<(), Error> {
     {
         return Err("unverified domains are trusted only with a loopback catcher".into());
     }
+    let client = HostClient::connect_unix(config.core).await?;
+    let engines = match config.mailboxes {
+        Some(mailboxes) => Some(webdock_mail::engine::Engines::new(
+            Box::new(webdock_mail::engine::HostWorkloads {
+                client: client.clone(),
+                plugin: manifest.id().into(),
+                generation: config.generation,
+            }),
+            mailboxes,
+        )?),
+        None => None,
+    };
     let plugin = webdock_mail::Plugin::new(
         webdock_mail::store::Store::connect(&config.storage_url).await?,
         webdock_mail::seal::Sealer::new(&config.secret_key_hex)?,
@@ -52,17 +64,12 @@ async fn run() -> Result<(), Error> {
             platform: config.platform_transport,
             trust_unverified_domains: config.trust_unverified_domains,
         },
-        config
-            .mailboxes
-            .as_ref()
-            .map(webdock_mail::engine::Engines::new)
-            .transpose()?,
+        engines,
     );
     plugin.resume().await?;
     let key: [u8; 32] = hex::decode(config.issuer_public_key_hex)?
         .try_into()
         .map_err(|_| "invalid key")?;
-    let client = HostClient::connect_unix(config.core).await?;
     let authority = runtime::RemoteAuthority::new(
         client,
         manifest.id().into(),
