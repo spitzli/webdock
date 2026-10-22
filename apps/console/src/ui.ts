@@ -18,7 +18,7 @@ export function button(variant: keyof typeof buttonVariants = "secondary", size?
 }
 /** Text inputs, selects and textareas. */
 export const input =
-  "min-h-10 w-full min-w-0 rounded-md border border-outline-strong bg-surface px-3 py-2 text-sm font-normal text-foreground placeholder:text-muted " +
+  "min-h-10 w-full min-w-0 rounded-md border border-outline-strong bg-surface px-3 py-2 text-sm max-sm:text-base font-normal text-foreground placeholder:text-muted " +
   "focus-visible:border-focus focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring [&:is(input,textarea):read-only]:bg-soft disabled:cursor-not-allowed disabled:opacity-55 user-invalid:border-danger";
 /** A label wrapping its control. */
 export const field = "grid gap-1.5 text-[13px] font-medium";
@@ -30,8 +30,8 @@ export const cardFooter =
   "flex min-h-15 flex-wrap items-center justify-between gap-3 border-t border-outline bg-subtle px-6 py-3 text-[13px] text-muted max-sm:px-[18px]";
 /** Rows of a card list, separated by hairlines. */
 export const cardRow = "flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-outline px-6 py-3.5 text-sm max-sm:px-[18px]";
-export const pageHeading = "mb-8 flex items-end justify-between gap-5 max-sm:mb-6 max-sm:flex-col max-sm:items-start max-sm:gap-4";
-export const pageTitle = "text-[28px] font-semibold leading-tight tracking-[-0.025em] max-sm:text-2xl";
+export const pageHeading = "mb-8 flex min-w-0 items-end justify-between gap-5 [&>div]:min-w-0 max-sm:mb-6 max-sm:flex-col max-sm:items-start max-sm:gap-4";
+export const pageTitle = "text-[28px] font-semibold leading-tight tracking-[-0.025em] [overflow-wrap:anywhere] max-sm:text-2xl";
 export const pageLead = "mt-1.5 max-w-[76ch] text-sm text-muted";
 export const sectionTitle = "text-base font-semibold tracking-[-0.01em]";
 /** Tables sit in a rounded, horizontally scrollable frame. */

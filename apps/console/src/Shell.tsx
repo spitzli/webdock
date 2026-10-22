@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
   Link,
   Outlet,
@@ -29,7 +29,7 @@ import { listSchema, recordSchema, type Session } from "./api";
 import { useMailWorkspace } from "./mail-client";
 import { useHostingContext } from "./hosting-context";
 import * as ui from "./ui";
-import { WorkspaceNav, useWorkspaceHeader } from "./WorkspaceNav";
+import { WorkspaceNav, useTenants, useWorkspaceHeader } from "./WorkspaceNav";
 const crumbSeparator = "select-none px-1.5 text-[22px] font-light text-outline-strong";
 const paletteItem =
   "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-foreground hover:bg-soft focus-visible:bg-soft";
@@ -46,6 +46,9 @@ const destinations = [
 ];
 export function Shell() {
   const session = useSession();
+  const navigationCopy = session.user.role === "operator"
+    ? { section: "Workspace", switch: "Switch customer or project", search: "Find a project or customer" }
+    : { section: "Switch", switch: "Switch workspace", search: "Find a workspace" };
   const api = useApi();
   const queryClient = useQueryClient();
   const pathname = useRouterState({
@@ -189,7 +192,7 @@ export function Shell() {
       ) : null}
       {workspaceNav ? <WorkspaceNav key={workspaceNav} customer={workspaceNav} item={navItem} /> : null}
       <div className="mb-[18px]">
-        <p className="px-2.5 py-1.5 text-xs text-muted">{session.user.role === "operator" ? "Workspace" : "Switch"}</p>
+        <p className="px-2.5 py-1.5 text-xs text-muted">{navigationCopy.section}</p>
         {session.user.role === "operator" ? (
           destinations.map(({ collection, label, icon: Icon }) => (
             <Link
@@ -301,7 +304,7 @@ export function Shell() {
             onClick={() => {
               setPalette(true);
             }}
-            aria-label="Switch customer or project"
+            aria-label={navigationCopy.switch}
           >
             <span className="grid size-[22px] shrink-0 place-items-center rounded-full bg-linear-135 from-[#ff9a5a] via-brand to-[#8f2d00] text-[11px] font-semibold text-white" aria-hidden>
               {workspace.label.slice(0, 1).toUpperCase()}
@@ -329,7 +332,7 @@ export function Shell() {
         <div className="ml-auto flex items-center gap-0 md:gap-1">
           <button
             className="flex size-9 items-center justify-center gap-2 rounded-md border border-outline-strong bg-surface text-[13px] text-muted hover:border-muted lg:mr-2 lg:h-8 lg:w-[220px] lg:justify-start lg:px-2"
-            aria-label="Find a project or customer"
+            aria-label={navigationCopy.search}
             onClick={() => {
               setPalette(true);
             }}
@@ -423,6 +426,8 @@ function CommandPalette({ close }: { close: () => void }) {
   const api = useApi();
   const session = useSession();
   const navigate = useNavigate();
+  const searchInput = useRef<HTMLInputElement>(null);
+  useEffect(() => { searchInput.current?.focus(); }, []);
   const [text, setText] = useState("");
   const [search, setSearch] = useState("");
   useEffect(() => {
@@ -460,9 +465,9 @@ function CommandPalette({ close }: { close: () => void }) {
         <MagnifyingGlassIcon size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" />
         <input
           className={ui.cx(`${ui.input} pl-9`)}
-          autoFocus
-          aria-label="Search projects and customers"
-          placeholder="Search by name…"
+          ref={searchInput}
+          aria-label={session.user.role === "operator" ? "Search projects and customers" : "Search your workspaces"}
+          placeholder={session.user.role === "operator" ? "Search by name…" : "Search your workspaces…"}
           value={text}
           maxLength={160}
           onChange={(event) => {
@@ -471,7 +476,9 @@ function CommandPalette({ close }: { close: () => void }) {
         />
       </label>
       <div className="mt-3 max-h-[55dvh] overflow-y-auto">
-        {session.user.role === "operator" && search.length >= 2 ? (
+        {session.user.role !== "operator" ? (
+          <WorkspaceChoices search={text} close={close} />
+        ) : search.length >= 2 ? (
           results.isPending ? (
             <Loading>Searching…</Loading>
           ) : results.isError ? (
@@ -505,8 +512,7 @@ function CommandPalette({ close }: { close: () => void }) {
           )
         ) : (
           <>
-            {session.user.role === "operator"
-              ? destinations.map((item) => (
+            {destinations.map((item) => (
                   <button
                     key={item.collection}
                     className={paletteItem}
@@ -521,23 +527,7 @@ function CommandPalette({ close }: { close: () => void }) {
                     <item.icon size={20} />
                     {item.label}
                   </button>
-                ))
-              : null}
-            {session.user.role !== "operator" ? (
-              <button
-                className={paletteItem}
-                onClick={() => {
-                  void navigate({
-                    to: "/$collection",
-                    params: { collection: "tenants" },
-                  });
-                  close();
-                }}
-              >
-                <BuildingsIcon size={20} />
-                Workspaces
-              </button>
-            ) : null}
+                ))}
             {api.config.enabledFeatures.includes("hosting") ? (
               <button
                 className={paletteItem}
@@ -567,6 +557,29 @@ function CommandPalette({ close }: { close: () => void }) {
   );
 }
 
+function WorkspaceChoices({ search, close }: { search: string; close: () => void }) {
+  const tenants = useTenants();
+  const navigate = useNavigate();
+  if (tenants.isPending) return <Loading>Loading workspaces…</Loading>;
+  if (tenants.isError) return <Failure error={tenants.error} retry={() => void tenants.refetch()} />;
+  const matches = tenants.data.filter((tenant) => tenant.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
+  return <>
+    {matches.length ? matches.map((tenant) => (
+      <button key={tenant.id} className={paletteItem} onClick={() => {
+        void navigate({ to: "/workspaces/$id", params: { id: tenant.id } });
+        close();
+      }}>
+        <BuildingsIcon size={20} className="shrink-0" />
+        <span className="min-w-0 [overflow-wrap:anywhere]">{tenant.name}</span>
+      </button>
+    )) : <Empty title="No workspaces found">Try another name or open all workspaces.</Empty>}
+    <button className={paletteItem} onClick={() => {
+      void navigate({ to: "/$collection", params: { collection: "tenants" } });
+      close();
+    }}>All workspaces</button>
+  </>;
+}
+
 function sectionTitle(pathname: string): string {
   if (pathname.startsWith("/customers")) return "Customers";
   if (pathname.startsWith("/projects")) return "Projects";
@@ -575,6 +588,8 @@ function sectionTitle(pathname: string): string {
   if (pathname.startsWith("/databases")) return "Databases";
   if (pathname === "/audit-events") return "Audit trail";
   if (pathname === "/account") return "Account";
+  if (pathname === "/plans") return "Plans";
+  if (pathname === "/clusters") return "Clusters";
   if (pathname.startsWith("/tenants") || pathname.startsWith("/workspaces")) return "Workspaces";
   return "Extensions";
 }

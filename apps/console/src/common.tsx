@@ -2,6 +2,7 @@ import { ArrowClockwiseIcon } from "@phosphor-icons/react/dist/csr/ArrowClockwis
 import { WarningCircleIcon } from "@phosphor-icons/react/dist/csr/WarningCircle";
 import { useEffect, useRef, type ReactNode } from "react";
 import * as ui from "./ui";
+import { describeFailure } from "./AuthFrame";
 const state = "flex items-start gap-3 rounded-xl border border-outline bg-surface px-7 py-10 max-sm:px-[18px] max-sm:py-6";
 export function Loading({ children = "Loading…" }: { children?: ReactNode }) {
   return (
@@ -23,7 +24,7 @@ export function Failure({
       <WarningCircleIcon size={22} className="shrink-0" />
       <div>
         <strong className="font-semibold">Unable to load</strong>
-        <p className="mt-1.5">{error.message}</p>
+        <p className="mt-1.5">{describeFailure(error)}</p>
         {retry ? (
           <button className={ui.cx(`${ui.button()} mt-4`)} onClick={retry}>
             <ArrowClockwiseIcon />
@@ -44,7 +45,7 @@ export function Empty({
   return (
     <div className={state}>
       <div>
-        <h2 className={ui.sectionTitle}>{title}</h2>
+        <h2 className={ui.cx(ui.sectionTitle, "min-w-0 [overflow-wrap:anywhere]")}>{title}</h2>
         <p className="mt-1.5 text-muted">{children}</p>
       </div>
     </div>
@@ -76,17 +77,19 @@ export function Modal({
     <dialog
       ref={ref}
       aria-label={title}
-      className="m-auto mt-[12vh] max-h-[calc(100dvh-48px)] w-[min(570px,calc(100vw-32px))] rounded-xl border border-outline bg-surface p-5 text-foreground shadow-2xl backdrop:bg-black/45"
+      className="m-auto max-h-[calc(100dvh-32px)] w-[min(570px,calc(100vw-32px))] overflow-y-auto rounded-xl border border-outline bg-surface p-5 text-foreground shadow-2xl backdrop:bg-black/45"
       onCancel={(event) => {
         event.preventDefault();
         if (dismissible) close();
       }}
       onClick={(event) => {
-        if (dismissible && event.target === event.currentTarget) close();
+        if (!dismissible || event.target !== event.currentTarget) return;
+        const bounds = event.currentTarget.getBoundingClientRect();
+        if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close();
       }}
     >
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className={ui.sectionTitle}>{title}</h2>
+        <h2 className={ui.cx(ui.sectionTitle, "min-w-0 [overflow-wrap:anywhere]")}>{title}</h2>
         {dismissible ? (
           <button
             className={ui.button("quiet")}

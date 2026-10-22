@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from "react";
+import { useState, lazy, Suspense, type ReactNode } from "react";
 import {
   QueryClient,
   QueryClientProvider,
@@ -140,6 +140,12 @@ function SessionGate() {
     </SessionContext.Provider>
   );
 }
+/** Route-level guidance complements the server's authorization; it grants no access. */
+function OperatorOnly({ children }: { children: ReactNode }) {
+  const session = useSession();
+  if (session.user.role === "operator" && !session.user.preview) return children;
+  return <Empty title="Operator access required">This area manages the platform. Open your workspace to manage your own services.</Empty>;
+}
 function RegistryRoute({ kind }: { kind: "list" | "detail" | "new" }) {
   const session = useSession();
   const params: { collection: string; id?: string } = (
@@ -222,9 +228,11 @@ const extensionsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/extensions",
   component: () => (
+    <OperatorOnly>
     <Suspense fallback={<Loading>Loading extensions…</Loading>}>
       <InstalledExtensions />
     </Suspense>
+    </OperatorOnly>
   ),
 });
 const resetRoute = createRoute({
@@ -343,21 +351,23 @@ const extensionRoute = createRoute({
   component: () => {
     const { plugin } = extensionRoute.useParams();
     return (
+      <OperatorOnly>
       <Suspense fallback={<Loading>Loading extension…</Loading>}>
         <PluginSettings key={plugin} plugin={plugin} />
       </Suspense>
+      </OperatorOnly>
     );
   },
 });
 const clustersRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/clusters",
-  component: Clusters,
+  component: () => <OperatorOnly><Clusters /></OperatorOnly>,
 });
 const plansRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/plans",
-  component: Plans,
+  component: () => <OperatorOnly><Plans /></OperatorOnly>,
 });
 const usageRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -425,9 +435,11 @@ const extensionOperationRoute = createRoute({
   component: () => {
     const { operationID } = extensionOperationRoute.useParams();
     return (
+      <OperatorOnly>
       <Suspense fallback={<Loading>Loading operation…</Loading>}>
         <ExtensionOperation key={operationID} id={operationID} />
       </Suspense>
+      </OperatorOnly>
     );
   },
 });

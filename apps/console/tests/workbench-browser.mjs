@@ -135,7 +135,7 @@ export async function workbenchBrowserChecks(page) {
 
 async function assertHostingContext(page) {
   await page.getByRole('navigation', { name: 'Primary navigation', exact: true }).getByRole('link', { name: 'Acceptance hosting project', exact: true }).waitFor();
-  const workspace = await page.getByRole('button', { name: 'Switch customer or project', exact: true }).innerText();
+  const workspace = await page.getByRole('button', { name: /^Switch (?:customer or project|workspace)$/ }).innerText();
   assert.ok(workspace.includes('Acceptance customer'), 'Hosting context must retain the authorized customer');
   const breadcrumb = await page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).innerText();
   assert.ok(breadcrumb.includes('Acceptance customer') && breadcrumb.includes('Acceptance hosting project'));

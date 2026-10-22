@@ -166,6 +166,7 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
     signIn.reset();
     passkey.reset();
   };
+  const busy = signIn.isPending || passkey.isPending;
   return (
     <main className={authFrame}>
       <AuthHeader product="Account" href="/account" />
@@ -194,6 +195,7 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
             signIn.mutate(form(event));
           }}
         >
+          <fieldset disabled={busy} className="contents">
           {mode === "password" || mode === "reset" ? (
             <label className={ui.field}>
               Email
@@ -233,7 +235,7 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
           />
           <button
             className={ui.cx(`${ui.button("primary")} w-full`)}
-            disabled={signIn.isPending || passkey.isPending}
+            disabled={busy}
           >
             {signIn.isPending
               ? "Checking…"
@@ -243,6 +245,7 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
                   ? "Send reset link"
                   : "Verify code"}
           </button>
+          </fieldset>
         </form>
         {mode === "password" ? (
           <>
@@ -251,7 +254,7 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
               onClick={() => {
                 passkey.mutate();
               }}
-              disabled={passkey.isPending || !browserSupportsWebAuthn()}
+              disabled={busy || !browserSupportsWebAuthn()}
             >
               {passkey.isPending
                 ? "Waiting for your passkey…"
@@ -259,6 +262,7 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
             </button>
             <button
               className={ui.textButton}
+              disabled={busy}
               onClick={() => {
                 choose("reset");
               }}
@@ -269,6 +273,7 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
         ) : mode === "reset" ? (
           <button
             className={ui.textButton}
+            disabled={busy}
             onClick={() => {
               choose("password");
             }}
@@ -276,8 +281,10 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
             Back to sign in
           </button>
         ) : (
+          <div className="flex flex-col">
           <button
             className={ui.textButton}
+            disabled={busy}
             onClick={() => {
               choose(mode === "totp" ? "recovery" : "totp");
             }}
@@ -286,6 +293,8 @@ function AccountSignIn({ onSuccess }: { onSuccess: () => void }) {
               ? "Use a recovery code"
               : "Use an authenticator code"}
           </button>
+          <button className={ui.textButton} disabled={busy} onClick={() => { choose("password"); }}>Back to sign in</button>
+          </div>
         )}
       </section>
     </main>
@@ -1213,7 +1222,7 @@ function useConsoleHref() {
   return (path: string) => api.config.consoleOrigin ? `${api.config.consoleOrigin}/api/sso/login?returnTo=${encodeURIComponent(path)}` : undefined;
 }
 const roleText: Record<string, string> = {
-  owner: "Owners manage everything in the workspace, including members, roles and billing.",
+  owner: "Owners manage the workspace, including its members, roles and services.",
   admin: "Administrators manage projects, members and customer details.",
   member: "Members work in the projects they are given access to.",
 };
@@ -1241,7 +1250,7 @@ function WorkspacesPage() {
       <div className={ui.pageHeading}>
         <div>
           <h1 className={ui.pageTitle}>Workspaces</h1>
-          <p className={ui.pageLead}>Organizations you belong to. Their projects, applications, databases and websites are managed in Console.</p>
+          <p className={ui.pageLead}>Open a workspace in Console to manage its projects and services.</p>
         </div>
       </div>
       {invitations.data.length ? (
@@ -1263,7 +1272,7 @@ function WorkspacesPage() {
       {tenants.data.length ? (
         <ul className={ui.card} aria-label="Your workspaces">
           {tenants.data.map((tenant) => {
-            const href = consoleHref(tenant.role === "owner" || tenant.role === "admin" ? `/tenants/${tenant.id}` : "/tenants");
+            const href = consoleHref(`/workspaces/${tenant.id}`);
             return (
               <li key={tenant.id} className={ui.cx(ui.cardRow, "first:border-t-0", href && ui.clickableRow)}>
                 <span className="flex min-w-0 items-center gap-3">
@@ -1367,7 +1376,7 @@ function InvitationPage() {
   const manages = Boolean(data.customerID) && ["owner", "admin"].includes(data.role);
   const steps: OnboardingStep[] = ["join", ...(manages ? ["details" as const] : []), ...(welcome && browserSupportsWebAuthn() ? ["passkey" as const] : []), "done"];
   const next = () => { setStep(steps[steps.indexOf(step) + 1] ?? "done"); };
-  const open = consoleHref(manages && data.customerID ? `/tenants/${data.customerID}` : "/tenants");
+  const open = consoleHref(data.customerID ? `/workspaces/${data.customerID}` : "/tenants");
   return (
     <>
       <OnboardingProgress steps={steps} current={step} account={welcome} />
@@ -1801,7 +1810,7 @@ function AccountShell({ session, consoleLink, children }: { session: Session; co
             ))}
           </nav>
         </aside>
-        <main id="main" className="mx-auto w-full max-w-[1040px] px-4 pt-6 pb-12 outline-none md:px-7 md:pt-8 md:pb-14 lg:px-10 lg:pt-10 lg:pb-16">
+        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1040px] px-4 pt-6 pb-12 outline-none md:px-7 md:pt-8 md:pb-14 lg:px-10 lg:pt-10 lg:pb-16">
           <nav aria-label="Account sections" className="mb-6 flex gap-2 md:hidden">
             <a className={ui.button()} href="/account">Security</a>
             <a className={ui.button()} href="/workspaces">Workspaces</a>

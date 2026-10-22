@@ -72,6 +72,7 @@ try {
   await page.getByRole('status').filter({ hasText: 'Change saved.' }).waitFor();
   assert.equal(await graceRole.inputValue(), 'owner', 'ownership can be given to another member');
   await page.getByRole('region', { name: 'Members', exact: true }).getByRole('listitem').filter({ hasText: 'Grace Admin' }).getByRole('button', { name: 'Remove', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Remove Grace Admin?' }).getByRole('button', { name: 'Remove member', exact: true }).click();
   await graceRole.waitFor({ state: 'detached' });
   // Customer owners and admins reach the same members management from their workspace list.
   await page.goto(previewOrigin + '/tenants');

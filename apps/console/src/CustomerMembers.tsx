@@ -1,8 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { useApi } from "./context";
-import { Failure, Loading } from "./common";
+import { Failure, Loading, Modal } from "./common";
 import { formText } from "./form";
 import { FieldError, useLiveValidation } from "./live-validation";
 import * as ui from "./ui";
@@ -92,12 +92,26 @@ export function CustomerMembers({ customer, welcome }: { customer: string; welco
   const client = useQueryClient();
   const live = useLiveValidation();
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState("");
+  const linkInput = useRef<HTMLInputElement>(null);
+  const [removing, setRemoving] = useState<{ id: string; name: string; email: string }>();
   const path = `/api/console/tenant/${encodeURIComponent(customer)}`;
   const tenant = useQuery({ queryKey: ["tenant", customer], queryFn: ({ signal }) => api.request(path, tenantSchema, { signal }) });
   const change = useMutation({
     mutationFn: (command: Record<string, unknown>) => api.write(path, "POST", command, changeSchema),
-    onSuccess: () => { setCopied(false); void client.invalidateQueries({ queryKey: ["tenant", customer] }); },
+    onSuccess: () => { setCopied(false); setCopyError(""); void client.invalidateQueries({ queryKey: ["tenant", customer] }); },
   });
+  const copyLink = async (link: string) => {
+    setCopyError("");
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+    } catch {
+      linkInput.current?.focus();
+      linkInput.current?.select();
+      setCopyError("Automatic copying is unavailable. Select the link and copy it manually.");
+    }
+  };
   if (tenant.isPending) return <Loading>Loading members…</Loading>;
   if (tenant.error) return <Failure error={tenant.error} retry={() => { void tenant.refetch(); }} />;
   const result = change.data;
@@ -119,19 +133,22 @@ export function CustomerMembers({ customer, welcome }: { customer: string; welco
       {result ? <p>{result.message} {deliveryText[result.delivery ?? ""] ?? ""}</p> : null}
       {result?.link ? (
         <div className="flex flex-wrap gap-2">
-          <input className={ui.cx(`${ui.input} min-h-9 flex-1 font-mono text-xs`)} readOnly value={result.link} aria-label="Invitation link" onFocus={(event) => { event.currentTarget.select(); }} />
-          <button className={ui.button()} onClick={() => { void navigator.clipboard.writeText(result.link ?? "").then(() => { setCopied(true); }); }}>{copied ? "Copied" : "Copy link"}</button>
+          <input ref={linkInput} className={ui.cx(`${ui.input} min-h-9 flex-1 font-mono text-xs`)} readOnly value={result.link} aria-label="Invitation link" onFocus={(event) => { event.currentTarget.select(); }} />
+          <button className={ui.button()} onClick={() => { void copyLink(result.link ?? ""); }}>{copied ? "Copied" : "Copy link"}</button>
         </div>
       ) : null}
       {result?.link ? <p className={ui.hint}>Anyone with this link can set up the invited account. Share it only with the invited person.</p> : null}
+      {copyError ? <p role="alert" className="text-danger">{copyError}</p> : null}
     </div>
   ) : null;
   const inviteForm = (footer: ReactNode, defaults?: FirstInvite) => (
     <form aria-label="Invite a person" {...live.form} onSubmit={(event) => {
       event.preventDefault();
-      const data = new FormData(event.currentTarget);
-      change.mutate({ action: "invite", email: formText(data, "email").trim(), name: formText(data, "name").trim(), role: formText(data, "role") });
-      if (!defaults) event.currentTarget.reset();
+      const form = event.currentTarget;
+      const data = new FormData(form);
+      change.mutate({ action: "invite", email: formText(data, "email").trim(), name: formText(data, "name").trim(), role: formText(data, "role") }, {
+        onSuccess: () => { if (!defaults) form.reset(); },
+      });
     }}>
       <div className="grid gap-3 border-t border-outline px-6 py-5 sm:grid-cols-[2fr_2fr_1fr] max-sm:px-[18px]">
         {defaults ? null : <h3 className="text-sm font-semibold sm:col-span-3">Invite a person</h3>}
@@ -211,13 +228,13 @@ export function CustomerMembers({ customer, welcome }: { customer: string; welco
     <section className={ui.cx(`${ui.card} mt-8`)} aria-label="Members">
       <div className={ui.cardBody}>
         <h2 className={ui.sectionTitle}>Members</h2>
-        <p className="-mt-2 text-sm text-muted">People who can open this customer's workspace. New people get one email to set up their account and join. Owners manage everything here, including who else is an owner.</p>
+        <p className="-mt-2 text-sm text-muted">Control who can access this workspace. Owners can also change roles and transfer ownership.</p>
       </div>
       {tenant.data.members.length ? (
         <ul>
           {tenant.data.members.map((member) => (
             <li key={member.id} className={ui.cardRow}>
-              <span className="grid min-w-0"><strong className="font-medium">{member.name}</strong><span className="truncate text-[13px] text-muted">{member.email}</span></span>
+              <span className="grid min-w-0"><strong className="font-medium [overflow-wrap:anywhere]">{member.name}</strong><span className="truncate text-[13px] text-muted" title={member.email}>{member.email}</span></span>
               <span className="flex flex-wrap items-center gap-2">
                 {member.mustChangePassword ? <span className={ui.badge("warning")}>Setup pending</span> : null}
                 {canSetRoles ? (
@@ -229,7 +246,7 @@ export function CustomerMembers({ customer, welcome }: { customer: string; welco
                   </select>
                 ) : <span className="text-[13px] text-muted capitalize">{member.role}</span>}
                 {canSetRoles || (tenant.data.canManage && member.role === "member") ? (
-                  <button className={ui.button("quiet")} disabled={change.isPending} onClick={() => { change.mutate({ action: "remove", member: member.id }); }}>Remove</button>
+                  <button className={ui.button("quiet")} disabled={change.isPending} onClick={() => { if (change.isError) change.reset(); setRemoving(member); }}>Remove</button>
                 ) : null}
               </span>
             </li>
@@ -275,6 +292,18 @@ export function CustomerMembers({ customer, welcome }: { customer: string; welco
           ))}
         </ul>
       </section>
+    ) : null}
+    {removing ? (
+      <Modal title={`Remove ${removing.name}?`} close={() => { setRemoving(undefined); }} dismissible={!change.isPending}>
+        <p className="text-sm [overflow-wrap:anywhere]">{removing.email} will lose access to this workspace. Their account and access to other workspaces stay intact. You can invite them again later.</p>
+        {change.isError && change.variables.action === "remove" ? <p role="alert" className="mt-3 text-sm text-danger">{change.error.message}</p> : null}
+        <div className="mt-5 flex flex-wrap justify-end gap-2">
+          <button className={ui.button()} disabled={change.isPending} onClick={() => { setRemoving(undefined); }}>Cancel</button>
+          <button className={ui.button("danger")} disabled={change.isPending} onClick={() => {
+            change.mutate({ action: "remove", member: removing.id }, { onSuccess: () => { setRemoving(undefined); } });
+          }}>{change.isPending ? "Removing…" : "Remove member"}</button>
+        </div>
+      </Modal>
     ) : null}
     </>
   );

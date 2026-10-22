@@ -35,12 +35,12 @@ try {
     await page.getByRole('button', { name: 'Not now', exact: true }).click();
   }
   await page.getByRole('heading', { name: "You're all set" }).waitFor();
-  assert.equal(await page.getByRole('link', { name: 'Open Console', exact: true }).getAttribute('href'), 'https://console.example.test/api/sso/login?returnTo=%2Ftenants%2F101', 'owners land on their workspace in Console');
+  assert.equal(await page.getByRole('link', { name: 'Open Console', exact: true }).getAttribute('href'), 'https://console.example.test/api/sso/login?returnTo=%2Fworkspaces%2F101', 'owners land on their workspace overview in Console');
   // Workspaces replace the old websites page; older links still arrive here.
   await page.goto(previewOrigin + '/sites');
   await page.getByRole('heading', { name: 'Workspaces', exact: true }).waitFor();
   await page.getByRole('link', { name: 'Review invitation', exact: true }).waitFor();
-  assert.equal(await page.getByRole('link', { name: 'Open in Console', exact: true }).getAttribute('href'), 'https://console.example.test/api/sso/login?returnTo=%2Ftenants%2F101');
+  assert.equal(await page.getByRole('link', { name: 'Open in Console', exact: true }).getAttribute('href'), 'https://console.example.test/api/sso/login?returnTo=%2Fworkspaces%2F101');
   assert.deepEqual(errors, []);
   console.log('Account onboarding checks passed: join, prefilled details, optional passkey, Console hand-off and workspaces. Test-only HTTP fixtures.');
 } finally { await browser.close(); await server.close(); }

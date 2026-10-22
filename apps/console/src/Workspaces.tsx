@@ -40,7 +40,7 @@ export function WorkspaceMembers({ id }: { id: string }) {
           <p className={ui.pageLead}>Who can open this workspace and what they may change.</p>
         </div>
       </div>
-      <CustomerMembers customer={id} />
+      <CustomerMembers key={id} customer={id} />
     </section>
   );
 }

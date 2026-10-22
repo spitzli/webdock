@@ -33,7 +33,7 @@ export function AuthHeader({ product, href }: { product?: string | undefined; hr
 /** Network failures surface as browser-specific text; never show that raw to people. */
 export function describeFailure(error: Error): string {
   if (error instanceof ApiError) return error.status >= 500 ? "The service is not responding right now." : error.message;
-  if (error instanceof TypeError) return "Webdock could not be reached. Check your connection; if you run it locally, make sure the services are started.";
+  if (error instanceof TypeError) return "Webdock could not be reached. Check your connection and try again.";
   return error.message;
 }
 export function PageProgress({ product, children, action }: { product?: string | undefined; children: ReactNode; action?: ReactNode }) {

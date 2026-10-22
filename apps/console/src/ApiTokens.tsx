@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { z } from "zod";
-import { useApi } from "./context";
-import { Failure, Loading } from "./common";
+import { useApi, useSession } from "./context";
+import { Empty, Failure, Loading } from "./common";
+import { useTenants } from "./WorkspaceNav";
 import * as ui from "./ui";
 
 const tokenSchema = z.object({
@@ -20,10 +21,15 @@ const day = (value: string) => new Date(value).toLocaleDateString();
 /** A workspace's API tokens: made here, shown once, used as Bearer tokens against the API origin. */
 export function WorkspaceApiTokens({ id }: { id: string }) {
   const api = useApi();
+  const session = useSession();
+  const tenants = useTenants();
+  const role = tenants.data?.find((tenant) => tenant.id === id)?.role;
+  const manager = !session.user.preview && (session.user.role === "operator" || role === "owner" || role === "admin");
   const client = useQueryClient();
   const [form, setForm] = useState({ name: "", canWrite: false, days: 90 });
   const tokens = useQuery({
     queryKey: ["api-tokens", id],
+    enabled: manager,
     queryFn: ({ signal }) => api.get(`/api/console/tenant/${id}/api-tokens`, z.array(tokenSchema), signal),
   });
   const create = useMutation({
@@ -37,6 +43,9 @@ export function WorkspaceApiTokens({ id }: { id: string }) {
     mutationFn: (token: string) => api.request(`/api/console/tenant/${id}/api-tokens/${token}`, z.object({}), { method: "DELETE" }),
     onSuccess: () => void client.invalidateQueries({ queryKey: ["api-tokens", id] }),
   });
+  if (tenants.isPending) return <Loading>Checking workspace access…</Loading>;
+  if (tenants.isError) return <Failure error={tenants.error} retry={() => void tenants.refetch()} />;
+  if (!manager) return <Empty title="Workspace administrator access required">An owner or administrator manages API tokens. You can continue using the services shared with you.</Empty>;
   const secret = create.data?.token;
   return (
     <section>

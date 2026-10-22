@@ -112,7 +112,8 @@ try {
   for(const width of [360,768,1280]) {await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`account fits ${width}px`);if(width===360)await page.screenshot({path:fromRepo('.runtime-test/account-security-mobile.png').pathname,fullPage:true});}
   await page.setViewportSize({width:1280,height:900});await page.screenshot({path:fromRepo('.runtime-test/account-security.png').pathname,fullPage:true});
   await page.goto(consoleOrigin+'/projects');
-  await page.getByRole('button',{name:'Sign out',exact:true}).first().click();
+  await page.getByRole('button',{name:/^Account menu for/}).click();
+  await page.getByRole('menuitem',{name:'Sign out',exact:true}).click();
   await page.getByRole('heading',{name:'Sign out of Webdock?',exact:true}).waitFor();assert.equal(new URL(page.url()).origin,authOrigin);
   await page.getByRole('button',{name:'Sign out',exact:true}).click();
   await page.waitForURL(consoleOrigin+'/login');

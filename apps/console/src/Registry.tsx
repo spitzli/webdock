@@ -288,6 +288,7 @@ export function RegistryDetail({
       {created === "customers" && collection === "customers" ? (
         // Second step of creating a customer; leaving it (Done or Skip) drops the step from history.
         <CustomerMembers
+          key={`members:${id}`}
           customer={id}
           welcome={{
             email: record.data.contactEmail ?? "",
@@ -357,7 +358,7 @@ export function RegistryDetail({
           </Link>
         </p>
       ) : null}
-      {collection === "customers" && record.data.status === "active" && created !== "customers" ? <CustomerMembers customer={id} /> : null}
+      {collection === "customers" && record.data.status === "active" && created !== "customers" ? <CustomerMembers key={`members:${id}`} customer={id} /> : null}
       {collection === "customers" && record.data.status === "active" ? <CustomerSelfService customer={id} /> : null}
       {collection === "customers" ? <CustomerPlan customer={id} /> : null}
     </section>

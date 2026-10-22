@@ -32,7 +32,7 @@ async function accepted(action, click) {
 }
 async function assertContext() {
   await page.getByRole('navigation', { name: 'Primary navigation', exact: true }).getByRole('link', { name: fixture.projectName, exact: true }).waitFor();
-  assert.ok((await page.getByRole('button', { name: 'Switch customer or project', exact: true }).innerText()).includes(fixture.customerName), 'Native hosting customer context was lost');
+  assert.ok((await page.getByRole('button', { name: /^Switch (?:customer or project|workspace)$/ }).innerText()).includes(fixture.customerName), 'Native hosting customer context was lost');
   assert.ok((await page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).innerText()).includes(fixture.projectName), 'Native hosting project breadcrumb was lost');
 }
 async function completedOperation() {

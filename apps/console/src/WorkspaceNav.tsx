@@ -82,7 +82,7 @@ export function WorkspaceNav({ customer, item }: { customer: string; item: (acti
         </Link>
       ) : null}
       {manager ? (
-        <Link to="/$collection/$id" params={{ collection: "tenants", id: customer }} className={item(pathname === `/tenants/${customer}`)}>
+        <Link to="/$collection/$id" params={{ collection: "tenants", id: customer }} className={item(pathname === `/tenants/${customer}`)} aria-current={pathname === `/tenants/${customer}` ? "page" : undefined}>
           <UsersIcon size={18} />
           Members
         </Link>

@@ -436,7 +436,7 @@ export function Plans() {
       <div className={ui.pageHeading}>
         <div>
           <h1 className={ui.pageTitle}>Plans</h1>
-          <p className={ui.pageLead}>What customers may use: projects, memory, CPU, storage and each product. Prices belong to billing, not here.</p>
+          <p className={ui.pageLead}>Define how many projects and services a workspace can use, and its CPU, memory and storage limits.</p>
         </div>
         {!editing ? (
           <button className={ui.button("primary")} onClick={() => { setEditing(draft()); }}>
