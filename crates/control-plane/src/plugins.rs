@@ -308,6 +308,10 @@ pub fn routes() -> Router<Arc<ServiceState>> {
             "/api/console/customers/{id}/notifications",
             get(notifications),
         )
+        .route(
+            "/api/console/projects/{project}/plugins/{plugin}/resources/{resource}/logs",
+            get(logs),
+        )
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -782,6 +786,47 @@ async fn notifications(
         let host = &endpoints(&state)?.host;
         let value = host
             .notifications(&actor.principal, &id)
+            .await
+            .map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
+}
+
+async fn logs(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    Path((project, plugin, resource)): Path<(String, String, String)>,
+    RawQuery(query): RawQuery,
+) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        let mut search = String::new();
+        let mut before = None;
+        for (key, value) in url::form_urlencoded::parse(query.as_deref().unwrap_or("").as_bytes()) {
+            match key.as_ref() {
+                "search" => search = value.into_owned(),
+                "before" => before = Some(value.into_owned()),
+                _ => {
+                    return Err(reject(
+                        StatusCode::BAD_REQUEST,
+                        "invalid_input",
+                        "Search with search and before only.",
+                    ));
+                }
+            }
+        }
+        let value = endpoints(&state)?
+            .host
+            .logs(
+                &actor.principal,
+                &project,
+                &plugin,
+                &resource,
+                &search,
+                before.as_deref(),
+            )
             .await
             .map_err(failure)?;
         Ok(Json(value).into_response())

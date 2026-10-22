@@ -1601,3 +1601,69 @@ async fn reports_open_and_resolve_notices_mailed_once() {
     .await;
     f.cleanup().await;
 }
+
+#[tokio::test]
+#[ignore = "requires local retained-schema restricted roles and signed RLS fixture"]
+async fn log_history_is_for_owners_and_admins_and_searchable() {
+    let f = Fixture::new().await;
+    let o = &f.owner;
+    for (at, line) in [
+        ("2026-10-22T10:00:00Z", "GET / 200"),
+        ("2026-10-22T10:00:01Z", "ERROR database unreachable"),
+        ("2026-10-22T10:00:02Z", "GET /health 200"),
+    ] {
+        sql(o, "INSERT INTO webdock_auth.workload_log(plugin_id,unit,project_id,resource_id,at,line) VALUES($1,'web-1',$2,'note-1',$3::timestamptz,$4)", vec![f.plugin.clone().into(), f.projects[0].clone().into(), at.into(), line.into()]).await;
+    }
+    let host = f.host().await;
+    let read = |who: &'static str, search: &'static str, before: Option<&'static str>| {
+        let host = host.clone();
+        let (f, project) = (&f, f.projects[0].clone());
+        async move {
+            host.logs(
+                f.principal(who),
+                &project,
+                &f.plugin,
+                "note-1",
+                search,
+                before,
+            )
+            .await
+        }
+    };
+    let lines = |v: Value| {
+        v.as_array()
+            .unwrap()
+            .iter()
+            .map(|l| l["line"].as_str().unwrap().to_owned())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        lines(read("owner", "", None).await.unwrap()),
+        ["GET /health 200", "ERROR database unreachable", "GET / 200"]
+    );
+    assert_eq!(
+        lines(read("admin", "error", None).await.unwrap()),
+        ["ERROR database unreachable"]
+    );
+    assert_eq!(
+        lines(
+            read("operator", "", Some("2026-10-22T10:00:01Z"))
+                .await
+                .unwrap()
+        ),
+        ["GET / 200"]
+    );
+    // A search is text, not a pattern.
+    assert!(lines(read("owner", "%", None).await.unwrap()).is_empty());
+    for who in ["member", "foreign"] {
+        assert!(read(who, "", None).await.is_err(), "{who}");
+    }
+    assert!(read("owner", "", Some("yesterday")).await.is_err());
+    sql(
+        o,
+        "DELETE FROM webdock_auth.workload_log WHERE plugin_id=$1",
+        vec![f.plugin.clone().into()],
+    )
+    .await;
+    f.cleanup().await;
+}

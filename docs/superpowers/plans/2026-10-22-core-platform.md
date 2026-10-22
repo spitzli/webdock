@@ -137,6 +137,14 @@ person who hit it. Cost if wrong: an owner learns of a limit only when someone h
 - The agent ships unit logs beyond the last 100 lines into a bounded store per unit (days, not
   months), searchable from the console.
 
+### Status (2026-10-22)
+
+Done: `workload_log` (`0034_logs`) appended from each report's newest lines (only lines newer than the
+last stored one), kept 3 days, read by owners, admins and operators with a plain-text search and
+paging; a "Log history" section under every resource with units. Ruling: Core keeps what the agent
+already sends (the last 100 lines of the first pod per report) instead of streaming logs. Cost if
+wrong: a unit that logs more than 100 lines between two reports loses the overflow from history.
+
 ## Phase F: placement
 
 - Projects choose a cluster from the clusters an operator allows; workloads follow the project.

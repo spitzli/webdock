@@ -194,6 +194,51 @@ async fn agents_poll_their_cluster_and_report() {
             .all(|w| w.plugin_id != plugin),
         "applied and freshly observed units are not due"
     );
+    // Reports also carry log lines, usage and problems: Core appends only new lines, samples usage
+    // and opens a notice.
+    let mut detailed = report(2, false);
+    detailed.observed_json = serde_json::to_vec(&json!({"ready": false,
+        "logs": ["2026-10-22T10:00:00.000001Z first", "2026-10-22T10:00:01Z second", "not a log line"],
+        "usage": {"cpu": 12, "memory": 40}, "problems": [{"reason": "CrashLoopBackOff"}]})).unwrap();
+    assert!(
+        client
+            .report_workload(detailed.clone())
+            .await
+            .unwrap()
+            .into_inner()
+            .accepted
+    );
+    detailed.observed_json = serde_json::to_vec(&json!({"ready": false,
+        "logs": ["2026-10-22T10:00:01Z second", "2026-10-22T10:00:02.5Z third"],
+        "usage": {"cpu": 20, "memory": 60}, "problems": [{"reason": "CrashLoopBackOff"}]}))
+    .unwrap();
+    assert!(
+        client
+            .report_workload(detailed)
+            .await
+            .unwrap()
+            .into_inner()
+            .accepted
+    );
+    let scalar = |sql: &'static str| {
+        let (owner, plugin) = (owner.clone(), plugin.clone());
+        async move {
+            owner
+                .query_one_raw(Statement::from_sql_and_values(
+                    DbBackend::Postgres,
+                    sql,
+                    [plugin.into()],
+                ))
+                .await
+                .unwrap()
+                .unwrap()
+                .try_get::<String>("", "v")
+                .unwrap()
+        }
+    };
+    assert_eq!(scalar("SELECT string_agg(line,',' ORDER BY at) AS v FROM webdock_auth.workload_log WHERE plugin_id=$1").await, "first,second,third");
+    assert_eq!(scalar("SELECT samples||' '||cpu_max||' '||memory_max AS v FROM webdock_auth.workload_usage WHERE plugin_id=$1").await, "2 20 60");
+    assert_eq!(scalar("SELECT string_agg(kind,',') AS v FROM webdock_auth.notification WHERE plugin_id=$1 AND resolved_at IS NULL").await, "crashing");
     // Another cluster's unit cannot be reported by this agent.
     let mut foreign = report(2, false);
     foreign.unit = "theirs".into();
@@ -242,6 +287,19 @@ async fn agents_poll_their_cluster_and_report() {
         .try_get("", "n")
         .unwrap();
     assert_eq!(left, 1, "only the other cluster's unit remains");
+    assert_eq!(
+        scalar("SELECT count(*)::text AS v FROM webdock_auth.notification WHERE plugin_id=$1 AND resolved_at IS NULL").await,
+        "0",
+        "a removed unit needs no attention"
+    );
+    for table in ["notification", "workload_usage", "workload_log"] {
+        execute(
+            &owner,
+            &format!("DELETE FROM webdock_auth.{table} WHERE plugin_id=$1"),
+            vec![plugin.clone().into()],
+        )
+        .await;
+    }
 
     let _ = stop.send(());
     server.await.unwrap();

@@ -1,5 +1,5 @@
-//! Notices Core raises from the agent's reports (see `webdock_rls.report_plugin_workload`): mailed
-//! once to the workspace's owners and admins, listed in the console with what is wrong.
+//! What Core keeps from the agent's reports (see `webdock_rls.report_plugin_workload`): notices,
+//! mailed once to the workspace's owners and admins and listed in the console, and log history.
 use super::*;
 use webdock_identity::{Delivery, DeliveryKind, DeliveryRequest};
 
@@ -76,6 +76,49 @@ impl HostService {
                 DbBackend::Postgres,
                 "SELECT webdock_rls.customer_notifications($1) AS value",
                 [customer.into()],
+            ))
+            .await
+            .map_err(|_| PluginError::denied())?
+            .ok_or_else(PluginError::denied)?
+            .try_get("", "value")
+            .map_err(db_error)?;
+        tx.commit().await.map_err(db_error)?;
+        Ok(value)
+    }
+    /// A resource's stored log lines, newest first, for owners, admins and operators.
+    pub async fn logs(
+        &self,
+        actor: &Principal,
+        project: &str,
+        plugin: &str,
+        resource: &str,
+        search: &str,
+        before: Option<&str>,
+    ) -> Result<Value> {
+        if search.chars().count() > 200
+            || resource.len() > 128
+            || !slug(plugin)
+            || before.is_some_and(|b| chrono::DateTime::parse_from_rfc3339(b).is_err())
+        {
+            return Err(invalid("Invalid log query"));
+        }
+        let tx = self
+            .signer
+            .begin(&self.db, actor)
+            .await
+            .map_err(|_| PluginError::denied())?;
+        timeouts(&tx).await?;
+        let value: Value = tx
+            .query_one_raw(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "SELECT webdock_rls.resource_logs($1,$2,$3,$4,$5::timestamptz) AS value",
+                [
+                    project.into(),
+                    plugin.into(),
+                    resource.into(),
+                    search.into(),
+                    before.into(),
+                ],
             ))
             .await
             .map_err(|_| PluginError::denied())?
