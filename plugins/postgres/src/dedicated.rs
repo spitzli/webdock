@@ -15,6 +15,10 @@ pub struct DedicatedConfig {
     /// Port of Traefik's PostgreSQL entry point as customers reach it.
     pub port: u16,
     pub entry_points: Vec<String>,
+    /// cert-manager ClusterIssuer for the instances' server certificates, so clients can verify
+    /// them (`sslmode=verify-full`). Without one, instances keep the operator's own certificates.
+    #[serde(default)]
+    pub issuer: Option<String>,
 }
 pub fn image(version: &str) -> Option<&'static str> {
     // ponytail: major tags, not digests; pin digests for production installs.
@@ -49,10 +53,18 @@ impl Placement {
     pub fn port(&self) -> u16 {
         self.config.port
     }
+    /// What customers put in `sslmode`.
+    pub fn ssl_mode(&self) -> &'static str {
+        if self.config.issuer.is_some() {
+            "verify-full"
+        } else {
+            "require"
+        }
+    }
     pub fn objects(&self, spec: &Spec<'_>) -> Value {
         let unit = unit(spec.id);
         let secret = format!("{unit}-role");
-        json!([
+        let mut objects = json!([
             // The operator watches labelled Secrets and applies a changed password to the role.
             {"apiVersion": "v1", "kind": "Secret", "metadata": {"name": secret, "labels": {"cnpg.io/reload": "true"}},
              "type": "kubernetes.io/basic-auth", "stringData": {"username": spec.role, "password": spec.password}},
@@ -65,7 +77,17 @@ impl Placement {
              "spec": {"entryPoints": self.config.entry_points,
               "routes": [{"match": format!("HostSNI(`{}`)", self.host(spec.id)), "services": [{"name": format!("{unit}-rw"), "port": 5432}]}],
               "tls": {"passthrough": true}}},
-        ])
+        ]);
+        if let Some(issuer) = &self.config.issuer {
+            let tls = format!("{unit}-tls");
+            objects[1]["spec"]["certificates"] =
+                json!({"serverTLSSecret": tls, "serverCASecret": tls});
+            if let Some(list) = objects.as_array_mut() {
+                list.push(json!({"apiVersion": "cert-manager.io/v1", "kind": "Certificate", "metadata": {"name": tls},
+                    "spec": {"secretName": tls, "dnsNames": [self.host(spec.id)], "issuerRef": {"name": issuer, "kind": "ClusterIssuer"}}}));
+            }
+        }
+        objects
     }
     pub async fn deploy(&self, spec: &Spec<'_>) -> Result<(), PluginError> {
         self.workloads

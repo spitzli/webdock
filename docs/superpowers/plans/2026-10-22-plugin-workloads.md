@@ -36,7 +36,7 @@ All tasks are done and were run live on the local stack (Tilt, k3s, enrolled age
 
 Rulings made while building:
 
-- Database and mail clients are routed through Traefik TCP routers by TLS server name with passthrough (PostgreSQL via Traefik's STARTTLS support). The certificates are self-signed for now, so clients use `sslmode=require` rather than verifying. Cost if wrong: production needs proper certificates per host (cert-manager) before customers verify.
+- Database and mail clients are routed through Traefik TCP routers by TLS server name with passthrough (PostgreSQL via Traefik's STARTTLS support). Certificates come from cert-manager (`Certificate` is a workload kind; Core refuses `isCA`). Local dev issues from its own CA, limited to `*.localhost` names (`bun tools/dev/local.mjs cluster-ca`); production swaps the ClusterIssuer for an ACME one. Cost if wrong: Stalwart reads its certificate files at load, so a renewed certificate takes effect after an engine restart.
 - Dedicated passwords are declarative: the role's Secret carries `cnpg.io/reload` and CloudNativePG's managed roles apply a changed password within seconds, so a rotation is just a new apply and nothing is staged. Cost if wrong: for a few seconds after a rotation the shown password may not work yet.
 - The plugin manages mail engines over Stalwart's HTTP API through an IngressRoute on the HTTP entry point, protected by the engine's admin password. Cost if wrong: in production this must move to an internal entry point, or the plugin must run in the cluster.
 - Core still accepts any host in plugin routes. Before more than one installation shares a Traefik, Core should pin route hosts to each plugin's configured domain.

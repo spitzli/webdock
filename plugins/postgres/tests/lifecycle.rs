@@ -105,6 +105,7 @@ async fn fixture(capacity: u32, core: Option<Core>) -> Fixture {
                 domain: "db.localhost".into(),
                 port: 55442,
                 entry_points: vec!["postgres".into()],
+                issuer: Some("webdock-dev-ca".into()),
             },
         )
     });
@@ -360,7 +361,23 @@ async fn dedicated_instance_lifecycle() {
         .iter()
         .map(|o| o["kind"].as_str().unwrap())
         .collect();
-    assert_eq!(kinds, ["Secret", "Cluster", "IngressRouteTCP"]);
+    assert_eq!(
+        kinds,
+        ["Secret", "Cluster", "IngressRouteTCP", "Certificate"]
+    );
+    // The server certificate names the public host, so clients can verify it.
+    assert_eq!(
+        objects[3]["spec"]["dnsNames"],
+        json!([format!("{unit}.db.localhost")])
+    );
+    assert_eq!(
+        objects[3]["spec"]["issuerRef"],
+        json!({"name": "webdock-dev-ca", "kind": "ClusterIssuer"})
+    );
+    assert_eq!(
+        objects[1]["spec"]["certificates"],
+        json!({"serverTLSSecret": format!("{unit}-tls"), "serverCASecret": format!("{unit}-tls")})
+    );
     assert_eq!(objects[0]["metadata"]["labels"]["cnpg.io/reload"], "true");
     let cluster = &objects[1]["spec"];
     assert_eq!(cluster["imageName"], "ghcr.io/cloudnative-pg/postgresql:18");
@@ -403,14 +420,14 @@ async fn dedicated_instance_lifecycle() {
             view["sslMode"].as_str(),
             view["user"].clone()
         ),
-        (Some("ready"), Some("require"), role.clone())
+        (Some("ready"), Some("verify-full"), role.clone())
     );
     let secret = f.ok("101", "databases.credentials", id(&created)).await;
     assert_eq!(secret["value"], objects[0]["stringData"]["password"]);
     assert_eq!(
         secret["uri"],
         format!(
-            "postgresql://{}:{}@{host}:55442/app?sslmode=require",
+            "postgresql://{}:{}@{host}:55442/app?sslmode=verify-full&sslrootcert=system",
             role.as_str().unwrap(),
             secret["value"].as_str().unwrap()
         )

@@ -60,8 +60,9 @@ impl Core {
 fn config() -> placement::PlacementConfig {
     placement::PlacementConfig {
         domain: "apps.localhost".into(),
-        public_url: "http://{host}:55480".into(),
-        entry_points: vec!["web".into()],
+        public_url: "https://{host}:55481".into(),
+        entry_points: vec!["websecure".into()],
+        issuer: Some("webdock-dev-ca".into()),
     }
 }
 
@@ -286,7 +287,16 @@ async fn apps_become_cluster_units() {
         .iter()
         .map(|o| o["kind"].as_str().unwrap())
         .collect();
-    assert_eq!(kinds, ["Secret", "Deployment", "Service", "IngressRoute"]);
+    assert_eq!(
+        kinds,
+        [
+            "Secret",
+            "Deployment",
+            "Service",
+            "IngressRoute",
+            "Certificate"
+        ]
+    );
     let deployment = &objects[1];
     assert_eq!(deployment["metadata"]["name"], unit);
     assert_eq!(deployment["spec"]["replicas"], 1);
@@ -305,7 +315,17 @@ async fn apps_become_cluster_units() {
         objects[3]["spec"]["routes"][0]["match"],
         format!("Host(`shop-{short}.apps.localhost`)")
     );
-    assert_eq!(objects[3]["spec"]["entryPoints"], json!(["web"]));
+    assert_eq!(objects[3]["spec"]["entryPoints"], json!(["websecure"]));
+    // HTTPS with a certificate for the app's own host.
+    assert_eq!(
+        objects[3]["spec"]["tls"],
+        json!({"secretName": format!("{unit}-tls")})
+    );
+    assert_eq!(
+        objects[4]["spec"]["dnsNames"],
+        json!([format!("shop-{short}.apps.localhost")])
+    );
+    assert_eq!(objects[4]["spec"]["secretName"], format!("{unit}-tls"));
 
     // Until the agent reports, the app is deploying and has no address.
     let view = f.view(&app).await;
@@ -319,7 +339,7 @@ async fn apps_become_cluster_units() {
     assert_eq!(view["status"], "running");
     assert_eq!(
         view["url"],
-        format!("http://shop-{short}.apps.localhost:55480")
+        format!("https://shop-{short}.apps.localhost:55481")
     );
     assert_eq!(
         f.ok("101", "apps.logs", json!({"resource_id": app})).await["lines"],

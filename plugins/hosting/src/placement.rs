@@ -15,8 +15,11 @@ pub struct PlacementConfig {
     pub domain: String,
     /// How customers reach that host, with `{host}` in it, e.g. `http://{host}:55480`.
     pub public_url: String,
-    /// Traefik entry points of the route, e.g. `["web"]` locally or `["websecure"]`.
+    /// Traefik entry points of the route, e.g. `["websecure"]`.
     pub entry_points: Vec<String>,
+    /// cert-manager ClusterIssuer for each app's certificate; the route then serves HTTPS with it.
+    #[serde(default)]
+    pub issuer: Option<String>,
 }
 pub struct Spec<'a> {
     pub id: &'a Uuid,
@@ -81,7 +84,8 @@ impl Placement {
             .map(|(k, v)| (k.clone(), json!(v)))
             .collect();
         let selector = json!({"app": unit});
-        json!([
+        let host = host(&self.config, spec.id, spec.name);
+        let mut objects = json!([
             {"apiVersion": "v1", "kind": "Secret", "metadata": {"name": format!("{unit}-env")}, "type": "Opaque", "stringData": env},
             {"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"name": unit, "labels": selector},
              "spec": {"replicas": if spec.running { 1 } else { 0 }, "selector": {"matchLabels": selector},
@@ -95,9 +99,18 @@ impl Placement {
              "spec": {"selector": selector, "ports": [{"port": 80, "targetPort": spec.port}]}},
             {"apiVersion": "traefik.io/v1alpha1", "kind": "IngressRoute", "metadata": {"name": unit},
              "spec": {"entryPoints": self.config.entry_points, "routes": [{"kind": "Rule",
-               "match": format!("Host(`{}`)", host(&self.config, spec.id, spec.name)),
+               "match": format!("Host(`{host}`)"),
                "services": [{"name": unit, "port": 80}]}]}},
-        ])
+        ]);
+        if let Some(issuer) = &self.config.issuer {
+            let tls = format!("{unit}-tls");
+            objects[3]["spec"]["tls"] = json!({"secretName": tls});
+            if let Some(list) = objects.as_array_mut() {
+                list.push(json!({"apiVersion": "cert-manager.io/v1", "kind": "Certificate", "metadata": {"name": tls},
+                    "spec": {"secretName": tls, "dnsNames": [host], "issuerRef": {"name": issuer, "kind": "ClusterIssuer"}}}));
+            }
+        }
+        objects
     }
     pub async fn deploy(&self, spec: &Spec<'_>) -> Result<(), PluginError> {
         self.workloads

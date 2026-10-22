@@ -1,8 +1,8 @@
 // Local development helper used by the root Tiltfile. Owned loopback state only; never deployment config.
-// Usage: bun tools/dev/local.mjs secrets|init|plugin-image <id>|seed|kubeconfig
+// Usage: bun tools/dev/local.mjs secrets|init|plugin-image <id>|seed|kubeconfig|cluster-ca
 import { execFileSync } from "node:child_process";
 import { createHash, generateKeyPairSync, randomBytes, scryptSync } from "node:crypto";
-import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "../..");
@@ -131,7 +131,7 @@ const PLUGINS = {
         adminUrl: `postgresql://postgres:${readEnv("shared-postgres.env").POSTGRES_PASSWORD}@127.0.0.1:${sharedPort}/postgres`, capacity: 50,
       }],
       // CloudNativePG on the local k3s, reached through Traefik's PostgreSQL entry point by TLS server name.
-      dedicated: { domain: "db.localhost", port: Number(process.env.WEBDOCK_DEV_K3S_POSTGRES_PORT ?? 55442), entryPoints: ["postgres"] },
+      dedicated: { domain: "db.localhost", port: Number(process.env.WEBDOCK_DEV_K3S_POSTGRES_PORT ?? 55442), entryPoints: ["postgres"], issuer: "webdock-dev-ca" },
     }),
   },
   // Every message goes to the local Mailpit catcher; nothing leaves this machine.
@@ -151,6 +151,7 @@ const PLUGINS = {
         imapPort: Number(process.env.WEBDOCK_DEV_K3S_IMAPS_PORT ?? 55993),
         submissionPort: Number(process.env.WEBDOCK_DEV_K3S_SUBMISSIONS_PORT ?? 55465),
         admin: { origin: `http://127.0.0.1:${process.env.WEBDOCK_DEV_K3S_HTTP_PORT ?? 55480}`, domain: "mail-admin.localhost", entryPoints: ["web"] },
+        issuer: "webdock-dev-ca",
       },
     }),
   },
@@ -160,8 +161,8 @@ const PLUGINS = {
     policy: { "create-apps": "selected", "resize-apps": "selected" },
     config: (secrets) => ({
       secretKeyHex: secrets.sealKey,
-      // Apps run on the local k3s; its Traefik answers on 55480 for any *.apps.localhost host.
-      placement: { domain: "apps.localhost", publicUrl: "http://{host}:55480", entryPoints: ["web"] },
+      // Apps run on the local k3s behind its Traefik, over HTTPS with certificates from the local CA.
+      placement: { domain: "apps.localhost", publicUrl: `https://{host}:${process.env.WEBDOCK_DEV_K3S_HTTPS_PORT ?? 55481}`, entryPoints: ["websecure"], issuer: "webdock-dev-ca" },
     }),
   },
 };
@@ -269,6 +270,36 @@ function kubeconfig() {
   if (!raw.includes("server:")) throw new Error("Local k3s did not write its kubeconfig");
   const api = process.env.WEBDOCK_DEV_K3S_API_PORT ?? 56443;
   writeFileSync(join(dir, "kubeconfig.yaml"), raw.replace("https://127.0.0.1:6443", `https://127.0.0.1:${api}`).replaceAll(": default", ": webdock-dev"), { mode: 0o600 });
+}
+
+// A CA of this machine's own for workload certificates, limited to *.localhost names, so trusting
+// its root locally vouches for nothing else. cert-manager issues from it as ClusterIssuer webdock-dev-ca.
+function clusterCa() {
+  const dir = file("ca");
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  const key = join(dir, "ca.key");
+  const cert = join(dir, "ca.crt");
+  if (!existsSync(cert)) {
+    execFileSync("openssl", ["req", "-x509", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:P-256", "-nodes", "-keyout", key, "-out", cert, "-days", "3650",
+      "-subj", "/CN=Webdock local development CA", "-addext", "basicConstraints=critical,CA:TRUE,pathlen:0",
+      "-addext", "keyUsage=critical,keyCertSign,cRLSign", "-addext", "nameConstraints=critical,permitted;DNS:localhost,permitted;DNS:.localhost"], { stdio: "ignore" });
+    chmodSync(key, 0o600);
+  }
+  const kubectl = (args, input) => execFileSync("kubectl", ["--kubeconfig", file("k3s/kubeconfig.yaml"), "--context", "webdock-dev", ...args], { input, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
+  const secret = { apiVersion: "v1", kind: "Secret", type: "kubernetes.io/tls", metadata: { name: "webdock-dev-ca", namespace: "cert-manager" },
+    data: { "tls.crt": readFileSync(cert).toString("base64"), "tls.key": readFileSync(key).toString("base64") } };
+  const issuer = { apiVersion: "cert-manager.io/v1", kind: "ClusterIssuer", metadata: { name: "webdock-dev-ca" }, spec: { ca: { secretName: "webdock-dev-ca" } } };
+  // cert-manager and its webhook come up a while after k3s.
+  for (let attempt = 0; ; attempt++) {
+    try {
+      kubectl(["apply", "-f", "-"], JSON.stringify({ apiVersion: "v1", kind: "List", items: [secret, issuer] }));
+      break;
+    } catch {
+      if (attempt >= 90) throw new Error("cert-manager did not accept the local CA");
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 2000);
+    }
+  }
+  console.log(`Local CA ready: ${cert} (trust it to verify *.localhost workloads)`);
 }
 
 // The chart digest the agent checks before using a chart (same walk as ApprovedChart::digest).
@@ -381,4 +412,5 @@ if (command === "init") init(value);
 else if (command === "plugin-image") await pluginImage(process.argv[3] ?? "echo-demo");
 else if (command === "seed") { seed(); writeEnv(value); }
 else if (command === "kubeconfig") kubeconfig();
-else if (command !== "secrets" && command !== "kubeconfig") throw new Error("Use: secrets | init | plugin-image | seed | kubeconfig");
+else if (command === "cluster-ca") clusterCa();
+else if (command !== "secrets") throw new Error("Use: secrets | init | plugin-image | seed | kubeconfig | cluster-ca");

@@ -246,14 +246,19 @@ impl Plugin {
             "id": r.id.to_string(), "name": r.name, "offering": r.offering, "state": r.state,
             "host": r.host, "port": r.port, "database": r.database_name, "user": r.role_name,
             "version": r.version, "server": server, "error": r.error, "createdAt": r.created_at,
-            "sslMode": if r.offering == "dedicated" { "require" } else { "disable" },
+            "sslMode": match (&self.placement, r.offering.as_str()) {
+                (Some(placement), "dedicated") => placement.ssl_mode(),
+                _ => "disable",
+            },
         })
     }
-    fn uri(r: &store::Resource, password: &str) -> Option<String> {
-        let tls = if r.offering == "dedicated" {
-            "?sslmode=require"
-        } else {
-            ""
+    fn uri(&self, r: &store::Resource, password: &str) -> Option<String> {
+        let tls = match (&self.placement, r.offering.as_str()) {
+            (Some(placement), "dedicated") if placement.ssl_mode() == "verify-full" => {
+                "?sslmode=verify-full&sslrootcert=system"
+            }
+            (Some(_), "dedicated") => "?sslmode=require",
+            _ => "",
         };
         Some(format!(
             "postgresql://{}:{password}@{}:{}/{}{tls}",
@@ -356,7 +361,7 @@ impl ActionHandler for Handler {
                     ));
                 }
                 let password = plugin.password(&r)?;
-                Ok(json!({"value": password, "uri": Plugin::uri(&r, &password)}))
+                Ok(json!({"value": password, "uri": plugin.uri(&r, &password)}))
             }
             "databases.rotate" => plugin.rotate(claims, input).await,
             "databases.delete" => plugin.delete(claims, input, "shared").await,

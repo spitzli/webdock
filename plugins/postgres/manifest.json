@@ -16,7 +16,8 @@
     "kinds": [
       "v1/Secret",
       "postgresql.cnpg.io/v1/Cluster",
-      "traefik.io/v1alpha1/IngressRouteTCP"
+      "traefik.io/v1alpha1/IngressRouteTCP",
+      "cert-manager.io/v1/Certificate"
     ]
   },
   "schemaVersion": 1,

@@ -23,6 +23,7 @@ fn config() -> engine::EngineConfig {
             domain: "mail-admin.localhost".into(),
             entry_points: vec!["web".into()],
         },
+        issuer: Some("webdock-dev-ca".into()),
     }
 }
 
@@ -393,6 +394,34 @@ async fn mailbox_lifecycle() {
     assert_eq!(
         session(&f.project, "anna@shop.example.test", "wrong").await,
         401
+    );
+    // Mail clients reach IMAPS by server name and can verify the issued certificate.
+    let kubeconfig = std::env::var("WEBDOCK_WORKLOAD_TEST_KUBECONFIG").unwrap();
+    let ca = std::path::Path::new(&kubeconfig)
+        .parent()
+        .unwrap()
+        .join("../ca/ca.crt");
+    let host = view["host"].as_str().unwrap();
+    let handshake = Command::new("openssl")
+        .args([
+            "s_client",
+            "-connect",
+            "127.0.0.1:55993",
+            "-servername",
+            host,
+            "-verify_hostname",
+            host,
+            "-verify_return_error",
+            "-CAfile",
+        ])
+        .arg(&ca)
+        .stdin(std::process::Stdio::null())
+        .output()
+        .unwrap();
+    assert!(
+        String::from_utf8_lossy(&handshake.stdout).contains("Verify return code: 0 (ok)"),
+        "{}",
+        String::from_utf8_lossy(&handshake.stderr)
     );
 
     // The domain shows its DKIM record once mailboxes use it, and cannot be removed under them.

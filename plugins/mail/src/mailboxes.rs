@@ -184,7 +184,7 @@ impl Plugin {
         Ok(json!({
             "address": format!("{}@{}", m.local_part, m.domain), "name": m.display_name, "state": m.state, "error": m.error,
             "host": engines.host(&m.project_id), "imapPort": imap, "smtpPort": submission, "username": format!("{}@{}", m.local_part, m.domain),
-            "quotaMb": m.quota_mb, "createdAt": m.created_at, "tls": "Implicit TLS, self-signed certificate",
+            "quotaMb": m.quota_mb, "createdAt": m.created_at, "tls": engines.tls_note(),
         }))
     }
     async fn ready_mailbox(

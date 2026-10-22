@@ -17,7 +17,8 @@
       "apps/v1/Deployment",
       "v1/Service",
       "v1/Secret",
-      "traefik.io/v1alpha1/IngressRoute"
+      "traefik.io/v1alpha1/IngressRoute",
+      "cert-manager.io/v1/Certificate"
     ]
   },
   "schemaVersion": 1,

@@ -20,6 +20,10 @@ pub struct EngineConfig {
     pub imap_port: u16,
     pub submission_port: u16,
     pub admin: AdminRoute,
+    /// cert-manager ClusterIssuer for the engines' certificates, so mail clients can verify them.
+    /// Without one, each engine gets a self-signed certificate.
+    #[serde(default)]
+    pub issuer: Option<String>,
 }
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -34,6 +38,7 @@ pub type Error = Box<dyn std::error::Error + Send + Sync>;
 const IMAP_PORT: u16 = 1993;
 const SUBMISSION_PORT: u16 = 2465;
 const DATA: &str = "/var/lib/stalwart";
+const TLS: &str = "/etc/stalwart-tls";
 
 pub struct Engines {
     workloads: Box<dyn Workloads>,
@@ -91,8 +96,13 @@ impl Client {
         }
         let value = &result[1];
         for key in ["notCreated", "notUpdated", "notDestroyed"] {
-            if value[key].as_object().is_some_and(|v| !v.is_empty()) {
-                return Err(format!("{method} rejected").into());
+            if let Some(rejected) = value[key].as_object().filter(|v| !v.is_empty()) {
+                let reasons: String = Value::Object(rejected.clone())
+                    .to_string()
+                    .chars()
+                    .take(300)
+                    .collect();
+                return Err(format!("{method} rejected: {reasons}").into());
             }
         }
         Ok(serde_json::from_value(value.clone())?)
@@ -138,6 +148,13 @@ impl Engines {
     pub fn ports(&self) -> (u16, u16) {
         (self.config.imap_port, self.config.submission_port)
     }
+    pub fn tls_note(&self) -> &'static str {
+        if self.config.issuer.is_some() {
+            "Implicit TLS"
+        } else {
+            "Implicit TLS, self-signed certificate"
+        }
+    }
     fn admin_host(&self, project: &str) -> String {
         format!("p{project}.{}", self.config.admin.domain)
     }
@@ -160,17 +177,25 @@ impl Engines {
             json!({"apiVersion": "v1", "kind": "PersistentVolumeClaim", "metadata": {"name": "engine-data"},
                    "spec": {"accessModes": ["ReadWriteOnce"], "resources": {"requests": {"storage": "2Gi"}}}}),
             json!({"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"name": "engine", "labels": app},
-                   "spec": {"replicas": 1, "strategy": {"type": "Recreate"}, "selector": {"matchLabels": app},
-                    "template": {"metadata": {"labels": app, "annotations": {"restarted": restart}},
-                     "spec": {"containers": [{"name": "stalwart", "image": self.config.image,
-                       "args": ["--config", format!("{DATA}/config.json")],
-                       "envFrom": if recovery.is_some() { json!([{"secretRef": {"name": "engine-recovery"}}]) } else { json!([]) },
-                       "ports": [{"containerPort": 8080}, {"containerPort": IMAP_PORT}, {"containerPort": SUBMISSION_PORT}],
-                       "volumeMounts": [{"name": "data", "mountPath": DATA}],
-                       "resources": {"limits": {"memory": "512Mi"}, "requests": {"memory": "512Mi", "cpu": "50m"}},
-                       // The binary carries this file capability and refuses to exec without it.
-                       "securityContext": {"allowPrivilegeEscalation": false, "capabilities": {"drop": ["ALL"], "add": ["NET_BIND_SERVICE"]}}}],
-                      "volumes": [{"name": "data", "persistentVolumeClaim": {"claimName": "engine-data"}}]}}}}),
+            "spec": {"replicas": 1, "strategy": {"type": "Recreate"}, "selector": {"matchLabels": app},
+             "template": {"metadata": {"labels": app, "annotations": {"restarted": restart}},
+              "spec": {"containers": [{"name": "stalwart", "image": self.config.image,
+                "args": ["--config", format!("{DATA}/config.json")],
+                "envFrom": if recovery.is_some() { json!([{"secretRef": {"name": "engine-recovery"}}]) } else { json!([]) },
+                "ports": [{"containerPort": 8080}, {"containerPort": IMAP_PORT}, {"containerPort": SUBMISSION_PORT}],
+                "volumeMounts": if self.config.issuer.is_some() {
+                    json!([{"name": "data", "mountPath": DATA}, {"name": "tls", "mountPath": TLS, "readOnly": true}])
+                } else {
+                    json!([{"name": "data", "mountPath": DATA}])
+                },
+                "resources": {"limits": {"memory": "512Mi"}, "requests": {"memory": "512Mi", "cpu": "50m"}},
+                // The binary carries this file capability and refuses to exec without it.
+                "securityContext": {"allowPrivilegeEscalation": false, "capabilities": {"drop": ["ALL"], "add": ["NET_BIND_SERVICE"]}}}],
+               "volumes": if self.config.issuer.is_some() {
+                   json!([{"name": "data", "persistentVolumeClaim": {"claimName": "engine-data"}}, {"name": "tls", "secret": {"secretName": "engine-tls"}}])
+               } else {
+                   json!([{"name": "data", "persistentVolumeClaim": {"claimName": "engine-data"}}])
+               }}}}}),
             json!({"apiVersion": "networking.k8s.io/v1", "kind": "NetworkPolicy", "metadata": {"name": "engine-no-egress"},
                    "spec": {"podSelector": {"matchLabels": app}, "policyTypes": ["Egress"], "egress": []}}),
             json!({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "engine"},
@@ -183,6 +208,10 @@ impl Engines {
             objects.push(json!({"apiVersion": "traefik.io/v1alpha1", "kind": "IngressRouteTCP", "metadata": {"name": format!("engine-{name}")},
                 "spec": {"entryPoints": [name], "routes": [{"match": format!("HostSNI(`{}`)", self.host(project)),
                  "services": [{"name": "engine", "port": port}]}], "tls": {"passthrough": true}}}));
+        }
+        if let Some(issuer) = &self.config.issuer {
+            objects.push(json!({"apiVersion": "cert-manager.io/v1", "kind": "Certificate", "metadata": {"name": "engine-tls"},
+                "spec": {"secretName": "engine-tls", "dnsNames": [self.host(project)], "issuerRef": {"name": issuer, "kind": "ClusterIssuer"}}}));
         }
         if let Some(password) = recovery {
             objects.push(json!({"apiVersion": "v1", "kind": "Secret", "metadata": {"name": "engine-recovery"}, "type": "Opaque",
@@ -269,9 +298,18 @@ impl Engines {
         let _: Value = admin
             .call("x:NetworkListener/set", json!({"create":listeners}))
             .await?;
-        let rcgen::CertifiedKey { cert, signing_key } =
-            rcgen::generate_simple_self_signed(vec![self.host(project), host])?;
-        let created: Created = admin.call("x:Certificate/set", json!({"create":{"c":{"certificate":{"@type":"Text","value":cert.pem()},"privateKey":{"@type":"Text","secret":signing_key.serialize_pem()}}}})).await?;
+        // An issued certificate is read from its mounted Secret; otherwise a self-signed one is stored.
+        // ponytail: the engine reads the files when it loads them; restart it after a renewal.
+        let certificate = if self.config.issuer.is_some() {
+            json!({"certificate":{"@type":"File","filePath":format!("{TLS}/tls.crt")},"privateKey":{"@type":"File","filePath":format!("{TLS}/tls.key")}})
+        } else {
+            let rcgen::CertifiedKey { cert, signing_key } =
+                rcgen::generate_simple_self_signed(vec![self.host(project), host])?;
+            json!({"certificate":{"@type":"Text","value":cert.pem()},"privateKey":{"@type":"Text","secret":signing_key.serialize_pem()}})
+        };
+        let created: Created = admin
+            .call("x:Certificate/set", json!({"create":{"c":certificate}}))
+            .await?;
         let certificate = &created
             .created
             .get("c")
