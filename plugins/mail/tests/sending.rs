@@ -270,15 +270,24 @@ async fn domain_verification_and_platform_delivery() {
         .await;
     assert_eq!(created["resource"]["name"], "shop.example.com");
     let domain = id(&created);
+    // An unverified claim blocks nobody: another project may add the same domain, and only
+    // one project can ever prove it.
+    let rival = id(&f
+        .ok(
+            "202",
+            "domains.create",
+            json!({"domain":"shop.example.com"}),
+        )
+        .await);
     assert_eq!(
         f.code(
-            "202",
+            "101",
             "domains.create",
             json!({"domain":"shop.example.com"})
         )
         .await,
         ErrorCode::Conflict,
-        "a domain belongs to one project"
+        "once per project"
     );
     assert_eq!(
         f.code("202", "domains.view", json!({"resource_id": domain}))
@@ -316,6 +325,23 @@ async fn domain_verification_and_platform_delivery() {
         f.ok("101", "domains.verify", json!({"resource_id": domain}))
             .await["verified"],
         true
+    );
+    // The rival project's own token is different; even with the right record it cannot verify twice.
+    let rival_token = f
+        .ok("202", "domains.view", json!({"resource_id": rival}))
+        .await["records"][0]["value"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    f.dns
+        .lock()
+        .unwrap()
+        .push(("_webdock.shop.example.com".into(), rival_token));
+    assert_eq!(
+        f.code("202", "domains.verify", json!({"resource_id": rival}))
+            .await,
+        ErrorCode::Conflict,
+        "first DNS proof wins"
     );
 
     let sent = f
@@ -376,13 +402,15 @@ async fn domain_verification_and_platform_delivery() {
             .await,
         ErrorCode::NotFound
     );
-    // A deleted domain can be claimed again.
-    f.ok(
-        "202",
-        "domains.create",
-        json!({"domain":"shop.example.com"}),
-    )
-    .await;
+    // Once the owner removes it, the other project can verify it.
+    assert_eq!(
+        f.ok("202", "domains.verify", json!({"resource_id": rival}))
+            .await["verified"],
+        true
+    );
+    // Deletes are idempotent: the Core already proved ownership.
+    f.ok("101", "domains.delete", json!({"resource_id": domain}))
+        .await;
     f.cleanup().await;
 }
 
