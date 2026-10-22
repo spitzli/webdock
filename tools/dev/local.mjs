@@ -122,6 +122,7 @@ const PLUGINS = {
   "echo-demo": { policy: { "create-notes": "selected" } },
   postgres: {
     storage: true,
+    capabilities: ["plugin.workloads"],
     policy: { "create-shared": "selected", "create-dedicated": "selected" },
     config: (secrets) => ({
       secretKeyHex: secrets.sealKey,
@@ -129,7 +130,8 @@ const PLUGINS = {
         id: "local-1", label: "Local shared server", host: "127.0.0.1", port: sharedPort,
         adminUrl: `postgresql://postgres:${readEnv("shared-postgres.env").POSTGRES_PASSWORD}@127.0.0.1:${sharedPort}/postgres`, capacity: 50,
       }],
-      dedicated: { dockerSocket: "/var/run/docker.sock", bindHost: "127.0.0.1" },
+      // CloudNativePG on the local k3s, reached through Traefik's PostgreSQL entry point by TLS server name.
+      dedicated: { domain: "db.localhost", port: Number(process.env.WEBDOCK_DEV_K3S_POSTGRES_PORT ?? 55442), entryPoints: ["postgres"] },
     }),
   },
   // Every message goes to the local Mailpit catcher; nothing leaves this machine.

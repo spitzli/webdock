@@ -88,32 +88,10 @@ impl Plugin {
             serial: tokio::sync::Mutex::new(()),
         })
     }
-    /// Finish instances whose creation was interrupted, e.g. by a restart, and settle rotations
-    /// that stopped between changing the instance password and storing it.
-    pub async fn resume(self: &Arc<Self>) -> std::result::Result<(), store::Error> {
-        for r in self.store.pending().await? {
-            let (Some(placement), Some(port), Some(pending)) = (
-                self.placement.as_ref(),
-                r.port.and_then(|p| u16::try_from(p).ok()),
-                r.pending_sealed
-                    .as_deref()
-                    .and_then(|s| self.sealer.open(&r.id, s)),
-            ) else {
-                continue;
-            };
-            if placement
-                .can_login(port, &r.database_name, &r.role_name, &pending)
-                .await
-            {
-                self.store.promote(&r.id).await?;
-            } else {
-                self.store.clear_pending(&r.id).await?;
-            }
-        }
+    /// Shared databases whose creation was interrupted, e.g. by a restart, are marked failed.
+    pub async fn resume(&self) -> std::result::Result<(), store::Error> {
         for resource in self.store.creating().await? {
-            if resource.offering == "dedicated" {
-                self.provision(resource);
-            } else {
+            if resource.offering == "shared" {
                 self.store
                     .failed(&resource.id, "Creation was interrupted")
                     .await?;
@@ -150,6 +128,25 @@ impl Plugin {
             .map_err(|e| unavailable("store", e))?
             .ok_or_else(missing)
     }
+    /// A dedicated instance's state is what the cluster's agent last saw.
+    async fn current(&self, mut r: store::Resource) -> Result<store::Resource> {
+        if r.offering == "dedicated" {
+            let (state, error) = self.placement()?.observe(&r.id).await?;
+            r.state = state.into();
+            r.error = error;
+        }
+        Ok(r)
+    }
+    fn spec<'a>(r: &'a store::Resource, password: &'a str) -> dedicated::Spec<'a> {
+        dedicated::Spec {
+            id: &r.id,
+            project: &r.project_id,
+            version: r.version.as_deref().unwrap_or_default(),
+            database: &r.database_name,
+            role: &r.role_name,
+            password,
+        }
+    }
     async fn create_shared(&self, claims: &InvocationClaims, input: Value) -> Result<Value> {
         let input: NewDatabase = parse(input)?;
         let name = display_name(&input.name)?;
@@ -179,7 +176,6 @@ impl Plugin {
             offering: "shared".into(),
             name: name.clone(),
             server_id: Some(server.id.clone()),
-            pending_sealed: None,
             database_name: generated(&id, "db_"),
             role_name: generated(&id, "u_"),
             password_sealed: self.sealer.seal(&id, &password),
@@ -207,28 +203,24 @@ impl Plugin {
             .map_err(|e| unavailable("store", e))?;
         Ok(json!({"resource":{"id":id.to_string(),"name":name}}))
     }
-    async fn create_dedicated(
-        self: &Arc<Self>,
-        claims: &InvocationClaims,
-        input: Value,
-    ) -> Result<Value> {
+    async fn create_dedicated(&self, claims: &InvocationClaims, input: Value) -> Result<Value> {
         let input: NewInstance = parse(input)?;
         let name = display_name(&input.name)?;
         let placement = self.placement()?;
         dedicated::image(&input.version).ok_or_else(invalid)?;
         let id = Uuid::new_v4();
+        let password = seal::password();
         let resource = store::Resource {
             id,
             project_id: claims.project_id.clone(),
             offering: "dedicated".into(),
             name: name.clone(),
             server_id: None,
-            pending_sealed: None,
             database_name: "app".into(),
             role_name: generated(&id, "u_"),
-            password_sealed: self.sealer.seal(&id, &seal::password()),
-            host: Some(placement.host().into()),
-            port: None,
+            password_sealed: self.sealer.seal(&id, &password),
+            host: Some(placement.host(&id)),
+            port: Some(i32::from(placement.port())),
             version: Some(input.version),
             state: "creating".into(),
             error: None,
@@ -238,48 +230,11 @@ impl Plugin {
             .insert(&resource)
             .await
             .map_err(|e| unavailable("store", e))?;
-        self.provision(resource);
+        if let Err(error) = placement.deploy(&Self::spec(&resource, &password)).await {
+            let _ = self.store.delete(&id).await;
+            return Err(error);
+        }
         Ok(json!({"resource":{"id":id.to_string(),"name":name}}))
-    }
-    /// Runs detached: pulling an image and starting PostgreSQL outlasts an invocation.
-    fn provision(self: &Arc<Self>, resource: store::Resource) {
-        let plugin = Arc::clone(self);
-        tokio::spawn(async move {
-            let outcome = async {
-                let placement = plugin.placement()?;
-                let password = plugin.password(&resource)?;
-                let version = resource.version.as_deref().unwrap_or_default();
-                placement
-                    .ensure(
-                        &resource.id,
-                        version,
-                        &resource.database_name,
-                        &resource.role_name,
-                        &password,
-                    )
-                    .await
-                    .map_err(|e| unavailable("dedicated_create", e))
-                    .map(|port| (placement.host().to_owned(), port))
-            }
-            .await;
-            let stored = match outcome {
-                Ok((host, port)) => {
-                    plugin
-                        .store
-                        .ready(&resource.id, &host, i32::from(port))
-                        .await
-                }
-                Err(_) => {
-                    plugin
-                        .store
-                        .failed(&resource.id, "The instance could not be started")
-                        .await
-                }
-            };
-            if let Err(error) = stored {
-                eprintln!("postgres_plugin_store: {error}");
-            }
-        });
     }
     fn view(&self, r: &store::Resource) -> Value {
         let server = r
@@ -291,12 +246,17 @@ impl Plugin {
             "id": r.id.to_string(), "name": r.name, "offering": r.offering, "state": r.state,
             "host": r.host, "port": r.port, "database": r.database_name, "user": r.role_name,
             "version": r.version, "server": server, "error": r.error, "createdAt": r.created_at,
-            "sslMode": "disable",
+            "sslMode": if r.offering == "dedicated" { "require" } else { "disable" },
         })
     }
     fn uri(r: &store::Resource, password: &str) -> Option<String> {
+        let tls = if r.offering == "dedicated" {
+            "?sslmode=require"
+        } else {
+            ""
+        };
         Some(format!(
-            "postgresql://{}:{password}@{}:{}/{}",
+            "postgresql://{}:{password}@{}:{}/{}{tls}",
             r.role_name,
             r.host.as_deref()?,
             r.port?,
@@ -305,7 +265,7 @@ impl Plugin {
     }
     async fn rotate(&self, claims: &InvocationClaims, input: Value) -> Result<Value> {
         let _serial = self.serial.lock().await;
-        let r = self.target(claims, input).await?;
+        let r = self.current(self.target(claims, input).await?).await?;
         if r.state != "ready" {
             return Err(PluginError::new(
                 ErrorCode::Conflict,
@@ -313,7 +273,6 @@ impl Plugin {
             ));
         }
         let new = seal::password();
-        let sealed = self.sealer.seal(&r.id, &new);
         match r.offering.as_str() {
             // The admin can always set it again, so a lost store write is repaired by rotating once more.
             "shared" => self
@@ -321,29 +280,11 @@ impl Plugin {
                 .password(&r.role_name, &new)
                 .await
                 .map_err(|e| unavailable("shared_rotate", e))?,
-            _ => {
-                // Only the current password can change it, so record the new one before using it.
-                let port = r
-                    .port
-                    .and_then(|p| u16::try_from(p).ok())
-                    .ok_or_else(invalid)?;
-                let old = self.password(&r)?;
-                self.store
-                    .stage(&r.id, &sealed)
-                    .await
-                    .map_err(|e| unavailable("store", e))?;
-                if let Err(error) = self
-                    .placement()?
-                    .password(port, &r.database_name, &r.role_name, &old, &new)
-                    .await
-                {
-                    let _ = self.store.clear_pending(&r.id).await;
-                    return Err(unavailable("dedicated_rotate", error));
-                }
-            }
+            // Declarative: the operator applies the new Secret; rotating again repairs a lost write.
+            _ => self.placement()?.deploy(&Self::spec(&r, &new)).await?,
         }
         self.store
-            .password(&r.id, &sealed)
+            .password(&r.id, &self.sealer.seal(&r.id, &new))
             .await
             .map_err(|e| unavailable("store", e))?;
         Ok(json!({}))
@@ -363,7 +304,7 @@ impl Plugin {
         if r.offering != offering {
             return Err(missing());
         }
-        if r.state == "creating" {
+        if offering == "shared" && r.state == "creating" {
             return Err(PluginError::new(
                 ErrorCode::Conflict,
                 "The database is still being created",
@@ -375,11 +316,7 @@ impl Plugin {
                 .drop(&r.database_name, &r.role_name)
                 .await
                 .map_err(|e| unavailable("shared_delete", e))?,
-            _ => self
-                .placement()?
-                .remove(&r.id)
-                .await
-                .map_err(|e| unavailable("dedicated_delete", e))?,
+            _ => self.placement()?.remove(&r.id).await?,
         }
         self.store
             .delete(&r.id)
@@ -407,9 +344,11 @@ impl ActionHandler for Handler {
         match claims.action.as_str() {
             "databases.create" => plugin.create_shared(claims, input).await,
             "instances.create" => plugin.create_dedicated(claims, input).await,
-            "databases.view" => Ok(plugin.view(&plugin.target(claims, input).await?)),
+            "databases.view" => {
+                Ok(plugin.view(&plugin.current(plugin.target(claims, input).await?).await?))
+            }
             "databases.credentials" => {
-                let r = plugin.target(claims, input).await?;
+                let r = plugin.current(plugin.target(claims, input).await?).await?;
                 if r.state != "ready" {
                     return Err(PluginError::new(
                         ErrorCode::Conflict,
@@ -434,7 +373,7 @@ impl ActionHandler for Handler {
 pub fn validate_manifest(manifest: &Manifest) -> Result<()> {
     let value = manifest.as_json();
     if manifest.id() != PLUGIN_ID
-        || value["capabilities"] != json!([])
+        || value["capabilities"] != json!(["plugin.workloads"])
         || value["httpBindings"] != json!([])
         || value["actions"]
             .as_array()

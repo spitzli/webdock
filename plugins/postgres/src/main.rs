@@ -39,11 +39,15 @@ async fn run() -> Result<(), Error> {
     for server in &config.shared_servers {
         server.harden().await?;
     }
-    let placement = config
-        .dedicated
-        .as_ref()
-        .map(webdock_postgres::dedicated::Placement::new)
-        .transpose()?;
+    let client = HostClient::connect_unix(config.core).await?;
+    let placement = config.dedicated.map(|dedicated| {
+        let workloads = webdock_postgres::dedicated::HostWorkloads {
+            client: client.clone(),
+            plugin: manifest.id().into(),
+            generation: config.generation,
+        };
+        webdock_postgres::dedicated::Placement::new(Box::new(workloads), dedicated)
+    });
     let plugin = webdock_postgres::Plugin::new(
         store,
         webdock_postgres::seal::Sealer::new(&config.secret_key_hex)?,
@@ -54,7 +58,6 @@ async fn run() -> Result<(), Error> {
     let key: [u8; 32] = hex::decode(config.issuer_public_key_hex)?
         .try_into()
         .map_err(|_| "invalid key")?;
-    let client = HostClient::connect_unix(config.core).await?;
     let authority = runtime::RemoteAuthority::new(
         client,
         manifest.id().into(),

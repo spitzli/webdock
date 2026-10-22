@@ -9,7 +9,16 @@
   "coreVersion": ">=0.1.0 <1.0.0",
   "image": "127.0.0.1:5005/webdock/postgres@sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "dependencies": [],
-  "capabilities": [],
+  "capabilities": [
+    "plugin.workloads"
+  ],
+  "workloads": {
+    "kinds": [
+      "v1/Secret",
+      "postgresql.cnpg.io/v1/Cluster",
+      "traefik.io/v1alpha1/IngressRouteTCP"
+    ]
+  },
   "schemaVersion": 1,
   "readableSchema": {
     "min": 1,

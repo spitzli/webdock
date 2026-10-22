@@ -165,6 +165,7 @@ function Resource(context: ResourceProps) {
           <Detail label="Port" value={String(data.port)} />
           <Detail label="Database" value={data.database} />
           <Detail label="User" value={data.user} />
+          {data.sslMode === "require" ? <Detail label="SSL mode" value="require" /> : null}
           {context.writable ? <Credentials context={context} resource={context.resource.id} /> : null}
         </section>
       ) : null}

@@ -1,257 +1,106 @@
-//! Dedicated instances, local-dev placement: one PostgreSQL container and volume per resource.
-// ponytail: Docker on the plugin host is for local dev only; production placement goes through
-// `plugin.workloads` and the cluster agent (CNPG), which replaces this module.
-use bollard::{Docker, models::*, query_parameters::*};
-use futures_util::TryStreamExt;
+//! Dedicated instances on the cluster through `plugin.workloads`: one CloudNativePG cluster per
+//! resource. The customer role's password lives in a Secret the operator reconciles, so a rotation
+//! is just a new apply. Customers connect through Traefik, routed by TLS server name.
 use serde::Deserialize;
-use std::{collections::HashMap, path::PathBuf, time::Duration};
+use serde_json::{Value, json};
 use uuid::Uuid;
+pub use webdock_plugin_kit::workloads::{HostWorkloads, Workloads};
+use webdock_plugin_protocol::PluginError;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DedicatedConfig {
-    pub docker_socket: PathBuf,
-    /// Loopback address the instance port is published on, and the host customers connect to.
-    pub bind_host: String,
+    /// Instances answer on `pg-<id>.<domain>`.
+    pub domain: String,
+    /// Port of Traefik's PostgreSQL entry point as customers reach it.
+    pub port: u16,
+    pub entry_points: Vec<String>,
 }
-pub struct Placement {
-    docker: Docker,
-    bind_host: String,
-}
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub fn image(version: &str) -> Option<&'static str> {
-    // ponytail: tags, not digests; pin digests when this placement leaves local dev.
+    // ponytail: major tags, not digests; pin digests for production installs.
     match version {
-        "18" => Some("docker.io/library/postgres:18-alpine"),
-        "17" => Some("docker.io/library/postgres:17-alpine"),
+        "18" => Some("ghcr.io/cloudnative-pg/postgresql:18"),
+        "17" => Some("ghcr.io/cloudnative-pg/postgresql:17"),
         _ => None,
     }
 }
-fn name(id: &Uuid) -> String {
-    format!("webdock-pg-{id}")
+pub fn unit(id: &Uuid) -> String {
+    format!("pg-{}", id.simple())
 }
-fn labels(id: &Uuid) -> HashMap<String, String> {
-    HashMap::from([
-        ("webdock.plugin".into(), "postgres".into()),
-        ("webdock.resource".into(), id.to_string()),
-    ])
+pub struct Spec<'a> {
+    pub id: &'a Uuid,
+    pub project: &'a str,
+    pub version: &'a str,
+    pub database: &'a str,
+    pub role: &'a str,
+    pub password: &'a str,
+}
+pub struct Placement {
+    workloads: Box<dyn Workloads>,
+    config: DedicatedConfig,
 }
 impl Placement {
-    pub fn new(config: &DedicatedConfig) -> Result<Self, Error> {
-        let socket = config
-            .docker_socket
-            .to_str()
-            .ok_or("invalid Docker socket")?;
-        if !["127.0.0.1", "::1"].contains(&config.bind_host.as_str()) {
-            return Err("dedicated instances publish on loopback only in local dev".into());
-        }
-        Ok(Self {
-            docker: Docker::connect_with_unix(socket, 30, bollard::API_DEFAULT_VERSION)?,
-            bind_host: config.bind_host.clone(),
-        })
+    pub fn new(workloads: Box<dyn Workloads>, config: DedicatedConfig) -> Self {
+        Self { workloads, config }
     }
-    pub fn host(&self) -> &str {
-        &self.bind_host
+    pub fn host(&self, id: &Uuid) -> String {
+        format!("{}.{}", unit(id), self.config.domain)
     }
-    /// Idempotent: reuses an existing container and volume of this resource. Returns the published port.
-    pub async fn ensure(
-        &self,
-        id: &Uuid,
-        version: &str,
-        database: &str,
-        role: &str,
-        password: &str,
-    ) -> Result<u16, Error> {
-        let image = image(version).ok_or("unsupported version")?;
-        let name = name(id);
-        if self
-            .docker
-            .inspect_container(&name, None::<InspectContainerOptions>)
-            .await
-            .is_err()
-        {
-            if self.docker.inspect_image(image).await.is_err() {
-                self.docker
-                    .create_image(
-                        Some(
-                            CreateImageOptionsBuilder::default()
-                                .from_image(image)
-                                .build(),
-                        ),
-                        None,
-                        None,
-                    )
-                    .try_collect::<Vec<_>>()
-                    .await?;
-            }
-            let body = ContainerCreateBody {
-                image: Some(image.into()),
-                env: Some(vec![
-                    format!("POSTGRES_USER={role}"),
-                    format!("POSTGRES_PASSWORD={password}"),
-                    format!("POSTGRES_DB={database}"),
-                ]),
-                labels: Some(labels(id)),
-                exposed_ports: Some(vec!["5432/tcp".into()]),
-                host_config: Some(HostConfig {
-                    port_bindings: Some(HashMap::from([(
-                        "5432/tcp".into(),
-                        Some(vec![PortBinding {
-                            host_ip: Some(self.bind_host.clone()),
-                            host_port: Some(String::new()),
-                        }]),
-                    )])),
-                    mounts: Some(vec![Mount {
-                        target: Some("/var/lib/postgresql".into()),
-                        source: Some(format!("{name}-data")),
-                        typ: Some(MountType::VOLUME),
-                        ..Default::default()
-                    }]),
-                    memory: Some(536_870_912),
-                    pids_limit: Some(256),
-                    security_opt: Some(vec!["no-new-privileges:true".into()]),
-                    restart_policy: Some(RestartPolicy {
-                        name: Some(RestartPolicyNameEnum::UNLESS_STOPPED),
-                        ..Default::default()
-                    }),
-                    ..Default::default()
-                }),
-                ..Default::default()
-            };
-            self.docker
-                .create_container(
-                    Some(CreateContainerOptionsBuilder::default().name(&name).build()),
-                    body,
-                )
-                .await?;
-        }
-        self.docker
-            .start_container(&name, None::<StartContainerOptions>)
-            .await
-            .or_else(|error| match error {
-                // Already running.
-                bollard::errors::Error::DockerResponseServerError {
-                    status_code: 304, ..
-                } => Ok(()),
-                other => Err(other),
-            })?;
-        let port = self.port(&name).await?;
-        self.wait(port, database, role, password).await?;
-        Ok(port)
+    pub fn port(&self) -> u16 {
+        self.config.port
     }
-    async fn port(&self, name: &str) -> Result<u16, Error> {
-        for _ in 0..20 {
-            let container = self
-                .docker
-                .inspect_container(name, None::<InspectContainerOptions>)
-                .await?;
-            let port = container
-                .network_settings
-                .and_then(|n| n.ports)
-                .and_then(|p| p.get("5432/tcp").cloned().flatten())
-                .and_then(|b| b.first().and_then(|b| b.host_port.clone()))
-                .and_then(|p| p.parse().ok());
-            if let Some(port) = port {
-                return Ok(port);
-            }
-            tokio::time::sleep(Duration::from_millis(250)).await;
-        }
-        Err("instance port not published".into())
+    pub fn objects(&self, spec: &Spec<'_>) -> Value {
+        let unit = unit(spec.id);
+        let secret = format!("{unit}-role");
+        json!([
+            // The operator watches labelled Secrets and applies a changed password to the role.
+            {"apiVersion": "v1", "kind": "Secret", "metadata": {"name": secret, "labels": {"cnpg.io/reload": "true"}},
+             "type": "kubernetes.io/basic-auth", "stringData": {"username": spec.role, "password": spec.password}},
+            {"apiVersion": "postgresql.cnpg.io/v1", "kind": "Cluster", "metadata": {"name": unit},
+             "spec": {"instances": 1, "imageName": image(spec.version), "storage": {"size": "1Gi"},
+              "resources": {"limits": {"memory": "512Mi"}, "requests": {"memory": "512Mi", "cpu": "100m"}},
+              "bootstrap": {"initdb": {"database": spec.database, "owner": spec.role, "secret": {"name": secret}}},
+              "managed": {"roles": [{"name": spec.role, "login": true, "ensure": "present", "passwordSecret": {"name": secret}}]}}},
+            {"apiVersion": "traefik.io/v1alpha1", "kind": "IngressRouteTCP", "metadata": {"name": unit},
+             "spec": {"entryPoints": self.config.entry_points,
+              "routes": [{"match": format!("HostSNI(`{}`)", self.host(spec.id)), "services": [{"name": format!("{unit}-rw"), "port": 5432}]}],
+              "tls": {"passthrough": true}}},
+        ])
     }
-    async fn wait(
-        &self,
-        port: u16,
-        database: &str,
-        role: &str,
-        password: &str,
-    ) -> Result<(), Error> {
-        let url = self.url(port, database, role, password);
-        for _ in 0..240 {
-            if let Ok((client, connection)) =
-                tokio_postgres::connect(&url, tokio_postgres::NoTls).await
-            {
-                tokio::spawn(connection);
-                if client.simple_query("SELECT 1").await.is_ok() {
-                    return Ok(());
-                }
-            }
-            tokio::time::sleep(Duration::from_millis(500)).await;
-        }
-        Err("instance did not become ready".into())
-    }
-    pub async fn can_login(&self, port: u16, database: &str, role: &str, password: &str) -> bool {
-        match tokio_postgres::connect(
-            &self.url(port, database, role, password),
-            tokio_postgres::NoTls,
-        )
-        .await
-        {
-            Ok((client, connection)) => {
-                tokio::spawn(connection);
-                client.simple_query("SELECT 1").await.is_ok()
-            }
-            Err(_) => false,
-        }
-    }
-    pub fn url(&self, port: u16, database: &str, role: &str, password: &str) -> String {
-        format!(
-            "postgresql://{role}:{password}@{}:{port}/{database}",
-            self.bind_host
-        )
-    }
-    /// The instance's own superuser is the customer role, so it changes its own password.
-    pub async fn password(
-        &self,
-        port: u16,
-        database: &str,
-        role: &str,
-        old: &str,
-        new: &str,
-    ) -> Result<(), Error> {
-        assert!(
-            new.bytes().all(|b| b.is_ascii_hexdigit()),
-            "generated password"
-        );
-        let (client, connection) =
-            tokio_postgres::connect(&self.url(port, database, role, old), tokio_postgres::NoTls)
-                .await?;
-        tokio::spawn(connection);
-        client
-            .batch_execute(&format!("ALTER ROLE CURRENT_USER PASSWORD '{new}'"))
+    pub async fn deploy(&self, spec: &Spec<'_>) -> Result<(), PluginError> {
+        self.workloads
+            .call("apply", json!({"project": spec.project, "unit": unit(spec.id), "objects": self.objects(spec)}))
             .await?;
         Ok(())
     }
-    pub async fn remove(&self, id: &Uuid) -> Result<(), Error> {
-        let name = name(id);
-        match self
-            .docker
-            .remove_container(
-                &name,
-                Some(
-                    RemoveContainerOptionsBuilder::default()
-                        .force(true)
-                        .v(true)
-                        .build(),
-                ),
-            )
-            .await
-        {
-            Ok(())
-            | Err(bollard::errors::Error::DockerResponseServerError {
-                status_code: 404, ..
-            }) => {}
-            Err(error) => return Err(error.into()),
-        }
-        match self
-            .docker
-            .remove_volume(&format!("{name}-data"), None::<RemoveVolumeOptions>)
-            .await
-        {
-            Ok(())
-            | Err(bollard::errors::Error::DockerResponseServerError {
-                status_code: 404, ..
-            }) => Ok(()),
-            Err(error) => Err(error.into()),
-        }
+    pub async fn remove(&self, id: &Uuid) -> Result<(), PluginError> {
+        self.workloads
+            .call("remove", json!({"unit": unit(id)}))
+            .await?;
+        Ok(())
+    }
+    /// `creating`, `ready` or `failed`, from what the cluster's agent last saw.
+    pub async fn observe(&self, id: &Uuid) -> Result<(&'static str, Option<String>), PluginError> {
+        Ok(state(
+            &self
+                .workloads
+                .call("observe", json!({"unit": unit(id)}))
+                .await?,
+        ))
+    }
+}
+pub fn state(seen: &Value) -> (&'static str, Option<String>) {
+    if seen["removed"] == true || seen["removing"] == true {
+        ("failed", Some("The instance is gone".into()))
+    } else if let Some(error) = seen["error"].as_str() {
+        (
+            "failed",
+            Some(format!("The cluster refused the instance: {error}")),
+        )
+    } else if seen["observed"]["ready"] == true {
+        // A rotation in flight keeps a running instance ready.
+        ("ready", None)
+    } else {
+        ("creating", None)
     }
 }

@@ -22,6 +22,8 @@ const MIGRATIONS: &[&str] = &[
     );
     CREATE INDEX resources_server ON resources(server_id) WHERE server_id IS NOT NULL;",
     "ALTER TABLE resources ADD COLUMN pending_sealed bytea",
+    // Dedicated rotations are declarative now; nothing is staged.
+    "ALTER TABLE resources DROP COLUMN pending_sealed",
 ];
 
 #[derive(Clone, Debug)]
@@ -31,8 +33,6 @@ pub struct Resource {
     pub offering: String,
     pub name: String,
     pub server_id: Option<String>,
-    /// A rotated password recorded before the instance accepted it.
-    pub pending_sealed: Option<Vec<u8>>,
     pub database_name: String,
     pub role_name: String,
     pub password_sealed: Vec<u8>,
@@ -43,7 +43,7 @@ pub struct Resource {
     pub error: Option<String>,
     pub created_at: String,
 }
-const COLUMNS: &str = "id,project_id,offering,name,server_id,database_name,role_name,password_sealed,host,port,version,state,error,created_at::text,pending_sealed";
+const COLUMNS: &str = "id,project_id,offering,name,server_id,database_name,role_name,password_sealed,host,port,version,state,error,created_at::text";
 fn resource(row: &tokio_postgres::Row) -> Resource {
     Resource {
         id: row.get(0),
@@ -60,7 +60,6 @@ fn resource(row: &tokio_postgres::Row) -> Resource {
         state: row.get(11),
         error: row.get(12),
         created_at: row.get(13),
-        pending_sealed: row.get(14),
     }
 }
 
@@ -125,43 +124,11 @@ impl Store {
     pub async fn password(&self, id: &Uuid, sealed: &[u8]) -> Result<(), Error> {
         self.0
             .execute(
-                "UPDATE resources SET password_sealed=$2,pending_sealed=NULL,updated_at=now() WHERE id=$1",
+                "UPDATE resources SET password_sealed=$2,updated_at=now() WHERE id=$1",
                 &[id, &sealed],
             )
             .await?;
         Ok(())
-    }
-    pub async fn stage(&self, id: &Uuid, sealed: &[u8]) -> Result<(), Error> {
-        self.0
-            .execute(
-                "UPDATE resources SET pending_sealed=$2 WHERE id=$1",
-                &[id, &sealed],
-            )
-            .await?;
-        Ok(())
-    }
-    pub async fn promote(&self, id: &Uuid) -> Result<(), Error> {
-        self.0.execute("UPDATE resources SET password_sealed=pending_sealed,pending_sealed=NULL,updated_at=now() WHERE id=$1 AND pending_sealed IS NOT NULL", &[id]).await?;
-        Ok(())
-    }
-    pub async fn clear_pending(&self, id: &Uuid) -> Result<(), Error> {
-        self.0
-            .execute(
-                "UPDATE resources SET pending_sealed=NULL WHERE id=$1",
-                &[id],
-            )
-            .await?;
-        Ok(())
-    }
-    pub async fn pending(&self) -> Result<Vec<Resource>, Error> {
-        let rows = self
-            .0
-            .query(
-                &format!("SELECT {COLUMNS} FROM resources WHERE pending_sealed IS NOT NULL"),
-                &[],
-            )
-            .await?;
-        Ok(rows.iter().map(resource).collect())
     }
     pub async fn delete(&self, id: &Uuid) -> Result<(), Error> {
         self.0
