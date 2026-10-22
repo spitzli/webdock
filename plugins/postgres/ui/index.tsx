@@ -83,7 +83,7 @@ function Credentials({ context, resource }: { context: ResourceProps; resource: 
 function Actions({ context, view }: { context: ResourceProps; view: View }) {
   const resource = { resource_id: context.resource.id };
   const rotate = usePluginMutation(context, "databases.rotate");
-  const remove = usePluginMutation(context, view.offering === "shared" ? "databases.delete" : "instances.delete");
+  const remove = usePluginMutation(context, view.offering === "shared" ? "databases.delete" : "instances.delete", { leaves: true });
   const [confirming, setConfirming] = useState(false);
   const [typed, setTyped] = useState("");
   const feature = view.offering === "shared" ? "create-shared" : "create-dedicated";

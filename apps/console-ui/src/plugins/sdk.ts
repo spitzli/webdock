@@ -47,13 +47,14 @@ export function usePluginQuery<T>(
     refetchInterval: (query) => options.refetchInterval?.(query.state.data) ?? false,
   });
 }
-/** A write; on success every query of this plugin in this project refetches. */
-export function usePluginMutation(context: PluginContext, action: string) {
+/** A write; on success every query of this plugin in this project refetches. A delete passes
+ *  `leaves: true` so nothing refetches the resource it just removed. */
+export function usePluginMutation(context: PluginContext, action: string, options: { leaves?: boolean } = {}) {
   const api = useApi();
   const client = useQueryClient();
   return useMutation({
     mutationFn: (input: Record<string, unknown>) => invokePlugin(api, context.plugin, context.projectID, action, input),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["plugin-ui", context.plugin, context.projectID] }),
+    onSuccess: () => options.leaves ? undefined : client.invalidateQueries({ queryKey: ["plugin-ui", context.plugin, context.projectID] }),
   });
 }
 /** Reads a value once on demand, never cached: for credentials behind a reveal. */

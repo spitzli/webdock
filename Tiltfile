@@ -17,6 +17,7 @@ docker_compose('deploy/dev/compose.yaml', project_name='webdock-dev')
 dc_resource('postgres', labels=['infra'])
 dc_resource('registry', labels=['infra'], links=[link('http://127.0.0.1:5005/v2/_catalog', 'catalog')])
 dc_resource('mailpit', labels=['infra'], links=[link('http://127.0.0.1:55026', 'Mailpit')])
+dc_resource('shared-postgres', labels=['infra'])
 
 local_resource(
     'core-build',
@@ -35,27 +36,26 @@ local_resource(
     labels=['infra'],
 )
 
-# Demo extension: image pushed to the local registry once, then recorded as an installed release.
-local_resource(
-    'echo-demo-image',
-    cmd='bun tools/dev/local.mjs plugin-image',
-    resource_deps=['registry'],
-    labels=['plugins'],
-)
+# Plugins: each image is pushed to the local registry once and recorded as an installed release;
+# the binary runs natively from the plugin's own workspace over private Unix sockets.
+plugins = {
+    'echo-demo': {'binary': 'webdock-echo-demo', 'deps': []},
+    'postgres': {'binary': 'webdock-postgres', 'deps': ['shared-postgres']},
+}
+for name in plugins:
+    local_resource(
+        name + '-image',
+        cmd='bun tools/dev/local.mjs plugin-image ' + name,
+        resource_deps=['registry'],
+        labels=['plugins'],
+    )
 
 local_resource(
     'seed',
     cmd='bun tools/dev/local.mjs seed',
-    deps=['tools/dev/local.mjs', 'plugins/echo-demo/manifest.json'],
-    resource_deps=['database', 'echo-demo-image'],
+    deps=['tools/dev/local.mjs'] + ['plugins/%s/manifest.json' % name for name in plugins],
+    resource_deps=['database'] + [name + '-image' for name in plugins],
     labels=['infra'],
-)
-
-local_resource(
-    'echo-demo-build',
-    cmd='cargo build --manifest-path plugins/echo-demo/Cargo.toml',
-    deps=['plugins/echo-demo/src', 'plugins/echo-demo/Cargo.toml', 'crates/plugin-runtime', 'crates/plugin-protocol'],
-    labels=['plugins'],
 )
 
 local_resource(
@@ -75,14 +75,21 @@ local_resource(
     labels=['plugins'],
 )
 
-local_resource(
-    'echo-demo',
-    serve_cmd="sh -c 'rm -f .dev-local/plugins/echo-demo.sock && exec plugins/echo-demo/target/debug/webdock-echo-demo \"$PWD/.dev-local/plugins/echo-demo.json\"'",
-    deps=['plugins/echo-demo/target/debug/webdock-echo-demo'],
-    resource_deps=['plugin-control', 'echo-demo-build'],
-    readiness_probe=probe(exec=exec_action(['test', '-S', '.dev-local/plugins/echo-demo.sock']), period_secs=1),
-    labels=['plugins'],
-)
+for name, plugin in plugins.items():
+    local_resource(
+        name + '-build',
+        cmd='cargo build --manifest-path plugins/%s/Cargo.toml' % name,
+        deps=['plugins/%s/src' % name, 'plugins/%s/Cargo.toml' % name, 'crates/plugin-runtime', 'crates/plugin-protocol'],
+        labels=['plugins'],
+    )
+    local_resource(
+        'plugin-' + name,
+        serve_cmd="sh -c 'rm -f .dev-local/plugins/%s.sock && exec plugins/%s/target/debug/%s \"$PWD/.dev-local/plugins/%s.json\"'" % (name, name, plugin['binary'], name),
+        deps=['plugins/%s/target/debug/%s' % (name, plugin['binary']), '.dev-local/plugins/%s.json' % name],
+        resource_deps=['plugin-control', name + '-build'] + plugin['deps'],
+        readiness_probe=probe(exec=exec_action(['test', '-S', '.dev-local/plugins/%s.sock' % name]), period_secs=1),
+        labels=['plugins'],
+    )
 
 local_resource(
     'core',

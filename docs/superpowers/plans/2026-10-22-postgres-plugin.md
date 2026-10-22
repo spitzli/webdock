@@ -30,3 +30,9 @@
 4. **Plugin: postgres.** Offerings `shared` and `dedicated`. Features `create-shared`, `create-dedicated`. Actions: `databases.create`, `instances.create`, `databases.view`, `databases.credentials`, `databases.rotate`, `databases.delete`, `instances.delete`. Integration tests against a disposable local PostgreSQL.
 5. **Plugin UI: postgres.** Resource page with status, connection details, reveal password, rotate and delete.
 6. **Live run** in the local stack, docs, push.
+
+## Status (2026-10-22)
+
+Tasks 1 to 6 done. Verified: plugin tests against a disposable PostgreSQL and Docker (shared lifecycle, isolation between customers, rotation, capacity, dedicated lifecycle); Core test `operator_lists_resources_across_customers`; browser test `postgres-plugin-browser.mjs`; live run in the local stack (create, connect with the shown credentials, rotate, delete for both offerings, nothing left behind); `bun run quality` green.
+
+Open: production placement for dedicated instances (`plugin.workloads` + agent/CNPG), TLS to shared servers, installation-scoped operator actions, removal of `crates/databases` and the Console database pages from Core, the Tabularis browser.

@@ -1,6 +1,6 @@
 # Product plugins with operator and self-service areas
 
-Date: 2026-10-21. Status: approved by the owner on 2026-10-21. Step 1 (self-service framework) implemented per `docs/superpowers/plans/2026-10-21-plugin-self-service-framework.md`; plugin databases, workload access and installation-scoped operator actions move to the PostgreSQL plan.
+Date: 2026-10-21. Status: approved by the owner on 2026-10-21. Step 1 (self-service framework) implemented per `docs/superpowers/plans/2026-10-21-plugin-self-service-framework.md`; step 2 (PostgreSQL plugin, local placement) per `docs/superpowers/plans/2026-10-22-postgres-plugin.md`; plugin databases, workload access and installation-scoped operator actions move to the PostgreSQL plan.
 
 ## Intent
 
@@ -40,7 +40,7 @@ Webdock is in shadow mode. There is no backward compatibility with the current C
 
 These would make the result a failure even if it works:
 
-- A product name branch in Core (`if plugin == "postgres"`), a product table in the Core schema, or a product page compiled into the Console.
+- A product name branch in Core (`if plugin == "postgres"`), a product table in the Core schema, or a product page in the Console's own source. First-party plugin UIs live in `plugins/<id>/ui`; the Console only finds them by a generic glob (see "First-party plugin UI").
 - Self-service on by default. A freshly installed plugin exposes nothing to customers until the operator sets a mode.
 - A customer seeing operator settings, provider credentials, pool internals or another customer's resources.
 - A plugin receiving platform database, platform Redis, cluster-admin or session-signing credentials.
