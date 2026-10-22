@@ -284,6 +284,7 @@ async fn outbound_unix_dispatch_revalidates_reads_and_replays_committed_work_aft
             storage_socket: None,
         },
         policy: Default::default(),
+        workloads: false,
     };
     {
         let mut daemon = Daemon::with_adapter(config.clone(), Arc::new(Controlled)).unwrap();
@@ -486,6 +487,7 @@ async fn outbound_mtls_rotates_certificates_and_stops_after_live_enrollment_revo
             storage_socket: None,
         },
         policy: Default::default(),
+        workloads: false,
     };
     let mut daemon = Daemon::with_adapter(config.clone(), Arc::new(Controlled)).unwrap();
     daemon.connect().await.unwrap();
@@ -591,6 +593,7 @@ async fn real_docker_executor_obeys_outbound_control_leases_and_reports_observat
             storage_socket: None,
         },
         policy: Default::default(),
+        workloads: false,
     };
     let outcome = tokio::spawn(async move {
         let mut daemon = Daemon::open(config).await.unwrap();
@@ -681,6 +684,7 @@ async fn lost_terminal_completion_ack_replays_durable_outbox_before_poll_without
             storage_socket: None,
         },
         policy: Default::default(),
+        workloads: false,
     };
     {
         let mut daemon = Daemon::with_adapter(config.clone(), Arc::new(Controlled)).unwrap();
@@ -811,6 +815,7 @@ async fn delayed_mail_guard_reply_cannot_authorize_runtime_after_lease_expiry() 
         mail_configuration_enabled: false,
         mail_runtime: None,
         policy: Default::default(),
+        workloads: false,
     };
     let executed = Arc::new(AtomicBool::new(false));
     let mut daemon = Daemon::with_adapter(config, Arc::new(Controlled))

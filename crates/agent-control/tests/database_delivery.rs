@@ -347,6 +347,7 @@ async fn case(name: String, owner: DatabaseConnection, mode: Failure) {
         mail_configuration_enabled: false,
         mail_runtime: None,
         policy: Default::default(),
+        workloads: false,
     };
     let runtime = Arc::new(Interrupted {
         owner: owner.clone(),

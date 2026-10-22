@@ -173,6 +173,7 @@ fn config(directory: &std::path::Path, socket: std::path::PathBuf, enabled: bool
         mail_configuration_enabled: enabled,
         database_runtime: None,
         policy: Default::default(),
+        workloads: false,
     }
 }
 fn command() -> wire::MailConfigurationCommand {

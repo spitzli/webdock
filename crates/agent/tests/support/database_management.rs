@@ -192,6 +192,7 @@ async fn database_checkpoint_and_completion_replay_exactly_after_daemon_restart(
         mail_configuration_enabled: false,
         mail_runtime: None,
         policy: Default::default(),
+        workloads: false,
     };
     let runtime = Arc::new(DatabaseFixture(std::sync::atomic::AtomicUsize::new(0)));
     {
@@ -318,6 +319,7 @@ async fn delayed_database_guard_cannot_enter_runtime_after_lease_expiry() {
         mail_configuration_enabled: false,
         mail_runtime: None,
         policy: Default::default(),
+        workloads: false,
     };
     let runtime = Arc::new(DatabaseEntry(std::sync::atomic::AtomicUsize::new(0)));
     let mut daemon = Daemon::with_adapter(config, Arc::new(Controlled))

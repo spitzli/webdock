@@ -512,6 +512,7 @@ async fn run(
         mail_configuration_enabled: configure,
         mail_runtime: Some(runtime),
         policy: Default::default(),
+        workloads: false,
     };
     let base = format!("wd-mail-{installation}-123");
     let flow=std::panic::AssertUnwindSafe(async{

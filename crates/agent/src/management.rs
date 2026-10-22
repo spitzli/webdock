@@ -24,6 +24,8 @@ pub use webdock_agent_protocol as wire;
 #[cfg(feature = "kubernetes")]
 mod database;
 #[cfg(feature = "kubernetes")]
+mod workloads;
+#[cfg(feature = "kubernetes")]
 pub use database::database_claim;
 #[cfg(test)]
 mod guard_tests;
@@ -125,6 +127,8 @@ struct Session {
     configuration_available: Arc<AtomicBool>,
     #[cfg(feature = "kubernetes")]
     database_client: wire::database_control_client::DatabaseControlClient<Channel>,
+    #[cfg(feature = "kubernetes")]
+    workload_client: wire::workload_control_client::WorkloadControlClient<Channel>,
     identity: wire::AgentIdentity,
     endpoint: ControlEndpoint,
     stamp: String,
@@ -281,6 +285,8 @@ pub struct Daemon {
     configuration_runtime: Option<Arc<dyn crate::mail::configuration::ConfigurationRuntime>>,
     #[cfg(feature = "kubernetes")]
     database_runtime: Option<Arc<dyn crate::database::DatabaseRuntime>>,
+    #[cfg(feature = "kubernetes")]
+    workload_runtime: Option<Arc<crate::workloads::WorkloadExecutor>>,
 }
 impl Daemon {
     /// Public injection supports independent adapters; authority always comes from authenticated Core.
@@ -323,6 +329,8 @@ impl Daemon {
             configuration_runtime: None,
             #[cfg(feature = "kubernetes")]
             database_runtime: None,
+            #[cfg(feature = "kubernetes")]
+            workload_runtime: None,
         })
     }
     pub async fn open(config: AgentConfig) -> Result<Self> {
@@ -401,6 +409,11 @@ impl Daemon {
                         )
                     })
                     .transpose()?;
+                let workload_runtime = config.workloads.then(|| {
+                    Arc::new(crate::workloads::WorkloadExecutor::new(
+                        adapter.database_client(),
+                    ))
+                });
                 let adapter = Arc::new(if let Some(socket) = storage_socket {
                     adapter.with_storage_socket(socket.clone()).await?
                 } else {
@@ -421,6 +434,7 @@ impl Daemon {
                 }
                 daemon.database_runtime = database_runtime
                     .map(|runtime| Arc::new(runtime) as Arc<dyn crate::database::DatabaseRuntime>);
+                daemon.workload_runtime = workload_runtime;
                 Ok(daemon)
             }
             #[cfg(not(all(feature = "docker", feature = "kubernetes")))]
@@ -488,6 +502,12 @@ impl Daemon {
             mail_client: wire::mail_control_client::MailControlClient::new(channel.clone())
                 .max_decoding_message_size(wire::MAX_MESSAGE_BYTES)
                 .max_encoding_message_size(wire::MAX_MESSAGE_BYTES),
+            #[cfg(feature = "kubernetes")]
+            workload_client: wire::workload_control_client::WorkloadControlClient::new(
+                channel.clone(),
+            )
+            .max_decoding_message_size(wire::MAX_MESSAGE_BYTES)
+            .max_encoding_message_size(wire::MAX_MESSAGE_BYTES),
             #[cfg(feature = "kubernetes")]
             database_client: wire::database_control_client::DatabaseControlClient::new(channel)
                 .max_decoding_message_size(wire::MAX_MESSAGE_BYTES)
@@ -719,6 +739,10 @@ impl Daemon {
             if let Some(command) = dispatch.command {
                 self.process(command).await?;
                 worked = true;
+            }
+            #[cfg(feature = "kubernetes")]
+            if self.workload_runtime.is_some() {
+                worked |= self.process_workloads().await?;
             }
             #[cfg(feature = "kubernetes")]
             {

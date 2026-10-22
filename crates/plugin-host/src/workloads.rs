@@ -185,7 +185,7 @@ pub fn pin(
                 .as_object()
                 .cloned()
                 .unwrap_or_default();
-            pod_labels.extend(labels.into_iter());
+            pod_labels.extend(labels);
             template["metadata"]["labels"] = Value::Object(pod_labels);
             template["spec"]["automountServiceAccountToken"] = json!(false);
         }

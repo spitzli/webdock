@@ -21,3 +21,6 @@ pub mod registry;
 
 #[cfg(feature = "kubernetes")]
 pub mod database;
+
+#[cfg(feature = "kubernetes")]
+pub mod workloads;

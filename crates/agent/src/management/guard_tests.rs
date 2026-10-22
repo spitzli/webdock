@@ -84,6 +84,9 @@ async fn delayed_hosting_guard_cannot_extend_authority_past_lease() {
                 ),
             configuration_available: Arc::new(AtomicBool::new(true)),
             #[cfg(feature = "kubernetes")]
+            workload_client: wire::workload_control_client::WorkloadControlClient::new(
+                channel.clone(),
+            ),
             database_client: wire::database_control_client::DatabaseControlClient::new(channel),
             identity: wire::AgentIdentity {
                 installation: "guard-fixture".into(),

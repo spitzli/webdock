@@ -226,6 +226,7 @@ async fn console_drives_real_native_hosting_and_docker() {
         mail_configuration_enabled: false,
         mail_runtime: None,
         policy: Default::default(),
+        workloads: false,
     };
     let captured_app = Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
     let captured = captured_app.clone();

@@ -25,6 +25,9 @@ pub struct AgentConfig {
     pub mail_configuration_enabled: bool,
     #[serde(default)]
     pub policy: crate::policy::RuntimePolicyConfig,
+    /// Apply plugin workloads Core sends for this cluster (Kubernetes runtimes only).
+    #[serde(default)]
+    pub workloads: bool,
 }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
@@ -134,6 +137,11 @@ impl AgentConfig {
         }
         if let Some(path) = &self.mail_runtime {
             read_private(path, 1024 * 1024)?;
+        }
+        if self.workloads && !matches!(self.runtime, RuntimeConfiguration::Kubernetes { .. }) {
+            return Err(AgentError::Configuration(
+                "Plugin workloads require Kubernetes",
+            ));
         }
         Ok(())
     }
