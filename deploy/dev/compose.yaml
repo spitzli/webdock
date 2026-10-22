@@ -36,6 +36,7 @@ services:
       - k3s:/var/lib/rancher/k3s
       - ./k3s/cnpg.yaml:/var/lib/rancher/k3s/server/manifests/webdock-cnpg.yaml:ro
       - ./k3s/traefik.yaml:/var/lib/rancher/k3s/server/manifests/webdock-traefik.yaml:ro
+      - ./k3s/cert-manager.yaml:/var/lib/rancher/k3s/server/manifests/webdock-cert-manager.yaml:ro
     ports:
       - '127.0.0.1:${WEBDOCK_DEV_K3S_API_PORT:-56443}:6443'
       - '127.0.0.1:${WEBDOCK_DEV_K3S_HTTP_PORT:-55480}:80'

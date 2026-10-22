@@ -26,6 +26,13 @@ local_resource(
     resource_deps=['k3s'],
     labels=['infra'],
 )
+local_resource(
+    'cluster-ca',
+    cmd='bun tools/dev/local.mjs cluster-ca',
+    deps=['tools/dev/local.mjs'],
+    resource_deps=['kubeconfig'],
+    labels=['infra'],
+)
 
 local_resource(
     'core-build',
