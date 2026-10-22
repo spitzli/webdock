@@ -89,6 +89,7 @@ pub const WORKLOAD_KINDS: &[&str] = &[
     "traefik.io/v1alpha1/IngressRoute",
     "traefik.io/v1alpha1/Middleware",
     "traefik.io/v1alpha1/IngressRouteTCP",
+    "cert-manager.io/v1/Certificate",
     "postgresql.cnpg.io/v1/Cluster",
     "postgresql.cnpg.io/v1/Pooler",
 ];

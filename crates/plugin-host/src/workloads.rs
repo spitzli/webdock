@@ -156,6 +156,9 @@ pub fn pin(
         }
         match kind.as_str() {
             "Deployment" | "StatefulSet" => safe_pod(&object["spec"]["template"]["spec"])?,
+            "Certificate" if object["spec"]["isCA"] == true => {
+                return Err(invalid("Certificates are for servers, not authorities"));
+            }
             "Service"
                 if object["spec"]["type"]
                     .as_str()
@@ -294,7 +297,7 @@ mod tests {
         v["capabilities"] = json!(["plugin.workloads"]);
         v["services"]["required"] = json!([]);
         v["jobs"] = json!([]);
-        v["workloads"] = json!({"kinds": ["apps/v1/Deployment", "v1/Service", "v1/Secret"]});
+        v["workloads"] = json!({"kinds": ["apps/v1/Deployment", "v1/Service", "v1/Secret", "cert-manager.io/v1/Certificate"]});
         for action in v["actions"].as_array_mut().unwrap() {
             action["capabilities"] = json!([]);
         }
@@ -324,6 +327,34 @@ mod tests {
         assert_eq!(
             pinned[1]["metadata"]["labels"]["webdock.dev/project-id"],
             "201"
+        );
+    }
+    #[test]
+    fn certificates_are_for_servers_only() {
+        let certificate = |spec: Value| json!([{"apiVersion":"cert-manager.io/v1","kind":"Certificate","metadata":{"name":"web"},"spec":spec}]);
+        let server = json!({"secretName":"web-tls","dnsNames":["web.apps.localhost"],"issuerRef":{"name":"webdock-dev-ca","kind":"ClusterIssuer"}});
+        assert!(
+            pin(
+                &manifest(),
+                "hosting",
+                "201",
+                "app-1",
+                &certificate(server.clone())
+            )
+            .is_ok()
+        );
+        let mut authority = server;
+        authority["isCA"] = json!(true);
+        assert!(
+            pin(
+                &manifest(),
+                "hosting",
+                "201",
+                "app-1",
+                &certificate(authority)
+            )
+            .is_err(),
+            "no plugin mints a CA"
         );
     }
     #[test]

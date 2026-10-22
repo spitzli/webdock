@@ -31,6 +31,39 @@ fn resource(kind: &str) -> Option<ApiResource> {
 fn selector(plugin: &str, unit: &str) -> String {
     format!("{OWNER}plugin={plugin},{OWNER}unit={unit}")
 }
+/// Whether one object is ready, and a short word on why not.
+fn readiness(kind: &str, exists: bool, spec: &Value, status: &Value) -> (bool, String) {
+    match kind {
+        "apps/v1/Deployment" | "apps/v1/StatefulSet" => {
+            let want = spec["replicas"].as_i64().unwrap_or(1);
+            let have = status["readyReplicas"].as_i64().unwrap_or(0);
+            (have >= want, format!("{have}/{want} ready"))
+        }
+        "postgresql.cnpg.io/v1/Cluster" => {
+            let want = spec["instances"].as_i64().unwrap_or(1);
+            let have = status["readyInstances"].as_i64().unwrap_or(0);
+            (
+                have >= want,
+                status["phase"].as_str().unwrap_or("pending").to_owned(),
+            )
+        }
+        "cert-manager.io/v1/Certificate" => {
+            let condition = status["conditions"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .find(|c| c["type"] == "Ready");
+            (
+                condition.is_some_and(|c| c["status"] == "True"),
+                condition
+                    .and_then(|c| c["message"].as_str())
+                    .unwrap_or_default()
+                    .to_owned(),
+            )
+        }
+        _ => (exists, String::new()),
+    }
+}
 fn failure(message: impl std::fmt::Display) -> String {
     let text = message.to_string();
     text.chars().take(300).collect()
@@ -240,22 +273,7 @@ impl WorkloadExecutor {
                 .as_ref()
                 .map(|o| o.data["spec"].clone())
                 .unwrap_or(Value::Null);
-            let (is_ready, message) = match kind.as_str() {
-                "apps/v1/Deployment" | "apps/v1/StatefulSet" => {
-                    let want = spec["replicas"].as_i64().unwrap_or(1);
-                    let have = status["readyReplicas"].as_i64().unwrap_or(0);
-                    (have >= want, format!("{have}/{want} ready"))
-                }
-                "postgresql.cnpg.io/v1/Cluster" => {
-                    let want = spec["instances"].as_i64().unwrap_or(1);
-                    let have = status["readyInstances"].as_i64().unwrap_or(0);
-                    (
-                        have >= want,
-                        status["phase"].as_str().unwrap_or("pending").to_owned(),
-                    )
-                }
-                _ => (object.is_some(), String::new()),
-            };
+            let (is_ready, message) = readiness(kind, object.is_some(), &spec, &status);
             ready &= is_ready;
             states.push(json!({"kind": kind, "name": name, "ready": is_ready, "message": message}));
         }
@@ -358,5 +376,31 @@ mod tests {
             "ingressroutes"
         );
         assert_eq!(resource("v1/Service").unwrap().group, "");
+    }
+    #[test]
+    fn readiness_follows_each_kind() {
+        let deployment = readiness(
+            "apps/v1/Deployment",
+            true,
+            &json!({"replicas":1}),
+            &json!({"readyReplicas":1}),
+        );
+        assert!(deployment.0);
+        assert!(
+            !readiness(
+                "apps/v1/Deployment",
+                true,
+                &json!({"replicas":1}),
+                &json!({})
+            )
+            .0
+        );
+        let issued = json!({"conditions":[{"type":"Ready","status":"True"}]});
+        let pending = json!({"conditions":[{"type":"Ready","status":"False","message":"Issuing"}]});
+        assert!(readiness("cert-manager.io/v1/Certificate", true, &json!({}), &issued).0);
+        let waiting = readiness("cert-manager.io/v1/Certificate", true, &json!({}), &pending);
+        assert_eq!(waiting, (false, "Issuing".to_owned()));
+        assert!(readiness("v1/Service", true, &json!({}), &json!({})).0);
+        assert!(!readiness("v1/Service", false, &json!({}), &json!({})).0);
     }
 }
