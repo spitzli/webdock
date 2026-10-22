@@ -24,3 +24,19 @@
 6. **Hosting plugin on Kubernetes:** Deployment, Service, Secret for environment, Traefik route `<app>.<workspace>.apps.localhost`. Docker placement removed.
 7. **Dedicated PostgreSQL on CNPG** and **mail engines on Kubernetes** (CNPG operator in local k3s; mail with an egress-deny NetworkPolicy).
 8. Live run, docs, push.
+
+## Status (2026-10-22)
+
+All tasks are done and were run live on the local stack (Tilt, k3s, enrolled agent):
+
+- Hosting: apps answer on `http://<name>-<id>.apps.localhost:55480`; logs, environment, stop/start and delete go through the unit.
+- Dedicated PostgreSQL: CloudNativePG 0.29.1 (chart, installed by k3s), one `Cluster` per instance, reached on `pg-<id>.db.localhost:55442` with `sslmode=require`.
+- Mail: one Stalwart engine per project with a deny-all-egress NetworkPolicy; IMAPS on 55993 and submission on 55465, by server name.
+- Plugins share the host call through `webdock_plugin_kit::workloads`.
+
+Rulings made while building:
+
+- Database and mail clients are routed through Traefik TCP routers by TLS server name with passthrough (PostgreSQL via Traefik's STARTTLS support). The certificates are self-signed for now, so clients use `sslmode=require` rather than verifying. Cost if wrong: production needs proper certificates per host (cert-manager) before customers verify.
+- Dedicated passwords are declarative: the role's Secret carries `cnpg.io/reload` and CloudNativePG's managed roles apply a changed password within seconds, so a rotation is just a new apply and nothing is staged. Cost if wrong: for a few seconds after a rotation the shown password may not work yet.
+- The plugin manages mail engines over Stalwart's HTTP API through an IngressRoute on the HTTP entry point, protected by the engine's admin password. Cost if wrong: in production this must move to an internal entry point, or the plugin must run in the cluster.
+- Core still accepts any host in plugin routes. Before more than one installation shares a Traefik, Core should pin route hosts to each plugin's configured domain.
