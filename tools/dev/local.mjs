@@ -1,7 +1,7 @@
 // Local development helper used by the root Tiltfile. Owned loopback state only; never deployment config.
 // Usage: bun tools/dev/local.mjs secrets|init|plugin-image <id>|seed
 import { execFileSync } from "node:child_process";
-import { createHash, generateKeyPairSync, randomBytes } from "node:crypto";
+import { createHash, generateKeyPairSync, randomBytes, scryptSync } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -227,6 +227,22 @@ COMMIT;`, { id, version: value.version, manifest, image: value.image, credential
   }), { mode: 0o600 });
 }
 
+// A customer owner of the Demo customer, so self-service can be tried without the operator account.
+// The password stays in .dev-local; it is never printed.
+function demoOwner() {
+  const path = file("demo-owner.json");
+  if (!existsSync(path)) writeFileSync(path, JSON.stringify({ email: "owner@example.test", password: `Demo-${secret().slice(0, 20)}` }, null, 2), { mode: 0o600 });
+  const { email, password } = JSON.parse(readFileSync(path, "utf8"));
+  const salt = randomBytes(16).toString("hex");
+  const hash = `${salt}:${scryptSync(password.normalize("NFKC"), salt, 64, { N: 16384, r: 16, p: 1, maxmem: 64 * 1024 * 1024 }).toString("hex")}`;
+  const organization = psql("SELECT organization_id FROM webdock_auth.tenant_customer WHERE customer_id=:'customer'", { customer: demo.customer });
+  psql(`BEGIN;
+INSERT INTO webdock_auth."user"(id,name,email,"emailVerified",role,"twoFactorEnabled","mustChangePassword") VALUES('local-demo-owner','Demo owner',:'email',true,'user',false,false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO webdock_auth.account(id,"accountId","providerId","userId",password,"createdAt","updatedAt") VALUES('local-demo-owner-account','local-demo-owner','credential','local-demo-owner',:'hash',now(),now()) ON CONFLICT (id) DO UPDATE SET password=EXCLUDED.password;
+INSERT INTO webdock_auth.member(id,"organizationId","userId",role,"createdAt") VALUES('local-demo-owner-member',:'organization','local-demo-owner','owner',now()) ON CONFLICT (id) DO NOTHING;
+COMMIT;`, { email, hash, organization });
+}
+
 function seed() {
   waitForDatabase();
   mkdirSync(plugins, { recursive: true, mode: 0o700 });
@@ -256,7 +272,8 @@ COMMIT;`, demo);
     hostBindings: pluginFile("host-bindings.json"), invocationSigningKey: pluginFile("invocation.key"),
     connections: pluginFile("connections.json"), control: { kind: "unix", path: pluginFile("control.sock") },
   }), { mode: 0o600 });
-  console.log(`Seeded Demo customer ${demo.customer} / Demo project ${demo.project} with ${Object.keys(PLUGINS).join(", ")}.`);
+  demoOwner();
+  console.log(`Seeded Demo customer ${demo.customer} / Demo project ${demo.project} with ${Object.keys(PLUGINS).join(", ")}. Customer sign-in: .dev-local/demo-owner.json`);
 }
 
 function runtimeEnv(value) {
