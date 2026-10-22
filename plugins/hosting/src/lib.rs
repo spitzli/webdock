@@ -293,6 +293,7 @@ impl Plugin {
         }))
     }
     /// Claims the app, applies `edit` to the row as stored now, saves it and hands it to the cluster.
+    /// If Core refuses the change (a plan limit, an unverified host), the row goes back as it was.
     async fn change(
         self: &Arc<Self>,
         claims: &InvocationClaims,
@@ -301,10 +302,14 @@ impl Plugin {
     ) -> Result<Value> {
         let id = uuid(id)?;
         let _slot = self.claim(id)?;
-        let mut app = self.target(claims, &id).await?;
+        let before = self.target(claims, &id).await?;
+        let mut app = before.clone();
         edit(&mut app)?;
         self.store.update(&app).await.map_err(store_error)?;
-        self.deploy(&app).await?;
+        if let Err(error) = self.deploy(&app).await {
+            self.store.update(&before).await.map_err(store_error)?;
+            return Err(error);
+        }
         Ok(json!({"status":"deploying"}))
     }
     async fn delete(self: &Arc<Self>, claims: &InvocationClaims, input: Value) -> Result<Value> {

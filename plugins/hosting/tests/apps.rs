@@ -19,6 +19,8 @@ struct Units {
     observed: Value,
     error: Option<String>,
     removed: Vec<String>,
+    /// Core refuses the next apply with this message (a plan limit, an unverified host).
+    refuse: Option<String>,
 }
 #[derive(Clone, Default)]
 struct Core(Arc<Mutex<Units>>);
@@ -28,6 +30,10 @@ impl placement::Workloads for Core {
         let mut units = self.0.lock().unwrap();
         let unit = input["unit"].as_str().unwrap().to_owned();
         Ok(match method {
+            "apply" if units.refuse.is_some() => {
+                let message = units.refuse.take().unwrap_or_default();
+                return Err(PluginError::new(ErrorCode::Conflict, message));
+            }
             "apply" => {
                 units.revision += 1;
                 units.objects.insert(unit, input["objects"].clone());
@@ -424,6 +430,19 @@ async fn apps_become_cluster_units() {
             ["memory"],
         "512Mi"
     );
+    assert_eq!(f.view(&app).await["memoryMb"], 512);
+    // When Core refuses a change, the app stays as it was and the customer reads why.
+    let limit = "Your plan allows 1024 MiB memory; 512 MiB are in use and this needs 2048 MiB.";
+    f.core.0.lock().unwrap().refuse = Some(limit.into());
+    let refused = f
+        .call(
+            "101",
+            "apps.resize",
+            json!({"resource_id": app, "memory_mb": 2048}),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(refused.message, limit);
     assert_eq!(f.view(&app).await["memoryMb"], 512);
 
     f.ok("101", "apps.delete", json!({"resource_id": app}))
