@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { server, previewOrigin } from "./preview-server.ts";
 import { commandSchema } from "../src/mail-contracts.ts";
+import { fromRepo } from './repo.mjs';
 const browser = await chromium.launch({
   headless: true,
   ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
@@ -225,10 +226,7 @@ try {
       `Configuration overflow at ${width}`,
     );
   }
-  const shots = new URL(
-    "../../../.runtime-test/mail-configuration-ui-screens/",
-    import.meta.url,
-  );
+  const shots = fromRepo(".runtime-test/mail-configuration-ui-screens/");
   await mkdir(shots, { recursive: true });
   await page.evaluate(() => {
     document.activeElement?.blur();

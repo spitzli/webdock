@@ -1,9 +1,8 @@
 // Test-only fixtures: the mail plugin's own React pages inside a customer project.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { server, previewOrigin } from './preview-server.ts';
-const manifest = JSON.parse(readFileSync(new URL('../../../plugins/mail/manifest.json', import.meta.url), 'utf8'));
+import manifest from '@plugins/mail/manifest.json' with { type: 'json' };
 const domainID = '00000000-0000-4000-8000-0000000000d1';
 const relayID = '00000000-0000-4000-8000-0000000000e1';
 const mailboxID = '00000000-0000-4000-8000-0000000000b1';

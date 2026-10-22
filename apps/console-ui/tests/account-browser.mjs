@@ -4,6 +4,7 @@ import { chromium } from 'playwright';
 import { createOTP } from '@better-auth/utils/otp';
 import { base32 } from '@better-auth/utils/base32';
 import { accountFixture, accountCookies } from './account-fixture.mjs';
+import { fromRepo } from './repo.mjs';
 const fixture=JSON.parse(readFileSync(accountFixture,'utf8'));
 const consoleOrigin='http://127.0.0.1:3121',authOrigin='http://localhost:3125';
 const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE}:{})});
@@ -108,8 +109,8 @@ try {
   await page.getByLabel('Passkey name',{exact:true}).fill('Renamed browser passkey');
   await page.getByRole('button',{name:'Rename',exact:true}).click();
   await page.locator('input[value="Renamed browser passkey"]').waitFor();
-  for(const width of [360,768,1280]) {await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`account fits ${width}px`);if(width===360)await page.screenshot({path:new URL('../../../.runtime-test/account-security-mobile.png',import.meta.url).pathname,fullPage:true});}
-  await page.setViewportSize({width:1280,height:900});await page.screenshot({path:new URL('../../../.runtime-test/account-security.png',import.meta.url).pathname,fullPage:true});
+  for(const width of [360,768,1280]) {await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`account fits ${width}px`);if(width===360)await page.screenshot({path:fromRepo('.runtime-test/account-security-mobile.png').pathname,fullPage:true});}
+  await page.setViewportSize({width:1280,height:900});await page.screenshot({path:fromRepo('.runtime-test/account-security.png').pathname,fullPage:true});
   await page.goto(consoleOrigin+'/projects');
   await page.getByRole('button',{name:'Sign out',exact:true}).first().click();
   await page.getByRole('heading',{name:'Sign out of Webdock?',exact:true}).waitFor();assert.equal(new URL(page.url()).origin,authOrigin);

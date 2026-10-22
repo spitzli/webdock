@@ -4,6 +4,7 @@ import { mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { server, previewOrigin } from "./preview-server.ts";
+import { fromRepo } from './repo.mjs';
 const browser = await chromium.launch({
   headless: true,
   ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
@@ -160,10 +161,7 @@ try {
       `Mail overflow at ${width}`,
     );
   }
-  const screenshots = new URL(
-    "../../../.runtime-test/mail-ui-screens/",
-    import.meta.url,
-  );
+  const screenshots = fromRepo(".runtime-test/mail-ui-screens/");
   await mkdir(screenshots, { recursive: true });
   await page.screenshot({
     path: fileURLToPath(new URL("mail-desktop.png", screenshots)),

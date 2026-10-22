@@ -1,11 +1,9 @@
 // Test-only fixtures: a customer workspace navigated by product from the sidebar.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { server, previewOrigin } from './preview-server.ts';
-const manifest = (name) => JSON.parse(readFileSync(new URL(`../../../plugins/${name}/manifest.json`, import.meta.url), 'utf8'));
-const postgres = manifest('postgres');
-const mail = manifest('mail');
+import postgres from '@plugins/postgres/manifest.json' with { type: 'json' };
+import mail from '@plugins/mail/manifest.json' with { type: 'json' };
 const projects = [{ id: '201', name: 'Shop', status: 'active' }, { id: '202', name: 'Blog', status: 'active' }];
 const resources = { 201: [{ id: '00000000-0000-4000-8000-000000000001', offering: 'shared', name: 'orders', createdVia: 'self-service' }], 202: [{ id: '00000000-0000-4000-8000-000000000002', offering: 'dedicated', name: 'analytics', createdVia: 'operator' }] };
 async function open(browser, role) {

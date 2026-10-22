@@ -1,9 +1,8 @@
 // Test-only fixtures: an operator chooses who may create plugin resources, customers use the project page.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { server, previewOrigin } from './preview-server.ts';
-const manifest = JSON.parse(readFileSync(new URL('../../../plugins/echo-demo/manifest.json', import.meta.url), 'utf8'));
+import manifest from '@plugins/echo-demo/manifest.json' with { type: 'json' };
 const state = { revision: 0, mode: 'assigned', customers: [], resources: [], puts: [] };
 const people = {
   operator: { id: '1', name: 'Acceptance operator', role: 'operator' },

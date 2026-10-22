@@ -1,3 +1,4 @@
+import { fromRepo } from './repo.mjs';
 // Independent recorded profiles keep account tests from deleting another fixture's grants.
 const name = process.env.WEBDOCK_ACCOUNT_FIXTURE ?? "account-browser.json";
 if (
@@ -7,8 +8,5 @@ if (
 ) {
   throw new Error("Use an owned account-browser fixture filename.");
 }
-export const accountFixture = new URL(`../../../.runtime-test/${name}`, import.meta.url);
-export const accountCookies = new URL(
-  `../../../.runtime-test/${name.replace(/\.json$/, "-cookies.json")}`,
-  import.meta.url,
-);
+export const accountFixture = fromRepo(`.runtime-test/${name}`);
+export const accountCookies = fromRepo(`.runtime-test/${name.replace(/\.json$/, "-cookies.json")}`);

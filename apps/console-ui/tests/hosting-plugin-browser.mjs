@@ -1,9 +1,8 @@
 // Test-only fixtures: the hosting plugin's own React page inside a customer project.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { server, previewOrigin } from './preview-server.ts';
-const manifest = JSON.parse(readFileSync(new URL('../../../plugins/hosting/manifest.json', import.meta.url), 'utf8'));
+import manifest from '@plugins/hosting/manifest.json' with { type: 'json' };
 const appID = '00000000-0000-4000-8000-0000000000a1';
 const state = { status: 'running', env: ['GREETING'], memory: 128, calls: [], deleted: false };
 async function open(browser, member, features) {
