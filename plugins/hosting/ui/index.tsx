@@ -12,7 +12,6 @@ const appSchema = z.object({
   url: z.string().nullable(),
   env: z.array(z.string()),
   error: z.string().nullable(),
-  restarts: z.number().nullable(),
   createdAt: z.string(),
 });
 type App = z.infer<typeof appSchema>;
@@ -37,7 +36,7 @@ function Problem({ error }: { error: Error | null }) {
 
 function Power({ context, app }: { context: ResourceProps; app: App }) {
   const power = usePluginMutation(context, "apps.power");
-  const busy = power.isPending || app.status === "deploying";
+  const busy = power.isPending;
   const run = (action: string) => { power.mutate({ resource_id: context.resource.id, action }); };
   return (
     <div className="flex flex-wrap gap-2">
@@ -46,7 +45,7 @@ function Power({ context, app }: { context: ResourceProps; app: App }) {
       ) : (
         <>
           <button type="button" className={ui.button()} disabled={busy || app.status !== "running"} onClick={() => { run("restart"); }}>Restart</button>
-          <button type="button" className={ui.button()} disabled={busy || app.status !== "running"} onClick={() => { run("stop"); }}>Stop</button>
+          <button type="button" className={ui.button()} disabled={busy} onClick={() => { run("stop"); }}>Stop</button>
         </>
       )}
       <Problem error={power.error} />
@@ -74,7 +73,7 @@ function Deploy({ context, app }: { context: ResourceProps; app: App }) {
           Port
           <input className={ui.input} name="port" type="number" required min={1} max={65535} defaultValue={app.port} />
         </label>
-        <button className={ui.button("primary")} disabled={deploy.isPending || app.status === "deploying"}>Deploy</button>
+        <button className={ui.button("primary")} disabled={deploy.isPending}>Deploy</button>
       </form>
       <Problem error={deploy.error} />
     </Section>
@@ -111,7 +110,7 @@ function Environment({ context, app }: { context: ResourceProps; app: App }) {
           <Problem error={save.error} />
         </form>
       ) : (
-        <div><button type="button" className={ui.button()} disabled={app.status === "deploying"} onClick={() => { setEditing(true); }}>Replace variables</button></div>
+        <div><button type="button" className={ui.button()} onClick={() => { setEditing(true); }}>Replace variables</button></div>
       )}
     </Section>
   );
@@ -125,7 +124,7 @@ function Memory({ context, app }: { context: ResourceProps; app: App }) {
       <select
         className={ui.cx(ui.input, "w-40")}
         value={app.memoryMb}
-        disabled={resize.isPending || app.status === "deploying"}
+        disabled={resize.isPending}
         onChange={(event) => { resize.mutate({ resource_id: context.resource.id, memory_mb: Number(event.target.value) }); }}
       >
         {memory.map((mb) => <option key={mb} value={mb}>{mb >= 1024 ? `${String(mb / 1024)} GB` : `${String(mb)} MB`}</option>)}

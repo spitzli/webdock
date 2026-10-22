@@ -1,268 +1,186 @@
-//! Local-dev placement: one container per app, its port published on loopback.
-// ponytail: Docker on the plugin host is for local dev only; production placement goes through
-// `plugin.workloads` and the cluster agent, which replaces this module.
-use bollard::{Docker, models::*, query_parameters::*};
-use futures_util::{StreamExt, TryStreamExt};
+//! Apps on the cluster through `plugin.workloads`: one unit per app with a Deployment, a Service,
+//! a Secret for its environment and a Traefik route. Core pins the namespace and owner labels;
+//! the cluster's agent applies the objects and reports readiness, pod problems and recent logs.
 use serde::Deserialize;
-use std::{collections::HashMap, path::PathBuf, time::Duration};
+use serde_json::{Value, json};
 use uuid::Uuid;
+use webdock_plugin_protocol::PluginError;
+
+/// The host call, so tests can stand in for Core.
+#[tonic::async_trait]
+pub trait Workloads: Send + Sync + 'static {
+    async fn call(&self, method: &str, input: Value) -> Result<Value, PluginError>;
+}
+/// The plugin runtime's own `plugin.workloads` calls to Core.
+pub struct HostWorkloads {
+    pub client: webdock_plugin_runtime::HostClient,
+    pub plugin: String,
+    pub generation: u64,
+}
+#[tonic::async_trait]
+impl Workloads for HostWorkloads {
+    async fn call(&self, method: &str, input: Value) -> Result<Value, PluginError> {
+        self.client
+            .workloads(&self.plugin, self.generation, method, input)
+            .await
+    }
+}
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PlacementConfig {
-    pub docker_socket: PathBuf,
-    /// Loopback address app ports are published on.
-    pub bind_host: String,
-}
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
-pub struct Placement {
-    docker: Docker,
-    bind_host: String,
+    /// Apps answer on `<name>-<id>.<domain>`.
+    pub domain: String,
+    /// How customers reach that host, with `{host}` in it, e.g. `http://{host}:55480`.
+    pub public_url: String,
+    /// Traefik entry points of the route, e.g. `["web"]` locally or `["websecure"]`.
+    pub entry_points: Vec<String>,
 }
 pub struct Spec<'a> {
+    pub id: &'a Uuid,
+    pub project: &'a str,
+    pub name: &'a str,
     pub image: &'a str,
     pub port: u16,
     pub memory_mb: u32,
     pub env: &'a [(String, String)],
     pub running: bool,
+    /// Changing it rolls the pods.
+    pub restart: &'a str,
 }
 pub struct Observed {
-    pub running: bool,
-    pub host_port: Option<u16>,
-    pub restarts: i64,
+    pub status: &'static str,
+    pub error: Option<String>,
+    pub logs: Vec<String>,
 }
-fn name(id: &Uuid) -> String {
-    format!("webdock-app-{id}")
+pub struct Placement {
+    workloads: Box<dyn Workloads>,
+    config: PlacementConfig,
 }
-fn absent(error: &bollard::errors::Error) -> bool {
-    matches!(
-        error,
-        bollard::errors::Error::DockerResponseServerError {
-            status_code: 404,
-            ..
-        }
-    )
+pub fn unit(id: &Uuid) -> String {
+    format!("app-{}", id.simple())
+}
+/// `<name>-<first 8 of the id>`: readable, unique, a DNS label.
+pub fn host(config: &PlacementConfig, id: &Uuid, name: &str) -> String {
+    let lowered: String = name
+        .to_ascii_lowercase()
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+        .collect();
+    let mut slug = lowered
+        .split('-')
+        .filter(|p| !p.is_empty())
+        .collect::<Vec<_>>()
+        .join("-");
+    slug.truncate(40);
+    let slug = slug.trim_end_matches('-');
+    let short = &id.simple().to_string()[..8];
+    if slug.is_empty() {
+        format!("app-{short}.{}", config.domain)
+    } else {
+        format!("{slug}-{short}.{}", config.domain)
+    }
 }
 impl Placement {
-    pub fn new(config: &PlacementConfig) -> Result<Self, Error> {
-        if !["127.0.0.1", "::1"].contains(&config.bind_host.as_str()) {
-            return Err("apps publish on loopback only in local dev".into());
-        }
-        let socket = config
-            .docker_socket
-            .to_str()
-            .ok_or("invalid Docker socket")?;
-        Ok(Self {
-            docker: Docker::connect_with_unix(socket, 120, bollard::API_DEFAULT_VERSION)?,
-            bind_host: config.bind_host.clone(),
-        })
+    pub fn new(workloads: Box<dyn Workloads>, config: PlacementConfig) -> Self {
+        Self { workloads, config }
     }
-    pub fn host(&self) -> &str {
-        &self.bind_host
+    pub fn url(&self, id: &Uuid, name: &str) -> String {
+        self.config
+            .public_url
+            .replace("{host}", &host(&self.config, id, name))
     }
-    /// Replaces the container with one for this specification. Pulls the image when missing.
-    pub async fn deploy(&self, id: &Uuid, spec: &Spec<'_>) -> Result<(), Error> {
-        // A tag can move, so it is pulled every time; a digest only when it is missing. A failed
-        // pull fails the deployment, so images that exist only on this host never run by name.
-        if !spec.image.contains("@sha256:") || self.docker.inspect_image(spec.image).await.is_err()
-        {
-            self.docker
-                .create_image(
-                    Some(
-                        CreateImageOptionsBuilder::default()
-                            .from_image(spec.image)
-                            .build(),
-                    ),
-                    None,
-                    None,
-                )
-                .try_collect::<Vec<_>>()
-                .await?;
-        }
-        self.remove(id).await?;
-        // Each app gets its own network: apps cannot reach each other or other workloads directly.
-        self.docker
-            .create_network(NetworkCreateRequest {
-                name: name(id),
-                driver: Some("bridge".into()),
-                labels: Some(HashMap::from([("webdock.plugin".into(), "hosting".into())])),
-                ..Default::default()
-            })
+    pub fn objects(&self, spec: &Spec<'_>) -> Value {
+        let unit = unit(spec.id);
+        let memory = format!("{}Mi", spec.memory_mb);
+        let env: serde_json::Map<String, Value> = spec
+            .env
+            .iter()
+            .map(|(k, v)| (k.clone(), json!(v)))
+            .collect();
+        let selector = json!({"app": unit});
+        json!([
+            {"apiVersion": "v1", "kind": "Secret", "metadata": {"name": format!("{unit}-env")}, "type": "Opaque", "stringData": env},
+            {"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"name": unit, "labels": selector},
+             "spec": {"replicas": if spec.running { 1 } else { 0 }, "selector": {"matchLabels": selector},
+              "template": {"metadata": {"labels": selector, "annotations": {"restarted": spec.restart}},
+               "spec": {"containers": [{"name": "app", "image": spec.image,
+                 "ports": [{"containerPort": spec.port}],
+                 "envFrom": [{"secretRef": {"name": format!("{unit}-env")}}],
+                 "resources": {"limits": {"memory": memory}, "requests": {"memory": memory, "cpu": "50m"}},
+                 "securityContext": {"allowPrivilegeEscalation": false}}]}}}},
+            {"apiVersion": "v1", "kind": "Service", "metadata": {"name": unit},
+             "spec": {"selector": selector, "ports": [{"port": 80, "targetPort": spec.port}]}},
+            {"apiVersion": "traefik.io/v1alpha1", "kind": "IngressRoute", "metadata": {"name": unit},
+             "spec": {"entryPoints": self.config.entry_points, "routes": [{"kind": "Rule",
+               "match": format!("Host(`{}`)", host(&self.config, spec.id, spec.name)),
+               "services": [{"name": unit, "port": 80}]}]}},
+        ])
+    }
+    pub async fn deploy(&self, spec: &Spec<'_>) -> Result<(), PluginError> {
+        self.workloads
+            .call("apply", json!({"project": spec.project, "unit": unit(spec.id), "objects": self.objects(spec)}))
             .await?;
-        let exposed = format!("{}/tcp", spec.port);
-        let memory = i64::from(spec.memory_mb) * 1_048_576;
-        let body = ContainerCreateBody {
-            image: Some(spec.image.into()),
-            env: Some(spec.env.iter().map(|(k, v)| format!("{k}={v}")).collect()),
-            labels: Some(HashMap::from([
-                ("webdock.plugin".into(), "hosting".into()),
-                ("webdock.resource".into(), id.to_string()),
-            ])),
-            exposed_ports: Some(vec![exposed.clone()]),
-            host_config: Some(HostConfig {
-                port_bindings: Some(HashMap::from([(
-                    exposed,
-                    Some(vec![PortBinding {
-                        host_ip: Some(self.bind_host.clone()),
-                        host_port: Some(String::new()),
-                    }]),
-                )])),
-                network_mode: Some(name(id)),
-                memory: Some(memory),
-                memory_swap: Some(memory),
-                pids_limit: Some(512),
-                cap_drop: Some(vec!["NET_RAW".into()]),
-                security_opt: Some(vec!["no-new-privileges:true".into()]),
-                restart_policy: Some(RestartPolicy {
-                    name: Some(RestartPolicyNameEnum::UNLESS_STOPPED),
-                    ..Default::default()
-                }),
-                log_config: Some(HostConfigLogConfig {
-                    typ: Some("json-file".into()),
-                    config: Some(HashMap::from([
-                        ("max-size".into(), "5m".into()),
-                        ("max-file".into(), "2".into()),
-                    ])),
-                }),
-                ..Default::default()
-            }),
-            ..Default::default()
-        };
-        self.docker
-            .create_container(
-                Some(
-                    CreateContainerOptionsBuilder::default()
-                        .name(&name(id))
-                        .build(),
-                ),
-                body,
-            )
-            .await?;
-        if spec.running {
-            self.docker
-                .start_container(&name(id), None::<StartContainerOptions>)
-                .await?;
-        }
         Ok(())
     }
-    pub async fn observe(&self, id: &Uuid) -> Result<Option<Observed>, Error> {
-        let container = match self
-            .docker
-            .inspect_container(&name(id), None::<InspectContainerOptions>)
-            .await
-        {
-            Ok(container) => container,
-            Err(error) if absent(&error) => return Ok(None),
-            Err(error) => return Err(error.into()),
-        };
-        let host_port = container
-            .network_settings
-            .and_then(|n| n.ports)
-            .and_then(|ports| {
-                ports
-                    .into_values()
-                    .flatten()
-                    .flatten()
-                    .find_map(|b| b.host_port)
-            })
-            .and_then(|p| p.parse().ok());
-        Ok(Some(Observed {
-            running: container.state.as_ref().and_then(|s| s.running) == Some(true),
-            host_port,
-            restarts: container.restart_count.unwrap_or_default(),
-        }))
+    pub async fn remove(&self, id: &Uuid) -> Result<(), PluginError> {
+        self.workloads
+            .call("remove", json!({"unit": unit(id)}))
+            .await?;
+        Ok(())
     }
-    pub async fn power(&self, id: &Uuid, action: &str) -> Result<(), Error> {
-        let name = name(id);
-        let result = match action {
-            "start" => {
-                self.docker
-                    .start_container(&name, None::<StartContainerOptions>)
-                    .await
-            }
-            "stop" => {
-                self.docker
-                    .stop_container(
-                        &name,
-                        Some(StopContainerOptionsBuilder::default().t(10).build()),
-                    )
-                    .await
-            }
-            _ => {
-                self.docker
-                    .restart_container(
-                        &name,
-                        Some(RestartContainerOptionsBuilder::default().t(10).build()),
-                    )
-                    .await
-            }
-        };
-        match result {
-            // Already in the requested state.
-            Ok(())
-            | Err(bollard::errors::Error::DockerResponseServerError {
-                status_code: 304, ..
-            }) => Ok(()),
-            Err(error) => Err(error.into()),
-        }
+    /// The app's state in plain words, from what the cluster's agent last saw.
+    pub async fn observe(&self, id: &Uuid, running: bool) -> Result<Observed, PluginError> {
+        let seen = self
+            .workloads
+            .call("observe", json!({"unit": unit(id)}))
+            .await?;
+        Ok(status(&seen, running))
     }
-    /// The last lines of stdout and stderr, without control characters.
-    pub async fn logs(&self, id: &Uuid, lines: usize) -> Result<Vec<String>, Error> {
-        let mut stream = self.docker.logs(
-            &name(id),
-            Some(
-                LogsOptionsBuilder::default()
-                    .stdout(true)
-                    .stderr(true)
-                    .timestamps(true)
-                    .tail(&lines.to_string())
-                    .build(),
-            ),
-        );
-        let mut out = Vec::new();
-        let read = async {
-            while let Some(chunk) = stream.next().await {
-                let text = chunk?.to_string();
-                out.extend(text.lines().map(|line| {
-                    line.chars()
-                        .filter(|c| !c.is_control() || *c == '\t')
-                        .collect::<String>()
-                }));
+}
+pub fn status(seen: &Value, running: bool) -> Observed {
+    let logs = seen["observed"]["logs"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .map(str::to_owned)
+        .collect();
+    let (status, error) = if seen["removed"] == true || seen["removing"] == true {
+        ("missing", None)
+    } else if let Some(error) = seen["error"].as_str() {
+        (
+            "failed",
+            Some(format!("The cluster refused the app: {error}")),
+        )
+    } else if seen["appliedRevision"].as_i64() < seen["revision"].as_i64() {
+        ("deploying", None)
+    } else if !running {
+        ("stopped", None)
+    } else if let Some(reason) = seen["observed"]["problems"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find_map(|p| p["reason"].as_str())
+    {
+        let message = match reason {
+            "ErrImagePull" | "ImagePullBackOff" | "InvalidImageName" => {
+                "The image could not be pulled. Check the image name.".to_owned()
             }
-            Ok::<(), bollard::errors::Error>(())
+            "CrashLoopBackOff" => {
+                "The app keeps stopping right after it starts. See the logs.".to_owned()
+            }
+            other => format!("The app cannot start ({other})."),
         };
-        match tokio::time::timeout(Duration::from_secs(5), read).await {
-            Ok(Err(error)) if absent(&error) => Ok(Vec::new()),
-            Ok(result) => {
-                result?;
-                Ok(out.split_off(out.len().saturating_sub(lines)))
-            }
-            Err(_) => Ok(out),
-        }
-    }
-    /// Removes the container, its anonymous volumes and its network.
-    pub async fn remove(&self, id: &Uuid) -> Result<(), Error> {
-        match self
-            .docker
-            .remove_container(
-                &name(id),
-                Some(
-                    RemoveContainerOptionsBuilder::default()
-                        .force(true)
-                        .v(true)
-                        .build(),
-                ),
-            )
-            .await
-        {
-            Ok(()) => {}
-            Err(error) if absent(&error) => {}
-            Err(error) => return Err(error.into()),
-        }
-        match self.docker.remove_network(&name(id)).await {
-            Ok(()) => Ok(()),
-            Err(error) if absent(&error) => Ok(()),
-            Err(error) => Err(error.into()),
-        }
+        ("failed", Some(message))
+    } else if seen["observed"]["ready"] == true {
+        ("running", None)
+    } else {
+        ("deploying", None)
+    };
+    Observed {
+        status,
+        error,
+        logs,
     }
 }

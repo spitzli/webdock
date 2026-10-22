@@ -2,7 +2,8 @@
 use tokio_postgres::Client;
 use uuid::Uuid;
 
-const MIGRATIONS: &[&str] = &["CREATE TABLE apps (
+const MIGRATIONS: &[&str] = &[
+    "CREATE TABLE apps (
         id uuid PRIMARY KEY,
         project_id text NOT NULL,
         name text NOT NULL,
@@ -14,7 +15,10 @@ const MIGRATIONS: &[&str] = &["CREATE TABLE apps (
         state text NOT NULL CHECK (state IN ('deploying','ready','failed')),
         error text,
         created_at timestamptz NOT NULL DEFAULT now()
-    )"];
+    )",
+    // Apps run on the cluster; their state comes from the agent's observation.
+    "ALTER TABLE apps DROP COLUMN state, DROP COLUMN error, ADD COLUMN restart text NOT NULL DEFAULT ''",
+];
 
 pub type Error = tokio_postgres::Error;
 #[derive(Clone, Debug)]
@@ -27,12 +31,12 @@ pub struct App {
     pub memory_mb: i32,
     pub env_sealed: Vec<u8>,
     pub running: bool,
-    pub state: String,
-    pub error: Option<String>,
+    /// A new value rolls the app's pods.
+    pub restart: String,
     pub created_at: String,
 }
 const COLUMNS: &str =
-    "id,project_id,name,image,port,memory_mb,env_sealed,running,state,error,created_at::text";
+    "id,project_id,name,image,port,memory_mb,env_sealed,running,restart,created_at::text";
 fn app(r: &tokio_postgres::Row) -> App {
     App {
         id: r.get(0),
@@ -43,9 +47,8 @@ fn app(r: &tokio_postgres::Row) -> App {
         memory_mb: r.get(5),
         env_sealed: r.get(6),
         running: r.get(7),
-        state: r.get(8),
-        error: r.get(9),
-        created_at: r.get(10),
+        restart: r.get(8),
+        created_at: r.get(9),
     }
 }
 
@@ -57,8 +60,8 @@ impl Store {
         ))
     }
     pub async fn insert(&self, a: &App) -> Result<(), Error> {
-        self.0.execute("INSERT INTO apps(id,project_id,name,image,port,memory_mb,env_sealed,running,state) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",
-            &[&a.id, &a.project_id, &a.name, &a.image, &a.port, &a.memory_mb, &a.env_sealed, &a.running, &a.state]).await?;
+        self.0.execute("INSERT INTO apps(id,project_id,name,image,port,memory_mb,env_sealed,running,restart) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+            &[&a.id, &a.project_id, &a.name, &a.image, &a.port, &a.memory_mb, &a.env_sealed, &a.running, &a.restart]).await?;
         Ok(())
     }
     /// An app of this project only; another project's id reads as missing.
@@ -73,37 +76,9 @@ impl Store {
             .as_ref()
             .map(app))
     }
-    pub async fn deploying(&self) -> Result<Vec<App>, Error> {
-        Ok(self
-            .0
-            .query(
-                &format!("SELECT {COLUMNS} FROM apps WHERE state='deploying'"),
-                &[],
-            )
-            .await?
-            .iter()
-            .map(app)
-            .collect())
-    }
-    /// Stores a changed specification and marks the app for a new deployment.
     pub async fn update(&self, a: &App) -> Result<(), Error> {
-        self.0.execute("UPDATE apps SET image=$2,port=$3,memory_mb=$4,env_sealed=$5,running=$6,state='deploying',error=NULL WHERE id=$1",
-            &[&a.id, &a.image, &a.port, &a.memory_mb, &a.env_sealed, &a.running]).await?;
-        Ok(())
-    }
-    pub async fn running(&self, id: &Uuid, running: bool) -> Result<(), Error> {
-        self.0
-            .execute("UPDATE apps SET running=$2 WHERE id=$1", &[id, &running])
-            .await?;
-        Ok(())
-    }
-    pub async fn outcome(&self, id: &Uuid, error: Option<&str>) -> Result<(), Error> {
-        self.0
-            .execute(
-                "UPDATE apps SET state=CASE WHEN $2::text IS NULL THEN 'ready' ELSE 'failed' END,error=$2 WHERE id=$1",
-                &[id, &error],
-            )
-            .await?;
+        self.0.execute("UPDATE apps SET image=$2,port=$3,memory_mb=$4,env_sealed=$5,running=$6,restart=$7 WHERE id=$1",
+            &[&a.id, &a.image, &a.port, &a.memory_mb, &a.env_sealed, &a.running, &a.restart]).await?;
         Ok(())
     }
     pub async fn delete(&self, id: &Uuid) -> Result<(), Error> {

@@ -9,7 +9,17 @@
   "coreVersion": ">=0.1.0 <1.0.0",
   "image": "127.0.0.1:5005/webdock/hosting@sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "dependencies": [],
-  "capabilities": [],
+  "capabilities": [
+    "plugin.workloads"
+  ],
+  "workloads": {
+    "kinds": [
+      "apps/v1/Deployment",
+      "v1/Service",
+      "v1/Secret",
+      "traefik.io/v1alpha1/IngressRoute"
+    ]
+  },
   "schemaVersion": 1,
   "readableSchema": {
     "min": 1,

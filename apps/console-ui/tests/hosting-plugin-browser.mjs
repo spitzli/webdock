@@ -23,7 +23,7 @@ async function open(browser, member, features) {
     state.calls.push(body);
     const ok = (value = {}) => route.fulfill({ json: value });
     switch (body.action) {
-      case 'apps.view': return ok({ name: 'Website', status: state.status, image: 'nginx:stable-alpine', port: 80, memoryMb: state.memory, url: state.status === 'running' ? 'http://127.0.0.1:49200' : null, env: state.env, error: null, restarts: 0, createdAt: '2026-10-22 10:00:00+00' });
+      case 'apps.view': return ok({ name: 'Website', status: state.status, image: 'nginx:stable-alpine', port: 80, memoryMb: state.memory, url: state.status === 'running' ? 'http://website-0123abcd.apps.localhost:55480' : null, env: state.env, error: null, createdAt: '2026-10-22 10:00:00+00' });
       case 'apps.logs': return ok({ lines: ['2026-10-22T10:00:00Z GET / 200'] });
       case 'apps.power': state.status = body.input.action === 'stop' ? 'stopped' : 'running'; return ok();
       case 'apps.env': state.env = body.input.env.split('\n').map((line) => line.split('=')[0]); return ok({ status: 'deploying' });
@@ -41,7 +41,7 @@ try {
   let session = await open(browser, 'owner', ['create-apps', 'resize-apps']);
   const page = () => session.page;
   await page().goto(previewOrigin + `/workspaces/101/projects/201/resources/hosting/${appID}`);
-  await page().getByRole('link', { name: 'http://127.0.0.1:49200' }).waitFor();
+  await page().getByRole('link', { name: 'http://website-0123abcd.apps.localhost:55480' }).waitFor();
   await page().getByText('GET / 200').waitFor();
   await page().getByRole('button', { name: 'Stop' }).click();
   await page().getByRole('button', { name: 'Start' }).waitFor();

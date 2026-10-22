@@ -33,19 +33,23 @@ async fn run() -> Result<(), Error> {
     )?)?;
     webdock_hosting::validate_manifest(&manifest)?;
     webdock_plugin_kit::loopback(&config.storage_url)?;
+    let client = HostClient::connect_unix(config.core).await?;
+    let workloads = webdock_hosting::placement::HostWorkloads {
+        client: client.clone(),
+        plugin: manifest.id().into(),
+        generation: config.generation,
+    };
     let plugin = webdock_hosting::Plugin::new(
         webdock_hosting::store::Store::connect(&config.storage_url).await?,
         webdock_hosting::seal::Sealer::new(&config.secret_key_hex)?,
-        webdock_hosting::placement::Placement::new(&config.placement)?,
+        webdock_hosting::placement::Placement::new(Box::new(workloads), config.placement),
         webdock_hosting::Settings {
             require_digest: config.require_digest,
         },
     );
-    plugin.resume().await?;
     let key: [u8; 32] = hex::decode(config.issuer_public_key_hex)?
         .try_into()
         .map_err(|_| "invalid key")?;
-    let client = HostClient::connect_unix(config.core).await?;
     let authority = runtime::RemoteAuthority::new(
         client,
         manifest.id().into(),

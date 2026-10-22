@@ -224,15 +224,6 @@ impl Plugin {
             id,
         })
     }
-    /// Finish deployments interrupted by a restart.
-    pub async fn resume(self: &Arc<Self>) -> std::result::Result<(), store::Error> {
-        for app in self.store.deploying().await? {
-            if let Ok(slot) = self.claim(app.id) {
-                self.deploy(app, slot);
-            }
-        }
-        Ok(())
-    }
     fn env(&self, app: &store::App) -> Result<Vec<(String, String)>> {
         let raw = self
             .sealer
@@ -247,39 +238,21 @@ impl Plugin {
             .map_err(store_error)?
             .ok_or_else(missing)
     }
-    /// Runs detached with the app's slot: pulling an image outlasts an invocation.
-    fn deploy(self: &Arc<Self>, app: store::App, slot: Slot) {
-        let plugin = Arc::clone(self);
-        tokio::spawn(async move {
-            let _slot = slot;
-            let outcome = async {
-                let env = plugin.env(&app).map_err(|e| e.message)?;
-                let spec = placement::Spec {
-                    image: &app.image,
-                    port: u16::try_from(app.port).map_err(|_| "Invalid port".to_owned())?,
-                    memory_mb: u32::try_from(app.memory_mb)
-                        .map_err(|_| "Invalid memory".to_owned())?,
-                    env: &env,
-                    running: app.running,
-                };
-                plugin
-                    .placement
-                    .deploy(&app.id, &spec)
-                    .await
-                    .map_err(|error| {
-                        eprintln!("hosting_plugin_deploy: {error}");
-                        "The image could not be pulled or started. Check the image name.".to_owned()
-                    })
-            }
-            .await;
-            if let Err(error) = plugin
-                .store
-                .outcome(&app.id, outcome.err().as_deref())
-                .await
-            {
-                eprintln!("hosting_plugin_store: {error}");
-            }
-        });
+    /// Hands the app as stored to the cluster. The agent applies it within seconds.
+    async fn deploy(&self, app: &store::App) -> Result<()> {
+        let env = self.env(app)?;
+        let spec = placement::Spec {
+            id: &app.id,
+            project: &app.project_id,
+            name: &app.name,
+            image: &app.image,
+            port: u16::try_from(app.port).map_err(|_| invalid("Invalid port"))?,
+            memory_mb: u32::try_from(app.memory_mb).map_err(|_| invalid("Invalid memory"))?,
+            env: &env,
+            running: app.running,
+            restart: &app.restart,
+        };
+        self.placement.deploy(&spec).await
     }
     async fn create(self: &Arc<Self>, claims: &InvocationClaims, input: Value) -> Result<Value> {
         let input: NewApp = parse(input)?;
@@ -293,47 +266,33 @@ impl Plugin {
             memory_mb: DEFAULT_MEMORY_MB,
             env_sealed: self.sealer.seal(&id, ""),
             running: true,
-            state: "deploying".into(),
-            error: None,
+            restart: String::new(),
             created_at: String::new(),
         };
-        let slot = self.claim(id)?;
+        let _slot = self.claim(id)?;
         self.store.insert(&app).await.map_err(store_error)?;
-        let name = app.name.clone();
-        self.deploy(app, slot);
-        Ok(json!({"resource":{"id":id.to_string(),"name":name}}))
+        if let Err(error) = self.deploy(&app).await {
+            let _ = self.store.delete(&id).await;
+            return Err(error);
+        }
+        Ok(json!({"resource":{"id":id.to_string(),"name":app.name}}))
     }
     async fn view(&self, claims: &InvocationClaims, input: Value) -> Result<Value> {
         let target: Target = parse(input)?;
         let app = self.target(claims, &uuid(&target.resource_id)?).await?;
-        let observed = self
-            .placement
-            .observe(&app.id)
-            .await
-            .map_err(|e| unavailable("observe", e))?;
-        let status = match (app.state.as_str(), &observed) {
-            ("deploying", _) => "deploying",
-            ("failed", _) => "failed",
-            (_, Some(o)) if o.running => "running",
-            (_, Some(_)) => "stopped",
-            (_, None) => "missing",
-        };
-        let url = observed
-            .as_ref()
-            .and_then(|o| o.host_port)
-            .filter(|_| status == "running")
-            .map(|p| format!("http://{}:{p}", self.placement.host()));
+        let observed = self.placement.observe(&app.id, app.running).await?;
+        let url = (observed.status == "running").then(|| self.placement.url(&app.id, &app.name));
         let keys = self
             .env(&app)?
             .into_iter()
             .map(|(k, _)| k)
             .collect::<Vec<_>>();
         Ok(json!({
-            "name": app.name, "status": status, "image": app.image, "port": app.port, "memoryMb": app.memory_mb,
-            "url": url, "env": keys, "error": app.error, "restarts": observed.map(|o| o.restarts), "createdAt": app.created_at,
+            "name": app.name, "status": observed.status, "image": app.image, "port": app.port, "memoryMb": app.memory_mb,
+            "url": url, "env": keys, "error": observed.error, "createdAt": app.created_at,
         }))
     }
-    /// Claims the app, applies `edit` to the row as stored now, saves it and redeploys.
+    /// Claims the app, applies `edit` to the row as stored now, saves it and hands it to the cluster.
     async fn change(
         self: &Arc<Self>,
         claims: &InvocationClaims,
@@ -341,36 +300,12 @@ impl Plugin {
         edit: impl FnOnce(&mut store::App) -> Result<()>,
     ) -> Result<Value> {
         let id = uuid(id)?;
-        let slot = self.claim(id)?;
+        let _slot = self.claim(id)?;
         let mut app = self.target(claims, &id).await?;
         edit(&mut app)?;
         self.store.update(&app).await.map_err(store_error)?;
-        self.deploy(app, slot);
+        self.deploy(&app).await?;
         Ok(json!({"status":"deploying"}))
-    }
-    async fn power(self: &Arc<Self>, claims: &InvocationClaims, input: Value) -> Result<Value> {
-        let input: Power = parse(input)?;
-        if !["start", "stop", "restart"].contains(&input.action.as_str()) {
-            return Err(invalid("Unknown power action"));
-        }
-        let id = uuid(&input.resource_id)?;
-        let _slot = self.claim(id)?;
-        let app = self.target(claims, &id).await?;
-        if app.state != "ready" {
-            return Err(PluginError::new(
-                ErrorCode::Conflict,
-                "The app is not deployed",
-            ));
-        }
-        self.placement
-            .power(&app.id, &input.action)
-            .await
-            .map_err(|e| unavailable("power", e))?;
-        self.store
-            .running(&app.id, input.action != "stop")
-            .await
-            .map_err(store_error)?;
-        Ok(json!({}))
     }
     async fn delete(self: &Arc<Self>, claims: &InvocationClaims, input: Value) -> Result<Value> {
         let target: Target = parse(input)?;
@@ -385,10 +320,7 @@ impl Plugin {
         else {
             return Ok(json!({}));
         };
-        self.placement
-            .remove(&app.id)
-            .await
-            .map_err(|e| unavailable("remove", e))?;
+        self.placement.remove(&app.id).await?;
         self.store.delete(&app.id).await.map_err(store_error)?;
         Ok(json!({}))
     }
@@ -417,12 +349,8 @@ impl ActionHandler for Handler {
             "apps.logs" => {
                 let target: Target = parse(input)?;
                 let app = plugin.target(claims, &uuid(&target.resource_id)?).await?;
-                let lines = plugin
-                    .placement
-                    .logs(&app.id, 200)
-                    .await
-                    .map_err(|e| unavailable("logs", e))?;
-                Ok(json!({"lines": lines}))
+                let observed = plugin.placement.observe(&app.id, app.running).await?;
+                Ok(json!({"lines": observed.logs}))
             }
             "apps.deploy" => {
                 let input: Deploy = parse(input)?;
@@ -457,7 +385,23 @@ impl ActionHandler for Handler {
                     })
                     .await
             }
-            "apps.power" => plugin.power(claims, input).await,
+            "apps.power" => {
+                let input: Power = parse(input)?;
+                let action = input.action;
+                if !["start", "stop", "restart"].contains(&action.as_str()) {
+                    return Err(invalid("Unknown power action"));
+                }
+                plugin
+                    .change(claims, &input.resource_id, |app| {
+                        match action.as_str() {
+                            "start" => app.running = true,
+                            "stop" => app.running = false,
+                            _ => app.restart = Uuid::new_v4().to_string(),
+                        }
+                        Ok(())
+                    })
+                    .await
+            }
             "apps.delete" => plugin.delete(claims, input).await,
             _ => Err(PluginError::new(
                 ErrorCode::NotSupported,
@@ -471,7 +415,7 @@ impl ActionHandler for Handler {
 pub fn validate_manifest(manifest: &Manifest) -> Result<()> {
     let value = manifest.as_json();
     if manifest.id() != PLUGIN_ID
-        || value["capabilities"] != json!([])
+        || value["capabilities"] != json!(["plugin.workloads"])
         || value["httpBindings"] != json!([])
         || value["actions"]
             .as_array()

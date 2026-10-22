@@ -150,7 +150,8 @@ const PLUGINS = {
     policy: { "create-apps": "selected", "resize-apps": "selected" },
     config: (secrets) => ({
       secretKeyHex: secrets.sealKey,
-      placement: { dockerSocket: "/var/run/docker.sock", bindHost: "127.0.0.1" },
+      // Apps run on the local k3s; its Traefik answers on 55480 for any *.apps.localhost host.
+      placement: { domain: "apps.localhost", publicUrl: "http://{host}:55480", entryPoints: ["web"] },
     }),
   },
 };
