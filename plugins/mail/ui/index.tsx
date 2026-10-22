@@ -1,7 +1,7 @@
 // Console UI of the mail plugin. Bundled by the Console; every call goes through the plugin action API.
 import { useState } from "react";
 import { z } from "zod";
-import { Failure, Loading, ui, usePluginMutation, usePluginQuery, type PluginUI, type ResourceProps } from "@webdock/plugin-ui";
+import { Failure, Loading, ui, usePluginMutation, usePluginQuery, usePluginReveal, type CreateProps, type PluginUI, type ResourceProps } from "@webdock/plugin-ui";
 
 const domainSchema = z.object({
   domain: z.string(),
@@ -9,9 +9,23 @@ const domainSchema = z.object({
   verificationSkipped: z.boolean(),
   transport: z.enum(["platform", "turbosmtp"]),
   records: z.array(z.object({ type: z.string(), name: z.string(), value: z.string(), purpose: z.string() })),
+  mailboxes: z.array(z.string()),
   recent: z.array(z.object({ from: z.string(), to: z.string(), subject: z.string(), transport: z.string(), status: z.enum(["accepted", "failed"]), at: z.string() })),
 });
 type Domain = z.infer<typeof domainSchema>;
+const mailboxSchema = z.object({
+  address: z.string(),
+  name: z.string(),
+  state: z.enum(["creating", "ready", "failed"]),
+  error: z.string().nullable(),
+  host: z.string().nullable(),
+  imapPort: z.number(),
+  smtpPort: z.number(),
+  username: z.string(),
+  quotaMb: z.number(),
+  tls: z.string(),
+});
+const createdSchema = z.object({ resource: z.object({ id: z.string() }) });
 const relaySchema = z.object({ provider: z.string(), region: z.string(), keyHint: z.string(), connectedAt: z.string() });
 const verifySchema = z.object({ verified: z.boolean() });
 
@@ -41,7 +55,7 @@ function Remove({ context, action, noun, feature }: { context: ResourceProps; ac
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-outline pt-4 first:border-t-0 first:pt-0">
       <div>
         <p className="text-sm font-medium">Remove {noun}</p>
-        <p className="text-[13px] text-muted">{noun === "domain" ? "Mail can no longer be sent from this domain." : "Mail goes through the platform again."}</p>
+        <p className="text-[13px] text-muted">{({ domain: "Mail can no longer be sent from this domain.", mailbox: "The mailbox and all its mail are deleted.", account: "Mail goes through the platform again." } as Record<string, string>)[noun]}</p>
       </div>
       {confirming ? (
         <div className="flex gap-2">
@@ -156,6 +170,12 @@ function DomainPage(context: ResourceProps) {
           </div>
         ))}
       </section>
+      {domain.mailboxes.length ? (
+        <section className={ui.card} aria-label="Mailboxes on this domain">
+          <h2 className={ui.cx(ui.sectionTitle, "px-6 py-4 max-sm:px-[18px]")}>Mailboxes</h2>
+          {domain.mailboxes.map((address) => <div key={address} className={ui.cardRow}><span>{address}</span></div>)}
+        </section>
+      ) : null}
       {context.writable ? <SendForm context={context} domain={domain} /> : null}
       <section className={ui.card} aria-label="Recent messages">
         <h2 className={ui.cx(ui.sectionTitle, "px-6 py-4 max-sm:px-[18px]")}>Recent messages</h2>
@@ -199,8 +219,142 @@ function RelayPage(context: ResourceProps) {
   );
 }
 
-function Resource(context: ResourceProps) {
-  return context.resource.offering === "relay" ? <RelayPage {...context} /> : <DomainPage {...context} />;
+
+function MailboxPassword({ context }: { context: ResourceProps }) {
+  const reveal = usePluginReveal(context, "mailboxes.credentials");
+  const rotate = usePluginMutation(context, "mailboxes.rotate");
+  const secret = reveal.data ? z.object({ value: z.string() }).safeParse(reveal.data) : undefined;
+  return (
+    <div className={ui.cardRow}>
+      <span className="w-36 shrink-0 text-muted">Password</span>
+      {secret?.success ? (
+        <>
+          <code className={ui.cx(ui.mono, "min-w-0 flex-1 break-all")}>{secret.data.value}</code>
+          <Copy value={secret.data.value} />
+          <button type="button" className={ui.button("quiet")} onClick={() => { reveal.reset(); }}>Hide</button>
+        </>
+      ) : (
+        <>
+          <span className="flex-1 text-muted">Hidden</span>
+          <button type="button" className={ui.button()} disabled={reveal.isPending} onClick={() => { reveal.mutate({ resource_id: context.resource.id }); }}>
+            {reveal.isPending ? "Loading…" : "Show password"}
+          </button>
+        </>
+      )}
+      <button type="button" className={ui.button()} disabled={rotate.isPending} onClick={() => { reveal.reset(); rotate.mutate({ resource_id: context.resource.id }); }}>
+        {rotate.isPending ? "Rotating…" : rotate.isSuccess ? "Rotated" : "Rotate"}
+      </button>
+      {reveal.error ?? rotate.error ? <p role="alert" className="basis-full text-sm text-danger">{(reveal.error ?? rotate.error)?.message}</p> : null}
+    </div>
+  );
 }
 
-export default { Resource } satisfies PluginUI;
+function MailboxPage(context: ResourceProps) {
+  const query = usePluginQuery(context, "mailboxes.view", { resource_id: context.resource.id }, mailboxSchema, {
+    refetchInterval: (data) => (data?.state === "creating" ? 2000 : false),
+  });
+  if (query.isPending) return <Loading>Loading mailbox…</Loading>;
+  if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
+  const mailbox = query.data;
+  const row = (label: string, value: string) => (
+    <div className={ui.cardRow}>
+      <span className="w-36 shrink-0 text-muted">{label}</span>
+      <code className={ui.cx(ui.mono, "min-w-0 flex-1 break-all")}>{value}</code>
+      <Copy value={value} />
+    </div>
+  );
+  return (
+    <div className="grid gap-6">
+      <section className={ui.card} aria-label="Status">
+        <div className={ui.cardBody}>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className={ui.badge(mailbox.state === "ready" ? "success" : mailbox.state === "creating" ? "warning" : "danger")}>
+              {mailbox.state === "ready" ? "Ready" : mailbox.state === "creating" ? "Setting up" : "Failed"}
+            </span>
+            <span className="text-sm text-muted">{mailbox.name ? `${mailbox.name} <${mailbox.address}>` : mailbox.address}</span>
+          </div>
+          {mailbox.state === "creating" ? <p className="text-[13px] text-muted">The first mailbox of a project starts its mail server, which takes a moment. This page updates by itself.</p> : null}
+          {mailbox.error ? <p role="alert" className="text-sm text-danger">{mailbox.error}</p> : null}
+        </div>
+      </section>
+      {mailbox.state === "ready" && mailbox.host ? (
+        <section className={ui.card} aria-label="Mail client settings">
+          <h2 className={ui.cx(ui.sectionTitle, "px-6 pt-4 max-sm:px-[18px]")}>Mail client settings</h2>
+          <p className="px-6 pb-3 pt-1 text-[13px] text-muted max-sm:px-[18px]">{mailbox.tls}.</p>
+          {row("IMAP server", `${mailbox.host}:${String(mailbox.imapPort)}`)}
+          {row("SMTP server", `${mailbox.host}:${String(mailbox.smtpPort)}`)}
+          {row("Username", mailbox.username)}
+          {context.writable ? <MailboxPassword context={context} /> : null}
+        </section>
+      ) : null}
+      {context.writable ? (
+        <div className={ui.cx(ui.card, ui.cardBody)}>
+          <Remove context={context} action="mailboxes.delete" noun="mailbox" feature="create-mailboxes" />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function MailboxCreate(props: CreateProps) {
+  const create = usePluginMutation(props, props.action);
+  const domains = props.resources.filter((resource) => resource.offering === "domain");
+  const [domain, setDomain] = useState(domains[0]?.id ?? "");
+  const suffix = domains.find((d) => d.id === domain)?.name;
+  return (
+    <form
+      className={ui.cx(ui.card, ui.cardBody, "mb-6")}
+      aria-label={props.title}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const data = Object.fromEntries(new FormData(event.currentTarget)) as Record<string, string>;
+        create.mutate({ domain_id: domain, local_part: data.local_part, name: data.name }, {
+          onSuccess: (result) => {
+            const created = createdSchema.safeParse(result);
+            if (created.success) props.onCreated(created.data.resource.id);
+          },
+        });
+      }}
+    >
+      <h2 className={ui.sectionTitle}>{props.title}</h2>
+      {domains.length === 0 ? (
+        <p className="text-sm text-muted">Add a sending domain first; mailboxes live on your project's domains.</p>
+      ) : (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className={ui.field}>
+              Address
+              <span className="flex items-center gap-2">
+                <input className={ui.input} name="local_part" required maxLength={64} autoComplete="off" />
+                <span className="shrink-0 text-sm text-muted">@{suffix}</span>
+              </span>
+            </label>
+            <label className={ui.field}>
+              Domain
+              <select className={ui.input} value={domain} onChange={(event) => { setDomain(event.target.value); }}>
+                {domains.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </label>
+          </div>
+          <label className={ui.field}>
+            Display name
+            <input className={ui.input} name="name" maxLength={80} />
+          </label>
+        </>
+      )}
+      {create.error ? <p role="alert" className="text-sm text-danger">{create.error.message}</p> : null}
+      <div className="flex gap-3">
+        <button className={ui.button("primary")} disabled={create.isPending || domains.length === 0}>{create.isPending ? "Creating…" : "Create"}</button>
+        <button type="button" className={ui.button()} onClick={props.onCancel}>Cancel</button>
+      </div>
+    </form>
+  );
+}
+
+function Resource(context: ResourceProps) {
+  if (context.resource.offering === "relay") return <RelayPage {...context} />;
+  if (context.resource.offering === "mailbox") return <MailboxPage {...context} />;
+  return <DomainPage {...context} />;
+}
+
+export default { Resource, Create: { "mailboxes.create": MailboxCreate } } satisfies PluginUI;

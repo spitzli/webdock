@@ -2,6 +2,8 @@
 //! turboSMTP account, and a send action exposed to the Console, the public API and MCP.
 //! The Core admits every call; this plugin checks again that records belong to the invoking project.
 pub use webdock_plugin_kit::seal;
+pub mod engine;
+mod mailboxes;
 pub mod store;
 pub mod transport;
 
@@ -27,6 +29,11 @@ const ACTIONS: &[(&str, &str)] = &[
     ("relay.connect", "write"),
     ("relay.view", "read"),
     ("relay.delete", "write"),
+    ("mailboxes.create", "write"),
+    ("mailboxes.view", "read"),
+    ("mailboxes.credentials", "write"),
+    ("mailboxes.rotate", "write"),
+    ("mailboxes.delete", "write"),
 ];
 const MAX_RECIPIENTS: usize = 10;
 fn invalid(message: &str) -> PluginError {
@@ -155,6 +162,9 @@ pub struct Plugin {
     sender: transport::Sender,
     dns: Box<dyn Dns>,
     settings: Settings,
+    engines: Option<engine::Engines>,
+    /// ponytail: one mailbox operation at a time across projects; per-project locks if it matters.
+    provisioning: tokio::sync::Mutex<()>,
 }
 impl Plugin {
     pub fn new(
@@ -163,6 +173,7 @@ impl Plugin {
         sender: transport::Sender,
         dns: Box<dyn Dns>,
         settings: Settings,
+        engines: Option<engine::Engines>,
     ) -> Arc<Self> {
         Arc::new(Self {
             store,
@@ -170,6 +181,8 @@ impl Plugin {
             sender,
             dns,
             settings,
+            engines,
+            provisioning: tokio::sync::Mutex::new(()),
         })
     }
     async fn domain(&self, claims: &InvocationClaims, id: &str) -> Result<store::Domain> {
@@ -195,7 +208,7 @@ impl Plugin {
         {
             return Err(PluginError::new(
                 ErrorCode::Conflict,
-                "This domain is already in use",
+                "This project already has this domain",
             ));
         }
         Ok(json!({"resource":{"id":domain.id.to_string(),"name":domain.domain}}))
@@ -209,22 +222,37 @@ impl Plugin {
             .await
             .map_err(store_error)?;
         let recent = self.store.recent(&domain.id).await.map_err(store_error)?;
+        let mailboxes = self
+            .store
+            .domain_mailboxes(&domain.id)
+            .await
+            .map_err(store_error)?;
+        let dkim = if mailboxes.is_empty() {
+            None
+        } else {
+            self.dkim(&claims.project_id, &domain.domain).await
+        };
         let spf = match (&relay, &self.settings.platform) {
             (Some(_), _) | (None, transport::Platform::TurboSmtp { .. }) => {
                 "v=spf1 include:_spf.turbo-smtp.com ~all"
             }
             (None, transport::Platform::Smtp { .. }) => "v=spf1 ~all",
         };
+        let mut records = vec![
+            json!({"type": "TXT", "name": format!("_webdock.{}", domain.domain), "value": format!("webdock-verify={}", domain.token), "purpose": "Proves you own the domain"}),
+            json!({"type": "TXT", "name": domain.domain, "value": spf, "purpose": "Allows the sending service (SPF)"}),
+            json!({"type": "TXT", "name": format!("_dmarc.{}", domain.domain), "value": "v=DMARC1; p=none", "purpose": "Reports on mail that claims your domain (DMARC)"}),
+        ];
+        if let Some((selector, key)) = dkim {
+            records.push(json!({"type": "TXT", "name": format!("{selector}._domainkey.{}", domain.domain), "value": format!("v=DKIM1; k=rsa; p={key}"), "purpose": "Signs mail from your mailboxes (DKIM)"}));
+        }
         Ok(json!({
             "domain": domain.domain,
             "verified": domain.verified || self.settings.trust_unverified_domains,
             "verificationSkipped": !domain.verified && self.settings.trust_unverified_domains,
             "transport": if relay.is_some() { "turbosmtp" } else { "platform" },
-            "records": [
-                {"type": "TXT", "name": format!("_webdock.{}", domain.domain), "value": format!("webdock-verify={}", domain.token), "purpose": "Proves you own the domain"},
-                {"type": "TXT", "name": domain.domain, "value": spf, "purpose": "Allows the sending service (SPF)"},
-                {"type": "TXT", "name": format!("_dmarc.{}", domain.domain), "value": "v=DMARC1; p=none", "purpose": "Reports on mail that claims your domain (DMARC)"},
-            ],
+            "records": records,
+            "mailboxes": mailboxes.iter().map(|local| format!("{local}@{}", domain.domain)).collect::<Vec<_>>(),
             "recent": recent.iter().map(|s| json!({"from": s.sender, "to": s.recipients, "subject": s.subject, "transport": s.transport, "status": s.status, "at": s.created_at})).collect::<Vec<_>>(),
         }))
     }
@@ -239,8 +267,11 @@ impl Plugin {
                 .await
                 .iter()
                 .any(|value| value.trim() == expected);
-        if found {
-            self.store.verified(&domain.id).await.map_err(store_error)?;
+        if found && !self.store.verified(&domain.id).await.map_err(store_error)? {
+            return Err(PluginError::new(
+                ErrorCode::Conflict,
+                "Another project has already verified this domain",
+            ));
         }
         Ok(json!({"verified": found}))
     }
@@ -339,7 +370,7 @@ impl Plugin {
                 provider_id,
             )
             .await
-            .map_err(store_error)?;
+            .unwrap_or_else(|error| eprintln!("mail_plugin_send_log: {error}"));
         match outcome {
             Ok(delivery) => Ok(
                 json!({"accepted": true, "transport": delivery.transport, "providerID": delivery.provider_id}),
@@ -426,14 +457,25 @@ impl ActionHandler for Handler {
             "domains.verify" => plugin.verify_domain(claims, input).await,
             "domains.delete" => {
                 let target: Target = parse(input)?;
-                let domain = plugin.domain(claims, &target.resource_id).await?;
-                plugin
+                // The Core proved ownership; a domain already gone here is simply done.
+                if !plugin
                     .store
-                    .delete_domain(&claims.project_id, &domain.id)
+                    .delete_domain(&claims.project_id, &uuid(&target.resource_id)?)
                     .await
-                    .map_err(store_error)?;
+                    .map_err(store_error)?
+                {
+                    return Err(PluginError::new(
+                        ErrorCode::Conflict,
+                        "Remove the domain's mailboxes first",
+                    ));
+                }
                 Ok(json!({}))
             }
+            "mailboxes.create" => plugin.create_mailbox(claims, input).await,
+            "mailboxes.view" => plugin.view_mailbox(claims, input).await,
+            "mailboxes.credentials" => plugin.mailbox_password(claims, input).await,
+            "mailboxes.rotate" => plugin.rotate_mailbox(claims, input).await,
+            "mailboxes.delete" => plugin.delete_mailbox(claims, input).await,
             "mail.send" => plugin.send(claims, input).await,
             "relay.connect" => plugin.connect_relay(claims, input).await,
             "relay.view" => {
@@ -443,10 +485,11 @@ impl ActionHandler for Handler {
                 )
             }
             "relay.delete" => {
-                let relay = plugin.relay(claims, input).await?;
+                let target: Target = parse(input)?;
+                // Idempotent: deleting an account that is already gone succeeds.
                 plugin
                     .store
-                    .delete_relay(&claims.project_id, &relay.id)
+                    .delete_relay(&claims.project_id, &uuid(&target.resource_id)?)
                     .await
                     .map_err(store_error)?;
                 Ok(json!({}))

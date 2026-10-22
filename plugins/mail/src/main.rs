@@ -18,6 +18,7 @@ struct Configuration {
     platform_transport: webdock_mail::transport::Platform,
     #[serde(default)]
     trust_unverified_domains: bool,
+    mailboxes: Option<webdock_mail::engine::EngineConfig>,
 }
 async fn run() -> Result<(), Error> {
     let mut args = std::env::args_os().skip(1);
@@ -51,7 +52,13 @@ async fn run() -> Result<(), Error> {
             platform: config.platform_transport,
             trust_unverified_domains: config.trust_unverified_domains,
         },
+        config
+            .mailboxes
+            .as_ref()
+            .map(webdock_mail::engine::Engines::new)
+            .transpose()?,
     );
+    plugin.resume().await?;
     let key: [u8; 32] = hex::decode(config.issuer_public_key_hex)?
         .try_into()
         .map_err(|_| "invalid key")?;

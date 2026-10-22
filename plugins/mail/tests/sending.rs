@@ -184,6 +184,7 @@ async fn fixture(trust: bool) -> Fixture {
             },
             trust_unverified_domains: trust,
         },
+        None,
     );
     Fixture {
         handler: Handler(plugin),

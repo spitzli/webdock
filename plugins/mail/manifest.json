@@ -2,7 +2,7 @@
   "name": "mail",
   "version": "0.1.0",
   "kind": "extension",
-  "description": "Mail: sending domains, delivery through the platform or your own turboSMTP account",
+  "description": "Mail: sending domains, mailboxes, delivery through the platform or your own turboSMTP account",
   "protocolVersion": 2,
   "sdkVersion": 2,
   "dataProtocolVersion": 2,
@@ -241,6 +241,124 @@
           }
         }
       }
+    },
+    {
+      "name": "mailboxes.create",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "mailbox",
+      "feature": "create-mailboxes",
+      "resource": "create",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "domain_id",
+          "local_part"
+        ],
+        "properties": {
+          "domain_id": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Sending domain"
+          },
+          "local_part": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Address before the @"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "Display name"
+          }
+        }
+      }
+    },
+    {
+      "name": "mailboxes.view",
+      "intent": "read",
+      "audience": "customer",
+      "capabilities": [],
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    {
+      "name": "mailboxes.credentials",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    {
+      "name": "mailboxes.rotate",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    {
+      "name": "mailboxes.delete",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "mailbox",
+      "feature": "create-mailboxes",
+      "resource": "delete",
+      "destructive": true,
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
     }
   ],
   "jobs": [],
@@ -252,6 +370,10 @@
     {
       "id": "relay",
       "label": "Own turboSMTP account"
+    },
+    {
+      "id": "mailbox",
+      "label": "Mailbox"
     }
   ],
   "selfService": {
@@ -267,6 +389,12 @@
         "label": "Connect own turboSMTP account",
         "offering": "relay",
         "description": "Send through the customer's own turboSMTP account instead of the platform's"
+      },
+      {
+        "id": "create-mailboxes",
+        "label": "Create mailboxes",
+        "offering": "mailbox",
+        "description": "Create and remove mailboxes on the project's domains"
       }
     ]
   },

@@ -26,10 +26,23 @@ export interface OperatorResource extends Omit<PluginResource, "createdVia"> {
   project: { id: string; name: string };
 }
 export interface OperatorProps { plugin: string; resources: OperatorResource[] }
-/** What a plugin UI module default-exports. Missing pages fall back to declarative panels. */
+export interface CreateProps extends PluginContext {
+  customer: string;
+  /** The create action this form runs. */
+  action: string;
+  title: string;
+  /** This plugin's resources in the project, e.g. to pick a domain. */
+  resources: PluginResource[];
+  /** Call with the created resource id; the Console opens it. */
+  onCreated: (resource: string) => void;
+  onCancel: () => void;
+}
+/** What a plugin UI module default-exports. Missing pages fall back to declarative panels and
+ *  generated create forms. `Create` is keyed by create action name. */
 export interface PluginUI {
   Resource?: ComponentType<ResourceProps>;
   Operator?: ComponentType<OperatorProps>;
+  Create?: Partial<Record<string, ComponentType<CreateProps>>>;
 }
 
 export function usePluginQuery<T>(

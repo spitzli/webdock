@@ -9,6 +9,7 @@ import { Empty, Failure, Loading } from "./common";
 import { ApiError } from "./api";
 import { PluginPanel } from "./plugins/Panel";
 import { creatable, invokePlugin, usePluginViews, useProject, type JsonSchema, type PluginAction, type PluginView } from "./plugins/views";
+import { useNativeUI } from "./plugins/native";
 import * as ui from "./ui";
 
 /** A project as its customer sees it: plugin resources by kind, and what the viewer may add. */
@@ -63,7 +64,7 @@ export function ProjectPage({ customer, id }: { customer: string; id: string }) 
         ) : null}
       </div>
       {chosen ? (
-        <CreateForm
+        <ChosenCreate
           key={chosen.key}
           view={chosen.view}
           action={chosen.action}
@@ -118,6 +119,29 @@ export function ProjectPage({ customer, id }: { customer: string; id: string }) 
   );
 }
 
+/** The plugin's own create form when it ships one, otherwise one generated from the input schema. */
+function ChosenCreate(props: { view: PluginView; action: PluginAction; title: string; customer: string; projectID: string; onCancel: () => void }) {
+  const native = useNativeUI(props.view.manifest.name);
+  const client = useQueryClient();
+  const navigate = useNavigate();
+  if (native.isLoading) return <Loading>Loading…</Loading>;
+  const Native = native.data?.Create?.[props.action.name];
+  if (!Native) return <CreateForm {...props} />;
+  return (
+    <Native
+      plugin={props.view.manifest.name}
+      projectID={props.projectID}
+      customer={props.customer}
+      action={props.action.name}
+      title={props.title}
+      resources={props.view.resources}
+      onCancel={props.onCancel}
+      onCreated={(resource) => {
+        void client.invalidateQueries({ queryKey: ["project-plugins"] }).then(() => navigate({ to: "/workspaces/$customer/projects/$id/resources/$plugin/$resource", params: { customer: props.customer, id: props.projectID, plugin: props.view.manifest.name, resource } }));
+      }}
+    />
+  );
+}
 function inputs(schema: JsonSchema | undefined) {
   return Object.entries(schema?.properties ?? {}).filter(([name]) => name !== "resource_id");
 }

@@ -8,7 +8,11 @@ Outgoing mail as a Webdock plugin:
 
 Platform transport: `{"kind":"turbosmtp","consumerKey":…,"consumerSecret":…}` or, for local dev only, `{"kind":"smtp","host":"127.0.0.1","port":…}` pointing at a loopback catcher such as Mailpit. `trustUnverifiedDomains` (local dev, loopback catcher only) skips DNS ownership because `.test` names carry no DNS.
 
-Not yet here: DKIM signing, mailboxes (Stalwart), webmail, sending limits.
+- **Mailboxes:** on a project's sending domain, with IMAP and SMTP submission (implicit TLS). Each project gets its own Stalwart Community Edition server (pinned digest); the first mailbox sets it up. Passwords are generated, stored sealed, shown on request and rotatable. A domain with mailboxes shows its DKIM record and cannot be removed until its mailboxes are. In local dev the server runs in an internal Docker network with no route out, so nothing a mailbox sends leaves the machine; production placement (Kubernetes, relay-only egress, public ingress, MX) replaces `src/engine.rs`.
+
+A domain is unique per project; across projects only one may verify it, and the first DNS proof wins. Deletes are idempotent.
+
+Not yet here: DKIM signing for API sends, inbound mail from the internet, webmail, sending limits.
 
 ```sh
 cargo test --manifest-path plugins/mail/Cargo.toml
