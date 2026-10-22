@@ -827,3 +827,35 @@ async fn index_follows_what_the_plugin_did_even_if_policy_changed_meanwhile() {
     );
     f.cleanup().await;
 }
+
+#[tokio::test]
+#[ignore = "requires local retained-schema restricted roles and signed RLS fixture"]
+async fn operator_lists_resources_across_customers() {
+    let f = Fixture::new().await;
+    let host = f.host().await;
+    f.set_mode("everyone", &[]).await;
+    let a = create(&f, &host, "owner", 0, &format!("a-{}", f.nonce)).await;
+    let b = create(&f, &host, "foreign", 1, &format!("b-{}", f.nonce)).await;
+    let list = host
+        .plugin_resources(f.principal("operator"), None, &f.plugin)
+        .await
+        .unwrap();
+    let rows = list.as_array().unwrap();
+    assert_eq!(rows.len(), 2);
+    let row = rows.iter().find(|r| r["id"] == a.as_str()).unwrap();
+    assert_eq!(row["customer"]["id"], f.customers[0].as_str());
+    assert_eq!(row["project"]["id"], f.projects[0].as_str());
+    assert!(row["project"]["name"].is_string() && row["customer"]["name"].is_string());
+    assert_eq!(row["offering"], "note");
+    assert_eq!(row["createdVia"], "self-service");
+    assert!(rows.iter().any(|r| r["id"] == b.as_str()));
+    for who in ["owner", "admin", "member", "foreign", "preview"] {
+        assert!(
+            host.plugin_resources(f.principal(who), None, &f.plugin)
+                .await
+                .is_err(),
+            "{who}"
+        );
+    }
+    f.cleanup().await;
+}

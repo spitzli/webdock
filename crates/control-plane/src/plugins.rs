@@ -269,6 +269,7 @@ pub fn routes() -> Router<Arc<ServiceState>> {
         .route("/api/console/plugins/invoke", post(invoke))
         .route("/api/console/plugins/installed", get(installed).post(admin))
         .route("/api/console/plugins/{id}/self-service", get(self_service))
+        .route("/api/console/plugins/{id}/resources", get(plugin_resources))
         .route(
             "/api/console/plugins/{id}/self-service/features/{feature}",
             put(set_feature_mode),
@@ -315,6 +316,23 @@ fn command<T: serde::de::DeserializeOwned>(
             "Invalid self-service command.",
         )
     })
+}
+async fn plugin_resources(
+    State(state): State<Arc<ServiceState>>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+) -> Response {
+    let result: Result<Response, ApiFailure> = async {
+        let actor = actor(&state, &headers).await?;
+        let host = &endpoints(&state)?.host;
+        let value = host
+            .plugin_resources(&actor.principal, Some(&actor.authority), &id)
+            .await
+            .map_err(failure)?;
+        Ok(Json(value).into_response())
+    }
+    .await;
+    result.unwrap_or_else(IntoResponse::into_response)
 }
 async fn self_service(
     State(state): State<Arc<ServiceState>>,

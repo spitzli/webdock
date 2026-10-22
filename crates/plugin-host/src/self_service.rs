@@ -290,6 +290,28 @@ impl HostService {
             .await?;
         Ok(Value::Array(out))
     }
+    /// Operator view of every resource of one plugin, across customers, from the Core index.
+    pub async fn plugin_resources(
+        &self,
+        actor: &Principal,
+        authority: Authority<'_>,
+        plugin: &str,
+    ) -> Result<Value> {
+        if !slug(plugin) {
+            return Err(invalid("Invalid plugin"));
+        }
+        let guard = self.admin_guard(actor, authority, false).await?;
+        let tx = self.operator_tx(actor).await?;
+        // ponytail: newest 1000; paginate when an installation outgrows it.
+        let rows = tx.query_all_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT jsonb_build_object('id',r.resource_id,'offering',r.offering_id,'name',r.name,'createdVia',r.created_via,'createdAt',r.created_at,'customer',jsonb_build_object('id',c.id,'name',c.name),'project',jsonb_build_object('id',p.id,'name',p.name)) AS value FROM webdock_auth.plugin_resource r JOIN webdock_admin.projects p ON p.id=r.project_id JOIN webdock_admin.customers c ON c.id=r.customer_id WHERE r.plugin_id=$1 ORDER BY r.created_at DESC,r.resource_id LIMIT 1000",[plugin.into()])).await.map_err(db_error)?;
+        let rows = rows
+            .iter()
+            .map(|r| r.try_get("", "value").map_err(db_error))
+            .collect::<Result<Vec<Value>>>()?;
+        self.admin_commit(tx, actor, authority, guard, false)
+            .await?;
+        Ok(Value::Array(rows))
+    }
     async fn modes(
         tx: &DatabaseTransaction,
         plugin: &str,
