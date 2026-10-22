@@ -59,9 +59,11 @@ async fn main() -> Result<(), Error> {
                 .into(),
         );
     }
-    if !hosting_enabled && !databases_enabled && !mail_enabled {
+    // Plugin workloads are served whenever this listener runs; they need no product feature.
+    let workloads_enabled = std::env::var("WEBDOCK_WORKLOADS_ENABLED").as_deref() == Ok("true");
+    if !hosting_enabled && !databases_enabled && !mail_enabled && !workloads_enabled {
         return Err(
-            "A configured Hosting, Databases or Mail agent domain must permit accepted operations"
+            "A configured Hosting, Databases, Mail or workload agent domain must permit accepted operations"
                 .into(),
         );
     }

@@ -3,6 +3,7 @@ mod completion;
 mod database;
 mod mail;
 mod mail_configuration;
+mod workload;
 use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend, Statement};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -609,6 +610,7 @@ impl ControlPlane {
             .add_service(self.clone().database_service())
             .add_service(self.clone().mail_service())
             .add_service(self.clone().mail_configuration_service())
+            .add_service(self.clone().workload_service())
             .add_service(self.service())
             .serve_with_incoming_shutdown(incoming, shutdown)
             .await?;
@@ -637,6 +639,7 @@ impl ControlPlane {
             .add_service(self.clone().database_service())
             .add_service(self.clone().mail_service())
             .add_service(self.clone().mail_configuration_service())
+            .add_service(self.clone().workload_service())
             .add_service(self.service())
             .serve_with_incoming_shutdown(
                 tokio_stream::wrappers::TcpListenerStream::new(listener),

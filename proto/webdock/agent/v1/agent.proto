@@ -169,3 +169,22 @@ message MailConfigurationDelivery {
     MailConfigurationReceipt receipt = 2;
   }
 }
+
+// Plugin workloads: Core-validated objects of one unit, already pinned to a namespace with owner
+// labels. The agent applies them with server-side apply, prunes objects that left the unit,
+// reports what it observes, and deletes everything of a unit that is being removed.
+service WorkloadControl {
+  rpc PollWorkloads(PollRequest) returns (WorkloadBatch);
+  rpc ReportWorkload(WorkloadReport) returns (Ack);
+}
+message Workload { string plugin_id = 1; string unit = 2; string namespace = 3; uint64 revision = 4; bytes objects_json = 5; bool removing = 6; }
+message WorkloadBatch { repeated Workload workloads = 1; }
+message WorkloadReport {
+  AgentIdentity identity = 1;
+  string plugin_id = 2;
+  string unit = 3;
+  uint64 revision = 4;
+  bytes observed_json = 5;
+  string error = 6;
+  bool removed = 7;
+}
