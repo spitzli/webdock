@@ -405,6 +405,53 @@ async fn operator_crud_atomic_audit_retained_guard_and_revocation() {
                 ),
                 "an active customer is kept"
             );
+            // Every customer starts with a Default project; it follows the customer while empty.
+            let default_project = |status: &'static str| {
+                let owner = &owner;
+                async move {
+                    scalar(owner, "SELECT count(*) AS n FROM webdock_admin.projects WHERE customer_id=$1 AND created_default AND name='Default' AND status::text=$2", vec![spare.into(), status.into()]).await
+                }
+            };
+            assert_eq!(default_project("active").await, 1);
+            let default_id: String = owner
+                .query_one_raw(Statement::from_sql_and_values(
+                    DbBackend::Postgres,
+                    "SELECT id FROM webdock_admin.projects WHERE customer_id=$1",
+                    [spare.into()],
+                ))
+                .await
+                .unwrap()
+                .unwrap()
+                .try_get("", "id")
+                .unwrap();
+            sql(&owner, "INSERT INTO webdock_admin.vercel_project_link(project_id,team_id,vercel_project_id,updated_by) VALUES($1,'team','prj','fixture')", vec![default_id.clone().into()]).await;
+            assert!(
+                matches!(
+                    service.archive(&principal, "customers", spare, true).await,
+                    Err(RegistryError::Invalid(_))
+                ),
+                "a Default project in use keeps the customer active"
+            );
+            sql(
+                &owner,
+                "DELETE FROM webdock_admin.vercel_project_link WHERE project_id=$1",
+                vec![default_id.into()],
+            )
+            .await;
+            service
+                .archive(&principal, "customers", spare, true)
+                .await
+                .unwrap();
+            assert_eq!(default_project("archived").await, 1);
+            service
+                .archive(&principal, "customers", spare, false)
+                .await
+                .unwrap();
+            assert_eq!(
+                default_project("active").await,
+                1,
+                "restored with its customer"
+            );
             service
                 .archive(&principal, "customers", spare, true)
                 .await
@@ -415,6 +462,7 @@ async fn operator_crud_atomic_audit_retained_guard_and_revocation() {
             );
             for (table, column, id) in [
                 ("webdock_admin.customers", "id", spare),
+                ("webdock_admin.projects", "customer_id", spare),
                 ("webdock_auth.tenant_customer", "customer_id", spare),
                 ("webdock_auth.organization", "id", tenant.as_str()),
             ] {

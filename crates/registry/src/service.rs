@@ -58,6 +58,30 @@ impl ArchiveGuard for RetainedArchiveGuard {
         Ok(())
     }
 }
+/// Whether the customer has projects (active ones only, if asked) besides its Default project
+/// while that one is still empty.
+async fn other_projects(tx: &DatabaseTransaction, customer: &str, active: bool) -> Result<bool> {
+    let status = if active { "AND status='active'" } else { "" };
+    Ok(tx
+        .query_one_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            format!("SELECT 1 AS found FROM webdock_admin.projects WHERE customer_id=$1 {status} AND NOT (created_default AND webdock_admin.project_is_empty(id)) LIMIT 1"),
+            [customer.into()],
+        ))
+        .await?
+        .is_some())
+}
+/// The Default project follows its customer through archive and restore; on delete the database
+/// removes it while it is empty.
+async fn default_projects(tx: &DatabaseTransaction, customer: &str, sql: &str) -> Result<()> {
+    tx.execute_raw(Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        sql,
+        [customer.into()],
+    ))
+    .await?;
+    Ok(())
+}
 #[derive(Clone)]
 pub struct RegistryService {
     db: DatabaseConnection,
@@ -404,17 +428,14 @@ impl RegistryService {
             )?,
         };
         if archived && collection == "customers" {
-            if project::Entity::find()
-                .filter(project::Column::Customer.eq(key))
-                .filter(project::Column::Status.eq(entities::ProjectStatus::Active))
-                .one(&tx)
-                .await?
-                .is_some()
-            {
+            if other_projects(&tx, key, true).await? {
                 return Err(RegistryError::Invalid(
                     "Archive this customer’s active projects first.",
                 ));
             }
+            default_projects(&tx, key, "UPDATE webdock_admin.projects SET status='archived',updated_at=now() WHERE customer_id=$1 AND created_default AND status='active'").await?;
+        } else if collection == "customers" {
+            default_projects(&tx, key, "UPDATE webdock_admin.projects SET status='active',updated_at=now() WHERE customer_id=$1 AND created_default AND status='archived'").await?;
         } else if archived {
             RetainedArchiveGuard.before_archive(&tx, key).await?;
             if let Some(guard) = &self.guard {
@@ -457,12 +478,7 @@ impl RegistryService {
                 "Archive this customer before deleting it.",
             ));
         }
-        if project::Entity::find()
-            .filter(project::Column::Customer.eq(key))
-            .one(&tx)
-            .await?
-            .is_some()
-        {
+        if other_projects(&tx, key, false).await? {
             return Err(RegistryError::Conflict(
                 "This customer still has projects. Delete or move them first.",
             ));
