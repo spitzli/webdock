@@ -2788,6 +2788,7 @@ dependencies = [
  "ed25519-dalek",
  "futures-util",
  "hex",
+ "postgres-protocol",
  "serde",
  "serde_json",
  "tokio",

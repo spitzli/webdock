@@ -27,12 +27,18 @@ fn ident(value: &str) -> &str {
     );
     value
 }
-fn secret(value: &str) -> &str {
+/// A SCRAM-SHA-256 verifier computed here, so the server (and its logs) never see the password.
+fn secret(value: &str) -> String {
     assert!(
         value.bytes().all(|b| b.is_ascii_hexdigit()),
         "generated password"
     );
-    value
+    let verifier = postgres_protocol::password::scram_sha_256(value.as_bytes());
+    assert!(
+        !verifier.contains('\''),
+        "verifier is base64 and separators only"
+    );
+    verifier
 }
 impl SharedServer {
     async fn admin(&self) -> Result<Client, Error> {

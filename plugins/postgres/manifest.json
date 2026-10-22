@@ -106,7 +106,7 @@
     },
     {
       "name": "databases.credentials",
-      "intent": "read",
+      "intent": "write",
       "audience": "customer",
       "capabilities": [],
       "resource": "use",

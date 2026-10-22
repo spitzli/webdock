@@ -64,12 +64,13 @@ try {
   errors.push(...session.errors);
   await session.context.close();
 
-  // 3. Members see connection details but cannot manage the instance.
+  // 3. Members see where to connect, but neither the password nor the controls.
   state.deleted = false;
   session = await open(browser, 'member');
   await session.page.goto(previewOrigin + `/workspaces/101/projects/201/resources/postgres/${id}`);
   await session.page.getByText('Host', { exact: true }).waitFor();
   assert.equal(await session.page.getByRole('region', { name: 'Manage' }).count(), 0);
+  assert.equal(await session.page.getByRole('button', { name: 'Show password' }).count(), 0, 'members never see the password');
   await session.page.setViewportSize({ width: 390, height: 844 });
   assert.ok(await session.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'no horizontal scroll at phone width');
   errors.push(...session.errors);

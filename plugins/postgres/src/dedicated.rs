@@ -179,6 +179,20 @@ impl Placement {
         }
         Err("instance did not become ready".into())
     }
+    pub async fn can_login(&self, port: u16, database: &str, role: &str, password: &str) -> bool {
+        match tokio_postgres::connect(
+            &self.url(port, database, role, password),
+            tokio_postgres::NoTls,
+        )
+        .await
+        {
+            Ok((client, connection)) => {
+                tokio::spawn(connection);
+                client.simple_query("SELECT 1").await.is_ok()
+            }
+            Err(_) => false,
+        }
+    }
     pub fn url(&self, port: u16, database: &str, role: &str, password: &str) -> String {
         format!(
             "postgresql://{role}:{password}@{}:{port}/{database}",

@@ -165,7 +165,7 @@ function Resource(context: ResourceProps) {
           <Detail label="Port" value={String(data.port)} />
           <Detail label="Database" value={data.database} />
           <Detail label="User" value={data.user} />
-          <Credentials context={context} resource={context.resource.id} />
+          {context.writable ? <Credentials context={context} resource={context.resource.id} /> : null}
         </section>
       ) : null}
       <Actions context={context} view={data} />

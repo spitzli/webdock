@@ -19,7 +19,7 @@ const ACTIONS: &[(&str, &str)] = &[
     ("databases.create", "write"),
     ("instances.create", "write"),
     ("databases.view", "read"),
-    ("databases.credentials", "read"),
+    ("databases.credentials", "write"),
     ("databases.rotate", "write"),
     ("databases.delete", "write"),
     ("instances.delete", "write"),
@@ -69,6 +69,9 @@ pub struct Plugin {
     sealer: seal::Sealer,
     servers: Vec<shared::SharedServer>,
     placement: Option<dedicated::Placement>,
+    /// Capacity checks, rotations and deletes run one at a time, so counts and stored passwords
+    /// never race. ponytail: global; per-resource locks if it ever matters.
+    serial: tokio::sync::Mutex<()>,
 }
 impl Plugin {
     pub fn new(
@@ -82,10 +85,31 @@ impl Plugin {
             sealer,
             servers,
             placement,
+            serial: tokio::sync::Mutex::new(()),
         })
     }
-    /// Finish instances whose creation was interrupted, e.g. by a restart.
+    /// Finish instances whose creation was interrupted, e.g. by a restart, and settle rotations
+    /// that stopped between changing the instance password and storing it.
     pub async fn resume(self: &Arc<Self>) -> std::result::Result<(), store::Error> {
+        for r in self.store.pending().await? {
+            let (Some(placement), Some(port), Some(pending)) = (
+                self.placement.as_ref(),
+                r.port.and_then(|p| u16::try_from(p).ok()),
+                r.pending_sealed
+                    .as_deref()
+                    .and_then(|s| self.sealer.open(&r.id, s)),
+            ) else {
+                continue;
+            };
+            if placement
+                .can_login(port, &r.database_name, &r.role_name, &pending)
+                .await
+            {
+                self.store.promote(&r.id).await?;
+            } else {
+                self.store.clear_pending(&r.id).await?;
+            }
+        }
         for resource in self.store.creating().await? {
             if resource.offering == "dedicated" {
                 self.provision(resource);
@@ -129,6 +153,7 @@ impl Plugin {
     async fn create_shared(&self, claims: &InvocationClaims, input: Value) -> Result<Value> {
         let input: NewDatabase = parse(input)?;
         let name = display_name(&input.name)?;
+        let _serial = self.serial.lock().await;
         let mut chosen = None;
         for server in &self.servers {
             let used = self
@@ -154,6 +179,7 @@ impl Plugin {
             offering: "shared".into(),
             name: name.clone(),
             server_id: Some(server.id.clone()),
+            pending_sealed: None,
             database_name: generated(&id, "db_"),
             role_name: generated(&id, "u_"),
             password_sealed: self.sealer.seal(&id, &password),
@@ -197,6 +223,7 @@ impl Plugin {
             offering: "dedicated".into(),
             name: name.clone(),
             server_id: None,
+            pending_sealed: None,
             database_name: "app".into(),
             role_name: generated(&id, "u_"),
             password_sealed: self.sealer.seal(&id, &seal::password()),
@@ -276,39 +303,63 @@ impl Plugin {
             r.database_name
         ))
     }
-    async fn rotate(&self, r: &store::Resource) -> Result<Value> {
+    async fn rotate(&self, claims: &InvocationClaims, input: Value) -> Result<Value> {
+        let _serial = self.serial.lock().await;
+        let r = self.target(claims, input).await?;
         if r.state != "ready" {
             return Err(PluginError::new(
                 ErrorCode::Conflict,
                 "The database is not ready",
             ));
         }
-        let old = self.password(r)?;
         let new = seal::password();
+        let sealed = self.sealer.seal(&r.id, &new);
         match r.offering.as_str() {
+            // The admin can always set it again, so a lost store write is repaired by rotating once more.
             "shared" => self
-                .server(r)?
+                .server(&r)?
                 .password(&r.role_name, &new)
                 .await
                 .map_err(|e| unavailable("shared_rotate", e))?,
             _ => {
+                // Only the current password can change it, so record the new one before using it.
                 let port = r
                     .port
                     .and_then(|p| u16::try_from(p).ok())
                     .ok_or_else(invalid)?;
-                self.placement()?
+                let old = self.password(&r)?;
+                self.store
+                    .stage(&r.id, &sealed)
+                    .await
+                    .map_err(|e| unavailable("store", e))?;
+                if let Err(error) = self
+                    .placement()?
                     .password(port, &r.database_name, &r.role_name, &old, &new)
                     .await
-                    .map_err(|e| unavailable("dedicated_rotate", e))?;
+                {
+                    let _ = self.store.clear_pending(&r.id).await;
+                    return Err(unavailable("dedicated_rotate", error));
+                }
             }
         }
         self.store
-            .password(&r.id, &self.sealer.seal(&r.id, &new))
+            .password(&r.id, &sealed)
             .await
             .map_err(|e| unavailable("store", e))?;
         Ok(json!({}))
     }
-    async fn delete(&self, r: &store::Resource, offering: &str) -> Result<Value> {
+    async fn delete(
+        &self,
+        claims: &InvocationClaims,
+        input: Value,
+        offering: &str,
+    ) -> Result<Value> {
+        let _serial = self.serial.lock().await;
+        // The Core proved ownership; a resource already gone here is simply done.
+        let r = match self.target(claims, input).await {
+            Err(error) if error.code == ErrorCode::NotFound => return Ok(json!({})),
+            other => other?,
+        };
         if r.offering != offering {
             return Err(missing());
         }
@@ -320,7 +371,7 @@ impl Plugin {
         }
         match offering {
             "shared" => self
-                .server(r)?
+                .server(&r)?
                 .drop(&r.database_name, &r.role_name)
                 .await
                 .map_err(|e| unavailable("shared_delete", e))?,
@@ -368,17 +419,9 @@ impl ActionHandler for Handler {
                 let password = plugin.password(&r)?;
                 Ok(json!({"value": password, "uri": Plugin::uri(&r, &password)}))
             }
-            "databases.rotate" => plugin.rotate(&plugin.target(claims, input).await?).await,
-            "databases.delete" => {
-                plugin
-                    .delete(&plugin.target(claims, input).await?, "shared")
-                    .await
-            }
-            "instances.delete" => {
-                plugin
-                    .delete(&plugin.target(claims, input).await?, "dedicated")
-                    .await
-            }
+            "databases.rotate" => plugin.rotate(claims, input).await,
+            "databases.delete" => plugin.delete(claims, input, "shared").await,
+            "instances.delete" => plugin.delete(claims, input, "dedicated").await,
             _ => Err(PluginError::new(
                 ErrorCode::NotSupported,
                 "Database action unavailable",

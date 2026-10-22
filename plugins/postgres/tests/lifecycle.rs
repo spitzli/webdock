@@ -328,3 +328,36 @@ async fn dedicated_instance_lifecycle() {
     assert!(connect(&uri).await.is_err());
     f.cleanup().await;
 }
+
+#[tokio::test]
+#[ignore = "requires a disposable local PostgreSQL server"]
+async fn races_and_repeated_deletes_stay_consistent() {
+    let f = fixture(1, false).await;
+    // Concurrent creates never exceed a server's capacity.
+    let (a, b) = tokio::join!(
+        f.call("101", "databases.create", json!({"name":"a"})),
+        f.call("101", "databases.create", json!({"name":"b"}))
+    );
+    assert_eq!(
+        [&a, &b].iter().filter(|r| r.is_ok()).count(),
+        1,
+        "{a:?} {b:?}"
+    );
+    let created = a.or(b).unwrap();
+    // Concurrent rotations leave the stored password working.
+    let (x, y) = tokio::join!(
+        f.call("101", "databases.rotate", id(&created)),
+        f.call("101", "databases.rotate", id(&created))
+    );
+    x.unwrap();
+    y.unwrap();
+    let uri = f.ok("101", "databases.credentials", id(&created)).await["uri"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    connect(&uri).await.unwrap();
+    // A delete whose result was lost can be repeated.
+    f.ok("101", "databases.delete", id(&created)).await;
+    f.ok("101", "databases.delete", id(&created)).await;
+    f.cleanup().await;
+}
