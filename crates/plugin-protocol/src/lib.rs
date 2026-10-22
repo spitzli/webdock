@@ -140,6 +140,27 @@ pub fn quantity(value: &serde_json::Value, unit: (u128, u128)) -> Option<u64> {
     let denominator = 10u128.pow(u32::try_from(fraction.len()).ok()?) * divide * unit.0;
     u64::try_from((digits * multiply * unit.1).div_ceil(denominator)).ok()
 }
+/// The message of an error the customer may read: what was wrong with their input, what conflicts
+/// (a plan limit, an unverified domain) or what is missing. One line of at most 300 characters.
+/// Other errors may carry diagnostics and cross process boundaries with a fixed text only.
+pub fn public_message(code: ErrorCode, message: &str) -> Option<String> {
+    if !matches!(
+        code,
+        ErrorCode::InvalidInput | ErrorCode::Conflict | ErrorCode::NotFound
+    ) {
+        return None;
+    }
+    let line: String = message
+        .lines()
+        .next()
+        .unwrap_or_default()
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(300)
+        .collect();
+    let line = line.trim();
+    (!line.is_empty()).then(|| line.to_owned())
+}
 /// Quantity units: MiB of bytes, millicores of cores.
 pub const MIB: (u128, u128) = (1 << 20, 1);
 pub const MILLI: (u128, u128) = (1, 1000);
@@ -147,6 +168,30 @@ pub const MILLI: (u128, u128) = (1, 1000);
 #[cfg(test)]
 mod quantity_tests {
     use super::*;
+    #[test]
+    fn only_customer_errors_keep_their_words() {
+        assert_eq!(
+            public_message(
+                ErrorCode::Conflict,
+                "Your plan allows 2 of these and 2 are in use.\nsecret"
+            )
+            .as_deref(),
+            Some("Your plan allows 2 of these and 2 are in use.")
+        );
+        assert_eq!(
+            public_message(ErrorCode::InvalidInput, &"x".repeat(400)).map(|m| m.len()),
+            Some(300)
+        );
+        assert_eq!(
+            public_message(
+                ErrorCode::Unavailable,
+                "connect to postgres://user:pw@db failed"
+            ),
+            None
+        );
+        assert_eq!(public_message(ErrorCode::PermissionDenied, "denied"), None);
+        assert_eq!(public_message(ErrorCode::NotFound, " \u{7}"), None);
+    }
     use serde_json::json;
     #[test]
     fn quantities_round_up_to_whole_units() {

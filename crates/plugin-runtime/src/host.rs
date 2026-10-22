@@ -146,7 +146,9 @@ fn map_status(status: Status) -> PluginError {
         tonic::Code::DeadlineExceeded => ErrorCode::DeadlineExceeded,
         _ => ErrorCode::Unavailable,
     };
-    PluginError::new(code, "Host request could not be completed")
+    let message = webdock_plugin_protocol::public_message(code, status.message())
+        .unwrap_or_else(|| "Host request could not be completed".into());
+    PluginError::new(code, message)
 }
 pub struct RemoteAuthority {
     host: HostClient,

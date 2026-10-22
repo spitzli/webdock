@@ -29,7 +29,9 @@ fn failure(error: PluginError) -> Status {
         ErrorCode::DeadlineExceeded => tonic::Code::DeadlineExceeded,
         ErrorCode::Unavailable => tonic::Code::Unavailable,
     };
-    Status::new(code, "Plugin host request denied")
+    let message = webdock_plugin_protocol::public_message(error.code, &error.message)
+        .unwrap_or_else(|| "Plugin host request denied".into());
+    Status::new(code, message)
 }
 fn claims(bytes: &[u8]) -> Result<InvocationClaims> {
     if bytes.len() > 16384 {

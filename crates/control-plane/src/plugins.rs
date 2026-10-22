@@ -149,12 +149,22 @@ impl PluginEndpoints {
                     tonic::Code::PermissionDenied | tonic::Code::Unauthenticated => {
                         PluginError::denied()
                     }
-                    tonic::Code::InvalidArgument => {
-                        PluginError::new(ErrorCode::InvalidInput, "Plugin request is invalid")
-                    }
-                    tonic::Code::Aborted => {
-                        PluginError::new(ErrorCode::Conflict, "Plugin operation conflict")
-                    }
+                    tonic::Code::InvalidArgument => PluginError::new(
+                        ErrorCode::InvalidInput,
+                        webdock_plugin_protocol::public_message(
+                            ErrorCode::InvalidInput,
+                            status.message(),
+                        )
+                        .unwrap_or_else(|| "Plugin request is invalid".into()),
+                    ),
+                    tonic::Code::Aborted => PluginError::new(
+                        ErrorCode::Conflict,
+                        webdock_plugin_protocol::public_message(
+                            ErrorCode::Conflict,
+                            status.message(),
+                        )
+                        .unwrap_or_else(|| "Plugin operation conflict".into()),
+                    ),
                     tonic::Code::Unimplemented => PluginError::new(
                         ErrorCode::CapabilityUnavailable,
                         "Plugin capability unavailable",

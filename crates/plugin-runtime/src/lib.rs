@@ -216,7 +216,11 @@ fn status(error: PluginError) -> Status {
         ErrorCode::DeadlineExceeded => tonic::Code::DeadlineExceeded,
         ErrorCode::NotFound => tonic::Code::NotFound,
     };
-    // Handler diagnostics may contain provider secrets; only stable codes cross the boundary.
+    // Handler diagnostics may contain provider secrets; only stable codes and customer-facing
+    // messages (`public_message`) cross the boundary.
+    if let Some(message) = webdock_plugin_protocol::public_message(error.code, &error.message) {
+        return Status::new(code, message);
+    }
     Status::new(
         code,
         match error.code {
