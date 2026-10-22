@@ -16,6 +16,7 @@ async function open(browser, member, features) {
   await page.route(path('/console-config.json'), json({ apiOrigin: previewOrigin, authOrigin: previewOrigin, enabledFeatures: [] }));
   await page.route(path('/v1/auth/session'), json({ data: { user: { id: '2', name: 'Ada Owner', email: 'ada@example.test', role: 'user', emailVerified: true }, session: { id: 's-ada', userId: '2', expiresAt: '2026-12-01T10:00:00Z' } } }));
   await page.route(path('/api/console/tenants'), json([{ id: '101', name: 'Demo customer', status: 'active', role: member }]));
+  await page.route(path('/api/console/tenant/101/projects'), json([{ id: '201', name: 'Demo project', status: 'active' }]));
   await page.route(path('/api/console/project/201'), json({ id: '201', name: 'Demo project', customer: { id: '101', name: 'Demo customer' }, role: member }));
   await page.route(path('/api/console/plugins'), (route) => route.fulfill({ json: [{ state: 'enabled', runtime: 'ready', manifest, generation: 1, manifestSha256: 'a'.repeat(64), launchLinks: [], features, resources: state.deleted ? [] : [{ id: appID, offering: 'app', name: 'Website', createdVia: 'self-service' }] }] }));
   await page.route(path('/api/console/plugins/invoke'), (route) => {
@@ -60,7 +61,7 @@ try {
   await page().waitForFunction(() => document.querySelector('select')?.value === '512');
   await page().getByRole('textbox', { name: 'Type Website to confirm' }).fill('Website');
   await page().getByRole('button', { name: 'Delete app' }).click();
-  await page().getByRole('heading', { name: 'Demo project' }).waitFor();
+  await page().getByRole('heading', { name: 'Apps', exact: true }).waitFor();
   assert.equal(state.calls.at(-1).action, 'apps.delete');
   errors.push(...session.errors);
   await session.context.close();

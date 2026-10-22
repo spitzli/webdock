@@ -7,6 +7,7 @@ import { useApi, useSession } from "./context";
 import { Empty, Failure, Loading } from "./common";
 import { formText } from "./form";
 import * as ui from "./ui";
+import { pluginNav, useWorkspacePlugins } from "./plugins/workspace";
 
 const tenantsSchema = z.array(z.object({ id: z.string(), name: z.string(), status: z.string(), role: z.string().nullable() }));
 const projectsSchema = z.array(z.object({ id: z.string(), name: z.string(), status: z.string() }));
@@ -22,6 +23,7 @@ export function WorkspaceProjects({ id }: { id: string }) {
     queryKey: ["workspace-projects", id],
     queryFn: ({ signal }) => api.get(`/api/console/tenant/${encodeURIComponent(id)}/projects`, projectsSchema, signal),
   });
+  const workspace = useWorkspacePlugins(id);
   const [adding, setAdding] = useState(false);
   const create = useMutation({
     mutationFn: (name: string) =>
@@ -42,10 +44,10 @@ export function WorkspaceProjects({ id }: { id: string }) {
         <div>
           <Link className={ui.backLink} to="/$collection" params={{ collection: "tenants" }}>
             <ArrowLeftIcon />
-            Your workspaces
+            All workspaces
           </Link>
           <h1 className={ui.pageTitle}>{tenant?.name ?? "Workspace"}</h1>
-          <p className={ui.pageLead}>Projects group the databases, mail and other resources you use together.</p>
+          <p className={ui.pageLead}>Everything this workspace runs. Projects group resources that belong together.</p>
         </div>
         {canCreate && !adding ? (
           <button className={ui.button("primary")} onClick={() => { setAdding(true); }}>
@@ -76,6 +78,26 @@ export function WorkspaceProjects({ id }: { id: string }) {
           </div>
         </form>
       ) : null}
+      {workspace.plugins.some((p) => p.features.length || p.resources.length) ? (
+        <ul className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Products">
+          {workspace.plugins.filter((p) => p.features.length || p.resources.length).map(({ plugin, resources, view }) => {
+            const { label, Icon } = pluginNav(plugin);
+            const kinds = view.manifest.offerings.map((offering) => ({ label: offering.label, count: resources.filter((r) => r.offering === offering.id).length })).filter((k) => k.count);
+            return (
+              <li key={plugin} className={ui.cx(ui.card, ui.clickableRow, "relative grid gap-2 p-5")}>
+                <Link className={ui.cx(ui.rowLink, "flex items-center gap-2 font-semibold")} to="/workspaces/$customer/products/$plugin" params={{ customer: id, plugin }}>
+                  <Icon size={20} />
+                  {label}
+                </Link>
+                <p className="text-[13px] text-muted">
+                  {kinds.length ? kinds.map((k) => `${String(k.count)} ${k.label.toLowerCase()}`).join(", ") : "Nothing yet"}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+      <h2 className={ui.cx(ui.sectionTitle, "mb-3")}>Projects</h2>
       {projects.data.length === 0 ? (
         <Empty title="No projects yet">
           {canCreate ? "Create a project to start adding resources." : "Your provider adds projects to this workspace for you."}

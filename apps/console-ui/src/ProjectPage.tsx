@@ -120,7 +120,7 @@ export function ProjectPage({ customer, id }: { customer: string; id: string }) 
 }
 
 /** The plugin's own create form when it ships one, otherwise one generated from the input schema. */
-function ChosenCreate(props: { view: PluginView; action: PluginAction; title: string; customer: string; projectID: string; onCancel: () => void }) {
+export function ChosenCreate(props: { view: PluginView; action: PluginAction; title: string; customer: string; projectID: string; onCancel: () => void }) {
   const native = useNativeUI(props.view.manifest.name);
   const client = useQueryClient();
   const navigate = useNavigate();

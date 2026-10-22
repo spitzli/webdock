@@ -8,6 +8,7 @@ import { parsePanel } from "./contracts";
 import { PluginPanel } from "./Panel";
 import { invokePlugin, usePluginViews, useProject } from "./views";
 import { useNativeUI } from "./native";
+import { pluginNav } from "./workspace";
 import * as ui from "../ui";
 
 /** One plugin resource, rendered from the plugin's self-service resource page. */
@@ -39,16 +40,16 @@ export function ResourcePage({ customer, projectID, plugin, resource }: { custom
     },
   });
   const back = (
-    <Link className={ui.backLink} to="/workspaces/$customer/projects/$id" params={{ customer, id: projectID }}>
+    <Link className={ui.backLink} to="/workspaces/$customer/products/$plugin" params={{ customer, plugin }}>
       <ArrowLeftIcon />
-      {project.data?.name ?? "Project"}
+      {pluginNav(plugin).label}
     </Link>
   );
   if (views.isPending || native.isLoading) return <Loading>Loading…</Loading>;
   if (views.error) return <Failure error={views.error} retry={() => void views.refetch()} />;
   const leave = async () => {
     await client.invalidateQueries({ queryKey: ["project-plugins"] });
-    await navigate({ to: "/workspaces/$customer/projects/$id", params: { customer, id: projectID } });
+    await navigate({ to: "/workspaces/$customer/products/$plugin", params: { customer, plugin } });
   };
   if (view && indexed && Native)
     return (
@@ -57,7 +58,10 @@ export function ResourcePage({ customer, projectID, plugin, resource }: { custom
           <div>
             {back}
             <h1 className={ui.pageTitle}>{indexed.name}</h1>
-            <p className={ui.pageLead}>{view.manifest.offerings.find((o) => o.id === indexed.offering)?.label}</p>
+            <p className={ui.pageLead}>
+              {view.manifest.offerings.find((o) => o.id === indexed.offering)?.label} in{" "}
+              <Link to="/workspaces/$customer/projects/$id" params={{ customer, id: projectID }}>{project.data?.name ?? "its project"}</Link>
+            </p>
           </div>
         </div>
         <Native

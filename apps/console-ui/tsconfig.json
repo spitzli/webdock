@@ -28,6 +28,9 @@
     "paths": {
       "@webdock/plugin-ui": [
         "./src/plugins/sdk.ts"
+      ],
+      "@plugins/*": [
+        "../../plugins/*"
       ]
     }
   },

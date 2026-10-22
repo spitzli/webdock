@@ -58,7 +58,7 @@ try {
   assert.ok(await confirm.isDisabled());
   await session.page.getByRole('textbox', { name: 'Type Analytics to confirm' }).fill('Analytics');
   await confirm.click();
-  await session.page.getByRole('heading', { name: 'Demo project' }).waitFor();
+  await session.page.getByRole('heading', { name: 'Databases', exact: true }).waitFor();
   await session.page.waitForTimeout(500);
   assert.equal(state.calls.at(-1), 'instances.delete', 'nothing reads the deleted instance again');
   errors.push(...session.errors);

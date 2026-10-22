@@ -27,6 +27,7 @@ import { listSchema, recordSchema, type Session } from "./api";
 import { useMailWorkspace } from "./mail-client";
 import { useHostingContext } from "./hosting-context";
 import * as ui from "./ui";
+import { WorkspaceNav, useWorkspaceHeader } from "./WorkspaceNav";
 const crumbSeparator = "select-none px-1.5 text-[22px] font-light text-outline-strong";
 const paletteItem =
   "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-foreground hover:bg-soft focus-visible:bg-soft";
@@ -103,6 +104,8 @@ export function Shell() {
     session,
     mail,
   );
+  const header = useWorkspaceHeader(pathname);
+  const identity = header ?? workspace;
   const [palette, setPalette] = useState(false);
   const [mobile, setMobile] = useState(false);
   useEffect(() => {
@@ -144,6 +147,7 @@ export function Shell() {
       window.location.assign(value.redirect?.trim() ? value.redirect : "/");
     },
   });
+  const workspaceNav = header?.customer;
   const navigation = (
     <>
       {hosting.project ? (
@@ -181,8 +185,9 @@ export function Shell() {
           </Link>
         </div>
       ) : null}
+      {workspaceNav ? <WorkspaceNav key={workspaceNav} customer={workspaceNav} item={navItem} /> : null}
       <div className="mb-[18px]">
-        <p className="px-2.5 py-1.5 text-xs text-muted">Workspace</p>
+        <p className="px-2.5 py-1.5 text-xs text-muted">{session.user.role === "operator" ? "Workspace" : "Switch"}</p>
         {session.user.role === "operator" ? (
           destinations.map(({ collection, label, icon: Icon }) => (
             <Link
@@ -203,10 +208,10 @@ export function Shell() {
           <Link
             to="/$collection"
             params={{ collection: "tenants" }}
-            className={navItem(pathname.startsWith("/workspaces") || pathname.startsWith("/tenants"))}
+            className={navItem(pathname === "/tenants" || pathname === "/workspaces")}
           >
             <BuildingsIcon size={18} />
-            Workspaces
+            All workspaces
           </Link>
         )}
       </div>
@@ -243,13 +248,15 @@ export function Shell() {
             Databases
           </Link>
         ) : null}
-        <Link
-          to="/extensions"
-          className={navItem(pathname.startsWith("/extensions"))}
-        >
-          <PlugsConnectedIcon size={18} />
-          Extensions
-        </Link>
+        {session.user.role === "operator" ? (
+          <Link
+            to="/extensions"
+            className={navItem(pathname.startsWith("/extensions"))}
+          >
+            <PlugsConnectedIcon size={18} />
+            Extensions
+          </Link>
+        ) : null}
         <Link
           to="/account"
           className={navItem(pathname === "/account")}
@@ -285,13 +292,13 @@ export function Shell() {
             <span className="grid size-[22px] shrink-0 place-items-center rounded-full bg-linear-135 from-[#ff9a5a] via-brand to-[#8f2d00] text-[11px] font-semibold text-white" aria-hidden>
               {workspace.label.slice(0, 1).toUpperCase()}
             </span>
-            <span className="min-w-0 truncate">{workspace.label}</span>
-            <span className="rounded-full border border-outline px-1.5 text-xs leading-[18px] font-normal text-muted max-md:hidden">{workspace.detail}</span>
+            <span className="min-w-0 truncate">{identity.label}</span>
+            <span className="rounded-full border border-outline px-1.5 text-xs leading-[18px] font-normal text-muted max-md:hidden">{identity.detail}</span>
             <CaretUpDownIcon size={14} className="shrink-0 text-muted" />
           </button>
           {(hosting.active
             ? hosting.breadcrumbs
-            : [customer.data?.name ?? "Workspace", sectionTitle(pathname)]
+            : header?.crumbs ?? [customer.data?.name ?? "Workspace", sectionTitle(pathname)]
           )
             .slice(1)
             .map((label, index) => (

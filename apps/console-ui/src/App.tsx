@@ -68,6 +68,8 @@ const ResourcePage = lazy(() =>
   })),
 );
 import { WorkspaceProjects } from "./WorkspaceProjects";
+import { useTenants } from "./WorkspaceNav";
+import { ProductPage } from "./plugins/ProductPage";
 import { ProjectPage } from "./ProjectPage";
 const ExtensionOperation = lazy(() =>
   import("./plugins/ExtensionOperation").then((module) => ({
@@ -195,10 +197,18 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: () => (
-    <Navigate to="/$collection" params={{ collection: "projects" }} replace />
-  ),
+  component: Home,
 });
+/** Customers with a single workspace start inside it; everyone else starts at the list. */
+function Home() {
+  const session = useSession();
+  const tenants = useTenants();
+  const customer = session.user.role !== "operator" && !session.user.preview;
+  if (customer && tenants.isPending) return <Loading>Opening your workspace…</Loading>;
+  const [only] = tenants.data ?? [];
+  if (customer && tenants.data?.length === 1 && only) return <Navigate to="/workspaces/$id" params={{ id: only.id }} replace />;
+  return <Navigate to="/$collection" params={{ collection: "projects" }} replace />;
+}
 const accountRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/account",
@@ -351,6 +361,14 @@ const projectRoute = createRoute({
     return <ProjectPage key={id} customer={customer} id={id} />;
   },
 });
+const productRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/workspaces/$customer/products/$plugin",
+  component: () => {
+    const { customer, plugin } = productRoute.useParams();
+    return <ProductPage key={`${customer}:${plugin}`} customer={customer} plugin={plugin} />;
+  },
+});
 const resourceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/workspaces/$customer/projects/$id/resources/$plugin/$resource",
@@ -433,6 +451,7 @@ const router = createRouter({
     extensionOperationRoute,
     workspaceRoute,
     projectRoute,
+    productRoute,
     resourceRoute,
     mailRoute,
     inboxRoute,
