@@ -2,8 +2,8 @@
 // Usage: bun tools/dev/local.mjs secrets|init|plugin-image <id>|seed|kubeconfig
 import { execFileSync } from "node:child_process";
 import { createHash, generateKeyPairSync, randomBytes, scryptSync } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { join, relative, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "../..");
 const state = join(root, ".dev-local");
@@ -146,6 +146,7 @@ const PLUGINS = {
   },
   hosting: {
     storage: true,
+    capabilities: ["plugin.workloads"],
     policy: { "create-apps": "selected", "resize-apps": "selected" },
     config: (secrets) => ({
       secretKeyHex: secrets.sealKey,
@@ -214,10 +215,12 @@ INSERT INTO webdock_auth.plugin_feature_customer(plugin_id,feature_id,customer_i
   psql(`BEGIN;
 INSERT INTO webdock_auth.plugin_installation(id,kind,state,desired_state,version,runtime,current_generation) VALUES(:'id','external','enabled','enabled',:'version','ready',1) ON CONFLICT DO NOTHING;
 INSERT INTO webdock_auth.plugin_release(plugin_id,version,manifest_bytes,manifest_sha256,image,registry_url,signer_key_id) VALUES(:'id',:'version',:'manifest',encode(sha256(convert_to(:'manifest','UTF8')),'hex'),:'image',:'registry','local-dev') ON CONFLICT (plugin_id,version) DO UPDATE SET manifest_bytes=EXCLUDED.manifest_bytes,manifest_sha256=EXCLUDED.manifest_sha256 WHERE webdock_auth.plugin_release.manifest_bytes IS DISTINCT FROM EXCLUDED.manifest_bytes;
-INSERT INTO webdock_auth.plugin_configuration(plugin_id,approved_capabilities,configuration) VALUES(:'id','[]','{}') ON CONFLICT DO NOTHING;
+INSERT INTO webdock_auth.plugin_configuration(plugin_id,approved_capabilities,configuration) VALUES(:'id',:'capabilities','{}') ON CONFLICT DO NOTHING;
+UPDATE webdock_auth.plugin_configuration SET approved_capabilities=:'capabilities' WHERE plugin_id=:'id' AND approved_capabilities IS DISTINCT FROM (:'capabilities')::jsonb;
 INSERT INTO webdock_auth.plugin_runtime(plugin_id,generation,version,image,status,configuration_revision,credential_hash,namespace,service_name) VALUES(:'id',1,:'version',:'image','ready',0,:'credential','local',:'id') ON CONFLICT (plugin_id,generation) DO UPDATE SET credential_hash=EXCLUDED.credential_hash;
 ${policies}
-COMMIT;`, { id, version: value.version, manifest, image: value.image, credential, registry: `http://${registry}`, customer: demo.customer });
+UPDATE webdock_auth.plugin_runtime r SET configuration_revision=c.revision FROM webdock_auth.plugin_configuration c WHERE r.plugin_id=:'id' AND c.plugin_id=r.plugin_id AND r.configuration_revision<>c.revision;
+COMMIT;`, { id, version: value.version, manifest, image: value.image, credential, registry: `http://${registry}`, customer: demo.customer, capabilities: JSON.stringify(options.capabilities ?? []) });
   const secrets = pluginSecrets(id);
   writeFileSync(pluginFile(`${id}.json`), JSON.stringify({
     manifest: pluginFile(`${id}.manifest.json`), issuerPublicKeyHex: readFileSync(pluginFile("invocation.pub"), "utf8"),
@@ -257,6 +260,52 @@ function kubeconfig() {
   writeFileSync(join(dir, "kubeconfig.yaml"), raw.replace("https://127.0.0.1:6443", `https://127.0.0.1:${api}`).replaceAll(": default", ": webdock-dev"), { mode: 0o600 });
 }
 
+// The chart digest the agent checks before using a chart (same walk as ApprovedChart::digest).
+function chartDigest(dir) {
+  const files = [];
+  const walk = (path) => {
+    for (const name of readdirSync(path)) {
+      const full = join(path, name);
+      if (lstatSync(full).isDirectory()) walk(full);
+      else files.push(relative(dir, full));
+    }
+  };
+  walk(dir);
+  files.sort();
+  const hash = createHash("sha256");
+  const length = (n) => { const b = Buffer.alloc(8); b.writeBigUInt64BE(BigInt(n)); return b; };
+  for (const name of files) {
+    const bytes = readFileSync(join(dir, name));
+    hash.update(length(Buffer.byteLength(name))).update(name).update(length(bytes.length)).update(bytes);
+  }
+  return hash.digest("hex");
+}
+
+// One enrolled agent for the local k3s: it applies plugin workloads over a private Unix socket.
+function agent() {
+  const dir = file("agent");
+  for (const path of [dir, join(dir, "state"), join(dir, "run")]) mkdirSync(path, { recursive: true, mode: 0o700 });
+  const cluster = psql(`INSERT INTO webdock_auth.hosting_cluster(id,name,provider,region,location_evidence,generation,verified,capacity,runtime_kind,runtime_installation)
+SELECT '900000000000000201','local-k3s','k3s','local','local development cluster',1,true,'{}','kubernetes','local'
+WHERE NOT EXISTS(SELECT 1 FROM webdock_auth.hosting_cluster WHERE name='local-k3s');
+SELECT id FROM webdock_auth.hosting_cluster WHERE name='local-k3s';`).split("\n").pop();
+  const credential = createHash("sha256").update(`local-dev-agent-${cluster}`).digest("hex");
+  psql(`INSERT INTO webdock_auth.hosting_agent(cluster_id,credential_hash,generation,last_sequence,observation)
+SELECT :'cluster',:'credential',1,0,'{}' WHERE NOT EXISTS(SELECT 1 FROM webdock_auth.hosting_agent WHERE cluster_id=:'cluster');
+INSERT INTO webdock_auth.agent_transport_enrollment(installation,agent_id,generation,cluster_id,credential_hash,transport,unix_uid)
+SELECT 'local','local-agent',1,:'cluster',:'credential','unix',:'uid' WHERE NOT EXISTS(SELECT 1 FROM webdock_auth.agent_transport_enrollment WHERE installation='local' AND agent_id='local-agent');`, { cluster, credential, uid });
+  const socket = join(dir, "run", "control.sock");
+  writeFileSync(join(dir, "agent-control.json"), JSON.stringify({ kind: "unix", path: socket, installation: "local", agent_id: "local-agent", uid }), { mode: 0o600 });
+  const chart = join(root, "deploy/helm/webdock-plugin");
+  writeFileSync(join(dir, "agent.json"), JSON.stringify({
+    version: 1, installation: "local", agentId: "local-agent", generation: 1, stateDirectory: join(dir, "state"),
+    control: { kind: "unix", path: socket },
+    runtime: { kind: "kubernetes", kubeconfig: file("k3s/kubeconfig.yaml"), context: "webdock-dev", helm: "/usr/local/bin/helm", chart, chartSha256: chartDigest(chart) },
+    workloads: true,
+  }), { mode: 0o600 });
+  return cluster;
+}
+
 function seed() {
   waitForDatabase();
   mkdirSync(plugins, { recursive: true, mode: 0o700 });
@@ -275,9 +324,11 @@ INSERT INTO webdock_auth.plugin_bootstrap(singleton,mode) VALUES(true,'fresh') O
 COMMIT;`, demo);
   const credential = createHash("sha256").update(readFileSync(pluginFile("credential"), "utf8")).digest("hex");
   for (const id of Object.keys(PLUGINS)) seedPlugin(id, credential);
+  const cluster = agent();
   const runtimes = (entry) => Object.fromEntries(Object.keys(PLUGINS).map((id) => [id, entry(id)]));
   writeFileSync(pluginFile("host-bindings.json"), JSON.stringify({ runtimes: runtimes((id) => ({
     generation: 1, namespace: "local", service: id, credentialSha256: credential, peers: [{ kind: "unix", uid }],
+    ...(PLUGINS[id].capabilities?.includes("plugin.workloads") ? { workloadCluster: cluster } : {}),
   })) }), { mode: 0o600 });
   writeFileSync(pluginFile("connections.json"), JSON.stringify({ runtimes: runtimes((id) => ({
     generation: 1, transport: { kind: "unix", path: pluginFile(`${id}.sock`) },

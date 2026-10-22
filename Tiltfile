@@ -64,7 +64,7 @@ local_resource(
     'seed',
     cmd='bun tools/dev/local.mjs seed',
     deps=['tools/dev/local.mjs'] + ['plugins/%s/manifest.json' % name for name in plugins],
-    resource_deps=['database'] + [name + '-image' for name in plugins],
+    resource_deps=['database', 'kubeconfig'] + [name + '-image' for name in plugins],
     labels=['infra'],
 )
 
@@ -82,6 +82,29 @@ local_resource(
     serve_cmd="sh -c 'set -a && . .dev-local/runtime.env && set +a && exec target/debug/webdock-plugin-controller --config \"$PWD/.dev-local/plugins/plugin-config.json\"'",
     deps=['target/debug/webdock-plugin-controller', '.dev-local/runtime.env'],
     resource_deps=['seed', 'core-build'],
+    labels=['plugins'],
+)
+
+# Plugin workloads: Core's agent listener and one enrolled agent for the local k3s.
+local_resource(
+    'agent-control',
+    serve_cmd="sh -c 'set -a && . .dev-local/runtime.env && set +a && export WEBDOCK_WORKLOADS_ENABLED=true && rm -f .dev-local/agent/run/control.sock && exec target/debug/webdock-agent-control --config \"$PWD/.dev-local/agent/agent-control.json\"'",
+    deps=['target/debug/webdock-agent-control', '.dev-local/runtime.env'],
+    resource_deps=['seed', 'core-build'],
+    readiness_probe=probe(exec=exec_action(['test', '-S', '.dev-local/agent/run/control.sock']), period_secs=1),
+    labels=['plugins'],
+)
+local_resource(
+    'agent-build',
+    cmd='cargo build -p webdock-agent --bin webdock-agent',
+    deps=['crates/agent/src', 'crates/agent/Cargo.toml', 'crates/agent-protocol', 'proto/webdock/agent'],
+    labels=['plugins'],
+)
+local_resource(
+    'agent',
+    serve_cmd="sh -c 'for i in $(seq 30); do target/debug/webdock-agent --config \"$PWD/.dev-local/agent/agent.json\" run && break; sleep 2; done'",
+    deps=['target/debug/webdock-agent', '.dev-local/agent/agent.json'],
+    resource_deps=['agent-control', 'agent-build', 'kubeconfig'],
     labels=['plugins'],
 )
 
