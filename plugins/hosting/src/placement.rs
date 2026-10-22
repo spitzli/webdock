@@ -78,6 +78,7 @@ impl Placement {
     pub fn objects(&self, spec: &Spec<'_>) -> Value {
         let unit = unit(spec.id);
         let memory = format!("{}Mi", spec.memory_mb);
+        let cpu = format!("{}m", (spec.memory_mb / 4).max(50));
         let env: serde_json::Map<String, Value> = spec
             .env
             .iter()
@@ -93,7 +94,10 @@ impl Placement {
                "spec": {"containers": [{"name": "app", "image": spec.image,
                  "ports": [{"containerPort": spec.port}],
                  "envFrom": [{"secretRef": {"name": format!("{unit}-env")}}],
-                 "resources": {"limits": {"memory": memory}, "requests": {"memory": memory, "cpu": "50m"}},
+                 // CPU is reserved in step with memory (a quarter millicore per MiB) and capped at one core.
+                 "resources": {"limits": {"memory": memory, "cpu": "1"}, "requests": {"memory": memory, "cpu": cpu}},
+                 // Ready once the port accepts connections, so a new image takes over only when it answers.
+                 "readinessProbe": {"tcpSocket": {"port": spec.port}, "periodSeconds": 5, "failureThreshold": 3},
                  "securityContext": {"allowPrivilegeEscalation": false}}]}}}},
             {"apiVersion": "v1", "kind": "Service", "metadata": {"name": unit},
              "spec": {"selector": selector, "ports": [{"port": 80, "targetPort": spec.port}]}},
@@ -114,7 +118,7 @@ impl Placement {
     }
     pub async fn deploy(&self, spec: &Spec<'_>) -> Result<(), PluginError> {
         self.workloads
-            .call("apply", json!({"project": spec.project, "unit": unit(spec.id), "objects": self.objects(spec)}))
+            .call("apply", json!({"project": spec.project, "unit": unit(spec.id), "resource": spec.id.to_string(), "objects": self.objects(spec)}))
             .await?;
         Ok(())
     }

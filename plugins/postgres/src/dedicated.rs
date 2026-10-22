@@ -91,7 +91,7 @@ impl Placement {
     }
     pub async fn deploy(&self, spec: &Spec<'_>) -> Result<(), PluginError> {
         self.workloads
-            .call("apply", json!({"project": spec.project, "unit": unit(spec.id), "objects": self.objects(spec)}))
+            .call("apply", json!({"project": spec.project, "unit": unit(spec.id), "resource": spec.id.to_string(), "objects": self.objects(spec)}))
             .await?;
         Ok(())
     }
