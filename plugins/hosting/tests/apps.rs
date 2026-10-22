@@ -431,6 +431,44 @@ async fn apps_become_cluster_units() {
         "512Mi"
     );
     assert_eq!(f.view(&app).await["memoryMb"], 512);
+    // Own domains join the route and the certificate; the platform's domain and junk are refused.
+    f.ok(
+        "101",
+        "apps.domains",
+        json!({"resource_id": app, "domains": "Shop.Example.test\n\nwww.shop.example.test.\nshop.example.test"}),
+    )
+    .await;
+    let objects = f.core.objects(&app);
+    let own = f.view(&app).await["host"].as_str().unwrap().to_owned();
+    assert_eq!(
+        objects[3]["spec"]["routes"][0]["match"],
+        format!("Host(`{own}`) || Host(`shop.example.test`) || Host(`www.shop.example.test`)")
+    );
+    assert_eq!(
+        objects[4]["spec"]["dnsNames"],
+        json!([own, "shop.example.test", "www.shop.example.test"])
+    );
+    assert_eq!(
+        f.view(&app).await["domains"],
+        json!(["shop.example.test", "www.shop.example.test"])
+    );
+    for bad in [
+        "x.apps.localhost",
+        "*.example.test",
+        "localhost",
+        "a b.example",
+    ] {
+        assert_eq!(
+            f.code(
+                "101",
+                "apps.domains",
+                json!({"resource_id": app, "domains": bad})
+            )
+            .await,
+            ErrorCode::InvalidInput,
+            "{bad}"
+        );
+    }
     // When Core refuses a change, the app stays as it was and the customer reads why.
     let limit = "Your plan allows 1024 MiB memory; 512 MiB are in use and this needs 2048 MiB.";
     f.core.0.lock().unwrap().refuse = Some(limit.into());

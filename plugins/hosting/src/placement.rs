@@ -32,6 +32,8 @@ pub struct Spec<'a> {
     pub running: bool,
     /// Changing it rolls the pods.
     pub restart: &'a str,
+    /// The customer's verified domains the app also answers on.
+    pub domains: &'a [String],
 }
 pub struct Observed {
     pub status: &'static str,
@@ -70,6 +72,12 @@ impl Placement {
     pub fn new(workloads: Box<dyn Workloads>, config: PlacementConfig) -> Self {
         Self { workloads, config }
     }
+    pub fn domain(&self) -> &str {
+        &self.config.domain
+    }
+    pub fn host(&self, id: &Uuid, name: &str) -> String {
+        host(&self.config, id, name)
+    }
     pub fn url(&self, id: &Uuid, name: &str) -> String {
         self.config
             .public_url
@@ -85,7 +93,14 @@ impl Placement {
             .map(|(k, v)| (k.clone(), json!(v)))
             .collect();
         let selector = json!({"app": unit});
-        let host = host(&self.config, spec.id, spec.name);
+        let hosts: Vec<String> = std::iter::once(host(&self.config, spec.id, spec.name))
+            .chain(spec.domains.iter().cloned())
+            .collect();
+        let rule = hosts
+            .iter()
+            .map(|h| format!("Host(`{h}`)"))
+            .collect::<Vec<_>>()
+            .join(" || ");
         let mut objects = json!([
             {"apiVersion": "v1", "kind": "Secret", "metadata": {"name": format!("{unit}-env")}, "type": "Opaque", "stringData": env},
             {"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"name": unit, "labels": selector},
@@ -103,7 +118,7 @@ impl Placement {
              "spec": {"selector": selector, "ports": [{"port": 80, "targetPort": spec.port}]}},
             {"apiVersion": "traefik.io/v1alpha1", "kind": "IngressRoute", "metadata": {"name": unit},
              "spec": {"entryPoints": self.config.entry_points, "routes": [{"kind": "Rule",
-               "match": format!("Host(`{host}`)"),
+               "match": rule,
                "services": [{"name": unit, "port": 80}]}]}},
         ]);
         if let Some(issuer) = &self.config.issuer {
@@ -111,7 +126,7 @@ impl Placement {
             objects[3]["spec"]["tls"] = json!({"secretName": tls});
             if let Some(list) = objects.as_array_mut() {
                 list.push(json!({"apiVersion": "cert-manager.io/v1", "kind": "Certificate", "metadata": {"name": tls},
-                    "spec": {"secretName": tls, "dnsNames": [host], "issuerRef": {"name": issuer, "kind": "ClusterIssuer"}}}));
+                    "spec": {"secretName": tls, "dnsNames": hosts, "issuerRef": {"name": issuer, "kind": "ClusterIssuer"}}}));
             }
         }
         objects

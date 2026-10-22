@@ -25,6 +25,7 @@ const ACTIONS: &[(&str, &str)] = &[
     ("apps.env", "write"),
     ("apps.power", "write"),
     ("apps.resize", "write"),
+    ("apps.domains", "write"),
     ("apps.delete", "write"),
 ];
 pub const MEMORY_MB: &[u32] = &[128, 256, 512, 1024, 2048];
@@ -162,6 +163,40 @@ struct Resize {
     resource_id: String,
     memory_mb: i64,
 }
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Domains {
+    resource_id: String,
+    domains: String,
+}
+/// Own domains, one per line: full lower-case names, at most 10, none under the platform's domain.
+/// Core refuses any the customer has not verified.
+pub fn domains(raw: &str, platform: &str) -> Result<Vec<String>> {
+    let mut out: Vec<String> = Vec::new();
+    for line in raw.lines().map(str::trim).filter(|l| !l.is_empty()) {
+        let name = line.trim_end_matches('.').to_ascii_lowercase();
+        let label = |l: &str| {
+            (1..=63).contains(&l.len())
+                && l.bytes()
+                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+                && !l.starts_with('-')
+                && !l.ends_with('-')
+        };
+        if name.len() > 253 || name.split('.').count() < 2 || !name.split('.').all(label) {
+            return Err(invalid(&format!("{line} is not a domain name")));
+        }
+        if name == platform || name.ends_with(&format!(".{platform}")) {
+            return Err(invalid(&format!("{line} belongs to the platform")));
+        }
+        if !out.contains(&name) {
+            out.push(name);
+        }
+    }
+    if out.len() > 10 {
+        return Err(invalid("An app answers on at most 10 own domains"));
+    }
+    Ok(out)
+}
 /// New apps start with this much memory; changing it is the separate `resize-apps` feature.
 pub const DEFAULT_MEMORY_MB: i32 = 256;
 
@@ -251,6 +286,7 @@ impl Plugin {
             env: &env,
             running: app.running,
             restart: &app.restart,
+            domains: &app.domains,
         };
         self.placement.deploy(&spec).await
     }
@@ -267,6 +303,7 @@ impl Plugin {
             env_sealed: self.sealer.seal(&id, ""),
             running: true,
             restart: String::new(),
+            domains: Vec::new(),
             created_at: String::new(),
         };
         let _slot = self.claim(id)?;
@@ -290,6 +327,7 @@ impl Plugin {
         Ok(json!({
             "name": app.name, "status": observed.status, "image": app.image, "port": app.port, "memoryMb": app.memory_mb,
             "url": url, "env": keys, "error": observed.error, "createdAt": app.created_at,
+            "host": self.placement.host(&app.id, &app.name), "domains": app.domains,
         }))
     }
     /// Claims the app, applies `edit` to the row as stored now, saves it and hands it to the cluster.
@@ -386,6 +424,16 @@ impl ActionHandler for Handler {
                 plugin
                     .change(claims, &input.resource_id, |app| {
                         app.memory_mb = memory;
+                        Ok(())
+                    })
+                    .await
+            }
+            "apps.domains" => {
+                let input: Domains = parse(input)?;
+                let domains = domains(&input.domains, plugin.placement.domain())?;
+                plugin
+                    .change(claims, &input.resource_id, |app| {
+                        app.domains = domains;
                         Ok(())
                     })
                     .await

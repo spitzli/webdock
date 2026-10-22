@@ -18,6 +18,8 @@ const MIGRATIONS: &[&str] = &[
     )",
     // Apps run on the cluster; their state comes from the agent's observation.
     "ALTER TABLE apps DROP COLUMN state, DROP COLUMN error, ADD COLUMN restart text NOT NULL DEFAULT ''",
+    // The customer's own domains the app answers on besides its own host.
+    "ALTER TABLE apps ADD COLUMN domains text[] NOT NULL DEFAULT '{}'",
 ];
 
 pub type Error = tokio_postgres::Error;
@@ -33,10 +35,11 @@ pub struct App {
     pub running: bool,
     /// A new value rolls the app's pods.
     pub restart: String,
+    pub domains: Vec<String>,
     pub created_at: String,
 }
 const COLUMNS: &str =
-    "id,project_id,name,image,port,memory_mb,env_sealed,running,restart,created_at::text";
+    "id,project_id,name,image,port,memory_mb,env_sealed,running,restart,domains,created_at::text";
 fn app(r: &tokio_postgres::Row) -> App {
     App {
         id: r.get(0),
@@ -48,7 +51,8 @@ fn app(r: &tokio_postgres::Row) -> App {
         env_sealed: r.get(6),
         running: r.get(7),
         restart: r.get(8),
-        created_at: r.get(9),
+        domains: r.get(9),
+        created_at: r.get(10),
     }
 }
 
@@ -60,8 +64,8 @@ impl Store {
         ))
     }
     pub async fn insert(&self, a: &App) -> Result<(), Error> {
-        self.0.execute("INSERT INTO apps(id,project_id,name,image,port,memory_mb,env_sealed,running,restart) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",
-            &[&a.id, &a.project_id, &a.name, &a.image, &a.port, &a.memory_mb, &a.env_sealed, &a.running, &a.restart]).await?;
+        self.0.execute("INSERT INTO apps(id,project_id,name,image,port,memory_mb,env_sealed,running,restart,domains) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
+            &[&a.id, &a.project_id, &a.name, &a.image, &a.port, &a.memory_mb, &a.env_sealed, &a.running, &a.restart, &a.domains]).await?;
         Ok(())
     }
     /// An app of this project only; another project's id reads as missing.
@@ -77,8 +81,8 @@ impl Store {
             .map(app))
     }
     pub async fn update(&self, a: &App) -> Result<(), Error> {
-        self.0.execute("UPDATE apps SET image=$2,port=$3,memory_mb=$4,env_sealed=$5,running=$6,restart=$7 WHERE id=$1",
-            &[&a.id, &a.image, &a.port, &a.memory_mb, &a.env_sealed, &a.running, &a.restart]).await?;
+        self.0.execute("UPDATE apps SET image=$2,port=$3,memory_mb=$4,env_sealed=$5,running=$6,restart=$7,domains=$8 WHERE id=$1",
+            &[&a.id, &a.image, &a.port, &a.memory_mb, &a.env_sealed, &a.running, &a.restart, &a.domains]).await?;
         Ok(())
     }
     pub async fn delete(&self, id: &Uuid) -> Result<(), Error> {

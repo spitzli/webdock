@@ -240,6 +240,32 @@
       }
     },
     {
+      "name": "apps.domains",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id",
+          "domains"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "domains": {
+            "type": "string",
+            "maxLength": 2600,
+            "description": "Own domains, one per line"
+          }
+        }
+      }
+    },
+    {
       "name": "apps.delete",
       "intent": "write",
       "audience": "customer",
@@ -273,7 +299,8 @@
         "Starts with 256 MB of memory; more if your provider allows it",
         "Environment variables are stored encrypted",
         "Logs, restart, stop and start in the console",
-        "Deploy a new image or port at any time"
+        "Deploy a new image or port at any time",
+        "Your own verified domains, with certificates"
       ]
     }
   ],

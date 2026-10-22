@@ -13,6 +13,8 @@ const appSchema = z.object({
   env: z.array(z.string()),
   error: z.string().nullable(),
   createdAt: z.string(),
+  host: z.string(),
+  domains: z.array(z.string()),
 });
 type App = z.infer<typeof appSchema>;
 const logsSchema = z.object({ lines: z.array(z.string()) });
@@ -116,6 +118,43 @@ function Environment({ context, app }: { context: ResourceProps; app: App }) {
   );
 }
 
+function Domains({ context, app }: { context: ResourceProps; app: App }) {
+  const save = usePluginMutation(context, "apps.domains");
+  const [editing, setEditing] = useState(false);
+  return (
+    <Section title="Domains">
+      <ul className="grid gap-1 text-sm" aria-label="Domains">
+        <li><code className={ui.mono}>{app.host}</code> <span className="text-muted">(always)</span></li>
+        {app.domains.map((domain) => <li key={domain}><code className={ui.mono}>{domain}</code></li>)}
+      </ul>
+      <p className="text-[13px] text-muted">
+        Verify a domain under Domains in your workspace first, then point it at <code className={ui.mono}>{app.host}</code> with a CNAME record. Each domain gets its own certificate.
+      </p>
+      {editing ? (
+        <form
+          className="grid gap-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            save.mutate({ resource_id: context.resource.id, domains: (Object.fromEntries(new FormData(event.currentTarget)) as Record<string, string>).domains }, { onSuccess: () => { setEditing(false); } });
+          }}
+        >
+          <label className={ui.field}>
+            Own domains, one per line
+            <textarea className={ui.cx(ui.input, "min-h-24 font-mono text-xs")} name="domains" maxLength={2600} spellCheck={false} defaultValue={app.domains.join("\n")} placeholder="shop.example.com" />
+          </label>
+          <div className="flex gap-2">
+            <button className={ui.button("primary")} disabled={save.isPending}>{save.isPending ? "Saving…" : "Save and redeploy"}</button>
+            <button type="button" className={ui.button("quiet")} onClick={() => { setEditing(false); }}>Cancel</button>
+          </div>
+          <Problem error={save.error} />
+        </form>
+      ) : (
+        <div><button type="button" className={ui.button()} onClick={() => { setEditing(true); }}>Change domains</button></div>
+      )}
+    </Section>
+  );
+}
+
 function Memory({ context, app }: { context: ResourceProps; app: App }) {
   const resize = usePluginMutation(context, "apps.resize");
   return (
@@ -202,6 +241,7 @@ function Resource(context: ResourceProps) {
         </div>
       </section>
       {context.writable ? <Deploy context={context} app={app} /> : null}
+      {context.writable ? <Domains context={context} app={app} /> : null}
       {context.writable ? <Environment context={context} app={app} /> : null}
       {context.writable ? <Logs context={context} /> : null}
       {context.writable ? <Remove context={context} /> : null}
