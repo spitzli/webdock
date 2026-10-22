@@ -77,8 +77,10 @@ try {
 
   // 2. The Demo owner adds a note from the project page and reveals its code.
   session = await open(browser, 'owner');
+  // With a single project the overview does not list it; the project page is still reachable.
   await session.page.goto(previewOrigin + '/workspaces/101');
-  await session.page.getByRole('link', { name: 'Demo project' }).click();
+  await session.page.getByText('Everything lives in one project for now.').waitFor();
+  await session.page.goto(previewOrigin + '/workspaces/101/projects/201');
   await session.page.getByRole('heading', { name: 'Demo project' }).waitFor();
   await session.page.getByText('Add', { exact: true }).click();
   await session.page.getByRole('button', { name: 'Create notes' }).click();
