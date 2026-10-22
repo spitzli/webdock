@@ -1,3 +1,4 @@
+import { Placement } from "./Placement";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -116,6 +117,7 @@ export function ProjectPage({ customer, id }: { customer: string; id: string }) 
       {operator ? plugins.flatMap((view) => view.manifest.areas.operator.pages.map((page) => (
         <OperatorPage key={`${view.manifest.name}:${page.id}`} view={view} projectID={id} action={page.action} label={page.label} />
       ))) : null}
+      <Placement projectID={id} role={project.data.role} />
     </section>
   );
 }

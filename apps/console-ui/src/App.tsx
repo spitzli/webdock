@@ -73,6 +73,7 @@ import { ProductPage } from "./plugins/ProductPage";
 import { Plans, WorkspaceUsage } from "./Usage";
 import { WorkspaceDomains } from "./Domains";
 import { WorkspaceApiTokens } from "./ApiTokens";
+import { Clusters } from "./Placement";
 import { ProjectPage } from "./ProjectPage";
 const ExtensionOperation = lazy(() =>
   import("./plugins/ExtensionOperation").then((module) => ({
@@ -348,6 +349,11 @@ const extensionRoute = createRoute({
     );
   },
 });
+const clustersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/clusters",
+  component: Clusters,
+});
 const plansRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/plans",
@@ -482,6 +488,7 @@ const router = createRouter({
     extensionRoute,
     extensionOperationRoute,
     plansRoute,
+    clustersRoute,
     usageRoute,
     domainsRoute,
     apiTokensRoute,

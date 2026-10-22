@@ -19,6 +19,7 @@ import { UserCircleIcon } from "@phosphor-icons/react/dist/csr/UserCircle";
 import { CommandIcon } from "@phosphor-icons/react/dist/csr/Command";
 import { CaretUpDownIcon } from "@phosphor-icons/react/dist/csr/CaretUpDown";
 import { GaugeIcon } from "@phosphor-icons/react/dist/csr/Gauge";
+import { HardDrivesIcon } from "@phosphor-icons/react/dist/csr/HardDrives";
 import { PlugsConnectedIcon } from "@phosphor-icons/react/dist/csr/PlugsConnected";
 import { useApi, useSession } from "./context";
 import { LocalePicker } from "./Locale";
@@ -262,6 +263,12 @@ export function Shell() {
           <Link to="/plans" className={navItem(pathname.startsWith("/plans"))}>
             <GaugeIcon size={18} />
             Plans
+          </Link>
+        ) : null}
+        {session.user.role === "operator" ? (
+          <Link to="/clusters" className={navItem(pathname.startsWith("/clusters"))}>
+            <HardDrivesIcon size={18} />
+            Clusters
           </Link>
         ) : null}
         <Link
