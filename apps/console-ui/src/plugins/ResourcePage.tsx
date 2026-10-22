@@ -8,7 +8,7 @@ import { parsePanel } from "./contracts";
 import { PluginPanel } from "./Panel";
 import { invokePlugin, usePluginViews, useProject } from "./views";
 import { useNativeUI } from "./native";
-import { pluginNav } from "./workspace";
+import { pluginNav, useWorkspaceProjects } from "./workspace";
 import * as ui from "../ui";
 
 /** One plugin resource, rendered from the plugin's self-service resource page. */
@@ -18,6 +18,7 @@ export function ResourcePage({ customer, projectID, plugin, resource }: { custom
   const navigate = useNavigate();
   const project = useProject(projectID);
   const views = usePluginViews(projectID);
+  const projects = useWorkspaceProjects(customer);
   const view = views.data?.find((v) => v.manifest.name === plugin);
   const indexed = view?.resources.find((r) => r.id === resource);
   const page = view?.manifest.areas.selfService?.pages[0];
@@ -59,8 +60,8 @@ export function ResourcePage({ customer, projectID, plugin, resource }: { custom
             {back}
             <h1 className={ui.pageTitle}>{indexed.name}</h1>
             <p className={ui.pageLead}>
-              {view.manifest.offerings.find((o) => o.id === indexed.offering)?.label} in{" "}
-              <Link to="/workspaces/$customer/projects/$id" params={{ customer, id: projectID }}>{project.data?.name ?? "its project"}</Link>
+              {view.manifest.offerings.find((o) => o.id === indexed.offering)?.label}
+              {(projects.data?.length ?? 0) > 1 ? <> in <Link to="/workspaces/$customer/projects/$id" params={{ customer, id: projectID }}>{project.data?.name ?? "its project"}</Link></> : null}
             </p>
             {view.manifest.offerings.find((o) => o.id === indexed.offering)?.description ? (
               <p className="mt-1 max-w-[76ch] text-[13px] text-muted">{view.manifest.offerings.find((o) => o.id === indexed.offering)?.description}</p>

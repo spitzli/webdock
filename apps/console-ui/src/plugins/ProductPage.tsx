@@ -82,9 +82,7 @@ export function ProductPage({ customer, plugin }: { customer: string; plugin: st
         </div>
       ) : null}
       {!projects.length ? (
-        <Empty title="No project yet">
-          <span>Resources live in projects. <Link to="/workspaces/$id" params={{ id: customer }}>Create a project</Link> first.</span>
-        </Empty>
+        <Empty title={`No ${label.toLowerCase()} yet`}>Your provider sets this workspace up for you.</Empty>
       ) : !entry?.resources.length ? (
         !chosen ? (
           <div className="grid gap-4">
@@ -104,7 +102,7 @@ export function ProductPage({ customer, plugin }: { customer: string; plugin: st
               <tr>
                 <th className={ui.th}>Name</th>
                 <th className={ui.th}>Type</th>
-                <th className={ui.th}>Project</th>
+                {projects.length > 1 ? <th className={ui.th}>Project</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -121,7 +119,7 @@ export function ProductPage({ customer, plugin }: { customer: string; plugin: st
                     {resource.createdVia === "operator" ? <span className="ml-2 text-[13px] text-muted">added by your provider</span> : null}
                   </td>
                   <td className={ui.td}>{offerings.find((o) => o.id === resource.offering)?.label ?? resource.offering}</td>
-                  <td className={ui.td}>{resource.project.name}</td>
+                  {projects.length > 1 ? <td className={ui.td}>{resource.project.name}</td> : null}
                 </tr>
               ))}
             </tbody>

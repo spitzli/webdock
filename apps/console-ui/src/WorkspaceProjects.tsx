@@ -49,8 +49,8 @@ export function WorkspaceProjects({ id }: { id: string }) {
           <h1 className={ui.pageTitle}>{tenant?.name ?? "Workspace"}</h1>
           <p className={ui.pageLead}>Everything this workspace runs. Projects group resources that belong together.</p>
         </div>
-        {canCreate && !adding ? (
-          <button className={ui.button("primary")} onClick={() => { setAdding(true); }}>
+        {canCreate && !adding && projects.data.length > 1 ? (
+          <button className={ui.button()} onClick={() => { setAdding(true); }}>
             New project
           </button>
         ) : null}
@@ -97,8 +97,14 @@ export function WorkspaceProjects({ id }: { id: string }) {
           })}
         </ul>
       ) : null}
-      <h2 className={ui.cx(ui.sectionTitle, "mb-3")}>Projects</h2>
-      {projects.data.length === 0 ? (
+      {projects.data.length <= 1 && !adding ? (
+        <p className="text-[13px] text-muted">
+          Everything lives in one project for now.
+          {canCreate ? <> Need separate access for a team, or a staging environment? <button type="button" className="underline underline-offset-2" onClick={() => { setAdding(true); }}>Add a project</button>.</> : null}
+        </p>
+      ) : null}
+      {projects.data.length > 1 ? <h2 className={ui.cx(ui.sectionTitle, "mb-3")}>Projects</h2> : null}
+      {projects.data.length <= 1 ? null : projects.data.length === 0 ? (
         <Empty title="No projects yet">
           {canCreate ? "Create a project to start adding resources." : "Your provider adds projects to this workspace for you."}
         </Empty>

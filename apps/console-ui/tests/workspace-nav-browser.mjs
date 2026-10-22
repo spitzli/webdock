@@ -6,7 +6,7 @@ import postgres from '@plugins/postgres/manifest.json' with { type: 'json' };
 import mail from '@plugins/mail/manifest.json' with { type: 'json' };
 const projects = [{ id: '201', name: 'Shop', status: 'active' }, { id: '202', name: 'Blog', status: 'active' }];
 const resources = { 201: [{ id: '00000000-0000-4000-8000-000000000001', offering: 'shared', name: 'orders', createdVia: 'self-service' }], 202: [{ id: '00000000-0000-4000-8000-000000000002', offering: 'dedicated', name: 'analytics', createdVia: 'operator' }] };
-async function open(browser, role) {
+async function open(browser, role, workspaceProjects = projects) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   const errors = [];
@@ -16,14 +16,22 @@ async function open(browser, role) {
   await page.route(path('/console-config.json'), json({ apiOrigin: previewOrigin, authOrigin: previewOrigin, enabledFeatures: [] }));
   await page.route(path('/v1/auth/session'), json({ data: { user: { id: '2', name: 'Ada', email: 'ada@example.test', role: 'user', emailVerified: true }, session: { id: 's-ada', userId: '2', expiresAt: '2026-12-01T10:00:00Z' } } }));
   await page.route(path('/api/console/tenants'), json([{ id: '101', name: 'Acme', status: 'active', role }]));
-  await page.route(path('/api/console/tenant/101/projects'), json(projects));
+  const created = [];
+  await page.route(path('/api/console/tenant/101/projects'), (route) => {
+    if (route.request().method() === 'POST') {
+      created.push(route.request().postDataJSON().name);
+      workspaceProjects.push({ id: '209', name: 'Default', status: 'active' });
+      return route.fulfill({ json: { id: '209' } });
+    }
+    return route.fulfill({ json: workspaceProjects });
+  });
   const features = role === 'member' ? [] : ['create-shared', 'create-dedicated'];
   await page.route(path('/api/console/plugins'), (route) => {
     const project = new URL(route.request().url()).searchParams.get('projectID');
     const view = (m, f, r) => ({ state: 'enabled', runtime: 'ready', manifest: m, generation: 1, manifestSha256: 'a'.repeat(64), launchLinks: [], features: f, resources: r });
     return route.fulfill({ json: [view(postgres, features, resources[project] ?? []), view(mail, [], [])] });
   });
-  return { page, context, errors };
+  return { page, context, errors, created };
 }
 const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } : {}) });
 const errors = [];
@@ -64,6 +72,20 @@ try {
   errors.push(...session.errors);
   await session.context.close();
 
+  // 4. An empty workspace gets its Default project when an owner opens it; with one project the
+  // project level stays out of sight.
+  const single = [];
+  session = await open(browser, 'owner', single);
+  await session.page.goto(previewOrigin + '/workspaces/101');
+  await session.page.getByText('Everything lives in one project for now.').waitFor();
+  assert.deepEqual(session.created, ['Default'], 'exactly one Default project is created');
+  await session.page.getByRole('button', { name: 'Add a project' }).waitFor();
+  await session.page.goto(previewOrigin + '/workspaces/101/products/postgres');
+  await session.page.getByRole('heading', { name: 'Databases', exact: true }).waitFor();
+  assert.equal(await session.page.getByRole('columnheader', { name: 'Project' }).count(), 0);
+  errors.push(...session.errors);
+  await session.context.close();
+
   assert.deepEqual(errors, []);
-  console.log('Workspace navigation checks passed: single workspace landing, product sidebar with counts, cross-project product page, offering help, create into a chosen project, member read-only. Test-only HTTP fixtures.');
+  console.log('Workspace navigation checks passed: single workspace landing, product sidebar with counts, cross-project product page, offering help, create into a chosen project, member read-only, lazy Default project, single-project view. Test-only HTTP fixtures.');
 } finally { await browser.close(); await server.close(); }
