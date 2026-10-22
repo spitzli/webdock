@@ -142,6 +142,14 @@ const PLUGINS = {
       trustUnverifiedDomains: true,
     }),
   },
+  hosting: {
+    storage: true,
+    policy: { "create-apps": "selected", "resize-apps": "selected" },
+    config: (secrets) => ({
+      secretKeyHex: secrets.sealKey,
+      placement: { dockerSocket: "/var/run/docker.sock", bindHost: "127.0.0.1" },
+    }),
+  },
 };
 function readEnv(name) {
   return Object.fromEntries(readFileSync(file(name), "utf8").trim().split("\n").map((line) => line.split(/=(.*)/s).slice(0, 2)));

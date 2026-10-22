@@ -42,6 +42,7 @@ plugins = {
     'echo-demo': {'binary': 'webdock-echo-demo', 'deps': []},
     'postgres': {'binary': 'webdock-postgres', 'deps': ['shared-postgres']},
     'mail': {'binary': 'webdock-mail', 'deps': ['mailpit']},
+    'hosting': {'binary': 'webdock-hosting', 'deps': []},
 }
 for name in plugins:
     local_resource(
