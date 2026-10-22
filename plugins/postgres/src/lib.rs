@@ -2,7 +2,7 @@
 //! The Core admits every call (audience, access mode, resource ownership); this plugin checks
 //! again that a resource belongs to the invoking project before touching it.
 pub mod dedicated;
-pub mod seal;
+pub use webdock_plugin_kit::seal;
 pub mod shared;
 pub mod store;
 

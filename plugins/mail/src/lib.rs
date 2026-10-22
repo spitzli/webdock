@@ -1,7 +1,7 @@
 //! Mail as a plugin: sending domains, delivery through the platform or a project's own
 //! turboSMTP account, and a send action exposed to the Console, the public API and MCP.
 //! The Core admits every call; this plugin checks again that records belong to the invoking project.
-pub mod seal;
+pub use webdock_plugin_kit::seal;
 pub mod store;
 pub mod transport;
 

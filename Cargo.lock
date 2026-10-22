@@ -8637,6 +8637,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "webdock-plugin-kit"
+version = "0.1.0"
+dependencies = [
+ "aes-gcm",
+ "getrandom 0.2.17",
+ "hex",
+ "rustix",
+ "tokio",
+ "tokio-postgres",
+ "url",
+ "uuid",
+]
+
+[[package]]
 name = "webdock-plugin-protocol"
 version = "0.1.0"
 dependencies = [

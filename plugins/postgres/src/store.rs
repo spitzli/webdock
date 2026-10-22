@@ -1,5 +1,5 @@
 //! The plugin's own database: one row per customer database or instance. The Core never reads it.
-use tokio_postgres::{Client, NoTls};
+use tokio_postgres::Client;
 use uuid::Uuid;
 
 const MIGRATIONS: &[&str] = &["CREATE TABLE resources (
@@ -62,41 +62,10 @@ pub type Error = tokio_postgres::Error;
 pub struct Store(Client);
 impl Store {
     /// Connects and applies pending migrations under an advisory lock.
-    // ponytail: one connection for the process; a lost connection fails calls until the supervisor restarts it.
     pub async fn connect(url: &str) -> Result<Self, Error> {
-        let (client, connection) = tokio_postgres::connect(url, NoTls).await?;
-        tokio::spawn(async move {
-            if let Err(error) = connection.await {
-                eprintln!("postgres_plugin_storage_lost: {error}");
-            }
-        });
-        client
-            .batch_execute(
-                "SELECT pg_advisory_lock(hashtext('webdock-postgres-plugin'));
-                 CREATE TABLE IF NOT EXISTS schema_migrations (version integer PRIMARY KEY)",
-            )
-            .await?;
-        let applied: i32 = client
-            .query_one(
-                "SELECT COALESCE(max(version),0) FROM schema_migrations",
-                &[],
-            )
-            .await?
-            .get(0);
-        for (index, sql) in MIGRATIONS.iter().enumerate() {
-            let version = i32::try_from(index).unwrap_or(i32::MAX) + 1;
-            if version > applied {
-                client
-                    .batch_execute(&format!(
-                        "BEGIN; {sql}; INSERT INTO schema_migrations VALUES ({version}); COMMIT;"
-                    ))
-                    .await?;
-            }
-        }
-        client
-            .batch_execute("SELECT pg_advisory_unlock(hashtext('webdock-postgres-plugin'))")
-            .await?;
-        Ok(Self(client))
+        Ok(Self(
+            webdock_plugin_kit::storage(url, "postgres", MIGRATIONS).await?,
+        ))
     }
     pub async fn insert(&self, r: &Resource) -> Result<(), Error> {
         self.0.execute("INSERT INTO resources(id,project_id,offering,name,server_id,database_name,role_name,password_sealed,host,port,version,state) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)",

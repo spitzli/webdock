@@ -3079,14 +3079,11 @@ dependencies = [
 name = "webdock-mail"
 version = "0.1.0"
 dependencies = [
- "aes-gcm",
  "ed25519-dalek",
- "getrandom 0.2.17",
  "hex",
  "hickory-resolver",
  "lettre",
  "reqwest",
- "rustix",
  "serde",
  "serde_json",
  "tokio",
@@ -3094,8 +3091,23 @@ dependencies = [
  "tonic",
  "url",
  "uuid",
+ "webdock-plugin-kit",
  "webdock-plugin-protocol",
  "webdock-plugin-runtime",
+]
+
+[[package]]
+name = "webdock-plugin-kit"
+version = "0.1.0"
+dependencies = [
+ "aes-gcm",
+ "getrandom 0.2.17",
+ "hex",
+ "rustix",
+ "tokio",
+ "tokio-postgres",
+ "url",
+ "uuid",
 ]
 
 [[package]]

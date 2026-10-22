@@ -1,5 +1,5 @@
 //! The plugin's own database: sending domains, connected relay accounts and a short send log.
-use tokio_postgres::{Client, NoTls};
+use tokio_postgres::Client;
 use uuid::Uuid;
 
 const MIGRATIONS: &[&str] = &["CREATE TABLE domains (
@@ -57,41 +57,10 @@ pub struct Send {
 
 pub struct Store(Client);
 impl Store {
-    // ponytail: one connection for the process; a lost connection fails calls until the supervisor restarts it.
     pub async fn connect(url: &str) -> Result<Self, Error> {
-        let (client, connection) = tokio_postgres::connect(url, NoTls).await?;
-        tokio::spawn(async move {
-            if let Err(error) = connection.await {
-                eprintln!("mail_plugin_storage_lost: {error}");
-            }
-        });
-        client
-            .batch_execute(
-                "SELECT pg_advisory_lock(hashtext('webdock-mail-plugin'));
-                 CREATE TABLE IF NOT EXISTS schema_migrations (version integer PRIMARY KEY)",
-            )
-            .await?;
-        let applied: i32 = client
-            .query_one(
-                "SELECT COALESCE(max(version),0) FROM schema_migrations",
-                &[],
-            )
-            .await?
-            .get(0);
-        for (index, sql) in MIGRATIONS.iter().enumerate() {
-            let version = i32::try_from(index).unwrap_or(i32::MAX) + 1;
-            if version > applied {
-                client
-                    .batch_execute(&format!(
-                        "BEGIN; {sql}; INSERT INTO schema_migrations VALUES ({version}); COMMIT;"
-                    ))
-                    .await?;
-            }
-        }
-        client
-            .batch_execute("SELECT pg_advisory_unlock(hashtext('webdock-mail-plugin'))")
-            .await?;
-        Ok(Self(client))
+        Ok(Self(
+            webdock_plugin_kit::storage(url, "mail", MIGRATIONS).await?,
+        ))
     }
     /// False when the domain is already claimed, by this or any other project.
     pub async fn add_domain(&self, project: &str, domain: &Domain) -> Result<bool, Error> {

@@ -1,4 +1,4 @@
-//! Credentials at rest: AES-256-GCM with a key from the private configuration, bound to the resource id.
+//! Credentials at rest: AES-256-GCM with a key from the private configuration, bound to the record id.
 use aes_gcm::{
     Aes256Gcm, KeyInit, Nonce,
     aead::{Aead, Payload},

@@ -1,12 +1,6 @@
 //! Mail plugin runtime over private Unix sockets, with its own storage database.
 use serde::Deserialize;
-use std::{
-    io::Read,
-    os::unix::fs::{MetadataExt, OpenOptionsExt},
-    path::{Path, PathBuf},
-    process::ExitCode,
-    sync::Arc,
-};
+use std::{path::PathBuf, process::ExitCode, sync::Arc};
 use webdock_plugin_runtime::{self as runtime, HostClient};
 type Error = Box<dyn std::error::Error + Send + Sync>;
 
@@ -25,45 +19,20 @@ struct Configuration {
     #[serde(default)]
     trust_unverified_domains: bool,
 }
-/// Without TLS the plugin only talks to databases on this machine.
-fn loopback(url: &str) -> Result<(), Error> {
-    let parsed = url::Url::parse(url)?;
-    if !matches!(parsed.host_str(), Some("127.0.0.1" | "localhost" | "[::1]")) {
-        return Err("database URLs must be loopback until TLS is configured".into());
-    }
-    Ok(())
-}
-fn file(path: &Path, private: bool) -> Result<Vec<u8>, Error> {
-    if !path.is_absolute() {
-        return Err("absolute path required".into());
-    }
-    let file = std::fs::OpenOptions::new()
-        .read(true)
-        .custom_flags(rustix::fs::OFlags::NOFOLLOW.bits() as i32)
-        .open(path)?;
-    let metadata = file.metadata()?;
-    if !metadata.is_file()
-        || metadata.nlink() != 1
-        || metadata.uid() != rustix::process::geteuid().as_raw()
-        || metadata.mode() & if private { 0o077 } else { 0o022 } != 0
-        || metadata.len() > 262144
-    {
-        return Err("untrusted configuration file".into());
-    }
-    let mut bytes = Vec::new();
-    file.take(262145).read_to_end(&mut bytes)?;
-    Ok(bytes)
-}
 async fn run() -> Result<(), Error> {
     let mut args = std::env::args_os().skip(1);
     let path = PathBuf::from(args.next().ok_or("configuration path required")?);
     if args.next().is_some() {
         return Err("unexpected argument".into());
     }
-    let config: Configuration = serde_json::from_slice(&file(&path, true)?)?;
-    let manifest = webdock_plugin_protocol::Manifest::parse(&file(&config.manifest, false)?)?;
+    let config: Configuration =
+        serde_json::from_slice(&webdock_plugin_kit::read_file(&path, true)?)?;
+    let manifest = webdock_plugin_protocol::Manifest::parse(&webdock_plugin_kit::read_file(
+        &config.manifest,
+        false,
+    )?)?;
     webdock_mail::validate_manifest(&manifest)?;
-    loopback(&config.storage_url)?;
+    webdock_plugin_kit::loopback(&config.storage_url)?;
     config.platform_transport.validate()?;
     if config.trust_unverified_domains
         && !matches!(

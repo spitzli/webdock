@@ -1,0 +1,21 @@
+[package]
+name = "webdock-plugin-kit"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+license = "AGPL-3.0-only"
+publish = false
+
+# Shared by standalone product plugins: sealed secrets, plugin-owned storage, private configuration.
+[dependencies]
+aes-gcm = "0.10"
+getrandom = "0.2"
+hex = "0.4"
+rustix = { version = "1", features = ["process", "fs"] }
+tokio = { version = "1", features = ["rt"] }
+tokio-postgres = "0.7"
+url = "2"
+uuid = { version = "1", features = ["v4"] }
+
+[lints]
+workspace = true
