@@ -18,6 +18,11 @@ async function open(browser, member, features) {
   await page.route(path('/api/console/tenant/101/projects'), json([{ id: '201', name: 'Demo project', status: 'active' }]));
   await page.route(path('/api/console/project/201'), json({ id: '201', name: 'Demo project', customer: { id: '101', name: 'Demo customer' }, role: member }));
   await page.route(path('/api/console/plugins'), (route) => route.fulfill({ json: [{ state: 'enabled', runtime: 'ready', manifest, generation: 1, manifestSha256: 'a'.repeat(64), launchLinks: [], features, resources: state.deleted ? [] : [{ id: appID, offering: 'app', name: 'Website', createdVia: 'self-service' }] }] }));
+  await page.route(path(`/api/console/projects/201/plugins/hosting/resources/${appID}/logs`), (route) => {
+    const search = new URL(route.request().url()).searchParams.get('search') ?? '';
+    const lines = [{ at: '2026-10-22T10:00:02Z', unit: 'app-1', line: 'ERROR cache miss storm' }, { at: '2026-10-22T10:00:01Z', unit: 'app-1', line: 'GET /stored 200' }];
+    return route.fulfill({ json: lines.filter((l) => l.line.toLowerCase().includes(search.toLowerCase())) });
+  });
   await page.route(path('/api/console/plugins/invoke'), (route) => {
     const body = route.request().postDataJSON();
     state.calls.push(body);
@@ -51,6 +56,14 @@ try {
   await page().getByRole('button', { name: 'Start' }).waitFor();
   await page().getByRole('button', { name: 'Start' }).click();
   await page().getByRole('button', { name: 'Restart' }).waitFor();
+
+  // 1b. Owners look back through the stored log history and search it.
+  const history = page().getByRole('region', { name: 'Log history' });
+  await history.getByText('GET /stored 200').waitFor();
+  await history.getByRole('textbox', { name: 'Search logs' }).fill('error');
+  await history.getByRole('button', { name: 'Search' }).click();
+  await history.getByText('ERROR cache miss storm').waitFor();
+  await page().waitForFunction(() => !document.querySelector('[aria-label="Log history"]')?.textContent?.includes('GET /stored 200'));
 
   // 2. Variables are replaced as a whole; values never come back.
   await page().getByRole('button', { name: 'Replace variables' }).click();
@@ -91,6 +104,7 @@ try {
   await page().getByRole('region', { name: 'Status' }).waitFor();
   // Logs often carry configuration values, so only owners and admins read them.
   assert.equal(await page().getByRole('region', { name: 'Logs' }).count(), 0);
+  assert.equal(await page().getByRole('region', { name: 'Log history' }).count(), 0);
   for (const name of ['Stop', 'Deploy', 'Replace variables', 'Change domains', 'Delete app']) assert.equal(await page().getByRole('button', { name }).count(), 0, name);
   await page().setViewportSize({ width: 390, height: 844 });
   assert.ok(await page().evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'no horizontal scroll at phone width');
@@ -98,5 +112,5 @@ try {
   await session.context.close();
 
   assert.deepEqual(errors, []);
-  console.log('Hosting plugin UI checks passed: URL and logs, power, variables never shown, own domains with the refusal from Core, memory gated by feature, delete, member read-only. Test-only HTTP fixtures.');
+  console.log('Hosting plugin UI checks passed: URL and logs, power, variables never shown, own domains with the refusal from Core, searchable log history, memory gated by feature, delete, member read-only. Test-only HTTP fixtures.');
 } finally { await browser.close(); await server.close(); }

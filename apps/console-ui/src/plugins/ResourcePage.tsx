@@ -1,3 +1,4 @@
+import { LogHistory } from "./LogHistory";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -77,6 +78,7 @@ export function ResourcePage({ customer, projectID, plugin, resource }: { custom
           writable={["owner", "admin", "operator"].includes(project.data?.role ?? "")}
           onDeleted={() => void leave()}
         />
+        <LogHistory projectID={projectID} plugin={plugin} resource={indexed.id} viewer={project.data} />
       </section>
     );
   if (!view || !indexed || !page)
