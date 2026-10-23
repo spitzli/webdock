@@ -25,6 +25,8 @@ pub struct Principal {
     must_change_password: bool,
     two_factor_enabled: bool,
     tenant_preview: bool,
+    tenant_acting: bool,
+    customer_scope: Option<String>,
 }
 impl Principal {
     pub fn can_access(&self) -> bool {
@@ -38,6 +40,16 @@ impl Principal {
     }
     pub fn in_tenant_preview(&self) -> bool {
         self.tenant_preview
+    }
+    /// Owner authority still requires a matching, live customer scope in signed RLS.
+    pub fn is_acting_customer(&self) -> bool {
+        self.tenant_preview && self.tenant_acting && self.can_access() && self.role == "operator"
+    }
+    pub fn in_read_only_preview(&self) -> bool {
+        self.tenant_preview && !self.is_acting_customer()
+    }
+    pub fn customer_scope(&self) -> Option<&str> {
+        self.customer_scope.as_deref()
     }
     pub fn requires_password_change(&self) -> bool {
         self.must_change_password
@@ -131,7 +143,7 @@ impl IdentityService {
         };
         let tx = self.db.begin().await?;
         let row = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
-            "SELECT u.id,u.name,u.email,u.role,u.\"emailVerified\",u.\"mustChangePassword\",coalesce(u.\"twoFactorEnabled\",false) AS \"twoFactorEnabled\",s.id AS session_id,s.\"expiresAt\",webdock_rls.identity_has_preview(u.id,s.id) AS preview FROM webdock_auth.\"user\" u JOIN webdock_auth.session s ON s.\"userId\"=u.id WHERE s.token=$1 AND s.\"expiresAt\">statement_timestamp() AND NOT coalesce(u.banned,false)", [token.into()])).await?;
+            "SELECT u.id,u.name,u.email,u.role,u.\"emailVerified\",u.\"mustChangePassword\",coalesce(u.\"twoFactorEnabled\",false) AS \"twoFactorEnabled\",s.id AS session_id,s.\"expiresAt\",webdock_rls.identity_has_preview(u.id,s.id) AS preview,webdock_rls.identity_is_acting(u.id,s.id) AS acting,webdock_rls.identity_customer_scope(u.id,s.id) AS customer_scope FROM webdock_auth.\"user\" u JOIN webdock_auth.session s ON s.\"userId\"=u.id WHERE s.token=$1 AND s.\"expiresAt\">statement_timestamp() AND NOT coalesce(u.banned,false)", [token.into()])).await?;
         let principal = if let Some(row) = row {
             let p = principal(&row)?;
             if externally_managed(&tx, &p.user_id).await? {
@@ -162,7 +174,7 @@ impl IdentityService {
         session_id: &str,
     ) -> Result<Option<Principal>> {
         let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
-            "SELECT u.id,u.name,u.email,u.role,u.\"emailVerified\",u.\"mustChangePassword\",coalesce(u.\"twoFactorEnabled\",false) AS \"twoFactorEnabled\",s.id AS session_id,s.\"expiresAt\",webdock_rls.identity_has_preview(u.id,s.id) AS preview FROM webdock_auth.\"user\" u JOIN webdock_auth.session s ON s.\"userId\"=u.id WHERE u.id=$1 AND s.id=$2 AND s.\"expiresAt\">statement_timestamp() AND NOT coalesce(u.banned,false) FOR SHARE OF u,s",[subject.into(),session_id.into()])).await?;
+            "SELECT u.id,u.name,u.email,u.role,u.\"emailVerified\",u.\"mustChangePassword\",coalesce(u.\"twoFactorEnabled\",false) AS \"twoFactorEnabled\",s.id AS session_id,s.\"expiresAt\",webdock_rls.identity_has_preview(u.id,s.id) AS preview,webdock_rls.identity_is_acting(u.id,s.id) AS acting,webdock_rls.identity_customer_scope(u.id,s.id) AS customer_scope FROM webdock_auth.\"user\" u JOIN webdock_auth.session s ON s.\"userId\"=u.id WHERE u.id=$1 AND s.id=$2 AND s.\"expiresAt\">statement_timestamp() AND NOT coalesce(u.banned,false) FOR SHARE OF u,s",[subject.into(),session_id.into()])).await?;
         let Some(row) = row else { return Ok(None) };
         let current = principal(&row)?;
         if externally_managed(tx, &current.user_id).await? {
@@ -353,6 +365,8 @@ fn principal(row: &QueryResult) -> Result<Principal> {
         must_change_password: row.try_get("", "mustChangePassword")?,
         two_factor_enabled: row.try_get("", "twoFactorEnabled")?,
         tenant_preview: row.try_get("", "preview")?,
+        tenant_acting: row.try_get("", "acting")?,
+        customer_scope: row.try_get("", "customer_scope")?,
     })
 }
 pub(crate) async fn externally_managed(tx: &DatabaseTransaction, user_id: &str) -> Result<bool> {

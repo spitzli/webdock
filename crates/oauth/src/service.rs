@@ -1074,7 +1074,7 @@ impl OAuthService {
                 return Err(Error::AccessDenied);
             }
             return Ok(
-                json!({"disabled":false,"webdock_role":"reader","webdock_preview":true,"webdock_email":principal.email,"webdock_name":principal.name}),
+                json!({"disabled":false,"webdock_role":if principal.is_acting_customer() { "admin" } else { "reader" },"webdock_preview":true,"webdock_email":principal.email,"webdock_name":principal.name}),
             );
         }
         self.current_claims(tx, client, principal).await

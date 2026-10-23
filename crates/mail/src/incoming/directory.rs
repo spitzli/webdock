@@ -23,7 +23,7 @@ impl NativeIncoming {
              LEFT JOIN webdock_mail.mailbox_grant g ON g.mailbox_id=b.id AND g.customer_id=b.customer_id AND g.subject=$2
              LEFT JOIN webdock_mail.identity i ON i.customer_id=b.customer_id AND i.subject=$2
              WHERE b.customer_id=$1 AND ($3 OR g.enabled) ORDER BY b.name,b.id LIMIT 64",
-            vec![customer.into(),access.principal.user_id.clone().into(),manage.into(),access.member_id.clone().into(),access.operator.into(),ready.into()]
+            vec![customer.into(),access.principal.user_id.clone().into(),manage.into(),access.member_id.clone().into(),(access.operator || access.principal.is_acting_customer()).into(),ready.into()]
         ).await?.iter().map(|row| Ok(Mailbox{id:field(row,"id")?,name:field(row,"name")?,address:field(row,"address")?,state:state(row,"state")?,enabled:field(row,"enabled")?,quota_bytes:field(row,"quota_bytes")?,can_open:field(row,"can_open")?})).collect::<Result<Vec<_>>>()?;
         let domains=rows(tx,"SELECT id,name,state,dkim_keys FROM webdock_mail.domain WHERE customer_id=$1 ORDER BY name LIMIT 32",vec![customer.into()]).await?.iter().map(|row|Ok(Domain{id:field(row,"id")?,name:field(row,"name")?,state:state(row,"state")?,dkim_keys:decode(row,"dkim_keys")?})).collect::<Result<Vec<_>>>()?;
         let (verified_domains, people, grants) =

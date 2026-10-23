@@ -298,7 +298,7 @@ impl HostService {
         Ok(action)
     }
     async fn project(tx: &DatabaseTransaction, project: &str, write: bool) -> Result<String> {
-        let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT p.customer_id,webdock_rls.customer_allowed(p.customer_id,$2) AS allowed FROM webdock_admin.projects p JOIN webdock_admin.customers c ON c.id=p.customer_id WHERE p.id=$1 AND p.status='active' AND c.status='active' AND webdock_rls.actor()->'preview'='null'::jsonb AND NOT EXISTS(SELECT 1 FROM webdock_admin.project_deletion d WHERE d.project_id=p.id AND d.status<>'deleted')",[project.into(),write.into()])).await.map_err(db_error)?.ok_or_else(PluginError::denied)?;
+        let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT p.customer_id,webdock_rls.customer_allowed(p.customer_id,$2) AS allowed FROM webdock_admin.projects p JOIN webdock_admin.customers c ON c.id=p.customer_id WHERE p.id=$1 AND p.status='active' AND c.status='active' AND (webdock_rls.actor()->'preview'='null'::jsonb OR webdock_rls.acting_customer()=p.customer_id) AND NOT EXISTS(SELECT 1 FROM webdock_admin.project_deletion d WHERE d.project_id=p.id AND d.status<>'deleted')",[project.into(),write.into()])).await.map_err(db_error)?.ok_or_else(PluginError::denied)?;
         if !row.try_get::<bool>("", "allowed").map_err(db_error)? {
             return denied();
         }
@@ -410,7 +410,31 @@ impl HostService {
         if metadata.grant["customer_id"] != customer {
             return denied();
         }
-        let operator = actor.is_operator();
+        let operator: bool = session
+            .query_one_raw(Statement::from_string(
+                DbBackend::Postgres,
+                "SELECT webdock_rls.operator() AS operator",
+            ))
+            .await
+            .map_err(db_error)?
+            .ok_or_else(PluginError::denied)?
+            .try_get("", "operator")
+            .map_err(db_error)?;
+        if actor.customer_scope().is_some() {
+            let scope: Option<String> = session
+                .query_one_raw(Statement::from_string(
+                    DbBackend::Postgres,
+                    "SELECT webdock_rls.customer_scope() AS scope",
+                ))
+                .await
+                .map_err(db_error)?
+                .ok_or_else(PluginError::denied)?
+                .try_get("", "scope")
+                .map_err(db_error)?;
+            if scope.as_deref() != actor.customer_scope() {
+                return denied();
+            }
+        }
         let resource = self_service::resource_input(&input.input).map(str::to_owned);
         self_service::gate(
             &tx,
@@ -468,11 +492,12 @@ impl HostService {
             generation: binding.generation,
             action: input.action,
             project_id: input.project_id.clone(),
+            customer_id: customer.clone(),
             iat: now,
             exp: now + 60,
         };
         let snapshot = Self::admission_snapshot(&metadata, &binding, &configuration)?;
-        let stored_scope = json!({"kind":"session","authProvider":"better-auth","subject":actor.user_id,"sessionID":actor.session_id,"nativeAdmission":snapshot,"authority":authority,"operator":operator,"resourceID":resource});
+        let stored_scope = json!({"kind":"session","authProvider":"better-auth","subject":actor.user_id,"sessionID":actor.session_id,"nativeAdmission":snapshot,"customerScope":actor.customer_scope(),"authority":authority,"operator":operator,"resourceID":resource});
         tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.plugin_invocation(id,plugin_id,customer_id,project_id,runtime_generation,grant_revision,kind,name,intent,actor_id,session_id,operation_id,capabilities,expires_at,session_context,request_hash) VALUES($1::uuid,$2,$3,$4,$5,$6,'action',$7,$8,$9,$10,$11,$12,to_timestamp($13),$14,$15)",[claims.id.clone().into(),input.plugin_id.into(),customer.into(),input.project_id.clone().into(),(claims.generation as i64).into(),integer(&metadata.grant,"revision")?.into(),claims.action.clone().into(),string(action,"intent")?.into(),actor.user_id.clone().into(),actor.session_id.clone().into(),operation.into(),action["capabilities"].clone().into(),claims.exp.into(),stored_scope.into(),request_hash.into()])).await.map_err(db_error)?;
         Self::project(&session, &input.project_id, write).await?;
         if let (Some(auth_tx), Some(authority)) = (&auth_tx, authority) {
@@ -541,6 +566,7 @@ impl HostService {
         if row["kind"] != "action"
             || row["plugin_id"] != claims.plugin_id
             || row["project_id"] != claims.project_id
+            || row["customer_id"] != claims.customer_id
             || row["name"] != claims.action
             || integer(&row, "runtime_generation")? != claims.generation as i64
             || row["session_context"]["kind"] != "session"
@@ -1193,7 +1219,16 @@ impl HostService {
             .ok_or_else(PluginError::denied)?
             .try_get::<bool>("", "writer")
             .map_err(db_error)?;
-        let operator = actor.is_operator();
+        let operator: bool = session
+            .query_one_raw(Statement::from_string(
+                DbBackend::Postgres,
+                "SELECT webdock_rls.operator() AS operator",
+            ))
+            .await
+            .map_err(db_error)?
+            .ok_or_else(PluginError::denied)?
+            .try_get("", "operator")
+            .map_err(db_error)?;
         let tx = self.controller().await?;
         fence(&tx, false).await?;
         let ids=tx.query_all_raw(Statement::from_string(DbBackend::Postgres,"SELECT id FROM webdock_auth.plugin_installation WHERE kind='external' AND state='enabled' AND runtime='ready' ORDER BY id")).await.map_err(db_error)?;

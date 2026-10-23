@@ -73,11 +73,11 @@ export function Workspaces() {
       <div className={ui.pageHeading}>
         <div>
           <h1 className={ui.pageTitle}>
-            {session.user.preview ? "Customer preview" : "Your workspaces"}
+            {session.user.preview ? session.user.acting ? "Acting as customer owner" : "Customer preview" : "Your workspaces"}
           </h1>
           <p className={ui.pageLead}>
             {session.user.preview
-              ? "You are viewing this customer with read-only access."
+              ? session.user.acting ? "You can manage this customer with owner permissions." : "You are viewing this customer with read-only access."
               : "Organizations you belong to. Open one to see its projects, applications and databases."}
           </p>
         </div>
@@ -114,7 +114,7 @@ export function Workspaces() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                {!session.user.preview && (t.role === "owner" || t.role === "admin") ? (
+                {!(session.user.preview && !session.user.acting) && (t.role === "owner" || t.role === "admin") ? (
                   <Link className={ui.cx(ui.button("quiet"), "relative z-10")} to="/$collection/$id" params={{ collection: "tenants", id: t.id }}>
                     Members
                   </Link>

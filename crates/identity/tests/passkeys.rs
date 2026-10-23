@@ -20,6 +20,7 @@ async fn retained_cose_passkey_verifies_real_signed_ceremonies() {
     for migration in [
         include_str!("../migrations/0001_security_challenges.sql"),
         include_str!("../migrations/0002_authentication_preview.sql"),
+        include_str!("../migrations/0005_customer_acting.sql"),
         include_str!("../migrations/0004_passkey_ceremonies.sql"),
     ] {
         db.execute_unprepared(migration).await.unwrap();

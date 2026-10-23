@@ -54,6 +54,19 @@ const MIGRATIONS: &[&str] = &[
         created_at timestamptz NOT NULL DEFAULT now(),
         UNIQUE (domain_id, local_part)
     );",
+    "CREATE TABLE project_customers (
+        project_id text PRIMARY KEY,
+        customer_id text NOT NULL
+    );
+    CREATE TABLE customer_engines (
+        customer_id text PRIMARY KEY,
+        id uuid NOT NULL UNIQUE,
+        admin_sealed bytea NOT NULL,
+        desired_enabled boolean NOT NULL DEFAULT true,
+        state text NOT NULL CHECK (state IN ('provisioning','ready','failed','suspending','suspended'))
+    );
+    ALTER TABLE mailboxes ADD COLUMN customer_id text REFERENCES customer_engines(customer_id);
+    CREATE INDEX mailboxes_customer ON mailboxes(customer_id);",
 ];
 
 pub type Error = tokio_postgres::Error;
@@ -205,12 +218,15 @@ impl Store {
 
 #[derive(Clone, Debug)]
 pub struct Engine {
+    pub customer_id: String,
+    pub desired_enabled: bool,
     pub id: Uuid,
     pub admin_sealed: Vec<u8>,
     pub state: String,
 }
 #[derive(Clone, Debug)]
 pub struct Mailbox {
+    pub customer_id: String,
     pub id: Uuid,
     pub project_id: String,
     pub domain_id: Uuid,
@@ -224,10 +240,11 @@ pub struct Mailbox {
     pub error: Option<String>,
     pub created_at: String,
 }
-const MAILBOX: &str = "SELECT m.id,m.project_id,m.domain_id,d.domain,m.local_part,m.display_name,m.password_sealed,m.account_id,m.quota_mb,m.state,m.error,m.created_at::text FROM mailboxes m JOIN domains d ON d.id=m.domain_id";
+const MAILBOX: &str = "SELECT m.id,m.project_id,m.domain_id,d.domain,m.local_part,m.display_name,m.password_sealed,m.account_id,m.quota_mb,m.state,m.error,m.created_at::text,COALESCE(m.customer_id,'') FROM mailboxes m JOIN domains d ON d.id=m.domain_id";
 fn mailbox(r: &tokio_postgres::Row) -> Mailbox {
     Mailbox {
         id: r.get(0),
+        customer_id: r.get(12),
         project_id: r.get(1),
         domain_id: r.get(2),
         domain: r.get(3),
@@ -242,54 +259,47 @@ fn mailbox(r: &tokio_postgres::Row) -> Mailbox {
     }
 }
 impl Store {
-    /// The project's engine row, created with this password the first time.
+    /// Persist signed ownership; a transferred project needs explicit data migration.
+    pub async fn bind_project(&self, project: &str, customer: &str) -> Result<bool, Error> {
+        Ok(self.0.query_opt("INSERT INTO project_customers(project_id,customer_id) VALUES($1,$2) ON CONFLICT(project_id) DO UPDATE SET customer_id=EXCLUDED.customer_id WHERE project_customers.customer_id=EXCLUDED.customer_id RETURNING project_id", &[&project,&customer]).await?.is_some())
+    }
+    /// Legacy project records have no trustworthy customer mapping. Retain them until migrated.
+    pub async fn legacy_engines(&self) -> Result<bool, Error> {
+        Ok(self.0.query_one("SELECT EXISTS(SELECT 1 FROM engines) OR EXISTS(SELECT 1 FROM mailboxes WHERE customer_id IS NULL)", &[]).await?.get(0))
+    }
+    /// Customer reservation is stable across projects, retries and suspension.
     pub async fn engine(
         &self,
-        project: &str,
+        customer: &str,
         id: &Uuid,
         admin_sealed: &[u8],
     ) -> Result<Engine, Error> {
-        self.0.execute("INSERT INTO engines(project_id,id,admin_sealed,state) VALUES($1,$2,$3,'provisioning') ON CONFLICT (project_id) DO NOTHING", &[&project, id, &admin_sealed]).await?;
-        let r = self
-            .0
-            .query_one(
-                "SELECT id,admin_sealed,state FROM engines WHERE project_id=$1",
-                &[&project],
-            )
-            .await?;
-        Ok(Engine {
-            id: r.get(0),
-            admin_sealed: r.get(1),
-            state: r.get(2),
-        })
+        self.0.execute("INSERT INTO customer_engines(customer_id,id,admin_sealed,state) VALUES($1,$2,$3,'provisioning') ON CONFLICT(customer_id) DO NOTHING", &[&customer,id,&admin_sealed]).await?;
+        Ok(self.find_engine(customer).await?.expect("reserved engine"))
     }
-    pub async fn find_engine(&self, project: &str) -> Result<Option<Engine>, Error> {
-        Ok(self
-            .0
-            .query_opt(
-                "SELECT id,admin_sealed,state FROM engines WHERE project_id=$1",
-                &[&project],
-            )
-            .await?
-            .map(|r| Engine {
-                id: r.get(0),
-                admin_sealed: r.get(1),
-                state: r.get(2),
-            }))
+    pub async fn find_engine(&self, customer: &str) -> Result<Option<Engine>, Error> {
+        Ok(self.0.query_opt("SELECT id,admin_sealed,state,customer_id,desired_enabled FROM customer_engines WHERE customer_id=$1", &[&customer]).await?.as_ref().map(engine))
     }
-    pub async fn engine_state(&self, project: &str, state: &str) -> Result<(), Error> {
+    pub async fn engines(&self) -> Result<Vec<Engine>, Error> {
+        Ok(self.0.query("SELECT id,admin_sealed,state,customer_id,desired_enabled FROM customer_engines ORDER BY customer_id", &[]).await?.iter().map(engine).collect())
+    }
+    pub async fn engine_enabled(&self, customer: &str, enabled: bool) -> Result<(), Error> {
+        self.0.execute("UPDATE customer_engines SET desired_enabled=$2,state=CASE WHEN $2 THEN 'provisioning' ELSE 'suspending' END WHERE customer_id=$1", &[&customer,&enabled]).await?;
+        Ok(())
+    }
+    pub async fn engine_state(&self, customer: &str, state: &str) -> Result<(), Error> {
         self.0
             .execute(
-                "UPDATE engines SET state=$2 WHERE project_id=$1",
-                &[&project, &state],
+                "UPDATE customer_engines SET state=$2 WHERE customer_id=$1 AND desired_enabled=($2<>'suspended')",
+                &[&customer, &state],
             )
             .await?;
         Ok(())
     }
     /// False when the address already exists.
     pub async fn add_mailbox(&self, m: &Mailbox) -> Result<bool, Error> {
-        Ok(self.0.execute("INSERT INTO mailboxes(id,project_id,domain_id,local_part,display_name,password_sealed,quota_mb,state) VALUES($1,$2,$3,$4,$5,$6,$7,'creating') ON CONFLICT (domain_id,local_part) DO NOTHING",
-            &[&m.id, &m.project_id, &m.domain_id, &m.local_part, &m.display_name, &m.password_sealed, &m.quota_mb]).await? == 1)
+        Ok(self.0.execute("INSERT INTO mailboxes(id,project_id,domain_id,local_part,display_name,password_sealed,quota_mb,state,customer_id) VALUES($1,$2,$3,$4,$5,$6,$7,'creating',$8) ON CONFLICT (domain_id,local_part) DO NOTHING",
+            &[&m.id, &m.project_id, &m.domain_id, &m.local_part, &m.display_name, &m.password_sealed, &m.quota_mb, &m.customer_id]).await? == 1)
     }
     pub async fn mailbox(&self, project: &str, id: &Uuid) -> Result<Option<Mailbox>, Error> {
         Ok(self
@@ -302,10 +312,15 @@ impl Store {
             .as_ref()
             .map(mailbox))
     }
-    pub async fn creating_mailboxes(&self) -> Result<Vec<Mailbox>, Error> {
+    pub async fn pending_mailboxes(&self) -> Result<Vec<Mailbox>, Error> {
         Ok(self
             .0
-            .query(&format!("{MAILBOX} WHERE m.state='creating'"), &[])
+            .query(
+                &format!(
+                    "{MAILBOX} WHERE m.state IN ('creating','failed') AND m.customer_id IS NOT NULL"
+                ),
+                &[],
+            )
             .await?
             .iter()
             .map(mailbox)
@@ -355,5 +370,15 @@ impl Store {
             .execute("DELETE FROM mailboxes WHERE id=$1", &[id])
             .await?;
         Ok(())
+    }
+}
+
+fn engine(r: &tokio_postgres::Row) -> Engine {
+    Engine {
+        id: r.get(0),
+        admin_sealed: r.get(1),
+        state: r.get(2),
+        customer_id: r.get(3),
+        desired_enabled: r.get(4),
     }
 }

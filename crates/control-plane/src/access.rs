@@ -356,11 +356,15 @@ async fn preview(
             let (a, p) = actor(&s, &h).await?;
             match action.as_str() {
                 "start" => {
-                    a.start_preview_as(
+                    a.start_customer_scope_as(
                         &p,
                         input["customerID"]
                             .as_str()
                             .ok_or_else(|| failure(webdock_access::Error::InvalidInput))?,
+                        serde_json::from_value(
+                            input.get("mode").cloned().unwrap_or(json!("read_only")),
+                        )
+                        .map_err(|_| failure(webdock_access::Error::InvalidInput))?,
                     )
                     .await
                 }

@@ -15,6 +15,7 @@ const people = {
   owner: { id: '2', name: 'Ada Owner', role: 'user', member: 'owner' },
 };
 function usage() {
+  const hour = Math.floor(Date.now() / 3600_000) * 3600_000;
   const plan = state.plans.find((p) => p.id === state.assignment.planId) ?? state.plans.find((p) => p.isDefault);
   const limits = Object.fromEntries(Object.entries({ ...(plan?.limits ?? {}), ...state.assignment.overrides }).filter(([, v]) => v !== null));
   return {
@@ -26,8 +27,9 @@ function usage() {
     units: [
       { plugin: 'hosting', unit: 'app-1', project: { id: '201', name: 'Demo project' }, resource: { id: 'a1', name: 'Shop frontend', offering: 'app' }, allocation: { memory: 256, cpu: 64, storage: 0 }, usage: { cpu: 3, memory: 41 }, observedAt: '2026-10-22T10:00:00Z' },
       { plugin: 'postgres', unit: 'pg-1', project: { id: '201', name: 'Demo project' }, resource: { id: 'p1', name: 'Orders', offering: 'dedicated' }, allocation: { memory: 512, cpu: 86, storage: 2048 }, usage: null, observedAt: null },
+      { plugin: 'fixture', unit: 'workspace-service', project: null, resource: null, allocation: {}, usage: null, observedAt: null },
     ],
-    history: [0, 1, 2, 4, 5].map((h) => ({ hour: new Date(Date.now() - (5 - h) * 3600_000).toISOString(), cpu: 20 + h * 10, memory: 300 + h * 40 })),
+    history: [0, 1, 2, 4, 5].map((h) => ({ hour: new Date(hour - (5 - h) * 3600_000).toISOString(), cpu: 20 + h * 10, memory: 300 + h * 40 })),
   };
 }
 async function open(browser, label) {
@@ -101,6 +103,8 @@ try {
   await session.page.getByText('2 of 3').waitFor();
   await session.page.getByText('2 of 2').waitFor();
   await session.page.getByRole('cell', { name: /Shop frontend/ }).waitFor();
+  const workspaceService = session.page.getByRole('row').filter({ has: session.page.getByText('workspace-service', { exact: true }) });
+  await workspaceService.getByRole('cell', { name: 'Workspace', exact: true }).waitFor();
   await session.page.getByText('Now 500 MiB, peak 500 MiB').waitFor();
   assert.equal(await session.page.locator('svg[aria-label="Memory used over the last 7 days"] path').count(), 2, 'a gap in the samples splits the line');
   await session.page.setViewportSize({ width: 390, height: 844 });

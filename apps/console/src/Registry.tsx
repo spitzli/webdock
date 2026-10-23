@@ -1,3 +1,4 @@
+import { CustomerScopeStart } from "./CustomerScope";
 import { CustomerSelfService } from "./plugins/CustomerSelfService";
 import { CustomerPlan } from "./Usage";
 import { CustomerMembers } from "./CustomerMembers";
@@ -282,6 +283,7 @@ export function RegistryDetail({
           <Status status={record.data.status} />
         ) : null}
       </div>
+      {collection === "customers" && record.data.status === "active" ? <CustomerScopeStart customer={id} /> : null}
       {created === "projects" && collection === "projects" ? (
         <p role="status" className={ui.cx(`${ui.notice} mb-6`)}>Project created.</p>
       ) : null}

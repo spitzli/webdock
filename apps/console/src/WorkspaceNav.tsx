@@ -46,7 +46,7 @@ export function WorkspaceNav({ customer, item }: { customer: string; item: (acti
   const tenants = useTenants();
   const workspace = useWorkspacePlugins(customer);
   const tenant = tenants.data?.find((t) => t.id === customer);
-  const manager = !session.user.preview && (session.user.role === "operator" || tenant?.role === "owner" || tenant?.role === "admin");
+  const manager = !(session.user.preview && !session.user.acting) && (session.user.role === "operator" || tenant?.role === "owner" || tenant?.role === "admin");
   const visible = workspace.plugins.filter((p) => p.features.length || p.resources.length);
   const overview = pathname === `/workspaces/${customer}` || pathname.startsWith(`/workspaces/${customer}/projects/`) && !pathname.includes("/resources/");
   return (
@@ -75,7 +75,7 @@ export function WorkspaceNav({ customer, item }: { customer: string; item: (acti
         <GaugeIcon size={18} />
         Plan and usage
       </Link>
-      {manager ? (
+      {manager && !session.user.preview ? (
         <Link to="/workspaces/$id/api-tokens" params={{ id: customer }} className={item(pathname === `/workspaces/${customer}/api-tokens`)} aria-current={pathname === `/workspaces/${customer}/api-tokens` ? "page" : undefined}>
           <KeyIcon size={18} />
           API tokens

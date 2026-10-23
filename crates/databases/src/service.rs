@@ -100,7 +100,7 @@ impl DatabaseService {
         )
         .await
         .map_err(|_| denied())?;
-        if !principal.can_access() || principal.in_tenant_preview() {
+        if !principal.can_access() || principal.in_read_only_preview() {
             return Err(denied());
         }
         Ok((auth, principal))
@@ -162,7 +162,7 @@ impl DatabaseService {
         authority: &StoredAuthority,
         live: bool,
     ) -> Result<Value> {
-        if (principal.in_tenant_preview() && (write || operator || live))
+        if (principal.in_read_only_preview() && (write || operator || live))
             || !principal.can_access()
             || write && authority.read_only()
         {
@@ -171,7 +171,9 @@ impl DatabaseService {
         let actor = one(tx, "SELECT webdock_rls.actor() AS value", vec![]).await?;
         if actor["subject"] != principal.user_id
             || actor["sessionID"] != principal.session_id
-            || (actor["preview"] != Value::Null && (write || operator || live))
+            || (actor["preview"] != Value::Null
+                && !principal.is_acting_customer()
+                && (write || operator || live))
         {
             return Err(denied());
         }

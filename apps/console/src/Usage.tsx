@@ -18,7 +18,7 @@ const usageSchema = z.object({
     z.object({
       plugin: z.string(),
       unit: z.string(),
-      project: z.object({ id: z.string(), name: z.string() }),
+      project: z.object({ id: z.string(), name: z.string() }).nullable(),
       resource: z.object({ id: z.string(), name: z.string(), offering: z.string() }).nullable(),
       allocation: amounts,
       usage: z.object({ cpu: z.number(), memory: z.number() }).nullish(),
@@ -156,7 +156,7 @@ function Units({ usage }: { usage: Usage }) {
                 <span className="font-medium">{u.resource?.name ?? u.unit}</span>
                 <span className="block text-xs text-muted">{u.plugin}</span>
               </td>
-              <td className={ui.td}>{u.project.name}</td>
+              <td className={ui.td}>{u.project?.name ?? "Workspace"}</td>
               <td className={ui.td}>{amount(mib, u.allocation.memory ?? 0)}</td>
               <td className={ui.td}>{u.usage ? amount(mib, u.usage.memory) : "—"}</td>
               <td className={ui.td}>{amount(cpu, u.allocation.cpu ?? 0)}</td>

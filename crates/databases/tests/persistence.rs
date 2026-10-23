@@ -132,8 +132,8 @@ async fn persisted_launch_rechecks_grants_membership_and_session() {
     let member = ids.allocate().await.unwrap().to_string();
     run(
         &owner,
-        "INSERT INTO webdock_admin.customers(id,name) VALUES($1,'Database fixture')",
-        vec![customer.clone().into()],
+        "WITH hint AS MATERIALIZED (SELECT set_config('webdock.organization_allocation',jsonb_build_object('customer_id',$1::text,'organization_id',$2::text)::text,true)) INSERT INTO webdock_admin.customers(id,name) SELECT $1,'Database fixture' FROM hint",
+        vec![customer.clone().into(),ids.allocate().await.unwrap().to_string().into()],
     )
     .await;
     let row = owner
@@ -303,6 +303,60 @@ async fn persisted_launch_rechecks_grants_membership_and_session() {
         vec![operator.session_id.clone().into()],
     )
     .await;
+    run(&owner,"INSERT INTO webdock_auth.studio_tenant_preview(session_id,actor_id,customer_id,organization_id,mode) VALUES($1,$2,$3,$4,'owner')",vec![operator.session_id.clone().into(),operator_id.clone().into(),customer.clone().into(),org.clone().into()]).await;
+    let acting = identity
+        .authenticate_session_in(
+            &auth.begin().await.unwrap(),
+            &operator.user_id,
+            &operator.session_id,
+        )
+        .await
+        .unwrap()
+        .unwrap();
+    let acting_authority = StoredAuthority::local_session(&acting);
+    let launch = service
+        .execute(
+            &acting,
+            &acting_authority,
+            json!({"action":"open","bindingID":created_id}),
+        )
+        .await
+        .unwrap();
+    let scoped_session = service
+        .exchange(launch["code"].as_str().unwrap())
+        .await
+        .unwrap();
+    assert!(
+        service
+            .inspect(scoped_session["token"].as_str().unwrap())
+            .await
+            .is_ok()
+    );
+    run(
+        &owner,
+        "DELETE FROM webdock_auth.studio_tenant_preview WHERE session_id=$1",
+        vec![operator.session_id.clone().into()],
+    )
+    .await;
+    assert!(
+        service
+            .inspect(scoped_session["token"].as_str().unwrap())
+            .await
+            .is_err()
+    );
+    run(&owner,"INSERT INTO webdock_auth.studio_tenant_preview(session_id,actor_id,customer_id,organization_id,mode) VALUES($1,$2,$3,$4,'owner')",vec![operator.session_id.clone().into(),operator_id.clone().into(),customer.clone().into(),org.clone().into()]).await;
+    assert!(
+        service
+            .inspect(scoped_session["token"].as_str().unwrap())
+            .await
+            .is_err()
+    );
+    run(
+        &owner,
+        "DELETE FROM webdock_auth.studio_tenant_preview WHERE session_id=$1",
+        vec![operator.session_id.clone().into()],
+    )
+    .await;
     service
         .execute(
             &operator,
@@ -311,6 +365,9 @@ async fn persisted_launch_rechecks_grants_membership_and_session() {
         )
         .await
         .unwrap();
+    for table in ["database_session", "database_launch"] {
+        run(&owner,&format!("DELETE FROM webdock_auth.{table} WHERE grant_id IN (SELECT id FROM webdock_auth.database_grant WHERE binding_id=$1)"),vec![created_id.clone().into()]).await;
+    }
     for table in ["database_audit", "database_runtime_owner", "database_grant"] {
         run(
             &owner,

@@ -42,6 +42,7 @@ struct HostingActor {
     user_id: String,
     session_id: String,
     git_release: Option<String>,
+    customer_scope: Option<String>,
 }
 impl From<&Principal> for HostingActor {
     fn from(p: &Principal) -> Self {
@@ -49,6 +50,7 @@ impl From<&Principal> for HostingActor {
             user_id: p.user_id.clone(),
             session_id: p.session_id.clone(),
             git_release: None,
+            customer_scope: p.customer_scope().map(str::to_owned),
         }
     }
 }
@@ -246,7 +248,16 @@ impl HostingService {
             return Err(error(401, "Identity mismatch."));
         }
         let is_operator = identity["operator"] == true;
-        let preview = !identity["preview"].is_null();
+        let acting: bool = one(
+            tx,
+            "SELECT webdock_rls.acting_customer() IS NOT NULL AS acting",
+            vec![],
+        )
+        .await?
+        .ok_or_else(|| error(403, "Customer authority is unavailable."))?
+        .try_get("", "acting")
+        .map_err(db_error)?;
+        let preview = !identity["preview"].is_null() && !acting;
         if preview && (write || operator || live) {
             return Err(error(403, "Customer preview is read-only."));
         }

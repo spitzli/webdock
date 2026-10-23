@@ -37,6 +37,8 @@ export const sessionSchema = z.object({
         twoFactorEnabled: z.boolean().optional(),
         mustChangePassword: z.boolean().optional(),
         preview: z.boolean().optional(),
+        acting: z.boolean().optional(),
+        customerScope: z.string().nullish(),
       }),
       session: z.object({
         id: z.string(),
@@ -202,4 +204,9 @@ function errorMessage(status: number, auth: boolean): string {
     default:
       return "The service could not complete this request. Try again.";
   }
+}
+
+/** The preview marker also scopes writable owner acting; only the old mode is read-only. */
+export function isReadOnlyPreview(session: Session): boolean {
+  return session.user.preview === true && session.user.acting !== true;
 }

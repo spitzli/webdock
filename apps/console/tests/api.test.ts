@@ -148,3 +148,13 @@ await test("conflicts show the server's reason, other failures keep generic text
   assert.match(messages[1] ?? "", /changed or has linked resources/);
   assert.doesNotMatch(messages[2] ?? "", /internal detail/);
 });
+
+await test("session preserves explicit owner acting while keeping the preview marker", () => {
+  const result = sessionSchema.parse({ data: {
+    user: { id: "1", name: "Operator", email: "operator@example.invalid", role: "user", emailVerified: true, preview: true, acting: true, customerScope: "scope-epoch" },
+    session: { id: "s", userId: "1", expiresAt: "2099-01-01T00:00:00Z" },
+  } });
+  assert.ok(result.data);
+  assert.equal(result.data.user.acting, true);
+  assert.equal(result.data.user.customerScope, "scope-epoch");
+});

@@ -225,7 +225,7 @@ export function HostingProject({ projectID }: { projectID: string }) {
         </Empty>
       ) : (
         <>
-          {apps.data?.canManage && !session.user.preview ? (
+          {apps.data?.canManage && !(session.user.preview && !session.user.acting) ? (
             <HostingCreate
               projectID={projectID}
               subscriptionRevision={apps.data.subscriptionRevision}

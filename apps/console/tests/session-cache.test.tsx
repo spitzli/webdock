@@ -208,6 +208,8 @@ await test("session, role, preview and security transitions purge fresh private 
     { ...original, session: { ...original.session, id: "rotated" } },
     { ...original, user: { ...original.user, role: "reader" } },
     { ...original, user: { ...original.user, preview: true } },
+    { ...original, user: { ...original.user, preview: true, acting: true, customerScope: "owner-epoch-a" } },
+    { ...original, user: { ...original.user, preview: true, acting: true, customerScope: "owner-epoch-b" } },
     { ...original, user: { ...original.user, emailVerified: false } },
     { ...original, user: { ...original.user, mustChangePassword: true } },
     { ...original, user: { ...original.user, twoFactorEnabled: false } },

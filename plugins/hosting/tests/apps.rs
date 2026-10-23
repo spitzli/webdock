@@ -125,6 +125,7 @@ impl Fixture {
             generation: 1,
             action: action.into(),
             project_id: project.into(),
+            customer_id: "101".into(),
             iat: 0,
             exp: 0,
         };

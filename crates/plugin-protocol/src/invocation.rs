@@ -16,6 +16,8 @@ pub struct InvocationClaims {
     pub action: String,
     #[serde(rename = "projectID")]
     pub project_id: String,
+    #[serde(rename = "customerID")]
+    pub customer_id: String,
     #[serde(deserialize_with = "integer")]
     pub iat: i64,
     #[serde(deserialize_with = "integer")]
@@ -57,6 +59,10 @@ pub fn verify_invocation(
             || claims.project_id.is_empty()
             || claims.project_id.len() > 20
             || !claims.project_id.bytes().all(|c| c.is_ascii_digit())
+            || claims.customer_id.is_empty()
+            || claims.customer_id.starts_with('0')
+            || claims.customer_id.len() > 19
+            || !claims.customer_id.bytes().all(|c| c.is_ascii_digit())
             || uuid::Uuid::parse_str(&claims.id)
                 .ok()?
                 .hyphenated()

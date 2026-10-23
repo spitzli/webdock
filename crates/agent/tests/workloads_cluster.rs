@@ -127,6 +127,32 @@ async fn applies_prunes_observes_and_removes_a_unit() {
         measured.observed
     );
 
+    // A stop is observed only after the Kubernetes controller acknowledges scale-to-zero.
+    let mut stopped = deployment.clone();
+    stopped["spec"]["replicas"] = json!(0);
+    let zero = serde_json::to_vec(&json!([stopped, service])).unwrap();
+    let mut stopping = executor
+        .handle("fixture", unit, &namespace, &zero, false)
+        .await;
+    for _ in 0..60 {
+        assert_eq!(stopping.error, None);
+        if stopping.observed["ready"] == true {
+            break;
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+        stopping = executor
+            .handle("fixture", unit, &namespace, &zero, false)
+            .await;
+    }
+    assert_eq!(stopping.observed["ready"], true, "{}", stopping.observed);
+    assert!(
+        stopping.observed["objects"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|o| o["kind"] == "apps/v1/Deployment" && o["message"] == "Stopped")
+    );
+
     // Dropping the service from the unit prunes it.
     let only = serde_json::to_vec(&json!([deployment])).unwrap();
     assert_eq!(

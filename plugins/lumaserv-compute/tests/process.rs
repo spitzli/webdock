@@ -144,6 +144,7 @@ fn invocation(
         generation: 1,
         action: action.into(),
         project_id: project.into(),
+        customer_id: "101".into(),
         iat: now(),
         exp: now() + 60,
     };

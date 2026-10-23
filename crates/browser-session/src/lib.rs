@@ -200,6 +200,8 @@ pub struct BrowserAuthority {
     pub role: String,
     pub scopes: Vec<String>,
     pub read_only: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub customer_scope: Option<String>,
 }
 pub struct BrowserAuthentication {
     pub principal: webdock_identity::Principal,
@@ -211,11 +213,33 @@ pub struct BrowserAuthentication {
 #[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
 pub enum StoredAuthority {
     LocalSession {},
-    FirstPartyBrowser { browser: BrowserAuthority },
+    CustomerSession {
+        customer_scope: String,
+        read_only: bool,
+    },
+    FirstPartyBrowser {
+        browser: BrowserAuthority,
+    },
 }
 impl StoredAuthority {
+    pub fn local_session(principal: &webdock_identity::Principal) -> Self {
+        match principal.customer_scope() {
+            Some(scope) => Self::CustomerSession {
+                customer_scope: scope.into(),
+                read_only: principal.in_read_only_preview(),
+            },
+            None => Self::LocalSession {},
+        }
+    }
     pub fn read_only(&self) -> bool {
         matches!(self, Self::FirstPartyBrowser { browser } if browser.read_only)
+            || matches!(
+                self,
+                Self::CustomerSession {
+                    read_only: true,
+                    ..
+                }
+            )
     }
 }
 /// Revalidates canonical session plus first-party client, token, role and scope ceilings.
@@ -234,6 +258,14 @@ pub async fn revalidate_stored_authority(
         .await?
         .ok_or(Error::Unauthorized)?;
     if !principal.can_access() {
+        return Err(Error::Unauthorized);
+    }
+    if let StoredAuthority::CustomerSession { customer_scope, .. } = authority {
+        if principal.customer_scope() != Some(customer_scope.as_str()) {
+            return Err(Error::Unauthorized);
+        }
+    } else if matches!(authority, StoredAuthority::LocalSession {}) && principal.in_tenant_preview()
+    {
         return Err(Error::Unauthorized);
     }
     if let StoredAuthority::FirstPartyBrowser { browser } = authority {

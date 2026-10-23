@@ -250,3 +250,20 @@ pub struct DeliveryBatch {
     pub failed: u32,
     pub canceled: u32,
 }
+
+/// Explicit owner acting is opt-in; existing callers keep read-only previews.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PreviewMode {
+    #[default]
+    ReadOnly,
+    Owner,
+}
+impl PreviewMode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ReadOnly => "read_only",
+            Self::Owner => "owner",
+        }
+    }
+}

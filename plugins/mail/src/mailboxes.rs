@@ -1,4 +1,4 @@
-//! Mailboxes on the project's own engine, on one of the project's sending domains.
+//! Mailboxes on the customer's shared engine, on one of the project's sending domains.
 use super::*;
 
 #[derive(Deserialize)]
@@ -28,31 +28,39 @@ impl Plugin {
             PluginError::new(ErrorCode::NotSupported, "Mailboxes are not available here")
         })
     }
-    /// The engine's admin password, recorded the first time a project needs an engine.
-    async fn engine_password(&self, project: &str) -> Result<String> {
+    /// The engine's admin password, recorded on explicit incoming activation.
+    async fn engine_password(&self, customer: &str) -> Result<String> {
         let id = Uuid::new_v4();
         let fresh = hex::encode(seal::random::<24>());
         let engine = self
             .store
-            .engine(project, &id, &self.sealer.seal(&id, &fresh))
+            .engine(customer, &id, &self.sealer.seal(&id, &fresh))
             .await
             .map_err(store_error)?;
         self.sealer
             .open(&engine.id, &engine.admin_sealed)
             .ok_or_else(|| unavailable("unseal", engine.id))
     }
-    async fn existing_client(&self, project: &str) -> Result<Option<engine::Client>> {
+    async fn existing_client(&self, customer: &str) -> Result<Option<engine::Client>> {
         let Some(engines) = self.engines.as_ref() else {
             return Ok(None);
         };
-        let Some(engine) = self.store.find_engine(project).await.map_err(store_error)? else {
+        let Some(engine) = self
+            .store
+            .find_engine(customer)
+            .await
+            .map_err(store_error)?
+        else {
             return Ok(None);
         };
+        if !engine.desired_enabled || engine.state != "ready" {
+            return Ok(None);
+        }
         let admin = self
             .sealer
             .open(&engine.id, &engine.admin_sealed)
             .ok_or_else(|| unavailable("unseal", engine.id))?;
-        Ok(Some(engines.client(project, &admin)))
+        Ok(Some(engines.client(customer, &admin)))
     }
     pub(crate) async fn create_mailbox(
         self: &Arc<Self>,
@@ -72,13 +80,30 @@ impl Plugin {
         if name.chars().count() > 80 || name.chars().any(char::is_control) {
             return Err(invalid("Invalid display name"));
         }
+        let local_part = local(&input.local_part)?;
+        let _serial = self.provisioning.lock().await;
+        self.require_migrated().await?;
+        self.engine_password(&claims.customer_id).await?;
+        let engine = self
+            .store
+            .find_engine(&claims.customer_id)
+            .await
+            .map_err(store_error)?
+            .ok_or_else(missing)?;
+        if !engine.desired_enabled {
+            return Err(PluginError::new(
+                ErrorCode::Conflict,
+                "Activate incoming mail before creating a mailbox",
+            ));
+        }
         let id = Uuid::new_v4();
         let mailbox = store::Mailbox {
             id,
             project_id: claims.project_id.clone(),
+            customer_id: claims.customer_id.clone(),
             domain_id: domain.id,
             domain: domain.domain.clone(),
-            local_part: local(&input.local_part)?,
+            local_part,
             display_name: name.into(),
             password_sealed: self.sealer.seal(&id, &seal::password()),
             account_id: None,
@@ -102,7 +127,7 @@ impl Plugin {
         self.provision(mailbox);
         Ok(json!({"resource":{"id":id.to_string(),"name":address}}))
     }
-    /// Runs detached: the first mailbox of a project sets up its engine, which takes a while.
+    /// Runs detached: the first mailbox of a customer sets up its engine, which takes a while.
     pub(crate) fn provision(self: &Arc<Self>, mailbox: store::Mailbox) {
         let plugin = Arc::clone(self);
         tokio::spawn(async move {
@@ -110,19 +135,36 @@ impl Plugin {
             let outcome = async {
                 let engines = plugin.engines().map_err(|e| e.message)?;
                 let admin = plugin
-                    .engine_password(&mailbox.project_id)
+                    .engine_password(&mailbox.customer_id)
                     .await
                     .map_err(|e| e.message)?;
-                engines
-                    .provision(&mailbox.project_id, &admin)
+                let engine = plugin
+                    .store
+                    .find_engine(&mailbox.customer_id)
                     .await
-                    .map_err(|e| format!("engine: {e}"))?;
+                    .map_err(|_| "engine registry")?
+                    .ok_or("engine registry")?;
+                if !engine.desired_enabled {
+                    return Ok(None);
+                }
+                let engine_result = engines
+                    .provision(&mailbox.customer_id, &admin)
+                    .await
+                    .map_err(|_| "engine provisioning failed".to_owned());
+                if let Err(error) = engine_result {
+                    plugin
+                        .store
+                        .engine_state(&mailbox.customer_id, "failed")
+                        .await
+                        .map_err(|_| "engine state")?;
+                    return Err(error);
+                }
                 plugin
                     .store
-                    .engine_state(&mailbox.project_id, "ready")
+                    .engine_state(&mailbox.customer_id, "ready")
                     .await
                     .map_err(|e| e.to_string())?;
-                let client = engines.client(&mailbox.project_id, &admin);
+                let client = engines.client(&mailbox.customer_id, &admin);
                 let domain = client
                     .domain(&mailbox.domain)
                     .await
@@ -135,13 +177,16 @@ impl Plugin {
                 client
                     .create_mailbox(&domain, &mailbox.local_part, &password, quota)
                     .await
-                    .map_err(|e| e.to_string())
+                    .map(Some)
+                    .map_err(|_| "mailbox provisioning failed".to_owned())
             }
             .await;
             let stored = match outcome {
-                Ok(account) => plugin.store.mailbox_ready(&mailbox.id, &account).await,
+                Ok(Some(account)) => plugin.store.mailbox_ready(&mailbox.id, &account).await,
+                Ok(None) => return,
                 Err(error) => {
-                    eprintln!("mail_plugin_mailbox: {error}");
+                    let _ = error;
+                    eprintln!("mail_plugin_mailbox: provisioning failed");
                     plugin
                         .store
                         .mailbox_failed(&mailbox.id, "The mailbox could not be set up")
@@ -149,18 +194,135 @@ impl Plugin {
                 }
             };
             if let Err(error) = stored {
-                eprintln!("mail_plugin_store: {error}");
+                let _ = error;
+                eprintln!("mail_plugin_store: mailbox state failed");
             }
         });
     }
-    /// Finish mailboxes interrupted by a restart.
+    /// Reconcile retained engines and finish interrupted mailboxes after runtime restart.
     pub async fn resume(self: &Arc<Self>) -> std::result::Result<(), store::Error> {
-        if self.engines.is_some() {
-            for mailbox in self.store.creating_mailboxes().await? {
+        if self.engines.is_some() && !self.store.legacy_engines().await? {
+            for engine in self.store.engines().await? {
+                self.reconcile(engine.customer_id);
+            }
+            for mailbox in self.store.pending_mailboxes().await? {
                 self.provision(mailbox);
             }
         }
         Ok(())
+    }
+    async fn require_migrated(&self) -> Result<()> {
+        if self.store.legacy_engines().await.map_err(store_error)? {
+            return Err(PluginError::new(
+                ErrorCode::Conflict,
+                "Incoming mail requires operator migration of retained project engines",
+            ));
+        }
+        Ok(())
+    }
+    pub(crate) async fn incoming_state(&self, customer: &str) -> Result<Value> {
+        if self.store.legacy_engines().await.map_err(store_error)? {
+            return Ok(json!({"state":"migration-required","desiredEnabled":false}));
+        }
+        Ok(
+            match self
+                .store
+                .find_engine(customer)
+                .await
+                .map_err(store_error)?
+            {
+                Some(engine) => {
+                    json!({"state":engine.state,"desiredEnabled":engine.desired_enabled})
+                }
+                None => json!({"state":"disabled","desiredEnabled":false}),
+            },
+        )
+    }
+    pub(crate) async fn incoming(
+        self: &Arc<Self>,
+        claims: &InvocationClaims,
+        input: Value,
+        enabled: bool,
+    ) -> Result<Value> {
+        self.engines()?;
+        let target: Target = parse(input)?;
+        self.domain(claims, &target.resource_id).await?;
+        self.require_migrated().await?;
+        if enabled {
+            self.engine_password(&claims.customer_id).await?;
+        }
+        let Some(_) = self
+            .store
+            .find_engine(&claims.customer_id)
+            .await
+            .map_err(store_error)?
+        else {
+            return Ok(json!({}));
+        };
+        self.store
+            .engine_enabled(&claims.customer_id, enabled)
+            .await
+            .map_err(store_error)?;
+        self.reconcile(claims.customer_id.clone());
+        if enabled {
+            for mailbox in self
+                .store
+                .pending_mailboxes()
+                .await
+                .map_err(store_error)?
+                .into_iter()
+                .filter(|m| m.customer_id == claims.customer_id)
+            {
+                self.provision(mailbox);
+            }
+        }
+        Ok(json!({}))
+    }
+    fn reconcile(self: &Arc<Self>, customer: String) {
+        let plugin = Arc::clone(self);
+        tokio::spawn(async move {
+            let _serial = plugin.provisioning.lock().await;
+            let outcome = async {
+                let Some(engine) = plugin
+                    .store
+                    .find_engine(&customer)
+                    .await
+                    .map_err(store_error)?
+                else {
+                    return Ok(());
+                };
+                let engines = plugin.engines()?;
+                if !engine.desired_enabled {
+                    engines
+                        .suspend(&customer)
+                        .await
+                        .map_err(|_| unavailable("engine", "suspension pending"))?;
+                    return plugin
+                        .store
+                        .engine_state(&customer, "suspended")
+                        .await
+                        .map_err(store_error);
+                }
+                let admin = plugin.engine_password(&customer).await?;
+                if engines.provision(&customer, &admin).await.is_err() {
+                    plugin
+                        .store
+                        .engine_state(&customer, "failed")
+                        .await
+                        .map_err(store_error)?;
+                    return Err(unavailable("engine", "provisioning failed"));
+                }
+                plugin
+                    .store
+                    .engine_state(&customer, "ready")
+                    .await
+                    .map_err(store_error)
+            }
+            .await;
+            if outcome.is_err() {
+                eprintln!("mail_plugin_engine: reconciliation failed");
+            }
+        });
     }
     async fn mailbox(
         &self,
@@ -168,10 +330,12 @@ impl Plugin {
         input: Value,
     ) -> Result<Option<store::Mailbox>> {
         let target: Target = parse(input)?;
-        self.store
+        let mailbox = self
+            .store
             .mailbox(&claims.project_id, &uuid(&target.resource_id)?)
             .await
-            .map_err(store_error)
+            .map_err(store_error)?;
+        Ok(mailbox.filter(|m| m.customer_id.is_empty() || m.customer_id == claims.customer_id))
     }
     pub(crate) async fn view_mailbox(
         &self,
@@ -181,9 +345,21 @@ impl Plugin {
         let m = self.mailbox(claims, input).await?.ok_or_else(missing)?;
         let engines = self.engines()?;
         let (imap, submission) = engines.ports();
+        let incoming = self.incoming_state(&claims.customer_id).await?;
+        let state = if m.customer_id.is_empty() {
+            "migration-required"
+        } else if incoming["desiredEnabled"] == false {
+            if incoming["state"] == "suspending" {
+                "suspending"
+            } else {
+                "suspended"
+            }
+        } else {
+            &m.state
+        };
         Ok(json!({
-            "address": format!("{}@{}", m.local_part, m.domain), "name": m.display_name, "state": m.state, "error": m.error,
-            "host": engines.host(&m.project_id), "imapPort": imap, "smtpPort": submission, "username": format!("{}@{}", m.local_part, m.domain),
+            "address": format!("{}@{}", m.local_part, m.domain), "name": m.display_name, "state": state, "error": m.error,
+            "host": if m.customer_id.is_empty() { None } else { Some(engines.host(&m.customer_id)) }, "imapPort": imap, "smtpPort": submission, "username": format!("{}@{}", m.local_part, m.domain),
             "quotaMb": m.quota_mb, "createdAt": m.created_at, "tls": engines.tls_note(),
         }))
     }
@@ -193,6 +369,17 @@ impl Plugin {
         input: Value,
     ) -> Result<(store::Mailbox, String)> {
         let m = self.mailbox(claims, input).await?.ok_or_else(missing)?;
+        let engine = self
+            .store
+            .find_engine(&m.customer_id)
+            .await
+            .map_err(store_error)?;
+        if !engine.is_some_and(|e| e.desired_enabled && e.state == "ready") {
+            return Err(PluginError::new(
+                ErrorCode::Conflict,
+                "Incoming mail is not ready",
+            ));
+        }
         match &m.account_id {
             Some(account) if m.state == "ready" => {
                 let account = account.clone();
@@ -225,7 +412,7 @@ impl Plugin {
         let (m, account) = self.ready_mailbox(claims, input).await?;
         let password = seal::password();
         let client = self
-            .existing_client(&m.project_id)
+            .existing_client(&m.customer_id)
             .await?
             .ok_or_else(|| unavailable("engine", "not running"))?;
         // The admin can always set it again, so a lost store write is repaired by rotating once more.
@@ -249,9 +436,15 @@ impl Plugin {
         let Some(m) = self.mailbox(claims, input).await? else {
             return Ok(json!({}));
         };
+        if m.customer_id.is_empty() {
+            return Err(PluginError::new(
+                ErrorCode::Conflict,
+                "Incoming mail requires operator migration",
+            ));
+        }
         if let Some(account) = &m.account_id {
             let client = self
-                .existing_client(&m.project_id)
+                .existing_client(&m.customer_id)
                 .await?
                 .ok_or_else(|| unavailable("engine", "not running"))?;
             client
@@ -265,9 +458,9 @@ impl Plugin {
             .map_err(store_error)?;
         Ok(json!({}))
     }
-    /// DKIM record for a domain that has mailboxes on the project's engine, if the engine runs.
-    pub(crate) async fn dkim(&self, project: &str, domain: &str) -> Option<(String, String)> {
-        let client = self.existing_client(project).await.ok()??;
+    /// DKIM record for a domain that has mailboxes on the customer's engine, if the engine runs.
+    pub(crate) async fn dkim(&self, customer: &str, domain: &str) -> Option<(String, String)> {
+        let client = self.existing_client(customer).await.ok()??;
         let rows: engine::Rows<engine::Named> = client
             .call(
                 "x:Domain/get",

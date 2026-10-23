@@ -450,7 +450,8 @@ impl BrowserSessions {
             return Err(Error::Unauthorized);
         }
         if let Some(ceiling) = ceiling
-            && ((principal.is_operator() && ceiling.role != "operator")
+            && (ceiling.customer_scope.as_deref() != principal.customer_scope()
+                || (principal.is_operator() && ceiling.role != "operator")
                 || scopes.iter().any(|v| !ceiling.scopes.contains(v)))
         {
             return Err(Error::Unauthorized);
@@ -470,7 +471,8 @@ impl BrowserSessions {
             expires_at: expires,
             role: role.into(),
             scopes,
-            read_only: principal.in_tenant_preview() || ceiling.is_some_and(|v| v.read_only),
+            read_only: principal.in_read_only_preview() || ceiling.is_some_and(|v| v.read_only),
+            customer_scope: principal.customer_scope().map(str::to_owned),
         };
         Ok(Some(BrowserAuthentication {
             principal,
@@ -517,7 +519,12 @@ impl BrowserSessions {
             || !matches!(role, "operator" | "admin" | "editor" | "reader")
             || if principal.in_tenant_preview() {
                 claims["webdock_preview"] != true
-                    || role != "reader"
+                    || role
+                        != if principal.is_acting_customer() {
+                            "admin"
+                        } else {
+                            "reader"
+                        }
                     || principal.role() != "operator"
             } else {
                 principal.is_operator() != (role == "operator")

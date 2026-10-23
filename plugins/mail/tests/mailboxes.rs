@@ -28,9 +28,10 @@ fn config() -> engine::EngineConfig {
 }
 
 /// Applies, prunes and removes like the agent, in one namespace, through kubectl.
+type Applied = std::collections::HashMap<String, Vec<(String, String)>>;
 struct Kube {
     namespace: String,
-    applied: Mutex<Vec<(String, String)>>,
+    applied: std::sync::Arc<Mutex<Applied>>,
 }
 fn kubectl(args: &[&str], input: Option<&Value>) -> std::process::Output {
     let kubeconfig =
@@ -70,7 +71,9 @@ fn resource(object: &Value) -> (String, String) {
 #[tonic::async_trait]
 impl engine::Workloads for Kube {
     async fn call(&self, method: &str, input: Value) -> Result<Value, PluginError> {
-        let ns = self.namespace.as_str();
+        let unit = input["unit"].as_str().expect("workload unit");
+        let namespace = format!("{}-{unit}", self.namespace);
+        let ns = namespace.as_str();
         Ok(match method {
             "apply" => {
                 let exists = kubectl(&["get", "namespace", ns], None).status.success();
@@ -109,7 +112,8 @@ impl engine::Workloads for Kube {
                     String::from_utf8_lossy(&out.stderr)
                 );
                 let wanted: Vec<_> = objects.iter().map(resource).collect();
-                let mut applied = self.applied.lock().unwrap();
+                let mut by_unit = self.applied.lock().unwrap();
+                let applied = by_unit.entry(unit.to_owned()).or_default();
                 for (kind, name) in applied.iter().filter(|r| !wanted.contains(r)) {
                     kubectl(
                         &["delete", "-n", ns, kind, name, "--ignore-not-found"],
@@ -117,7 +121,7 @@ impl engine::Workloads for Kube {
                     );
                 }
                 *applied = wanted;
-                json!({})
+                json!({"revision":1})
             }
             "remove" => {
                 kubectl(
@@ -130,13 +134,34 @@ impl engine::Workloads for Kube {
                     ],
                     None,
                 );
-                self.applied.lock().unwrap().clear();
+                self.applied.lock().unwrap().remove(unit);
                 json!({})
             }
             _ if !kubectl(&["get", "namespace", ns], None).status.success() => {
                 json!({"removed": true})
             }
-            _ => json!({"observed": {}}),
+            _ => {
+                let out = kubectl(
+                    &["get", "deployment", "engine", "-n", ns, "-o", "json"],
+                    None,
+                );
+                let deployment: Value = serde_json::from_slice(&out.stdout).unwrap();
+                let stopped = [
+                    "replicas",
+                    "readyReplicas",
+                    "availableReplicas",
+                    "updatedReplicas",
+                    "currentReplicas",
+                    "terminatingReplicas",
+                ]
+                .iter()
+                .all(|key| deployment["status"][key].as_i64().unwrap_or(0) == 0);
+                let observed = deployment["status"]["observedGeneration"]
+                    .as_i64()
+                    .unwrap_or(0)
+                    >= deployment["metadata"]["generation"].as_i64().unwrap();
+                json!({"appliedRevision":1,"observed":{"ready":stopped && observed}})
+            }
         })
     }
 }
@@ -177,6 +202,7 @@ impl Fixture {
             generation: 1,
             action: action.into(),
             project_id: project.into(),
+            customer_id: if project == "202" { "202" } else { "101" }.into(),
             iat: 0,
             exp: 0,
         };
@@ -195,7 +221,7 @@ impl Fixture {
     }
 }
 /// A JMAP session through the engine's route, as the mailbox's user.
-async fn session(project: &str, user: &str, password: &str) -> u16 {
+async fn session(customer: &str, user: &str, password: &str) -> u16 {
     reqwest::Client::builder()
         .no_proxy()
         .build()
@@ -203,7 +229,7 @@ async fn session(project: &str, user: &str, password: &str) -> u16 {
         .get(format!("{ORIGIN}/jmap/session"))
         .header(
             reqwest::header::HOST,
-            format!("p{project}.mail-admin.localhost"),
+            format!("c{customer}.mail-admin.localhost"),
         )
         .basic_auth(user, Some(password))
         .send()
@@ -211,6 +237,21 @@ async fn session(project: &str, user: &str, password: &str) -> u16 {
         .unwrap()
         .status()
         .as_u16()
+}
+
+async fn wait_mailbox(f: &Fixture, project: &str, id: &str) -> Value {
+    for _ in 0..600 {
+        let view = f
+            .call(project, "mailboxes.view", json!({"resource_id":id}))
+            .await
+            .unwrap();
+        if view["state"] != "creating" {
+            assert_eq!(view["state"], "ready", "{view}");
+            return view;
+        }
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+    panic!("mailbox readiness timed out");
 }
 
 #[test]
@@ -266,7 +307,7 @@ fn engines_have_no_egress_and_drop_the_setup_administrator() {
         .unwrap();
     assert_eq!(
         imaps["spec"]["routes"][0]["match"],
-        "HostSNI(`p7.mail.localhost`)"
+        "HostSNI(`c7.mail.localhost`)"
     );
     assert!(
         engine::Engines::new(
@@ -277,6 +318,30 @@ fn engines_have_no_egress_and_drop_the_setup_administrator() {
             }
         )
         .is_err()
+    );
+}
+
+#[tokio::test]
+async fn unavailable_management_never_removes_retained_engine() {
+    struct Offline(std::sync::Arc<Mutex<Vec<String>>>);
+    #[tonic::async_trait]
+    impl engine::Workloads for Offline {
+        async fn call(&self, method: &str, _: Value) -> Result<Value, PluginError> {
+            self.0.lock().unwrap().push(method.into());
+            Err(PluginError::new(
+                ErrorCode::Unavailable,
+                "fixture unavailable",
+            ))
+        }
+    }
+    let calls = std::sync::Arc::new(Mutex::new(Vec::new()));
+    let mut config = config();
+    config.admin.origin = "http://127.0.0.1:9".into();
+    let engines = engine::Engines::new(Box::new(Offline(calls.clone())), config).unwrap();
+    assert!(engines.provision("7", "fixture-password").await.is_err());
+    assert!(
+        !calls.lock().unwrap().iter().any(|m| m == "remove"),
+        "A health-check failure must not delete customer mail data"
     );
 }
 
@@ -293,9 +358,10 @@ async fn mailbox_lifecycle() {
     url.set_path(&storage);
     let project = format!("9{}", std::process::id());
     let namespace = format!("wd-mailtest-{project}");
+    let applied = std::sync::Arc::new(Mutex::new(std::collections::HashMap::new()));
     let kube = || Kube {
         namespace: namespace.clone(),
-        applied: Mutex::new(Vec::new()),
+        applied: applied.clone(),
     };
     let plugin = Plugin::new(
         Store::connect(url.as_str()).await.unwrap(),
@@ -311,7 +377,8 @@ async fn mailbox_lifecycle() {
         },
         Some(engine::Engines::new(Box::new(kube()), config()).unwrap()),
     );
-    let f = Fixture {
+    let stored = Store::connect(url.as_str()).await.unwrap();
+    let mut f = Fixture {
         handler: Handler(plugin),
         storage,
         project,
@@ -388,13 +455,186 @@ async fn mailbox_lifecycle() {
         .unwrap()
         .to_owned();
     assert_eq!(
-        session(&f.project, "anna@shop.example.test", &password).await,
+        session("101", "anna@shop.example.test", &password).await,
         200
     );
+    assert_eq!(session("101", "anna@shop.example.test", "wrong").await, 401);
+    // Another project of the same customer uses the same retained engine.
+    let second_domain = f
+        .call(
+            "303",
+            "domains.create",
+            json!({"domain":"second.example.test"}),
+        )
+        .await
+        .unwrap()["resource"]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let second = f
+        .call(
+            "303",
+            "mailboxes.create",
+            json!({"domain_id":second_domain,"local_part":"bob"}),
+        )
+        .await
+        .unwrap()["resource"]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let second_view = wait_mailbox(&f, "303", &second).await;
+    assert_eq!(second_view["host"], view["host"]);
     assert_eq!(
-        session(&f.project, "anna@shop.example.test", "wrong").await,
+        f.call("303", "mailboxes.view", json!({"resource_id":mailbox}))
+            .await
+            .unwrap_err()
+            .code,
+        ErrorCode::NotFound
+    );
+    let before = stored.find_engine("101").await.unwrap().unwrap();
+
+    // Different customers have separate CE installations and credentials cannot cross them.
+    let other_domain = f
+        .call(
+            "202",
+            "domains.create",
+            json!({"domain":"other.example.test"}),
+        )
+        .await
+        .unwrap()["resource"]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let other = f
+        .call(
+            "202",
+            "mailboxes.create",
+            json!({"domain_id":other_domain,"local_part":"eve"}),
+        )
+        .await
+        .unwrap()["resource"]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let other_view = wait_mailbox(&f, "202", &other).await;
+    assert_ne!(other_view["host"], view["host"]);
+    assert_eq!(
+        session("202", "anna@shop.example.test", &password).await,
         401
     );
+    let other_password = f
+        .call("202", "mailboxes.credentials", json!({"resource_id":other}))
+        .await
+        .unwrap()["value"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    assert_eq!(
+        session("202", "eve@other.example.test", &other_password).await,
+        200
+    );
+
+    // Suspension retains the PVC UID, encrypted credentials and reservation across runtime restart.
+    let ns = format!("{namespace}-engine-c101");
+    let pvc = || {
+        kubectl(
+            &[
+                "get",
+                "pvc",
+                "engine-data",
+                "-n",
+                &ns,
+                "-o",
+                "jsonpath={.metadata.uid}",
+            ],
+            None,
+        )
+        .stdout
+    };
+    let retained = pvc();
+    assert!(!retained.is_empty());
+    f.ok("incoming.deactivate", json!({"resource_id":domain}))
+        .await;
+    assert_eq!(pvc(), retained);
+    for _ in 0..600 {
+        if stored.find_engine("101").await.unwrap().unwrap().state == "suspended" {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+    assert_eq!(
+        stored.find_engine("101").await.unwrap().unwrap().state,
+        "suspended"
+    );
+    // Crash after Stalwart account creation, before the ready row was recorded.
+    let (db, connection) = tokio_postgres::connect(url.as_str(), NoTls).await.unwrap();
+    tokio::spawn(connection);
+    db.execute(
+        "UPDATE mailboxes SET state='creating',account_id=NULL WHERE id=$1",
+        &[&uuid::Uuid::parse_str(&mailbox).unwrap()],
+    )
+    .await
+    .unwrap();
+    drop(db);
+    f.handler = Handler(Plugin::new(
+        Store::connect(url.as_str()).await.unwrap(),
+        Sealer::new(&"57".repeat(32)).unwrap(),
+        transport::Sender::new("http://127.0.0.1:9"),
+        Box::new(NoDns),
+        Settings {
+            platform: transport::Platform::Smtp {
+                host: "127.0.0.1".into(),
+                port: 9,
+            },
+            trust_unverified_domains: true,
+        },
+        Some(engine::Engines::new(Box::new(kube()), config()).unwrap()),
+    ));
+    f.handler.0.resume().await.unwrap();
+    assert!(
+        !stored
+            .find_engine("101")
+            .await
+            .unwrap()
+            .unwrap()
+            .desired_enabled
+    );
+    f.call(
+        "303",
+        "incoming.activate",
+        json!({"resource_id":second_domain}),
+    )
+    .await
+    .unwrap();
+    for _ in 0..600 {
+        if matches!(
+            stored
+                .find_engine("101")
+                .await
+                .unwrap()
+                .unwrap()
+                .state
+                .as_str(),
+            "ready" | "failed"
+        ) {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+    let after = stored.find_engine("101").await.unwrap().unwrap();
+    assert_eq!(after.state, "ready");
+    assert_eq!(after.id, before.id);
+    assert_eq!(after.admin_sealed, before.admin_sealed);
+    assert_eq!(pvc(), retained);
+    assert_eq!(
+        wait_mailbox(&f, &f.project, &mailbox).await["state"],
+        "ready"
+    );
+    assert_eq!(
+        session("101", "anna@shop.example.test", &password).await,
+        200
+    );
+
     // Mail clients reach IMAPS by server name and can verify the issued certificate.
     let kubeconfig = std::env::var("WEBDOCK_WORKLOAD_TEST_KUBECONFIG").unwrap();
     let ca = std::path::Path::new(&kubeconfig)
@@ -447,7 +687,7 @@ async fn mailbox_lifecycle() {
     f.ok("mailboxes.rotate", json!({"resource_id": mailbox}))
         .await;
     assert_eq!(
-        session(&f.project, "anna@shop.example.test", &password).await,
+        session("101", "anna@shop.example.test", &password).await,
         401
     );
     let rotated = f
@@ -457,26 +697,61 @@ async fn mailbox_lifecycle() {
         .unwrap()
         .to_owned();
     assert_eq!(
-        session(&f.project, "anna@shop.example.test", &rotated).await,
+        session("101", "anna@shop.example.test", &rotated).await,
         200
     );
 
     f.ok("mailboxes.delete", json!({"resource_id": mailbox}))
         .await;
     assert_eq!(
-        session(&f.project, "anna@shop.example.test", &rotated).await,
+        session("101", "anna@shop.example.test", &rotated).await,
         401
     );
     f.ok("mailboxes.delete", json!({"resource_id": mailbox}))
         .await;
     f.ok("domains.delete", json!({"resource_id": domain})).await;
 
+    let remaining_password = f
+        .call(
+            "303",
+            "mailboxes.credentials",
+            json!({"resource_id":second}),
+        )
+        .await
+        .unwrap()["value"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    assert_eq!(
+        session("101", "bob@second.example.test", &remaining_password).await,
+        200
+    );
+    assert_eq!(
+        stored.find_engine("101").await.unwrap().unwrap().id,
+        before.id
+    );
+    f.call("303", "mailboxes.delete", json!({"resource_id":second}))
+        .await
+        .unwrap();
+    f.call(
+        "303",
+        "domains.delete",
+        json!({"resource_id":second_domain}),
+    )
+    .await
+    .unwrap();
     engine::Engines::new(Box::new(kube()), config())
         .unwrap()
-        .destroy(&f.project)
+        .destroy("202")
+        .await
+        .unwrap();
+    engine::Engines::new(Box::new(kube()), config())
+        .unwrap()
+        .destroy("101")
         .await
         .unwrap();
     drop(f.handler);
+    drop(stored);
     admin()
         .await
         .batch_execute(&format!("DROP DATABASE {} WITH (FORCE)", f.storage))

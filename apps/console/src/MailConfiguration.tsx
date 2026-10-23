@@ -25,7 +25,7 @@ export function MailConfiguration({
   const configure = useConfigurationAction(value, readAt, "configure", refresh);
   const revoke = useConfigurationAction(value, readAt, "revoke", refresh);
   if (!value.canManage) return null;
-  const preview = Boolean(session.user.preview);
+  const preview = Boolean((session.user.preview && !session.user.acting));
   const disabled =
     preview || !value.canConfigure || provisioningBlocked || configure.blocked;
   return (

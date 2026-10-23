@@ -63,10 +63,14 @@ impl IncomingAgent {
             Err(error) if super::super::authorization::denied(&error) => return Ok(None),
             Err(_) => return Err(Error::Unavailable),
         };
-        if principal.in_tenant_preview() {
+        if principal.in_read_only_preview() {
             return Ok(None);
         }
-        if field::<bool>(&record.row,"operator_authority")? {
+        if principal.is_acting_customer() {
+            let business = self.incoming.signer.begin(&self.incoming.dependencies.business, &principal).await.map_err(|_|Error::Unavailable)?;
+            let allowed = one(&business,"SELECT webdock_rls.customer_allowed($1,true) AS allowed",vec![record.customer.clone().into()]).await?.is_some_and(|r|field::<bool>(&r,"allowed").ok()==Some(true));
+            if !allowed { return Ok(None); }
+        } else if field::<bool>(&record.row,"operator_authority")? {
             if !principal.is_operator(){return Ok(None);}
         } else if one(tx,r#"SELECT 1 FROM webdock_auth.member m JOIN webdock_auth.tenant_customer t ON t.organization_id=m."organizationId" WHERE t.customer_id=$1 AND m."userId"=$2 AND m.id=$3 AND m.role IN ('owner','admin') FOR SHARE OF m"#,vec![record.customer.clone().into(),principal.user_id.into(),field::<Option<String>>(&record.row,"admission_member_id")?.into()]).await?.is_none(){return Ok(None);}
 

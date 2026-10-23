@@ -256,7 +256,7 @@ export function MailCustomer({ customerID }: { customerID: string }) {
   )
     return <Loading>Loading mailbox directory…</Loading>;
   const blocked =
-    Boolean(session.user.preview) ||
+    Boolean((session.user.preview && !session.user.acting)) ||
     ledger.data !== null ||
     service.isFetching ||
     directory.isFetching;
@@ -279,7 +279,7 @@ export function MailCustomer({ customerID }: { customerID: string }) {
               Refresh Mail
             </button>
           </div>
-          {session.user.preview ? (
+          {(session.user.preview && !session.user.acting) ? (
             <p className={ui.notice}>Customer preview is read-only.</p>
           ) : null}
           <ServiceSummary value={service.data} />

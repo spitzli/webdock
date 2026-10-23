@@ -6,7 +6,7 @@ use webdock_plugin_runtime::ActionHandler;
 fn claims(action: &str) -> InvocationClaims {
     serde_json::from_value(json!({
         "v":1,"id":"00000000-0000-4000-8000-000000000001","pluginID":"echo-demo","generation":1,
-        "action":action,"projectID":"201","iat":0,"exp":60
+        "action":action,"projectID":"201","customerID":"101","iat":0,"exp":60
     }))
     .unwrap()
 }

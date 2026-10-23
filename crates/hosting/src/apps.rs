@@ -493,6 +493,7 @@ impl HostingService {
         }
         let row = row.as_ref().unwrap();
         let mut desired = json!({"appID":row["id"],"projectID":project,"clusterID":cluster,"namespace":access.project.get("namespace").cloned().unwrap_or(json!(format!("wd-{project}"))),"name":row["name"],"spec":spec,"revision":row["revision"],"action":if logging{match action{"apps.inspect"=>"inspect","apps.metrics"=>"metrics",_=>"logs"}}else if purging{"purge-storage"}else if deleting{"delete"}else{"apply"},"expectedUID":row["observed_uid"]});
+        desired["customerScope"] = json!(actor.customer_scope);
         if storage {
             desired["storageVersion"] = json!(1);
         }

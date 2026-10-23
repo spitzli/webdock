@@ -129,7 +129,7 @@ async fn ready(tx: &DatabaseTransaction, customer: &str) -> Result<bool> {
     Ok(one(tx,"SELECT 1 FROM webdock_mail.service WHERE customer_id=$1 AND desired_enabled AND state='ready' AND revision=applied_revision AND EXISTS(SELECT 1 FROM webdock_auth.platform_settings WHERE id=true AND settings->>'mailEnabled'='true') FOR SHARE",vec![customer.into()]).await?.is_some())
 }
 async fn can_manage(access: &authority::AuthorizedCustomer, customer: &str) -> Result<bool> {
-    if access.operator {
+    if access.operator || access.principal.is_acting_customer() {
         return Ok(true);
     }
     Ok(one(&access.business,"SELECT 1 FROM webdock_auth.member m JOIN webdock_auth.tenant_customer t ON t.organization_id=m.\"organizationId\" WHERE t.customer_id=$1 AND m.\"userId\"=$2 AND m.role IN ('owner','admin')",vec![customer.into(),access.principal.user_id.clone().into()]).await?.is_some())

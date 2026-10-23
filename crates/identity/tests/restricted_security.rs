@@ -35,6 +35,10 @@ async fn bootstrap_authentication_works_without_widening_business_role_permissio
         .await
         .unwrap();
     offline
+        .execute_unprepared(include_str!("../migrations/0005_customer_acting.sql"))
+        .await
+        .unwrap();
+    offline
         .execute_unprepared(include_str!("../migrations/0003_account_recovery.sql"))
         .await
         .unwrap();

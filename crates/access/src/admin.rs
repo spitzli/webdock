@@ -255,6 +255,16 @@ impl AccessService {
     }
     /// Trusted backend entry point; revalidates the persisted native principal.
     pub async fn start_preview_as(&self, actor: &Principal, customer: &str) -> Result<Value> {
+        self.start_customer_scope_as(actor, customer, PreviewMode::ReadOnly)
+            .await
+    }
+    /// Explicit owner acting; the old preview entry points remain read-only.
+    pub async fn start_customer_scope_as(
+        &self,
+        actor: &Principal,
+        customer: &str,
+        mode: PreviewMode,
+    ) -> Result<Value> {
         let actor = self.current_actor(actor).await?;
         if !actor.is_operator() {
             return Err(Error::Forbidden);
@@ -266,9 +276,19 @@ impl AccessService {
         if !local_org(&tx, &org).await? {
             return Err(Error::ActivationRequired);
         }
-        tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.studio_tenant_preview(session_id,actor_id,customer_id,organization_id) VALUES($1,$2,$3,$4) ON CONFLICT(session_id) DO NOTHING RETURNING session_id",[actor.session_id.clone().into(),actor.user_id.clone().into(),customer.into(),org.into()])).await?.ok_or(Error::Conflict)?;
-        self.audit(&tx, &actor, "tenant-preview-start", Some(customer), false)
-            .await?;
+        tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.studio_tenant_preview(session_id,actor_id,customer_id,organization_id,mode) VALUES($1,$2,$3,$4,$5) ON CONFLICT(session_id) DO NOTHING RETURNING session_id",[actor.session_id.clone().into(),actor.user_id.clone().into(),customer.into(),org.into(),mode.as_str().into()])).await?.ok_or(Error::Conflict)?;
+        self.audit(
+            &tx,
+            &actor,
+            if mode == PreviewMode::Owner {
+                "tenant-acting-start"
+            } else {
+                "tenant-preview-start"
+            },
+            Some(customer),
+            false,
+        )
+        .await?;
         tx.commit().await?;
         self.current_preview_as(&actor).await
     }

@@ -51,7 +51,7 @@ async fn explicit_mailbox_grant_one_use_launch_revocation_and_secret_boundary() 
     url.set_path(&format!("/{name}"));
     let owner = Database::connect(url.as_str()).await.unwrap();
     let result=std::panic::AssertUnwindSafe(async{
-        webdock_persistence::migrations::bootstrap(&owner,&name,KEY).await.unwrap();owner.execute_unprepared(include_str!("../migrations/0001_native_authority.sql")).await.unwrap();
+        webdock_persistence::migrations::bootstrap(&owner,&name,KEY).await.unwrap();
         sql(&owner,"INSERT INTO webdock_auth.\"user\"(id,name,email,\"emailVerified\",role,\"twoFactorEnabled\",\"mustChangePassword\") VALUES('alice','Alice','alice@example.invalid',true,'user',false,false),('operator','Operator','operator@example.invalid',true,'operator',true,false)",vec![]).await;
         sql(&owner,"INSERT INTO webdock_auth.session(id,token,\"userId\",\"expiresAt\",\"updatedAt\") VALUES('alice-session','alice-token','alice',now()+interval '1 hour',now()),('operator-session','operator-token','operator',now()+interval '1 hour',now())",vec![]).await;
         let seed=owner.begin().await.unwrap();sql(&seed,"SELECT set_config('webdock.organization_allocation','{\"customer_id\":\"123\",\"organization_id\":\"124\"}',true)",vec![]).await;sql(&seed,"INSERT INTO webdock_admin.customers(id,name) VALUES('123','Webmail fixture')",vec![]).await;seed.commit().await.unwrap();
@@ -87,8 +87,25 @@ async fn explicit_mailbox_grant_one_use_launch_revocation_and_secret_boundary() 
         keys.manage(&operator,&StoredAuthority::LocalSession {},"125",KeyCommand::Revoke { key_id: key_id.into() }).await.unwrap();
         assert!(keys.authenticate(token,None).await.is_err());assert!(keys.authorize_id("125",key_id,None).await.is_err());
         drop(keys);
-        let service=WebmailService::new(dependencies,WebmailConfig{enabled:true,gateway_origin:"https://mail.example.test".into(),managed_cluster:"200".into(),rls_secret:KEY.into(),encryption_key:encryption}).await.unwrap();
+        let service=WebmailService::new(dependencies,WebmailConfig{enabled:true,gateway_origin:"https://mail.example.test".into(),managed_cluster:"200".into(),rls_secret:KEY.into(),encryption_key:encryption.clone()}).await.unwrap();
         assert!(service.launch(&operator,&StoredAuthority::LocalSession {},"123","303").await.is_err());
+        sql(&owner,"INSERT INTO webdock_auth.studio_tenant_preview(session_id,actor_id,customer_id,organization_id,mode) VALUES('operator-session','operator','123','124','owner')",vec![]).await;
+        let acting=identity.authenticate_cookie(&operator_cookie).await.unwrap().unwrap();
+        let acting_proof=StoredAuthority::local_session(&acting);
+        assert!(service.launch(&acting,&acting_proof,"123","303").await.is_err(),"owner still needs explicit mailbox grant");
+        let sealed=MailCipher::new(&encryption).unwrap().seal(&json!({"username":"native-operator","password":"fixture-only-password"}),"identity:123:305").unwrap();
+        sql(&owner,"INSERT INTO webdock_mail.identity(id,customer_id,subject,provider_id,encrypted_credentials,state) VALUES('305','123','operator','principal2',$1,'ready')",vec![sealed.into()]).await;
+        sql(&owner,"INSERT INTO webdock_mail.mailbox_grant(customer_id,mailbox_id,subject,enabled,revision,applied_revision,operator_grant) VALUES('123','303','operator',true,1,1,true)",vec![]).await;
+        let scoped_launch=service.launch(&acting,&acting_proof,"123","303").await.unwrap();
+        let scoped_session=service.exchange(&scoped_launch.code).await.unwrap();
+        assert!(service.inspect(&scoped_session.token).await.is_ok());
+        assert!(service.launch(&acting,&acting_proof,"125","303").await.is_err());
+        sql(&owner,"DELETE FROM webdock_auth.studio_tenant_preview WHERE session_id='operator-session'",vec![]).await;
+        assert!(service.inspect(&scoped_session.token).await.is_err());
+        sql(&owner,"INSERT INTO webdock_auth.studio_tenant_preview(session_id,actor_id,customer_id,organization_id,mode) VALUES('operator-session','operator','123','124','owner')",vec![]).await;
+        assert!(service.inspect(&scoped_session.token).await.is_err(),"same-customer reentry never revives a prior session");
+        assert!(service.launch(&acting,&StoredAuthority::LocalSession {},"123","303").await.is_err());
+        sql(&owner,"DELETE FROM webdock_auth.studio_tenant_preview WHERE session_id='operator-session'",vec![]).await;
         let launch=service.launch(&alice,&StoredAuthority::LocalSession {},"123","303").await.unwrap();assert!(!serde_json::to_string(&launch).unwrap().contains("password"));
         assert!(owner.execute_unprepared("UPDATE webdock_mail.webmail_launch SET native_authority='{}' WHERE session_id='alice-session'").await.is_err());
         let exchanged=service.exchange(&launch.code).await.unwrap();assert!(service.exchange(&launch.code).await.is_err());assert!(!serde_json::to_string(&exchanged).unwrap().contains("password"));

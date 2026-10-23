@@ -55,7 +55,7 @@ pub fn cookie(headers: &HeaderMap) -> Result<String, ApiFailure> {
     })
 }
 pub fn public_user(actor: &Principal) -> Value {
-    json!({"id":actor.user_id,"name":actor.name,"email":actor.email,"emailVerified":actor.email_verified(),"role":actor.role(),"banned":false,"twoFactorEnabled":actor.two_factor_enabled(),"mustChangePassword":actor.requires_password_change(),"preview":actor.in_tenant_preview()})
+    json!({"id":actor.user_id,"name":actor.name,"email":actor.email,"emailVerified":actor.email_verified(),"role":if actor.in_tenant_preview() { "user" } else { actor.role() },"banned":false,"twoFactorEnabled":actor.two_factor_enabled(),"mustChangePassword":actor.requires_password_change(),"preview":actor.in_tenant_preview(),"acting":actor.is_acting_customer(),"customerScope":actor.customer_scope()})
 }
 fn session_value(actor: &Principal) -> Value {
     json!({"user":public_user(actor),"session":{"id":actor.session_id,"userId":actor.user_id,"expiresAt":actor.expires_at}})
@@ -97,7 +97,7 @@ pub struct AuthenticatedActor {
 }
 impl AuthenticatedActor {
     pub fn read_only(&self) -> bool {
-        self.principal.in_tenant_preview()
+        self.principal.in_read_only_preview()
             || matches!(&self.authority,ActorAuthority::FirstPartyBrowser{browser} if browser.read_only)
     }
 }
@@ -132,8 +132,8 @@ pub async fn resolve_actor(
         .await
         .map(|value| {
             value.map(|principal| AuthenticatedActor {
+                authority: ActorAuthority::local_session(&principal),
                 principal,
-                authority: ActorAuthority::LocalSession {},
             })
         })
         .map_err(failure)

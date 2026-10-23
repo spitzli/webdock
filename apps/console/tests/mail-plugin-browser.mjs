@@ -6,7 +6,7 @@ import manifest from '@plugins/mail/manifest.json' with { type: 'json' };
 const domainID = '00000000-0000-4000-8000-0000000000d1';
 const relayID = '00000000-0000-4000-8000-0000000000e1';
 const mailboxID = '00000000-0000-4000-8000-0000000000b1';
-const state = { verified: false, recent: [], calls: [], relay: true, mailbox: false, mailboxViews: 0 };
+const state = { verified: false, recent: [], calls: [], relay: true, mailbox: false, mailboxViews: 0, incoming: 'disabled', desiredEnabled: false };
 async function open(browser, member) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
@@ -19,11 +19,11 @@ async function open(browser, member) {
   await page.route(path('/api/console/tenants'), json([{ id: '101', name: 'Demo customer', status: 'active', role: member }]));
   await page.route(path('/api/console/tenant/101/projects'), json([{ id: '201', name: 'Demo project', status: 'active' }]));
   await page.route(path('/api/console/project/201'), json({ id: '201', name: 'Demo project', customer: { id: '101', name: 'Demo customer' }, role: member }));
-  await page.route(path('/api/console/plugins'), (route) => route.fulfill({ json: [{ state: 'enabled', runtime: 'ready', manifest, generation: 1, manifestSha256: 'a'.repeat(64), launchLinks: [], features: member === 'owner' ? ['add-domains', 'byok-turbosmtp', 'create-mailboxes'] : [], resources: [{ id: domainID, offering: 'domain', name: 'shop.example.com', createdVia: 'self-service' }, ...(state.relay ? [{ id: relayID, offering: 'relay', name: 'turboSMTP account', createdVia: 'self-service' }] : []), ...(state.mailbox ? [{ id: mailboxID, offering: 'mailbox', name: 'anna@shop.example.com', createdVia: 'self-service' }] : [])] }] }));
+  await page.route(path('/api/console/plugins'), (route) => route.fulfill({ json: [{ state: 'enabled', runtime: 'ready', manifest, generation: 1, manifestSha256: 'a'.repeat(64), launchLinks: [], features: member === 'owner' ? ['add-domains', 'byok-turbosmtp', 'create-mailboxes', 'manage-incoming'] : [], resources: [{ id: domainID, offering: 'domain', name: 'shop.example.com', createdVia: 'self-service' }, ...(state.relay ? [{ id: relayID, offering: 'relay', name: 'turboSMTP account', createdVia: 'self-service' }] : []), ...(state.mailbox ? [{ id: mailboxID, offering: 'mailbox', name: 'anna@shop.example.com', createdVia: 'self-service' }] : [])] }] }));
   await page.route(path('/api/console/plugins/invoke'), (route) => {
     const body = route.request().postDataJSON();
     state.calls.push(body);
-    if (body.action === 'domains.view') return route.fulfill({ json: { domain: 'shop.example.com', verified: state.verified, verificationSkipped: false, transport: 'platform', records: [{ type: 'TXT', name: '_webdock.shop.example.com', value: 'webdock-verify=abc', purpose: 'Proves you own the domain' }], mailboxes: state.mailbox ? ['anna@shop.example.com'] : [], recent: state.recent } });
+    if (body.action === 'domains.view') return route.fulfill({ json: { domain: 'shop.example.com', verified: state.verified, verificationSkipped: false, transport: 'platform', records: [{ type: 'TXT', name: '_webdock.shop.example.com', value: 'webdock-verify=abc', purpose: 'Proves you own the domain' }], mailboxes: state.mailbox ? ['anna@shop.example.com'] : [], recent: state.recent, incoming: { state: state.incoming, desiredEnabled: state.desiredEnabled } } });
     if (body.action === 'domains.verify') { state.verified = true; return route.fulfill({ json: { verified: true } }); }
     if (body.action === 'mail.send') {
       state.recent = [{ from: `${body.input.from}@shop.example.com`, to: body.input.to, subject: body.input.subject, transport: 'platform', status: 'accepted', at: '2026-10-22 10:00:00+00' }];
@@ -31,11 +31,12 @@ async function open(browser, member) {
     }
     if (body.action === 'relay.view') return route.fulfill({ json: { provider: 'turboSMTP', region: 'EU', keyHint: '…a1b2', connectedAt: '2026-10-22 09:00:00+00' } });
     if (body.action === 'relay.delete') { state.relay = false; return route.fulfill({ json: {} }); }
-    if (body.action === 'mailboxes.create') { state.mailbox = true; return route.fulfill({ json: { resource: { id: mailboxID, name: 'anna@shop.example.com' } } }); }
+    if (body.action === 'incoming.deactivate') { state.incoming = 'suspending'; state.desiredEnabled = false; return route.fulfill({ json: {} }); }
+    if (body.action === 'mailboxes.create') { state.mailbox = true; state.incoming = 'ready'; state.desiredEnabled = true; return route.fulfill({ json: { resource: { id: mailboxID, name: 'anna@shop.example.com' } } }); }
     if (body.action === 'mailboxes.view') {
       state.mailboxFirst ||= Date.now();
       const ready = Date.now() - state.mailboxFirst > 1500;
-      return route.fulfill({ json: { address: 'anna@shop.example.com', name: 'Anna', state: ready ? 'ready' : 'creating', error: null, host: ready ? '192.168.80.2' : null, imapPort: 1993, smtpPort: 2465, username: 'anna@shop.example.com', quotaMb: 1024, tls: 'Implicit TLS, self-signed certificate (local development)' } });
+      return route.fulfill({ json: { address: 'anna@shop.example.com', name: 'Anna', state: ['suspending', 'suspended'].includes(state.incoming) ? state.incoming : ready ? 'ready' : 'creating', error: null, host: ready ? '192.168.80.2' : null, imapPort: 1993, smtpPort: 2465, username: 'anna@shop.example.com', quotaMb: 1024, tls: 'Implicit TLS, self-signed certificate (local development)' } });
     }
     if (body.action === 'mailboxes.credentials') return route.fulfill({ json: { value: 'feedc0de' } });
     return route.fulfill({ status: 404, json: {} });
@@ -89,6 +90,27 @@ try {
   assert.equal(await session.page.getByText('feedc0de').count(), 0);
   await session.page.getByRole('button', { name: 'Show password' }).click();
   await session.page.getByText('feedc0de').waitFor();
+  errors.push(...session.errors);
+  await session.context.close();
+
+  // Suspension is customer-wide, explicitly confirmed and polled until observed completion.
+  session = await open(browser, 'owner');
+  await session.page.goto(previewOrigin + `/workspaces/101/projects/201/resources/mail/${domainID}`);
+  const incoming = session.page.getByRole('region', { name: 'Customer incoming mail', exact: true });
+  const suspend = incoming.getByRole('button', { name: 'Suspend incoming mail', exact: true });
+  await suspend.waitFor();
+  assert.equal(await suspend.isDisabled(), true);
+  await incoming.getByRole('checkbox', { name: 'Suspend incoming mail for every project of this customer' }).check();
+  await suspend.click();
+  await incoming.getByText('Status: suspending', { exact: true }).waitFor();
+  state.incoming = 'suspended';
+  await incoming.getByText('Status: suspended', { exact: true }).waitFor({ timeout: 7000 });
+  assert.ok(state.calls.some((call) => call.action === 'incoming.deactivate' && call.input.resource_id === domainID));
+  state.incoming = 'suspending';
+  await session.page.goto(previewOrigin + `/workspaces/101/projects/201/resources/mail/${mailboxID}`);
+  await session.page.getByText('Suspending', { exact: true }).waitFor();
+  state.incoming = 'suspended';
+  await session.page.getByText('Suspended', { exact: true }).waitFor({ timeout: 7000 });
   errors.push(...session.errors);
   await session.context.close();
 

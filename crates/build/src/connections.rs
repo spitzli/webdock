@@ -35,7 +35,7 @@ impl BuildService {
             || row["actor"]["sessionID"] != principal.session_id
             || row["allowed"] != true
             || row["manage"] != true
-            || write && !row["actor"]["preview"].is_null()
+            || write && principal.in_read_only_preview()
         {
             return Err(error("permission_denied"));
         }

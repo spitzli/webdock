@@ -213,12 +213,19 @@ impl HostingService {
         let check = self.db.begin().await.map_err(db_error)?;
         self.apply_scope(&check,"webdock_auth_runtime",json!({"kind":"session","authProvider":"better-auth","subject":actor,"sessionID":session})).await?;
         let write = !is_read_action(field(op, "action")?);
-        let row=one(&check,"SELECT webdock_rls.actor() AS actor,webdock_rls.customer_permission(p.customer_id,'org:projects:manage') AS write_allowed,webdock_rls.customer_allowed(p.customer_id,false) AS read_allowed,h.mode FROM webdock_admin.projects p JOIN webdock_admin.customers c ON c.id=p.customer_id JOIN webdock_auth.hosting_project h ON h.project_id=p.id WHERE p.id=$1 AND p.customer_id=$2 AND h.cluster_id=$3 AND p.status='active' AND c.status='active' AND NOT EXISTS(SELECT 1 FROM webdock_admin.project_deletion d WHERE d.project_id=p.id AND d.status<>'deleted')",vec![field(op,"project_id")?.into(),field(op,"customer_id")?.into(),field(op,"cluster_id")?.into()]).await?;
+        let row=one(&check,"SELECT webdock_rls.customer_scope() AS customer_scope,webdock_rls.actor() AS actor,webdock_rls.customer_permission(p.customer_id,'org:projects:manage') AS write_allowed,webdock_rls.customer_allowed(p.customer_id,false) AS read_allowed,h.mode FROM webdock_admin.projects p JOIN webdock_admin.customers c ON c.id=p.customer_id JOIN webdock_auth.hosting_project h ON h.project_id=p.id WHERE p.id=$1 AND p.customer_id=$2 AND h.cluster_id=$3 AND p.status='active' AND c.status='active' AND NOT EXISTS(SELECT 1 FROM webdock_admin.project_deletion d WHERE d.project_id=p.id AND d.status<>'deleted')",vec![field(op,"project_id")?.into(),field(op,"customer_id")?.into(),field(op,"cluster_id")?.into()]).await?;
         let allowed = if let Some(row) = row {
             let identity: Option<Value> = row.try_get("", "actor").map_err(db_error)?;
             let operator = identity.as_ref().is_some_and(|i| i["operator"] == true);
+            let current_scope: Option<String> =
+                row.try_get("", "customer_scope").map_err(db_error)?;
+            if current_scope.as_deref() != op["desired"]["customerScope"].as_str() {
+                return Ok(false);
+            }
             identity.as_ref().is_some_and(|i| {
-                i["subject"] == actor && i["sessionID"] == session && i["preview"].is_null()
+                i["subject"] == actor
+                    && i["sessionID"] == session
+                    && (i["preview"].is_null() || i["preview"]["customer_id"] == op["customer_id"])
             }) && row.try_get::<bool>("", "read_allowed").map_err(db_error)?
                 && (!write
                     || (row.try_get::<bool>("", "write_allowed").map_err(db_error)?

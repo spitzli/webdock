@@ -69,7 +69,7 @@ export function DatabaseDirectory({
         { action: "list", customerID },
         directorySchema,
       ),
-    enabled: Boolean(customerID) && !session.user.preview,
+    enabled: Boolean(customerID) && !(session.user.preview && !session.user.acting),
   });
   const [editing, setEditing] = useState<string>();
   const mutation = useMutation({
@@ -92,7 +92,7 @@ export function DatabaseDirectory({
         <p className={ui.pageLead}>{i18n.t("Database access is unavailable.")}</p>
       </section>
     );
-  if (session.user.preview)
+  if ((session.user.preview && !session.user.acting))
     return (
       <section>
         <h1 className={ui.pageTitle}>{i18n.t("Databases")}</h1>
@@ -474,7 +474,7 @@ export function DatabaseViewer({
     }),
     [api],
   );
-  if (session.user.preview || !api.config.enabledFeatures.includes("databases"))
+  if ((session.user.preview && !session.user.acting) || !api.config.enabledFeatures.includes("databases"))
     return <p className="text-muted">{i18n.t("Database access is unavailable.")}</p>;
   return (
     // database-view remains as the hook for the module's fixed-height workbench rules.

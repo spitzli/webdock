@@ -25,7 +25,7 @@ impl AccessService {
     ) -> Result<Value> {
         let actor = self.current_actor(actor).await?;
         let name = text(name, 120)?;
-        if actor.in_tenant_preview() {
+        if actor.in_read_only_preview() {
             return Err(Error::Forbidden);
         }
         let tx = self.domain(&actor).await?;

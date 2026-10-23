@@ -41,6 +41,9 @@ async fn persists_revokes_and_denies_security_setup_and_mfa_bypass() {
     ))
     .await
     .unwrap();
+    db.execute_unprepared(include_str!("../migrations/0005_customer_acting.sql"))
+        .await
+        .unwrap();
     let policy = CookiePolicy::new(false, "fixture-secret-with-at-least-32-bytes").unwrap();
     let service = IdentityService::new(db.clone(), policy);
     let account = service

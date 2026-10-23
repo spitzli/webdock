@@ -66,7 +66,7 @@ impl SessionGuard {
         )
         .await
         .map_err(|_| error("session_authority_revoked"))?;
-        if self.write && principal.in_tenant_preview() {
+        if self.write && principal.in_read_only_preview() {
             return Err(error("permission_denied"));
         }
         Ok(())

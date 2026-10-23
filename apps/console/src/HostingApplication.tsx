@@ -116,7 +116,7 @@ export function HostingApplication({
           Settings
         </Link>
       </nav>
-      {session.user.preview ? (
+      {(session.user.preview && !session.user.acting) ? (
         <p className={ui.cx(`${ui.notice} mb-4`)} role="status">
           Customer preview is read-only. Live log requests and application
           changes are unavailable.
@@ -140,7 +140,7 @@ export function HostingApplication({
           {view === "overview" ? (
             <>
               <ApplicationSummary app={app.data} />
-              {canManageApp(app.data, session.user.preview === true) ? (
+              {canManageApp(app.data, (session.user.preview && !session.user.acting) === true) ? (
                 <>
                   <ApplicationControls key={appID} app={app.data} />
                   <HostingDeletion key={`delete-${appID}`} app={app.data} />
@@ -154,7 +154,7 @@ export function HostingApplication({
             </>
           ) : null}
           {view === "settings" ? (
-            canManageApp(app.data, session.user.preview === true) ? (
+            canManageApp(app.data, (session.user.preview && !session.user.acting) === true) ? (
               <HostingSettings key={appID} app={app.data} />
             ) : (
               <Empty title="Settings are read-only">
@@ -322,7 +322,7 @@ function ApplicationLogs({ app }: { app: HostingApp }) {
   const { mutation, retry, uncertain } = useHostingAction();
   const [completed, setCompleted] = useState(false);
   const allowed =
-    app.canRequestLogs && !session.user.preview && app.status !== "deleted";
+    app.canRequestLogs && !(session.user.preview && !session.user.acting) && app.status !== "deleted";
   return (
     <section className={ui.card}>
       <div className={ui.cardBody}>

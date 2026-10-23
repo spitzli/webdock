@@ -35,8 +35,8 @@ export function WorkspaceProjects({ id }: { id: string }) {
     },
   });
   const tenant = tenants.data?.find((t) => t.id === id);
-  const operator = session.user.role === "operator" && !session.user.preview;
-  const canCreate = !session.user.preview && (operator || tenant?.role === "owner" || tenant?.role === "admin");
+  const operator = session.user.role === "operator" && !(session.user.preview && !session.user.acting);
+  const canCreate = !(session.user.preview && !session.user.acting) && (operator || tenant?.role === "owner" || tenant?.role === "admin");
   if (projects.isPending) return <Loading>Loading projects…</Loading>;
   if (projects.error) return <Failure error={projects.error} retry={() => void projects.refetch()} />;
   return (

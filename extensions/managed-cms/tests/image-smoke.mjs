@@ -93,7 +93,7 @@ print(json.dumps(plugin_installer.runtime_resources(config,job,value['token'],va
   const invocation = privateKey => {
     const now = Math.floor(Date.now() / 1000);
     const body = Buffer.from(JSON.stringify({ v: 1, id: randomUUID(), pluginID: identity.WEBDOCK_PLUGIN_ID, generation: 1,
-      action: "cms.instances", projectID: "123", iat: now, exp: now + 50 })).toString("base64url");
+      action: "cms.instances", projectID: "123", customerID: "101", iat: now, exp: now + 50 })).toString("base64url");
     return body + "." + sign(null, Buffer.from(body), privateKey).toString("base64url");
   };
   const invoke = privateKey => https("/actions/cms.instances", payload, { authorization: "Bearer " + token, "x-plugin-invocation": invocation(privateKey) });

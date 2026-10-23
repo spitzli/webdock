@@ -155,7 +155,7 @@ export function useConfigurationAction(
     if (
       inFlight.current ||
       ledger.data ||
-      session.user.preview ||
+      (session.user.preview && !session.user.acting) ||
       !value.canManage
     )
       return;

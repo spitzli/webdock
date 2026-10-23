@@ -88,7 +88,28 @@ fn signed(value: &Value) -> String {
     )
 }
 fn claims() -> Value {
-    json!({"v":1,"id":"123e4567-e89b-42d3-a456-426614174000","pluginID":"project-notes","generation":1,"action":"notes.read","projectID":"123","iat":1000,"exp":1060})
+    json!({"v":1,"id":"123e4567-e89b-42d3-a456-426614174000","pluginID":"project-notes","generation":1,"action":"notes.read","projectID":"123","customerID":"101","iat":1000,"exp":1060})
+}
+
+#[test]
+fn signed_customer_scope_is_required() {
+    let key = SigningKey::from_bytes(&[7; 32]).verifying_key();
+    assert!(verify_invocation(&signed(&claims()), &key, "project-notes", 1, 1001).is_ok());
+    for customer in [
+        json!(null),
+        json!(""),
+        json!("0"),
+        json!("01"),
+        json!("other"),
+        json!("1".repeat(21)),
+    ] {
+        let mut value = claims();
+        value["customerID"] = customer;
+        assert!(verify_invocation(&signed(&value), &key, "project-notes", 1, 1001).is_err());
+    }
+    let mut missing = claims();
+    missing.as_object_mut().unwrap().remove("customerID");
+    assert!(verify_invocation(&signed(&missing), &key, "project-notes", 1, 1001).is_err());
 }
 
 #[test]

@@ -13,7 +13,7 @@ const domainSchema = z.object({
   verifiedAt: z.string().nullable(),
   checkedAt: z.string().nullable(),
   record: z.object({ type: z.string(), name: z.string(), value: z.string() }),
-  usedBy: z.array(z.object({ plugin: z.string(), unit: z.string(), project: z.string(), resource: z.string().nullable() })),
+  usedBy: z.array(z.object({ plugin: z.string(), unit: z.string(), project: z.string().nullable(), resource: z.string().nullable() })),
 });
 type Domain = z.infer<typeof domainSchema>;
 
@@ -67,7 +67,7 @@ function Row({ customer, domain, writable }: { customer: string; domain: Domain;
       ) : null}
       {domain.usedBy.length ? (
         <p className="text-[13px] text-muted">
-          Used by {domain.usedBy.map((u) => `${u.resource ?? u.unit} (${u.project})`).join(", ")}
+          Used by {domain.usedBy.map((u) => `${u.resource ?? u.unit} (${u.project ?? "Workspace"})`).join(", ")}
         </p>
       ) : null}
       {error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}
@@ -93,7 +93,7 @@ export function WorkspaceDomains({ id }: { id: string }) {
     },
   });
   const role = tenants.data?.find((t) => t.id === id)?.role;
-  const writable = !session.user.preview && (session.user.role === "operator" || role === "owner" || role === "admin");
+  const writable = !(session.user.preview && !session.user.acting) && (session.user.role === "operator" || role === "owner" || role === "admin");
   return (
     <section>
       <div className={ui.pageHeading}>

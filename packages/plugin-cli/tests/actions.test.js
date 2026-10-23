@@ -25,7 +25,7 @@ test('actions runtime requires TLS, bearer identity and action-bound signed invo
   server.listen(0,'127.0.0.1');await once(server,'listening');
   const token=(changes={})=>{
    const now=Math.floor(Date.now()/1000);
-   const body=Buffer.from(JSON.stringify({v:1,id:randomUUID(),pluginID:'echo-demo',generation:1,projectID:'42',action:'demo.echo',iat:now,exp:now+60,...changes})).toString('base64url');
+   const body=Buffer.from(JSON.stringify({v:1,id:randomUUID(),pluginID:'echo-demo',generation:1,projectID:'42',customerID:'101',action:'demo.echo',iat:now,exp:now+60,...changes})).toString('base64url');
    return body+'.'+sign(null,Buffer.from(body),keys.privateKey).toString('base64url');
   };
   const call=(path,{auth=true,invocation,body,method='GET'}={})=>new Promise((resolve,reject)=>{

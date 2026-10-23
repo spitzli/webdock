@@ -13,7 +13,7 @@ export function Webmail({ customerID, mailboxID }: { customerID: string | undefi
   const session = useSession();
   const call = useMailCommand();
   const origin = api.config.mailGatewayOrigin;
-  const enabled = Boolean(customerID && origin && api.config.enabledFeatures.includes("mail") && !session.user.preview);
+  const enabled = Boolean(customerID && origin && api.config.enabledFeatures.includes("mail") && !(session.user.preview && !session.user.acting));
   const directory = useQuery({
     queryKey: ["mail", session.session.id, customerID, "directory"],
     queryFn: async ({ signal }) => {

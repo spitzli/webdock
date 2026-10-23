@@ -158,7 +158,7 @@ async fn customer_access(
     )
     .await
     .map_err(|_| Error::Unavailable)?;
-    if principal.in_tenant_preview() {
+    if principal.in_read_only_preview() {
         return Err(Error::Unavailable);
     }
     let business = signer
@@ -173,7 +173,10 @@ async fn customer_access(
         "actor",
     )?
     .ok_or(Error::Unavailable)?;
-    if actor["subject"] != subject || actor["sessionID"] != session || !actor["preview"].is_null() {
+    if actor["subject"] != subject
+        || actor["sessionID"] != session
+        || (!actor["preview"].is_null() && !principal.is_acting_customer())
+    {
         return Err(Error::Unavailable);
     }
     let tenant=one(&business,"SELECT webdock_rls.customer_allowed(c.id,false) AS allowed FROM webdock_admin.customers c WHERE c.id=$1 AND (c.status='active' OR ($2 AND webdock_rls.operator())) FOR SHARE OF c",vec![customer.into(),allow_inactive_operator.into()]).await?.ok_or(Error::Unavailable)?;
@@ -190,9 +193,10 @@ async fn customer_access(
         .map(|r| field::<String>(r, "role"))
         .transpose()?;
     let operator = actor["operator"] == true;
-    if (!operator && member_id.is_none())
+    if (!operator && !principal.is_acting_customer() && member_id.is_none())
         || (manage
             && !operator
+            && !principal.is_acting_customer()
             && !role
                 .as_deref()
                 .is_some_and(|r| ["owner", "admin"].contains(&r)))

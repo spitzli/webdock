@@ -203,6 +203,7 @@ impl Fixture {
             generation: 1,
             action: action.into(),
             project_id: project.into(),
+            customer_id: if project == "202" { "202" } else { "101" }.into(),
             iat: 0,
             exp: 0,
         };
@@ -217,6 +218,14 @@ impl Fixture {
         self.call(project, action, input).await.unwrap_err().code
     }
     async fn cleanup(self) {
+        let mut url = admin_url();
+        url.set_path(&self.storage);
+        let store = Store::connect(url.as_str()).await.unwrap();
+        assert!(
+            store.engines().await.unwrap().is_empty(),
+            "outgoing-only domains, relay and sends must not reserve incoming engines"
+        );
+        drop(store);
         drop(self.handler);
         admin()
             .await

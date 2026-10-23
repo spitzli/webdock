@@ -1,3 +1,4 @@
+import { CustomerScopeBanner } from "./CustomerScope";
 import { Fragment, useEffect, useRef, useState } from "react";
 import {
   Link,
@@ -25,7 +26,7 @@ import { useApi, useSession } from "./context";
 import { LocalePicker } from "./Locale";
 import { parseConsoleSearch } from "./search";
 import { Empty, Failure, Loading, Modal } from "./common";
-import { listSchema, recordSchema, type Session } from "./api";
+import { isReadOnlyPreview, listSchema, recordSchema, type Session } from "./api";
 import { useMailWorkspace } from "./mail-client";
 import { useHostingContext } from "./hosting-context";
 import * as ui from "./ui";
@@ -243,7 +244,7 @@ export function Shell() {
           </Link>
         ) : null}
         {api.config.enabledFeatures.includes("databases") &&
-        !session.user.preview ? (
+        !isReadOnlyPreview(session) ? (
           <Link
             to="/databases"
             search={{ customer: customerId }}
@@ -377,6 +378,7 @@ export function Shell() {
         ) : null}
       </aside>
       <div className="flex min-w-0 flex-col">
+        <CustomerScopeBanner />
         <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1200px] flex-1 px-4 pt-6 pb-12 outline-none md:px-7 md:pt-8 md:pb-14 lg:px-10 lg:pt-10 lg:pb-16">
           <Outlet />
         </main>

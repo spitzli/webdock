@@ -373,6 +373,50 @@
           }
         }
       }
+    },
+    {
+      "name": "incoming.activate",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "domain",
+      "feature": "manage-incoming",
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    {
+      "name": "incoming.deactivate",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "offering": "domain",
+      "feature": "manage-incoming",
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
     }
   ],
   "jobs": [],
@@ -430,6 +474,12 @@
         "label": "Create mailboxes",
         "offering": "mailbox",
         "description": "Create and remove mailboxes on the project's domains"
+      },
+      {
+        "id": "manage-incoming",
+        "label": "Manage incoming mail",
+        "offering": "domain",
+        "description": "Activate or suspend incoming mail for all projects of the customer; suspension retains mailbox data"
       }
     ]
   },

@@ -247,7 +247,7 @@ impl RepositoryAdmission {
                 tx,
                 authority,
             } => {
-                if principal.in_tenant_preview() {
+                if principal.in_read_only_preview() {
                     return Err(error("permission_denied"));
                 }
                 let access =

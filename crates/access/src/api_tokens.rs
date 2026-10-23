@@ -53,6 +53,9 @@ impl AccessService {
         if !(1..=366).contains(&days) {
             return Err(Error::InvalidInput);
         }
+        if self.current_actor(actor).await?.in_tenant_preview() {
+            return Err(Error::Forbidden);
+        }
         let (actor, tx) = self.domain_writer(actor, customer).await?;
         let session = self
             .identity
@@ -98,6 +101,9 @@ impl AccessService {
         customer: &str,
         token: &str,
     ) -> Result<()> {
+        if self.current_actor(actor).await?.in_tenant_preview() {
+            return Err(Error::Forbidden);
+        }
         let (actor, tx) = self.domain_writer(actor, customer).await?;
         let row = tx
             .query_one_raw(Statement::from_sql_and_values(

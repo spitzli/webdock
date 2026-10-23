@@ -98,8 +98,8 @@ impl Fixture {
             let cid = id(&owner).await;
             sql(
                 &owner,
-                "INSERT INTO webdock_admin.customers(id,name) VALUES($1,$2)",
-                vec![cid.clone().into(), format!("{nonce}-{label}").into()],
+                "WITH hint AS MATERIALIZED (SELECT set_config('webdock.organization_allocation',jsonb_build_object('customer_id',$1::text,'organization_id',$3::text)::text,true)) INSERT INTO webdock_admin.customers(id,name) SELECT $1,$2 FROM hint",
+                vec![cid.clone().into(), format!("{nonce}-{label}").into(),id(&owner).await.into()],
             )
             .await;
             let pid = id(&owner).await;
@@ -137,6 +137,7 @@ impl Fixture {
             ("member", "user", Some((0, "member"))),
             ("foreign", "user", Some((1, "owner"))),
             ("preview", "operator", None),
+            ("acting", "operator", None),
         ] {
             let uid = format!("{nonce}-{label}");
             let sid = format!("{uid}-session");
@@ -151,6 +152,9 @@ impl Fixture {
             }
             if label == "preview" {
                 sql(&owner, "INSERT INTO webdock_auth.studio_tenant_preview(session_id,actor_id,customer_id,organization_id) VALUES($1,$2,$3,$4)", vec![format!("{uid}-session").into(), uid.clone().into(), customers[0].clone().into(), orgs[0].clone().into()]).await;
+            }
+            if label == "acting" {
+                sql(&owner, "INSERT INTO webdock_auth.studio_tenant_preview(session_id,actor_id,customer_id,organization_id,mode) VALUES($1,$2,$3,$4,'owner')", vec![format!("{uid}-session").into(), uid.clone().into(), customers[0].clone().into(), orgs[0].clone().into()]).await;
             }
             let cookie = format!("{}={}", cookies.name(), cookies.sign(&token).unwrap());
             principals.insert(
@@ -1900,5 +1904,52 @@ async fn projects_choose_offered_clusters_while_empty() {
         )
         .await;
     }
+    f.cleanup().await;
+}
+
+#[tokio::test]
+#[ignore = "requires local retained-schema restricted roles and signed RLS fixture"]
+async fn acting_owner_plugin_admission_stays_customer_scoped() {
+    let f = Fixture::new().await;
+    let host = f.host().await;
+    f.set_mode("everyone", &[]).await;
+    let admitted = host
+        .admit(
+            f.principal("acting"),
+            f.input(0, "notes.create", json!({"name":"acting"})),
+        )
+        .await
+        .unwrap();
+    assert_eq!(admitted.claims.customer_id, f.customers[0]);
+    assert!(
+        host.admit(
+            f.principal("acting"),
+            f.input(1, "notes.create", json!({"name":"foreign"}))
+        )
+        .await
+        .is_err()
+    );
+    assert!(
+        host.admit(
+            f.principal("acting"),
+            f.input(0, "notes.operator", json!({}))
+        )
+        .await
+        .is_err()
+    );
+    let handle = host.authenticate(peer(), &admitted.token).await.unwrap();
+    host.record_resource(
+        &handle,
+        &json!({"resource":{"id":"acting","name":"Acting"}}),
+    )
+    .await
+    .unwrap();
+    sql(
+        &f.owner,
+        "DELETE FROM webdock_auth.studio_tenant_preview WHERE session_id=$1",
+        vec![f.principal("acting").session_id.clone().into()],
+    )
+    .await;
+    assert!(host.revalidate(&handle).await.is_err());
     f.cleanup().await;
 }

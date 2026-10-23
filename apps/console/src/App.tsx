@@ -156,7 +156,7 @@ function RegistryRoute({ kind }: { kind: "list" | "detail" | "new" }) {
   ).useSearch();
   if (session.user.mustChangePassword)
     return <Navigate to="/account" replace />;
-  if (params.collection === "tenants" && kind === "detail" && params.id && !session.user.preview)
+  if (params.collection === "tenants" && kind === "detail" && params.id && !(session.user.preview && !session.user.acting))
     return <WorkspaceMembers id={params.id} />;
   if (
     session.user.role !== "operator" ||
@@ -213,7 +213,7 @@ const indexRoute = createRoute({
 function Home() {
   const session = useSession();
   const tenants = useTenants();
-  const customer = session.user.role !== "operator" && !session.user.preview;
+  const customer = session.user.role !== "operator";
   if (customer && tenants.isPending) return <Loading>Opening your workspace…</Loading>;
   const [only] = tenants.data ?? [];
   if (customer && tenants.data?.length === 1 && only) return <Navigate to="/workspaces/$id" params={{ id: only.id }} replace />;

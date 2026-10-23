@@ -5,6 +5,7 @@ import { server, previewOrigin } from './preview-server.ts';
 const notices = [
   { id: '1', kind: 'crashing', plugin: 'hosting', unit: 'app-1', project: { id: '201', name: 'Demo project' }, resource: { id: 'a1', name: 'Shop frontend' }, openedAt: '2026-10-22T10:00:00Z', resolvedAt: null },
   { id: '2', kind: 'image', plugin: 'hosting', unit: 'app-2', project: { id: '201', name: 'Demo project' }, resource: { id: 'a2', name: 'Old worker' }, openedAt: '2026-10-21T10:00:00Z', resolvedAt: '2026-10-21T11:00:00Z' },
+  { id: '3', kind: 'refused', plugin: 'fixture', unit: 'workspace-service', project: null, resource: null, openedAt: '2026-10-22T10:00:00Z', resolvedAt: null },
 ];
 const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } : {}) });
 try {
@@ -23,6 +24,8 @@ try {
   await page.goto(previewOrigin + '/workspaces/101');
   const region = page.getByRole('region', { name: 'Needs attention' });
   await region.getByText(/keeps stopping right after it starts/).waitFor();
+  await region.getByText(/workspace-service.*in this workspace.*was refused/).waitFor();
+  assert.equal(await region.getByRole('link', { name: 'workspace-service' }).count(), 0);
   assert.equal(await region.getByText('Old worker').count(), 0, 'resolved notices are not shown as open');
   assert.equal(await region.getByRole('link', { name: 'Shop frontend' }).getAttribute('href'), '/workspaces/101/projects/201/resources/hosting/a1');
   assert.deepEqual(errors, []);

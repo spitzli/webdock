@@ -1,6 +1,34 @@
 # Native platform parity inventory
 
-Source inspection: 2026-10-20, isolated Rust worktree. This records remaining callable contracts, not completion percentages. Existing TypeScript backends remain behavior references until their complete native replacements pass acceptance.
+Source inspection: 2026-10-20, isolated Rust worktree. This records remaining callable contracts, not completion percentages. Retired TypeScript backends under `legacy/` remain behavior references; Rust is the sole active platform API.
+
+## Subsequent checkpoints
+
+The historical inventory below predates substantial changes. The completed
+[Core plan](../superpowers/plans/2026-10-22-core-platform.md) supersedes its gaps for
+plugin Kubernetes workloads, plans/limits/usage, verified domains and TLS, API tokens,
+notifications/log history and project placement. The active React Console/account app is
+`apps/console`; retired TypeScript applications and deployment paths are archived.
+
+The [Console review](../superpowers/plans/2026-10-22-console-ux.md) and
+[customer acting plan](../superpowers/plans/2026-10-23-act-as-customer.md) record native
+account/MFA/passkey/PKCE and actual operator/customer browser acceptance. Account onboarding
+therefore no longer has the blanket browser-verification gap stated below. Explicit customer-owner
+acting preserves the operator audit identity and scopes persisted work to the exact session epoch.
+
+[Customer-owned workloads](../superpowers/plans/2026-10-23-customer-workloads.md) and
+[Mail isolation](../superpowers/plans/2026-10-23-customer-mail-isolation.md) implement retained
+customer infrastructure independently of projects and one explicitly activated Stalwart CE engine
+per customer. Existing project Mail data requires explicit migration; public reception, incoming
+relay and the complete plugin Webmail/outbox product remain open.
+
+Native plugin installation/storage lifecycle, generation-based update/rollback, generic jobs and
+installation-scoped operator actions remain subsequent slices. Removing Rust product code from
+Core still requires plugin parity for Git builds/releases, Tabularis authority and durable
+Mail/Webmail handoffs. These checkpoints do not establish retained-data parity or a production
+cutover. The public website/CMS remains a separate TypeScript application.
+
+## Historical inventory
 
 | Slice | Native implementation present | Remaining contract or workflow |
 | --- | --- | --- |

@@ -191,6 +191,7 @@ impl HostingService {
             user_id: field(&authority, "subject")?.into(),
             session_id: authority["sessionID"].as_str().unwrap_or("").into(),
             git_release: Some(release_id.into()),
+            customer_scope: None,
         };
         let app = Self::app(tx, field(&row, "source_target")?).await?;
         let mut spec = app["spec"].clone();

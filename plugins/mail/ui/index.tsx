@@ -10,13 +10,14 @@ const domainSchema = z.object({
   transport: z.enum(["platform", "turbosmtp"]),
   records: z.array(z.object({ type: z.string(), name: z.string(), value: z.string(), purpose: z.string() })),
   mailboxes: z.array(z.string()),
+  incoming: z.object({ state: z.enum(["disabled", "provisioning", "ready", "failed", "suspending", "suspended", "migration-required"]), desiredEnabled: z.boolean() }),
   recent: z.array(z.object({ from: z.string(), to: z.string(), subject: z.string(), transport: z.string(), status: z.enum(["accepted", "failed"]), at: z.string() })),
 });
 type Domain = z.infer<typeof domainSchema>;
 const mailboxSchema = z.object({
   address: z.string(),
   name: z.string(),
-  state: z.enum(["creating", "ready", "failed"]),
+  state: z.enum(["creating", "ready", "failed", "suspending", "suspended", "migration-required"]),
   error: z.string().nullable(),
   host: z.string().nullable(),
   imapPort: z.number(),
@@ -126,8 +127,38 @@ function SendForm({ context, domain }: { context: ResourceProps; domain: Domain 
   );
 }
 
+function IncomingMail({ context, domain, refresh }: { context: ResourceProps; domain: Domain; refresh: () => void }) {
+  const activate = usePluginMutation(context, "incoming.activate");
+  const deactivate = usePluginMutation(context, "incoming.deactivate");
+  const [confirmed, setConfirmed] = useState(false);
+  const { state, desiredEnabled } = domain.incoming;
+  const pending = activate.isPending || deactivate.isPending;
+  const change = () => {
+    (desiredEnabled ? deactivate : activate).mutate({ resource_id: context.resource.id }, { onSuccess: () => { setConfirmed(false); refresh(); } });
+  };
+  return (
+    <section className={ui.card} aria-label="Customer incoming mail">
+      <div className={ui.cardBody}>
+        <h2 className={ui.sectionTitle}>Incoming mail</h2>
+        <p className="text-sm text-muted">All projects and domains of this customer share one isolated mail server. Suspending it retains mailboxes and stored mail.</p>
+        <p className="text-sm">{state === "migration-required" ? "Operator migration required: retained project mail servers must be migrated before incoming mail can change." : state === "disabled" ? "Not activated. Outgoing mail does not allocate a mail server." : `Status: ${state}`}</p>
+        {state !== "disabled" && state !== "migration-required" ? <p className="text-sm text-muted">API sending through incoming mail is pending relay integration. Public reception is not enabled.</p> : null}
+        {context.writable && context.features.includes("manage-incoming") && state !== "migration-required" ? (
+          <div className="grid gap-3">
+            {desiredEnabled ? <label className="text-sm"><input type="checkbox" checked={confirmed} onChange={(event) => { setConfirmed(event.target.checked); }} /> Suspend incoming mail for every project of this customer</label> : null}
+            <button type="button" className={ui.button()} disabled={pending || (desiredEnabled && !confirmed)} onClick={() => { change(); }}>
+              {pending ? "Applying…" : desiredEnabled ? "Suspend incoming mail" : "Activate incoming mail"}
+            </button>
+          </div>
+        ) : null}
+        {activate.error || deactivate.error ? <p role="alert" className="text-sm text-danger">{(activate.error ?? deactivate.error)?.message}</p> : null}
+      </div>
+    </section>
+  );
+}
+
 function DomainPage(context: ResourceProps) {
-  const query = usePluginQuery(context, "domains.view", { resource_id: context.resource.id }, domainSchema);
+  const query = usePluginQuery(context, "domains.view", { resource_id: context.resource.id }, domainSchema, { refetchInterval: (data) => data && ["provisioning", "suspending"].includes(data.incoming.state) ? 2000 : false });
   const verify = usePluginMutation(context, "domains.verify");
   if (query.isPending) return <Loading>Loading domain…</Loading>;
   if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
@@ -140,7 +171,7 @@ function DomainPage(context: ResourceProps) {
           <div className="flex flex-wrap items-center gap-3">
             <span className={ui.badge(domain.verified ? "success" : "warning")}>{domain.verified ? "Verified" : "Not verified"}</span>
             <span className="text-sm text-muted">
-              {domain.transport === "turbosmtp" ? "Sends through your own turboSMTP account" : "Sends through the platform"}
+              {domain.incoming.state !== "disabled" ? "Incoming mail uses the customer’s mail server" : domain.transport === "turbosmtp" ? "Sends through your own turboSMTP account" : "Sends through the platform"}
             </span>
           </div>
           {domain.verificationSkipped ? <p className={ui.notice}>Local development: DNS ownership is not checked here.</p> : null}
@@ -157,6 +188,7 @@ function DomainPage(context: ResourceProps) {
           ) : null}
         </div>
       </section>
+      <IncomingMail context={context} domain={domain} refresh={() => void query.refetch()} />
       <section className={ui.card} aria-label="DNS records">
         <h2 className={ui.cx(ui.sectionTitle, "px-6 py-4 max-sm:px-[18px]")}>DNS records</h2>
         {domain.records.map((record) => (
@@ -176,7 +208,7 @@ function DomainPage(context: ResourceProps) {
           {domain.mailboxes.map((address) => <div key={address} className={ui.cardRow}><span>{address}</span></div>)}
         </section>
       ) : null}
-      {context.writable ? <SendForm context={context} domain={domain} /> : null}
+      {context.writable && domain.incoming.state === "disabled" ? <SendForm context={context} domain={domain} /> : null}
       <section className={ui.card} aria-label="Recent messages">
         <h2 className={ui.cx(ui.sectionTitle, "px-6 py-4 max-sm:px-[18px]")}>Recent messages</h2>
         {domain.recent.length === 0 ? <p className="px-6 pb-5 text-sm text-muted max-sm:px-[18px]">Nothing sent yet.</p> : domain.recent.map((message) => (
@@ -251,7 +283,7 @@ function MailboxPassword({ context }: { context: ResourceProps }) {
 
 function MailboxPage(context: ResourceProps) {
   const query = usePluginQuery(context, "mailboxes.view", { resource_id: context.resource.id }, mailboxSchema, {
-    refetchInterval: (data) => (data?.state === "creating" ? 2000 : false),
+    refetchInterval: (data) => (data && ["creating", "suspending"].includes(data.state) ? 2000 : false),
   });
   if (query.isPending) return <Loading>Loading mailbox…</Loading>;
   if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
@@ -269,11 +301,13 @@ function MailboxPage(context: ResourceProps) {
         <div className={ui.cardBody}>
           <div className="flex flex-wrap items-center gap-3">
             <span className={ui.badge(mailbox.state === "ready" ? "success" : mailbox.state === "creating" ? "warning" : "danger")}>
-              {mailbox.state === "ready" ? "Ready" : mailbox.state === "creating" ? "Setting up" : "Failed"}
+              {({ ready: "Ready", creating: "Setting up", failed: "Failed", suspending: "Suspending", suspended: "Suspended", "migration-required": "Operator migration required" } as const)[mailbox.state]}
             </span>
             <span className="text-sm text-muted">{mailbox.name ? `${mailbox.name} <${mailbox.address}>` : mailbox.address}</span>
           </div>
-          {mailbox.state === "creating" ? <p className="text-[13px] text-muted">The first mailbox of a project starts its mail server, which takes a moment. This page updates by itself.</p> : null}
+          {mailbox.state === "creating" ? <p className="text-[13px] text-muted">The first mailbox starts the customer’s shared mail server, which takes a moment. This page updates by itself.</p> : null}
+          {mailbox.state === "migration-required" ? <p role="alert" className="text-sm text-danger">The retained project mail server needs operator migration. Mail data has been preserved.</p> : null}
+          {mailbox.state === "suspended" ? <p className="text-sm text-muted">Incoming mail is suspended for this customer. Mailboxes and stored mail are retained.</p> : null}
           {mailbox.error ? <p role="alert" className="text-sm text-danger">{mailbox.error}</p> : null}
         </div>
       </section>

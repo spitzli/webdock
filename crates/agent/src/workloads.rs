@@ -63,12 +63,39 @@ async fn selected_pods(
     Ok(pods.into_values().collect())
 }
 /// Whether one object is ready, and a short word on why not.
-fn readiness(kind: &str, exists: bool, spec: &Value, status: &Value) -> (bool, String) {
+fn readiness(
+    kind: &str,
+    exists: bool,
+    spec: &Value,
+    status: &Value,
+    generation: Option<i64>,
+) -> (bool, String) {
     match kind {
         "apps/v1/Deployment" | "apps/v1/StatefulSet" => {
             let want = spec["replicas"].as_i64().unwrap_or(1);
             let have = status["readyReplicas"].as_i64().unwrap_or(0);
-            (have >= want, format!("{have}/{want} ready"))
+            if want == 0 {
+                // Apply acknowledgment precedes controller convergence, including terminating pods.
+                let observed = generation.is_some_and(|g| {
+                    status["observedGeneration"]
+                        .as_i64()
+                        .is_some_and(|o| o >= g)
+                });
+                let stopped = exists
+                    && observed
+                    && [
+                        "replicas",
+                        "readyReplicas",
+                        "availableReplicas",
+                        "updatedReplicas",
+                        "currentReplicas",
+                        "terminatingReplicas",
+                    ]
+                    .iter()
+                    .all(|field| status[*field].as_i64().unwrap_or(0) == 0);
+                return (stopped, if stopped { "Stopped" } else { "Stopping" }.into());
+            }
+            (exists && have >= want, format!("{have}/{want} ready"))
         }
         "postgresql.cnpg.io/v1/Cluster" => {
             let want = spec["instances"].as_i64().unwrap_or(1);
@@ -304,7 +331,13 @@ impl WorkloadExecutor {
                 .as_ref()
                 .map(|o| o.data["spec"].clone())
                 .unwrap_or(Value::Null);
-            let (is_ready, message) = readiness(kind, object.is_some(), &spec, &status);
+            let (is_ready, message) = readiness(
+                kind,
+                object.is_some(),
+                &spec,
+                &status,
+                object.as_ref().and_then(|o| o.metadata.generation),
+            );
             ready &= is_ready;
             states.push(json!({"kind": kind, "name": name, "ready": is_ready, "message": message}));
         }
@@ -435,12 +468,54 @@ mod tests {
         assert_eq!(resource("v1/Service").unwrap().group, "");
     }
     #[test]
+    fn zero_replicas_waits_for_the_last_running_instance() {
+        for kind in ["apps/v1/Deployment", "apps/v1/StatefulSet"] {
+            for status in [
+                json!({"observedGeneration":2,"replicas":1,"readyReplicas":0}),
+                json!({"observedGeneration":2,"replicas":0,"readyReplicas":1}),
+                json!({"observedGeneration":2,"replicas":0,"availableReplicas":1}),
+                json!({"observedGeneration":2,"replicas":0,"updatedReplicas":1}),
+                json!({"observedGeneration":2,"replicas":0,"terminatingReplicas":1}),
+                json!({"observedGeneration":2,"replicas":0,"currentReplicas":1}),
+                json!({"observedGeneration":1,"replicas":0}),
+                json!({}),
+            ] {
+                assert!(
+                    !readiness(kind, true, &json!({"replicas":0}), &status, Some(2)).0,
+                    "{kind}: {status}"
+                );
+            }
+            assert!(
+                readiness(
+                    kind,
+                    true,
+                    &json!({"replicas":0}),
+                    &json!({"observedGeneration":2,"replicas":0}),
+                    Some(2)
+                )
+                .0
+            );
+            assert!(
+                readiness(
+                    kind,
+                    true,
+                    &json!({"replicas":0}),
+                    &json!({"observedGeneration":2}),
+                    Some(2)
+                )
+                .0
+            );
+            assert!(!readiness(kind, false, &json!({"replicas":0}), &json!({}), Some(2)).0);
+        }
+    }
+    #[test]
     fn readiness_follows_each_kind() {
         let deployment = readiness(
             "apps/v1/Deployment",
             true,
             &json!({"replicas":1}),
             &json!({"readyReplicas":1}),
+            None,
         );
         assert!(deployment.0);
         assert!(
@@ -448,16 +523,32 @@ mod tests {
                 "apps/v1/Deployment",
                 true,
                 &json!({"replicas":1}),
-                &json!({})
+                &json!({}),
+                None
             )
             .0
         );
         let issued = json!({"conditions":[{"type":"Ready","status":"True"}]});
         let pending = json!({"conditions":[{"type":"Ready","status":"False","message":"Issuing"}]});
-        assert!(readiness("cert-manager.io/v1/Certificate", true, &json!({}), &issued).0);
-        let waiting = readiness("cert-manager.io/v1/Certificate", true, &json!({}), &pending);
+        assert!(
+            readiness(
+                "cert-manager.io/v1/Certificate",
+                true,
+                &json!({}),
+                &issued,
+                None
+            )
+            .0
+        );
+        let waiting = readiness(
+            "cert-manager.io/v1/Certificate",
+            true,
+            &json!({}),
+            &pending,
+            None,
+        );
         assert_eq!(waiting, (false, "Issuing".to_owned()));
-        assert!(readiness("v1/Service", true, &json!({}), &json!({})).0);
-        assert!(!readiness("v1/Service", false, &json!({}), &json!({})).0);
+        assert!(readiness("v1/Service", true, &json!({}), &json!({}), None).0);
+        assert!(!readiness("v1/Service", false, &json!({}), &json!({}), None).0);
     }
 }

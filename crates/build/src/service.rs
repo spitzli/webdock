@@ -230,7 +230,7 @@ impl BuildService {
             || r["actor"]["sessionID"] != p.session_id
             || r["allowed"] != true
             || write
-                && (!r["actor"]["preview"].is_null()
+                && (p.in_read_only_preview()
                     || r["write"] != true
                     || (r["actor"]["operator"] != true && r["hosting"]["mode"] != "selfservice"))
         {

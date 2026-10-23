@@ -160,8 +160,8 @@ async fn confidential_browser_handoff_is_one_use_origin_bound_and_live() {
     offline
         .execute_raw(Statement::from_sql_and_values(
             DbBackend::Postgres,
-            "INSERT INTO webdock_admin.customers(id,name) VALUES($1,'Browser fixture')",
-            [customer.clone().into()],
+            "WITH hint AS MATERIALIZED (SELECT set_config('webdock.organization_allocation',jsonb_build_object('customer_id',$1::text,'organization_id',$2::text)::text,true)) INSERT INTO webdock_admin.customers(id,name) SELECT $1,'Browser fixture' FROM hint",
+            [customer.clone().into(),allocator.allocate().await.unwrap().to_string().into()],
         ))
         .await
         .unwrap();
@@ -635,6 +635,54 @@ async fn confidential_browser_handoff_is_one_use_origin_bound_and_live() {
             .unwrap()
             .is_operator()
     );
+    access
+        .start_customer_scope_as(
+            &op_session.principal,
+            &customer,
+            webdock_access::PreviewMode::Owner,
+        )
+        .await
+        .unwrap();
+    let acting = browser
+        .resolve_authority(
+            "https://console.example.invalid",
+            cookie(&op_browser.set_cookies[0]),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(acting.principal.is_acting_customer());
+    assert!(!acting.principal.is_operator());
+    assert!(!acting.authority.read_only);
+    assert_eq!(acting.authority.role, "admin");
+    let persisted = db.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT payload FROM webdock_auth.identity_browser_session WHERE user_id=$1 AND session_id=$2",[operator.clone().into(),acting.principal.session_id.clone().into()])).await.unwrap().unwrap();
+    let persisted: serde_json::Value = serde_json::from_str(
+        &keys
+            .decrypt(&persisted.try_get::<String>("", "payload").unwrap())
+            .unwrap(),
+    )
+    .unwrap();
+    let public = oauth
+        .introspect(
+            &ClientAuthentication {
+                client_id: client.client_id.clone(),
+                client_secret: client.client_secret.clone(),
+                method: ClientAuthMethod::ClientSecretPost,
+            },
+            persisted["access_token"].as_str().unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        public["active"], false,
+        "owner acting never grants public OAuth authority"
+    );
+    access
+        .create_project_as(&acting.principal, &customer, "Acting browser owner")
+        .await
+        .unwrap();
+    access.exit_preview_as(&acting.principal).await.unwrap();
+    assert!(browser.revalidate(&acting.authority).await.is_err());
     db.execute_raw(Statement::from_sql_and_values(
         DbBackend::Postgres,
         "DELETE FROM webdock_auth.\"user\" WHERE id=$1",
@@ -671,6 +719,14 @@ async fn confidential_browser_handoff_is_one_use_origin_bound_and_live() {
     ))
     .await
     .unwrap();
+    offline
+        .execute_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "DELETE FROM webdock_admin.projects WHERE customer_id=$1",
+            [customer.clone().into()],
+        ))
+        .await
+        .unwrap();
     offline
         .execute_raw(Statement::from_sql_and_values(
             DbBackend::Postgres,

@@ -6,7 +6,7 @@ const empty = `${ui.cardRow} text-muted`;
 export function MailDirectoryView({ value }: { value: MailDirectory }) {
   const api = useApi();
   const session = useSession();
-  const webmail = Boolean(api.config.mailGatewayOrigin) && !session.user.preview;
+  const webmail = Boolean(api.config.mailGatewayOrigin) && !(session.user.preview && !session.user.acting);
   const configuration = value.configuration;
   return (
     <>

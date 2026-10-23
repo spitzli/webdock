@@ -34,6 +34,8 @@ const ACTIONS: &[(&str, &str)] = &[
     ("mailboxes.credentials", "write"),
     ("mailboxes.rotate", "write"),
     ("mailboxes.delete", "write"),
+    ("incoming.activate", "write"),
+    ("incoming.deactivate", "write"),
 ];
 const MAX_RECIPIENTS: usize = 10;
 fn invalid(message: &str) -> PluginError {
@@ -230,7 +232,7 @@ impl Plugin {
         let dkim = if mailboxes.is_empty() {
             None
         } else {
-            self.dkim(&claims.project_id, &domain.domain).await
+            self.dkim(&claims.customer_id, &domain.domain).await
         };
         let spf = match (&relay, &self.settings.platform) {
             (Some(_), _) | (None, transport::Platform::TurboSmtp { .. }) => {
@@ -252,6 +254,7 @@ impl Plugin {
             "verificationSkipped": !domain.verified && self.settings.trust_unverified_domains,
             "transport": if relay.is_some() { "turbosmtp" } else { "platform" },
             "records": records,
+            "incoming": self.incoming_state(&claims.customer_id).await?,
             "mailboxes": mailboxes.iter().map(|local| format!("{local}@{}", domain.domain)).collect::<Vec<_>>(),
             "recent": recent.iter().map(|s| json!({"from": s.sender, "to": s.recipients, "subject": s.subject, "transport": s.transport, "status": s.status, "at": s.created_at})).collect::<Vec<_>>(),
         }))
@@ -278,6 +281,19 @@ impl Plugin {
     async fn send(&self, claims: &InvocationClaims, input: Value) -> Result<Value> {
         let input: Outgoing = parse(input)?;
         let domain = self.domain(claims, &input.resource_id).await?;
+        if self
+            .store
+            .find_engine(&claims.customer_id)
+            .await
+            .map_err(store_error)?
+            .is_some()
+            || self.store.legacy_engines().await.map_err(store_error)?
+        {
+            return Err(PluginError::new(
+                ErrorCode::Conflict,
+                "API sending through incoming mail is not available; incoming storage remains retained",
+            ));
+        }
         if !domain.verified && !self.settings.trust_unverified_domains {
             return Err(PluginError::new(
                 ErrorCode::Conflict,
@@ -451,6 +467,14 @@ impl ActionHandler for Handler {
             return Err(invalid("Invalid mail request"));
         }
         let plugin = &self.0;
+        if !plugin
+            .store
+            .bind_project(&claims.project_id, &claims.customer_id)
+            .await
+            .map_err(store_error)?
+        {
+            return Err(PluginError::denied());
+        }
         match claims.action.as_str() {
             "domains.create" => plugin.create_domain(claims, input).await,
             "domains.view" => plugin.view_domain(claims, input).await,
@@ -471,6 +495,8 @@ impl ActionHandler for Handler {
                 }
                 Ok(json!({}))
             }
+            "incoming.activate" => plugin.incoming(claims, input, true).await,
+            "incoming.deactivate" => plugin.incoming(claims, input, false).await,
             "mailboxes.create" => plugin.create_mailbox(claims, input).await,
             "mailboxes.view" => plugin.view_mailbox(claims, input).await,
             "mailboxes.credentials" => plugin.mailbox_password(claims, input).await,

@@ -71,7 +71,10 @@ impl AccessService {
             .authenticate_session_in(&tx, &principal.user_id, &principal.session_id)
             .await?
             .ok_or(Error::Unauthorized)?;
-        if !current.can_access() {
+        if !current.can_access()
+            || principal.customer_scope().is_some()
+                && principal.customer_scope() != current.customer_scope()
+        {
             return Err(Error::Unauthorized);
         }
         tx.commit().await?;
@@ -124,7 +127,7 @@ impl AccessService {
     pub async fn list_tenants_as(&self, actor: &Principal) -> Result<Vec<Value>> {
         let actor = self.current_actor(actor).await?;
         let tx = self.domain(&actor).await?;
-        let rows=json_rows(&tx,"SELECT jsonb_build_object('id',c.id,'name',c.name,'status',c.status,'role',CASE WHEN $3 THEN 'admin' ELSE m.role END,'localAuthority',webdock_rls.local_organization_authority(t.organization_id)) AS data FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id LEFT JOIN webdock_auth.member m ON m.\"organizationId\"=t.organization_id AND m.\"userId\"=$1 WHERE $2 OR $3 OR (c.status='active' AND m.id IS NOT NULL AND webdock_rls.local_organization_authority(t.organization_id)) ORDER BY c.name,c.id",vec![actor.user_id.clone().into(),actor.is_operator().into(),actor.in_tenant_preview().into()]).await?;
+        let rows=json_rows(&tx,"SELECT jsonb_build_object('id',c.id,'name',c.name,'status',c.status,'role',CASE WHEN $3 THEN coalesce(webdock_rls.membership_role(t.organization_id),'admin') ELSE m.role END,'localAuthority',webdock_rls.local_organization_authority(t.organization_id)) AS data FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id LEFT JOIN webdock_auth.member m ON m.\"organizationId\"=t.organization_id AND m.\"userId\"=$1 WHERE $2 OR $3 OR (c.status='active' AND m.id IS NOT NULL AND webdock_rls.local_organization_authority(t.organization_id)) ORDER BY c.name,c.id",vec![actor.user_id.clone().into(),actor.is_operator().into(),actor.in_tenant_preview().into()]).await?;
         tx.commit().await?;
         Ok(rows)
     }
@@ -156,12 +159,16 @@ impl AccessService {
         let tx = self.domain(&actor).await?;
         let mut tenant = tenant(&tx, &actor, customer).await?;
         if actor.in_tenant_preview() {
-            tenant["member_role"] = json!("admin");
+            tenant["member_role"] = json!(if actor.is_acting_customer() {
+                "owner"
+            } else {
+                "admin"
+            });
         }
         let org = field(&tenant, "organization_id")?;
         let local = local_org(&tx, org).await?;
         let can_manage = local
-            && !actor.in_tenant_preview()
+            && !actor.in_read_only_preview()
             && tenant["status"] == "active"
             && (actor.is_operator()
                 || ["owner", "admin"].contains(&tenant["member_role"].as_str().unwrap_or("")));
@@ -334,7 +341,7 @@ impl AccessService {
         customer: &str,
         command: TenantCommand,
     ) -> Result<ChangeResult> {
-        if actor.in_tenant_preview() {
+        if actor.in_read_only_preview() {
             return Err(Error::Forbidden);
         }
         let preliminary = self.domain(actor).await?;
@@ -663,7 +670,7 @@ impl AccessService {
             })
             .map_err(|_| Error::InvalidInput)?,
         )?;
-        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.access_delivery_job(id,invitation_id,organization_id,user_id,binding_id,actor_id,actor_session_id,generation,kind,payload) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",[id.into(),invitation.map(str::to_owned).into(),org.into(),user.into(),binding.map(str::to_owned).into(),actor.user_id.clone().into(),actor.session_id.clone().into(),generation.into(),kind.as_str().into(),payload.into()])).await?;
+        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.access_delivery_job(id,invitation_id,organization_id,user_id,binding_id,actor_id,actor_session_id,generation,kind,payload,admitted_customer_scope,admission_bound) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,webdock_rls.customer_scope(),true)",[id.into(),invitation.map(str::to_owned).into(),org.into(),user.into(),binding.map(str::to_owned).into(),actor.user_id.clone().into(),actor.session_id.clone().into(),generation.into(),kind.as_str().into(),payload.into()])).await?;
         Ok(())
     }
     pub async fn get_invitation(&self, cookie: &str, invitation: &str) -> Result<Value> {
@@ -803,16 +810,30 @@ impl AccessService {
                     &job.try_get::<String>("", "actor_session_id")?,
                 )
                 .await?;
-            let mut valid = principal
-                .as_ref()
-                .is_some_and(|p| p.can_access() && !p.in_tenant_preview())
+            let admitted_scope: Option<String> = job.try_get("", "admitted_customer_scope")?;
+            let mut valid = job.try_get::<bool>("", "admission_bound")?
+                && principal.as_ref().is_some_and(|p| {
+                    p.can_access()
+                        && !p.in_read_only_preview()
+                        && p.customer_scope() == admitted_scope.as_deref()
+                })
                 && local_org(&tx, &org).await?;
-            if let Some(principal) = principal.as_ref()
+            // Hold session and scope locks through delivery, so exiting cannot restore authority
+            // between this exact-scope permission check and dispatch.
+            let permission = if let Some(principal) = principal.as_ref()
                 && valid
-                && !principal.is_operator()
             {
-                valid=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT id FROM webdock_auth.member WHERE \"organizationId\"=$1 AND \"userId\"=$2 AND role IN ('owner','admin')",[org.clone().into(),principal.user_id.clone().into()])).await?.is_some();
-            }
+                let permission = self.signer.begin(&self.business, principal).await?;
+                permission.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
+                    "SELECT session_id FROM webdock_auth.studio_tenant_preview WHERE session_id=$1 AND actor_id=$2 FOR SHARE",
+                    [principal.session_id.clone().into(),principal.user_id.clone().into()])).await?;
+                valid = permission.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
+                    "SELECT coalesce(webdock_rls.organization_allowed($1,true),false) AND webdock_rls.customer_scope() IS NOT DISTINCT FROM $2::text AS allowed",
+                    [org.clone().into(),admitted_scope.into()])).await?.ok_or(Error::Forbidden)?.try_get("","allowed")?;
+                Some(permission)
+            } else {
+                None
+            };
             let invitation: Option<String> = job.try_get("", "invitation_id")?;
             let recipient: String = job.try_get("", "user_id")?;
             valid&=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT id FROM webdock_auth.\"user\" WHERE id=$1 AND role='user' AND NOT coalesce(banned,false) AND webdock_rls.local_identity_authority(id)",[recipient.clone().into()])).await?.is_some();
@@ -826,13 +847,16 @@ impl AccessService {
             let payload: DeliveryRequest =
                 serde_json::from_str(&self.keys.decrypt(&job.try_get::<String>("", "payload")?)?)
                     .map_err(|_| Error::InvalidInput)?;
-            tx.commit().await?;
             let delivered = valid
                 && matches!(
                     tokio::time::timeout(Duration::from_secs(10), self.delivery.deliver(&payload))
                         .await,
                     Ok(Ok(()))
                 );
+            if let Some(permission) = permission {
+                permission.commit().await?;
+            }
+            tx.commit().await?;
             let state = if !valid {
                 "canceled"
             } else if delivered {
@@ -961,7 +985,7 @@ pub(crate) async fn tenant(
     customer: &str,
 ) -> Result<Value> {
     let sql = format!(
-        "SELECT to_jsonb(profile) AS data FROM (SELECT {PROFILE},t.organization_id,m.role AS member_role FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id LEFT JOIN webdock_auth.member m ON m.\"organizationId\"=t.organization_id AND m.\"userId\"=$2 WHERE c.id=$1 AND ($3 OR $4 OR (c.status='active' AND m.id IS NOT NULL AND webdock_rls.local_organization_authority(t.organization_id)))) profile"
+        "SELECT to_jsonb(profile) AS data FROM (SELECT {PROFILE},t.organization_id,webdock_rls.membership_role(t.organization_id) AS member_role FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id LEFT JOIN webdock_auth.member m ON m.\"organizationId\"=t.organization_id AND m.\"userId\"=$2 WHERE c.id=$1 AND ($3 OR $4 OR (c.status='active' AND m.id IS NOT NULL AND webdock_rls.local_organization_authority(t.organization_id)))) profile"
     );
     let rows = json_rows(
         tx,
@@ -980,7 +1004,7 @@ pub(crate) async fn tenant(
     rows.into_iter().next().ok_or(Error::NotFound)
 }
 fn manageable(actor: &Principal, tenant: &Value) -> Result<()> {
-    if actor.in_tenant_preview()
+    if actor.in_read_only_preview()
         || tenant["status"] != "active"
         || (!actor.is_operator()
             && !["owner", "admin"].contains(&tenant["member_role"].as_str().unwrap_or("")))

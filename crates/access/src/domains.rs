@@ -173,7 +173,7 @@ impl AccessService {
         customer: &str,
     ) -> Result<(Principal, sea_orm::DatabaseTransaction)> {
         let actor = self.current_actor(actor).await?;
-        if actor.in_tenant_preview() {
+        if actor.in_read_only_preview() {
             return Err(Error::Forbidden);
         }
         let tx = self.domain(&actor).await?;

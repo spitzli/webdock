@@ -10,7 +10,7 @@ const noticeSchema = z.object({
   kind: z.enum(["crashing", "image", "refused", "certificate"]),
   plugin: z.string(),
   unit: z.string(),
-  project: z.object({ id: z.string(), name: z.string() }),
+  project: z.object({ id: z.string(), name: z.string() }).nullable(),
   resource: z.object({ id: z.string(), name: z.string() }).nullable(),
   openedAt: z.string(),
   resolvedAt: z.string().nullable(),
@@ -39,7 +39,7 @@ export function Attention({ customer }: { customer: string }) {
           <div className="flex min-w-0 items-start gap-3">
             <WarningCircleIcon size={20} className="mt-0.5 shrink-0 text-warning" />
             <p className="text-sm">
-              {n.resource ? (
+              {n.resource && n.project ? (
                 <Link
                   to="/workspaces/$customer/projects/$id/resources/$plugin/$resource"
                   params={{ customer, id: n.project.id, plugin: n.plugin, resource: n.resource.id }}
@@ -50,7 +50,7 @@ export function Attention({ customer }: { customer: string }) {
               ) : (
                 <span className="font-medium">{n.unit}</span>
               )}{" "}
-              in {n.project.name} {what[n.kind]}
+              in {n.project?.name ?? "this workspace"} {what[n.kind]}
             </p>
           </div>
           <span className="text-xs text-muted">since {new Date(n.openedAt).toLocaleString()}</span>

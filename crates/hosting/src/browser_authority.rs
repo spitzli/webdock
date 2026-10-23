@@ -44,7 +44,7 @@ impl BrowserGuard {
             ) => error(403, "Git browser approval is no longer valid."),
             _ => error(503, "Git browser authority is unavailable."),
         })?;
-        if principal.in_tenant_preview() {
+        if principal.in_read_only_preview() {
             return Err(error(403, "Git approval is read-only."));
         }
         Ok(principal.expires_at)
@@ -134,7 +134,7 @@ impl HostingService {
         )
         .await
         .map_err(|_| error(403, "Git browser approval is no longer valid."))?;
-        if principal.in_tenant_preview() {
+        if principal.in_read_only_preview() {
             return Err(error(403, "Git approval is read-only."));
         }
         Ok(())

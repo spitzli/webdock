@@ -120,7 +120,7 @@ impl SessionAuthority {
         };
         if principal.user_id != subject
             || principal.session_id != session
-            || (write && principal.in_tenant_preview())
+            || (write && principal.in_read_only_preview())
         {
             return Err(PluginError::denied());
         }

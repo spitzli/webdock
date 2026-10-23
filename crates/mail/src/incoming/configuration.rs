@@ -350,7 +350,8 @@ async fn change_grant(
         .transpose()?;
     let operator = member_id.is_none();
     if operator
-        && !(access.operator
+        && !((access.operator
+            || (access.principal.is_acting_customer() && subject == access.principal.user_id))
             && field::<String>(&user, "role")? == "operator"
             && field::<bool>(&user, "mfa")?)
     {

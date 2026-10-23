@@ -34,6 +34,9 @@ async fn operator_setup_mfa_recovery_and_revocation_are_real_and_single_use() {
     ))
     .await
     .unwrap();
+    db.execute_unprepared(include_str!("../migrations/0005_customer_acting.sql"))
+        .await
+        .unwrap();
     let keys = SecretKeys::new(
         BTreeMap::from([(0, SECRET.to_owned())]),
         0,

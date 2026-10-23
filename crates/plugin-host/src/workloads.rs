@@ -1,6 +1,6 @@
 //! `plugin.workloads`: a plugin runtime states the Kubernetes objects one unit (usually one
 //! resource) needs. Core checks them against the manifest and a fixed safety policy, pins them to
-//! the installation's namespace in the project and stamps owner labels; the cluster's agent
+//! the installation's namespace in the project or customer and stamps owner labels; the cluster's agent
 //! applies them and reports back. Calls authenticate the plugin runtime itself, not an invocation,
 //! because provisioning outlasts one.
 use super::*;
@@ -35,6 +35,20 @@ pub fn namespace(plugin: &str, project: &str) -> Result<String> {
         return Err(invalid("Invalid workload namespace"));
     }
     Ok(value)
+}
+fn customer_namespace(plugin: &str, customer: &str) -> Result<String> {
+    if !numeric_owner(customer) {
+        return Err(invalid("Invalid customer"));
+    }
+    let value = format!("wd-{plugin}-c{customer}");
+    Ok(if dns_label(&value) {
+        value
+    } else {
+        format!("wd-{}-c{customer}", &digest(plugin.as_bytes())[..12])
+    })
+}
+fn numeric_owner(value: &str) -> bool {
+    !value.is_empty() && value.len() <= 20 && value.bytes().all(|b| b.is_ascii_digit())
 }
 fn object_map<'a>(
     value: &'a Value,
@@ -304,14 +318,18 @@ pub struct Pinned {
 pub fn pin(
     manifest: &Manifest,
     plugin: &str,
-    project: &str,
+    customer: &str,
+    project: Option<&str>,
     unit: &str,
     objects: &Value,
 ) -> Result<Pinned> {
     if !dns_label(unit) {
         return Err(invalid("Invalid workload unit"));
     }
-    let namespace = namespace(plugin, project)?;
+    let namespace = match project {
+        Some(project) => namespace(plugin, project)?,
+        None => customer_namespace(plugin, customer)?,
+    };
     let list = objects
         .as_array()
         .filter(|l| (1..=MAX_OBJECTS).contains(&l.len()))
@@ -385,7 +403,10 @@ pub fn pin(
         let mut labels = labels;
         labels.insert(format!("{OWNER}managed-by"), json!("webdock"));
         labels.insert(format!("{OWNER}plugin"), json!(plugin));
-        labels.insert(format!("{OWNER}project-id"), json!(project));
+        labels.insert(format!("{OWNER}customer-id"), json!(customer));
+        if let Some(project) = project {
+            labels.insert(format!("{OWNER}project-id"), json!(project));
+        }
         labels.insert(format!("{OWNER}unit"), json!(unit));
         object["metadata"]["labels"] = Value::Object(labels.clone());
         object["metadata"]["namespace"] = json!(namespace);
@@ -396,6 +417,7 @@ pub fn pin(
                 .as_object()
                 .cloned()
                 .unwrap_or_default();
+            pod_labels.retain(|key, _| !key.starts_with(OWNER));
             pod_labels.extend(labels);
             template["metadata"]["labels"] = Value::Object(pod_labels);
             template["spec"]["automountServiceAccountToken"] = json!(false);
@@ -411,14 +433,53 @@ pub fn pin(
 }
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(try_from = "ApplyInput")]
 struct Apply {
-    project: String,
+    project: Option<String>,
+    customer: Option<String>,
     unit: String,
     objects: Value,
     /// The plugin resource this unit belongs to, so usage can show its name.
+    resource: Option<String>,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ApplyInput {
+    #[serde(default, deserialize_with = "owner_field")]
+    project: Option<String>,
+    #[serde(default, deserialize_with = "owner_field")]
+    customer: Option<String>,
+    unit: String,
+    objects: Value,
     #[serde(default)]
     resource: Option<String>,
+}
+fn owner_field<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<Option<String>, D::Error> {
+    String::deserialize(deserializer).map(Some)
+}
+impl TryFrom<ApplyInput> for Apply {
+    type Error = &'static str;
+    fn try_from(input: ApplyInput) -> std::result::Result<Self, Self::Error> {
+        if input.project.is_some() == input.customer.is_some()
+            || input
+                .project
+                .iter()
+                .chain(input.customer.iter())
+                .any(|v| !numeric_owner(v))
+            || input.customer.is_some() && input.resource.is_some()
+        {
+            return Err("Specify exactly one project or customer owner");
+        }
+        Ok(Self {
+            project: input.project,
+            customer: input.customer,
+            unit: input.unit,
+            objects: input.objects,
+            resource: input.resource,
+        })
+    }
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -456,22 +517,74 @@ impl HostService {
             "apply" => {
                 let input: Apply =
                     serde_json::from_value(input).map_err(|_| invalid("Invalid workload"))?;
-                // The project's chosen cluster, else the plugin's default. A unit that exists keeps
-                // the cluster it was placed on.
-                let chosen: Option<String> = tx
+                if !dns_label(&input.unit) {
+                    return Err(invalid("Invalid workload unit"));
+                }
+                // Serialize one unit before looking up its immutable owner and existing cluster.
+                tx.execute_raw(Statement::from_sql_and_values(
+                    DbBackend::Postgres,
+                    "SELECT pg_advisory_xact_lock(hashtextextended($1,0))",
+                    [format!("webdock-workload:{plugin}:{}", input.unit).into()],
+                ))
+                .await
+                .map_err(db_error)?;
+                let previous = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
+                    "SELECT customer_id,project_id,cluster_id,allocation FROM webdock_auth.plugin_workload WHERE plugin_id=$1 AND unit=$2 FOR UPDATE",
+                    [plugin.into(),input.unit.clone().into()])).await.map_err(db_error)?;
+                let checked: Value = tx
                     .query_one_raw(Statement::from_sql_and_values(
                         DbBackend::Postgres,
-                        "SELECT webdock_rls.project_cluster($1) AS cluster",
-                        [input.project.clone().into()],
+                        "SELECT webdock_rls.workload_owner($1,$2) AS value",
+                        [input.project.clone().into(), input.customer.clone().into()],
                     ))
                     .await
                     .map_err(db_error)?
                     .ok_or_else(unavailable)?
-                    .try_get("", "cluster")
+                    .try_get("", "value")
                     .map_err(db_error)?;
-                let cluster = chosen
-                    .or_else(|| binding.workload_cluster.clone())
-                    .ok_or_else(|| unsupported("No cluster is assigned to this plugin"))?;
+                let customer = checked["customer"]
+                    .as_str()
+                    .ok_or_else(PluginError::denied)?;
+                let (cluster, previous_allocation) = match previous {
+                    Some(row) => {
+                        if row.try_get::<String>("", "customer_id").map_err(db_error)? != customer
+                            || row
+                                .try_get::<Option<String>>("", "project_id")
+                                .map_err(db_error)?
+                                != input.project
+                        {
+                            return Err(conflict("This unit belongs to another owner"));
+                        }
+                        (
+                            row.try_get::<String>("", "cluster_id").map_err(db_error)?,
+                            row.try_get::<Value>("", "allocation").map_err(db_error)?,
+                        )
+                    }
+                    None => (
+                        checked["cluster"]
+                            .as_str()
+                            .map(str::to_owned)
+                            .or_else(|| binding.workload_cluster.clone())
+                            .ok_or_else(|| unsupported("No cluster is assigned to this plugin"))?,
+                        json!({}),
+                    ),
+                };
+                if input.project.is_none() {
+                    let allowed: bool = tx
+                        .query_one_raw(Statement::from_sql_and_values(
+                            DbBackend::Postgres,
+                            "SELECT webdock_rls.customer_workload_cluster($1,$2) AS allowed",
+                            [customer.into(), cluster.clone().into()],
+                        ))
+                        .await
+                        .map_err(db_error)?
+                        .ok_or_else(unavailable)?
+                        .try_get("", "allowed")
+                        .map_err(db_error)?;
+                    if !allowed {
+                        return Err(PluginError::denied());
+                    }
+                }
                 let Pinned {
                     namespace,
                     objects,
@@ -480,11 +593,11 @@ impl HostService {
                 } = pin(
                     &metadata.manifest,
                     plugin,
-                    &input.project,
+                    customer,
+                    input.project.as_deref(),
                     &input.unit,
                     &input.objects,
                 )?;
-                let checked = super::limits::checked(&tx, &input.project).await?;
                 // Hosts under the plugin's own route domains are its to hand out; anything else
                 // must be a domain the project's customer verified.
                 let foreign: Vec<&String> = hosts
@@ -495,9 +608,9 @@ impl HostService {
                     let row = tx
                         .query_one_raw(Statement::from_sql_and_values(
                             DbBackend::Postgres,
-                            "SELECT webdock_rls.project_unverified_host($1,$2) AS host",
+                            "SELECT webdock_rls.customer_unverified_host($1,$2) AS host",
                             [
-                                input.project.clone().into(),
+                                customer.into(),
                                 foreign
                                     .iter()
                                     .map(|h| (*h).clone())
@@ -525,20 +638,17 @@ impl HostService {
                 }) {
                     return Err(invalid("Invalid resource"));
                 }
-                let previous = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
-                    "SELECT allocation FROM webdock_auth.plugin_workload WHERE plugin_id=$1 AND unit=$2 AND project_id=$3",
-                    [plugin.into(), input.unit.clone().into(), input.project.clone().into()])).await.map_err(db_error)?
-                    .map(|r| r.try_get::<Value>("", "allocation")).transpose().map_err(db_error)?
-                    .unwrap_or_else(|| json!({}));
-                if let Some(message) = super::limits::exceeded(&checked, &previous, &allocation) {
+                if let Some(message) =
+                    super::limits::exceeded(&checked, &previous_allocation, &allocation)
+                {
                     return Err(conflict(&message));
                 }
                 let row = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
-                    "INSERT INTO webdock_auth.plugin_workload(plugin_id,unit,project_id,cluster_id,namespace,objects,allocation,resource_id,hosts) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) \
+                    "INSERT INTO webdock_auth.plugin_workload(plugin_id,unit,project_id,cluster_id,namespace,objects,allocation,resource_id,hosts,customer_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) \
                      ON CONFLICT (plugin_id,unit) DO UPDATE SET objects=EXCLUDED.objects,allocation=EXCLUDED.allocation,resource_id=EXCLUDED.resource_id,hosts=EXCLUDED.hosts,removing=false,revision=webdock_auth.plugin_workload.revision+1,updated_at=now() \
-                     WHERE webdock_auth.plugin_workload.project_id=EXCLUDED.project_id RETURNING revision",
-                    [plugin.into(), input.unit.into(), input.project.into(), cluster.into(), namespace.clone().into(), Value::Array(objects).into(), allocation.into(), input.resource.into(), hosts.into()])).await.map_err(db_error)?
-                    .ok_or_else(|| conflict("This unit belongs to another project"))?;
+                     WHERE webdock_auth.plugin_workload.project_id IS NOT DISTINCT FROM EXCLUDED.project_id AND webdock_auth.plugin_workload.customer_id=EXCLUDED.customer_id AND webdock_auth.plugin_workload.cluster_id=EXCLUDED.cluster_id RETURNING revision",
+                    [plugin.into(), input.unit.into(), input.project.into(), cluster.into(), namespace.clone().into(), Value::Array(objects).into(), allocation.into(), input.resource.into(), hosts.into(),customer.into()])).await.map_err(db_error)?
+                    .ok_or_else(|| conflict("This unit belongs to another owner"))?;
                 json!({"revision": row.try_get::<i64>("", "revision").map_err(db_error)?, "namespace": namespace})
             }
             "observe" => {
@@ -570,6 +680,49 @@ impl HostService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn apply_accepts_exactly_one_numeric_owner() {
+        for owner in [json!({"project":"123"}), json!({"customer":"456"})] {
+            let mut input = json!({"unit":"unit-1","objects":[]});
+            input
+                .as_object_mut()
+                .unwrap()
+                .extend(owner.as_object().unwrap().clone());
+            assert!(serde_json::from_value::<Apply>(input).is_ok(), "{owner}");
+        }
+        for owner in [
+            json!({}),
+            json!({"project":"123","customer":"456"}),
+            json!({"customer":null}),
+            json!({"project":""}),
+            json!({"customer":"foreign"}),
+            json!({"customer":456}),
+            json!({"customer":"456","unknown":true}),
+        ] {
+            let mut input = json!({"unit":"unit-1","objects":[]});
+            input
+                .as_object_mut()
+                .unwrap()
+                .extend(owner.as_object().unwrap().clone());
+            assert!(serde_json::from_value::<Apply>(input).is_err(), "{owner}");
+        }
+    }
+    #[test]
+    fn customer_namespaces_and_pod_labels_cannot_claim_a_project() {
+        let objects = json!([{"apiVersion":"apps/v1","kind":"Deployment","metadata":{"name":"service"},"spec":{"template":{"metadata":{"labels":{"webdock.dev/project-id":"999"}},"spec":{"containers":[{"name":"service","resources":{"limits":{"memory":"128Mi"},"requests":{"cpu":"50m"}}}]}}}}]);
+        let customer = pin(&manifest(), "hosting", "101", None, "service", &objects).unwrap();
+        assert_eq!(customer.namespace, "wd-hosting-c101");
+        assert_ne!(customer.namespace, namespace("hosting", "101").unwrap());
+        for labels in [
+            &customer.objects[0]["metadata"]["labels"],
+            &customer.objects[0]["spec"]["template"]["metadata"]["labels"],
+        ] {
+            assert_eq!(labels["webdock.dev/customer-id"], "101");
+            assert!(labels.get("webdock.dev/project-id").is_none());
+        }
+        let long = customer_namespace(&"p".repeat(64), "12345678901234567890").unwrap();
+        assert!(long.len() <= 63 && long.ends_with("-c12345678901234567890"));
+    }
     fn manifest() -> Manifest {
         let mut v: Value = serde_json::from_str(include_str!(
             "../../plugin-protocol/tests/fixtures/project-notes.json"
@@ -597,7 +750,15 @@ mod tests {
             namespace,
             objects: pinned,
             ..
-        } = pin(&manifest(), "hosting", "201", "app-1", &objects).unwrap();
+        } = pin(
+            &manifest(),
+            "hosting",
+            "101",
+            Some("201"),
+            "app-1",
+            &objects,
+        )
+        .unwrap();
         assert_eq!(namespace, "wd-hosting-201");
         assert_eq!(pinned[0]["metadata"]["namespace"], "wd-hosting-201");
         assert_eq!(pinned[0]["metadata"]["labels"]["webdock.dev/unit"], "app-1");
@@ -716,7 +877,15 @@ mod tests {
         ];
         for object in cases {
             assert!(
-                pin(&manifest(), "hosting", "201", "app-1", &json!([object])).is_err(),
+                pin(
+                    &manifest(),
+                    "hosting",
+                    "101",
+                    Some("201"),
+                    "app-1",
+                    &json!([object])
+                )
+                .is_err(),
                 "{object}"
             );
         }
@@ -799,7 +968,8 @@ mod tests {
             pin(
                 &manifest(),
                 "hosting",
-                "201",
+                "101",
+                Some("201"),
                 "app-1",
                 &certificate(server.clone())
             )
@@ -811,7 +981,8 @@ mod tests {
             pin(
                 &manifest(),
                 "hosting",
-                "201",
+                "101",
+                Some("201"),
                 "app-1",
                 &certificate(authority)
             )
@@ -848,7 +1019,15 @@ mod tests {
         ];
         for objects in cases {
             assert!(
-                pin(&manifest(), "hosting", "201", "app-1", &objects).is_err(),
+                pin(
+                    &manifest(),
+                    "hosting",
+                    "101",
+                    Some("201"),
+                    "app-1",
+                    &objects
+                )
+                .is_err(),
                 "{objects}"
             );
         }
@@ -856,7 +1035,8 @@ mod tests {
             pin(
                 &manifest(),
                 "hosting",
-                "201",
+                "101",
+                Some("201"),
                 "App_1",
                 &json!([{"apiVersion":"v1","kind":"Secret","metadata":{"name":"x"}}])
             )
@@ -866,7 +1046,8 @@ mod tests {
             pin(
                 &manifest(),
                 "hosting",
-                "20x",
+                "101",
+                Some("20x"),
                 "app-1",
                 &json!([{"apiVersion":"v1","kind":"Secret","metadata":{"name":"x"}}])
             )

@@ -45,6 +45,8 @@ export function sessionCacheScope(
     session.user.mustChangePassword ?? false,
     session.user.twoFactorEnabled ?? false,
     session.user.preview ?? false,
+    session.user.acting ?? false,
+    session.user.customerScope ?? null,
     // The wire contract exposes no preview target/version yet. Each confirmed
     // preview response is a new scope, including true-to-true target changes.
     session.user.preview ? verifiedAt : 0,

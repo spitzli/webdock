@@ -53,6 +53,10 @@ try {
   assert.equal(await session.page.getByText('_webdock-challenge.shop.example.test').count(), 0, 'a verified domain no longer shows its record');
   await session.page.setViewportSize({ width: 390, height: 844 });
   assert.ok(await session.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'no horizontal scroll at phone width');
+  state.domains[0].usedBy = [{ plugin: 'mail', unit: 'engine-c101', project: null, resource: null }];
+  await session.page.reload();
+  await session.page.getByText('Used by engine-c101 (Workspace)', { exact: true }).waitFor();
+  assert.equal(await session.page.getByRole('button', { name: 'Remove', exact: true }).isDisabled(), true, 'customer-wide units keep their domains reserved');
   errors.push(...session.errors);
   await session.context.close();
   // Members read, but neither add nor remove.

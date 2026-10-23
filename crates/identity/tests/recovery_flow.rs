@@ -35,6 +35,7 @@ async fn activation_reset_and_delivery_are_durable_scoped_and_single_use() {
     for migration in [
         include_str!("../migrations/0001_security_challenges.sql"),
         include_str!("../migrations/0002_authentication_preview.sql"),
+        include_str!("../migrations/0005_customer_acting.sql"),
         include_str!("../migrations/0003_account_recovery.sql"),
     ] {
         db.execute_unprepared(migration).await.unwrap();

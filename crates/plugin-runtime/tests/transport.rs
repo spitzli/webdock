@@ -75,7 +75,7 @@ fn request(generation: u64, input: Value) -> wire::InvokeRequest {
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    let claims = json!({"v":1,"id":"123e4567-e89b-42d3-a456-426614174000","pluginID":"project-notes","generation":generation,"action":"notes.read","projectID":"123","iat":now,"exp":now+60});
+    let claims = json!({"v":1,"id":"123e4567-e89b-42d3-a456-426614174000","pluginID":"project-notes","generation":generation,"action":"notes.read","projectID":"123","customerID":"101","iat":now,"exp":now+60});
     let body = URL_SAFE_NO_PAD.encode(serde_json::to_vec(&claims).unwrap());
     let token = format!(
         "{body}.{}",
