@@ -1,4 +1,4 @@
-//! Reconciles persisted availability commands for explicitly installed runtimes.
+//! Reconciles persisted plugin lifecycle commands and durable job attempts.
 use clap::Parser;
 use std::{path::PathBuf, process::ExitCode, sync::Arc, time::Duration};
 use webdock_control_plane::{
@@ -49,20 +49,22 @@ async fn run() -> Result<(), Error> {
         .await?,
     );
     let authority = authority_services(auth.clone(), ids.clone(), &platform).await?;
-    let endpoints = PluginEndpoints::initialize(
-        PluginDependencies {
-            business: business.clone(),
-            worker,
-            auth,
-            identity: authority.identity,
-            browser: authority.browser,
-            oauth: authority.oauth,
-            ids,
-            rls_secret: required("DATABASE_RLS_SECRET")?,
-        },
-        &config,
-    )
-    .await?;
+    let endpoints = Arc::new(
+        PluginEndpoints::initialize(
+            PluginDependencies {
+                business: business.clone(),
+                worker,
+                auth,
+                identity: authority.identity,
+                browser: authority.browser,
+                oauth: authority.oauth,
+                ids,
+                rls_secret: required("DATABASE_RLS_SECRET")?,
+            },
+            &config,
+        )
+        .await?,
+    );
     let installer = match args.installation_config {
         Some(path) => Some(
             webdock_control_plane::plugins::installation::worker::InstallationWorker::load(
@@ -72,17 +74,29 @@ async fn run() -> Result<(), Error> {
         ),
         None => None,
     };
+    // Dropping the set aborts requests on shutdown; their persisted leases remain recoverable.
+    let mut jobs = tokio::task::JoinSet::new();
     loop {
+        if let Some(result) = jobs.try_join_next() {
+            result??;
+        }
+        if jobs.is_empty() {
+            let endpoints = endpoints.clone();
+            jobs.spawn(async move { endpoints.advance_job().await });
+        }
         if let Some(lease) = endpoints.host.claim_state_operation(None).await? {
             endpoints
                 .host
-                .advance_state_operation(&lease, &endpoints)
+                .advance_state_operation(&lease, endpoints.as_ref())
                 .await?;
         }
         if let Some(installer) = &installer {
             installer.advance(&endpoints).await?;
         }
         if args.once {
+            while let Some(result) = jobs.join_next().await {
+                result??;
+            }
             return Ok(());
         }
         tokio::select! {

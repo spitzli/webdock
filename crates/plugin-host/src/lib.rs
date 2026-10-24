@@ -2,6 +2,7 @@
 mod authority;
 pub mod catalog;
 pub use authority::installation;
+pub use authority::jobs::JobLease;
 pub use catalog::{Catalog, CatalogDescriptor, CatalogTargetDescriptor};
 pub use installation::{
     InstallClaim, InstallRequest, InstallSnapshot, InstallWork, PreparedInstallation,

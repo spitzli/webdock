@@ -18,6 +18,8 @@ use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use webdock_plugin_host::{AdmissionInput, HostService};
 use webdock_plugin_protocol::{ErrorCode, Manifest, PluginError};
+#[path = "plugin_jobs.rs"]
+mod jobs;
 pub struct PluginEndpoints {
     pub host: Arc<HostService>,
     pub connections: RuntimeConnections,

@@ -1,5 +1,7 @@
 # Native initial plugin installation
 
+For immediate background execution after installation, see [Native plugin jobs](native-plugin-jobs.md).
+
 Internal operator guide for the opt-in Rust initial-install path. The first managed PostgreSQL profile exposes dedicated instances. This documents implemented interfaces, not production readiness or a passing end-to-end rollout; root records actual signed-OCI/Console acceptance separately.
 
 Use this flow for a fresh, separately configured platform. Keep existing Tilt services running. Tilt's seeded Echo demo and the historical [plugin state checkpoint](plugin-state-bootstrap.md) are not fresh-install acceptance. Do not reset the development database, create dummy customers/projects, insert installation/enrollment rows manually, or use existing customer data for a fixture.

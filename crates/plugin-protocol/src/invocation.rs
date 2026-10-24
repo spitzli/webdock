@@ -5,6 +5,14 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct JobIdentity {
+    pub id: String,
+    #[serde(deserialize_with = "integer")]
+    pub attempt: u8,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct InvocationClaims {
     #[serde(deserialize_with = "integer")]
     pub v: u8,
@@ -22,6 +30,29 @@ pub struct InvocationClaims {
     pub iat: i64,
     #[serde(deserialize_with = "integer")]
     pub exp: i64,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "job"
+    )]
+    pub job: Option<JobIdentity>,
+}
+
+// Absence denotes an action; explicit null must never erase the execution kind.
+fn job<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<Option<JobIdentity>, D::Error> {
+    let identity = JobIdentity::deserialize(deserializer)?;
+    if identity.id.len() != 68
+        || !identity.id.starts_with("job-")
+        || !identity.id.as_bytes()[4..]
+            .iter()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(b))
+        || !(1..=5).contains(&identity.attempt)
+    {
+        return Err(serde::de::Error::custom("Invalid job identity"));
+    }
+    Ok(Some(identity))
 }
 
 /// Signature authenticates the issuer, never current grant/session authority.

@@ -148,6 +148,8 @@ impl wire::plugin_host_server::PluginHost for HostRpc {
         let request = request.into_inner();
         let limit = match (request.service.as_str(), request.method.as_str()) {
             ("data", "read") | ("apps", "request") => 32768,
+            ("jobs", "enqueue") => 36864,
+            ("jobs", "get" | "cancel") => 256,
             ("data", "write") => 131072,
             ("http", "request") => 1048576,
             _ => return Err(Status::unimplemented("Host capability unavailable")),
@@ -175,6 +177,9 @@ impl wire::plugin_host_server::PluginHost for HostRpc {
                 .await
                 .and_then(|value| serde_json::to_value(value).map_err(|_| unavailable())),
             ("apps", "request") => self.host.apps_request(&handle, input).await,
+            ("jobs", "enqueue") => self.host.jobs_enqueue(&handle, input).await,
+            ("jobs", "get") => self.host.jobs_get(&handle, input).await,
+            ("jobs", "cancel") => self.host.jobs_cancel(&handle, input).await,
             _ => unreachable!(),
         }
         .map_err(failure)?;

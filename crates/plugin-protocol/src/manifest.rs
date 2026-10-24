@@ -323,6 +323,9 @@ impl Manifest {
             .iter()
             .find(|a| a["name"] == name)
     }
+    pub fn job(&self, name: &str) -> Option<&Value> {
+        find(&self.value["jobs"], "name", name)
+    }
     pub fn offering(&self, id: &str) -> Option<&Value> {
         find(&self.value["offerings"], "id", id)
     }
@@ -348,13 +351,25 @@ impl Manifest {
             .map_or(&[], Vec::as_slice)
     }
     pub fn require_action_only_lifecycle(&self) -> Result<()> {
-        if ["dependencies", "tables", "migrations", "jobs"]
+        if ["dependencies", "tables", "migrations"]
             .iter()
             .any(|k| !self.value[k].as_array().unwrap().is_empty())
+            || self.value["jobs"].as_array().unwrap().iter().any(|job| {
+                job.get("intervalSeconds").is_some()
+                    || job["capabilities"].as_array().unwrap().iter().any(|cap| {
+                        ![
+                            "plugin.data.read",
+                            "plugin.data.write",
+                            "plugin.http.read",
+                            "plugin.http.request",
+                        ]
+                        .contains(&cap.as_str().unwrap())
+                    })
+            })
         {
             return Err(PluginError::new(
                 ErrorCode::NotSupported,
-                "Installer supports action plugins with scoped documents only",
+                "Installer supports actions and immediate data/HTTP jobs only",
             ));
         }
         Ok(())

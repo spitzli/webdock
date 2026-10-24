@@ -208,7 +208,7 @@ impl Catalog {
             verified.manifest.require_action_only_lifecycle()?;
             verified
                 .manifest
-                .require_host_services(&[("data", 1), ("http", 1)])?;
+                .require_host_services(&[("data", 1), ("http", 1), ("jobs", 1)])?;
             if !release.recipe.is_object()
                 || serde_json::to_vec(&release.recipe)
                     .map_err(|_| unavailable())?

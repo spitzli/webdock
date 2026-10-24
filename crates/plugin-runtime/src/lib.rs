@@ -92,6 +92,19 @@ pub trait ActionHandler: Send + Sync + 'static {
     ) -> Result<Value, PluginError>;
 }
 
+#[tonic::async_trait]
+pub trait JobHandler: Send + Sync + 'static {
+    /// Dropped on cancellation, deadline or revoked attempt authority. Effects are at least once;
+    /// use the stable job ID for idempotency across fresh invocation IDs and attempts.
+    async fn run(
+        &self,
+        claims: &InvocationClaims,
+        invocation_token: &str,
+        input: Value,
+        configuration: Value,
+    ) -> Result<Value, PluginError>;
+}
+
 #[derive(Clone)]
 pub struct Runtime {
     manifest: Arc<Manifest>,
@@ -99,6 +112,7 @@ pub struct Runtime {
     key: VerifyingKey,
     authority: Arc<dyn InvocationAuthority>,
     handler: Arc<dyn ActionHandler>,
+    jobs: Option<Arc<dyn JobHandler>>,
     permits: Arc<Semaphore>,
 }
 impl Runtime {
@@ -121,8 +135,101 @@ impl Runtime {
             key,
             authority,
             handler,
+            jobs: None,
             permits: Arc::new(Semaphore::new(32)),
         })
+    }
+    pub fn with_jobs(mut self, handler: Arc<dyn JobHandler>) -> Self {
+        self.jobs = Some(handler);
+        self
+    }
+
+    async fn run_job_inner(
+        &self,
+        request: Request<wire::RunJobRequest>,
+    ) -> Result<Response<wire::RunJobResponse>, Status> {
+        let _permit = self
+            .permits
+            .try_acquire()
+            .map_err(|_| Status::unavailable("Plugin job concurrency limit"))?;
+        let peer = self.peer(&request).await?;
+        let request = request.into_inner();
+        let claims = self.check(&peer, &request.invocation_token).await?;
+        if claims.job.is_none() || claims.action != request.name {
+            return Err(status(PluginError::denied()));
+        }
+        let job = self
+            .manifest
+            .job(&request.name)
+            .ok_or_else(|| Status::not_found("Unknown plugin job"))?;
+        let handler = self
+            .jobs
+            .as_ref()
+            .ok_or_else(|| Status::unimplemented("Plugin jobs unavailable"))?;
+        if request.input_json.len() > FRAME_BYTES
+            || request.configuration_json.len() > DOCUMENT_BYTES
+        {
+            return Err(Status::resource_exhausted("Plugin input limit"));
+        }
+        let input: Value = serde_json::from_slice(&request.input_json)
+            .map_err(|_| Status::invalid_argument("Invalid JSON"))?;
+        let configuration: Value = serde_json::from_slice(&request.configuration_json)
+            .map_err(|_| Status::invalid_argument("Invalid JSON"))?;
+        validate_value(job.get("input"), &input).map_err(status)?;
+        validate_value(
+            Some(&self.manifest.as_json()["configuration"]),
+            &configuration,
+        )
+        .map_err(status)?;
+        self.check_job_request(&peer, &claims, &request).await?;
+        let execution = handler.run(&claims, &request.invocation_token, input, configuration);
+        tokio::pin!(execution);
+        let mut interval = tokio::time::interval(Duration::from_millis(250));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        let result = loop {
+            tokio::select! {
+                result = &mut execution => break result.map_err(status)?,
+                _ = interval.tick() => { self.check(&peer, &request.invocation_token).await?; },
+            }
+        };
+        self.check(&peer, &request.invocation_token).await?;
+        self.check_job_request(&peer, &claims, &request).await?;
+        let output_json =
+            serde_json::to_vec(&result).map_err(|_| Status::internal("Invalid plugin result"))?;
+        if output_json.len() > FRAME_BYTES {
+            return Err(Status::resource_exhausted("Plugin job output limit"));
+        }
+        Ok(Response::new(wire::RunJobResponse { output_json }))
+    }
+
+    async fn check_job_request(
+        &self,
+        peer: &PeerIdentity,
+        claims: &InvocationClaims,
+        request: &wire::RunJobRequest,
+    ) -> Result<(), Status> {
+        tokio::time::timeout(
+            Duration::from_secs(3),
+            self.authority.authorize_request(
+                peer,
+                claims,
+                &request.input_json,
+                &request.configuration_json,
+            ),
+        )
+        .await
+        .map_err(|_| Status::deadline_exceeded("Authority deadline exceeded"))?
+        .map_err(status)?;
+        // Payload authorization can cross token expiry; do not await another lookup here.
+        verify_invocation(
+            &request.invocation_token,
+            &self.key,
+            self.manifest.id(),
+            self.generation,
+            now()?,
+        )
+        .map_err(status)?;
+        Ok(())
     }
     fn service(self) -> PluginRuntimeServer<Self> {
         PluginRuntimeServer::new(self)
@@ -283,7 +390,7 @@ impl PluginRuntime for Runtime {
         let peer = self.peer(&request).await?;
         let request = request.into_inner();
         let claims = self.check(&peer, &request.invocation_token).await?;
-        if claims.action != request.action {
+        if claims.job.is_some() || claims.action != request.action {
             return Err(status(PluginError::denied()));
         }
         let action = self
@@ -356,6 +463,18 @@ impl PluginRuntime for Runtime {
             return Err(Status::resource_exhausted("Plugin output limit"));
         }
         Ok(Response::new(wire::InvokeResponse { output_json }))
+    }
+    async fn run_job(
+        &self,
+        request: Request<wire::RunJobRequest>,
+    ) -> Result<Response<wire::RunJobResponse>, Status> {
+        // The outer deadline also bounds authority awaits and final result validation.
+        tokio::time::timeout_at(
+            tokio::time::Instant::now() + Duration::from_secs(45),
+            self.run_job_inner(request),
+        )
+        .await
+        .map_err(|_| Status::deadline_exceeded("Plugin job deadline exceeded"))?
     }
     type WatchOperationStream =
         Pin<Box<dyn Stream<Item = Result<wire::OperationEvent, Status>> + Send + 'static>>;

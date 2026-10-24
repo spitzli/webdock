@@ -120,6 +120,7 @@ impl Fixture {
         Handler(self.plugin.clone())
             .invoke(
                 &InvocationClaims {
+                    job: None,
                     v: 1,
                     id: Uuid::new_v4().to_string(),
                     plugin_id: "mail".into(),

@@ -1,4 +1,7 @@
-# Core BullMQ operations
+# Core BullMQ operations (historical)
+
+This describes the retained TypeScript implementation. The active Rust job path and
+`bun run test:plugin-jobs` are documented in [Native plugin jobs](native-plugin-jobs.md).
 
 Core owns BullMQ 6.3.16 and ioredis 6.0.0. `@webdock/core/jobs` exports explicit Redis configuration and durable per-domain dispatch workers. `@webdock/core/plugin-jobs` owns the scoped plugin service and HTTP adapter. `@webdock/plugin-sdk/server` is the plugin-facing client; it has no Redis dependency.
 

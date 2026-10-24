@@ -7,6 +7,7 @@ service PluginRuntime {
   rpc Describe(DescribeRequest) returns (DescribeResponse);
   rpc Health(HealthRequest) returns (HealthResponse);
   rpc Invoke(InvokeRequest) returns (InvokeResponse);
+  rpc RunJob(RunJobRequest) returns (RunJobResponse);
   rpc WatchOperation(WatchOperationRequest) returns (stream OperationEvent);
 }
 message DescribeRequest {}
@@ -25,6 +26,13 @@ message InvokeRequest {
   bytes configuration_json = 4;
 }
 message InvokeResponse { bytes output_json = 1; }
+message RunJobRequest {
+  string invocation_token = 1;
+  string name = 2;
+  bytes input_json = 3;
+  bytes configuration_json = 4;
+}
+message RunJobResponse { bytes output_json = 1; }
 message WatchOperationRequest {
   string invocation_token = 1;
   string operation_id = 2;

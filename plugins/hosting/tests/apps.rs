@@ -119,6 +119,7 @@ async fn fixture() -> Fixture {
 impl Fixture {
     async fn call(&self, project: &str, action: &str, input: Value) -> Result<Value, PluginError> {
         let claims = InvocationClaims {
+            job: None,
             v: 1,
             id: uuid::Uuid::new_v4().to_string(),
             plugin_id: "hosting".into(),

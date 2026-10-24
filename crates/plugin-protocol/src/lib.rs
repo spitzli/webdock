@@ -2,7 +2,7 @@
 mod invocation;
 mod manifest;
 mod policy;
-pub use invocation::{InvocationClaims, verify_invocation};
+pub use invocation::{InvocationClaims, JobIdentity, verify_invocation};
 pub use manifest::{Manifest, validate_value};
 pub use policy::{ActionPolicy, Availability};
 use serde::{Deserialize, Serialize};

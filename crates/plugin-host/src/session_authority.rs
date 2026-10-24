@@ -14,6 +14,7 @@ pub(crate) enum AuthorityReference {
         authority: webdock_oauth::McpAuthority,
     },
 }
+
 pub(crate) struct SessionAuthority {
     auth: DatabaseConnection,
     identity: Arc<IdentityService>,
@@ -35,6 +36,19 @@ impl SessionAuthority {
             browser,
             mcp: None,
         })
+    }
+    pub(crate) async fn begin_principal(
+        &self,
+        subject: &str,
+        session: &str,
+        authority: &AuthorityReference,
+        write: bool,
+    ) -> Result<(DatabaseTransaction, webdock_identity::Principal)> {
+        let tx = self.auth.begin().await.map_err(db_error)?;
+        let principal = self
+            .principal(&tx, subject, session, authority, write)
+            .await?;
+        Ok((tx, principal))
     }
     pub async fn begin(
         &self,
@@ -104,7 +118,7 @@ impl SessionAuthority {
                     authority,
                 )
                 .await
-                .map_err(|_| PluginError::denied())?
+                .map_err(browser_error)?
             }
             AuthorityReference::Mcp { authority } => {
                 if write && !authority.can_write() {
@@ -115,7 +129,7 @@ impl SessionAuthority {
                     .ok_or_else(PluginError::denied)?
                     .revalidate_mcp_authority_in(tx, authority)
                     .await
-                    .map_err(|_| PluginError::denied())?
+                    .map_err(oauth_error)?
             }
         };
         if principal.user_id != subject
@@ -125,5 +139,66 @@ impl SessionAuthority {
             return Err(PluginError::denied());
         }
         Ok(principal)
+    }
+}
+
+fn identity_error(error: webdock_identity::IdentityError) -> PluginError {
+    use webdock_identity::IdentityError as E;
+    match error {
+        E::Database(_) | E::Configuration | E::Crypto | E::Allocation | E::Worker => {
+            crate::unavailable()
+        }
+        _ => PluginError::denied(),
+    }
+}
+fn oauth_error(error: webdock_oauth::Error) -> PluginError {
+    use webdock_oauth::Error as E;
+    match error {
+        E::Identity(error) => identity_error(error),
+        E::Database(_) | E::Configuration | E::Crypto | E::Allocation => crate::unavailable(),
+        _ => PluginError::denied(),
+    }
+}
+fn browser_error(error: webdock_browser_session::Error) -> PluginError {
+    use webdock_browser_session::Error as E;
+    match error {
+        E::Identity(error) => identity_error(error),
+        E::OAuth(error) => oauth_error(error),
+        E::Database(_) | E::Configuration => crate::unavailable(),
+        _ => PluginError::denied(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use webdock_plugin_protocol::ErrorCode;
+    #[test]
+    fn verifier_infrastructure_is_retryable_and_denial_is_terminal() {
+        let database = || sea_orm::DbErr::Custom("private diagnostic".into());
+        for error in [
+            webdock_browser_session::Error::Database(database()),
+            webdock_browser_session::Error::Identity(webdock_identity::IdentityError::Database(
+                database(),
+            )),
+            webdock_browser_session::Error::OAuth(webdock_oauth::Error::Database(database())),
+        ] {
+            assert_eq!(browser_error(error).code, ErrorCode::Unavailable);
+        }
+        assert_eq!(
+            browser_error(webdock_browser_session::Error::Unauthorized).code,
+            ErrorCode::PermissionDenied
+        );
+        assert_eq!(
+            oauth_error(webdock_oauth::Error::AccessDenied).code,
+            ErrorCode::PermissionDenied
+        );
+        assert_eq!(
+            oauth_error(webdock_oauth::Error::Identity(
+                webdock_identity::IdentityError::Database(database())
+            ))
+            .code,
+            ErrorCode::Unavailable
+        );
     }
 }

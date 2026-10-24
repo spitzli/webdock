@@ -64,6 +64,8 @@ impl HostClient {
         input: Value,
     ) -> Result<Value, PluginError> {
         let limit = match (service, method) {
+            ("jobs", "enqueue") => 32768 + 4096,
+            ("jobs", "get" | "cancel") => 256,
             ("data", "read") | ("apps", "request") => 32768,
             ("data", "write") => 131072,
             ("http", "request") => 1048576,

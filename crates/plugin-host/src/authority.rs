@@ -230,17 +230,23 @@ impl HostService {
         })
     }
     async fn binding(&self, plugin: &str, metadata: &Metadata) -> Result<RuntimeBinding> {
-        let mut services = vec![("data", 1), ("http", 1)];
-        if self.apps.is_some() {
-            services.push(("apps", 1));
-        }
-        metadata.manifest.require_host_services(&services)?;
-
         let binding = self
             .bindings
             .runtime(plugin)
             .await?
             .ok_or_else(|| unsupported("Plugin runtime is not configured"))?;
+        self.checked_binding(metadata, binding)
+    }
+    fn checked_binding(
+        &self,
+        metadata: &Metadata,
+        binding: RuntimeBinding,
+    ) -> Result<RuntimeBinding> {
+        let mut services = vec![("data", 1), ("http", 1), ("jobs", 1)];
+        if self.apps.is_some() {
+            services.push(("apps", 1));
+        }
+        metadata.manifest.require_host_services(&services)?;
         if binding.generation == 0
             || binding.generation > 9_007_199_254_740_991
             || integer(&metadata.installation, "current_generation")? != binding.generation as i64
@@ -272,6 +278,9 @@ impl HostService {
                 "plugin.data.write",
                 "plugin.http.read",
                 "plugin.http.request",
+                "plugin.jobs.enqueue",
+                "plugin.jobs.read",
+                "plugin.jobs.cancel",
             ]
             .contains(&capability)
                 && !(self.apps.is_some()
@@ -376,6 +385,33 @@ impl HostService {
         {
             return Err(invalid("Invalid plugin admission"));
         }
+        // Discovery owns no locks while canonical session authority is acquired.
+        let discovery = self.controller().await?;
+        let discovered = self
+            .metadata(&discovery, &input.plugin_id, Some(&input.project_id))
+            .await?;
+        let discovered_write = discovered
+            .manifest
+            .action(&input.action)
+            .ok_or_else(PluginError::denied)?["intent"]
+            == "write";
+        discovery.commit().await.map_err(db_error)?;
+        let auth_tx = if let Some(authority) = authority {
+            Some(
+                self.session_authority
+                    .as_ref()
+                    .ok_or_else(PluginError::denied)?
+                    .begin(
+                        &actor.user_id,
+                        &actor.session_id,
+                        authority,
+                        discovered_write,
+                    )
+                    .await?,
+            )
+        } else {
+            None
+        };
         let session = self
             .signer
             .begin(&self.db, actor)
@@ -394,20 +430,12 @@ impl HostService {
         }
         let action = self.action(&metadata, &input.action)?;
         let write = action["intent"] == "write";
+        if write != discovered_write {
+            return denied();
+        }
         if write && !can_write {
             return denied();
         }
-        let auth_tx = if let Some(authority) = authority {
-            Some(
-                self.session_authority
-                    .as_ref()
-                    .ok_or_else(PluginError::denied)?
-                    .begin(&actor.user_id, &actor.session_id, authority, write)
-                    .await?,
-            )
-        } else {
-            None
-        };
         let customer = Self::project(&session, &input.project_id, write).await?;
         if metadata.grant["customer_id"] != customer {
             return denied();
@@ -488,6 +516,7 @@ impl HostService {
         if let Some(prior)=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT request_hash FROM webdock_auth.plugin_invocation WHERE plugin_id=$1 AND project_id=$2 AND actor_id=$3 AND operation_id=$4 LIMIT 1",[input.plugin_id.clone().into(),input.project_id.clone().into(),actor.user_id.clone().into(),operation.clone().into()])).await.map_err(db_error)? && prior.try_get::<Option<String>>("","request_hash").map_err(db_error)?.as_deref()!=Some(&request_hash){return Err(conflict("Idempotency key reused with different input"));}
         let now = chrono::Utc::now().timestamp();
         let claims = InvocationClaims {
+            job: None,
             v: 1,
             id: uuid::Uuid::new_v4().to_string(),
             plugin_id: input.plugin_id.clone(),
@@ -500,7 +529,7 @@ impl HostService {
         };
         let snapshot = Self::admission_snapshot(&metadata, &binding, &configuration)?;
         let stored_scope = json!({"kind":"session","authProvider":"better-auth","subject":actor.user_id,"sessionID":actor.session_id,"nativeAdmission":snapshot,"customerScope":actor.customer_scope(),"authority":authority,"operator":operator,"resourceID":resource});
-        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.plugin_invocation(id,plugin_id,customer_id,project_id,runtime_generation,grant_revision,kind,name,intent,actor_id,session_id,operation_id,capabilities,expires_at,session_context,request_hash) VALUES($1::uuid,$2,$3,$4,$5,$6,'action',$7,$8,$9,$10,$11,$12,to_timestamp($13),$14,$15)",[claims.id.clone().into(),input.plugin_id.into(),customer.into(),input.project_id.clone().into(),(claims.generation as i64).into(),integer(&metadata.grant,"revision")?.into(),claims.action.clone().into(),string(action,"intent")?.into(),actor.user_id.clone().into(),actor.session_id.clone().into(),operation.into(),action["capabilities"].clone().into(),claims.exp.into(),stored_scope.into(),request_hash.into()])).await.map_err(db_error)?;
+        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.plugin_invocation(id,plugin_id,customer_id,project_id,runtime_generation,grant_revision,kind,name,intent,actor_id,session_id,operation_id,capabilities,created_at,expires_at,session_context,request_hash) VALUES($1::uuid,$2,$3,$4,$5,$6,'action',$7,$8,$9,$10,$11,$12,to_timestamp($13)-interval '60 seconds',to_timestamp($13),$14,$15)",[claims.id.clone().into(),input.plugin_id.into(),customer.into(),input.project_id.clone().into(),(claims.generation as i64).into(),integer(&metadata.grant,"revision")?.into(),claims.action.clone().into(),string(action,"intent")?.into(),actor.user_id.clone().into(),actor.session_id.clone().into(),operation.into(),action["capabilities"].clone().into(),claims.exp.into(),stored_scope.into(),request_hash.into()])).await.map_err(db_error)?;
         Self::project(&session, &input.project_id, write).await?;
         if let (Some(auth_tx), Some(authority)) = (&auth_tx, authority) {
             self.session_authority
@@ -552,6 +581,9 @@ impl HostService {
         &self,
         claims: &InvocationClaims,
     ) -> Result<(PersistedInvocation, Metadata, RuntimeBinding)> {
+        if claims.job.is_some() {
+            return self.persisted_job(claims).await;
+        }
         let now = chrono::Utc::now().timestamp();
         if claims.v != 1
             || claims.iat > now
@@ -565,7 +597,8 @@ impl HostService {
         let row: Value = row.try_get("", "invocation").map_err(db_error)?;
         let actor = string(&row, "actor_id")?.to_owned();
         let session = string(&row, "session_id")?.to_owned();
-        if row["kind"] != "action"
+        if claims.job.is_some()
+            || row["kind"] != "action"
             || row["plugin_id"] != claims.plugin_id
             || row["project_id"] != claims.project_id
             || row["customer_id"] != claims.customer_id
@@ -812,6 +845,17 @@ impl HostService {
         binding: &RuntimeBinding,
         configuration: &Value,
     ) -> Result<Value> {
+        if serde_json::to_vec(configuration)
+            .map_err(|_| unavailable())?
+            .len()
+            > 65536
+            || serde_json::to_vec(&metadata.configuration["configuration"])
+                .map_err(|_| unavailable())?
+                .len()
+                > 65536
+        {
+            return Err(invalid("Plugin configuration exceeds 64 KiB"));
+        }
         Ok(
             json!({"v":1,"configurationRevision":metadata.configuration["revision"],"configuration":metadata.configuration["configuration"],"runtimeCredentialSHA256":metadata.runtime["credential_hash"],"runtimeNamespace":metadata.runtime["namespace"],"runtimeService":metadata.runtime["service_name"],"configurationSHA256":digest(serde_json::to_vec(configuration).map_err(|_|unavailable())?),"manifestSHA256":metadata.release["manifest_sha256"],"bindingSHA256":digest(serde_json::to_vec(binding).map_err(|_|unavailable())?)}),
         )
@@ -825,12 +869,17 @@ impl HostService {
         configuration: &Value,
     ) -> Result<()> {
         let (inv, _, _) = self.persisted(&handle.claims).await?;
-        if crate::data::javascript_json(input, false)?.len() > 32768
+        let request_bytes = if handle.claims.job.is_some() {
+            jobs::canonical_json(input)?
+        } else {
+            crate::data::javascript_json(input, false)?.into_bytes()
+        };
+        if request_bytes.len() > 32768
             || serde_json::to_vec(configuration)
                 .map_err(|_| unavailable())?
                 .len()
                 > 65536
-            || inv.row["request_hash"] != digest(crate::data::javascript_json(input, false)?)
+            || inv.row["request_hash"] != digest(&request_bytes)
             || inv.row["session_context"]["nativeAdmission"]["configurationSHA256"]
                 != digest(serde_json::to_vec(configuration).map_err(|_| unavailable())?)
         {
@@ -1012,6 +1061,8 @@ mod admin;
 mod controller;
 #[path = "installation.rs"]
 pub mod installation;
+#[path = "jobs.rs"]
+pub mod jobs;
 #[path = "limits.rs"]
 pub mod limits;
 #[path = "notifications.rs"]

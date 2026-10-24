@@ -129,6 +129,7 @@ impl Fixture {
         input: Value,
     ) -> Result<Value, webdock_plugin_protocol::PluginError> {
         let claims = InvocationClaims {
+            job: None,
             v: 1,
             id: uuid::Uuid::new_v4().to_string(),
             plugin_id: "postgres".into(),

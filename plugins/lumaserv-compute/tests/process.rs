@@ -138,6 +138,7 @@ fn invocation(
     input: Value,
 ) -> wire::InvokeRequest {
     let claims = InvocationClaims {
+        job: None,
         v: 1,
         id: uuid::Uuid::new_v4().to_string(),
         plugin_id: "lumaserv-compute".into(),

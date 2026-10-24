@@ -149,6 +149,72 @@ fn verifies_node_crypto_golden_signature_over_encoded_body() {
 }
 
 #[test]
+fn signed_jobs_are_strict_and_actions_keep_their_original_serialization() {
+    let key = SigningKey::from_bytes(&[7; 32]).verifying_key();
+    let action = verify_invocation(&signed(&claims()), &key, "project-notes", 1, 1001).unwrap();
+    assert_eq!(
+        serde_json::to_string(&action).unwrap(),
+        r#"{"v":1,"id":"123e4567-e89b-42d3-a456-426614174000","pluginID":"project-notes","generation":1,"action":"notes.read","projectID":"123","customerID":"101","iat":1000,"exp":1060}"#
+    );
+    assert_eq!(serde_json::to_value(action).unwrap(), claims());
+    let identity = json!({"id":format!("job-{}", "a".repeat(64)),"attempt":1});
+    let mut value = claims();
+    value["job"] = identity.clone();
+    let job = verify_invocation(&signed(&value), &key, "project-notes", 1, 1001).unwrap();
+    assert_eq!(serde_json::to_value(job).unwrap(), value);
+    for invalid in [
+        json!(null),
+        json!({}),
+        json!("job"),
+        json!({"id":format!("job-{}", "A".repeat(64)),"attempt":1}),
+        json!({"id":format!("job-{}", "a".repeat(63)),"attempt":1}),
+        json!({"id":format!("job-{}", "a".repeat(65)),"attempt":1}),
+        json!({"id":format!("job-{}", "a".repeat(64)),"attempt":0}),
+        json!({"id":format!("job-{}", "a".repeat(64)),"attempt":6}),
+        json!({"id":format!("job-{}", "a".repeat(64)),"attempt":1.5}),
+        json!({"id":format!("job-{}", "a".repeat(64)),"attempt":1,"claimToken":"private"}),
+    ] {
+        value["job"] = invalid;
+        assert!(
+            verify_invocation(&signed(&value), &key, "project-notes", 1, 1001).is_err(),
+            "{value}"
+        );
+    }
+    value["job"] = identity;
+    value["job"]["attempt"] = json!(5);
+    assert!(verify_invocation(&signed(&value), &key, "project-notes", 1, 1001).is_ok());
+}
+
+#[test]
+fn native_lifecycle_allows_only_immediate_data_http_jobs() {
+    let mut value = fixture();
+    value["jobs"] = json!([{"name":"notes.compact","capabilities":["plugin.data.write"],"input":{"type":"object"}}]);
+    let manifest = Manifest::parse(&serde_json::to_vec(&value).unwrap()).unwrap();
+    assert!(manifest.require_action_only_lifecycle().is_ok());
+    for cap in ["plugin.jobs.enqueue", "plugin.apps.read", "plugin.db.read"] {
+        let mut unsupported = value.clone();
+        unsupported["capabilities"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!(cap));
+        unsupported["jobs"][0]["capabilities"] = json!([cap]);
+        assert!(
+            Manifest::parse(&serde_json::to_vec(&unsupported).unwrap())
+                .unwrap()
+                .require_action_only_lifecycle()
+                .is_err()
+        );
+    }
+    value["jobs"][0]["intervalSeconds"] = json!(60);
+    assert!(
+        Manifest::parse(&serde_json::to_vec(&value).unwrap())
+            .unwrap()
+            .require_action_only_lifecycle()
+            .is_err()
+    );
+}
+
+#[test]
 fn availability_requires_all_live_authority_dimensions() {
     use webdock_plugin_protocol::{ActionPolicy, Availability};
     let manifest = Manifest::parse(&serde_json::to_vec(&fixture()).unwrap()).unwrap();

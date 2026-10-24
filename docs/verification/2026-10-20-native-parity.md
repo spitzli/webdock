@@ -26,7 +26,11 @@ The [native initial installer](../operations/native-plugin-installation.md) now 
 catalog review, private metadata storage, enrolled-agent runtime deployment and retained recovery.
 The [local acceptance](2026-10-23-native-plugin-installation.json) covers fresh native bootstrap,
 Console installation, dedicated PostgreSQL SQL write/read and runtime replacement. Generation-based
-[updates and rollback](2026-10-24-native-plugin-updates.json) now retain storage and keys while deploying fresh runtime generations, with logical-schema compatibility gates and actual PostgreSQL SQL acceptance. Generic jobs, purge and installation-scoped operator actions remain subsequent slices. Removing Rust product code from
+[updates and rollback](2026-10-24-native-plugin-updates.json) now retain storage and keys while deploying fresh runtime generations, with logical-schema compatibility gates and actual PostgreSQL SQL acceptance.
+[Immediate plugin jobs](2026-10-24-native-plugin-jobs.json) add native enqueue/read/cancel,
+leased execution, bounded retries and session/acting authority revalidation. Recurring
+schedules, autonomous system jobs, purge and installation-scoped operator actions remain
+subsequent slices. Removing Rust product code from
 Core still requires plugin parity for Git builds/releases, Tabularis authority and durable
 Mail/Webmail handoffs. These checkpoints do not establish retained-data parity or a production
 cutover. The public website/CMS remains a separate TypeScript application.

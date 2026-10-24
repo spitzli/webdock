@@ -83,7 +83,7 @@ impl Runtime {
     ) -> Result<(), tonic::transport::Error> {
         let incoming = socket.incoming().expect("socket listener owned");
         let result = Server::builder()
-            .timeout(Duration::from_secs(35))
+            .timeout(Duration::from_secs(55))
             .concurrency_limit_per_connection(32)
             .add_service(self.service())
             .serve_with_incoming_shutdown(incoming, shutdown)
@@ -105,7 +105,7 @@ impl Runtime {
                     .client_auth_optional(false)
                     .timeout(Duration::from_secs(5)),
             )?
-            .timeout(Duration::from_secs(35))
+            .timeout(Duration::from_secs(55))
             .concurrency_limit_per_connection(32)
             .add_service(self.service())
             .serve_with_incoming_shutdown(TcpListenerStream::new(listener), shutdown)
@@ -136,7 +136,7 @@ pub async fn unix_channel(
             .ok_or_else(|| io::Error::other("Invalid socket path"))?
     );
     let channel = Endpoint::from_shared(uri)?
-        .timeout(Duration::from_secs(35))
+        .timeout(Duration::from_secs(55))
         .connect_timeout(Duration::from_secs(3))
         .connect()
         .await?;
@@ -168,7 +168,7 @@ pub(crate) async fn mtls_channel(
                 .ca_certificate(tls.peer_ca)
                 .domain_name(domain),
         )?
-        .timeout(Duration::from_secs(35))
+        .timeout(Duration::from_secs(55))
         .connect_timeout(Duration::from_secs(5))
         .connect()
         .await?;

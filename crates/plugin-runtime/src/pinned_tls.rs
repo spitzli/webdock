@@ -136,7 +136,7 @@ pub async fn pinned_mtls_authenticated(
     let endpoint = Endpoint::from_shared(logical.to_string())?
         .origin(origin.parse()?)
         .connect_timeout(Duration::from_secs(5))
-        .timeout(Duration::from_secs(35));
+        .timeout(Duration::from_secs(55));
     let observed = Arc::new(std::sync::Mutex::new(None));
     let observed_connection = observed.clone();
     let service = tower::service_fn(move |_: tonic::codegen::http::Uri| {

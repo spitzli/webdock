@@ -247,6 +247,10 @@ fn rust_checks(manifests: &[PathBuf]) -> Vec<Check> {
             "webdock-plugin-runtime",
             "--test",
             "transport",
+            "--test",
+            "jobs",
+            "--test",
+            "job_host",
             "--locked",
         ],
     ));
@@ -504,6 +508,16 @@ mod tests {
             .collect::<Vec<_>>();
         assert_eq!(releases.len(), 1);
         assert!(argument(releases[0], "--test", "contracts"));
+        let runtime = tests
+            .iter()
+            .find(|check| argument(check, "-p", "webdock-plugin-runtime"))
+            .unwrap();
+        for suite in ["transport", "jobs", "job_host"] {
+            assert!(
+                argument(runtime, "--test", suite),
+                "missing native runtime suite {suite}"
+            );
+        }
         assert!(
             tests
                 .iter()
