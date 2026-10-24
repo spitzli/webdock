@@ -7,6 +7,7 @@ use ed25519_dalek::VerifyingKey;
 pub use host::{CorePeer, HostClient, RemoteAuthority};
 pub use pinned_tls::{
     PinnedMutualTls, connect_pinned_mtls, pinned_mtls_authenticated, pinned_mtls_channel,
+    pinned_mtls_channel_lazy,
 };
 use serde_json::Value;
 use std::{
@@ -18,7 +19,9 @@ use tokio::sync::Semaphore;
 use tokio_stream::Stream;
 use tonic::transport::server::{TcpConnectInfo, TlsConnectInfo, UdsConnectInfo};
 use tonic::{Request, Response, Status};
-pub use transport::{MutualTls, UnixSocket, connect_mtls, connect_unix, unix_channel};
+pub use transport::{
+    MutualTls, UnixSocket, connect_mtls, connect_unix, unix_channel, unix_channel_lazy,
+};
 use webdock_plugin_protocol::{
     DOCUMENT_BYTES, ErrorCode, FRAME_BYTES, InvocationClaims, MANIFEST_BYTES, Manifest,
     PluginError, validate_value, verify_invocation,

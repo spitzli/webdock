@@ -69,21 +69,39 @@ impl RuntimeTransport {
         Ok(())
     }
     pub async fn core_client(&self) -> Result<HostClient, Error> {
+        self.core_client_with_mode(false).await
+    }
+    /// Deferred callback availability must not prevent candidate discovery from listening.
+    pub async fn core_client_lazy(&self) -> Result<HostClient, Error> {
+        self.core_client_with_mode(true).await
+    }
+    async fn core_client_with_mode(&self, lazy: bool) -> Result<HostClient, Error> {
         self.validate()?;
         let channel = match (&self.core, &self.core_tls) {
+            (Some(path), None) if lazy => webdock_plugin_runtime::unix_channel_lazy(path)?,
             (Some(path), None) => webdock_plugin_runtime::unix_channel(path.clone()).await?,
             (None, Some(tls)) => {
-                webdock_plugin_runtime::pinned_mtls_channel(
-                    tls.origin.clone(),
-                    tls.domain.clone(),
-                    PinnedMutualTls {
-                        certificate: read_file(&tls.certificate, false)?,
-                        private_key: read_file(&tls.private_key, true)?,
-                        authority: read_file(&tls.authority, false)?,
-                        server_certificate_sha256: tls.server_certificate_sha256.clone(),
-                    },
-                )
-                .await?
+                let material = PinnedMutualTls {
+                    certificate: read_file(&tls.certificate, false)?,
+                    private_key: read_file(&tls.private_key, true)?,
+                    authority: read_file(&tls.authority, false)?,
+                    server_certificate_sha256: tls.server_certificate_sha256.clone(),
+                };
+                if lazy {
+                    webdock_plugin_runtime::pinned_mtls_channel_lazy(
+                        tls.origin.clone(),
+                        tls.domain.clone(),
+                        material,
+                    )
+                    .await?
+                } else {
+                    webdock_plugin_runtime::pinned_mtls_channel(
+                        tls.origin.clone(),
+                        tls.domain.clone(),
+                        material,
+                    )
+                    .await?
+                }
             }
             _ => return Err("Core transport required".into()),
         };

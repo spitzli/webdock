@@ -251,6 +251,8 @@ fn rust_checks(manifests: &[PathBuf]) -> Vec<Check> {
             "jobs",
             "--test",
             "job_host",
+            "--test",
+            "runtime_authorization",
             "--locked",
         ],
     ));
@@ -293,6 +295,14 @@ pub fn plan(scope: Scope, standalone_manifests: &[PathBuf]) -> Vec<Check> {
         checks.extend(rust_checks(standalone_manifests));
     }
     if matches!(scope, Scope::All | Scope::Frontend) {
+        checks.push(Check::new(
+            "bun",
+            &[
+                "--no-env-file",
+                "test",
+                "tools/tests/native-plugin-fixture.test.mjs",
+            ],
+        ));
         for script in ["lint", "typecheck", "test", "build", "test:browser"] {
             checks.push(Check::new(
                 "bun",
@@ -343,7 +353,7 @@ mod tests {
         let checks = plan(Scope::All, &manifests);
         assert_eq!(
             checks.iter().filter(|check| check.program == "bun").count(),
-            5
+            6
         );
         for path in manifests {
             for command in ["fmt", "clippy", "test"] {
@@ -355,6 +365,15 @@ mod tests {
                 );
             }
         }
+        assert!(checks.iter().any(|check| {
+            check.program == "bun"
+                && check.args
+                    == [
+                        "--no-env-file",
+                        "test",
+                        "tools/tests/native-plugin-fixture.test.mjs",
+                    ]
+        }));
         let isolated = checks
             .iter()
             .filter(|check| {
@@ -512,7 +531,7 @@ mod tests {
             .iter()
             .find(|check| argument(check, "-p", "webdock-plugin-runtime"))
             .unwrap();
-        for suite in ["transport", "jobs", "job_host"] {
+        for suite in ["transport", "jobs", "job_host", "runtime_authorization"] {
             assert!(
                 argument(runtime, "--test", suite),
                 "missing native runtime suite {suite}"

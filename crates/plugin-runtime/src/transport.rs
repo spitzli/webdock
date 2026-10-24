@@ -122,25 +122,55 @@ pub async fn unix_channel(
     path: impl AsRef<Path>,
 ) -> Result<Channel, Box<dyn std::error::Error + Send + Sync>> {
     let path = path.as_ref();
+    private_socket(path)?;
+    Ok(unix_endpoint(path)?.connect().await?)
+}
+fn private_socket(path: &Path) -> io::Result<()> {
     private_directory(path)?;
     let metadata = std::fs::symlink_metadata(path)?;
     if !metadata.file_type().is_socket()
         || metadata.uid() != rustix::process::geteuid().as_raw()
         || metadata.mode() & 0o077 != 0
     {
-        return Err(io::Error::new(io::ErrorKind::PermissionDenied, "Untrusted socket").into());
+        return Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "Untrusted socket",
+        ));
     }
+    Ok(())
+}
+fn unix_endpoint(path: &Path) -> Result<Endpoint, Box<dyn std::error::Error + Send + Sync>> {
     let uri = format!(
         "unix://{}",
         path.to_str()
             .ok_or_else(|| io::Error::other("Invalid socket path"))?
     );
-    let channel = Endpoint::from_shared(uri)?
+    Ok(Endpoint::from_shared(uri)?
         .timeout(Duration::from_secs(55))
-        .connect_timeout(Duration::from_secs(3))
-        .connect()
-        .await?;
-    Ok(channel)
+        .connect_timeout(Duration::from_secs(3)))
+}
+/// Allows an initially absent callback; rechecks private directory/socket custody on every connect.
+pub fn unix_channel_lazy(
+    path: impl AsRef<Path>,
+) -> Result<Channel, Box<dyn std::error::Error + Send + Sync>> {
+    let path = path.as_ref();
+    private_directory(path)?;
+    match private_socket(path) {
+        Ok(()) => {}
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+        Err(error) => return Err(error.into()),
+    }
+    let endpoint = unix_endpoint(path)?;
+    let path = path.to_owned();
+    let connector = tower::service_fn(move |_: tonic::codegen::http::Uri| {
+        let path = path.clone();
+        async move {
+            private_socket(&path)?;
+            let stream = tokio::net::UnixStream::connect(path).await?;
+            Ok::<_, io::Error>(hyper_util::rt::TokioIo::new(stream))
+        }
+    });
+    Ok(endpoint.connect_with_connector_lazy(connector))
 }
 pub async fn connect_mtls(
     origin: String,

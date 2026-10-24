@@ -56,6 +56,28 @@ impl HostClient {
                 .max_encoding_message_size(1048576 + 32768),
         }
     }
+    /// Ordinary current-runtime authority over this client's authenticated callback transport.
+    pub async fn authorize_runtime(
+        &self,
+        plugin: &str,
+        generation: u64,
+    ) -> Result<(), PluginError> {
+        let result = tokio::time::timeout(
+            Duration::from_secs(5),
+            self.client.clone().authorize_peer(wire::HostPeerRequest {
+                plugin_id: plugin.into(),
+                generation,
+            }),
+        )
+        .await
+        .map_err(|_| PluginError::new(ErrorCode::DeadlineExceeded, "Host deadline exceeded"))?
+        .map_err(map_status)?
+        .into_inner();
+        if !result.active {
+            return Err(PluginError::denied());
+        }
+        Ok(())
+    }
     pub async fn call(
         &self,
         token: &str,
@@ -198,21 +220,9 @@ impl InvocationAuthority for RemoteAuthority {
     }
     async fn authorize_peer(&self, peer: &PeerIdentity) -> Result<(), PluginError> {
         self.peer(peer)?;
-        let result = self
-            .host
-            .client
-            .clone()
-            .authorize_peer(wire::HostPeerRequest {
-                plugin_id: self.plugin_id.clone(),
-                generation: self.generation,
-            })
+        self.host
+            .authorize_runtime(&self.plugin_id, self.generation)
             .await
-            .map_err(map_status)?
-            .into_inner();
-        if !result.active {
-            return Err(PluginError::denied());
-        }
-        Ok(())
     }
     async fn authorize_invocation(
         &self,

@@ -74,6 +74,23 @@ pub async fn pinned_mtls_authenticated(
     domain: String,
     tls: PinnedMutualTls,
 ) -> Result<(Channel, crate::PeerIdentity), Box<dyn std::error::Error + Send + Sync>> {
+    let (channel, peer) = pinned_connection(origin, domain, tls, false).await?;
+    Ok((channel, peer.ok_or("Runtime peer certificate unavailable")?))
+}
+/// Validates local trust material now; every deferred connection still verifies PKI and leaf pin.
+pub async fn pinned_mtls_channel_lazy(
+    origin: String,
+    domain: String,
+    tls: PinnedMutualTls,
+) -> Result<Channel, Box<dyn std::error::Error + Send + Sync>> {
+    Ok(pinned_connection(origin, domain, tls, true).await?.0)
+}
+async fn pinned_connection(
+    origin: String,
+    domain: String,
+    tls: PinnedMutualTls,
+    lazy: bool,
+) -> Result<(Channel, Option<crate::PeerIdentity>), Box<dyn std::error::Error + Send + Sync>> {
     let url = url::Url::parse(&origin)?;
     if url.scheme() != "https"
         || !url.username().is_empty()
@@ -164,13 +181,19 @@ pub async fn pinned_mtls_authenticated(
             Ok::<_, io::Error>(hyper_util::rt::TokioIo::new(stream))
         }
     });
+    if lazy {
+        return Ok((endpoint.connect_with_connector_lazy(service), None));
+    }
     let channel = endpoint.connect_with_connector(service).await?;
     let certificates = observed
         .lock()
         .map_err(|_| "Runtime peer state unavailable")?
         .clone()
         .ok_or("Runtime peer certificate unavailable")?;
-    Ok((channel, crate::PeerIdentity::MutualTls { certificates }))
+    Ok((
+        channel,
+        Some(crate::PeerIdentity::MutualTls { certificates }),
+    ))
 }
 pub async fn connect_pinned_mtls(
     origin: String,

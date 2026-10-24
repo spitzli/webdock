@@ -8,6 +8,31 @@ Outgoing mail as a Webdock plugin:
 
 Platform transport: `{"kind":"turbosmtp","consumerKey":…,"consumerSecret":…}` or, for local dev only, `{"kind":"smtp","host":"127.0.0.1","port":…}` pointing at a loopback catcher such as Mailpit. `trustUnverifiedDomains` (local dev, loopback catcher only) skips DNS ownership because `.test` names carry no DNS.
 
+The signed managed installer supplies private `listenTls`, `coreTls`, `corePeers`,
+`storageUrl`, `storageCa` and `secretKeyHex` runtime fields, using the same shapes as
+the PostgreSQL plugin. Exactly one listener (`listen` or `listenTls`) and callback
+(`core` or `coreTls`) are required. Existing absolute private Unix socket configs
+remain supported. TLS callbacks verify the Core hostname, CA and exact certificate
+pin; incoming probes require the configured Core peer. Remote metadata PostgreSQL
+requires `storageCa` and verifies its actual hostname with no plaintext fallback.
+Without a CA, `Store::connect` accepts only loopback endpoints, including driver host
+overrides. Configuration and TLS files retain the shared owned-file checks.
+
+Describe/Health listening starts even if the Core callback is initially offline.
+The deferred callback transport retains CA/name/leaf-pin verification and checks
+Unix socket ownership/permissions on every connection attempt. A listener-scoped
+startup future waits for ordinary current-generation Core authority,
+retrying denial/outage with backoff from 100ms to 5s. Only then does it call `resume`;
+a failed resume requires fresh authorization before another attempt. The shutdown
+signal cancels the wait, including an in-flight callback or resume future, before
+asking the listener to drain active requests. Signal monitoring continues after
+resume succeeds; listener exit also cancels startup.
+Metadata migrations may run while the runtime is a candidate. Startup failure logs
+only `mail_plugin_start_failed`. Update/rollback must retain the metadata database
+and sealing key; runtime generation and certificate changes do not replace engine,
+mailbox or relay credentials. Physical migration versions remain 1–3 and the signed
+logical schema remains 1.
+
 - **Incoming Mail:** explicitly creating the first mailbox or using `incoming.activate` on an owned domain reserves one Stalwart Community Edition engine for the **customer**, not the project. All of that customer's projects, domains and mailboxes reuse its sealed administrator credentials, workload unit `engine-c<customer>` and host `c<customer>.<domain>`. Customer identity comes from Core's signed `customerID`; request input cannot select a customer or engine address. Mailboxes, domains and relay resources keep project ownership, so sharing an engine does not grant access to another project's resource.
 - **Retained lifecycle:** `incoming.deactivate` on an owned domain suspends incoming Mail for every project of the customer by scaling the engine to zero. Its workload, volume, credentials and mailbox records remain. The operation stays `suspending` until Core acknowledges the apply revision and observes the zero-replica workload; only then is it `suspended`. Activation and runtime restart reconcile the saved desired state; management failures never destroy or rebuild the volume. Mailbox deletion remains explicit; engine retirement/export/deletion is a separate operator operation, with no customer engine-delete action.
 - **Legacy project engines:** the storage migration preserves old `engines` rows, sealed credentials and mailbox records. They have no trustworthy customer mapping in plugin storage, so incoming operations report **migration-required** and do not provision replacements or reconcile those engines. Because another project might belong to the same legacy customer, all incoming activation stays blocked until the operator explicitly migrates the retained records and storage. This change does not migrate deployed Spitzli assets. Keep the plugin encryption key and all retained volumes. The UI exposes the migration state; do not delete legacy records just to bypass it.

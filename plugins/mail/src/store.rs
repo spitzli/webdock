@@ -95,9 +95,16 @@ pub struct Send {
 
 pub struct Store(Client);
 impl Store {
-    pub async fn connect(url: &str) -> Result<Self, Error> {
+    pub async fn connect(url: &str) -> Result<Self, webdock_plugin_kit::Error> {
+        webdock_plugin_kit::loopback(url)?;
         Ok(Self(
             webdock_plugin_kit::storage(url, "mail", MIGRATIONS).await?,
+        ))
+    }
+    /// Remote metadata storage verifies the actual PostgreSQL hostname with the private CA.
+    pub async fn connect_tls(url: &str, ca: &[u8]) -> Result<Self, webdock_plugin_kit::Error> {
+        Ok(Self(
+            webdock_plugin_kit::storage_tls(url, ca, "mail", MIGRATIONS).await?,
         ))
     }
     /// False when the domain is already claimed, by this or any other project.

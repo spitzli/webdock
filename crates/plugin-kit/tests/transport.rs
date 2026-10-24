@@ -43,3 +43,30 @@ fn tls_callback_is_an_exact_https_origin_with_owned_files() {
         );
     }
 }
+
+#[tokio::test]
+async fn lazy_core_allows_missing_socket_but_preserves_private_directory_checks() {
+    use std::os::unix::fs::DirBuilderExt;
+    let directory =
+        std::env::temp_dir().join(format!("kit-lazy-{}", uuid::Uuid::new_v4().simple()));
+    std::fs::DirBuilder::new()
+        .mode(0o700)
+        .create(&directory)
+        .unwrap();
+    let transport = RuntimeTransport {
+        listen: Some(directory.join("plugin.sock")),
+        core: Some(directory.join("core.sock")),
+        ..RuntimeTransport::default()
+    };
+    assert!(transport.core_client().await.is_err());
+    let result = transport.core_client_lazy().await;
+    std::fs::remove_dir(&directory).unwrap();
+    assert!(
+        result.is_ok(),
+        "callback availability must not gate listener construction"
+    );
+    assert!(
+        transport.core_client_lazy().await.is_err(),
+        "missing private parent is not a valid socket configuration"
+    );
+}
