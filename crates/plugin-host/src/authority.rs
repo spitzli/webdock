@@ -73,6 +73,7 @@ pub trait AppsAdapter: Send + Sync {
     async fn request(&self, scope: &InvocationScope, input: Value) -> Result<Value>;
 }
 pub struct HostService {
+    installation: Option<crate::installation::InstallationConfig>,
     pub(crate) db: DatabaseConnection,
     worker: DatabaseConnection,
     signer: RlsSigner,
@@ -148,6 +149,7 @@ impl HostService {
             key,
             apps: None,
             session_authority: None,
+            installation: None,
         })
     }
     pub async fn with_session_authority(
@@ -1008,6 +1010,8 @@ pub(crate) async fn fence(tx: &DatabaseTransaction, exclusive: bool) -> Result<(
 mod admin;
 #[path = "controller.rs"]
 mod controller;
+#[path = "installation.rs"]
+pub mod installation;
 #[path = "limits.rs"]
 pub mod limits;
 #[path = "notifications.rs"]
@@ -1249,12 +1253,7 @@ impl HostService {
                 return denied();
             }
             let features = if operator {
-                metadata
-                    .manifest
-                    .features()
-                    .iter()
-                    .map(|f| string(f, "id").map(str::to_owned))
-                    .collect::<Result<_>>()?
+                self_service::supported_features(&tx, &metadata.manifest, &id).await?
             } else if writer {
                 self_service::usable_features(&tx, &metadata.manifest, &id, &customer).await?
             } else {

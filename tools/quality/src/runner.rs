@@ -164,6 +164,38 @@ fn rust_checks(manifests: &[PathBuf]) -> Vec<Check> {
             "--locked",
         ],
     ));
+    // Workspace --lib --all-features already covers native runtime guard/ownership unit tests.
+    // Run only the new Kubernetes management tests here; common management stays in the
+    // no-default pass above. The runtime target uses loopback API/filesystem fixtures by default.
+    checks.push(Check::new(
+        "cargo",
+        &[
+            "test",
+            "-p",
+            "webdock-agent",
+            "--test",
+            "management",
+            "--no-default-features",
+            "--features",
+            "kubernetes",
+            "--locked",
+            "plugin_management::",
+        ],
+    ));
+    checks.push(Check::new(
+        "cargo",
+        &[
+            "test",
+            "-p",
+            "webdock-agent",
+            "--test",
+            "plugin_runtime",
+            "--no-default-features",
+            "--features",
+            "kubernetes",
+            "--locked",
+        ],
+    ));
     // Pure manifest builders: include both adapters, without executing either runtime.
     checks.push(Check::new(
         "cargo",
@@ -202,6 +234,8 @@ fn rust_checks(manifests: &[PathBuf]) -> Vec<Check> {
             "webdock-plugin-protocol",
             "--test",
             "contracts",
+            "--test",
+            "release",
             "--locked",
         ],
     ));
@@ -378,6 +412,103 @@ mod tests {
                 && check.args.iter().any(|value| value == "policy")
                 && check.args.iter().any(|value| value == "--all-features")
         }));
+    }
+    #[test]
+    fn native_plugin_suites_run_once_with_kubernetes_without_repeating_workspace_libs() {
+        fn argument(check: &Check, flag: &str, value: &str) -> bool {
+            check
+                .args
+                .windows(2)
+                .any(|pair| pair[0] == flag && pair[1] == value)
+        }
+        let checks = plan(Scope::Rust, &[]);
+        let tests = checks
+            .iter()
+            .filter(|check| check.args.first().is_some_and(|arg| arg == "test"))
+            .collect::<Vec<_>>();
+        let agent = tests
+            .iter()
+            .copied()
+            .filter(|check| argument(check, "-p", "webdock-agent"))
+            .collect::<Vec<_>>();
+        for suite in ["plugin_runtime", "management"] {
+            let native = agent
+                .iter()
+                .copied()
+                .filter(|check| {
+                    argument(check, "--test", suite) && argument(check, "--features", "kubernetes")
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(native.len(), 1, "one Kubernetes invocation for {suite}");
+            assert!(
+                native[0]
+                    .args
+                    .iter()
+                    .any(|arg| arg == "--no-default-features")
+            );
+            assert!(
+                !native[0]
+                    .args
+                    .iter()
+                    .any(|arg| arg == "--ignored" || arg == "--include-ignored")
+            );
+            if suite == "management" {
+                assert!(
+                    native[0]
+                        .args
+                        .iter()
+                        .any(|arg| arg == "plugin_management::"),
+                    "avoid repeating the common management suites"
+                );
+            }
+        }
+        assert_eq!(
+            tests
+                .iter()
+                .filter(|check| check.args.iter().any(|arg| arg == "--workspace")
+                    && check.args.iter().any(|arg| arg == "--lib"))
+                .count(),
+            1,
+            "native library guards already run in the existing all-features workspace pass"
+        );
+        assert!(
+            agent
+                .iter()
+                .all(|check| !check.args.iter().any(|arg| arg == "--lib")),
+            "do not duplicate agent unit tests"
+        );
+        assert!(
+            tests.iter().any(|check| {
+                ["--workspace", "--lib", "--all-features"]
+                    .iter()
+                    .all(|flag| check.args.iter().any(|arg| arg == flag))
+            }),
+            "native library tests require Kubernetes through the existing all-features pass"
+        );
+
+        let protocol = tests
+            .iter()
+            .find(|check| argument(check, "-p", "webdock-agent-protocol"))
+            .unwrap();
+        assert!(
+            protocol.args.iter().any(|arg| arg == "--tests"),
+            "all agent protocol integration tests include plugin DTO regressions"
+        );
+        let releases = tests
+            .iter()
+            .copied()
+            .filter(|check| {
+                argument(check, "-p", "webdock-plugin-protocol")
+                    && argument(check, "--test", "release")
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(releases.len(), 1);
+        assert!(argument(releases[0], "--test", "contracts"));
+        assert!(
+            tests
+                .iter()
+                .all(|check| check.args.iter().any(|arg| arg == "--locked"))
+        );
     }
     #[test]
     fn unknown_scope_is_not_silently_replaced() {

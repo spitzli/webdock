@@ -120,3 +120,6 @@ impl<T: Message + Default, const LIMIT: usize> MessageOutbox<T, LIMIT> {
         Ok(())
     }
 }
+
+pub type PluginRuntimeOutbox =
+    MessageOutbox<webdock_agent_protocol::PluginRuntimeDelivery, { 64 * 1024 }>;

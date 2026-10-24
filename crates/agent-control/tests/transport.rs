@@ -81,6 +81,7 @@ async fn real_transport_enrollment_generation_revocation_and_connectivity_heartb
     let server = tokio::spawn(async move {
         Server::builder()
             .add_service(control.clone().database_service())
+            .add_service(control.clone().plugin_runtime_service())
             .add_service(control.service())
             .serve_with_incoming_shutdown(
                 tokio_stream::wrappers::UnixListenerStream::new(socket),
@@ -98,6 +99,8 @@ async fn real_transport_enrollment_generation_revocation_and_connectivity_heartb
         .unwrap();
     let mut database_client =
         wire::database_control_client::DatabaseControlClient::new(channel.clone());
+    let mut plugin_client =
+        wire::plugin_runtime_control_client::PluginRuntimeControlClient::new(channel.clone());
     let mut client = AgentControlClient::new(channel);
     let identity = wire::AgentIdentity {
         installation: installation.clone(),
@@ -128,6 +131,17 @@ async fn real_transport_enrollment_generation_revocation_and_connectivity_heartb
             .code(),
         tonic::Code::FailedPrecondition,
         "database execution must default deny without its domain authority"
+    );
+    assert_eq!(
+        plugin_client
+            .poll_plugin_runtime(wire::PollRequest {
+                identity: Some(identity.clone())
+            })
+            .await
+            .unwrap_err()
+            .code(),
+        tonic::Code::Unimplemented,
+        "unconfigured plugin deployment is an optional unavailable domain"
     );
     let mut forged = hello.clone();
     forged.certificate_sha256 = "a".repeat(64);
@@ -188,6 +202,58 @@ async fn real_transport_enrollment_generation_revocation_and_connectivity_heartb
             .code(),
         tonic::Code::PermissionDenied,
         "database RPC rechecks revoked transport on the same channel"
+    );
+    assert_eq!(
+        plugin_client
+            .poll_plugin_runtime(wire::PollRequest {
+                identity: Some(identity.clone())
+            })
+            .await
+            .unwrap_err()
+            .code(),
+        tonic::Code::PermissionDenied
+    );
+    assert_eq!(
+        plugin_client
+            .guard_plugin_runtime(wire::PluginRuntimeGuardRequest {
+                identity: Some(identity.clone()),
+                spec_json: vec![],
+                lease_json: vec![],
+                request_sha256: String::new()
+            })
+            .await
+            .unwrap_err()
+            .code(),
+        tonic::Code::PermissionDenied
+    );
+    assert_eq!(
+        plugin_client
+            .checkpoint_plugin_runtime(wire::PluginRuntimeCheckpointRequest {
+                identity: Some(identity.clone()),
+                spec_json: vec![],
+                lease_json: vec![],
+                request_sha256: String::new(),
+                checkpoint_json: vec![]
+            })
+            .await
+            .unwrap_err()
+            .code(),
+        tonic::Code::PermissionDenied
+    );
+    assert_eq!(
+        plugin_client
+            .complete_plugin_runtime(wire::PluginRuntimeReceipt {
+                identity: Some(identity.clone()),
+                spec_json: vec![],
+                lease_json: vec![],
+                request_sha256: String::new(),
+                completion_json: vec![]
+            })
+            .await
+            .unwrap_err()
+            .code(),
+        tonic::Code::PermissionDenied,
+        "historical callback delivery still requires current transport enrollment"
     );
     stop.send(()).unwrap();
     server.await.unwrap();

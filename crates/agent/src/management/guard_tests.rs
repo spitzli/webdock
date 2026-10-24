@@ -84,6 +84,12 @@ async fn delayed_hosting_guard_cannot_extend_authority_past_lease() {
                 ),
             configuration_available: Arc::new(AtomicBool::new(true)),
             #[cfg(feature = "kubernetes")]
+            plugin_client: wire::plugin_runtime_control_client::PluginRuntimeControlClient::new(
+                channel.clone(),
+            ),
+            #[cfg(feature = "kubernetes")]
+            plugin_domain: Arc::new(std::sync::atomic::AtomicU8::new(plugin::DOMAIN_UNKNOWN)),
+            #[cfg(feature = "kubernetes")]
             workload_client: wire::workload_control_client::WorkloadControlClient::new(
                 channel.clone(),
             ),
@@ -104,6 +110,14 @@ async fn delayed_hosting_guard_cannot_extend_authority_past_lease() {
             crate::outbox::MailOutbox::open(directory.path().join("mail.json")).unwrap(),
         ),
         mail_retry_at: Mutex::new(None),
+        #[cfg(feature = "kubernetes")]
+        plugin_outbox: Mutex::new(
+            crate::outbox::PluginRuntimeOutbox::open(directory.path().join("plugin.json")).unwrap(),
+        ),
+        #[cfg(feature = "kubernetes")]
+        plugin_retry_at: Mutex::new(None),
+        #[cfg(feature = "kubernetes")]
+        plugin_checkpoint: Mutex::new(None),
         configuration_outbox: Mutex::new(
             crate::outbox::MailConfigurationOutbox::open(
                 directory.path().join("configuration.json"),

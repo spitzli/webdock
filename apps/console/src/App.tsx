@@ -57,6 +57,7 @@ const InstalledExtensions = lazy(() =>
     default: module.InstalledExtensions,
   })),
 );
+const InstallExtension = lazy(() => import("./plugins/InstallExtension").then((module) => ({ default: module.InstallExtension })));
 const PluginSettings = lazy(() =>
   import("./plugins/SelfServicePolicy").then((module) => ({
     default: module.PluginSettings,
@@ -234,6 +235,14 @@ const extensionsRoute = createRoute({
     </Suspense>
     </OperatorOnly>
   ),
+});
+const installExtensionRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/extensions/install/$catalogID/$version",
+  component: () => {
+    const { catalogID, version } = installExtensionRoute.useParams();
+    return <OperatorOnly><Suspense fallback={<Loading>Loading release…</Loading>}><InstallExtension catalogID={catalogID} version={version} /></Suspense></OperatorOnly>;
+  },
 });
 const resetRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -497,6 +506,7 @@ const router = createRouter({
     indexRoute,
     accountRoute,
     extensionsRoute,
+    installExtensionRoute,
     extensionRoute,
     extensionOperationRoute,
     plansRoute,

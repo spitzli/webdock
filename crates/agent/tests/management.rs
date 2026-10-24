@@ -285,6 +285,7 @@ async fn outbound_unix_dispatch_revalidates_reads_and_replays_committed_work_aft
         },
         policy: Default::default(),
         workloads: false,
+        plugin_runtime_enabled: false,
     };
     {
         let mut daemon = Daemon::with_adapter(config.clone(), Arc::new(Controlled)).unwrap();
@@ -488,6 +489,7 @@ async fn outbound_mtls_rotates_certificates_and_stops_after_live_enrollment_revo
         },
         policy: Default::default(),
         workloads: false,
+        plugin_runtime_enabled: false,
     };
     let mut daemon = Daemon::with_adapter(config.clone(), Arc::new(Controlled)).unwrap();
     daemon.connect().await.unwrap();
@@ -594,6 +596,7 @@ async fn real_docker_executor_obeys_outbound_control_leases_and_reports_observat
         },
         policy: Default::default(),
         workloads: false,
+        plugin_runtime_enabled: false,
     };
     let outcome = tokio::spawn(async move {
         let mut daemon = Daemon::open(config).await.unwrap();
@@ -685,6 +688,7 @@ async fn lost_terminal_completion_ack_replays_durable_outbox_before_poll_without
         },
         policy: Default::default(),
         workloads: false,
+        plugin_runtime_enabled: false,
     };
     {
         let mut daemon = Daemon::with_adapter(config.clone(), Arc::new(Controlled)).unwrap();
@@ -816,6 +820,7 @@ async fn delayed_mail_guard_reply_cannot_authorize_runtime_after_lease_expiry() 
         mail_runtime: None,
         policy: Default::default(),
         workloads: false,
+        plugin_runtime_enabled: false,
     };
     let executed = Arc::new(AtomicBool::new(false));
     let mut daemon = Daemon::with_adapter(config, Arc::new(Controlled))
@@ -848,3 +853,7 @@ mod database_management;
 
 #[path = "support/configuration_management.rs"]
 mod configuration_management;
+
+#[cfg(feature = "kubernetes")]
+#[path = "support/plugin_management.rs"]
+mod plugin_management;

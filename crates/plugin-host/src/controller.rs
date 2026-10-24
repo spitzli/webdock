@@ -36,6 +36,7 @@ impl StateLease {
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OperationSnapshot {
+    pub kind: &'static str,
     pub id: String,
     #[serde(rename = "pluginID")]
     pub plugin_id: String,
@@ -90,6 +91,16 @@ pub trait StateProbe: Send + Sync {
 fn snapshot(row: &sea_orm::QueryResult) -> Result<OperationSnapshot> {
     let checkpoint: Value = row.try_get("", "checkpoint").map_err(db_error)?;
     Ok(OperationSnapshot {
+        kind: if row
+            .try_get::<Option<String>>("", "kind")
+            .ok()
+            .flatten()
+            .is_some_and(|kind| kind == "install" || kind == "installRetry")
+        {
+            "install"
+        } else {
+            "state"
+        },
         id: row.try_get("", "id").map_err(db_error)?,
         plugin_id: row.try_get("", "plugin_id").map_err(db_error)?,
         status: OperationStatus::parse(&row.try_get::<String>("", "status").map_err(db_error)?)?,
@@ -115,7 +126,7 @@ impl HostService {
         let auth = self.admin_guard(actor, Some(authority), false).await?;
         let tx = self.operator_tx(actor).await?;
         let row = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
-            "SELECT id,plugin_id,status,phase,generation,checkpoint FROM webdock_auth.plugin_operation WHERE id=$1",
+            "SELECT id,plugin_id,status,phase,generation,checkpoint,payload->>'kind' AS kind FROM webdock_auth.plugin_operation WHERE id=$1",
             [id.into()])).await.map_err(db_error)?.ok_or_else(|| PluginError::new(webdock_plugin_protocol::ErrorCode::NotFound,"Operation not found"))?;
         let result = snapshot(&row)?;
         self.admin_commit(tx, actor, Some(authority), auth, false)

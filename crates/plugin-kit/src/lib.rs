@@ -1,5 +1,7 @@
 //! Building blocks of standalone product plugins. No Core authority or domain code lives here.
+pub mod postgres;
 pub mod seal;
+pub mod transport;
 pub mod workloads;
 
 use std::{
@@ -62,10 +64,29 @@ pub async fn storage(
     let (client, connection) = tokio_postgres::connect(url, NoTls).await?;
     let label = plugin.to_owned();
     tokio::spawn(async move {
-        if let Err(error) = connection.await {
-            eprintln!("{label}_plugin_storage_lost: {error}");
+        if connection.await.is_err() {
+            eprintln!("{label}_plugin_storage_lost");
         }
     });
+    migrate(&client, plugin, migrations).await?;
+    Ok(client)
+}
+/// The same migrations as local storage, with verified TLS and no plaintext fallback.
+pub async fn storage_tls(
+    url: &str,
+    ca: &[u8],
+    plugin: &str,
+    migrations: &[&str],
+) -> Result<Client, Error> {
+    let client = postgres::connect(url, Some(ca)).await?;
+    migrate(&client, plugin, migrations).await?;
+    Ok(client)
+}
+async fn migrate(
+    client: &Client,
+    plugin: &str,
+    migrations: &[&str],
+) -> Result<(), tokio_postgres::Error> {
     let lock = format!("webdock-{plugin}-plugin");
     client
         .execute("SELECT pg_advisory_lock(hashtext($1))", &[&lock])
@@ -93,7 +114,7 @@ pub async fn storage(
     client
         .execute("SELECT pg_advisory_unlock(hashtext($1))", &[&lock])
         .await?;
-    Ok(client)
+    Ok(())
 }
 #[cfg(test)]
 mod tests {

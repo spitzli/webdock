@@ -26,6 +26,7 @@ pub mod plugin_config;
 pub mod plugins;
 
 pub mod bootstrap;
+pub mod plugin_bootstrap;
 pub mod resource_auth;
 mod resource_hosting;
 mod resource_registry;

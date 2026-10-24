@@ -63,13 +63,20 @@ fn resource(row: &tokio_postgres::Row) -> Resource {
     }
 }
 
-pub type Error = tokio_postgres::Error;
+pub type Error = webdock_plugin_kit::Error;
 pub struct Store(Client);
 impl Store {
     /// Connects and applies pending migrations under an advisory lock.
     pub async fn connect(url: &str) -> Result<Self, Error> {
+        webdock_plugin_kit::loopback(url)?;
         Ok(Self(
             webdock_plugin_kit::storage(url, "postgres", MIGRATIONS).await?,
+        ))
+    }
+    /// Remote metadata storage verifies the actual PostgreSQL hostname with the private CA.
+    pub async fn connect_tls(url: &str, ca: &[u8]) -> Result<Self, Error> {
+        Ok(Self(
+            webdock_plugin_kit::storage_tls(url, ca, "postgres", MIGRATIONS).await?,
         ))
     }
     pub async fn insert(&self, r: &Resource) -> Result<(), Error> {

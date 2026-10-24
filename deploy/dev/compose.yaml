@@ -55,8 +55,25 @@ services:
   mailpit:
     image: axllent/mailpit:v1.27.11
     ports: ['127.0.0.1:${WEBDOCK_DEV_SMTP_PORT:-55025}:1025', '127.0.0.1:${WEBDOCK_DEV_MAILPIT_PORT:-55026}:8025']
+  minio:
+    image: webdock-dev-minio:local
+    build: {context: ./minio}
+    pull_policy: build
+    env_file: [../../.dev-local/minio.env]
+    environment:
+      MINIO_SITE_REGION: us-east-1
+      MINIO_BROWSER_REDIRECT_URL: 'http://127.0.0.1:${WEBDOCK_DEV_MINIO_CONSOLE_PORT:-55901}'
+    command: [server, /data, --address, ':9000', --console-address, ':9001']
+    ports: ['127.0.0.1:${WEBDOCK_DEV_S3_PORT:-55900}:9000', '127.0.0.1:${WEBDOCK_DEV_MINIO_CONSOLE_PORT:-55901}:9001']
+    volumes: [minio:/data]
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, http://127.0.0.1:9000/minio/health/ready]
+      interval: 2s
+      timeout: 3s
+      retries: 30
 volumes:
   k3s:
   postgres:
   shared-postgres:
   registry:
+  minio:

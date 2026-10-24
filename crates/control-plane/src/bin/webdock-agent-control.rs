@@ -40,6 +40,15 @@ async fn main() -> Result<(), Error> {
     let configuration_enabled =
         webdock_control_plane::mail::incoming_configuration_enabled(&environment)?;
     let config = PlatformConfig::from_map(&environment)?;
+    let plugin_config = std::env::var("WEBDOCK_NATIVE_PLUGIN_CONFIG")
+        .ok()
+        .map(|path| {
+            webdock_control_plane::plugin_config::PluginConfig::load(std::path::Path::new(&path))
+        })
+        .transpose()?;
+    let plugin_installations_enabled = plugin_config
+        .as_ref()
+        .is_some_and(|config| config.installation_catalog.is_some());
     let hosting_enabled = config
         .features
         .require("hosting", OperationKind::ContinueAccepted)
@@ -61,7 +70,12 @@ async fn main() -> Result<(), Error> {
     }
     // Plugin workloads are served whenever this listener runs; they need no product feature.
     let workloads_enabled = std::env::var("WEBDOCK_WORKLOADS_ENABLED").as_deref() == Ok("true");
-    if !hosting_enabled && !databases_enabled && !mail_enabled && !workloads_enabled {
+    if !hosting_enabled
+        && !databases_enabled
+        && !mail_enabled
+        && !workloads_enabled
+        && !plugin_installations_enabled
+    {
         return Err(
             "A configured Hosting, Databases, Mail or workload agent domain must permit accepted operations"
                 .into(),
@@ -138,16 +152,41 @@ async fn main() -> Result<(), Error> {
     };
     let hosting = Arc::new(
         webdock_hosting::HostingService::new(
-            session,
+            session.clone(),
             auth.clone(),
-            worker,
+            worker.clone(),
             required("DATABASE_RLS_SECRET")?,
             key,
-            ids,
+            ids.clone(),
         )
         .await?
         .with_session_authority(authority.identity.clone(), authority.browser.clone()),
     );
+    let plugin_backend = if plugin_installations_enabled {
+        let endpoints = webdock_control_plane::plugins::PluginEndpoints::initialize(
+            webdock_control_plane::plugins::PluginDependencies {
+                business: session,
+                worker,
+                auth: auth.clone(),
+                identity: authority.identity.clone(),
+                browser: authority.browser.clone(),
+                oauth: authority.oauth.clone(),
+                ids,
+                rls_secret: required("DATABASE_RLS_SECRET")?,
+            },
+            plugin_config
+                .as_ref()
+                .ok_or("Native plugin configuration required")?,
+        )
+        .await?;
+        Some(Arc::new(
+            webdock_control_plane::plugins::installation::AgentBackend {
+                host: endpoints.host,
+            },
+        ))
+    } else {
+        None
+    };
     let shutdown = async {
         #[cfg(unix)]
         {
@@ -181,6 +220,9 @@ async fn main() -> Result<(), Error> {
             if let Some(mail) = mail {
                 service = service.with_mail(mail);
             }
+            if let Some(backend) = plugin_backend {
+                service = service.with_plugin_runtime(backend);
+            }
             service
                 .serve_unix(UnixSocket::bind(path)?, shutdown)
                 .await?;
@@ -208,6 +250,9 @@ async fn main() -> Result<(), Error> {
             }
             if let Some(mail) = mail {
                 service = service.with_mail(mail);
+            }
+            if let Some(backend) = plugin_backend {
+                service = service.with_plugin_runtime(backend);
             }
             service
                 .serve_mtls(tokio::net::TcpListener::bind(address).await?, tls, shutdown)

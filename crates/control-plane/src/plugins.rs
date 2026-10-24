@@ -60,7 +60,8 @@ impl PluginEndpoints {
             .ok_or_else(|| PluginError::new(ErrorCode::NotFound, "Plugin is unavailable"))?;
         let connection = self
             .connections
-            .load(&input.plugin_id)
+            .load_generation(&input.plugin_id, view.generation)
+            .await
             .map_err(|_| unavailable_plugin())?;
         if connection.generation != view.generation {
             return Err(PluginError::denied());
@@ -88,7 +89,8 @@ impl PluginEndpoints {
         let plugin = input.plugin_id.clone();
         let connection = self
             .connections
-            .load(&plugin)
+            .load_generation(&plugin, view.generation)
+            .await
             .map_err(|_| unavailable_plugin())?;
         if connection.generation != view.generation {
             return Err(PluginError::denied());
@@ -189,7 +191,8 @@ impl PluginEndpoints {
             )?;
             if self
                 .connections
-                .load(&plugin)
+                .load_generation(&plugin, view.generation)
+                .await
                 .map_err(|_| unavailable_plugin())?
                 != connection
             {
@@ -280,6 +283,7 @@ pub fn routes() -> Router<Arc<ServiceState>> {
         .merge(api::routes())
         .merge(exposure::routes())
         .merge(operations::routes())
+        .merge(installation::routes())
         .route("/api/console/plugins", get(list))
         .route("/api/console/plugins/invoke", post(invoke))
         .route("/api/console/plugins/installed", get(installed).post(admin))
@@ -488,7 +492,10 @@ async fn list(
                 .ok_or_else(|| failure(unavailable_plugin()))?;
             let mut value =
                 serde_json::to_value(&view).map_err(|_| failure(unavailable_plugin()))?;
-            if let Ok(binding) = service.connections.load(plugin)
+            if let Ok(binding) = service
+                .connections
+                .load_generation(plugin, view.generation)
+                .await
                 && binding.generation == view.generation
             {
                 value["uiOrigin"] = json!(binding.ui_origin);
@@ -620,26 +627,49 @@ impl PluginEndpoints {
         dependencies: PluginDependencies,
         config: &crate::plugin_config::PluginConfig,
     ) -> Result<Self, crate::plugin_config::ConfigurationError> {
-        let host = Arc::new(
-            HostService::new(
-                dependencies.business,
-                dependencies.worker.clone(),
-                dependencies.rls_secret.clone(),
-                dependencies.ids,
-                Arc::new(webdock_plugin_host::FileBindings::new(
-                    config.host_bindings.clone(),
-                )),
-                crate::plugin_config::signing_key(&config.invocation_signing_key)?,
-            )
-            .await?
-            .with_session_authority(
-                dependencies.auth.clone(),
-                dependencies.identity.clone(),
-                dependencies.browser.clone(),
-            )
-            .await?
-            .with_mcp_authority(dependencies.oauth)?,
+        let fallback: Arc<dyn webdock_plugin_host::RuntimeBindings> = Arc::new(
+            webdock_plugin_host::FileBindings::new(config.host_bindings.clone()),
         );
+        let managed = match &config.installation_catalog {
+            Some(_) => Some(Arc::new(
+                webdock_plugin_host::ManagedBindings::new(
+                    crate::db::independent_pool(&dependencies.worker, "webdock_worker_runtime")
+                        .await?,
+                    dependencies.rls_secret.clone(),
+                    fallback.clone(),
+                )
+                .await?
+                .with_encryption_secret(&crate::plugin_config::installation_secret()?)?,
+            )),
+            None => None,
+        };
+        let bindings: Arc<dyn webdock_plugin_host::RuntimeBindings> = match &managed {
+            Some(value) => value.clone(),
+            None => fallback,
+        };
+        let mut host = HostService::new(
+            dependencies.business,
+            dependencies.worker.clone(),
+            dependencies.rls_secret.clone(),
+            dependencies.ids,
+            bindings,
+            crate::plugin_config::signing_key(&config.invocation_signing_key)?,
+        )
+        .await?
+        .with_session_authority(
+            dependencies.auth.clone(),
+            dependencies.identity.clone(),
+            dependencies.browser.clone(),
+        )
+        .await?
+        .with_mcp_authority(dependencies.oauth)?;
+        if let Some(catalog) = &config.installation_catalog {
+            host = host.with_installation(
+                Arc::new(webdock_plugin_host::Catalog::load(catalog)?),
+                &crate::plugin_config::installation_secret()?,
+            )?;
+        }
+        let host = Arc::new(host);
         let repository = match &config.repository {
             Some(repository) => Some(Arc::new(
                 webdock_build::RepositoryAdmission::new(
@@ -661,14 +691,21 @@ impl PluginEndpoints {
             )),
             None => None,
         };
+        let mut connections = RuntimeConnections::new(config.connections.clone());
+        if let Some(managed) = managed {
+            connections = connections.with_managed(managed);
+        }
         Ok(Self {
             host,
-            connections: RuntimeConnections::new(config.connections.clone()),
+            connections,
             repository,
             mcp_client: config.mcp_client.clone(),
         })
     }
 }
+
+#[path = "plugin_installation/mod.rs"]
+pub mod installation;
 
 #[path = "api.rs"]
 pub(crate) mod api;

@@ -4,6 +4,7 @@
 # `docker compose -f deploy/dev/compose.yaml down -v` resets it.
 
 local('bun tools/dev/local.mjs secrets', quiet=True)
+local('bun tools/dev/minio.mjs', quiet=True)
 
 # WEBDOCK_DEV_HTTPS=1 tilt up: Console and account pages over HTTPS (needs mkcert; reset when switching).
 https = os.getenv('WEBDOCK_DEV_HTTPS', '') == '1'
@@ -18,6 +19,10 @@ dc_resource('postgres', labels=['infra'])
 dc_resource('registry', labels=['infra'], links=[link('http://127.0.0.1:5005/v2/_catalog', 'catalog')])
 dc_resource('mailpit', labels=['infra'], links=[link('http://127.0.0.1:55026', 'Mailpit')])
 dc_resource('shared-postgres', labels=['infra'])
+dc_resource('minio', labels=['infra'], links=[
+    link('http://127.0.0.1:' + os.getenv('WEBDOCK_DEV_S3_PORT', '55900'), 'S3'),
+    link('http://127.0.0.1:' + os.getenv('WEBDOCK_DEV_MINIO_CONSOLE_PORT', '55901'), 'MinIO'),
+])
 dc_resource('k3s', labels=['infra'])
 local_resource(
     'kubeconfig',

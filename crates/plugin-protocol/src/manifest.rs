@@ -868,6 +868,11 @@ fn check_depth(v: &Value, depth: usize) -> Result<()> {
     Ok(())
 }
 // Reject duplicate object keys before converting to Value; a parser must not silently choose authority.
+pub(crate) fn strict_json(bytes: &[u8]) -> Result<Value> {
+    serde_json::from_slice::<StrictJson>(bytes)
+        .map(|value| value.0)
+        .map_err(|_| invalid())
+}
 struct StrictJson(Value);
 impl<'de> Deserialize<'de> for StrictJson {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {

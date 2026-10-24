@@ -15,6 +15,8 @@ webdock-repository-protocol={path="../repository-protocol"}
 ed25519-dalek="2"
 hex="0.4"
 getrandom="0.2"
+rcgen = { version = "0.14", features = ["x509-parser"] }
+x509-parser = "0.18"
 webdock-mail = { path = "../mail" }
 webdock-databases = { path = "../databases" }
 sha2 = "0.10"
@@ -29,6 +31,7 @@ webdock-browser-session = { path = "../browser-session" }
 webdock-access = { path = "../access" }
 webdock-hosting = { path = "../hosting" }
 webdock-agent-control = { path = "../agent-control" }
+webdock-agent-protocol = { path = "../agent-protocol" }
 webdock-plugin-runtime = { path = "../plugin-runtime" }
 webdock-plugin-http = { path = "../plugin-http" }
 tonic = { version = "0.14.6", features = ["transport", "tls-ring"] }
@@ -54,6 +57,8 @@ governor = "0.10.4"
 clap = { version = "4", features = ["derive"] }
 
 [dev-dependencies]
+webdock-plugin-kit = { path = "../plugin-kit" }
+tokio-postgres = "0.7"
 serde-saphyr = "0.0.29"
 tempfile = "3"
 webdock-secrets = { path = "../secrets" }

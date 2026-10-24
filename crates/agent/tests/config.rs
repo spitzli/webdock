@@ -67,3 +67,20 @@ async fn daemon_without_runtime_adapters_fails_closed_after_configuration_valida
     ));
     assert!(!dir.path().join("commands.json").exists());
 }
+
+#[test]
+fn plugin_runtime_domain_is_opt_in_and_requires_kubernetes() {
+    let dir = private();
+    let value = json!({"version":1,"installation":"test-install","agentId":"test-agent","generation":1,"stateDirectory":dir.path(),"control":{"kind":"unix","path":dir.path().join("core.sock")},"runtime":{"kind":"docker","socket":"/unused","initializerImage":null}});
+    let old: AgentConfig = serde_json::from_value(value.clone()).unwrap();
+    assert!(!old.plugin_runtime_enabled);
+    old.validate().unwrap();
+    let mut enabled = value;
+    enabled["pluginRuntimeEnabled"] = true.into();
+    assert!(
+        serde_json::from_value::<AgentConfig>(enabled)
+            .unwrap()
+            .validate()
+            .is_err()
+    );
+}

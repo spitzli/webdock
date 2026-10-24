@@ -11,6 +11,8 @@ struct Args {
     config: PathBuf,
     #[arg(long)]
     once: bool,
+    #[arg(long)]
+    installation_config: Option<PathBuf>,
 }
 type Error = Box<dyn std::error::Error + Send + Sync>;
 fn required(key: &str) -> Result<String, Error> {
@@ -49,7 +51,7 @@ async fn run() -> Result<(), Error> {
     let authority = authority_services(auth.clone(), ids.clone(), &platform).await?;
     let endpoints = PluginEndpoints::initialize(
         PluginDependencies {
-            business,
+            business: business.clone(),
             worker,
             auth,
             identity: authority.identity,
@@ -61,12 +63,24 @@ async fn run() -> Result<(), Error> {
         &config,
     )
     .await?;
+    let installer = match args.installation_config {
+        Some(path) => Some(
+            webdock_control_plane::plugins::installation::worker::InstallationWorker::load(
+                &path, &business, &config,
+            )
+            .await?,
+        ),
+        None => None,
+    };
     loop {
         if let Some(lease) = endpoints.host.claim_state_operation(None).await? {
             endpoints
                 .host
                 .advance_state_operation(&lease, &endpoints)
                 .await?;
+        }
+        if let Some(installer) = &installer {
+            installer.advance(&endpoints).await?;
         }
         if args.once {
             return Ok(());

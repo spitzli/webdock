@@ -28,6 +28,9 @@ pub struct AgentConfig {
     /// Apply plugin workloads Core sends for this cluster (Kubernetes runtimes only).
     #[serde(default)]
     pub workloads: bool,
+    /// Installation-owned native runtime deployment (Kubernetes only).
+    #[serde(default)]
+    pub plugin_runtime_enabled: bool,
 }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
@@ -137,6 +140,13 @@ impl AgentConfig {
         }
         if let Some(path) = &self.mail_runtime {
             read_private(path, 1024 * 1024)?;
+        }
+        if self.plugin_runtime_enabled
+            && !matches!(self.runtime, RuntimeConfiguration::Kubernetes { .. })
+        {
+            return Err(AgentError::Configuration(
+                "Plugin runtime deployment requires Kubernetes",
+            ));
         }
         if self.workloads && !matches!(self.runtime, RuntimeConfiguration::Kubernetes { .. }) {
             return Err(AgentError::Configuration(

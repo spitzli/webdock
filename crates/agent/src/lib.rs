@@ -24,3 +24,6 @@ pub mod database;
 
 #[cfg(feature = "kubernetes")]
 pub mod workloads;
+
+#[cfg(feature = "kubernetes")]
+pub mod plugin_runtime;

@@ -22,3 +22,6 @@ pub mod mail_configuration;
 
 /// Bounded application/database frames, including public CA material.
 pub const MAX_MESSAGE_BYTES: usize = 512 * 1024;
+
+/// Guarded installation-owned runtime deployment, independent of customer workloads.
+pub mod plugin;

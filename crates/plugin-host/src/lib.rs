@@ -1,9 +1,18 @@
 //! Persisted plugin admission and host services on retained signed RLS policies.
 mod authority;
+pub mod catalog;
+pub use authority::installation;
+pub use catalog::{Catalog, CatalogDescriptor, CatalogTargetDescriptor};
+pub use installation::{
+    InstallClaim, InstallRequest, InstallSnapshot, InstallWork, PreparedInstallation,
+};
 mod bindings;
+mod managed_bindings;
+pub use managed_bindings::ManagedBindings;
 pub mod data;
 mod entities;
 pub mod http;
+pub mod provisioning;
 mod scope;
 mod session_authority;
 pub use authority::limits::{CustomerPlanInput, PlanInput};

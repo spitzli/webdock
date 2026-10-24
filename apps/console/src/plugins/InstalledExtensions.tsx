@@ -5,6 +5,7 @@ import { useApi, useSession } from "../context";
 import { Empty, Failure, Loading, Modal } from "../common";
 import { ActionFailure } from "../HostingActionState";
 import { uncertainOutcome } from "../hosting-client";
+import { InstallationCatalog } from "./InstallationCatalog";
 import * as ui from "../ui";
 import {
   availability,
@@ -60,8 +61,7 @@ export function InstalledExtensions() {
       </p>
       {query.data.length === 0 ? (
         <Empty title="No installation records">
-          No installed extensions were returned by the server. Source
-          installation is not yet available in this Console.
+          No extensions have been installed. Choose a reviewed release from the catalog below.
         </Empty>
       ) : (
         <div className={ui.tableFrame}>
@@ -78,7 +78,7 @@ export function InstalledExtensions() {
               {query.data.map((plugin) => (
                 <tr key={plugin.id} className={ui.tr}>
                   <td className={ui.cx(`${ui.td} min-w-[170px]`)}>
-                    {plugin.kind === "external" ? (
+                    {plugin.kind === "external" && plugin.runtime === "ready" ? (
                       <Link className="font-medium underline-offset-[3px] hover:underline" to="/extensions/$plugin" params={{ plugin: plugin.id }}>
                         {plugin.id}
                       </Link>
@@ -113,14 +113,16 @@ export function InstalledExtensions() {
                     <span className={ui.cx(`${ui.badge(ui.statusTone(plugin.runtime))} normal-case`)}>{plugin.runtime}</span>
                   </td>
                   <td className={ui.cx(`${ui.td} whitespace-nowrap`)}>
-                    <button
+                    {plugin.operationID ? <Link className={ui.cx(ui.button("quiet"), "mr-2")} to="/extensions/operations/$operationID" params={{ operationID: plugin.operationID }}>View operation</Link> : null}
+                    {!plugin.installRecovery ? <button
                       className={ui.button()}
+                      disabled={plugin.runtime === "starting"}
                       onClick={() => {
                         setSelected(plugin);
                       }}
                     >
                       Change availability
-                    </button>
+                    </button> : null}
                   </td>
                 </tr>
               ))}
@@ -128,6 +130,7 @@ export function InstalledExtensions() {
           </table>
         </div>
       )}
+      <InstallationCatalog installed={query.data.map((plugin) => plugin.id)} />
       {selected ? (
         <ExtensionStateForm
           key={`${selected.id}:${selected.revision}`}

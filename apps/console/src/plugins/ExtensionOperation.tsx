@@ -1,9 +1,13 @@
 import { useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useApi, useSession } from "../context";
 import { Empty, Failure, Loading } from "../common";
-import { extensionOperation, extensionPolling } from "./lifecycle-contracts";
+import { extensionOperation, extensionPolling, extensionReceipt } from "./lifecycle-contracts";
+import { installationPhase } from "./installation-contracts";
+import { ActionFailure } from "../HostingActionState";
+import { uncertainOutcome } from "../hosting-client";
 import { backLink } from "../ui";
 import * as ui from "../ui";
 export function ExtensionOperation({ id }: { id: string }) {
@@ -47,7 +51,7 @@ export function ExtensionOperation({ id }: { id: string }) {
           <Link className={backLink} to="/extensions">
             Installed extensions
           </Link>
-          <h1 className={ui.pageTitle}>Extension operation</h1>
+          <h1 className={ui.pageTitle}>{query.data.kind === "install" ? "Extension installation" : "Extension operation"}</h1>
           <p className={ui.pageLead}>
             {query.data.pluginID} · <span className={ui.mono}>{query.data.id}</span>
           </p>
@@ -68,7 +72,7 @@ export function ExtensionOperation({ id }: { id: string }) {
         </div>
         <div>
           <dt className="text-xs text-muted">Phase</dt>
-          <dd className="mt-1 text-sm">{query.data.phase}</dd>
+          <dd className="mt-1 text-sm">{query.data.kind === "install" ? installationPhase(query.data.phase) : query.data.phase}</dd>
         </div>
         <div>
           <dt className="text-xs text-muted">Generation</dt>
@@ -87,10 +91,33 @@ export function ExtensionOperation({ id }: { id: string }) {
           {query.data.condition}
         </p>
       ) : null}
-      <p className={ui.cardFooter}>{extensionDescription(query.data.status)}</p>
+      <p className={ui.cardFooter}>{query.data.kind === "install" ? installationDescription(query.data.status) : extensionDescription(query.data.status)}</p>
       </div>
+      {query.data.kind === "install" && query.data.status === "succeeded" ? <Link className={ui.cx(ui.button("primary"), "mt-5")} to="/extensions/$plugin" params={{ plugin: query.data.pluginID }}>Configure self-service</Link> : null}
+      {query.data.kind === "install" && ["blocked", "failed"].includes(query.data.status) ? <RetryInstallation key={id} id={id} /> : null}
     </section>
   );
+}
+function RetryInstallation({ id }: { id: string }) {
+  const api = useApi();
+  const navigate = useNavigate();
+  const retry = useMutation({ mutationFn: (idempotencyKey: string) => api.write(`/api/console/plugins/operations/${id}/retry`, "POST", { idempotencyKey }, extensionReceipt),
+    onSuccess: (receipt) => { void navigate({ to: "/extensions/operations/$operationID", params: { operationID: receipt.id } }); } });
+  const uncertain = uncertainOutcome(retry.error);
+  return <div className="mt-5 grid gap-3"><p className="text-sm text-muted">Retry retains this installation's approved release, private storage and identity.</p>
+    <button className={ui.cx(ui.button(), "justify-self-start")} disabled={retry.isPending || uncertain} onClick={() => { retry.mutate(crypto.randomUUID()); }}>Retry installation</button>
+    <ActionFailure error={retry.error} uncertain={uncertain} pending={retry.isPending} retry={() => { if (retry.variables) retry.mutate(retry.variables); }} />
+  </div>;
+}
+function installationDescription(status: string) {
+  switch (status) {
+    case "pending": return "The installation request is saved. Waiting for the controller.";
+    case "running": return "Installation is in progress. Runtime access remains disabled until identity and readiness are verified.";
+    case "succeeded": return "The runtime identity and readiness were verified. Configure which features customers may use next.";
+    case "blocked": return "Installation needs attention. Review the reported condition before retrying; private storage is retained.";
+    case "failed": return "Installation did not complete. Its private storage and identity are retained for recovery.";
+    default: return "Installation state is unavailable.";
+  }
 }
 function extensionDescription(status: string) {
   switch (status) {

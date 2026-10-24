@@ -6,6 +6,12 @@ use std::{
 };
 use webdock_plugin_runtime::{PinnedMutualTls, wire::plugin_runtime_client::PluginRuntimeClient};
 pub type ConfigurationError = Box<dyn std::error::Error + Send + Sync>;
+pub fn installation_secret() -> Result<String, ConfigurationError> {
+    std::env::var("WEBDOCK_NATIVE_PLUGIN_ENCRYPTION_KEY")
+        .or_else(|_| std::env::var("WEBDOCK_AUTH_SECRET"))
+        .or_else(|_| std::env::var("BETTER_AUTH_SECRET"))
+        .map_err(|_| "Missing native installation encryption secret".into())
+}
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PluginConfig {
@@ -13,6 +19,8 @@ pub struct PluginConfig {
     pub invocation_signing_key: PathBuf,
     pub connections: PathBuf,
     pub control: ControlListener,
+    #[serde(default)]
+    pub installation_catalog: Option<PathBuf>,
     #[serde(default)]
     pub repository: Option<RepositoryConfig>,
     #[serde(default)]
@@ -83,6 +91,7 @@ pub struct RuntimeConnection {
 #[derive(Clone)]
 pub struct RuntimeConnections {
     path: PathBuf,
+    managed: Option<std::sync::Arc<webdock_plugin_host::ManagedBindings>>,
 }
 impl PluginConfig {
     pub fn load(path: &Path) -> Result<Self, ConfigurationError> {
@@ -102,6 +111,13 @@ impl PluginConfig {
             .is_some_and(|mail| !mail.signing_key.is_absolute())
         {
             return Err("Absolute Mail signing-key path required".into());
+        }
+        if value
+            .installation_catalog
+            .as_ref()
+            .is_some_and(|path| !path.is_absolute())
+        {
+            return Err("Absolute installation catalog path required".into());
         }
         Ok(value)
     }
@@ -126,9 +142,19 @@ fn pem(path: &Path) -> Result<Vec<u8>, ConfigurationError> {
 }
 impl RuntimeConnections {
     pub fn new(path: PathBuf) -> Self {
-        Self { path }
+        Self {
+            path,
+            managed: None,
+        }
     }
-    pub fn load(&self, plugin: &str) -> Result<RuntimeConnection, ConfigurationError> {
+    pub fn with_managed(
+        mut self,
+        managed: std::sync::Arc<webdock_plugin_host::ManagedBindings>,
+    ) -> Self {
+        self.managed = Some(managed);
+        self
+    }
+    fn file(&self, plugin: &str) -> Result<Option<RuntimeConnection>, ConfigurationError> {
         #[derive(Deserialize)]
         #[serde(deny_unknown_fields)]
         struct File {
@@ -136,10 +162,31 @@ impl RuntimeConnections {
         }
         let mut config: File =
             serde_json::from_slice(&crate::config::read_private_file(&self.path)?)?;
-        let value = config
-            .runtimes
-            .remove(plugin)
-            .ok_or("Plugin runtime is not routed")?;
+        Ok(config.runtimes.remove(plugin))
+    }
+    pub fn load(&self, plugin: &str) -> Result<RuntimeConnection, ConfigurationError> {
+        Self::checked(self.file(plugin)?.ok_or("Plugin runtime is not routed")?)
+    }
+    pub async fn load_generation(
+        &self,
+        plugin: &str,
+        generation: u64,
+    ) -> Result<RuntimeConnection, ConfigurationError> {
+        let file = self.file(plugin)?;
+        let managed = match &self.managed {
+            Some(bindings) => bindings
+                .managed_endpoint(plugin, generation)
+                .await?
+                .map(serde_json::from_value::<RuntimeConnection>)
+                .transpose()?,
+            None => None,
+        };
+        if file.is_some() && managed.is_some() {
+            return Err("Managed and file runtime routing collide".into());
+        }
+        Self::checked(managed.or(file).ok_or("Plugin runtime is not routed")?)
+    }
+    fn checked(value: RuntimeConnection) -> Result<RuntimeConnection, ConfigurationError> {
         if value.generation == 0 || value.generation > 9_007_199_254_740_991 {
             return Err("Invalid plugin generation".into());
         }

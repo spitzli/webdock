@@ -273,6 +273,7 @@ async fn scenario(f: Arc<Fixture>, case: Case) {
             },
             policy: Default::default(),
             workloads: false,
+            plugin_runtime_enabled: false,
         };
         let fail_runtime = Arc::new(AtomicBool::new(false));
         let mut daemon = Daemon::with_adapter(

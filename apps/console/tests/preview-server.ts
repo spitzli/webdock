@@ -143,6 +143,7 @@ async function serve(
     send([]);
     return;
   }
+  if (url.pathname === "/api/console/plugins/catalog") { send([]); return; }
   if (url.pathname === "/v1/auth/session") {
     send({
       data: {
@@ -189,6 +190,7 @@ async function serve(
 }
 export const server = await createServer({
   root,
+  cacheDir: fileURLToPath(new URL('../../../.runtime-test/vite-cache/preview', import.meta.url)),
   // 3121 by default; another free port when a local Tilt Console already uses it.
   server: { host: "127.0.0.1", port: Number(process.env.WEBDOCK_PREVIEW_PORT ?? 3121), strictPort: false },
   plugins: [

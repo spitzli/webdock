@@ -22,8 +22,12 @@ customer infrastructure independently of projects and one explicitly activated S
 per customer. Existing project Mail data requires explicit migration; public reception, incoming
 relay and the complete plugin Webmail/outbox product remain open.
 
-Native plugin installation/storage lifecycle, generation-based update/rollback, generic jobs and
-installation-scoped operator actions remain subsequent slices. Removing Rust product code from
+The [native initial installer](../operations/native-plugin-installation.md) now provides signed
+catalog review, private metadata storage, enrolled-agent runtime deployment and retained recovery.
+The [local acceptance](2026-10-23-native-plugin-installation.json) covers fresh native bootstrap,
+Console installation, dedicated PostgreSQL SQL write/read and runtime replacement. Generation-based
+update/rollback, generic jobs, purge and installation-scoped operator actions remain subsequent
+slices. Removing Rust product code from
 Core still requires plugin parity for Git builds/releases, Tabularis authority and durable
 Mail/Webmail handoffs. These checkpoints do not establish retained-data parity or a production
 cutover. The public website/CMS remains a separate TypeScript application.

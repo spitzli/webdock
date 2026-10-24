@@ -174,6 +174,7 @@ fn config(directory: &std::path::Path, socket: std::path::PathBuf, enabled: bool
         database_runtime: None,
         policy: Default::default(),
         workloads: false,
+        plugin_runtime_enabled: false,
     }
 }
 fn command() -> wire::MailConfigurationCommand {

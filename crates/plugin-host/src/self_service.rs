@@ -36,8 +36,8 @@ pub(crate) async fn gate(
         _ => return denied(),
     }
     if let Some(feature) = action["feature"].as_str()
-        && !operator
-        && !feature_allowed(tx, plugin, feature, customer).await?
+        && (!feature_supported(tx, plugin, feature).await?
+            || !operator && !feature_allowed(tx, plugin, feature, customer).await?)
     {
         return denied();
     }
@@ -52,6 +52,36 @@ pub(crate) async fn gate(
         _ => {}
     }
     Ok(())
+}
+pub(crate) async fn feature_supported(
+    tx: &DatabaseTransaction,
+    plugin: &str,
+    feature: &str,
+) -> Result<bool> {
+    tx.query_one_raw(Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        "SELECT webdock_rls.plugin_feature_supported($1,$2) AS supported",
+        [plugin.into(), feature.into()],
+    ))
+    .await
+    .map_err(db_error)?
+    .ok_or_else(unavailable)?
+    .try_get("", "supported")
+    .map_err(db_error)
+}
+pub(crate) async fn supported_features(
+    tx: &DatabaseTransaction,
+    manifest: &Manifest,
+    plugin: &str,
+) -> Result<Vec<String>> {
+    let mut features = Vec::new();
+    for feature in manifest.features() {
+        let id = string(feature, "id")?;
+        if feature_supported(tx, plugin, id).await? {
+            features.push(id.into());
+        }
+    }
+    Ok(features)
 }
 async fn feature_allowed(
     tx: &DatabaseTransaction,
@@ -92,7 +122,9 @@ pub(crate) async fn usable_features(
     let mut usable = Vec::new();
     for feature in manifest.features() {
         let id = string(feature, "id")?;
-        if feature_allowed(tx, plugin, id, customer).await? {
+        if feature_supported(tx, plugin, id).await?
+            && feature_allowed(tx, plugin, id, customer).await?
+        {
             usable.push(id.to_owned());
         }
     }
@@ -201,6 +233,7 @@ impl HostService {
                 }
             }
             let mut view = feature.clone();
+            view["supported"] = json!(feature_supported(&tx, plugin, id).await?);
             view["mode"] = json!(modes.get(id).map_or("assigned", String::as_str));
             view["customers"] = Value::Array(customers);
             features.push(view);
@@ -302,6 +335,9 @@ impl HostService {
                 .iter().map(|r| r.try_get::<String>("", "feature_id").map_err(db_error)).collect::<Result<Vec<_>>>()?;
             for feature in metadata.manifest.features() {
                 let id = string(feature, "id")?;
+                if !feature_supported(&tx, &plugin, id).await? {
+                    continue;
+                }
                 out.push(json!({"plugin":plugin,"pluginRevision":integer(&metadata.installation,"policy_revision")?.to_string(),"feature":id,"label":feature["label"],"mode":modes.get(id).map_or("assigned", String::as_str),"allowed":listed.iter().any(|l| l == id)}));
             }
         }
@@ -377,6 +413,11 @@ impl HostService {
         let metadata = self.metadata(&tx, plugin, None).await?;
         if metadata.manifest.feature(feature).is_none() {
             return Err(invalid("Unknown self-service feature"));
+        }
+        if !feature_supported(&tx, plugin, feature).await? {
+            return Err(unsupported(
+                "The installed profile does not support this feature",
+            ));
         }
         let current = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT policy_revision::text AS revision FROM webdock_auth.plugin_installation WHERE id=$1 FOR UPDATE",[plugin.into()])).await.map_err(db_error)?.ok_or_else(PluginError::denied)?.try_get::<String>("","revision").map_err(db_error)?;
         if current != expected_revision {

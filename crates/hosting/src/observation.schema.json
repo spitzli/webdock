@@ -175,6 +175,10 @@
         "environment": {
           "type": "boolean"
         },
+        "pluginRuntimeVersion": {
+          "type": "number",
+          "const": 1
+        },
         "serviceBindingsVersion": {
           "type": "number",
           "const": 1

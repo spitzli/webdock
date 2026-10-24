@@ -78,7 +78,7 @@ impl HostService {
         {
             return Err(unsupported("Initialize plugin installation state offline"));
         }
-        let rows=tx.query_all_raw(Statement::from_string(DbBackend::Postgres,"SELECT jsonb_build_object('id',id,'kind',kind,'revision',revision::text,'desiredState',desired_state,'state',state,'version',version,'imageDigest',image_digest,'runtime',runtime,'blockers',blockers,'dependencies',dependencies) AS value FROM webdock_auth.plugin_installation ORDER BY id")).await.map_err(db_error)?;
+        let rows=tx.query_all_raw(Statement::from_string(DbBackend::Postgres,"SELECT jsonb_build_object('id',id,'kind',kind,'revision',revision::text,'desiredState',desired_state,'state',state,'version',version,'imageDigest',image_digest,'runtime',runtime,'blockers',blockers,'dependencies',dependencies,'installRecovery',(plugin_installation.current_generation IS NULL AND EXISTS(SELECT 1 FROM webdock_auth.plugin_install_execution recovery WHERE recovery.plugin_id=plugin_installation.id))) || jsonb_strip_nulls(jsonb_build_object('operationID',(SELECT o.id FROM webdock_auth.plugin_operation o WHERE o.plugin_id=plugin_installation.id ORDER BY o.created_at DESC,o.id DESC LIMIT 1))) AS value FROM webdock_auth.plugin_installation ORDER BY id")).await.map_err(db_error)?;
         rows.into_iter()
             .map(|row| row.try_get("", "value").map_err(db_error))
             .collect()
@@ -152,6 +152,11 @@ impl HostService {
         if current["revision"] != expected_revision {
             return Err(conflict(
                 "Installation changed; review its current revision",
+            ));
+        }
+        if current["installRecovery"] == true {
+            return Err(conflict(
+                "Complete or retry initial installation before changing availability",
             ));
         }
         if desired != "enabled"

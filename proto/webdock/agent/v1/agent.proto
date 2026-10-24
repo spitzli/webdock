@@ -188,3 +188,46 @@ message WorkloadReport {
   string error = 6;
   bool removed = 7;
 }
+
+// Installation-owned runtimes, independent of customer/project workload ownership.
+service PluginRuntimeControl {
+  rpc PollPluginRuntime(PollRequest) returns (PluginRuntimeDispatch);
+  rpc GuardPluginRuntime(PluginRuntimeGuardRequest) returns (GuardReply);
+  rpc CheckpointPluginRuntime(PluginRuntimeCheckpointRequest) returns (Ack);
+  rpc CompletePluginRuntime(PluginRuntimeReceipt) returns (Ack);
+}
+message PluginRuntimeCommand {
+  bytes spec_json = 1;
+  bytes lease_json = 2;
+  string request_sha256 = 3;
+  // Ephemeral private files, never copied into durable callback custody.
+  bytes material_json = 4;
+  bytes checkpoint_json = 5;
+}
+message PluginRuntimeDispatch { PluginRuntimeCommand command = 1; }
+message PluginRuntimeGuardRequest {
+  AgentIdentity identity = 1;
+  bytes spec_json = 2;
+  bytes lease_json = 3;
+  string request_sha256 = 4;
+}
+message PluginRuntimeCheckpointRequest {
+  AgentIdentity identity = 1;
+  bytes spec_json = 2;
+  bytes lease_json = 3;
+  string request_sha256 = 4;
+  bytes checkpoint_json = 5;
+}
+message PluginRuntimeReceipt {
+  AgentIdentity identity = 1;
+  bytes spec_json = 2;
+  bytes lease_json = 3;
+  string request_sha256 = 4;
+  bytes completion_json = 5;
+}
+message PluginRuntimeDelivery {
+  oneof callback {
+    PluginRuntimeCheckpointRequest checkpoint = 1;
+    PluginRuntimeReceipt receipt = 2;
+  }
+}

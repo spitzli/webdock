@@ -204,6 +204,10 @@ pub async fn bootstrap(
     tx.execute_unprepared(NATIVE_BASELINE)
         .await
         .map_err(MigrationError::Bootstrap)?;
+    // This path proved the database empty. Retained upgrades/startup must never stamp fresh state.
+    tx.execute_unprepared("INSERT INTO webdock_auth.plugin_bootstrap(mode) VALUES('fresh')")
+        .await
+        .map_err(MigrationError::Bootstrap)?;
     // The schema-only baseline contains cache triggers but deliberately no data. Their domain
     // registry is structural metadata: derive it from those exact installed triggers before the
     // first customer/user write. Never import customer rows or reset epochs on an existing target.

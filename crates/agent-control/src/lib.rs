@@ -3,7 +3,9 @@ mod completion;
 mod database;
 mod mail;
 mod mail_configuration;
+mod plugin;
 mod workload;
+pub use plugin::PluginRuntimeBackend;
 use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend, Statement};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -29,6 +31,7 @@ pub struct ControlPlane {
     db: DatabaseConnection,
     hosting: Arc<HostingService>,
     hosting_enabled: bool,
+    plugin_runtime: Option<Arc<dyn PluginRuntimeBackend>>,
     local: Option<LocalBinding>,
     databases: Option<Arc<webdock_databases::DatabaseService>>,
     mail: Option<Arc<webdock_mail::incoming::agent::IncomingAgent>>,
@@ -206,6 +209,7 @@ impl ControlPlane {
             db,
             hosting,
             hosting_enabled: true,
+            plugin_runtime: None,
             local,
             databases: None,
             mail: None,
@@ -611,6 +615,7 @@ impl ControlPlane {
             .add_service(self.clone().mail_service())
             .add_service(self.clone().mail_configuration_service())
             .add_service(self.clone().workload_service())
+            .add_service(self.clone().plugin_runtime_service())
             .add_service(self.service())
             .serve_with_incoming_shutdown(incoming, shutdown)
             .await?;
@@ -640,6 +645,7 @@ impl ControlPlane {
             .add_service(self.clone().mail_service())
             .add_service(self.clone().mail_configuration_service())
             .add_service(self.clone().workload_service())
+            .add_service(self.clone().plugin_runtime_service())
             .add_service(self.service())
             .serve_with_incoming_shutdown(
                 tokio_stream::wrappers::TcpListenerStream::new(listener),

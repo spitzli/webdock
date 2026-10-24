@@ -21,6 +21,7 @@ const policySchema = z.object({
     label: z.string(),
     description: z.string().optional(),
     offering: z.string().optional(),
+    supported: z.boolean().default(true),
     mode: z.enum(["everyone", "selected", "assigned"]),
     customers: z.array(z.object({ id: z.string(), name: z.string() })),
   })),
@@ -71,13 +72,14 @@ export function PluginSettings({ plugin }: { plugin: string }) {
                 <div>
                   <h2 className="text-sm font-semibold">{feature.label}</h2>
                   {feature.description ? <p className="text-[13px] text-muted">{feature.description}</p> : null}
+                  {!feature.supported ? <p className="text-[13px] text-muted">Not configured for this installation.</p> : null}
                 </div>
                 <label className="grid gap-1 text-[13px] text-muted">
                   Who can do this themselves
                   <select
                     className={ui.cx(ui.input, "w-56")}
                     value={feature.mode}
-                    disabled={change.isPending}
+                    disabled={change.isPending || !feature.supported}
                     onChange={(event) => { setMode(feature.id, z.enum(["everyone", "selected", "assigned"]).parse(event.target.value)); }}
                   >
                     {modes.map((mode) => <option key={mode.value} value={mode.value}>{mode.label}</option>)}

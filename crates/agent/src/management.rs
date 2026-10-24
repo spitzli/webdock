@@ -16,6 +16,8 @@ pub enum AgentError {
     ConfigurationPending,
     #[error("Hosting delivery remains pending")]
     HostingPending,
+    #[error("Plugin runtime delivery remains pending")]
+    PluginPending,
     #[error(transparent)]
     Execution(#[from] webdock_supervisor::ExecutionError),
 }
@@ -24,9 +26,13 @@ pub use webdock_agent_protocol as wire;
 #[cfg(feature = "kubernetes")]
 mod database;
 #[cfg(feature = "kubernetes")]
+mod plugin;
+#[cfg(feature = "kubernetes")]
 mod workloads;
 #[cfg(feature = "kubernetes")]
 pub use database::database_claim;
+#[cfg(feature = "kubernetes")]
+pub use plugin::plugin_claim;
 #[cfg(test)]
 mod guard_tests;
 mod mail;
@@ -129,6 +135,10 @@ struct Session {
     database_client: wire::database_control_client::DatabaseControlClient<Channel>,
     #[cfg(feature = "kubernetes")]
     workload_client: wire::workload_control_client::WorkloadControlClient<Channel>,
+    #[cfg(feature = "kubernetes")]
+    plugin_client: wire::plugin_runtime_control_client::PluginRuntimeControlClient<Channel>,
+    #[cfg(feature = "kubernetes")]
+    plugin_domain: Arc<std::sync::atomic::AtomicU8>,
     identity: wire::AgentIdentity,
     endpoint: ControlEndpoint,
     stamp: String,
@@ -179,6 +189,12 @@ fn accepted(ack: wire::Ack) -> Result<()> {
     }
 }
 struct RemoteAuthority {
+    #[cfg(feature = "kubernetes")]
+    plugin_outbox: Mutex<crate::outbox::PluginRuntimeOutbox>,
+    #[cfg(feature = "kubernetes")]
+    plugin_retry_at: Mutex<Option<tokio::time::Instant>>,
+    #[cfg(feature = "kubernetes")]
+    plugin_checkpoint: Mutex<Option<wire::plugin::PluginRuntimeCheckpoint>>,
     session: Arc<RwLock<Option<Session>>>,
     mail_outbox: Mutex<crate::outbox::MailOutbox>,
     mail_retry_at: Mutex<Option<tokio::time::Instant>>,
@@ -275,6 +291,8 @@ impl Authorizer for RemoteAuthority {
 }
 
 pub struct Daemon {
+    #[cfg(feature = "kubernetes")]
+    plugin_runtime: Option<Arc<dyn crate::plugin_runtime::PluginRuntimeExecutor>>,
     config: AgentConfig,
     state: Mutex<IdentityState>,
     outbox: Mutex<crate::outbox::ReceiptOutbox>,
@@ -298,6 +316,14 @@ impl Daemon {
         let outbox =
             crate::outbox::ReceiptOutbox::open(config.state_directory.join("receipt-outbox.json"))?;
         let authority = Arc::new(RemoteAuthority {
+            #[cfg(feature = "kubernetes")]
+            plugin_outbox: Mutex::new(crate::outbox::PluginRuntimeOutbox::open(
+                config.state_directory.join("plugin-runtime-outbox.json"),
+            )?),
+            #[cfg(feature = "kubernetes")]
+            plugin_retry_at: Mutex::new(None),
+            #[cfg(feature = "kubernetes")]
+            plugin_checkpoint: Mutex::new(None),
             session: Arc::new(RwLock::new(None)),
             mail_outbox: Mutex::new(crate::outbox::MailOutbox::open(
                 config.state_directory.join("mail-outbox.json"),
@@ -319,6 +345,8 @@ impl Daemon {
         });
         let executor = Executor::new(journal, authority.clone(), adapter.clone());
         Ok(Self {
+            #[cfg(feature = "kubernetes")]
+            plugin_runtime: None,
             config,
             state: Mutex::new(state),
             outbox: Mutex::new(outbox),
@@ -409,6 +437,12 @@ impl Daemon {
                         )
                     })
                     .transpose()?;
+                let plugin_runtime = config.plugin_runtime_enabled.then(|| {
+                    Arc::new(crate::plugin_runtime::KubernetesPluginRuntime::new(
+                        adapter.database_client(),
+                        config.installation.clone(),
+                    )) as Arc<dyn crate::plugin_runtime::PluginRuntimeExecutor>
+                });
                 let workload_runtime = config.workloads.then(|| {
                     Arc::new(crate::workloads::WorkloadExecutor::new(
                         adapter.database_client(),
@@ -435,6 +469,7 @@ impl Daemon {
                 daemon.database_runtime = database_runtime
                     .map(|runtime| Arc::new(runtime) as Arc<dyn crate::database::DatabaseRuntime>);
                 daemon.workload_runtime = workload_runtime;
+                daemon.plugin_runtime = plugin_runtime;
                 Ok(daemon)
             }
             #[cfg(not(all(feature = "docker", feature = "kubernetes")))]
@@ -499,6 +534,14 @@ impl Daemon {
                 .max_decoding_message_size(wire::MAX_MESSAGE_BYTES)
                 .max_encoding_message_size(wire::MAX_MESSAGE_BYTES),
             configuration_available: Arc::new(AtomicBool::new(true)),
+            #[cfg(feature = "kubernetes")]
+            plugin_client: wire::plugin_runtime_control_client::PluginRuntimeControlClient::new(
+                channel.clone(),
+            )
+            .max_decoding_message_size(wire::MAX_MESSAGE_BYTES)
+            .max_encoding_message_size(wire::MAX_MESSAGE_BYTES),
+            #[cfg(feature = "kubernetes")]
+            plugin_domain: Arc::new(std::sync::atomic::AtomicU8::new(plugin::DOMAIN_UNKNOWN)),
             mail_client: wire::mail_control_client::MailControlClient::new(channel.clone())
                 .max_decoding_message_size(wire::MAX_MESSAGE_BYTES)
                 .max_encoding_message_size(wire::MAX_MESSAGE_BYTES),
@@ -557,6 +600,8 @@ impl Daemon {
             self.configuration_delivery_ready().await?;
             #[cfg(feature = "kubernetes")]
             self.database_delivery_ready().await?;
+            #[cfg(feature = "kubernetes")]
+            self.plugin_delivery_ready().await?;
             Ok(())
         }
         .await;
@@ -669,6 +714,13 @@ impl Daemon {
                     .ok_or(AgentError::Transport)?
                     .extend(fields.as_object().ok_or(AgentError::Transport)?.clone());
             }
+            #[cfg(feature = "kubernetes")]
+            if self.config.plugin_runtime_enabled
+                && self.plugin_runtime.is_some()
+                && session.plugin_domain.load(Ordering::SeqCst) == plugin::DOMAIN_AVAILABLE
+            {
+                value["capabilities"]["pluginRuntimeVersion"] = 1.into();
+            }
             value["capabilities"]["environment"] = snapshot.environment.into();
             value["capabilities"]["volumeQuotas"] = (snapshot.runtime_kind == "docker"
                 && snapshot.storage.as_ref().is_some_and(|s| s.ready))
@@ -739,6 +791,14 @@ impl Daemon {
             if let Some(command) = dispatch.command {
                 self.process(command).await?;
                 worked = true;
+            }
+            #[cfg(feature = "kubernetes")]
+            if self.plugin_delivery_ready().await? {
+                match self.process_plugin().await {
+                    Ok(work) => worked |= work,
+                    Err(AgentError::PluginPending) => worked = true,
+                    Err(error) => return Err(error),
+                }
             }
             #[cfg(feature = "kubernetes")]
             if self.workload_runtime.is_some() {

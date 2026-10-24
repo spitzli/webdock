@@ -322,3 +322,22 @@ fn normalize_numbers(value: &mut Value) {
         _ => (),
     }
 }
+
+#[cfg(test)]
+mod plugin_runtime_observation_tests {
+    use super::*;
+    #[test]
+    fn optional_plugin_runtime_capability_is_versioned_without_relaxing_observation_shape() {
+        let mut value = json!({"sequence":1,"generation":1,"observedAt":"2026-10-23T20:00:00.000Z","version":"fixture","nodes":[],"runtimeKind":"kubernetes","capacity":{"apps":0,"cpuMillicores":0,"memoryBytes":0,"volumeBytes":0,"ephemeralBytes":0,"replicasPerApp":0,"concurrentDeployments":0},"capabilities":{"networkIsolation":false,"restrictedPods":false,"storage":false,"ingress":false}});
+        observation(&value).unwrap();
+        value["capabilities"]["pluginRuntimeVersion"] = json!(1);
+        observation(&value).unwrap();
+        for unsupported in [json!(0), json!(2), json!("1"), json!(true)] {
+            value["capabilities"]["pluginRuntimeVersion"] = unsupported;
+            assert!(observation(&value).is_err());
+        }
+        value["capabilities"]["pluginRuntimeVersion"] = json!(1);
+        value["capabilities"]["unreviewedRuntime"] = json!(true);
+        assert!(observation(&value).is_err());
+    }
+}

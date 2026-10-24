@@ -15,7 +15,8 @@ impl StateProbe for PluginEndpoints {
     ) -> Result<RuntimeDescription, PluginError> {
         let connection = self
             .connections
-            .load(plugin)
+            .load_generation(plugin, generation)
+            .await
             .map_err(|_| unavailable_plugin())?;
         if connection.generation != generation {
             return Err(PluginError::denied());
@@ -37,7 +38,8 @@ impl StateProbe for PluginEndpoints {
             .into_inner();
         if self
             .connections
-            .load(plugin)
+            .load_generation(plugin, generation)
+            .await
             .map_err(|_| unavailable_plugin())?
             != connection
         {

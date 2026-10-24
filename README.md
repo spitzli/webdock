@@ -16,6 +16,8 @@ bun run quality             # Rust, contracts, frontend and local browser fixtur
 
 Console runs on 3121, account UI on `localhost:3125`, and Rust Core on 3130. Tilt stores private local configuration under `.dev-local/`. Use disposable fixtures for tests; never customer databases or real mail. Dev mail goes only to Mailpit. See [native development](crates/control-plane/README.md) and [Console development](apps/console/README.md).
 
+Tilt also runs MinIO for local S3 tests: API `http://127.0.0.1:55900`, web console `http://127.0.0.1:55901`, region `us-east-1`. Use path-style addressing with S3 clients. The generated access key (`MINIO_ROOT_USER`) and secret key (`MINIO_ROOT_PASSWORD`) are in `.dev-local/minio.env`; reruns preserve them. Containers on the Compose network use `http://minio:9000`. Override host ports with `WEBDOCK_DEV_S3_PORT` and `WEBDOCK_DEV_MINIO_CONSOLE_PORT`. Buckets and objects live in the retained `minio` Docker volume. The first start builds the [pinned official MinIO release](https://github.com/minio/minio/releases/tag/RELEASE.2025-10-15T17-29-55Z) locally because its historical upstream image tags are unavailable.
+
 For separately configured processes:
 
 ```sh
@@ -48,7 +50,7 @@ docker build -f deploy/docker/Dockerfile --target migrate -t webdock-migrate:loc
 bun run test:distribution
 ```
 
-Core serves the built Console and account UI on their configured hosts. It needs private restricted-role PostgreSQL connections and canonical origins from [the runtime example](crates/control-plane/.env.example). Offline migration and initial operator setup use independent credentials and exact database targets; see [native setup](crates/control-plane/README.md). Runtime startup does not upgrade schemas.
+Core serves the built Console and account UI on their configured hosts. It needs private restricted-role PostgreSQL connections and canonical origins from [the runtime example](crates/control-plane/.env.example). Offline migration and initial operator setup use independent credentials and exact database targets; see [native setup](crates/control-plane/README.md). Runtime startup does not upgrade schemas. For the opt-in signed product-plugin initial path, see [native plugin installation](docs/operations/native-plugin-installation.md).
 
 Native Compose and Helm candidates are under `deploy/`. Managed workloads belong on the existing Kubernetes cluster. The old multi-service Bun release pipeline is archived under `legacy/`; historical releases are not native Rust release evidence. This branch has no published native release or production cutover. Domain migration, retained-data upgrade/rollback and outstanding product parity need their own acceptance before rollout. See [the parity inventory](docs/verification/2026-10-20-native-parity.md).
 

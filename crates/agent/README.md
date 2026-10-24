@@ -194,3 +194,28 @@ Receipt delivery does not require a still-live tenant execution grant. Core veri
 Database capability observation requires the available CNPG operator, both retained denying admission policies, schedulable healthy nodes and independently verified database storage helpers. Capacity includes unplaced and init-container requests and occupied NodePorts. Unavailable or incomplete observations do not establish capacity. This observer reports placement capacity; the separate database usage-observation RPC remains to be connected.
 
 The owned Kind fixture verifies Apply/Configure/Observe, actual SCRAM authentication over verified direct and pooled TLS, restart, credential rotation, CPU/memory resizing, pause/resume with retained physical identity/data, retained deletion and explicit dedicated purge. Private Unix transport tests verify checkpoint/completion acknowledgement loss, exact restart replay and live denial. The `--domain` fixture creates a fresh uniquely named database with existing restricted roles and exercises native operator/MFA authorization, plan/order admission, enrolled Core dispatch, daemon restart with lost callback acknowledgements and CNPG maintenance through retained deletion/purge. It cleans only that database and its exact runtime resources. Physical-only shared-pool readiness, usage observation, migration execution and Docker service bindings remain open; this does not establish full database parity.
+
+For setup, trust profiles and operator configuration, see the internal [native plugin installation guide](../../docs/operations/native-plugin-installation.md).
+
+Installation-owned plugin runtimes are separately opt-in with `pluginRuntimeEnabled: true`
+(Kubernetes only). `PluginRuntimeControl` shares the enrolled outbound connection; an unavailable
+optional Core service leaves that connection healthy. Dispatches contain a strict installation
+specification and separate fenced lease, never customer application `RuntimeSpec` or arbitrary YAML.
+The native profile creates only its derived Namespace, immutable Secret, Deployment, ClusterIP
+Service, NetworkPolicy and Traefik TCP route. It stages the six approved UTF8 files into runtime-owned
+memory as regular mode0600 files and passes `/run/webdock/runtime/runtime.json` to the artifact.
+No metadata PVC or purge is part of this domain: private metadata storage is external and retained.
+
+UID checkpoints and exact receipts use `plugin-runtime-outbox.json` in the protected agent state
+directory. Pending delivery blocks new installation dispatch until acknowledged, including across
+restart; decrypted file material never enters the outbox. Every Kubernetes action and wait retains
+live Core authorization. Convergence proves the owned Deployment and profile, while Core must
+separately authenticate candidate Describe/Health before publishing runtime readiness.
+
+The `plugin_runtime` test target uses a loopback Kubernetes API fixture by default. Its ignored
+real-cluster test requires explicit `WEBDOCK_PLUGIN_RUNTIME_TEST_KUBECONFIG`,
+`WEBDOCK_PLUGIN_RUNTIME_TEST_CONTEXT` and private `WEBDOCK_PLUGIN_RUNTIME_TEST_CLAIM` paths.
+Only owned `kind-webdock-rust-*`/`k3d-webdock-rust-*` contexts are accepted by default. The exact
+`webdock-dev` context additionally requires `WEBDOCK_PLUGIN_RUNTIME_ALLOW_DEV_K3S=true` and verified
+`https://127.0.0.1:56443`. The claim requires a `test-*` platform identity and a fresh derived
+namespace; the test removes only that namespace using UID/resource-version preconditions.
