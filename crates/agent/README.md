@@ -212,6 +212,30 @@ restart; decrypted file material never enters the outbox. Every Kubernetes actio
 live Core authorization. Convergence proves the owned Deployment and profile, while Core must
 separately authenticate candidate Describe/Health before publishing runtime readiness.
 
+Existing initial spec1 fingerprints and resource names are preserved. Update/rollback spec2 uses a
+namespace derived from platform, plugin and runtime generation, retaining the fixed resource names
+inside it. Each generation has a distinct runtime hostname/SNI and new TLS identity; metadata
+database credentials and the installation sealing key remain stable. Rollback runs the retained
+release as a new generation, never reviving old runtime authority. See the guide's
+[update and rollback flow](../../docs/operations/native-plugin-installation.md#update-and-rollback)
+for explicit disable/drain, API and logical schema high-water requirements. This is not SQL undo.
+
+The dedicated wire-compatible `PluginRuntimePollRequest` carries `max_spec_version`; Poll responses
+carry `supported_spec_version`. Absent/zero means1. The daemon requests2 but advertises capability2
+only after this connection negotiates2, resetting on reconnect so old Core continues seeing1.
+Core also requires the current authenticated capability2 observation and request max2 for lifecycle
+dispatch, including suspension of an old spec1 source; a stale capability2 observation cannot
+authorize a downgraded agent.
+
+Suspension requires the exact retained spec/material and all six owned UIDs before mutation. It
+conditionally writes replicas0 using the Deployment UID/resourceVersion and a metadata-only
+`webdock.dev/suspension-fence` annotation containing SHA256 of the exact serialized lease. A fresh
+lease changes metadata even at replicas0. The agent waits for observed generation and an empty
+Pod list, including terminating/unready Pods, under live guards. Missing custody or an unknown
+writer outcome blocks progression with resources retained; retry does not authorize adoption or
+purge. Stopped generation namespaces remain retained. Compatible code-only signed-OCI/Console
+update/rollback acceptance is in progress and is not claimed by the loopback tests below.
+
 The `plugin_runtime` test target uses a loopback Kubernetes API fixture by default. Its ignored
 real-cluster test requires explicit `WEBDOCK_PLUGIN_RUNTIME_TEST_KUBECONFIG`,
 `WEBDOCK_PLUGIN_RUNTIME_TEST_CONTEXT` and private `WEBDOCK_PLUGIN_RUNTIME_TEST_CLAIM` paths.

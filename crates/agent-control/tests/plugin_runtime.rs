@@ -10,6 +10,7 @@ impl PluginRuntimeBackend for EmptyBackend {
     async fn poll(
         &self,
         _: &AgentIdentity,
+        _: u32,
     ) -> std::result::Result<Option<PluginRuntimeClaim>, Status> {
         Ok(None)
     }

@@ -118,6 +118,23 @@ fn component<'a>(work: &'a InstallWork, name: &str) -> Result<&'a str, Error> {
         .map(String::as_str)
         .ok_or_else(|| "Retained installation material incomplete".into())
 }
+fn seeds_needed(kind: &str, components: &BTreeMap<String, String>) -> Result<(bool, bool), Error> {
+    if !["install", "update", "rollback"].contains(&kind) {
+        return Err("Invalid private installation profile".into());
+    }
+    let masters = ["storagePassword", "sealingKey"]
+        .iter()
+        .filter(|key| components.contains_key(**key))
+        .count();
+    let identity = ["certificate", "privateKey", "certificateSha256"]
+        .iter()
+        .filter(|key| components.contains_key(**key))
+        .count();
+    if (masters != 2 && !(masters == 0 && kind == "install")) || ![0, 3].contains(&identity) {
+        return Err("Retained installation material incomplete".into());
+    }
+    Ok((masters == 0, identity == 0))
+}
 fn guarded_origin(value: &str) -> Result<url::Url, Error> {
     let url = url::Url::parse(value).map_err(|_| "Invalid private callback")?;
     if url.scheme() != "https"
@@ -279,21 +296,34 @@ impl InstallationWorker {
         {
             return Err("Private recipe overrides reserved runtime configuration".into());
         }
-        let namespace = PluginRuntimeSpec::namespace_name(&work.platform_id, &work.plugin_id);
+        let lifecycle = work.kind != "install";
+        let namespace = if lifecycle {
+            PluginRuntimeSpec::namespace_name_v2(
+                &work.platform_id,
+                &work.plugin_id,
+                work.runtime_generation,
+            )
+        } else {
+            PluginRuntimeSpec::namespace_name(&work.platform_id, &work.plugin_id)
+        };
         let host = format!("{namespace}.{}", policy.runtime_domain);
-        if work.components.is_empty() {
-            let identity = issue_runtime_identity(
-                &private_text(&policy.runtime_identity.authority)?,
-                &private_text(&policy.runtime_identity.private_key)?,
-                &host,
-            )?;
-            let seeds = BTreeMap::from([
-                ("storagePassword".into(), random_hex()?),
-                ("sealingKey".into(), random_hex()?),
-                ("certificate".into(), identity.certificate_pem),
-                ("privateKey".into(), identity.private_key_pem),
-                ("certificateSha256".into(), identity.certificate_sha256),
-            ]);
+        let (create_master, create_identity) = seeds_needed(&work.kind, &work.components)?;
+        if create_master || create_identity {
+            let mut seeds = work.components.clone();
+            if create_master {
+                seeds.insert("storagePassword".into(), random_hex()?);
+                seeds.insert("sealingKey".into(), random_hex()?);
+            }
+            if create_identity {
+                let identity = issue_runtime_identity(
+                    &private_text(&policy.runtime_identity.authority)?,
+                    &private_text(&policy.runtime_identity.private_key)?,
+                    &host,
+                )?;
+                seeds.insert("certificate".into(), identity.certificate_pem);
+                seeds.insert("privateKey".into(), identity.private_key_pem);
+                seeds.insert("certificateSha256".into(), identity.certificate_sha256);
+            }
             endpoints
                 .host
                 .persist_install_components(claim, seeds)
@@ -328,7 +358,11 @@ impl InstallationWorker {
                 target.runtime_host.clone(),
                 target.runtime_port,
             )?;
-            let result = provisioner.provision(&plan).await?;
+            let result = if lifecycle {
+                provisioner.retained(&plan).await?
+            } else {
+                provisioner.provision(&plan).await?
+            };
             storage = Some((result.url, ca));
         }
         if !endpoints.host.guard_installation(claim).await? {
@@ -396,7 +430,7 @@ impl InstallationWorker {
             .unwrap_or(&host)
             .to_owned();
         let spec = PluginRuntimeSpec {
-            version: 1,
+            version: if lifecycle { 2 } else { 1 },
             platform_id: work.platform_id.clone(),
             plugin_id: work.plugin_id.clone(),
             runtime_generation: work.runtime_generation,
@@ -559,6 +593,24 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn lifecycle_seed_plan_preserves_masters_and_never_repairs_partial_identity() {
+        let empty = BTreeMap::new();
+        assert_eq!(seeds_needed("install", &empty).unwrap(), (true, true));
+        assert!(seeds_needed("update", &empty).is_err());
+        assert!(seeds_needed("rollback", &empty).is_err());
+        let mut retained = BTreeMap::from([
+            ("storagePassword".into(), "a".repeat(64)),
+            ("sealingKey".into(), "b".repeat(64)),
+        ]);
+        assert_eq!(seeds_needed("update", &retained).unwrap(), (false, true));
+        assert_eq!(seeds_needed("rollback", &retained).unwrap(), (false, true));
+        retained.insert("certificate".into(), "retained".into());
+        assert!(seeds_needed("update", &retained).is_err());
+        retained.insert("privateKey".into(), "retained".into());
+        retained.insert("certificateSha256".into(), "retained".into());
+        assert_eq!(seeds_needed("update", &retained).unwrap(), (false, false));
+    }
     use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
     struct Probe {
         calls: AtomicUsize,

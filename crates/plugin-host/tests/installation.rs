@@ -216,7 +216,8 @@ async fn restricted_install_replay_fencing_promotion_and_retained_retry() {
         .unwrap(),
     );
     let catalog = Arc::new(
-        Catalog::from_bytes(&serde_json::to_vec(&catalog_fixture::catalog()).unwrap()).unwrap(),
+        Catalog::from_bytes(&serde_json::to_vec(&catalog_fixture::with_releases()).unwrap())
+            .unwrap(),
     );
     let host = HostService::new(
         business.clone(),
@@ -435,7 +436,11 @@ async fn restricted_install_replay_fencing_promotion_and_retained_retry() {
     let old = host.claim_installation(None).await.unwrap().unwrap();
     host.persist_install_components(
         &old,
-        BTreeMap::from([("storage-password".into(), "private-fixed-password".into())]),
+        BTreeMap::from([
+            ("storage-password".into(), "private-fixed-password".into()),
+            ("storagePassword".into(), "fixed-master".into()),
+            ("sealingKey".into(), "fixed-sealer".into()),
+        ]),
     )
     .await
     .unwrap();
@@ -612,7 +617,7 @@ async fn restricted_install_replay_fencing_promotion_and_retained_retry() {
         .authenticate_enrolled_agent("42", 1, &"a".repeat(64))
         .await
         .unwrap();
-    let dispatch = host.poll_plugin_runtime(&agent).await.unwrap().unwrap();
+    let dispatch = host.poll_plugin_runtime(&agent, 1).await.unwrap().unwrap();
     assert!(
         host.guard_plugin_runtime(&agent, &dispatch.spec, &dispatch.lease)
             .await
@@ -649,7 +654,7 @@ async fn restricted_install_replay_fencing_promotion_and_retained_retry() {
     );
     sql(&owner,"UPDATE webdock_auth.plugin_operation SET lease_until=now()-interval '1 second' WHERE id=$1",vec![accepted.id.clone().into()]).await;
     assert!(
-        host.poll_plugin_runtime(&agent).await.unwrap().is_none(),
+        host.poll_plugin_runtime(&agent, 1).await.unwrap().is_none(),
         "operator revocation is not an agent transport denial"
     );
     let revoked_checkpoint = PluginRuntimeCheckpoint {
@@ -685,7 +690,7 @@ async fn restricted_install_replay_fencing_promotion_and_retained_retry() {
         .retry_install_with_authority(&principal, &authority, &accepted.id, "retry-authority")
         .await
         .unwrap();
-    let dispatch = host.poll_plugin_runtime(&agent).await.unwrap().unwrap();
+    let dispatch = host.poll_plugin_runtime(&agent, 1).await.unwrap().unwrap();
     assert_eq!(dispatch.spec, spec);
     sql(&owner,"UPDATE webdock_auth.plugin_operation SET lease_until=now()-interval '1 second' WHERE id=$1",vec![accepted.id.clone().into()]).await;
     let obsolete_checkpoint = PluginRuntimeCheckpoint {
@@ -732,7 +737,7 @@ async fn restricted_install_replay_fencing_promotion_and_retained_retry() {
         .await,
         0
     );
-    let dispatch = host.poll_plugin_runtime(&agent).await.unwrap().unwrap();
+    let dispatch = host.poll_plugin_runtime(&agent, 1).await.unwrap().unwrap();
     let checkpoint = PluginRuntimeCheckpoint {
         namespace_uid: Some("ns-uid".into()),
         secret_uid: Some("secret-uid".into()),
@@ -836,7 +841,7 @@ async fn restricted_install_replay_fencing_promotion_and_retained_retry() {
         .await,
         1
     );
-    let dispatch = host.poll_plugin_runtime(&agent).await.unwrap().unwrap();
+    let dispatch = host.poll_plugin_runtime(&agent, 1).await.unwrap().unwrap();
     assert_eq!(dispatch.spec, spec);
     assert!(
         host.complete_plugin_runtime(&agent, &dispatch.spec, &dispatch.lease, &completion)
@@ -862,6 +867,7 @@ async fn restricted_install_replay_fencing_promotion_and_retained_retry() {
         "complete"
     );
     assert!(bindings.runtime("postgres").await.unwrap().is_some());
+    assert_eq!(scalar(&owner,"SELECT schema_high_water AS n FROM webdock_auth.plugin_installation WHERE id='postgres'").await,1,"initial signed release reserves logical schema before execution");
     let policy = host
         .self_service(&principal, Some(&authority), "postgres")
         .await
@@ -928,4 +934,698 @@ async fn restricted_install_replay_fencing_promotion_and_retained_retry() {
         state["status"], "pending",
         "promoted runtime availability remains manageable"
     );
+    // The same real operator/agent flow must preserve generation1 and reserve schema before startup.
+    sql(
+        &owner,
+        "UPDATE webdock_auth.agent_transport_enrollment SET revoked=false",
+        vec![],
+    )
+    .await;
+    sql(&owner,r#"UPDATE webdock_auth.hosting_agent SET observation='{"capabilities":{"pluginRuntimeVersion":2}}'::jsonb"#,vec![]).await;
+    struct NoProbe;
+    #[tonic::async_trait]
+    impl webdock_plugin_host::StateProbe for NoProbe {
+        async fn describe(
+            &self,
+            _: &str,
+            _: u64,
+        ) -> webdock_plugin_protocol::Result<RuntimeDescription> {
+            panic!("disable never probes")
+        }
+    }
+    let state_claim = host.claim_state_operation(None).await.unwrap().unwrap();
+    host.advance_state_operation(&state_claim, &NoProbe)
+        .await
+        .unwrap();
+    let installed = host
+        .installed_with_authority(&principal, &authority)
+        .await
+        .unwrap();
+    let descriptor = catalog
+        .descriptors()
+        .into_iter()
+        .find(|r| r.version == "0.2.0")
+        .unwrap();
+    let update = webdock_plugin_host::UpdateRequest {
+        version: "0.2.0".into(),
+        review_sha256: descriptor.targets[0].review_sha256.clone(),
+        expected_revision: installed[0]["revision"].as_str().unwrap().into(),
+        approved_capabilities: descriptor.capabilities,
+        idempotency_key: "update-1".into(),
+    };
+    for field in ["review", "revision", "capabilities"] {
+        let mut invalid = update.clone();
+        invalid.idempotency_key = format!("invalid-{field}");
+        match field {
+            "review" => invalid.review_sha256 = "0".repeat(64),
+            "revision" => invalid.expected_revision = "0".into(),
+            _ => invalid.approved_capabilities.clear(),
+        }
+        assert!(
+            host.request_update_with_authority(&principal, &authority, "postgres", invalid)
+                .await
+                .is_err(),
+            "reject changed {field}"
+        );
+    }
+    // A writer of schema2 that only reads2 cannot consume the retained schema1.
+    let forward_only = catalog
+        .descriptors()
+        .into_iter()
+        .find(|release| release.version == "0.4.0")
+        .unwrap();
+    let counters = [
+        "SELECT schema_high_water n FROM webdock_auth.plugin_installation WHERE id='postgres'",
+        "SELECT generation n FROM webdock_auth.plugin_installation WHERE id='postgres'",
+        "SELECT count(*)::bigint n FROM webdock_auth.plugin_operation",
+        "SELECT count(*)::bigint n FROM webdock_auth.plugin_runtime",
+        "SELECT count(*)::bigint n FROM webdock_auth.plugin_install_execution",
+    ];
+    let mut before = Vec::new();
+    for query in counters {
+        before.push(scalar(&owner, query).await);
+    }
+    let rejection = host
+        .request_update_with_authority(
+            &principal,
+            &authority,
+            "postgres",
+            webdock_plugin_host::UpdateRequest {
+                version: forward_only.version,
+                review_sha256: forward_only.targets[0].review_sha256.clone(),
+                expected_revision: update.expected_revision.clone(),
+                approved_capabilities: forward_only.capabilities,
+                idempotency_key: "forward-only-reader".into(),
+            },
+        )
+        .await
+        .err()
+        .expect("reader2..2 must reject retained schema1 before reserving schema2");
+    assert_eq!(rejection.code, webdock_plugin_protocol::ErrorCode::Conflict);
+    for (query, expected) in counters.into_iter().zip(before) {
+        assert_eq!(
+            scalar(&owner, query).await,
+            expected,
+            "incompatible old-schema reader cannot mutate lifecycle state"
+        );
+    }
+    assert_eq!(
+        host.installed_with_authority(&principal, &authority)
+            .await
+            .unwrap(),
+        installed
+    );
+    let mut competing = update.clone();
+    competing.idempotency_key = "competing-update".into();
+    let (first, second) = tokio::join!(
+        host.request_update_with_authority(&principal, &authority, "postgres", update.clone()),
+        host.request_update_with_authority(&principal, &authority, "postgres", competing.clone())
+    );
+    assert_eq!(
+        u8::from(first.is_ok()) + u8::from(second.is_ok()),
+        1,
+        "admission serializes lifecycle changes"
+    );
+    let (updated, update) = if let Ok(updated) = first {
+        (updated, update)
+    } else {
+        (second.unwrap(), competing)
+    };
+
+    assert_eq!(updated.kind, "update");
+    assert_eq!(
+        host.request_update_with_authority(&principal, &authority, "postgres", update)
+            .await
+            .unwrap()
+            .id,
+        updated.id
+    );
+    assert_eq!(
+        scalar(
+            &owner,
+            "SELECT count(*)::bigint n FROM webdock_auth.plugin_install_execution"
+        )
+        .await,
+        2
+    );
+    let claim = host.claim_installation(None).await.unwrap().unwrap();
+    let next = host.install_work(&claim).await.unwrap();
+    assert_eq!(next.runtime_generation, 2);
+    assert_eq!(next.source_runtime_generation, Some(1));
+    assert_eq!(next.components["storagePassword"], "fixed-master");
+    assert_eq!(next.components["sealingKey"], "fixed-sealer");
+    assert_eq!(
+        host.installed_with_authority(&principal, &authority)
+            .await
+            .unwrap()[0]["version"],
+        "0.1.0"
+    );
+
+    host.persist_install_components(
+        &claim,
+        BTreeMap::from([("certificate".into(), "new-tls".into())]),
+    )
+    .await
+    .unwrap();
+    assert!(
+        host.persist_install_components(
+            &claim,
+            BTreeMap::from([("storagePassword".into(), "replacement".into())])
+        )
+        .await
+        .is_err()
+    );
+    let (next_spec, _) = prepare_generation(&host, &claim, &next, &spec, &binding).await;
+    assert!(
+        host.poll_plugin_runtime(&agent, 1).await.unwrap().is_none(),
+        "old binary request cannot consume lifecycle despite retained cap2"
+    );
+    let stop = host.poll_plugin_runtime(&agent, 2).await.unwrap().unwrap();
+    assert_eq!(stop.lease.action, PluginRuntimeAction::Suspend);
+    assert_eq!(stop.spec, spec);
+    assert_eq!(stop.checkpoint.as_ref(), Some(&checkpoint));
+    // Capability loss stops mutation, but cannot strand the exact obsolete receipt in an outbox.
+    sql(&owner,r#"UPDATE webdock_auth.hosting_agent SET observation='{"capabilities":{"pluginRuntimeVersion":1}}'::jsonb"#,vec![]).await;
+    assert!(
+        !host
+            .guard_plugin_runtime(&agent, &stop.spec, &stop.lease)
+            .await
+            .unwrap()
+    );
+    assert!(
+        host.complete_plugin_runtime(&agent, &stop.spec, &stop.lease, &completion)
+            .await
+            .unwrap()
+    );
+    assert_eq!(
+        scalar(
+            &owner,
+            "SELECT count(*)::bigint n FROM webdock_auth.plugin_install_execution WHERE stopped"
+        )
+        .await,
+        0
+    );
+    sql(&owner,r#"UPDATE webdock_auth.hosting_agent SET observation='{"capabilities":{"pluginRuntimeVersion":2}}'::jsonb"#,vec![]).await;
+    let retry_update = host
+        .retry_install_with_authority(&principal, &authority, &updated.id, "retry-update")
+        .await
+        .unwrap();
+    assert_eq!(retry_update.kind, "update");
+    let stop = host.poll_plugin_runtime(&agent, 2).await.unwrap().unwrap();
+    assert!(
+        host.complete_plugin_runtime(&agent, &stop.spec, &stop.lease, &completion)
+            .await
+            .unwrap()
+    );
+    let apply = host.poll_plugin_runtime(&agent, 2).await.unwrap().unwrap();
+    assert_eq!(apply.spec, next_spec);
+    assert_eq!(apply.lease.action, PluginRuntimeAction::Apply);
+    assert!(
+        host.complete_plugin_runtime(&agent, &stop.spec, &stop.lease, &completion)
+            .await
+            .unwrap(),
+        "late source exact ACK cannot advance candidate"
+    );
+    assert_eq!(
+        host.install_operation_with_authority(&principal, &authority, &retry_update.id)
+            .await
+            .unwrap()
+            .phase,
+        "deploying"
+    );
+    let candidate_checkpoint = generation_checkpoint(2);
+    let candidate_completion = PluginRuntimeCompletion {
+        outcome: PluginRuntimeOutcome::Succeeded,
+        checkpoint: candidate_checkpoint,
+        converged: true,
+    };
+    assert!(
+        host.complete_plugin_runtime(&agent, &apply.spec, &apply.lease, &candidate_completion)
+            .await
+            .unwrap()
+    );
+    let verify = host.claim_installation(None).await.unwrap().unwrap();
+    sql(
+        &owner,
+        "UPDATE webdock_auth.plugin_install_execution SET stopped=false WHERE runtime_generation=1",
+        vec![],
+    )
+    .await;
+    assert!(
+        host.promote_installation(&verify, generation_proof(&next, "0.2.0"))
+            .await
+            .is_err(),
+        "promotion must recheck predecessor stop proof"
+    );
+    sql(
+        &owner,
+        "UPDATE webdock_auth.plugin_install_execution SET stopped=true WHERE runtime_generation=1",
+        vec![],
+    )
+    .await;
+    host.promote_installation(&verify, generation_proof(&next, "0.2.0"))
+        .await
+        .unwrap();
+    assert_eq!(
+        bindings
+            .runtime("postgres")
+            .await
+            .unwrap()
+            .unwrap()
+            .generation,
+        2
+    );
+    sql(&owner,r#"UPDATE webdock_auth.plugin_install_execution SET supported_features='["create-dedicated","create-shared"]'::jsonb WHERE plugin_id='postgres' AND runtime_generation=1"#,vec![]).await;
+    let policy = host
+        .self_service(&principal, Some(&authority), "postgres")
+        .await
+        .unwrap();
+    assert!(
+        host.set_feature_mode(
+            &principal,
+            Some(&authority),
+            "postgres",
+            "create-shared",
+            "everyone",
+            policy["revision"].as_str().unwrap()
+        )
+        .await
+        .is_err(),
+        "historical supported features never grant current authority"
+    );
+    sql(&owner,r#"UPDATE webdock_auth.plugin_install_execution SET supported_features='["create-dedicated"]'::jsonb WHERE plugin_id='postgres' AND runtime_generation=1"#,vec![]).await;
+
+    assert!(
+        bindings
+            .managed_endpoint("postgres", 1)
+            .await
+            .unwrap()
+            .is_some()
+    );
+    let history = host
+        .release_history_with_authority(&principal, &authority, "postgres")
+        .await
+        .unwrap();
+    assert_eq!(history["currentGeneration"], "2");
+    assert_eq!(history["previousGeneration"], "1");
+    assert_eq!(history["releases"].as_array().unwrap().len(), 2);
+    assert!(!history.to_string().contains("private"));
+    let installed = host
+        .installed_with_authority(&principal, &authority)
+        .await
+        .unwrap();
+    assert_eq!(installed[0]["version"], "0.2.0");
+    assert_eq!(installed[0]["managed"], true);
+    host.request_state_with_authority(
+        &principal,
+        &authority,
+        "postgres",
+        "disabled",
+        installed[0]["revision"].as_str().unwrap(),
+        "disable-v2",
+    )
+    .await
+    .unwrap();
+    let disable = host.claim_state_operation(None).await.unwrap().unwrap();
+    host.advance_state_operation(&disable, &NoProbe)
+        .await
+        .unwrap();
+    let installed = host
+        .installed_with_authority(&principal, &authority)
+        .await
+        .unwrap();
+    let first = catalog
+        .descriptors()
+        .into_iter()
+        .find(|r| r.version == "0.1.0")
+        .unwrap();
+    let rollback = webdock_plugin_host::RollbackRequest {
+        release_generation: "1".into(),
+        review_sha256: first.targets[0].review_sha256.clone(),
+        expected_revision: installed[0]["revision"].as_str().unwrap().into(),
+        approved_capabilities: first.capabilities.clone(),
+        idempotency_key: "rollback-1".into(),
+    };
+    let rolled = host
+        .request_rollback_with_authority(&principal, &authority, "postgres", rollback.clone())
+        .await
+        .unwrap();
+    assert_eq!(rolled.kind, "rollback");
+    let prepare = host.claim_installation(None).await.unwrap().unwrap();
+    let restored = host.install_work(&prepare).await.unwrap();
+    assert_eq!(restored.runtime_generation, 3);
+    assert_eq!(restored.components["storagePassword"], "fixed-master");
+    assert_eq!(restored.components["sealingKey"], "fixed-sealer");
+    prepare_generation(&host, &prepare, &restored, &spec, &binding).await;
+    let stop = host.poll_plugin_runtime(&agent, 2).await.unwrap().unwrap();
+    assert_eq!(stop.spec.runtime_generation, 2);
+    assert!(
+        host.complete_plugin_runtime(&agent, &stop.spec, &stop.lease, &candidate_completion)
+            .await
+            .unwrap()
+    );
+    let apply = host.poll_plugin_runtime(&agent, 2).await.unwrap().unwrap();
+    assert_eq!(apply.spec.runtime_generation, 3);
+    let third_completion = PluginRuntimeCompletion {
+        outcome: PluginRuntimeOutcome::Succeeded,
+        checkpoint: generation_checkpoint(3),
+        converged: true,
+    };
+    assert!(
+        host.complete_plugin_runtime(&agent, &apply.spec, &apply.lease, &third_completion)
+            .await
+            .unwrap()
+    );
+    let verify = host.claim_installation(None).await.unwrap().unwrap();
+    host.promote_installation(&verify, generation_proof(&restored, "0.1.0"))
+        .await
+        .unwrap();
+    assert_eq!(
+        bindings
+            .runtime("postgres")
+            .await
+            .unwrap()
+            .unwrap()
+            .generation,
+        3
+    );
+    assert_eq!(
+        scalar(
+            &owner,
+            "SELECT count(*)::bigint n FROM webdock_auth.plugin_install_execution WHERE stopped"
+        )
+        .await,
+        2
+    );
+    let installed = host
+        .installed_with_authority(&principal, &authority)
+        .await
+        .unwrap();
+    host.request_state_with_authority(
+        &principal,
+        &authority,
+        "postgres",
+        "disabled",
+        installed[0]["revision"].as_str().unwrap(),
+        "disable-v3",
+    )
+    .await
+    .unwrap();
+    let disable = host.claim_state_operation(None).await.unwrap().unwrap();
+    host.advance_state_operation(&disable, &NoProbe)
+        .await
+        .unwrap();
+    let installed = host
+        .installed_with_authority(&principal, &authority)
+        .await
+        .unwrap();
+    let compatible = catalog
+        .descriptors()
+        .into_iter()
+        .find(|r| r.version == "0.2.0")
+        .unwrap();
+    let unknown = host
+        .request_update_with_authority(
+            &principal,
+            &authority,
+            "postgres",
+            webdock_plugin_host::UpdateRequest {
+                version: "0.2.0".into(),
+                review_sha256: compatible.targets[0].review_sha256.clone(),
+                expected_revision: installed[0]["revision"].as_str().unwrap().into(),
+                approved_capabilities: compatible.capabilities,
+                idempotency_key: "unknown-start".into(),
+            },
+        )
+        .await
+        .unwrap();
+    let claim = host.claim_installation(None).await.unwrap().unwrap();
+    let work = host.install_work(&claim).await.unwrap();
+    prepare_generation(&host, &claim, &work, &spec, &binding).await;
+    let stop = host.poll_plugin_runtime(&agent, 2).await.unwrap().unwrap();
+    assert_eq!(stop.spec.runtime_generation, 3);
+    assert!(
+        host.complete_plugin_runtime(&agent, &stop.spec, &stop.lease, &third_completion)
+            .await
+            .unwrap()
+    );
+    let apply = host.poll_plugin_runtime(&agent, 2).await.unwrap().unwrap();
+    assert_eq!(apply.spec.runtime_generation, 4);
+    let uncertain = PluginRuntimeCompletion {
+        outcome: PluginRuntimeOutcome::NeedsReconciliation,
+        checkpoint: PluginRuntimeCheckpoint {
+            namespace_uid: generation_checkpoint(4).namespace_uid,
+            ..Default::default()
+        },
+        converged: false,
+    };
+    assert!(
+        host.complete_plugin_runtime(&agent, &apply.spec, &apply.lease, &uncertain)
+            .await
+            .unwrap()
+    );
+    let installed = host
+        .installed_with_authority(&principal, &authority)
+        .await
+        .unwrap();
+    let mut refused = rollback.clone();
+    refused.idempotency_key = "unknown-custody-rollback".into();
+    refused.expected_revision = installed[0]["revision"].as_str().unwrap().into();
+    assert!(
+        host.request_rollback_with_authority(&principal, &authority, "postgres", refused)
+            .await
+            .is_err(),
+        "unknown candidate writer requires complete custody"
+    );
+    let retry = host
+        .retry_install_with_authority(&principal, &authority, &unknown.id, "reconcile-unknown")
+        .await
+        .unwrap();
+    let apply = host.poll_plugin_runtime(&agent, 2).await.unwrap().unwrap();
+    assert_eq!(apply.spec.runtime_generation, 4);
+    let fourth_completion = PluginRuntimeCompletion {
+        outcome: PluginRuntimeOutcome::Succeeded,
+        checkpoint: generation_checkpoint(4),
+        converged: true,
+    };
+    assert!(
+        host.complete_plugin_runtime(&agent, &apply.spec, &apply.lease, &fourth_completion)
+            .await
+            .unwrap()
+    );
+    let verify = host.claim_installation(None).await.unwrap().unwrap();
+    host.fail_installation(&verify, "candidate_rejected", true)
+        .await
+        .unwrap();
+    let installed = host
+        .installed_with_authority(&principal, &authority)
+        .await
+        .unwrap();
+    let mut recovered = rollback.clone();
+    recovered.idempotency_key = "recover-failed-candidate".into();
+    recovered.expected_revision = installed[0]["revision"].as_str().unwrap().into();
+    host.request_rollback_with_authority(&principal, &authority, "postgres", recovered)
+        .await
+        .unwrap();
+    let claim = host.claim_installation(None).await.unwrap().unwrap();
+    let work = host.install_work(&claim).await.unwrap();
+    prepare_generation(&host, &claim, &work, &spec, &binding).await;
+    let stop = host.poll_plugin_runtime(&agent, 2).await.unwrap().unwrap();
+    assert_eq!(
+        stop.spec.runtime_generation, 4,
+        "the failed candidate is stopped even though current generation is3"
+    );
+    assert!(
+        host.complete_plugin_runtime(&agent, &stop.spec, &stop.lease, &fourth_completion)
+            .await
+            .unwrap()
+    );
+    let apply = host.poll_plugin_runtime(&agent, 2).await.unwrap().unwrap();
+    assert_eq!(apply.spec.runtime_generation, 5);
+    let fifth_completion = PluginRuntimeCompletion {
+        outcome: PluginRuntimeOutcome::Succeeded,
+        checkpoint: generation_checkpoint(5),
+        converged: true,
+    };
+    assert!(
+        host.complete_plugin_runtime(&agent, &apply.spec, &apply.lease, &fifth_completion)
+            .await
+            .unwrap()
+    );
+    let verify = host.claim_installation(None).await.unwrap().unwrap();
+    host.promote_installation(&verify, generation_proof(&work, "0.1.0"))
+        .await
+        .unwrap();
+    assert_eq!(
+        host.install_operation_with_authority(&principal, &authority, &retry.id)
+            .await
+            .unwrap()
+            .status,
+        webdock_plugin_host::OperationStatus::Failed
+    );
+    let installed = host
+        .installed_with_authority(&principal, &authority)
+        .await
+        .unwrap();
+    host.request_state_with_authority(
+        &principal,
+        &authority,
+        "postgres",
+        "disabled",
+        installed[0]["revision"].as_str().unwrap(),
+        "disable-v5",
+    )
+    .await
+    .unwrap();
+    let disable = host.claim_state_operation(None).await.unwrap().unwrap();
+    host.advance_state_operation(&disable, &NoProbe)
+        .await
+        .unwrap();
+    let installed = host
+        .installed_with_authority(&principal, &authority)
+        .await
+        .unwrap();
+    let advanced = catalog
+        .descriptors()
+        .into_iter()
+        .find(|r| r.version == "0.3.0")
+        .unwrap();
+    let advanced = host
+        .request_update_with_authority(
+            &principal,
+            &authority,
+            "postgres",
+            webdock_plugin_host::UpdateRequest {
+                version: "0.3.0".into(),
+                review_sha256: advanced.targets[0].review_sha256.clone(),
+                expected_revision: installed[0]["revision"].as_str().unwrap().into(),
+                approved_capabilities: advanced.capabilities,
+                idempotency_key: "reserve-schema2".into(),
+            },
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        scalar(
+            &owner,
+            "SELECT schema_high_water n FROM webdock_auth.plugin_installation WHERE id='postgres'"
+        )
+        .await,
+        2
+    );
+    let preparing = host.claim_installation(None).await.unwrap().unwrap();
+    host.fail_installation(&preparing, "before_start", true)
+        .await
+        .unwrap();
+    assert_eq!(scalar(&owner,"SELECT count(*)::bigint n FROM webdock_auth.plugin_install_execution WHERE runtime_generation=6 AND apply_dispatched").await,0);
+    let installed = host
+        .installed_with_authority(&principal, &authority)
+        .await
+        .unwrap();
+    let mut incompatible = rollback;
+    incompatible.expected_revision = installed[0]["revision"].as_str().unwrap().into();
+    incompatible.idempotency_key = "incompatible-rollback".into();
+    assert!(
+        host.request_rollback_with_authority(&principal, &authority, "postgres", incompatible)
+            .await
+            .is_err()
+    );
+    assert_eq!(
+        scalar(
+            &owner,
+            "SELECT count(*)::bigint n FROM webdock_auth.plugin_runtime"
+        )
+        .await,
+        6
+    );
+    assert_eq!(
+        host.install_operation_with_authority(&principal, &authority, &advanced.id)
+            .await
+            .unwrap()
+            .status,
+        webdock_plugin_host::OperationStatus::Blocked
+    );
+    let history = host
+        .release_history_with_authority(&principal, &authority, "postgres")
+        .await
+        .unwrap();
+    assert_eq!(history["schemaHighWater"], 2);
+    assert!(owner.execute_unprepared("UPDATE webdock_auth.plugin_installation SET schema_high_water=1 WHERE id='postgres'").await.is_err(),"schema watermark cannot move backwards even when work failed");
+
+    assert_eq!(
+        history["releases"][1]["rollbackBlocker"],
+        "schema_incompatible"
+    );
+}
+
+fn generation_checkpoint(generation: u64) -> PluginRuntimeCheckpoint {
+    let uid = |name: &str| Some(format!("{name}-{generation}"));
+    PluginRuntimeCheckpoint {
+        namespace_uid: uid("ns"),
+        secret_uid: uid("secret"),
+        deployment_uid: uid("deployment"),
+        service_uid: uid("service"),
+        network_policy_uid: uid("policy"),
+        route_uid: uid("route"),
+    }
+}
+fn generation_proof(work: &webdock_plugin_host::InstallWork, version: &str) -> RuntimeDescription {
+    RuntimeDescription {
+        manifest: work.manifest_bytes.as_bytes().to_vec(),
+        plugin_id: "postgres".into(),
+        version: version.into(),
+        generation: work.runtime_generation,
+        protocol_version: 1,
+        peer: webdock_plugin_runtime::PeerIdentity::Unix {
+            uid: rustix::process::geteuid().as_raw(),
+        },
+    }
+}
+async fn prepare_generation(
+    host: &HostService,
+    claim: &webdock_plugin_host::InstallClaim,
+    work: &webdock_plugin_host::InstallWork,
+    template: &PluginRuntimeSpec,
+    binding: &RuntimeBinding,
+) -> (PluginRuntimeSpec, RuntimeBinding) {
+    let mut spec = template.clone();
+    spec.version = 2;
+    spec.runtime_generation = work.runtime_generation;
+    spec.manifest_sha256 = work.manifest_sha256.clone();
+    spec.image = work.image.clone();
+    spec.namespace =
+        PluginRuntimeSpec::namespace_name_v2("fixture", "postgres", work.runtime_generation);
+    let files: BTreeMap<String, String> = MATERIAL_FILES
+        .iter()
+        .map(|name| {
+            (
+                (*name).into(),
+                if *name == "manifest.json" {
+                    work.manifest_bytes.clone()
+                } else {
+                    format!("private-{name}-{}", work.runtime_generation)
+                },
+            )
+        })
+        .collect();
+    spec.material_sha256 = PluginRuntimeMaterial {
+        files: files.clone(),
+    }
+    .fingerprint()
+    .unwrap();
+    let mut binding = binding.clone();
+    binding.generation = work.runtime_generation;
+    binding.namespace = spec.namespace.clone();
+    host.prepare_installation(
+        claim,
+        PreparedInstallation {
+            spec: serde_json::to_value(&spec).unwrap(),
+            files,
+            binding: binding.clone(),
+            endpoint: json!({"generation":work.runtime_generation,"private":"endpoint"}),
+        },
+    )
+    .await
+    .unwrap();
+    (spec, binding)
 }

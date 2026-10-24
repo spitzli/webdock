@@ -91,15 +91,16 @@ pub trait StateProbe: Send + Sync {
 fn snapshot(row: &sea_orm::QueryResult) -> Result<OperationSnapshot> {
     let checkpoint: Value = row.try_get("", "checkpoint").map_err(db_error)?;
     Ok(OperationSnapshot {
-        kind: if row
+        kind: match row
             .try_get::<Option<String>>("", "kind")
             .ok()
             .flatten()
-            .is_some_and(|kind| kind == "install" || kind == "installRetry")
+            .as_deref()
         {
-            "install"
-        } else {
-            "state"
+            Some("install" | "installRetry") => "install",
+            Some("update" | "updateRetry") => "update",
+            Some("rollback" | "rollbackRetry") => "rollback",
+            _ => "state",
         },
         id: row.try_get("", "id").map_err(db_error)?,
         plugin_id: row.try_get("", "plugin_id").map_err(db_error)?,
@@ -297,6 +298,7 @@ impl HostService {
         let baseline = if request.desired == Availability::Enabled {
             let metadata = self.metadata(&tx, &lease.plugin, None).await?;
             metadata.manifest.require_action_only_lifecycle()?;
+            self.require_current_reader(&tx, &lease.plugin).await?;
             let binding = self.binding(&lease.plugin, &metadata).await?;
             Some((
                 runtime_fingerprint(&metadata, &binding)?,
@@ -328,6 +330,7 @@ impl HostService {
         let tx = self.controller().await?;
         self.state_lock(&tx, lease).await?;
         if let (Some((fingerprint, _)), Some(proof)) = (baseline, description) {
+            self.require_current_reader(&tx, &lease.plugin).await?;
             let fresh = self.metadata(&tx, &lease.plugin, None).await?;
             let binding = self.binding(&lease.plugin, &fresh).await?;
             if fingerprint != runtime_fingerprint(&fresh, &binding)? {

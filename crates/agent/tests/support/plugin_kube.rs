@@ -12,6 +12,10 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 pub struct State {
     pub objects: Mutex<BTreeMap<String, Value>>,
     pub creates: AtomicUsize,
+    pub patches: AtomicUsize,
+    pub pod_lists: AtomicUsize,
+    pub pods: Mutex<Vec<Value>>,
+    pub drain_pods_on_list: AtomicBool,
     pub lost_deployment: AtomicBool,
     pub revoke_on_secret: AtomicBool,
     pub revoked: AtomicBool,
@@ -117,6 +121,13 @@ async fn serve(mut stream: tokio::net::TcpStream, state: Arc<State>) -> std::io:
 fn respond(state: &State, method: &str, path: &str, mut input: Value) -> (u16, Value) {
     let mut objects = state.objects.lock().unwrap();
     match method {
+        "GET" if path.ends_with("/pods") => {
+            state.pod_lists.fetch_add(1, Ordering::SeqCst);
+            let mut pods = state.pods.lock().unwrap();
+            let items = pods.clone();
+            if state.drain_pods_on_list.load(Ordering::SeqCst) { pods.clear(); }
+            (200, json!({"apiVersion":"v1","kind":"PodList","metadata":{"resourceVersion":"1"},"items":items}))
+        },
         "GET"=>objects.get(path).cloned().map_or_else(||(404,json!({"kind":"Status","apiVersion":"v1","status":"Failure","reason":"NotFound","code":404})),|v|(200,v)),
         "POST"=> {
             let key=format!("{path}/{}",input["metadata"]["name"].as_str().unwrap());
@@ -138,7 +149,23 @@ fn respond(state: &State, method: &str, path: &str, mut input: Value) -> (u16, V
         "PATCH"=> {
             let Some(object)=objects.get_mut(path) else {return(404,json!({"kind":"Status","apiVersion":"v1","code":404}))};
             if input["metadata"]["uid"]!=object["metadata"]["uid"]||input["metadata"]["resourceVersion"]!=object["metadata"]["resourceVersion"] {return(409,json!({"kind":"Status","apiVersion":"v1","code":409}));}
-            object["spec"]["replicas"]=input["spec"]["replicas"].clone();object["metadata"]["generation"]=2.into();object["metadata"]["resourceVersion"]="2".into();converge(object);(200,object.clone())
+            state.patches.fetch_add(1, Ordering::SeqCst);
+            let changed = object["spec"]["replicas"] != input["spec"]["replicas"];
+            let annotations_changed = input["metadata"]["annotations"].as_object().is_some_and(|a| a.iter().any(|(key,value)| object["metadata"]["annotations"].get(key) != Some(value)));
+            if changed || annotations_changed {
+                let rv = object["metadata"]["resourceVersion"].as_str().unwrap().parse::<u64>().unwrap() + 1;
+                object["metadata"]["resourceVersion"] = rv.to_string().into();
+                if changed {
+                    let generation = object["metadata"]["generation"].as_u64().unwrap() + 1;
+                    object["metadata"]["generation"] = generation.into();
+                }
+                object["spec"]["replicas"] = input["spec"]["replicas"].clone();
+                if let Some(annotations) = input["metadata"]["annotations"].as_object() {
+                    for (k,v) in annotations { object["metadata"]["annotations"][k] = v.clone(); }
+                }
+                converge(object);
+            }
+            (200,object.clone())
         },
         _=>(405,json!({"kind":"Status","apiVersion":"v1","code":405})),
     }

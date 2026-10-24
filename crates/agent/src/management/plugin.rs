@@ -228,16 +228,25 @@ impl Daemon {
         let response = session
             .plugin_client
             .clone()
-            .poll_plugin_runtime(request(wire::PollRequest {
+            .poll_plugin_runtime(request(wire::PluginRuntimePollRequest {
                 identity: Some(session.identity.clone()),
+                max_spec_version: 2,
             }))
             .await;
         let dispatch = match response {
             Ok(response) => {
+                let dispatch = response.into_inner();
+                let version = wire::plugin::normalize_spec_version(dispatch.supported_spec_version)
+                    .map_err(|_| {
+                        AgentError::Configuration("Unsupported plugin runtime specification")
+                    })?;
+                session
+                    .plugin_spec_version
+                    .store(version as u8, Ordering::SeqCst);
                 session
                     .plugin_domain
                     .store(DOMAIN_AVAILABLE, Ordering::SeqCst);
-                response.into_inner()
+                dispatch
             }
             Err(status) if status.code() == tonic::Code::Unimplemented => {
                 session
@@ -251,7 +260,9 @@ impl Daemon {
             return Ok(false);
         };
         let claim = plugin_claim(&command, self.config.generation)?;
-        if claim.spec.platform_id != self.config.installation {
+        if claim.spec.platform_id != self.config.installation
+            || claim.spec.version > session.plugin_spec_version.load(Ordering::SeqCst)
+        {
             return Err(ExecutionError::Ownership.into());
         }
         PluginRuntimeAuthority::guard(self.authority.as_ref(), &claim).await?;

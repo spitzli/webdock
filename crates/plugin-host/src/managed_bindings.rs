@@ -39,13 +39,21 @@ impl ManagedBindings {
             Some(SecretCipher::new(secret).map_err(|_| invalid("Binding encryption required"))?);
         Ok(self)
     }
+    async fn managed(&self, plugin: &str) -> Result<bool> {
+        let tx = self.worker.begin().await.map_err(db_error)?;
+        self.scopes.controller(&tx).await?;
+        let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT EXISTS(SELECT 1 FROM webdock_auth.plugin_install_execution WHERE plugin_id=$1) AS managed",[plugin.into()])).await.map_err(db_error)?.ok_or_else(unavailable)?;
+        let managed = row.try_get("", "managed").map_err(db_error)?;
+        tx.commit().await.map_err(db_error)?;
+        Ok(managed)
+    }
     async fn metadata(&self, plugin: &str, generation: Option<u64>) -> Result<Option<Value>> {
         if !crate::slug(plugin) || generation.is_some_and(|g| g == 0 || g > 9_007_199_254_740_991) {
             return Err(invalid("Invalid managed runtime"));
         }
         let tx = self.worker.begin().await.map_err(db_error)?;
         self.scopes.controller(&tx).await?;
-        let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT to_jsonb(e) AS execution,p.current_generation,p.runtime AS installation_runtime,r.status FROM webdock_auth.plugin_install_execution e JOIN webdock_auth.plugin_installation p ON p.id=e.plugin_id JOIN webdock_auth.plugin_runtime r ON r.plugin_id=e.plugin_id AND r.generation=e.runtime_generation WHERE e.plugin_id=$1 AND ($2::bigint IS NULL OR e.runtime_generation=$2::bigint)",[plugin.into(),generation.map(|g|g as i64).into()])).await.map_err(db_error)?;
+        let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT to_jsonb(e) AS execution,p.current_generation,p.runtime AS installation_runtime,r.status FROM webdock_auth.plugin_install_execution e JOIN webdock_auth.plugin_installation p ON p.id=e.plugin_id JOIN webdock_auth.plugin_runtime r ON r.plugin_id=e.plugin_id AND r.generation=e.runtime_generation WHERE e.plugin_id=$1 AND e.runtime_generation=coalesce($2::bigint,p.current_generation)",[plugin.into(),generation.map(|g|g as i64).into()])).await.map_err(db_error)?;
         let result = match row {
             Some(row) => {
                 let mut value: Value = row.try_get("", "execution").map_err(db_error)?;
@@ -71,7 +79,11 @@ impl ManagedBindings {
             return Err(invalid("Invalid managed runtime"));
         }
         let fallback = self.fallback.runtime(plugin).await?;
-        let Some(value) = self.metadata(plugin, None).await? else {
+        let value = self.metadata(plugin, Some(generation)).await?;
+        if fallback.is_some() && self.managed(plugin).await? {
+            return Err(invalid("Managed and file runtime enrollment collide"));
+        }
+        let Some(value) = value else {
             return Ok(None);
         };
         if fallback.is_some() {
@@ -96,6 +108,9 @@ impl ManagedBindings {
 impl RuntimeBindings for ManagedBindings {
     async fn runtime(&self, plugin: &str) -> Result<Option<RuntimeBinding>> {
         let fallback = self.fallback.runtime(plugin).await?;
+        if fallback.is_some() && self.managed(plugin).await? {
+            return Err(invalid("Managed and file runtime enrollment collide"));
+        }
         let Some(value) = self.metadata(plugin, None).await? else {
             return Ok(fallback);
         };

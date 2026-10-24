@@ -92,6 +92,8 @@ pub struct CatalogDescriptor {
     pub supported_features: Vec<String>,
     pub targets: Vec<CatalogTargetDescriptor>,
     pub configuration_schema: Value,
+    pub schema_version: u64,
+    pub readable_schema: Value,
 }
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -290,6 +292,8 @@ impl Catalog {
                     })
                     .collect(),
                 configuration_schema: e.manifest.as_json()["configuration"].clone(),
+                schema_version: e.manifest.as_json()["schemaVersion"].as_u64().unwrap(),
+                readable_schema: e.manifest.as_json()["readableSchema"].clone(),
             })
             .collect()
     }

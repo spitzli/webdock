@@ -14,6 +14,9 @@ use support::*;
 use tower::ServiceExt;
 const CATALOG: &str = "/api/console/plugins/catalog";
 const INSTALL: &str = "/api/console/plugins/install";
+const RELEASES: &str = "/api/console/plugins/postgres/releases";
+const UPDATE: &str = "/api/console/plugins/postgres/update";
+const ROLLBACK: &str = "/api/console/plugins/postgres/rollback";
 
 async fn call(
     app: &Router,
@@ -86,6 +89,131 @@ async fn request(
 }
 fn input(descriptor: &Value) -> Value {
     json!({"catalogID":descriptor["catalogID"],"version":descriptor["version"],"reviewSha256":descriptor["targets"][0]["reviewSha256"],"targetID":"local-eu","configuration":{},"approvedCapabilities":descriptor["capabilities"],"idempotencyKey":"http-install"})
+}
+
+// Removing a route's transport/strict DTO checks must make these actual router calls fail.
+async fn release_transport_guards(app: &Router, cookie: &str, update: &Value, rollback: &Value) {
+    for (method, path, body) in [
+        ("GET", RELEASES, None),
+        ("POST", UPDATE, Some(update)),
+        ("POST", ROLLBACK, Some(rollback)),
+    ] {
+        assert_eq!(
+            call(
+                app,
+                method,
+                path,
+                None,
+                "localhost:3120",
+                Some(ORIGIN),
+                body
+            )
+            .await
+            .0,
+            StatusCode::UNAUTHORIZED,
+            "unauthenticated {method} {path}"
+        );
+        assert_eq!(
+            call(
+                app,
+                method,
+                path,
+                Some(cookie),
+                "localhost:3130",
+                Some(ORIGIN),
+                body
+            )
+            .await
+            .0,
+            StatusCode::NOT_FOUND,
+            "wrong Host {method} {path}"
+        );
+    }
+    for (path, body) in [(UPDATE, update), (ROLLBACK, rollback)] {
+        for origin in [None, Some("https://attacker.invalid")] {
+            assert_eq!(
+                call(
+                    app,
+                    "POST",
+                    path,
+                    Some(cookie),
+                    "localhost:3120",
+                    origin,
+                    Some(body)
+                )
+                .await
+                .0,
+                StatusCode::FORBIDDEN,
+                "mutation Origin {path}"
+            );
+        }
+        for field in [
+            "_authority",
+            "image",
+            "manifestRaw",
+            "keys",
+            "recipe",
+            "endpoint",
+            "targetPolicy",
+            "targetID",
+            "configuration",
+            "files",
+            "runtime",
+        ] {
+            let mut injected = body.clone();
+            injected[field] = json!({"value":"FIXTURE_PRIVATE_INJECTED"});
+            assert_eq!(
+                request(app, "POST", path, cookie, Some(&injected)).await.0,
+                StatusCode::BAD_REQUEST,
+                "private or server-owned field {field} in {path}"
+            );
+        }
+        let mut malformed = body.clone();
+        malformed["expectedRevision"] = json!(1);
+        assert_eq!(
+            request(app, "POST", path, cookie, Some(&malformed)).await.0,
+            StatusCode::BAD_REQUEST,
+            "decimal revision must remain a string"
+        );
+        assert_eq!(
+            request(app, "POST", path, cookie, Some(&json!({}))).await.0,
+            StatusCode::BAD_REQUEST,
+            "required reviewed intent {path}"
+        );
+        assert_eq!(
+            request(app, "POST", path, cookie, Some(body)).await.0,
+            StatusCode::CONFLICT,
+            "uninstalled release change {path}"
+        );
+    }
+    assert_eq!(
+        request(
+            app,
+            "GET",
+            "/api/console/plugins/missing-plugin/releases",
+            cookie,
+            None
+        )
+        .await
+        .0,
+        StatusCode::FORBIDDEN,
+        "unknown plugin exposes no history"
+    );
+    for (suffix, body) in [("update", update), ("rollback", rollback)] {
+        assert_eq!(
+            request(
+                app,
+                "POST",
+                &format!("/api/console/plugins/missing-plugin/{suffix}"),
+                cookie,
+                Some(body)
+            )
+            .await
+            .0,
+            StatusCode::CONFLICT,
+            "unknown plugin cannot allocate a lifecycle operation"
+        );
+    }
 }
 
 #[tokio::test]
@@ -173,6 +301,9 @@ async fn restricted_http_installation_guards_private_data_and_idempotent_retry()
     assert!(!public.contains(fixture.catalog["keys"][0]["key"]["x"].as_str().unwrap()));
     assert!(!public.contains(fixture.catalog["releases"][0]["jws"].as_str().unwrap()));
     let command = input(&rows[0]);
+    let update = json!({"version":rows[0]["version"],"reviewSha256":rows[0]["targets"][0]["reviewSha256"],"expectedRevision":"0","approvedCapabilities":rows[0]["capabilities"],"idempotencyKey":"http-update"});
+    let rollback = json!({"releaseGeneration":"1","reviewSha256":rows[0]["targets"][0]["reviewSha256"],"expectedRevision":"0","approvedCapabilities":rows[0]["capabilities"],"idempotencyKey":"http-rollback"});
+
     for (invalidate, restore) in [
         (
             "UPDATE webdock_auth.hosting_agent SET revoked=true",
@@ -365,6 +496,37 @@ async fn restricted_http_installation_guards_private_data_and_idempotent_retry()
         0
     );
     let portal = fixture.first_party_cookie(&fixture.operator_cookie).await;
+    release_transport_guards(&fixture.local, &fixture.operator_cookie, &update, &rollback).await;
+    release_transport_guards(&fixture.first_party, &portal, &update, &rollback).await;
+    for (method, path, body) in [
+        ("GET", RELEASES, None),
+        ("POST", UPDATE, Some(&update)),
+        ("POST", ROLLBACK, Some(&rollback)),
+    ] {
+        assert_eq!(
+            request(
+                &fixture.first_party,
+                method,
+                path,
+                &fixture.operator_cookie,
+                body
+            )
+            .await
+            .0,
+            StatusCode::UNAUTHORIZED,
+            "first-party {path} cannot fall back to native cookie"
+        );
+    }
+    assert_eq!(
+        count(
+            &fixture.owner,
+            "SELECT count(*)::bigint n FROM webdock_auth.plugin_operation"
+        )
+        .await,
+        0,
+        "denied HTTP requests never admit work"
+    );
+
     assert_eq!(
         request(&fixture.first_party, "GET", CATALOG, &portal, None)
             .await
@@ -394,6 +556,26 @@ async fn restricted_http_installation_guards_private_data_and_idempotent_retry()
     .await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(accepted["kind"], "install");
+    for (app, cookie) in [
+        (&fixture.local, &fixture.operator_cookie),
+        (&fixture.first_party, &portal),
+    ] {
+        let (status, history) = request(app, "GET", RELEASES, cookie, None).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(history["pluginID"], "postgres");
+        assert_eq!(history["currentGeneration"], Value::Null);
+        assert_eq!(history["candidateGeneration"], "1");
+        assert_eq!(history["schemaHighWater"], 1);
+        assert_eq!(history["targetID"], "local-eu");
+        assert_eq!(history["releases"].as_array().unwrap().len(), 1);
+        assert_eq!(history["releases"][0]["generation"], "1");
+        assert_eq!(history["releases"][0]["version"], rows[0]["version"]);
+        assert_eq!(history["releases"][0]["rollbackEligible"], false);
+        assert_eq!(
+            history["releases"][0]["rollbackBlocker"],
+            "release_not_promoted"
+        );
+    }
     let id = accepted["id"].as_str().unwrap();
     let operation = format!("/api/console/plugins/operations/{id}");
     let retry = format!("{operation}/retry");
@@ -454,6 +636,9 @@ async fn restricted_http_installation_guards_private_data_and_idempotent_retry()
         ("POST", INSTALL, Some(&command)),
         ("GET", operation.as_str(), None),
         ("POST", retry.as_str(), Some(&retry_body)),
+        ("GET", RELEASES, None),
+        ("POST", UPDATE, Some(&update)),
+        ("POST", ROLLBACK, Some(&rollback)),
     ] {
         assert_eq!(
             request(&fixture.local, method, path, &fixture.customer_cookie, body)
@@ -483,6 +668,9 @@ async fn restricted_http_installation_guards_private_data_and_idempotent_retry()
             ("POST", INSTALL, Some(&command)),
             ("GET", operation.as_str(), None),
             ("POST", retry.as_str(), Some(&retry_body)),
+            ("GET", RELEASES, None),
+            ("POST", UPDATE, Some(&update)),
+            ("POST", ROLLBACK, Some(&rollback)),
         ] {
             assert_eq!(
                 request(&fixture.first_party, method, path, &scoped, body)
@@ -490,6 +678,19 @@ async fn restricted_http_installation_guards_private_data_and_idempotent_retry()
                     .0,
                 StatusCode::FORBIDDEN,
                 "{mode} {method} {path}"
+            );
+        }
+        for (method, path, body) in [
+            ("GET", RELEASES, None),
+            ("POST", UPDATE, Some(&update)),
+            ("POST", ROLLBACK, Some(&rollback)),
+        ] {
+            assert_eq!(
+                request(&fixture.local, method, path, &fixture.scope_cookie, body)
+                    .await
+                    .0,
+                StatusCode::FORBIDDEN,
+                "native {mode} {method} {path}"
             );
         }
     }
@@ -566,6 +767,38 @@ async fn restricted_http_installation_guards_private_data_and_idempotent_retry()
         .0,
         StatusCode::CONFLICT
     );
+    sql(
+        &fixture.owner,
+        "UPDATE webdock_auth.\"user\" SET role='user' WHERE id='operator'",
+        vec![],
+    )
+    .await;
+    for (app, cookie, expected) in [
+        (
+            &fixture.local,
+            &fixture.operator_cookie,
+            StatusCode::FORBIDDEN,
+        ),
+        (&fixture.first_party, &portal, StatusCode::UNAUTHORIZED),
+    ] {
+        for (method, path, body) in [
+            ("GET", RELEASES, None),
+            ("POST", UPDATE, Some(&update)),
+            ("POST", ROLLBACK, Some(&rollback)),
+        ] {
+            assert_eq!(
+                request(app, method, path, cookie, body).await.0,
+                expected,
+                "current operator role is rechecked for {path}"
+            );
+        }
+    }
+    sql(
+        &fixture.owner,
+        "UPDATE webdock_auth.\"user\" SET role='operator' WHERE id='operator'",
+        vec![],
+    )
+    .await;
     assert_eq!(
         count(
             &fixture.owner,

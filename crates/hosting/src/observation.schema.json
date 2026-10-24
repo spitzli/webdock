@@ -177,7 +177,7 @@
         },
         "pluginRuntimeVersion": {
           "type": "number",
-          "const": 1
+          "enum": [1, 2]
         },
         "serviceBindingsVersion": {
           "type": "number",

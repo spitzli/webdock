@@ -32,6 +32,24 @@ pub struct InstallRequest {
     pub approved_capabilities: Vec<String>,
     pub idempotency_key: String,
 }
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct UpdateRequest {
+    pub version: String,
+    pub review_sha256: String,
+    pub expected_revision: String,
+    pub approved_capabilities: Vec<String>,
+    pub idempotency_key: String,
+}
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RollbackRequest {
+    pub release_generation: String,
+    pub review_sha256: String,
+    pub expected_revision: String,
+    pub approved_capabilities: Vec<String>,
+    pub idempotency_key: String,
+}
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InstallSnapshot {
@@ -67,6 +85,8 @@ impl InstallClaim {
     }
 }
 pub struct InstallWork {
+    pub kind: String,
+    pub source_runtime_generation: Option<u64>,
     pub plugin_id: String,
     pub platform_id: String,
     pub runtime_generation: u64,
@@ -104,7 +124,12 @@ fn snapshot(row: &QueryResult) -> Result<InstallSnapshot> {
     Ok(InstallSnapshot {
         id: row.try_get("", "id").map_err(db_error)?,
         plugin_id: row.try_get("", "plugin_id").map_err(db_error)?,
-        kind: "install",
+        kind: operation_kind(
+            row.try_get::<Option<String>>("", "kind")
+                .ok()
+                .flatten()
+                .as_deref(),
+        ),
         status: parsed(json!(
             row.try_get::<String>("", "status").map_err(db_error)?
         ))?,
@@ -192,3 +217,25 @@ mod admission;
 mod agent;
 #[path = "installation/worker.rs"]
 mod worker;
+
+fn operation_kind(kind: Option<&str>) -> &'static str {
+    match kind {
+        Some("update" | "updateRetry") => "update",
+        Some("rollback" | "rollbackRetry") => "rollback",
+        _ => "install",
+    }
+}
+fn lifecycle(v: &Value) -> bool {
+    !v["execution"]["source_runtime_generation"].is_null()
+}
+fn readable(manifest: &Value, high: i64) -> bool {
+    high > 0
+        && manifest["readableSchema"]["min"]
+            .as_i64()
+            .is_some_and(|v| v <= high)
+        && manifest["readableSchema"]["max"]
+            .as_i64()
+            .is_some_and(|v| v >= high)
+}
+#[path = "installation/releases.rs"]
+mod releases;

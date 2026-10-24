@@ -9,7 +9,14 @@ use wire::plugin::{
 /// Implementations retain operation/spec/actor fences and exact historical receipt deduplication.
 #[tonic::async_trait]
 pub trait PluginRuntimeBackend: Send + Sync {
-    async fn poll(&self, agent: &AgentIdentity) -> Result<Option<PluginRuntimeClaim>, Status>;
+    fn supported_spec_version(&self) -> u32 {
+        1
+    }
+    async fn poll(
+        &self,
+        agent: &AgentIdentity,
+        max_spec_version: u32,
+    ) -> Result<Option<PluginRuntimeClaim>, Status>;
     async fn guard(
         &self,
         agent: &AgentIdentity,
@@ -79,17 +86,27 @@ impl ControlPlane {
 impl wire::plugin_runtime_control_server::PluginRuntimeControl for ControlPlane {
     async fn poll_plugin_runtime(
         &self,
-        request: Request<wire::PollRequest>,
+        request: Request<wire::PluginRuntimePollRequest>,
     ) -> Result<Response<wire::PluginRuntimeDispatch>, Status> {
         let identity = request.get_ref().identity.as_ref();
         let agent = self.authorize(&request, identity).await?;
-        let claim = self.plugin_backend()?.poll(&agent).await?;
+        let backend = self.plugin_backend()?;
+        let supported_spec_version =
+            wire::plugin::normalize_spec_version(backend.supported_spec_version())
+                .map_err(|_| invalid())?;
+        let max_spec_version =
+            wire::plugin::normalize_spec_version(request.get_ref().max_spec_version)
+                .map_err(|_| invalid())?;
+        let claim = backend
+            .poll(&agent, max_spec_version.min(supported_spec_version))
+            .await?;
         let command = claim
             .map(|claim| {
                 claim.validate(now()).map_err(|_| invalid())?;
                 if claim.spec.platform_id != identity.ok_or_else(invalid)?.installation
                     || claim.lease.agent_generation != identity.ok_or_else(invalid)?.generation
                     || claim.spec.cluster_id != agent.cluster_id()
+                    || u32::from(claim.spec.version) > max_spec_version.min(supported_spec_version)
                 {
                     return Err(invalid());
                 }
@@ -116,7 +133,10 @@ impl wire::plugin_runtime_control_server::PluginRuntimeControl for ControlPlane 
             })
             .transpose()?;
         self.authorize(&request, identity).await?;
-        Ok(Response::new(wire::PluginRuntimeDispatch { command }))
+        Ok(Response::new(wire::PluginRuntimeDispatch {
+            command,
+            supported_spec_version,
+        }))
     }
     async fn guard_plugin_runtime(
         &self,

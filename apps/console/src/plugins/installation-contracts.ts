@@ -7,6 +7,8 @@ export const catalogSchema = z.array(z.object({
   capabilities: z.array(z.string().max(128)).max(64), supportedFeatures: z.array(z.string().max(64)).max(64),
   targets: z.array(z.object({ id: z.string().min(1).max(64), label: z.string().min(1).max(160), reviewSha256: digest })).max(100),
   configurationSchema: z.record(z.string(), z.unknown()),
+  schemaVersion: z.number().int().positive().optional(),
+  readableSchema: z.object({ min: z.number().int().positive(), max: z.number().int().positive() }).optional(),
 })).max(1000);
 export type CatalogRelease = z.infer<typeof catalogSchema>[number];
 export const installRequestSchema = z.strictObject({
@@ -18,6 +20,7 @@ export type InstallRequest = z.infer<typeof installRequestSchema>;
 const phaseNames: Record<string, string> = {
   requested: "Installation requested", preparing_storage: "Preparing private storage",
   preparing_configuration: "Preparing runtime configuration", deploying: "Starting runtime",
+  suspending_runtime: "Stopping previous runtime",
   verifying_runtime: "Verifying runtime identity", complete: "Installation complete",
   blocked: "Waiting for operator action", failed: "Installation did not complete",
 };

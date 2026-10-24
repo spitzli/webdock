@@ -332,7 +332,9 @@ mod plugin_runtime_observation_tests {
         observation(&value).unwrap();
         value["capabilities"]["pluginRuntimeVersion"] = json!(1);
         observation(&value).unwrap();
-        for unsupported in [json!(0), json!(2), json!("1"), json!(true)] {
+        value["capabilities"]["pluginRuntimeVersion"] = json!(2);
+        observation(&value).unwrap();
+        for unsupported in [json!(0), json!(3), json!("1"), json!(true)] {
             value["capabilities"]["pluginRuntimeVersion"] = unsupported;
             assert!(observation(&value).is_err());
         }

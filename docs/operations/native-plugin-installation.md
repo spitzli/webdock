@@ -219,6 +219,40 @@ For a failed/blocked initial install, inspect its safe condition and use `{"idem
 
 After success, use the existing self-service settings and supported APIs to create the intended customer/project/resource and verify SQL write/read and retained runtime restart. Installation itself needs no customer or project. Availability disable/draining retains its existing admission semantics; it does not imply storage deletion.
 
+## Update and rollback
+
+For a native managed installation, open **Versions** at `/extensions/{plugin}/releases`. Explicitly disable the extension and wait for the availability operation to finish draining accepted work before requesting a version change. A current write-capable platform operator reviews the signed release and current installation revision; customer, read-only and acting scopes cannot perform this flow. Legacy/file installations without verified managed provenance are unsupported.
+
+Updates and rollbacks retain the existing target, placement policy and public configuration. The target release must accept that configuration, and its declared capabilities, retained approvals and submitted approvals must be the same set. This flow cannot relocate an installation or grant additional capabilities. The release must remain in the reviewed loaded catalog.
+
+| Method/path | Purpose |
+| --- | --- |
+| `GET /api/console/plugins/{id}/releases` | Retained release history, current/candidate generations, schema high-water and rollback eligibility |
+| `POST /api/console/plugins/{id}/update` | Request an exact reviewed catalog version |
+| `POST /api/console/plugins/{id}/rollback` | Select a previously promoted release by its retained generation |
+
+Update request shape; replace placeholders with the current server-provided review and decimal revision:
+
+```json
+{"version":"<REVIEWED_VERSION>","reviewSha256":"<REVIEW_SHA256>","expectedRevision":"<CURRENT_DECIMAL_REVISION>","approvedCapabilities":["plugin.workloads"],"idempotencyKey":"<STABLE_REQUEST_KEY>"}
+```
+
+Rollback uses `releaseGeneration` instead of `version`; the selected generation and revision are decimal strings:
+
+```json
+{"releaseGeneration":"<PROMOTED_DECIMAL_GENERATION>","reviewSha256":"<REVIEW_SHA256>","expectedRevision":"<CURRENT_DECIMAL_REVISION>","approvedCapabilities":["plugin.workloads"],"idempotencyKey":"<STABLE_REQUEST_KEY>"}
+```
+
+Use the exact retained capability set rather than treating the example as an approval default. Repeat the exact body and idempotency key after an uncertain response; changed intent conflicts. Follow the returned latest operation through the existing operation page/API. The promoted release and ordinary bindings change only after Core authenticates the exact candidate and atomically promotes it.
+
+Rollback starts a new monotonically increasing runtime generation from the selected retained release; it never reactivates the old generation. In the simple initial release v1 → release v2 → release v1 sequence, rollback uses runtime generation3. Existing initial spec1 resources keep their original identity. Update/rollback spec2 namespaces derive from platform, plugin and generation, with distinct derived hostnames/SNI and newly issued runtime TLS identities. The installation-owned metadata database, role/password and sealing key remain stable; stopped generation namespaces and material are retained.
+
+Before any candidate starts, the agent suspends each potentially running predecessor or failed candidate using its exact retained spec, material and complete six-object UID checkpoint. It conditionally writes replicas0 with the Deployment UID/resourceVersion and a metadata-only suspension fence derived from the exact lease. A fresh lease advances that fence even if replicas were already zero. Completion requires the resulting Deployment generation to be observed and no remaining Pods, including terminating or unready Pods. Missing/replaced custody or an uncertain writer outcome blocks progression and retains resources. Retry the retained operation under current authority; do not substitute namespaces, regenerate master secrets, adopt foreign objects or purge data.
+
+Lifecycle execution requires agent support2 negotiated through both Poll request `maxSpecVersion` and response `supportedSpecVersion`, plus a current authenticated database capability2 observation. Absent/zero wire versions mean1. New agents advertise capability2 only after this connection negotiates2 and reset negotiation on reconnect. An old agent cannot execute lifecycle work, even if the same enrollment generation still has a stale capability2 observation. This also applies when suspending a retained spec1 source.
+
+Schema compatibility trusts the reviewed signed publisher's logical `schemaVersion` and `readableSchema` declarations. The target must read both the existing high-water H and the reserved `max(H, target.schemaVersion)`. Admission reserves that monotonic bound before startup; guards and promotion recheck it, and enabling a retained reader must respect it. Failure, cancellation and retry never lower the bound. An uncertain start or even a crash before startup may conservatively block an older reader. PostgreSQL's physical SQL migration numbers are a separate domain: rollback performs no SQL undo or down migration, and Describe/Health do not prove physical schema integrity.
+
 ## Runtime material and limits
 
 The fixed native profile creates only its derived owned Namespace, immutable Secret, Deployment, ClusterIP Service, NetworkPolicy and TLS-passthrough TCP route. Isolation is applied before a pod starts. Metadata storage is external: this runtime creates no metadata PVC and has no purge command.
@@ -237,6 +271,6 @@ The same reviewed digest image stages the group-readable source projection in an
 
 Protected checkpoints/receipts contain no decrypted file material and replay before new deployment work after restart. Keep the agent state directory and retained Core encryption/identity material. Inspect safe failure categories, owned UIDs, routing and file metadata; do not dump `runtime.json`, Secret data or private PEMs to diagnose startup.
 
-Update, rollback, purge, general jobs/source builds and automated certificate rotation are future work. Existing legacy product/production verification does not establish acceptance of this new initial installer. Record fresh fixture results and the independent final review before changing that boundary.
+Purge, general jobs/source builds and automated certificate rotation remain future work. The current update/rollback signed-OCI/Console acceptance is a compatible code-only lifecycle exercise and is still in progress; it does not establish physical schema migration or production readiness. Record its fresh fixture results and independent final review separately.
 
 Source contracts: [offline setup](../../crates/control-plane/src/plugin_bootstrap.rs), [catalog](../../crates/plugin-host/src/catalog.rs), [worker](../../crates/control-plane/src/plugin_installation/worker.rs), [agent runtime](../../crates/agent/src/plugin_runtime.rs).

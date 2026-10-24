@@ -160,6 +160,31 @@ impl MetadataProvisioner {
             tls: ca.is_some(),
         })
     }
+    /// Inspect retained ownership only. Unlike initial provisioning, missing markers are not repaired.
+    pub async fn retained(&self, plan: &StoragePlan) -> Result<ProvisionedStorage> {
+        let url = plan.url()?;
+        if !self.tls {
+            webdock_plugin_kit::loopback(&url).map_err(|_| Error::Trust)?;
+        }
+        let client = self.client.lock().await;
+        let row = client.query_opt(
+            "SELECT r.rolsuper,r.rolcreatedb,r.rolcreaterole,r.rolinherit,r.rolreplication,r.rolbypassrls,r.rolcanlogin,pg_catalog.shobj_description(r.oid,'pg_authid'),pg_catalog.shobj_description(d.oid,'pg_database'),EXISTS(SELECT FROM pg_catalog.pg_auth_members m WHERE m.member=r.oid) FROM pg_catalog.pg_database d JOIN pg_catalog.pg_roles r ON r.oid=d.datdba WHERE r.rolname=$1 AND d.datname=$2",
+            &[&plan.role, &plan.database],
+        ).await.map_err(|_| Error::Unavailable)?.ok_or(Error::Ownership)?;
+        if (0..6).any(|i| row.get::<_, bool>(i))
+            || !row.get::<_, bool>(6)
+            || row.get::<_, Option<String>>(7).as_deref() != Some(plan.marker.as_str())
+            || row.get::<_, Option<String>>(8).as_deref() != Some(plan.marker.as_str())
+            || row.get::<_, bool>(9)
+        {
+            return Err(Error::Ownership);
+        }
+        Ok(ProvisionedStorage {
+            url,
+            database: plan.database.clone(),
+            role: plan.role.clone(),
+        })
+    }
     pub async fn provision(&self, plan: &StoragePlan) -> Result<ProvisionedStorage> {
         let url = plan.url()?;
         if !self.tls {

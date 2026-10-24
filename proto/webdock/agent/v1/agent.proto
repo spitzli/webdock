@@ -191,7 +191,7 @@ message WorkloadReport {
 
 // Installation-owned runtimes, independent of customer/project workload ownership.
 service PluginRuntimeControl {
-  rpc PollPluginRuntime(PollRequest) returns (PluginRuntimeDispatch);
+  rpc PollPluginRuntime(PluginRuntimePollRequest) returns (PluginRuntimeDispatch);
   rpc GuardPluginRuntime(PluginRuntimeGuardRequest) returns (GuardReply);
   rpc CheckpointPluginRuntime(PluginRuntimeCheckpointRequest) returns (Ack);
   rpc CompletePluginRuntime(PluginRuntimeReceipt) returns (Ack);
@@ -204,7 +204,13 @@ message PluginRuntimeCommand {
   bytes material_json = 4;
   bytes checkpoint_json = 5;
 }
-message PluginRuntimeDispatch { PluginRuntimeCommand command = 1; }
+// Identity retains PollRequest's wire tag; old clients omit max_spec_version (legacy v1).
+message PluginRuntimePollRequest { AgentIdentity identity = 1; uint32 max_spec_version = 2; }
+message PluginRuntimeDispatch {
+  PluginRuntimeCommand command = 1;
+  // Absent/zero retains the old server's version1 behavior.
+  uint32 supported_spec_version = 2;
+}
 message PluginRuntimeGuardRequest {
   AgentIdentity identity = 1;
   bytes spec_json = 2;

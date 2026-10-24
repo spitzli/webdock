@@ -20,7 +20,7 @@ impl HostService {
     // Release the lookup connection before acquiring canonical authority: auth -> worker/fence.
     pub(super) async fn install_authorization(&self, id: &str) -> Result<DatabaseTransaction> {
         let tx = self.controller().await?;
-        let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT payload FROM webdock_auth.plugin_operation WHERE id=$1 AND payload->>'kind' IN ('install','installRetry')",[id.into()])).await.map_err(db_error)?.ok_or_else(PluginError::denied)?;
+        let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT payload FROM webdock_auth.plugin_operation WHERE id=$1 AND payload->>'kind' IN ('install','installRetry','update','updateRetry','rollback','rollbackRetry')",[id.into()])).await.map_err(db_error)?.ok_or_else(PluginError::denied)?;
         let payload: Value = row.try_get("", "payload").map_err(db_error)?;
         tx.commit().await.map_err(db_error)?;
         self.operator_install_proof(&payload).await
@@ -38,7 +38,7 @@ impl HostService {
         generation: i64,
     ) -> Result<Value> {
         fence(tx, true).await?;
-        let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT to_jsonb(o) AS operation,to_jsonb(e) AS execution,to_jsonb(p) AS installation,to_jsonb(c) AS configuration,to_jsonb(r) AS runtime,to_jsonb(l) AS release FROM webdock_auth.plugin_operation o JOIN webdock_auth.plugin_install_execution e ON e.operation_id=o.id JOIN webdock_auth.plugin_installation p ON p.id=e.plugin_id JOIN webdock_auth.plugin_configuration c ON c.plugin_id=p.id JOIN webdock_auth.plugin_runtime r ON r.plugin_id=p.id AND r.generation=e.runtime_generation JOIN webdock_auth.plugin_release l ON l.plugin_id=p.id AND l.version=p.version WHERE o.id=$1 AND o.generation=$2 AND p.generation=o.generation AND p.kind='external' AND p.state='disabled' AND p.desired_state='enabled' AND p.candidate_generation=e.runtime_generation AND c.revision=e.configuration_revision AND r.configuration_revision=c.revision AND r.image=l.image AND r.version=l.version FOR UPDATE OF p,o,e FOR SHARE OF c,r,l",[id.into(),generation.into()])).await.map_err(db_error)?.ok_or_else(PluginError::denied)?;
+        let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT to_jsonb(o) AS operation,to_jsonb(e) AS execution,to_jsonb(p) AS installation,to_jsonb(c) AS configuration,to_jsonb(r) AS runtime,to_jsonb(l) AS release FROM webdock_auth.plugin_operation o JOIN webdock_auth.plugin_install_execution e ON e.operation_id=o.id JOIN webdock_auth.plugin_installation p ON p.id=e.plugin_id JOIN webdock_auth.plugin_configuration c ON c.plugin_id=p.id JOIN webdock_auth.plugin_runtime r ON r.plugin_id=p.id AND r.generation=e.runtime_generation JOIN webdock_auth.plugin_release l ON l.plugin_id=p.id AND l.version=r.version WHERE o.id=$1 AND o.generation=$2 AND p.generation=o.generation AND p.kind='external' AND p.state='disabled' AND p.desired_state='enabled' AND p.candidate_generation=e.runtime_generation AND c.revision=e.configuration_revision AND r.configuration_revision=c.revision AND r.image=l.image AND r.version=l.version FOR UPDATE OF p,o,e FOR SHARE OF c,r,l",[id.into(),generation.into()])).await.map_err(db_error)?.ok_or_else(PluginError::denied)?;
         let mut value = serde_json::Map::new();
         for key in [
             "operation",
@@ -50,7 +50,7 @@ impl HostService {
         ] {
             value.insert(key.into(), row.try_get::<Value>("", key).map_err(db_error)?);
         }
-        let value = Value::Object(value);
+        let mut value = Value::Object(value);
         if digest(
             value["release"]["manifest_bytes"]
                 .as_str()
@@ -66,12 +66,14 @@ impl HostService {
             .entries
             .get(&(
                 p["id"].as_str().ok_or_else(error)?.into(),
-                p["version"].as_str().ok_or_else(error)?.into(),
+                value["runtime"]["version"]
+                    .as_str()
+                    .ok_or_else(error)?
+                    .into(),
             ))
             .ok_or_else(PluginError::denied)?;
         if entry.manifest_sha256 != value["release"]["manifest_sha256"]
             || value["release"]["image"] != entry.manifest.as_json()["image"]
-            || value["installation"]["image_digest"] != value["release"]["image"]
             || value["release"]["registry_url"] != entry.registry_url
             || value["release"]["signer_key_id"] != entry.kid
             || e["platform_id"] != catalog.platform_id
@@ -90,13 +92,33 @@ impl HostService {
         if e["cluster_id"] != target.cluster_id {
             return Err(PluginError::denied());
         }
-        let original=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT payload->'request' AS request FROM webdock_auth.plugin_operation WHERE plugin_id=$1 AND payload->>'kind'='install' ORDER BY created_at,id LIMIT 1 FOR SHARE",[p["id"].as_str().ok_or_else(error)?.into()])).await.map_err(db_error)?.ok_or_else(PluginError::denied)?;
-        let original: Value = original.try_get("", "request").map_err(db_error)?;
-        if original["configuration"] != value["configuration"]["configuration"]
-            || original["approvedCapabilities"] != value["configuration"]["approved_capabilities"]
+        self.verified_release(
+            tx,
+            p["id"].as_str().ok_or_else(error)?,
+            value["runtime"]["version"].as_str().ok_or_else(error)?,
+            entry,
+        )
+        .await?;
+        if e["configuration_snapshot"]["configuration"] != value["configuration"]["configuration"]
+            || e["configuration_snapshot"]["approvedCapabilities"]
+                != value["configuration"]["approved_capabilities"]
         {
             return Err(PluginError::denied());
         }
+        let high = match p["schema_high_water"].as_i64() {
+            Some(h) => h,
+            None => {
+                let h = self
+                    .initial_schema_baseline(tx, p["id"].as_str().ok_or_else(error)?)
+                    .await?;
+                tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.plugin_installation SET schema_high_water=$2 WHERE id=$1 AND schema_high_water IS NULL",[p["id"].as_str().ok_or_else(error)?.into(),h.into()])).await.map_err(db_error)?;
+                h
+            }
+        };
+        if !readable(entry.manifest.as_json(), high) {
+            return Err(PluginError::denied());
+        }
+        value["installation"]["schema_high_water"] = json!(high);
         Ok(value)
     }
     pub(super) async fn worker_install_guard(
@@ -153,6 +175,16 @@ impl HostService {
         if !enrolled.try_get::<bool>("", "allowed").map_err(db_error)? {
             return Err(PluginError::denied());
         }
+        if lifecycle(&value)
+            && !Self::lifecycle_capability(
+                tx,
+                e["cluster_id"].as_str().ok_or_else(error)?,
+                agent.try_get("", "generation").map_err(db_error)?,
+            )
+            .await?
+        {
+            return Err(PluginError::denied());
+        }
         Ok(value)
     }
     pub async fn claim_installation(&self, plugin: Option<&str>) -> Result<Option<InstallClaim>> {
@@ -162,7 +194,7 @@ impl HostService {
         self.installer()?;
         let tx = self.controller().await?;
         fence(&tx, true).await?;
-        let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT o.id,o.plugin_id,o.generation,o.phase FROM webdock_auth.plugin_operation o JOIN webdock_auth.plugin_install_execution e ON e.operation_id=o.id WHERE o.payload->>'kind' IN ('install','installRetry') AND o.status IN ('pending','running') AND o.phase IN ('requested','preparing_storage','preparing_configuration','verifying_runtime') AND o.available_at<=now() AND (o.lease_until IS NULL OR o.lease_until<=now()) AND ($1::text IS NULL OR o.plugin_id=$1) ORDER BY o.available_at,o.id FOR UPDATE OF o SKIP LOCKED LIMIT 1",[plugin.into()])).await.map_err(db_error)?;
+        let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT o.id,o.plugin_id,o.generation,o.phase FROM webdock_auth.plugin_operation o JOIN webdock_auth.plugin_install_execution e ON e.operation_id=o.id WHERE o.payload->>'kind' IN ('install','installRetry','update','updateRetry','rollback','rollbackRetry') AND o.status IN ('pending','running') AND o.phase IN ('requested','preparing_storage','preparing_configuration','verifying_runtime') AND o.available_at<=now() AND (o.lease_until IS NULL OR o.lease_until<=now()) AND ($1::text IS NULL OR o.plugin_id=$1) ORDER BY o.available_at,o.id FOR UPDATE OF o SKIP LOCKED LIMIT 1",[plugin.into()])).await.map_err(db_error)?;
         let Some(row) = row else {
             tx.commit().await.map_err(db_error)?;
             return Ok(None);
@@ -234,6 +266,8 @@ impl HostService {
             components.insert(name.trim_start_matches("seed.").to_owned(), open(name)?);
         }
         let work = InstallWork {
+            kind: operation_kind(v["operation"]["payload"]["kind"].as_str()).into(),
+            source_runtime_generation: e["source_runtime_generation"].as_u64(),
             plugin_id: claim.plugin.clone(),
             platform_id: e["platform_id"].as_str().ok_or_else(error)?.into(),
             runtime_generation,
@@ -314,7 +348,7 @@ impl HostService {
                 );
             }
         }
-        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.plugin_install_execution SET private_components=$2,updated_at=now() WHERE plugin_id=$1",[claim.plugin.clone().into(),Value::Object(private).into()])).await.map_err(db_error)?;
+        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.plugin_install_execution SET private_components=$2,updated_at=now() WHERE plugin_id=$1 AND runtime_generation=$3",[claim.plugin.clone().into(),Value::Object(private).into(),(generation as i64).into()])).await.map_err(db_error)?;
         tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.plugin_operation SET phase='preparing_configuration',checkpoint=jsonb_build_object('sequence',coalesce((checkpoint->>'sequence')::bigint,0)+1),updated_at=now() WHERE id=$1",[claim.id.clone().into()])).await.map_err(db_error)?;
         tx.commit().await.map_err(db_error)?;
         auth.commit().await.map_err(db_error)
@@ -339,8 +373,8 @@ impl HostService {
         if count != 1 {
             return Err(PluginError::denied());
         }
-        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.plugin_installation SET runtime='failed',blockers=jsonb_build_array(jsonb_build_object('code',$2::text)),revision=revision+1,updated_at=now() WHERE id=$1",[claim.plugin.clone().into(),condition.into()])).await.map_err(db_error)?;
-        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.plugin_runtime SET status='failed' WHERE plugin_id=$1 AND generation=(SELECT runtime_generation FROM webdock_auth.plugin_install_execution WHERE plugin_id=$1)",[claim.plugin.clone().into()])).await.map_err(db_error)?;
+        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.plugin_installation SET runtime=CASE WHEN current_generation IS NULL THEN 'failed' ELSE runtime END,blockers=jsonb_build_array(jsonb_build_object('code',$2::text)),revision=revision+1,updated_at=now() WHERE id=$1",[claim.plugin.clone().into(),condition.into()])).await.map_err(db_error)?;
+        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.plugin_runtime SET status='failed' WHERE plugin_id=$1 AND generation=(SELECT candidate_generation FROM webdock_auth.plugin_installation WHERE id=$1)",[claim.plugin.clone().into()])).await.map_err(db_error)?;
         tx.commit().await.map_err(db_error)
     }
 }
@@ -354,6 +388,7 @@ impl HostService {
         let auth = self.install_authorization(&claim.id).await?;
         let tx = self.controller().await?;
         let v = self.worker_install_guard(&tx, claim, &auth).await?;
+        let v = self.dispatch_install_value(&tx, v).await?;
         let e = &v["execution"];
         let binding: RuntimeBinding = parsed(e["binding"].clone())?;
         let spec: PluginRuntimeSpec = parsed(e["spec"].clone())?;
@@ -393,7 +428,8 @@ impl HostService {
             return Err(PluginError::denied());
         }
         tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.plugin_runtime SET status='ready',observed_at=now() WHERE plugin_id=$1 AND generation=$2",[claim.plugin.clone().into(),(spec.runtime_generation as i64).into()])).await.map_err(db_error)?;
-        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.plugin_installation SET current_generation=candidate_generation,candidate_generation=NULL,state='enabled',desired_state='enabled',runtime='ready',blockers='[]'::jsonb,revision=revision+1,updated_at=now() WHERE id=$1",[claim.plugin.clone().into()])).await.map_err(db_error)?;
+        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.plugin_installation SET previous_generation=current_generation,version=$2,image_digest=$3,current_generation=candidate_generation,candidate_generation=NULL,state='enabled',desired_state='enabled',runtime='ready',blockers='[]'::jsonb,revision=revision+1,updated_at=now() WHERE id=$1",[claim.plugin.clone().into(),v["release"]["version"].as_str().ok_or_else(error)?.into(),v["release"]["image"].as_str().ok_or_else(error)?.into()])).await.map_err(db_error)?;
+        tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.plugin_install_execution SET promoted_at=now() WHERE plugin_id=$1 AND runtime_generation=$2",[claim.plugin.clone().into(),(spec.runtime_generation as i64).into()])).await.map_err(db_error)?;
         tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"UPDATE webdock_auth.plugin_operation SET status='succeeded',phase='complete',claim_token=NULL,lease_until=NULL,checkpoint=jsonb_build_object('sequence',coalesce((checkpoint->>'sequence')::bigint,0)+1),updated_at=now() WHERE id=$1",[claim.id.clone().into()])).await.map_err(db_error)?;
         let result = self.install_snapshot_in(&tx, &claim.id).await?;
         tx.commit().await.map_err(db_error)?;

@@ -114,6 +114,7 @@ export function InstalledExtensions() {
                   </td>
                   <td className={ui.cx(`${ui.td} whitespace-nowrap`)}>
                     {plugin.operationID ? <Link className={ui.cx(ui.button("quiet"), "mr-2")} to="/extensions/operations/$operationID" params={{ operationID: plugin.operationID }}>View operation</Link> : null}
+                    {plugin.managed && !plugin.installRecovery ? <Link className={ui.cx(ui.button("quiet"), "mr-2")} to="/extensions/$plugin/releases" params={{ plugin: plugin.id }}>Versions</Link> : null}
                     {!plugin.installRecovery ? <button
                       className={ui.button()}
                       disabled={plugin.runtime === "starting"}

@@ -151,3 +151,65 @@ fn large_signed_manifest_fits_wire_but_private_file_and_serialized_caps_hold() {
     );
     assert!(material.validate().is_err());
 }
+
+#[test]
+fn generation_namespaces_accept_v2_without_reinterpreting_v1_custody() {
+    let mut spec = fixture().spec;
+    spec.version = 2;
+    spec.runtime_generation = 2;
+    spec.namespace = "wd-plugin-03ef6c37c7cfdd6de366d541".into();
+    spec.validate().unwrap();
+    spec.runtime_generation = 3;
+    assert!(
+        spec.validate().is_err(),
+        "another generation cannot adopt the namespace"
+    );
+    spec.version = 1;
+    assert!(
+        spec.validate().is_err(),
+        "legacy custody keeps its original namespace"
+    );
+    spec.namespace = PluginRuntimeSpec::namespace_name("fixture", "postgres");
+    spec.validate().unwrap();
+}
+
+#[test]
+fn legacy_spec_keeps_its_existing_namespace_and_serialized_fingerprint() {
+    let spec = fixture().spec;
+    assert_eq!(spec.namespace, "wd-plugin-84f085a592d4a0c834cb9e85");
+    assert_eq!(
+        spec.fingerprint().unwrap(),
+        "1369d793803e31dbe79865c68965763699890c7b7fba4ecb387f9858d3664446"
+    );
+}
+
+#[test]
+fn plugin_poll_request_preserves_old_wire_identity_and_bounds_versions() {
+    use prost::Message;
+    use webdock_agent_protocol::{AgentIdentity, PluginRuntimePollRequest, PollRequest};
+    let identity = Some(AgentIdentity {
+        installation: "fixture".into(),
+        agent_id: "agent".into(),
+        generation: 1,
+    });
+    let old = PollRequest {
+        identity: identity.clone(),
+    };
+    let current = PluginRuntimePollRequest {
+        identity: identity.clone(),
+        max_spec_version: 2,
+    };
+    assert_eq!(
+        PollRequest::decode(current.encode_to_vec().as_slice())
+            .unwrap()
+            .identity,
+        identity
+    );
+    let decoded = PluginRuntimePollRequest::decode(old.encode_to_vec().as_slice()).unwrap();
+    assert_eq!(decoded.identity, identity);
+    assert_eq!(normalize_spec_version(decoded.max_spec_version).unwrap(), 1);
+    assert_eq!(normalize_spec_version(2).unwrap(), 2);
+    for invalid in [3, u32::MAX] {
+        assert!(normalize_spec_version(invalid).is_err());
+    }
+}

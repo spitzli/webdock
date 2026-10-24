@@ -26,6 +26,7 @@ export const installationSchema = z.object({
   dependencies: z.array(z.object({ id: pluginID })).max(100),
   operationID: z.string().nullable().optional(),
   installRecovery: z.boolean().default(false),
+  managed: z.boolean().default(false),
 });
 export type Installation = z.infer<typeof installationSchema>;
 export const installedSchema = z.array(installationSchema).max(1000);
@@ -44,7 +45,7 @@ export const extensionReceipt = z.object({
   status: z.enum(["pending", "running", "succeeded", "failed", "blocked"]),
 });
 export const extensionOperation = extensionReceipt.extend({
-  kind: z.enum(["state", "install"]).default("state"),
+  kind: z.enum(["state", "install", "update", "rollback"]).default("state"),
   pluginID,
   phase: z.string(),
   generation: revision,

@@ -139,6 +139,8 @@ struct Session {
     plugin_client: wire::plugin_runtime_control_client::PluginRuntimeControlClient<Channel>,
     #[cfg(feature = "kubernetes")]
     plugin_domain: Arc<std::sync::atomic::AtomicU8>,
+    #[cfg(feature = "kubernetes")]
+    plugin_spec_version: Arc<std::sync::atomic::AtomicU8>,
     identity: wire::AgentIdentity,
     endpoint: ControlEndpoint,
     stamp: String,
@@ -542,6 +544,8 @@ impl Daemon {
             .max_encoding_message_size(wire::MAX_MESSAGE_BYTES),
             #[cfg(feature = "kubernetes")]
             plugin_domain: Arc::new(std::sync::atomic::AtomicU8::new(plugin::DOMAIN_UNKNOWN)),
+            #[cfg(feature = "kubernetes")]
+            plugin_spec_version: Arc::new(std::sync::atomic::AtomicU8::new(1)),
             mail_client: wire::mail_control_client::MailControlClient::new(channel.clone())
                 .max_decoding_message_size(wire::MAX_MESSAGE_BYTES)
                 .max_encoding_message_size(wire::MAX_MESSAGE_BYTES),
@@ -719,7 +723,8 @@ impl Daemon {
                 && self.plugin_runtime.is_some()
                 && session.plugin_domain.load(Ordering::SeqCst) == plugin::DOMAIN_AVAILABLE
             {
-                value["capabilities"]["pluginRuntimeVersion"] = 1.into();
+                value["capabilities"]["pluginRuntimeVersion"] =
+                    session.plugin_spec_version.load(Ordering::SeqCst).into();
             }
             value["capabilities"]["environment"] = snapshot.environment.into();
             value["capabilities"]["volumeQuotas"] = (snapshot.runtime_kind == "docker"

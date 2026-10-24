@@ -78,7 +78,7 @@ impl HostService {
         {
             return Err(unsupported("Initialize plugin installation state offline"));
         }
-        let rows=tx.query_all_raw(Statement::from_string(DbBackend::Postgres,"SELECT jsonb_build_object('id',id,'kind',kind,'revision',revision::text,'desiredState',desired_state,'state',state,'version',version,'imageDigest',image_digest,'runtime',runtime,'blockers',blockers,'dependencies',dependencies,'installRecovery',(plugin_installation.current_generation IS NULL AND EXISTS(SELECT 1 FROM webdock_auth.plugin_install_execution recovery WHERE recovery.plugin_id=plugin_installation.id))) || jsonb_strip_nulls(jsonb_build_object('operationID',(SELECT o.id FROM webdock_auth.plugin_operation o WHERE o.plugin_id=plugin_installation.id ORDER BY o.created_at DESC,o.id DESC LIMIT 1))) AS value FROM webdock_auth.plugin_installation ORDER BY id")).await.map_err(db_error)?;
+        let rows=tx.query_all_raw(Statement::from_string(DbBackend::Postgres,"SELECT jsonb_build_object('id',id,'kind',kind,'revision',revision::text,'desiredState',desired_state,'state',state,'version',version,'imageDigest',image_digest,'runtime',runtime,'blockers',blockers,'dependencies',dependencies,'managed',EXISTS(SELECT 1 FROM webdock_auth.plugin_install_execution m WHERE m.plugin_id=plugin_installation.id),'installRecovery',(plugin_installation.current_generation IS NULL AND EXISTS(SELECT 1 FROM webdock_auth.plugin_install_execution recovery WHERE recovery.plugin_id=plugin_installation.id))) || jsonb_strip_nulls(jsonb_build_object('operationID',(SELECT o.id FROM webdock_auth.plugin_operation o WHERE o.plugin_id=plugin_installation.id ORDER BY o.created_at DESC,o.id DESC LIMIT 1))) AS value FROM webdock_auth.plugin_installation ORDER BY id")).await.map_err(db_error)?;
         rows.into_iter()
             .map(|row| row.try_get("", "value").map_err(db_error))
             .collect()
@@ -154,10 +154,13 @@ impl HostService {
                 "Installation changed; review its current revision",
             ));
         }
-        if current["installRecovery"] == true {
+        if current["installRecovery"] == true || tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT id FROM webdock_auth.plugin_installation WHERE id=$1 AND candidate_generation IS NOT NULL",[id.into()])).await.map_err(db_error)?.is_some() {
             return Err(conflict(
                 "Complete or retry initial installation before changing availability",
             ));
+        }
+        if desired == "enabled" {
+            self.require_current_reader(&tx, id).await?;
         }
         if desired != "enabled"
             && installed.iter().any(|p| {

@@ -4,6 +4,47 @@ use std::sync::Arc;
 use tonic::transport::{Endpoint, Server};
 use webdock_agent_control::{ControlPlane, LocalBinding};
 use webdock_agent_protocol::{self as wire, agent_control_client::AgentControlClient};
+struct NegotiationBackend(std::sync::Mutex<Vec<u32>>);
+#[tonic::async_trait]
+impl webdock_agent_control::PluginRuntimeBackend for NegotiationBackend {
+    fn supported_spec_version(&self) -> u32 {
+        2
+    }
+    async fn poll(
+        &self,
+        _: &webdock_hosting::AgentIdentity,
+        max: u32,
+    ) -> Result<Option<wire::plugin::PluginRuntimeClaim>, tonic::Status> {
+        self.0.lock().unwrap().push(max);
+        Ok(None)
+    }
+    async fn guard(
+        &self,
+        _: &webdock_hosting::AgentIdentity,
+        _: &wire::plugin::PluginRuntimeSpec,
+        _: &wire::plugin::PluginRuntimeLease,
+    ) -> Result<bool, tonic::Status> {
+        Ok(false)
+    }
+    async fn checkpoint(
+        &self,
+        _: &webdock_hosting::AgentIdentity,
+        _: &wire::plugin::PluginRuntimeSpec,
+        _: &wire::plugin::PluginRuntimeLease,
+        _: &wire::plugin::PluginRuntimeCheckpoint,
+    ) -> Result<bool, tonic::Status> {
+        Ok(false)
+    }
+    async fn complete(
+        &self,
+        _: &webdock_hosting::AgentIdentity,
+        _: &wire::plugin::PluginRuntimeSpec,
+        _: &wire::plugin::PluginRuntimeLease,
+        _: &wire::plugin::PluginRuntimeCompletion,
+    ) -> Result<bool, tonic::Status> {
+        Ok(false)
+    }
+}
 async fn db(key: &str) -> DatabaseConnection {
     let raw = std::env::var(key).unwrap();
     let url = url::Url::parse(&raw).unwrap();
@@ -74,6 +115,10 @@ async fn real_transport_enrollment_generation_revocation_and_connectivity_heartb
     )
     .await
     .unwrap();
+    let negotiated_backend = Arc::new(NegotiationBackend(std::sync::Mutex::new(Vec::new())));
+    let versioned_control = control
+        .clone()
+        .with_plugin_runtime(negotiated_backend.clone());
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("control.sock");
     let socket = tokio::net::UnixListener::bind(&path).unwrap();
@@ -134,8 +179,9 @@ async fn real_transport_enrollment_generation_revocation_and_connectivity_heartb
     );
     assert_eq!(
         plugin_client
-            .poll_plugin_runtime(wire::PollRequest {
-                identity: Some(identity.clone())
+            .poll_plugin_runtime(wire::PluginRuntimePollRequest {
+                identity: Some(identity.clone()),
+                max_spec_version: 0,
             })
             .await
             .unwrap_err()
@@ -143,6 +189,59 @@ async fn real_transport_enrollment_generation_revocation_and_connectivity_heartb
         tonic::Code::Unimplemented,
         "unconfigured plugin deployment is an optional unavailable domain"
     );
+    let versioned_path = directory.path().join("plugin-control.sock");
+    let versioned_socket = tokio::net::UnixListener::bind(&versioned_path).unwrap();
+    let (versioned_stop, versioned_shutdown) = tokio::sync::oneshot::channel();
+    let versioned_server = tokio::spawn(async move {
+        Server::builder()
+            .add_service(versioned_control.plugin_runtime_service())
+            .serve_with_incoming_shutdown(
+                tokio_stream::wrappers::UnixListenerStream::new(versioned_socket),
+                async {
+                    let _ = versioned_shutdown.await;
+                },
+            )
+            .await
+            .unwrap();
+    });
+    let versioned_channel = Endpoint::from_shared(format!("unix://{}", versioned_path.display()))
+        .unwrap()
+        .connect()
+        .await
+        .unwrap();
+    let mut versioned_client =
+        wire::plugin_runtime_control_client::PluginRuntimeControlClient::new(versioned_channel);
+    for max_spec_version in [0, 1, 2] {
+        let reply = versioned_client
+            .poll_plugin_runtime(wire::PluginRuntimePollRequest {
+                identity: Some(identity.clone()),
+                max_spec_version,
+            })
+            .await
+            .unwrap()
+            .into_inner();
+        assert_eq!(reply.supported_spec_version, 2);
+        assert!(reply.command.is_none());
+    }
+    assert_eq!(
+        *negotiated_backend.0.lock().unwrap(),
+        vec![1, 1, 2],
+        "old request max remains1 regardless of any stored capability observation"
+    );
+    assert_eq!(
+        versioned_client
+            .poll_plugin_runtime(wire::PluginRuntimePollRequest {
+                identity: Some(identity.clone()),
+                max_spec_version: 3
+            })
+            .await
+            .unwrap_err()
+            .code(),
+        tonic::Code::InvalidArgument
+    );
+    assert_eq!(*negotiated_backend.0.lock().unwrap(), vec![1, 1, 2]);
+    versioned_stop.send(()).unwrap();
+    versioned_server.await.unwrap();
     let mut forged = hello.clone();
     forged.certificate_sha256 = "a".repeat(64);
     assert!(client.register(forged).await.is_err());
@@ -205,8 +304,9 @@ async fn real_transport_enrollment_generation_revocation_and_connectivity_heartb
     );
     assert_eq!(
         plugin_client
-            .poll_plugin_runtime(wire::PollRequest {
-                identity: Some(identity.clone())
+            .poll_plugin_runtime(wire::PluginRuntimePollRequest {
+                identity: Some(identity.clone()),
+                max_spec_version: 0,
             })
             .await
             .unwrap_err()

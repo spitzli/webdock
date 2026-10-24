@@ -390,3 +390,118 @@ async fn tcp_crd_normalization_preserves_ready_runtime_convergence() {
         "emit only fields supported by the TCP CRD"
     );
 }
+
+#[tokio::test]
+async fn suspend_requires_complete_custody_without_creating_missing_resources() {
+    let fixture = api_fixture::Fixture::open().await;
+    let authority = Authority {
+        state: fixture.state.clone(),
+        checkpoint: Mutex::new(None),
+    };
+    let mut claim = claim();
+    claim.lease.action = PluginRuntimeAction::Suspend;
+    let runtime =
+        KubernetesPluginRuntime::new(fixture.client.clone(), claim.spec.platform_id.clone());
+    assert!(runtime.execute(&claim, &authority).await.is_err());
+    assert_eq!(fixture.state.creates.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
+async fn suspend_checks_all_six_objects_before_changing_replicas() {
+    let fixture = api_fixture::Fixture::open().await;
+    let authority = Authority {
+        state: fixture.state.clone(),
+        checkpoint: Mutex::new(None),
+    };
+    let mut claim = claim();
+    let runtime =
+        KubernetesPluginRuntime::new(fixture.client.clone(), claim.spec.platform_id.clone());
+    claim.checkpoint = Some(
+        runtime
+            .execute(&claim, &authority)
+            .await
+            .unwrap()
+            .checkpoint,
+    );
+    fixture
+        .state
+        .objects
+        .lock()
+        .unwrap()
+        .values_mut()
+        .find(|o| o["kind"] == "IngressRouteTCP")
+        .unwrap()["metadata"]["uid"] = "foreign".into();
+    claim.lease.action = PluginRuntimeAction::Suspend;
+    assert!(runtime.execute(&claim, &authority).await.is_err());
+    assert_eq!(fixture.state.patches.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
+async fn suspend_waits_for_terminating_unready_pods_and_fences_already_zero_deployments() {
+    let fixture = api_fixture::Fixture::open().await;
+    let authority = Authority {
+        state: fixture.state.clone(),
+        checkpoint: Mutex::new(None),
+    };
+    let mut claim = claim();
+    let runtime =
+        KubernetesPluginRuntime::new(fixture.client.clone(), claim.spec.platform_id.clone());
+    claim.checkpoint = Some(
+        runtime
+            .execute(&claim, &authority)
+            .await
+            .unwrap()
+            .checkpoint,
+    );
+    claim.lease.action = PluginRuntimeAction::Suspend;
+    fixture.state.pods.lock().unwrap().push(serde_json::json!({
+        "apiVersion":"v1", "kind":"Pod", "metadata":{"name":"terminating","uid":"pod-1","deletionTimestamp":"2026-10-24T00:00:00Z"},
+        "spec":{"containers":[{"name":"runtime","image":"fixture"}]},
+        "status":{"phase":"Running","conditions":[{"type":"Ready","status":"False"}]}
+    }));
+    fixture
+        .state
+        .drain_pods_on_list
+        .store(true, Ordering::SeqCst);
+    runtime.execute(&claim, &authority).await.unwrap();
+    assert!(
+        fixture.state.pod_lists.load(Ordering::SeqCst) >= 2,
+        "termination must be observed before completion"
+    );
+    let before = fixture
+        .state
+        .objects
+        .lock()
+        .unwrap()
+        .values()
+        .find(|o| o["kind"] == "Deployment")
+        .unwrap()["metadata"]["resourceVersion"]
+        .clone();
+    claim.lease.token = "d".repeat(64);
+    runtime.execute(&claim, &authority).await.unwrap();
+    let after = fixture
+        .state
+        .objects
+        .lock()
+        .unwrap()
+        .values()
+        .find(|o| o["kind"] == "Deployment")
+        .unwrap()["metadata"]["resourceVersion"]
+        .clone();
+    assert_ne!(
+        before, after,
+        "a fresh suspension fences previously read resource versions even at zero"
+    );
+    let deployments: kube::Api<k8s_openapi::api::apps::v1::Deployment> =
+        kube::Api::namespaced(fixture.client.clone(), &claim.spec.namespace);
+    let stale = serde_json::json!({"metadata":{"uid":claim.checkpoint.as_ref().unwrap().deployment_uid,"resourceVersion":before},"spec":{"replicas":1}});
+    let error = deployments
+        .patch(
+            "runtime",
+            &kube::api::PatchParams::default(),
+            &kube::api::Patch::Merge(&stale),
+        )
+        .await
+        .unwrap_err();
+    assert!(matches!(error, kube::Error::Api(response) if response.code == 409));
+}

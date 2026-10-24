@@ -13,6 +13,13 @@ impl std::fmt::Display for PluginRuntimeError {
 }
 impl std::error::Error for PluginRuntimeError {}
 pub type Result<T> = std::result::Result<T, PluginRuntimeError>;
+pub fn normalize_spec_version(version: u32) -> Result<u32> {
+    match version {
+        0 | 1 => Ok(1),
+        2 => Ok(2),
+        _ => Err(PluginRuntimeError),
+    }
+}
 fn ensure(value: bool) -> Result<()> {
     if value {
         Ok(())
@@ -117,12 +124,20 @@ impl PluginRuntimeSpec {
         let input = format!("{}:{platform}{}:{plugin}", platform.len(), plugin.len());
         format!("wd-plugin-{}", &sha256(input.as_bytes())[..24])
     }
+    pub fn namespace_name_v2(platform: &str, plugin: &str, generation: u64) -> String {
+        let input = format!(
+            "v2:{}:{platform}{}:{plugin}:{generation}",
+            platform.len(),
+            plugin.len()
+        );
+        format!("wd-plugin-{}", &sha256(input.as_bytes())[..24])
+    }
     pub fn service_name() -> &'static str {
         "runtime"
     }
     pub fn validate(&self) -> Result<()> {
         ensure(
-            self.version == 1
+            matches!(self.version, 1 | 2)
                 && slug(&self.platform_id, 24)
                 && slug(&self.plugin_id, 64)
                 && record(&self.cluster_id)
@@ -145,7 +160,16 @@ impl PluginRuntimeSpec {
                 && digest != "0".repeat(64),
         )?;
         ensure(
-            self.namespace == Self::namespace_name(&self.platform_id, &self.plugin_id)
+            self.namespace
+                == if self.version == 1 {
+                    Self::namespace_name(&self.platform_id, &self.plugin_id)
+                } else {
+                    Self::namespace_name_v2(
+                        &self.platform_id,
+                        &self.plugin_id,
+                        self.runtime_generation,
+                    )
+                }
                 && self.service == Self::service_name()
                 && dns(&self.runtime_host)
                 && self.runtime_host.contains('.')

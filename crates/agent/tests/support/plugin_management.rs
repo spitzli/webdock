@@ -16,17 +16,25 @@ struct State {
     receipts: Mutex<Vec<wire::PluginRuntimeReceipt>>,
     finished: AtomicBool,
     lose_receipt: AtomicBool,
+    supported_spec_version: AtomicUsize,
+    requested_versions: Mutex<Vec<u32>>,
 }
 struct Service(Arc<State>);
 #[tonic::async_trait]
 impl wire::plugin_runtime_control_server::PluginRuntimeControl for Service {
     async fn poll_plugin_runtime(
         &self,
-        r: Request<wire::PollRequest>,
+        r: Request<wire::PluginRuntimePollRequest>,
     ) -> std::result::Result<Response<wire::PluginRuntimeDispatch>, Status> {
         self.0.core.peer(&r)?;
+        self.0
+            .requested_versions
+            .lock()
+            .unwrap()
+            .push(r.get_ref().max_spec_version);
         Ok(Response::new(wire::PluginRuntimeDispatch {
             command: (!self.0.finished.load(Ordering::SeqCst)).then(|| self.0.command.clone()),
+            supported_spec_version: self.0.supported_spec_version.load(Ordering::SeqCst) as u32,
         }))
     }
     async fn guard_plugin_runtime(
@@ -161,6 +169,8 @@ async fn exact_plugin_receipt_replays_after_restart_and_lease_expiration_without
         receipts: Mutex::new(Vec::new()),
         finished: AtomicBool::new(false),
         lose_receipt: AtomicBool::new(true),
+        supported_spec_version: AtomicUsize::new(0),
+        requested_versions: Mutex::new(Vec::new()),
     });
     let control = state.core.clone();
     let service = state.clone();
@@ -225,9 +235,9 @@ async fn exact_plugin_receipt_replays_after_restart_and_lease_expiration_without
     stop.send(()).unwrap();
     server.await.unwrap();
 }
-struct StrictOldControl(ControlService);
+struct CompatibilityControl(ControlService, Option<Arc<Mutex<Vec<Option<u64>>>>>);
 #[tonic::async_trait]
-impl AgentControl for StrictOldControl {
+impl AgentControl for CompatibilityControl {
     async fn register(
         &self,
         r: Request<wire::Hello>,
@@ -240,10 +250,13 @@ impl AgentControl for StrictOldControl {
     ) -> std::result::Result<Response<wire::Ack>, Status> {
         let observation: serde_json::Value = serde_json::from_slice(&r.get_ref().observation_json)
             .map_err(|_| Status::invalid_argument("observation required"))?;
-        if observation["capabilities"]
+        let version = observation["capabilities"]
             .get("pluginRuntimeVersion")
-            .is_some()
-        {
+            .and_then(serde_json::Value::as_u64);
+        if let Some(versions) = &self.1 {
+            versions.lock().unwrap().push(version);
+        }
+        if self.1.is_none() && version.is_some() {
             return Err(Status::invalid_argument("Unknown capability"));
         }
         self.0.heartbeat(r).await
@@ -309,9 +322,10 @@ async fn absent_optional_domain_preserves_healthy_shared_agent_connection() {
     let (stop, shutdown) = tokio::sync::oneshot::channel();
     let server = tokio::spawn(async move {
         tonic::transport::Server::builder()
-            .add_service(AgentControlServer::new(StrictOldControl(ControlService(
-                control,
-            ))))
+            .add_service(AgentControlServer::new(CompatibilityControl(
+                ControlService(control),
+                None,
+            )))
             .serve_with_incoming_shutdown(UnixListenerStream::new(listener), async {
                 let _ = shutdown.await;
             })
@@ -328,6 +342,67 @@ async fn absent_optional_domain_preserves_healthy_shared_agent_connection() {
     assert_eq!(core.sequences.lock().unwrap().len(), 2);
     assert_eq!(executions.load(Ordering::SeqCst), 0);
     drop(daemon);
+    stop.send(()).unwrap();
+    server.await.unwrap();
+}
+
+#[tokio::test]
+async fn plugin_spec_negotiation_resets_after_same_generation_reconnect_to_old_core() {
+    let dir = tempfile::Builder::new()
+        .permissions(std::fs::Permissions::from_mode(0o700))
+        .tempdir()
+        .unwrap();
+    let socket = dir.path().join("core.sock");
+    let listener = tokio::net::UnixListener::bind(&socket).unwrap();
+    std::fs::set_permissions(&socket, std::fs::Permissions::from_mode(0o600)).unwrap();
+    let config = config(dir.path(), socket);
+    let state = Arc::new(State {
+        core: core(),
+        command: wire::PluginRuntimeCommand::default(),
+        receipts: Mutex::new(Vec::new()),
+        finished: AtomicBool::new(true),
+        lose_receipt: AtomicBool::new(false),
+        supported_spec_version: AtomicUsize::new(2),
+        requested_versions: Mutex::new(Vec::new()),
+    });
+    let versions = Arc::new(Mutex::new(Vec::new()));
+    let control = state.core.clone();
+    let service = state.clone();
+    let observed = versions.clone();
+    let (stop, shutdown) = tokio::sync::oneshot::channel();
+    let server = tokio::spawn(async move {
+        tonic::transport::Server::builder()
+            .add_service(AgentControlServer::new(CompatibilityControl(
+                ControlService(control),
+                Some(observed),
+            )))
+            .add_service(
+                wire::plugin_runtime_control_server::PluginRuntimeControlServer::new(Service(
+                    service,
+                )),
+            )
+            .serve_with_incoming_shutdown(UnixListenerStream::new(listener), async {
+                let _ = shutdown.await;
+            })
+            .await
+            .unwrap();
+    });
+    let executions = Arc::new(AtomicUsize::new(0));
+    let mut daemon = Daemon::with_adapter(config, Arc::new(ObservedControlled))
+        .unwrap()
+        .with_plugin_runtime(Arc::new(Executor(executions)));
+    daemon.connect().await.unwrap();
+    assert!(!daemon.cycle().await.unwrap());
+    assert!(!daemon.cycle().await.unwrap());
+    state.supported_spec_version.store(0, Ordering::SeqCst);
+    daemon.connect().await.unwrap();
+    assert!(!daemon.cycle().await.unwrap());
+    assert!(!daemon.cycle().await.unwrap());
+    assert_eq!(
+        *versions.lock().unwrap(),
+        vec![None, Some(2), None, Some(1)]
+    );
+    assert_eq!(*state.requested_versions.lock().unwrap(), vec![2, 2, 2, 2]);
     stop.send(()).unwrap();
     server.await.unwrap();
 }

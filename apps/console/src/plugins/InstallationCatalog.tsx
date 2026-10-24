@@ -5,9 +5,9 @@ import { Empty, Failure, Loading } from "../common";
 import * as ui from "../ui";
 import { catalogSchema } from "./installation-contracts";
 
-export function useInstallationCatalog() {
+export function useInstallationCatalog(enabled = true) {
   const api = useApi();
-  return useQuery({ queryKey: ["extension-catalog"], queryFn: ({ signal }) => api.get("/api/console/plugins/catalog", catalogSchema, signal) });
+  return useQuery({ queryKey: ["extension-catalog"], queryFn: ({ signal }) => api.get("/api/console/plugins/catalog", catalogSchema, signal), enabled });
 }
 /** Only mounted inside the operator route; catalog metadata never grants runtime authority. */
 export function InstallationCatalog({ installed = [] }: { installed?: string[] }) {

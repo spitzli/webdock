@@ -90,6 +90,8 @@ async fn delayed_hosting_guard_cannot_extend_authority_past_lease() {
             #[cfg(feature = "kubernetes")]
             plugin_domain: Arc::new(std::sync::atomic::AtomicU8::new(plugin::DOMAIN_UNKNOWN)),
             #[cfg(feature = "kubernetes")]
+            plugin_spec_version: Arc::new(std::sync::atomic::AtomicU8::new(1)),
+            #[cfg(feature = "kubernetes")]
             workload_client: wire::workload_control_client::WorkloadControlClient::new(
                 channel.clone(),
             ),

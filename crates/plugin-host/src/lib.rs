@@ -5,6 +5,7 @@ pub use authority::installation;
 pub use catalog::{Catalog, CatalogDescriptor, CatalogTargetDescriptor};
 pub use installation::{
     InstallClaim, InstallRequest, InstallSnapshot, InstallWork, PreparedInstallation,
+    RollbackRequest, UpdateRequest,
 };
 mod bindings;
 mod managed_bindings;

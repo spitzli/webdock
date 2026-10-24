@@ -3,7 +3,9 @@
 mod profile;
 use kube::{
     Api, Client,
-    api::{ApiResource, DynamicObject, GroupVersionKind, Patch, PatchParams, PostParams},
+    api::{
+        ApiResource, DynamicObject, GroupVersionKind, ListParams, Patch, PatchParams, PostParams,
+    },
 };
 pub use profile::{STAGE_SCRIPT, plugin_objects};
 use serde_json::{Value, json};
@@ -176,11 +178,16 @@ impl KubernetesPluginRuntime {
         if let Some(existing) = existing {
             Self::owned(&existing, desired, &claim.spec, expected_uid)?;
             if desired["kind"] != "Deployment"
-                || existing.data["spec"]["replicas"] == desired["spec"]["replicas"]
+                || claim.lease.action != PluginRuntimeAction::Suspend
+                    && existing.data["spec"]["replicas"] == desired["spec"]["replicas"]
             {
                 return Ok(existing);
             }
-            let patch = json!({"metadata":{"uid":existing.metadata.uid,"resourceVersion":existing.metadata.resource_version},"spec":{"replicas":desired["spec"]["replicas"]}});
+            let mut patch = json!({"metadata":{"uid":existing.metadata.uid,"resourceVersion":existing.metadata.resource_version},"spec":{"replicas":desired["spec"]["replicas"]}});
+            if claim.lease.action == PluginRuntimeAction::Suspend {
+                // A fresh fence must advance resourceVersion even when replicas is already zero.
+                patch["metadata"]["annotations"] = json!({"webdock.dev/suspension-fence":sha256(&serde_json::to_vec(&claim.lease).map_err(|_|ExecutionError::Runtime)?)});
+            }
             return self
                 .guarded(claim, authority, async {
                     api.patch(name, &PatchParams::default(), &Patch::Merge(&patch))
@@ -262,7 +269,7 @@ impl KubernetesPluginRuntime {
         if claim.lease.action == PluginRuntimeAction::Suspend
             || claim.lease.action == PluginRuntimeAction::Inspect && replicas == 0
         {
-            return Ok(replicas == 0
+            if !(replicas == 0
                 && [
                     "replicas",
                     "readyReplicas",
@@ -271,7 +278,27 @@ impl KubernetesPluginRuntime {
                     "terminatingReplicas",
                 ]
                 .iter()
-                .all(|f| status[*f].as_u64().unwrap_or(0) == 0));
+                .all(|f| status[*f].as_u64().unwrap_or(0) == 0))
+            {
+                return Ok(false);
+            }
+            let pods: Api<k8s_openapi::api::core::v1::Pod> =
+                Api::namespaced(self.client.clone(), &claim.spec.namespace);
+            return self
+                .guarded(claim, authority, async {
+                    // Any remaining Pod, including a terminating/unready one, prevents another writer.
+                    let pods = pods
+                        .list(&ListParams::default().limit(1))
+                        .await
+                        .map_err(|_| ExecutionError::Runtime)?;
+                    Ok(pods.items.is_empty()
+                        && pods
+                            .metadata
+                            .continue_
+                            .as_ref()
+                            .is_none_or(String::is_empty))
+                })
+                .await;
         }
         Ok(replicas == 1
             && ["readyReplicas", "availableReplicas", "updatedReplicas"]
@@ -289,8 +316,20 @@ impl PluginRuntimeExecutor for KubernetesPluginRuntime {
         if claim.spec.platform_id != self.installation {
             return Err(ExecutionError::Ownership);
         }
+        if claim.lease.action == PluginRuntimeAction::Suspend
+            && claim
+                .checkpoint
+                .as_ref()
+                .is_none_or(|checkpoint| !checkpoint.complete())
+        {
+            return Err(ExecutionError::Ownership);
+        }
         let objects = plugin_objects(claim)?;
         let mut checkpoint = claim.checkpoint.clone().unwrap_or_default();
+        if claim.lease.action == PluginRuntimeAction::Suspend {
+            self.verify_objects(claim, authority, &objects, &checkpoint)
+                .await?;
+        }
         // Isolation must exist before any Pod can start; route exposure comes last.
         for index in [0, 4, 1, 3, 2, 5] {
             let desired = &objects[index];

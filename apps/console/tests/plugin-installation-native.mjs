@@ -10,7 +10,7 @@ import { base32 } from '@better-auth/utils/base32';
 import { fromRepo } from './repo.mjs';
 
 const reportPath = process.env.WEBDOCK_NATIVE_INSTALL_FIXTURE;
-assert.ok(reportPath && reportPath.startsWith(fromRepo('.runtime-test/native-installer/').pathname), 'An owned native installer report is required');
+assert.ok(reportPath && ['.runtime-test/native-installer/', '.runtime-test/native-plugin-updates/'].some((base) => reportPath.startsWith(fromRepo(base).pathname)), 'An owned native installer report is required');
 const readJSON = async (path) => JSON.parse(await readFile(path, 'utf8'));
 const report = await readJSON(reportPath);
 assert.equal(report.fixture, true);
