@@ -269,7 +269,7 @@ fn domain_names_are_normalised_and_bounded() {
 
 #[tokio::test]
 #[ignore = "requires a disposable local PostgreSQL server"]
-async fn domain_verification_and_platform_delivery() {
+async fn domain_verification_and_unconfigured_delivery_denial() {
     let f = fixture(false).await;
     let created = f
         .ok(
@@ -314,8 +314,8 @@ async fn domain_verification_and_platform_delivery() {
     assert_eq!(
         f.code("101", "mail.send", send(&domain, "a@example.net"))
             .await,
-        ErrorCode::Conflict,
-        "unverified domains cannot send"
+        ErrorCode::CapabilityUnavailable,
+        "unconfigured delivery never sends inline"
     );
 
     f.dns.lock().unwrap().push((
@@ -354,57 +354,24 @@ async fn domain_verification_and_platform_delivery() {
         "first DNS proof wins"
     );
 
-    let sent = f
-        .ok(
+    assert_eq!(
+        f.code(
             "101",
             "mail.send",
-            send(&domain, "a@example.net, b@example.org"),
+            send(&domain, "a@example.net, b@example.org")
         )
-        .await;
-    assert_eq!(sent["transport"], "platform");
-    let mail = f.mail.lock().unwrap().clone();
-    assert_eq!(mail.len(), 1);
-    assert!(
-        mail[0].contains("From: \"Shop\" <hello@shop.example.com>")
-            || mail[0].contains("From: Shop <hello@shop.example.com>"),
-        "{}",
-        mail[0]
+        .await,
+        ErrorCode::CapabilityUnavailable
     );
-    assert!(mail[0].contains("Subject: Order shipped"));
-    let view = f
-        .ok("101", "domains.view", json!({"resource_id": domain}))
-        .await;
-    assert_eq!(view["recent"][0]["to"], "a@example.net, b@example.org");
-    assert_eq!(view["recent"][0]["status"], "accepted");
-
-    for (input, why) in [
-        (send(&domain, ""), "no recipient"),
-        (
-            send(
-                &domain,
-                &(0..11)
-                    .map(|i| format!("r{i}@example.net"))
-                    .collect::<Vec<_>>()
-                    .join(","),
-            ),
-            "too many recipients",
-        ),
-        (send(&domain, "not-an-address"), "bad recipient"),
-        (
-            json!({"resource_id": domain, "from": "a@b", "to": "a@example.net", "subject": "s", "text": "t"}),
-            "sender with @",
-        ),
-        (
-            json!({"resource_id": domain, "from": "a", "to": "a@example.net", "subject": "s\r\nBcc: x@y.z", "text": "t"}),
-            "header injection",
-        ),
-    ] {
-        assert_eq!(
-            f.code("101", "mail.send", input).await,
-            ErrorCode::InvalidInput,
-            "{why}"
-        );
-    }
+    assert!(f.mail.lock().unwrap().is_empty());
+    assert!(f.turbo.lock().unwrap().is_empty());
+    assert!(
+        f.ok("101", "domains.view", json!({"resource_id":domain}))
+            .await["recent"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
     f.ok("101", "domains.delete", json!({"resource_id": domain}))
         .await;
     assert_eq!(
@@ -426,7 +393,7 @@ async fn domain_verification_and_platform_delivery() {
 
 #[tokio::test]
 #[ignore = "requires a disposable local PostgreSQL server"]
-async fn own_turbosmtp_account() {
+async fn own_turbosmtp_metadata_never_enables_inline_delivery() {
     let f = fixture(true).await;
     let domain = id(&f
         .ok(
@@ -469,48 +436,17 @@ async fn own_turbosmtp_account() {
         ErrorCode::NotFound
     );
 
-    let sent = f
-        .ok("101", "mail.send", send(&domain, "a@example.net"))
-        .await;
-    assert_eq!(sent["transport"], "turbosmtp");
-    assert_eq!(sent["providerID"], "98765432101234567890");
-    assert!(
-        f.mail.lock().unwrap().is_empty(),
-        "nothing went through the platform"
-    );
-    let (head, body) = f.turbo.lock().unwrap()[0].clone();
-    assert!(
-        head.to_ascii_lowercase()
-            .contains("consumersecret: s3cret-value")
-    );
-    assert_eq!(body["from"], "hello@mail.example.com");
-    assert_eq!(body["to"], "a@example.net");
-    assert!(
-        body["mime_raw"]
-            .as_str()
-            .unwrap()
-            .contains("Subject: Order shipped")
-    );
-
-    // Wrong keys surface as a credentials problem, and the attempt is logged as failed.
-    f.ok("101", "relay.delete", json!({"resource_id": relay}))
-        .await;
-    f.ok(
-        "101",
-        "relay.connect",
-        json!({"consumer_key":"bad-key","consumer_secret":"x"}),
-    )
-    .await;
     assert_eq!(
         f.code("101", "mail.send", send(&domain, "a@example.net"))
             .await,
-        ErrorCode::PermissionDenied
+        ErrorCode::CapabilityUnavailable
     );
+    assert!(f.mail.lock().unwrap().is_empty());
+    assert!(f.turbo.lock().unwrap().is_empty());
     let view = f
-        .ok("101", "domains.view", json!({"resource_id": domain}))
+        .ok("101", "domains.view", json!({"resource_id":domain}))
         .await;
-    assert_eq!(view["recent"][0]["status"], "failed");
+    assert!(view["recent"].as_array().unwrap().is_empty());
     assert_eq!(view["transport"], "turbosmtp");
-    assert_eq!(view["verificationSkipped"], true);
     f.cleanup().await;
 }

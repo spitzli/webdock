@@ -7,7 +7,7 @@ use crate::{
 use axum::{
     Json, Router,
     body::Bytes,
-    extract::{Path, RawQuery, State},
+    extract::{Path, RawQuery, Request, State},
     http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response},
     routing::{get, post, put},
@@ -144,6 +144,13 @@ impl PluginEndpoints {
                 return Err(PluginError::denied());
             }
             let manifest = Manifest::parse(&described.manifest_json)?;
+            if plugin == "mail"
+                && admitted.claims.plugin_id == "mail"
+                && admitted.claims.action == "mail.send"
+                && admitted.claims.job.is_none()
+            {
+                client = client.max_encoding_message_size(224 * 1024);
+            }
             let reply = client
                 .invoke(webdock_plugin_runtime::wire::InvokeRequest {
                     invocation_token: admitted.token.clone(),
@@ -250,8 +257,12 @@ async fn actor(
         )
     })
 }
+const MAIL_ENVELOPE_BYTES: usize = 160 * 1024;
 fn json_body(body: &[u8], headers: &HeaderMap) -> Result<Value, ApiFailure> {
-    if body.len() > 65536 {
+    json_body_limit(body, headers, 65536)
+}
+fn json_body_limit(body: &[u8], headers: &HeaderMap, limit: usize) -> Result<Value, ApiFailure> {
+    if body.len() > limit {
         return Err(reject(
             StatusCode::PAYLOAD_TOO_LARGE,
             "invalid_input",
@@ -279,6 +290,40 @@ fn json_body(body: &[u8], headers: &HeaderMap) -> Result<Value, ApiFailure> {
             "Invalid plugin request.",
         )
     })
+}
+// The caller authenticates before buffering this single Console invocation envelope.
+fn invoke_input(body: &[u8], headers: &HeaderMap) -> Result<AdmissionInput, ApiFailure> {
+    let input: AdmissionInput =
+        serde_json::from_value(json_body_limit(body, headers, MAIL_ENVELOPE_BYTES)?).map_err(
+            |_| {
+                reject(
+                    StatusCode::BAD_REQUEST,
+                    "invalid_input",
+                    "Invalid plugin command.",
+                )
+            },
+        )?;
+    let mail = input.plugin_id == "mail" && input.action == "mail.send";
+    if body.len() > 65536 && !mail
+        || mail
+            && serde_json::to_vec(&input.input)
+                .map_err(|_| {
+                    reject(
+                        StatusCode::BAD_REQUEST,
+                        "invalid_input",
+                        "Invalid plugin command.",
+                    )
+                })?
+                .len()
+                > webdock_plugin_host::MAIL_ACTION_INPUT_BYTES
+    {
+        return Err(reject(
+            StatusCode::PAYLOAD_TOO_LARGE,
+            "invalid_input",
+            "Plugin request exceeds limit.",
+        ));
+    }
+    Ok(input)
 }
 pub fn routes() -> Router<Arc<ServiceState>> {
     Router::new()
@@ -509,21 +554,20 @@ async fn list(
     .await;
     result.unwrap_or_else(IntoResponse::into_response)
 }
-async fn invoke(
-    State(state): State<Arc<ServiceState>>,
-    headers: HeaderMap,
-    body: Bytes,
-) -> Response {
+async fn invoke(State(state): State<Arc<ServiceState>>, request: Request) -> Response {
     let result: Result<Response, ApiFailure> = async {
+        let headers = request.headers().clone();
         let actor = actor(&state, &headers).await?;
-        let input: AdmissionInput =
-            serde_json::from_value(json_body(&body, &headers)?).map_err(|_| {
+        let body = axum::body::to_bytes(request.into_body(), MAIL_ENVELOPE_BYTES)
+            .await
+            .map_err(|_| {
                 reject(
-                    StatusCode::BAD_REQUEST,
+                    StatusCode::PAYLOAD_TOO_LARGE,
                     "invalid_input",
-                    "Invalid plugin command.",
+                    "Plugin request exceeds limit.",
                 )
             })?;
+        let input = invoke_input(&body, &headers)?;
         Ok(Json(
             endpoints(&state)?
                 .invoke(&actor, input)
@@ -664,7 +708,11 @@ impl PluginEndpoints {
             dependencies.browser.clone(),
         )
         .await?
-        .with_mcp_authority(dependencies.oauth)?;
+        .with_mcp_authority(dependencies.oauth)?
+        .with_native_mail_control(crate::mail::native_control_configured(
+            config.mail.as_ref(),
+            &std::env::vars().collect(),
+        ));
         if let Some(catalog) = &config.installation_catalog {
             host = host.with_installation(
                 Arc::new(webdock_plugin_host::Catalog::load(catalog)?),
@@ -959,4 +1007,32 @@ async fn offer_cluster(
     }
     .await;
     result.unwrap_or_else(IntoResponse::into_response)
+}
+
+#[cfg(test)]
+mod mail_input_tests {
+    use super::*;
+    fn headers() -> HeaderMap {
+        HeaderMap::from_iter([(
+            header::CONTENT_TYPE,
+            axum::http::HeaderValue::from_static("application/json"),
+        )])
+    }
+    #[test]
+    fn authenticated_console_parser_only_widens_mail_send() {
+        for count in [20_000, 30_000] {
+            let mut value = json!({"pluginID":"mail","projectID":"123","action":"mail.send","idempotencyKey":"same","input":{"resource_id":"owned","text":"😀".repeat(count)}});
+            let body = serde_json::to_vec(&value).unwrap();
+            assert!(body.len() > 65536);
+            assert!(invoke_input(&body, &headers()).is_ok());
+            assert!(json_body(&body, &headers()).is_err());
+            value["pluginID"] = json!("notes");
+            assert!(invoke_input(&serde_json::to_vec(&value).unwrap(), &headers()).is_err());
+            value["pluginID"] = json!("mail");
+            value["action"] = json!("mail.status");
+            assert!(invoke_input(&serde_json::to_vec(&value).unwrap(), &headers()).is_err());
+        }
+        let body=serde_json::to_vec(&json!({"pluginID":"mail","projectID":"123","action":"mail.send","idempotencyKey":"same","input":{"text":"x".repeat(131073)}})).unwrap();
+        assert!(invoke_input(&body, &headers()).is_err());
+    }
 }

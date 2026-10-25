@@ -79,8 +79,21 @@ pub fn header_name(name: &[u8]) -> bool {
             .iter()
             .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+.^_`|~-".contains(b))
 }
-fn display_name(name: &str) -> Result<String> {
-    if js_len(name) > 80 || control(name) {
+#[derive(Clone, Copy)]
+enum ValidationProfile {
+    Native,
+    Action,
+}
+impl ValidationProfile {
+    fn valid_name(self, name: &str) -> bool {
+        match self {
+            Self::Native => js_len(name) <= 80 && !control(name),
+            Self::Action => name.chars().count() <= 80 && !name.chars().any(char::is_control),
+        }
+    }
+}
+fn display_name(name: &str, profile: ValidationProfile) -> Result<String> {
+    if !profile.valid_name(name) {
         return Err(Error::Invalid);
     }
     let mut words = Vec::new();
@@ -105,6 +118,25 @@ pub fn prepare_message(
     raw: &[u8],
     sender: &Sender,
     recipients: &[String],
+) -> Result<PreparedMessage> {
+    prepare_with_profile(raw, sender, recipients, ValidationProfile::Native)
+}
+/// Action-only MIME preparation; caller must derive action authority from its trusted lease.
+pub fn prepare_action_message(
+    raw: &[u8],
+    sender: &Sender,
+    recipients: &[String],
+) -> Result<PreparedMessage> {
+    if recipients.len() > 10 {
+        return Err(Error::Invalid);
+    }
+    prepare_with_profile(raw, sender, recipients, ValidationProfile::Action)
+}
+fn prepare_with_profile(
+    raw: &[u8],
+    sender: &Sender,
+    recipients: &[String],
+    profile: ValidationProfile,
 ) -> Result<PreparedMessage> {
     if raw.len() > MAX_MESSAGE
         || raw.contains(&0)
@@ -157,7 +189,7 @@ pub fn prepare_message(
     let name = sender
         .name
         .as_deref()
-        .map(display_name)
+        .map(|name| display_name(name, profile))
         .transpose()?
         .unwrap_or_default();
     let mut prepared = if name.is_empty() {
@@ -450,12 +482,79 @@ impl SendRequest {
         });
         Self::parse(value, now)
     }
+    /// Parse canonical action payloads without interpreting display names as public address syntax.
+    pub fn parse_stored_action(mut value: Value) -> Result<Self> {
+        if !value
+            .get("to")
+            .and_then(Value::as_array)
+            .is_some_and(|to| (1..=10).contains(&to.len()))
+        {
+            return Err(Error::Invalid);
+        }
+        let sender: Sender =
+            serde_json::from_value(value.get("from").ok_or(Error::Invalid)?.clone())
+                .map_err(|_| Error::Invalid)?;
+        value["from"] = Value::String(sender.email.clone());
+        let mut request = Self::parse(value, Utc::now())?;
+        request.from = sender;
+        request.validate_action()?;
+        Ok(request)
+    }
+    fn validate_action(&self) -> Result<()> {
+        let local = self.from.email.split_once('@').ok_or(Error::Invalid)?.0;
+        if local.is_empty()
+            || local.len() > 64
+            || local.starts_with('.')
+            || local.ends_with('.')
+            || local.contains("..")
+            || !local
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"._+-".contains(&b))
+            || envelope_address(&self.from.email)? != self.from.email
+            || self.from.name.as_ref().is_some_and(|name| {
+                name.is_empty()
+                    || name.trim() != name
+                    || !ValidationProfile::Action.valid_name(name)
+            })
+            || self.to.is_empty()
+            || self.to.len() > 10
+            || !self.cc.is_empty()
+            || !self.bcc.is_empty()
+            || self.subject.trim().is_empty()
+            || self.subject.trim() != self.subject
+            || self.subject.chars().count() > 200
+            || self.subject.chars().any(char::is_control)
+            || self
+                .text
+                .as_ref()
+                .is_none_or(|text| text.is_empty() || text.chars().count() > 30_000)
+            || self.html.is_some()
+            || self.attachments.is_some()
+            || self.scheduled_at.is_some()
+        {
+            return Err(Error::Invalid);
+        }
+        for address in std::iter::once(&self.from.email).chain(&self.to) {
+            address
+                .parse::<lettre::Address>()
+                .map_err(|_| Error::Invalid)?;
+        }
+        Ok(())
+    }
     pub fn compile(&self) -> Result<DispatchMessage> {
+        self.compile_with_profile(ValidationProfile::Native)
+    }
+    /// Compile only an authenticated action payload, preserving the plugin's character bounds.
+    pub fn compile_action(&self) -> Result<DispatchMessage> {
+        self.compile_with_profile(ValidationProfile::Action)
+    }
+    fn compile_with_profile(&self, profile: ValidationProfile) -> Result<DispatchMessage> {
         // Public fields are intentionally revalidated at the final compilation boundary.
-        let mut request = Self::parse_stored(
-            serde_json::to_value(self).map_err(|_| Error::Invalid)?,
-            Utc::now(),
-        )?;
+        let value = serde_json::to_value(self).map_err(|_| Error::Invalid)?;
+        let mut request = match profile {
+            ValidationProfile::Native => Self::parse_stored(value, Utc::now())?,
+            ValidationProfile::Action => Self::parse_stored_action(value)?,
+        };
         // Parsing an address removes one enclosing quote pair. Revalidation must not
         // normalize an already parsed display name again; prepare_message validates it.
         request.from.name = self.from.name.clone();
@@ -502,7 +601,7 @@ impl SendRequest {
             .chain(&request.bcc)
             .cloned()
             .collect::<Vec<_>>();
-        let raw = prepare_message(&raw, &request.from, &recipients)?.raw;
+        let raw = prepare_with_profile(&raw, &request.from, &recipients, profile)?.raw;
         Ok(DispatchMessage {
             sender: request.from,
             to: request.to,
@@ -512,4 +611,85 @@ impl SendRequest {
             raw,
         })
     }
+}
+
+/// Strict existing plugin input. The resource is resolved by the caller's authority layer.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ActionInput {
+    #[serde(rename = "resource_id")]
+    _resource_id: String,
+    from: String,
+    #[serde(default)]
+    from_name: String,
+    to: String,
+    subject: String,
+    text: String,
+}
+
+pub struct CompiledAction {
+    pub request: SendRequest,
+    pub payload: Vec<u8>,
+    pub envelope: Value,
+}
+
+/// Compile bounded mail.send input with an already authorized canonical owned domain.
+/// No caller-supplied resource, customer, job or invocation identity enters the result.
+pub fn compile_action(input: Value, owned_domain: &str) -> Result<CompiledAction> {
+    let input: ActionInput = serde_json::from_value(input).map_err(|_| Error::Invalid)?;
+    let local = input.from.trim();
+    let name = input.from_name.trim();
+    let subject = input.subject.trim();
+    if local.is_empty()
+        || local.len() > 64
+        || local.starts_with('.')
+        || local.ends_with('.')
+        || local.contains("..")
+        || !local
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"._+-".contains(&b))
+        || name.chars().count() > 80
+        || name.chars().any(char::is_control)
+        || subject.is_empty()
+        || subject.chars().count() > 200
+        || subject.chars().any(char::is_control)
+        || input.text.is_empty()
+        || input.text.chars().count() > 30_000
+    {
+        return Err(Error::Invalid);
+    }
+    let address = format!("{local}@{owned_domain}");
+    address
+        .parse::<lettre::Address>()
+        .map_err(|_| Error::Invalid)?;
+    let from = envelope_address(&address)?;
+    if from.split_once('@').map(|(_, domain)| domain) != Some(owned_domain) {
+        return Err(Error::Invalid);
+    }
+    let recipients = input
+        .to
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| {
+            s.parse::<lettre::Address>().map_err(|_| Error::Invalid)?;
+            envelope_address(s)
+        })
+        .collect::<Result<Vec<_>>>()?;
+    if recipients.is_empty() || recipients.len() > 10 {
+        return Err(Error::Invalid);
+    }
+    let mut request = SendRequest::parse(
+        serde_json::json!({"from":from,"to":recipients,"subject":subject,"text":input.text}),
+        Utc::now(),
+    )?;
+    request.from.name = (!name.is_empty()).then(|| name.to_owned());
+    request.validate_action()?;
+    let payload = serde_json::to_vec(&request).map_err(|_| Error::Invalid)?;
+    let envelope = serde_json::json!({"from":request.from.email,"to":request.to});
+    Ok(CompiledAction {
+        request,
+        payload,
+        envelope,
+    })
 }

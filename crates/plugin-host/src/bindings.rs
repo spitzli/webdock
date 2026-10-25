@@ -66,6 +66,17 @@ impl RuntimeBinding {
 #[async_trait]
 pub trait RuntimeBindings: Send + Sync {
     async fn runtime(&self, plugin_id: &str) -> Result<Option<RuntimeBinding>>;
+    /// Consume enrollment already locked by the caller; never reacquire the worker pool.
+    async fn runtime_from_enrollment(
+        &self,
+        plugin: &str,
+        managed: Option<Value>,
+    ) -> Result<Option<RuntimeBinding>> {
+        if managed.is_some() {
+            return Err(unavailable());
+        }
+        self.runtime(plugin).await
+    }
 }
 pub struct FileBindings {
     path: PathBuf,

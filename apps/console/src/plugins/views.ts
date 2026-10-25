@@ -84,11 +84,12 @@ export function invokePlugin(
   action: string,
   input: Record<string, unknown>,
   signal?: AbortSignal,
+  idempotencyKey?: string,
 ) {
   return api.request("/api/console/plugins/invoke", z.unknown(), {
     method: "POST",
     signal: signal ?? null,
-    body: JSON.stringify({ pluginID: plugin, projectID, action, input, idempotencyKey: crypto.randomUUID() }),
+    body: JSON.stringify({ pluginID: plugin, projectID, action, input, idempotencyKey: idempotencyKey ?? crypto.randomUUID() }),
   });
 }
 export const projectSchema = z.object({

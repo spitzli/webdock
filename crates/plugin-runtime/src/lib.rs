@@ -26,6 +26,15 @@ use webdock_plugin_protocol::{
     DOCUMENT_BYTES, ErrorCode, FRAME_BYTES, InvocationClaims, MANIFEST_BYTES, Manifest,
     PluginError, validate_value, verify_invocation,
 };
+// Compatibility exception for the preserved30k-character Mail action input. Select only
+// from verified invocation claims; ordinary actions and every job retain FRAME_BYTES.
+fn invocation_input_limit(claims: &InvocationClaims) -> usize {
+    if claims.plugin_id == "mail" && claims.action == "mail.send" && claims.job.is_none() {
+        128 * 1024
+    } else {
+        FRAME_BYTES
+    }
+}
 #[allow(
     clippy::allow_attributes_without_reason,
     clippy::excessive_nesting,
@@ -234,9 +243,16 @@ impl Runtime {
         .map_err(status)?;
         Ok(())
     }
-    fn service(self) -> PluginRuntimeServer<Self> {
+    /// Compose fixed-purpose HTTP routes on the same authenticated listener, retaining RPC limits.
+    pub fn service(self) -> PluginRuntimeServer<Self> {
+        let decoding =
+            if self.manifest.id() == "mail" && self.manifest.action("mail.send").is_some() {
+                224 * 1024
+            } else {
+                128 * 1024
+            };
         PluginRuntimeServer::new(self)
-            .max_decoding_message_size(128 * 1024)
+            .max_decoding_message_size(decoding)
             .max_encoding_message_size(MANIFEST_BYTES + 1024)
     }
     async fn peer<T>(&self, request: &Request<T>) -> Result<PeerIdentity, Status> {
@@ -400,7 +416,7 @@ impl PluginRuntime for Runtime {
             .manifest
             .action(&claims.action)
             .ok_or_else(|| Status::not_found("Unknown plugin action"))?;
-        if request.input_json.len() > FRAME_BYTES
+        if request.input_json.len() > invocation_input_limit(&claims)
             || request.configuration_json.len() > DOCUMENT_BYTES
         {
             return Err(Status::resource_exhausted("Plugin input limit"));

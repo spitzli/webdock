@@ -289,7 +289,7 @@ async fn suspension_and_restart_retain_customer_engine_credentials_and_volume() 
     f.host.0.lock().unwrap().clear();
     restart.resume().await.unwrap();
     tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-    assert_eq!(f.call("11","101","mail.send",json!({"resource_id":a,"from":"hello","to":"recipient@example.test","subject":"must not fall back","text":"fixture"})).await.unwrap_err().code, ErrorCode::Conflict);
+    assert_eq!(f.call("11","101","mail.send",json!({"resource_id":a,"from":"hello","to":"recipient@example.test","subject":"must not fall back","text":"fixture"})).await.unwrap_err().code, ErrorCode::CapabilityUnavailable);
     let calls = f.host.0.lock().unwrap().clone();
     assert!(
         calls.iter().all(|(m, v)| m == "observe"

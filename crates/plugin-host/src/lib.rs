@@ -21,11 +21,12 @@ pub use authority::limits::{CustomerPlanInput, PlanInput};
 pub use authority::workloads;
 pub use authority::{
     AdmissionInput, AdmittedInvocation, AppsAdapter, HostService, InvocationHandle,
-    InvocationScope, MailPolicySnapshot, OperationSnapshot, OperationStatus, PluginView,
-    RepositoryPolicySnapshot, RuntimeAuthority, RuntimeDescription, StateLease, StateProbe,
+    InvocationScope, MAIL_ACTION_INPUT_BYTES, MailActionGuard, MailPolicySnapshot, MailRuntimeMode,
+    MailRuntimeProof, OperationSnapshot, OperationStatus, PluginView, RepositoryPolicySnapshot,
+    RuntimeAuthority, RuntimeDescription, StateLease, StateProbe,
 };
 pub use bindings::{FileBindings, PeerEnrollment, RuntimeBinding, RuntimeBindings};
-use webdock_plugin_protocol::{ErrorCode, PluginError};
+pub use webdock_plugin_protocol::{ErrorCode, PluginError};
 fn unavailable() -> PluginError {
     PluginError::new(ErrorCode::Unavailable, "Plugin host unavailable")
 }

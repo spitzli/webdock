@@ -86,7 +86,11 @@ impl LeaseClaims {
             || !slug(&self.worker_id)
             || !id(&self.customer_id)
             || !id(&self.job_id)
-            || !source.is_some_and(id)
+            || !(source.is_some_and(id)
+                || self
+                    .source_id
+                    .strip_prefix("action:")
+                    .is_some_and(valid_digest))
             || !uuid::Uuid::parse_str(&self.id).is_ok_and(|v| {
                 v.to_string() == self.id
                     && v.get_version_num() == 4
@@ -160,3 +164,7 @@ pub fn verify_lease(
     }
     Ok(claims)
 }
+
+pub mod outbox;
+pub use outbox::{CleanupItem, PayloadFormat, PayloadLease, Preparation, Receipt, SendLease};
+pub mod native_control;

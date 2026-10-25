@@ -108,6 +108,7 @@ const SHARED: &[&str] = &[
     "webdock-repository-protocol",
     "webdock-mail-protocol",
     "webdock-mail-message",
+    "webdock-mail-runtime",
 ];
 fn zone(root: &Path, path: &Path, name: &str) -> Zone {
     // This vendor SDK is currently used only by the separately installed repository provider.

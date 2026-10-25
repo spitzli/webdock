@@ -80,3 +80,19 @@ fn lease_signature_purpose_current_generation_expiry_and_bounds_are_enforced() {
         assert!(bad.sign(&key).is_err());
     }
 }
+#[test]
+fn action_source_is_exact_persisted_operation_hash() {
+    let mut c = claims();
+    c.source_id = format!("action:{}", "a".repeat(64));
+    assert!(c.validate(1000).is_ok());
+    for source in [
+        format!("action:{}", "A".repeat(64)),
+        "action:123".into(),
+        format!("action:{}", "a".repeat(65)),
+        "action:".into(),
+        "key:01".into(),
+    ] {
+        c.source_id = source;
+        assert!(c.validate(1000).is_err());
+    }
+}

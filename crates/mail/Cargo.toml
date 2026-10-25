@@ -7,9 +7,11 @@ license.workspace = true
 publish = false
 
 [features]
-test-support = []
+test-support = ["webdock-mail-runtime/test-support"]
 
 [dependencies]
+webdock-plugin-host = { path = "../plugin-host" }
+webdock-mail-runtime = { path = "../mail-runtime" }
 aes-gcm = "0.10"
 async-trait.workspace = true
 base64 = "0.22"

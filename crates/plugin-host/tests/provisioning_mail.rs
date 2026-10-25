@@ -73,7 +73,7 @@ async fn mail_binary_tls_callbacks_unix_restart_and_private_diagnostics() {
         .iter()
         .map(|r| r.get(0))
         .collect();
-    assert_eq!(versions, [1, 2, 3]);
+    assert_eq!(versions, [1, 2, 3, 4]);
     assert!(
         f.sql
             .query_one(
@@ -197,7 +197,7 @@ async fn mail_binary_tls_callbacks_unix_restart_and_private_diagnostics() {
             .iter()
             .map(|r| r.get(0))
             .collect();
-        assert_eq!(versions, [1, 2, 3]);
+        assert_eq!(versions, [1, 2, 3, 4]);
         drop(client);
         shutdown(&mut child).await;
         drop(child);

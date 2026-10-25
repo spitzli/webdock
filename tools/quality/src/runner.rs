@@ -256,6 +256,34 @@ fn rust_checks(manifests: &[PathBuf]) -> Vec<Check> {
             "--locked",
         ],
     ));
+    checks.push(Check::new(
+        "cargo",
+        &[
+            "test",
+            "-p",
+            "webdock-mail-runtime",
+            "-p",
+            "webdock-mail-protocol",
+            "-p",
+            "webdock-mail-message",
+            "--tests",
+            "--all-features",
+            "--locked",
+        ],
+    ));
+    checks.push(Check::new(
+        "cargo",
+        &[
+            "test",
+            "-p",
+            "webdock-plugin-host",
+            "--test",
+            "mail_outbox_catcher",
+            "--test",
+            "mail_outbox_native",
+            "--locked",
+        ],
+    ));
     for manifest in manifests {
         let path = manifest.to_string_lossy();
         checks.push(Check::new(
@@ -542,6 +570,44 @@ mod tests {
                 .iter()
                 .all(|check| check.args.iter().any(|arg| arg == "--locked"))
         );
+    }
+    #[test]
+    fn mail_sending_protocol_runtime_and_catcher_run_without_infrastructure_opt_ins() {
+        let checks = plan(Scope::Rust, &[]);
+        let runtime = checks
+            .iter()
+            .find(|check| {
+                check.args.iter().any(|arg| arg == "webdock-mail-runtime")
+                    && check.args.first().is_some_and(|arg| arg == "test")
+            })
+            .expect("Mail execution integration tests must run in quality");
+        for required in [
+            "webdock-mail-protocol",
+            "webdock-mail-message",
+            "--tests",
+            "--all-features",
+            "--locked",
+        ] {
+            assert!(runtime.args.iter().any(|arg| arg == required));
+        }
+        let catcher = checks
+            .iter()
+            .find(|check| check.args.iter().any(|arg| arg == "mail_outbox_catcher"))
+            .expect("The bounded SMTP fault helper must run in quality");
+        assert!(catcher.args.iter().any(|arg| arg == "webdock-plugin-host"));
+        assert!(
+            catcher
+                .args
+                .windows(2)
+                .any(|pair| pair == ["--test", "mail_outbox_native"]),
+            "The safe native outbox custody regressions must run in quality"
+        );
+        assert!(!checks.iter().any(|check| {
+            check
+                .args
+                .iter()
+                .any(|arg| arg == "--include-ignored" || arg == "--ignored")
+        }));
     }
     #[test]
     fn unknown_scope_is_not_silently_replaced() {

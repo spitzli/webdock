@@ -75,6 +75,7 @@ export function ResourcePage({ customer, projectID, plugin, resource }: { custom
           customer={customer}
           resource={indexed}
           features={view.features}
+          actions={view.manifest.actions.map(action => action.name)}
           writable={["owner", "admin", "operator"].includes(project.data?.role ?? "")}
           onDeleted={() => void leave()}
         />

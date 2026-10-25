@@ -1,6 +1,6 @@
 [package]
 name = "webdock-mail"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.94"
 license = "AGPL-3.0-only"
@@ -9,8 +9,17 @@ publish = false
 [workspace]
 
 [dependencies]
+async-trait = "0.1"
+base64 = "0.22"
+sha2 = "0.10"
+rustls-pemfile = "2"
+axum = "0.8"
+tokio-stream = { version = "0.1", features = ["net"] }
+webdock-mail-runtime = { path = "../../crates/mail-runtime" }
+webdock-mail-protocol = { path = "../../crates/mail-protocol" }
+webdock-mail-message = { path = "../../crates/mail-message" }
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1", features = ["arbitrary_precision"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "time"] }
 webdock-plugin-protocol = { path = "../../crates/plugin-protocol" }
 webdock-plugin-runtime = { path = "../../crates/plugin-runtime" }
@@ -21,10 +30,14 @@ hex = "0.4"
 uuid = { version = "1", features = ["v4"] }
 tokio-postgres = { version = "0.7", features = ["with-uuid-1"] }
 url = "2"
-lettre = { version = "0.11.23", default-features = false, features = ["builder", "smtp-transport", "tokio1", "hostname"] }
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream"] }
 hickory-resolver = "0.25"
 rcgen = "0.14"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+tempfile = "3"
 
 # Mirrors the root workspace policy; checked by tools/quality.
 [lints.rust]

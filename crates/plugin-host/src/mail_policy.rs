@@ -16,6 +16,8 @@ pub struct MailPolicySnapshot {
     pub signer_key_id: String,
     pub binding_sha256: String,
     pub binding: RuntimeBinding,
+    pub managed: bool,
+    pub transport: Value,
 }
 impl MailPolicySnapshot {
     pub fn permits_peer(&self, peer: &PeerIdentity) -> bool {
@@ -56,7 +58,17 @@ impl HostService {
             return Err(unavailable());
         }
         let manifest = Manifest::parse(raw.as_bytes())?;
-        manifest.require_host_services(&[("http", 1)])?;
+        let managed = policy["installation"]["id"] == "mail";
+        manifest.require_host_services(if managed {
+            &[
+                ("http", 1),
+                ("data", 1),
+                ("jobs", 1),
+                ("native-mail-control", 1),
+            ]
+        } else {
+            &[("http", 1)]
+        })?;
         let plugin = string(&policy["installation"], "id")?;
         if manifest.id() != plugin
             || manifest.version() != string(&policy["installation"], "version")?
@@ -72,7 +84,18 @@ impl HostService {
             configuration: policy["configuration"].clone(),
             grant: Value::Null,
         };
-        let binding = self.binding(plugin, &metadata).await?;
+        if managed {
+            super::native_mail::readable_custody(&metadata)?;
+        }
+        let binding = if managed {
+            self.mail_binding_in(
+                &metadata,
+                (policy["managedEnrollment"] == true).then(|| policy["enrollment"].clone()),
+            )
+            .await?
+        } else {
+            self.binding(plugin, &metadata).await?
+        };
         let mut config = metadata.configuration["configuration"]
             .as_object()
             .cloned()
@@ -111,6 +134,8 @@ impl HostService {
             signer_key_id: string(&metadata.release, "signer_key_id")?.into(),
             binding_sha256,
             binding,
+            managed,
+            transport: policy["transport"].clone(),
         })
     }
 }

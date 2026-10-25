@@ -34,10 +34,21 @@ pub struct ProviderSnapshot {
     pub configuration_revision: u64,
     pub descriptor_sha256: String,
     pub binding_sha256: String,
-    pub send_binding: webdock_plugin_http::HttpBinding,
+    pub execution: ProviderExecution,
+}
+pub enum ProviderExecution {
+    LegacyHttp(webdock_plugin_http::HttpBinding),
+    Managed {
+        transport: Value,
+        credentials_sha256: String,
+        worker_credential_sha256: String,
+    },
 }
 #[async_trait::async_trait]
 pub trait ProviderPolicy: Send + Sync {
+    async fn action_source(&self, _tx: &DatabaseTransaction, _source: &Value) -> Result<bool> {
+        Err(Error::Unavailable)
+    }
     /// The adapter holds policy locks in this transaction and validates the actual plugin peer.
     async fn snapshot(
         &self,
@@ -59,17 +70,11 @@ pub struct SendingConfig {
 pub struct Sending {
     pub(crate) dependencies: MailDependencies,
     pub(crate) config: SendingConfig,
-    signing: SigningKey,
+    pub(crate) signing: SigningKey,
     pub(crate) webmail: Option<Arc<crate::webmail::WebmailService>>,
     pub(crate) policy: Arc<dyn ProviderPolicy>,
 }
-#[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct Preparation {
-    pub metadata_sha256: String,
-    pub mime_sha256: String,
-    pub mime_bytes: u64,
-}
+pub use webdock_mail_protocol::outbox::Preparation;
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Envelope {
@@ -280,20 +285,45 @@ impl Sending {
                 lease,
                 digest,
                 preparation,
-            } => self.begin(&tx, *lease, &digest, preparation).await?,
+            } => {
+                if crate::managed_control::managed_source(&lease.source_context) {
+                    return Err(Error::Unavailable);
+                }
+                self.begin(&tx, *lease, &digest, preparation).await?
+            }
         };
         tx.commit().await.map_err(|_| Error::Unavailable)?;
         Ok(result)
     }
     async fn admit(&self, tx: &DatabaseTransaction, input: Admission, id: String) -> Result<Value> {
+        self.admit_in(tx, input, id, json!({}))
+            .await
+            .map_err(Error::from)
+    }
+    pub(crate) async fn admit_in(
+        &self,
+        tx: &DatabaseTransaction,
+        input: Admission,
+        id: String,
+        mut source_context: Value,
+    ) -> std::result::Result<Value, crate::keys::KeyFailure> {
         input.envelope.validate()?;
         let access =
-            NativeKeys::authenticate_in(tx, &input.token, Some(&input.envelope.from)).await?;
+            NativeKeys::authenticate_proof_in(tx, &input.token, Some(&input.envelope.from)).await?;
         let snapshot = self
             .policy
             .snapshot(tx, &access.customer_id, false, None)
             .await?;
-        sender(tx, &access.customer_id, &input.envelope.from).await?;
+        if matches!(snapshot.execution, ProviderExecution::Managed { .. })
+            != crate::managed_control::managed_source(&source_context)
+        {
+            return Err(crate::keys::KeyFailure::Unavailable);
+        }
+        if crate::managed_control::managed_source(&source_context) {
+            source_context["transportSha256"] =
+                json!(crate::managed_control::transport_sha256(&snapshot)?);
+        }
+        sender_proof(tx, &access.customer_id, &input.envelope.from).await?;
         one(
             tx,
             "SELECT pg_advisory_xact_lock(hashtextextended($1,0))",
@@ -301,14 +331,19 @@ impl Sending {
         )
         .await?;
         let source = format!("key:{}", access.key_id);
-        if let Some(row)=one(tx,"SELECT id,state,request_hash FROM webdock_mail.send_job WHERE customer_id=$1 AND source_id=$2 AND idempotency_key=$3",vec![access.customer_id.clone().into(),source.clone().into(),input.idempotency_key.clone().into()]).await? {
-            if field::<String>(&row,"request_hash")?!=input.request_hash {return Err(Error::Invalid);}
+        if let Some(row)=one(tx,"SELECT id,state,request_hash,source_context,payload_ref::text,CASE WHEN state='staging' AND lease_until>clock_timestamp() THEN lease_token::text END AS upload_token FROM webdock_mail.send_job WHERE customer_id=$1 AND source_id=$2 AND idempotency_key=$3",vec![access.customer_id.clone().into(),source.clone().into(),input.idempotency_key.clone().into()]).await? {
+            if field::<String>(&row,"request_hash")?!=input.request_hash {return Err(crate::keys::KeyFailure::Invalid);}
+            if crate::managed_control::managed_source(&source_context) {
+                let existing:Value=field(&row,"source_context")?;
+                if !crate::managed_control::managed_source(&existing)||existing["payloadStoreID"]!=crate::managed_control::STORE_ID{return Err(crate::keys::KeyFailure::Unavailable);}
+
+            }
             return Ok(json!({"id":field::<String>(&row,"id")?,"state":field::<String>(&row,"state")?,"created":false}));
         }
         let budget =
             budget::reserve(tx, &access.customer_id, &id, input.envelope.recipients()).await?;
         if budget.state != "reserved" {
-            return Err(Error::Unavailable);
+            return Err(crate::keys::KeyFailure::Unavailable);
         }
         if let SendPath::Stalwart { service_revision } = &budget.path {
             self.config
@@ -337,7 +372,7 @@ impl Sending {
                     .map_err(|_| Error::Unavailable)?,
                 envelope: serde_json::to_value(input.envelope).map_err(|_| Error::Invalid)?,
                 payload_format: PayloadFormat::Request,
-                source_context: json!({}),
+                source_context,
                 staging: true,
                 not_before: input.not_before,
             },
@@ -358,13 +393,27 @@ impl Sending {
         envelope.validate()?;
         if let Some(key) = job.source_id.strip_prefix("key:") {
             NativeKeys::authorize_id_in(tx, &job.customer_id, key, Some(&envelope.from)).await?;
+        } else if job.source_id.starts_with("action:")
+            && crate::managed_control::managed_source(&job.source_context)
+        {
+            if !self.policy.action_source(tx, &job.source_context).await? {
+                return Err(Error::Unavailable);
+            }
         } else {
             let access = self.queued_access(tx, job).await?;
             if access.sender_address != envelope.from {
                 return Err(Error::Unavailable);
             }
         }
-        sender(tx, &job.customer_id, &envelope.from).await?;
+        if !job.source_id.starts_with("action:") {
+            sender(tx, &job.customer_id, &envelope.from).await?;
+        }
+        if crate::managed_control::managed_source(&job.source_context) {
+            if !crate::managed_control::transport_matches(&job.source_context, snapshot)? {
+                return Err(Error::Unavailable);
+            }
+            crate::managed_control::deny_retained_incoming(tx, &job.customer_id).await?;
+        }
         let route: Route =
             serde_json::from_value(job.route.clone()).map_err(|_| Error::Unavailable)?;
         let budget = budget::reserve(tx, &job.customer_id, &job.id, envelope.recipients()).await?;
@@ -376,7 +425,7 @@ impl Sending {
         }
         Ok(budget.path)
     }
-    async fn begin(
+    pub(crate) async fn begin(
         &self,
         tx: &DatabaseTransaction,
         lease: SendLease,
@@ -539,18 +588,29 @@ impl Sending {
             Utc::now().timestamp(),
         )
         .map_err(|_| Error::Unavailable)?;
-        if claims != persisted
-            || claims.worker_id != self.config.worker_id
-            || claims.worker_generation != self.config.worker_generation
-            || claims.worker_credential_sha256 != self.config.worker_credential_sha256
-        {
+        if claims != persisted {
             return Err(Error::Unavailable);
         }
         let snapshot = self
             .policy
             .snapshot(&tx, &claims.customer_id, true, Some(peer))
             .await?;
-        if !snapshot.matches(&claims) {
+        let worker_matches = match &snapshot.execution {
+            ProviderExecution::LegacyHttp(_) => {
+                claims.worker_id == self.config.worker_id
+                    && claims.worker_generation == self.config.worker_generation
+                    && claims.worker_credential_sha256 == self.config.worker_credential_sha256
+            }
+            ProviderExecution::Managed {
+                worker_credential_sha256,
+                ..
+            } => {
+                claims.worker_id == "mail"
+                    && claims.worker_generation == snapshot.generation
+                    && claims.worker_credential_sha256 == *worker_credential_sha256
+            }
+        };
+        if !worker_matches || !snapshot.matches(&claims) {
             return Err(Error::Unavailable);
         }
         let job = read_job(
@@ -571,7 +631,25 @@ impl Sending {
         lock_job(&tx, &job, "handoff").await?;
         let result = if attempt {
             if !run(&tx,"UPDATE webdock_mail.provider_lease SET attempted_at=clock_timestamp() WHERE id=$1::uuid AND token_sha256=$2 AND attempted_at IS NULL AND revoked_at IS NULL AND expires_at>clock_timestamp()",vec![claims.id.into(),sha256(token.as_bytes()).into()]).await? {return Err(Error::Unavailable);}
-            Some(json!({"binding":snapshot.send_binding}))
+            Some(match snapshot.execution {
+                ProviderExecution::LegacyHttp(binding) => json!({"binding":binding}),
+                ProviderExecution::Managed { mut transport, .. } => {
+                    if !crate::managed_control::managed_source(&job.source_context) {
+                        return Err(Error::Unavailable);
+                    }
+                    transport["selection"] = json!(if job.source_id.starts_with("action:") {
+                        "project"
+                    } else {
+                        "native"
+                    });
+                    if job.source_id.starts_with("action:") {
+                        transport["projectID"] = job.source_context["projectID"].clone();
+                        transport["privatePolicySha256"] =
+                            job.source_context["privatePolicySha256"].clone();
+                    }
+                    json!({"kind":"managed","sourceContext":job.source_context,"transport":transport})
+                }
+            })
         } else {
             None
         };
@@ -632,8 +710,17 @@ pub(crate) async fn read_job(
     }))
 }
 pub(crate) async fn sender(tx: &DatabaseTransaction, customer: &str, from: &str) -> Result<()> {
-    let (_, domain) = from.split_once('@').ok_or(Error::Invalid)?;
-    let row=one(tx,"SELECT provider_id,provider_snapshot FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND customer_id=$1 AND domain=$2 AND status='ownership_verified' AND provider_operation IS NULL FOR SHARE",vec![customer.into(),domain.into()]).await?.ok_or(Error::Unavailable)?;
+    sender_proof(tx, customer, from).await.map_err(Error::from)
+}
+pub(crate) async fn sender_proof(
+    tx: &DatabaseTransaction,
+    customer: &str,
+    from: &str,
+) -> std::result::Result<(), crate::keys::KeyFailure> {
+    let (_, domain) = from
+        .split_once('@')
+        .ok_or(crate::keys::KeyFailure::Invalid)?;
+    let row=one(tx,"SELECT provider_id,provider_snapshot FROM webdock_auth.mail_sender_domain WHERE deleted_at IS NULL AND customer_id=$1 AND domain=$2 AND status='ownership_verified' AND provider_operation IS NULL FOR SHARE",vec![customer.into(),domain.into()]).await?.ok_or(crate::keys::KeyFailure::Denied)?;
     // Retained verified domain evidence is required even when a provider was explicitly adopted.
     let snapshot: Value = field(&row, "provider_snapshot")?;
     if snapshot["domain"] != domain
@@ -645,7 +732,7 @@ pub(crate) async fn sender(tx: &DatabaseTransaction, customer: &str, from: &str)
         || snapshot["dkim_verified"] != true
         || snapshot["dmarc_verified"] != true
     {
-        return Err(Error::Unavailable);
+        return Err(crate::keys::KeyFailure::Denied);
     }
     Ok(())
 }

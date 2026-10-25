@@ -94,7 +94,14 @@ impl wire::plugin_host_server::PluginHost for HostRpc {
         let peer = authenticated_peer(&request)?;
         let request = request.into_inner();
         let claims = claims(&request.claims_json).map_err(failure)?;
-        if request.input_json.len() > 32768 || request.configuration_json.len() > 65536 {
+        if request.input_json.len()
+            > crate::authority::invocation_input_limit(
+                &claims.plugin_id,
+                &claims.action,
+                claims.job.is_some(),
+            )
+            || request.configuration_json.len() > 65536
+        {
             return Err(Status::resource_exhausted("Invocation payload limit"));
         }
         self.host

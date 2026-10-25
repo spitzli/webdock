@@ -22,3 +22,9 @@ message SendReceipt {
  State state=1;
  string provider_id=2;
 }
+// Fixed native Mail control lane on the existing authenticated Core plugin listener.
+service NativeMailControl {
+ rpc Call(NativeMailControlRequest) returns (NativeMailControlReply);
+}
+message NativeMailControlRequest { string plugin_id=1; uint64 generation=2; bytes command_json=3; }
+message NativeMailControlReply { bytes result_json=1; }

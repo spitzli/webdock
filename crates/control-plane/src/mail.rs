@@ -19,10 +19,32 @@ use subtle::ConstantTimeEq;
 use webdock_core::features::OperationKind;
 use webdock_mail::incoming::{MailboxCommand, NativeIncoming, ServiceCommand};
 use webdock_mail::keys::{KeyChange, KeyCommand};
-use webdock_mail::sending::{ProviderPolicy, ProviderSnapshot, SendCommand, Sending};
+use webdock_mail::sending::{
+    ProviderExecution, ProviderPolicy, ProviderSnapshot, SendCommand, Sending,
+};
 use webdock_mail::submissions::{QueueCommand, Submissions};
 use webdock_mail::webmail::{FinishWrite, ReserveWrite, WebmailService};
 
+/// Match the optional Core listener gate before declaring its required host service usable.
+pub fn native_control_configured(
+    configuration: Option<&crate::plugin_config::MailConfig>,
+    environment: &std::collections::HashMap<String, String>,
+) -> bool {
+    configuration.is_some()
+        && environment
+            .get("WEBDOCK_NATIVE_MAIL_SENDING_ENABLED")
+            .map(String::as_str)
+            == Some("true")
+        && webdock_core::features::FeatureSet::from_json(
+            environment
+                .get("WEBDOCK_FEATURES")
+                .map(String::as_str)
+                .unwrap_or("{}"),
+        )
+        .is_ok_and(|features| {
+            features.state("mail") != webdock_core::features::FeatureState::Disabled
+        })
+}
 /// Provider-neutral policy bridge. The domain keeps this transaction open until its state
 /// transition commits; a separate momentary snapshot would lose the revocation fence.
 pub struct MailProviderPolicy {
@@ -35,6 +57,16 @@ impl MailProviderPolicy {
 }
 #[async_trait::async_trait]
 impl ProviderPolicy for MailProviderPolicy {
+    async fn action_source(
+        &self,
+        tx: &sea_orm::DatabaseTransaction,
+        source: &Value,
+    ) -> webdock_mail::Result<bool> {
+        self.host
+            .mail_source_in(tx, source)
+            .await
+            .map_err(|_| webdock_mail::Error::Unavailable)
+    }
     async fn snapshot(
         &self,
         tx: &sea_orm::DatabaseTransaction,
@@ -50,20 +82,43 @@ impl ProviderPolicy for MailProviderPolicy {
         if peer.is_some_and(|peer| !policy.permits_peer(peer)) {
             return Err(webdock_mail::Error::Unavailable);
         }
-        let send_binding = policy
-            .binding
-            .customers
-            .get(customer)
-            .and_then(|bindings| bindings.get("send"))
-            .ok_or(webdock_mail::Error::Unavailable)?
-            .clone();
-        let rule = send_binding
-            .rules
-            .iter()
-            .find(|rule| rule.method == "POST")
-            .ok_or(webdock_mail::Error::Unavailable)?;
-        webdock_plugin_http::bind_target(&rule.method, &rule.path, send_binding.clone())
-            .map_err(|_| webdock_mail::Error::Unavailable)?;
+        let execution = if policy.managed {
+            let transport = &policy.transport;
+            if transport["region"] != "eu"
+                || !["managed", "byok"].contains(&transport["mode"].as_str().unwrap_or(""))
+            {
+                return Err(webdock_mail::Error::Unavailable);
+            }
+            ProviderExecution::Managed {
+                credentials_sha256: transport["credentials_sha256"]
+                    .as_str()
+                    .filter(|v| {
+                        v.len() == 64
+                            && v.bytes()
+                                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                    })
+                    .ok_or(webdock_mail::Error::Unavailable)?
+                    .into(),
+                transport: serde_json::json!({"customerID":policy.customer_id,"accountID":transport["provider_account_id"],"mode":transport["mode"],"region":"eu","transportRevision":policy.transport_revision,"bindingRevision":policy.grant_revision,"byokRevision":transport["byok_revision"]}),
+                worker_credential_sha256: policy.binding.credential_sha256.clone(),
+            }
+        } else {
+            let send_binding = policy
+                .binding
+                .customers
+                .get(customer)
+                .and_then(|bindings| bindings.get("send"))
+                .ok_or(webdock_mail::Error::Unavailable)?
+                .clone();
+            let rule = send_binding
+                .rules
+                .iter()
+                .find(|rule| rule.method == "POST")
+                .ok_or(webdock_mail::Error::Unavailable)?;
+            webdock_plugin_http::bind_target(&rule.method, &rule.path, send_binding.clone())
+                .map_err(|_| webdock_mail::Error::Unavailable)?;
+            ProviderExecution::LegacyHttp(send_binding)
+        };
         Ok(ProviderSnapshot {
             customer_id: policy.customer_id,
             plugin_id: policy.plugin_id,
@@ -73,7 +128,7 @@ impl ProviderPolicy for MailProviderPolicy {
             configuration_revision: policy.configuration_revision,
             descriptor_sha256: policy.manifest_sha256,
             binding_sha256: policy.binding_sha256,
-            send_binding,
+            execution,
         })
     }
 }

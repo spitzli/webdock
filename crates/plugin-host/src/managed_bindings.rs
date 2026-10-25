@@ -106,6 +106,20 @@ impl ManagedBindings {
 }
 #[async_trait]
 impl RuntimeBindings for ManagedBindings {
+    async fn runtime_from_enrollment(
+        &self,
+        plugin: &str,
+        managed: Option<Value>,
+    ) -> Result<Option<RuntimeBinding>> {
+        let fallback = self.fallback.runtime(plugin).await?;
+        match managed {
+            Some(value) if fallback.is_none() => serde_json::from_value(value)
+                .map(Some)
+                .map_err(|_| unavailable()),
+            Some(_) => Err(invalid("Managed and file runtime enrollment collide")),
+            None => Ok(fallback),
+        }
+    }
     async fn runtime(&self, plugin: &str) -> Result<Option<RuntimeBinding>> {
         let fallback = self.fallback.runtime(plugin).await?;
         if fallback.is_some() && self.managed(plugin).await? {

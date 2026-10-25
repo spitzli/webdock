@@ -1,6 +1,6 @@
 {
   "name": "mail",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "kind": "extension",
   "description": "Mail for your domains: send from your apps and the console, give people mailboxes, or route sending through your own turboSMTP account.",
   "protocolVersion": 2,
@@ -24,15 +24,20 @@
       "cert-manager.io/v1/Certificate"
     ]
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "readableSchema": {
     "min": 1,
-    "max": 1
+    "max": 2
   },
   "migrations": [],
   "tables": [],
   "services": {
-    "required": [],
+    "required": [
+      {
+        "name": "native-mail-control",
+        "version": 1
+      }
+    ],
     "optional": []
   },
   "configuration": {
@@ -178,6 +183,76 @@
             "minLength": 1,
             "maxLength": 30000,
             "description": "Plain-text body"
+          }
+        }
+      }
+    },
+    {
+      "name": "mail.status",
+      "intent": "read",
+      "audience": "customer",
+      "capabilities": [],
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id",
+          "id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 19
+          }
+        }
+      }
+    },
+    {
+      "name": "mail.cancel",
+      "intent": "write",
+      "audience": "customer",
+      "capabilities": [],
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id",
+          "id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 19
+          }
+        }
+      }
+    },
+    {
+      "name": "mail.history",
+      "intent": "read",
+      "audience": "customer",
+      "capabilities": [],
+      "resource": "use",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "maxLength": 128
           }
         }
       }
@@ -506,6 +581,21 @@
       "method": "POST",
       "path": "/send",
       "action": "mail.send"
+    },
+    {
+      "method": "POST",
+      "path": "/status",
+      "action": "mail.status"
+    },
+    {
+      "method": "POST",
+      "path": "/cancel",
+      "action": "mail.cancel"
+    },
+    {
+      "method": "POST",
+      "path": "/history",
+      "action": "mail.history"
     }
   ],
   "mcp": [
@@ -513,6 +603,21 @@
       "name": "send_email",
       "description": "Send a plain-text email from a verified sending domain of the project",
       "action": "mail.send"
+    },
+    {
+      "name": "email_status",
+      "action": "mail.status",
+      "description": "Get the durable status of a message on an owned sending domain"
+    },
+    {
+      "name": "cancel_email",
+      "action": "mail.cancel",
+      "description": "Cancel a message before handoff on an owned sending domain"
+    },
+    {
+      "name": "email_history",
+      "action": "mail.history",
+      "description": "List the latest twenty durable sends on an owned sending domain"
     }
   ]
 }

@@ -26,20 +26,5 @@ pub mod submissions;
 pub mod webmail;
 pub mod webmail_send_api;
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("invalid Mail message or submission")]
-    Invalid,
-    #[error("Mail credentials cannot be opened; check key version and instance binding")]
-    Secret,
-    #[error("private Mail storage is unavailable")]
-    Storage,
-    #[error("Mail submission is unavailable")]
-    Unavailable,
-}
-pub type Result<T> = std::result::Result<T, Error>;
-impl From<webdock_mail_message::Error> for Error {
-    fn from(_: webdock_mail_message::Error) -> Self {
-        Self::Invalid
-    }
-}
+pub use webdock_mail_runtime::{Error, Result};
+pub mod managed_control;

@@ -11,6 +11,27 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use webdock_browser_session::StoredAuthority;
 use webdock_identity::{Principal, RlsSigner};
+pub(crate) enum KeyFailure {
+    Invalid,
+    Denied,
+    Unavailable,
+}
+impl From<Error> for KeyFailure {
+    fn from(error: Error) -> Self {
+        match error {
+            Error::Invalid => Self::Invalid,
+            _ => Self::Unavailable,
+        }
+    }
+}
+impl From<KeyFailure> for Error {
+    fn from(error: KeyFailure) -> Self {
+        match error {
+            KeyFailure::Invalid => Self::Invalid,
+            _ => Self::Unavailable,
+        }
+    }
+}
 pub struct NativeKeys {
     dependencies: MailDependencies,
     signer: RlsSigner,
@@ -261,6 +282,15 @@ impl NativeKeys {
         value: &str,
         sender: Option<&str>,
     ) -> Result<KeyAccess> {
+        Self::authenticate_proof_in(tx, value, sender)
+            .await
+            .map_err(Error::from)
+    }
+    pub(crate) async fn authenticate_proof_in(
+        tx: &DatabaseTransaction,
+        value: &str,
+        sender: Option<&str>,
+    ) -> std::result::Result<KeyAccess, KeyFailure> {
         let hash = token_hash(value)?;
         let row = one(
             tx,
@@ -271,7 +301,7 @@ impl NativeKeys {
             vec![hash.into()],
         )
         .await?
-        .ok_or(Error::Unavailable)?;
+        .ok_or(KeyFailure::Denied)?;
         authorize_row(tx, &row, sender).await
     }
     pub async fn authorize_id(
@@ -300,8 +330,18 @@ impl NativeKeys {
         key: &str,
         sender: Option<&str>,
     ) -> Result<KeyAccess> {
+        Self::authorize_id_proof_in(tx, customer, key, sender)
+            .await
+            .map_err(Error::from)
+    }
+    pub(crate) async fn authorize_id_proof_in(
+        tx: &DatabaseTransaction,
+        customer: &str,
+        key: &str,
+        sender: Option<&str>,
+    ) -> std::result::Result<KeyAccess, KeyFailure> {
         if !valid_id(customer) || !valid_id(key) {
-            return Err(Error::Invalid);
+            return Err(KeyFailure::Invalid);
         }
         let row = one(
             tx,
@@ -312,7 +352,7 @@ impl NativeKeys {
             vec![key.into(), customer.into()],
         )
         .await?
-        .ok_or(Error::Unavailable)?;
+        .ok_or(KeyFailure::Denied)?;
         authorize_row(tx, &row, sender).await
     }
 }
@@ -320,7 +360,7 @@ async fn authorize_row(
     tx: &DatabaseTransaction,
     row: &QueryResult,
     sender: Option<&str>,
-) -> Result<KeyAccess> {
+) -> std::result::Result<KeyAccess, KeyFailure> {
     let customer: String = field(row, "customer_id")?;
     one(
         tx,
@@ -330,18 +370,19 @@ async fn authorize_row(
         vec![customer.clone().into()],
     )
     .await?
-    .ok_or(Error::Unavailable)?;
+    .ok_or(KeyFailure::Denied)?;
     let restricted: bool = field(row, "domain_restricted")?;
     let domain_id: Option<String> = field(row, "domain_id")?;
     let domain: Option<String> = field(row, "domain")?;
     let status: Option<String> = field(row, "domain_status")?;
     if restricted && (domain_id.is_none() || status.as_deref() != Some("ownership_verified")) {
-        return Err(Error::Unavailable);
+        return Err(KeyFailure::Denied);
     }
     if let Some(sender) = sender {
-        let normalized = crate::message::envelope_address(sender)?;
+        let normalized =
+            crate::message::envelope_address(sender).map_err(|_| KeyFailure::Invalid)?;
         if restricted && normalized.split_once('@').map(|(_, domain)| domain) != domain.as_deref() {
-            return Err(Error::Unavailable);
+            return Err(KeyFailure::Denied);
         }
     }
     Ok(KeyAccess {

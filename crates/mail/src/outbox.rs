@@ -4,24 +4,11 @@
 use crate::{Error, Result, proof::valid_id};
 use chrono::{DateTime, Utc};
 use sea_orm::{ConnectionTrait, DatabaseTransaction, DbBackend, QueryResult, Statement};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::Value;
 use uuid::Uuid;
 
-#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-pub enum PayloadFormat {
-    Request,
-    Mime,
-}
-impl PayloadFormat {
-    fn as_str(self) -> &'static str {
-        match self {
-            Self::Request => "request",
-            Self::Mime => "mime",
-        }
-    }
-}
+pub use webdock_mail_protocol::outbox::{PayloadFormat, PayloadLease, Receipt, SendLease};
 #[derive(Clone)]
 pub struct Enqueue {
     /// Already allocated and committed by the coordinated native ID allocator.
@@ -47,57 +34,6 @@ pub struct Enqueued {
     pub created: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub upload_token: Option<String>,
-}
-#[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct SendLease {
-    pub id: String,
-    #[serde(rename = "customerID")]
-    pub customer_id: String,
-    #[serde(rename = "sourceID")]
-    pub source_id: String,
-    pub payload_ref: String,
-    pub payload_bytes: i32,
-    pub request_hash: String,
-    pub payload_format: PayloadFormat,
-    pub source_context: Value,
-    pub route: Value,
-    pub envelope: Value,
-    pub lease_token: String,
-}
-#[derive(Clone, Serialize, Deserialize)]
-#[serde(tag = "state", rename_all = "lowercase", deny_unknown_fields)]
-pub enum Receipt {
-    Accepted {
-        #[serde(rename = "providerID")]
-        provider_id: String,
-    },
-    Rejected {},
-    Unknown {},
-}
-impl Receipt {
-    pub fn state(&self) -> &'static str {
-        match self {
-            Self::Accepted { .. } => "accepted",
-            Self::Rejected {} => "rejected",
-            Self::Unknown {} => "unknown",
-        }
-    }
-    fn provider(&self) -> Option<&str> {
-        match self {
-            Self::Accepted { provider_id } => Some(provider_id),
-            _ => None,
-        }
-    }
-}
-#[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct PayloadLease {
-    pub id: String,
-    #[serde(rename = "customerID")]
-    pub customer_id: String,
-    pub payload_ref: String,
-    pub upload_token: String,
 }
 pub(crate) async fn one(
     tx: &DatabaseTransaction,
@@ -200,11 +136,18 @@ pub async fn enqueue(tx: &DatabaseTransaction, input: &Enqueue) -> Result<Enqueu
 }
 /// Optional tenant partition only narrows the existing signed worker authority.
 pub async fn claim(tx: &DatabaseTransaction, customer: Option<&str>) -> Result<Option<SendLease>> {
+    claim_lane(tx, customer, None).await
+}
+pub(crate) async fn claim_lane(
+    tx: &DatabaseTransaction,
+    customer: Option<&str>,
+    lane: Option<u64>,
+) -> Result<Option<SendLease>> {
     if customer.is_some_and(|s| !valid_id(s)) {
         return Err(Error::Invalid);
     }
-    run(tx,"WITH expired AS (SELECT id FROM webdock_mail.send_job WHERE state IN ('leased','handoff') AND lease_until<now() AND ($1::text IS NULL OR customer_id=$1) FOR UPDATE SKIP LOCKED LIMIT 100) UPDATE webdock_mail.send_job SET state=CASE WHEN state='leased' THEN 'queued' ELSE 'unknown' END WHERE id IN (SELECT id FROM expired)",vec![customer.into()]).await?;
-    let Some(row)=one(tx,"SELECT id,customer_id,source_id,payload_ref::text,payload_bytes,request_hash,payload_format,source_context,route,envelope FROM webdock_mail.send_job WHERE state='queued' AND not_before<=now() AND ($1::text IS NULL OR customer_id=$1) ORDER BY not_before,id FOR UPDATE SKIP LOCKED LIMIT 1",vec![customer.into()]).await?else{return Ok(None);};
+    run(tx,"WITH expired AS (SELECT id FROM webdock_mail.send_job WHERE state IN ('leased','handoff') AND lease_until<now() AND ($1::text IS NULL OR customer_id=$1) AND (($2::bigint IS NULL AND source_context->>'executor' IS DISTINCT FROM 'managed-mail-v1') OR ($2 IS NOT NULL AND source_context->>'executor'='managed-mail-v1' AND source_context->>'payloadStoreID'='mail:platform:v1' AND jsonb_typeof(source_context->'payloadStoreVersion')='number' AND source_context->>'payloadStoreVersion'='1' AND source_context->>'executorGeneration'=$2::text)) FOR UPDATE SKIP LOCKED LIMIT 100) UPDATE webdock_mail.send_job SET state=CASE WHEN state='leased' THEN 'queued' ELSE 'unknown' END WHERE id IN (SELECT id FROM expired)",vec![customer.into(),lane.map(|n|n as i64).into()]).await?;
+    let Some(row)=one(tx,"SELECT id,customer_id,source_id,payload_ref::text,payload_bytes,request_hash,payload_format,source_context,route,envelope FROM webdock_mail.send_job WHERE state='queued' AND not_before<=now() AND ($1::text IS NULL OR customer_id=$1) AND (($2::bigint IS NULL AND source_context->>'executor' IS DISTINCT FROM 'managed-mail-v1') OR ($2 IS NOT NULL AND source_context->>'executor'='managed-mail-v1' AND source_context->>'payloadStoreID'='mail:platform:v1' AND jsonb_typeof(source_context->'payloadStoreVersion')='number' AND source_context->>'payloadStoreVersion'='1' AND source_context->>'executorGeneration'=$2::text)) ORDER BY not_before,id FOR UPDATE SKIP LOCKED LIMIT 1",vec![customer.into(),lane.map(|n|n as i64).into()]).await?else{return Ok(None);};
     let id: String = field(&row, "id")?;
     let token = Uuid::new_v4().to_string();
     run(tx,"UPDATE webdock_mail.send_job SET state='leased',lease_token=$2::uuid,lease_until=now()+interval '2 minutes' WHERE id=$1",vec![id.clone().into(),token.clone().into()]).await?;

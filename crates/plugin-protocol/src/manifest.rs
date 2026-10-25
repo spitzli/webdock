@@ -10,8 +10,19 @@ use std::{collections::HashSet, fmt};
 const NAME: &str = r"^[a-z][a-z0-9_.-]*$";
 const SLUG: &str = r"^[a-z][a-z0-9-]*$";
 const SERVICES: &[&str] = &[
-    "apps", "project", "data", "db", "cache", "jobs", "events", "storage", "secrets", "http",
-    "audit", "log",
+    "apps",
+    "project",
+    "data",
+    "db",
+    "cache",
+    "jobs",
+    "events",
+    "storage",
+    "secrets",
+    "http",
+    "audit",
+    "log",
+    "native-mail-control",
 ];
 // Product names (mail, hosting, databases, ...) are plugins now; only platform kernel names stay reserved.
 const RESERVED: &[&str] = &["core", "auth", "registry", "plugins", "billing"];

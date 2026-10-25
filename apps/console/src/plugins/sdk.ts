@@ -17,6 +17,8 @@ export interface ResourceProps extends PluginContext {
   features: string[];
   /** Whether the viewer may run write actions at all (owner, admin or operator). */
   writable: boolean;
+  /** Actions declared by the installed release; absent on older host adapters. */
+  actions?: readonly string[];
   /** Call after a delete action succeeded; returns to the project. */
   onDeleted: () => void;
 }
@@ -68,6 +70,18 @@ export function usePluginMutation(context: PluginContext, action: string, option
   return useMutation({
     mutationFn: (input: Record<string, unknown>) => invokePlugin(api, context.plugin, context.projectID, action, input),
     onSuccess: () => options.leaves ? undefined : client.invalidateQueries({ queryKey: ["plugin-ui", context.plugin, context.projectID] }),
+  });
+}
+/** One logical submission keeps its explicit key when a response is lost. */
+export interface PluginSubmission { input: Record<string, unknown>; idempotencyKey: string }
+export function usePluginSubmission<T>(context: PluginContext, action: string, schema: z.ZodType<T>) {
+  const api = useApi();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ input, idempotencyKey }: PluginSubmission) => schema.parse(await invokePlugin(api, context.plugin, context.projectID, action, input, undefined, idempotencyKey)),
+    retry: false,
+    gcTime: 0,
+    onSettled: () => client.invalidateQueries({ queryKey: ["plugin-ui", context.plugin, context.projectID] }),
   });
 }
 /** Reads a value once on demand, never cached: for credentials behind a reveal. */

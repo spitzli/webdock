@@ -2,15 +2,15 @@
 //! turboSMTP account, and a send action exposed to the Console, the public API and MCP.
 //! The Core admits every call; this plugin checks again that records belong to the invoking project.
 pub use webdock_plugin_kit::seal;
+pub mod delivery;
 pub mod engine;
+pub mod executor;
+pub mod listener;
 mod mailboxes;
+pub mod payload;
 pub mod store;
 pub mod transport;
 
-use lettre::{
-    Message,
-    message::{Mailbox, header::ContentType},
-};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::sync::Arc;
@@ -26,6 +26,9 @@ const ACTIONS: &[(&str, &str)] = &[
     ("domains.verify", "write"),
     ("domains.delete", "write"),
     ("mail.send", "write"),
+    ("mail.status", "read"),
+    ("mail.cancel", "write"),
+    ("mail.history", "read"),
     ("relay.connect", "write"),
     ("relay.view", "read"),
     ("relay.delete", "write"),
@@ -37,7 +40,6 @@ const ACTIONS: &[(&str, &str)] = &[
     ("incoming.activate", "write"),
     ("incoming.deactivate", "write"),
 ];
-const MAX_RECIPIENTS: usize = 10;
 fn invalid(message: &str) -> PluginError {
     PluginError::new(ErrorCode::InvalidInput, message)
 }
@@ -45,7 +47,8 @@ fn missing() -> PluginError {
     PluginError::new(ErrorCode::NotFound, "Not found")
 }
 fn unavailable(context: &str, error: impl std::fmt::Display) -> PluginError {
-    eprintln!("mail_plugin_{context}: {error}");
+    let _ = error;
+    eprintln!("mail_plugin_{context}_unavailable");
     PluginError::new(ErrorCode::Unavailable, "Mail service is unavailable")
 }
 fn parse<T: for<'a> Deserialize<'a>>(input: Value) -> Result<T> {
@@ -77,20 +80,6 @@ pub fn domain_name(raw: &str) -> Result<String> {
     }
     Ok(name)
 }
-fn local_part(raw: &str) -> Result<&str> {
-    if raw.is_empty()
-        || raw.len() > 64
-        || raw.starts_with('.')
-        || raw.ends_with('.')
-        || raw.contains("..")
-        || !raw
-            .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || b"._+-".contains(&b))
-    {
-        return Err(invalid("Invalid sender address"));
-    }
-    Ok(raw)
-}
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct NewDomain {
@@ -100,17 +89,6 @@ struct NewDomain {
 #[serde(deny_unknown_fields)]
 struct Target {
     resource_id: String,
-}
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Outgoing {
-    resource_id: String,
-    from: String,
-    #[serde(default)]
-    from_name: String,
-    to: String,
-    subject: String,
-    text: String,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -159,9 +137,9 @@ pub struct Settings {
     pub trust_unverified_domains: bool,
 }
 pub struct Plugin {
-    store: store::Store,
+    store: Arc<store::Store>,
     sealer: seal::Sealer,
-    sender: transport::Sender,
+    delivery: Option<Arc<delivery::Delivery>>,
     dns: Box<dyn Dns>,
     settings: Settings,
     engines: Option<engine::Engines>,
@@ -172,20 +150,29 @@ impl Plugin {
     pub fn new(
         store: store::Store,
         sealer: seal::Sealer,
-        sender: transport::Sender,
+        _sender: transport::Sender,
         dns: Box<dyn Dns>,
         settings: Settings,
         engines: Option<engine::Engines>,
     ) -> Arc<Self> {
         Arc::new(Self {
-            store,
+            store: Arc::new(store),
             sealer,
-            sender,
+            delivery: None,
             dns,
             settings,
             engines,
             provisioning: tokio::sync::Mutex::new(()),
         })
+    }
+    pub fn with_delivery(self: Arc<Self>, delivery: Arc<delivery::Delivery>) -> Result<Arc<Self>> {
+        let mut plugin =
+            Arc::try_unwrap(self).map_err(|_| invalid("Mail configuration already shared"))?;
+        plugin.delivery = Some(delivery);
+        Ok(Arc::new(plugin))
+    }
+    pub fn store(&self) -> Arc<store::Store> {
+        self.store.clone()
     }
     async fn domain(&self, claims: &InvocationClaims, id: &str) -> Result<store::Domain> {
         self.store
@@ -278,132 +265,6 @@ impl Plugin {
         }
         Ok(json!({"verified": found}))
     }
-    async fn send(&self, claims: &InvocationClaims, input: Value) -> Result<Value> {
-        let input: Outgoing = parse(input)?;
-        let domain = self.domain(claims, &input.resource_id).await?;
-        if self
-            .store
-            .find_engine(&claims.customer_id)
-            .await
-            .map_err(store_error)?
-            .is_some()
-            || self.store.legacy_engines().await.map_err(store_error)?
-        {
-            return Err(PluginError::new(
-                ErrorCode::Conflict,
-                "API sending through incoming mail is not available; incoming storage remains retained",
-            ));
-        }
-        if !domain.verified && !self.settings.trust_unverified_domains {
-            return Err(PluginError::new(
-                ErrorCode::Conflict,
-                "Verify the domain before sending",
-            ));
-        }
-        let from_name = input.from_name.trim();
-        if from_name.chars().count() > 80 || from_name.chars().any(char::is_control) {
-            return Err(invalid("Invalid sender name"));
-        }
-        let address = format!("{}@{}", local_part(input.from.trim())?, domain.domain);
-        let from = Mailbox::new(
-            (!from_name.is_empty()).then(|| from_name.to_owned()),
-            address
-                .parse()
-                .map_err(|_| invalid("Invalid sender address"))?,
-        );
-        let recipients = input
-            .to
-            .split(',')
-            .map(str::trim)
-            .filter(|r| !r.is_empty())
-            .map(|r| {
-                r.parse::<lettre::Address>()
-                    .map_err(|_| invalid("Invalid recipient address"))
-            })
-            .collect::<Result<Vec<_>>>()?;
-        if recipients.is_empty() || recipients.len() > MAX_RECIPIENTS {
-            return Err(invalid("Send to between 1 and 10 recipients"));
-        }
-        let subject = input.subject.trim();
-        if subject.is_empty()
-            || subject.chars().count() > 200
-            || subject.chars().any(char::is_control)
-        {
-            return Err(invalid("Invalid subject"));
-        }
-        if input.text.is_empty() || input.text.chars().count() > 30_000 {
-            return Err(invalid("Invalid message text"));
-        }
-        let mut builder = Message::builder().from(from).subject(subject);
-        for recipient in &recipients {
-            builder = builder.to(Mailbox::new(None, recipient.clone()));
-        }
-        let message = builder
-            .header(ContentType::TEXT_PLAIN)
-            .body(input.text)
-            .map_err(|_| invalid("Invalid message"))?;
-        let relay = self
-            .store
-            .relay(&claims.project_id)
-            .await
-            .map_err(store_error)?;
-        let route = match &relay {
-            Some(relay) => transport::Route::Own {
-                key: self
-                    .sealer
-                    .open(&relay.id, &relay.key_sealed)
-                    .ok_or_else(|| unavailable("unseal", relay.id))?,
-                secret: self
-                    .sealer
-                    .open(&relay.id, &relay.secret_sealed)
-                    .ok_or_else(|| unavailable("unseal", relay.id))?,
-            },
-            None => transport::Route::Platform(&self.settings.platform),
-        };
-        let joined = recipients
-            .iter()
-            .map(ToString::to_string)
-            .collect::<Vec<_>>()
-            .join(", ");
-        let outcome = self.sender.send(route, message).await;
-        let transport = if relay.is_some() {
-            "turbosmtp"
-        } else {
-            "platform"
-        };
-        let (status, provider_id) = match &outcome {
-            Ok(delivery) => ("accepted", delivery.provider_id.as_deref()),
-            Err(_) => ("failed", None),
-        };
-        self.store
-            .log(
-                &domain.id,
-                &address,
-                &joined,
-                subject,
-                transport,
-                status,
-                provider_id,
-            )
-            .await
-            .unwrap_or_else(|error| eprintln!("mail_plugin_send_log: {error}"));
-        match outcome {
-            Ok(delivery) => Ok(
-                json!({"accepted": true, "transport": delivery.transport, "providerID": delivery.provider_id}),
-            ),
-            Err(transport::Failure::Credentials) => Err(PluginError::new(
-                ErrorCode::PermissionDenied,
-                "turboSMTP rejected the connected account's keys",
-            )),
-            Err(transport::Failure::Rejected) => {
-                Err(invalid("The mail service rejected this message"))
-            }
-            Err(transport::Failure::Unavailable) => Err(PluginError::new(
-                ErrorCode::Unavailable,
-                "The mail service could not be reached; try again",
-            )),
-        }
-    }
     async fn connect_relay(&self, claims: &InvocationClaims, input: Value) -> Result<Value> {
         let input: NewRelay = parse(input)?;
         let (key, secret) = (input.consumer_key.trim(), input.consumer_secret.trim());
@@ -459,7 +320,7 @@ impl ActionHandler for Handler {
     async fn invoke(
         &self,
         claims: &InvocationClaims,
-        _token: &str,
+        token: &str,
         input: Value,
         configuration: Value,
     ) -> Result<Value> {
@@ -474,6 +335,27 @@ impl ActionHandler for Handler {
             .map_err(store_error)?
         {
             return Err(PluginError::denied());
+        }
+        let transition = matches!(
+            claims.action.as_str(),
+            "incoming.activate" | "mailboxes.create" | "domains.delete"
+        );
+        let _fence =
+            if transition || matches!(claims.action.as_str(), "relay.connect" | "relay.delete") {
+                Some(
+                    plugin
+                        .store
+                        .customer_fence(&claims.customer_id)
+                        .await
+                        .map_err(|_| {
+                            PluginError::new(ErrorCode::Unavailable, "Mail transition unavailable")
+                        })?,
+                )
+            } else {
+                None
+            };
+        if transition {
+            plugin.transition(token, &input).await?;
         }
         match claims.action.as_str() {
             "domains.create" => plugin.create_domain(claims, input).await,
@@ -502,7 +384,9 @@ impl ActionHandler for Handler {
             "mailboxes.credentials" => plugin.mailbox_password(claims, input).await,
             "mailboxes.rotate" => plugin.rotate_mailbox(claims, input).await,
             "mailboxes.delete" => plugin.delete_mailbox(claims, input).await,
-            "mail.send" => plugin.send(claims, input).await,
+            "mail.send" => plugin.queued_send(claims, token, input).await,
+            "mail.status" | "mail.cancel" => plugin.outbox_status(token, input, false).await,
+            "mail.history" => plugin.outbox_status(token, input, true).await,
             "relay.connect" => plugin.connect_relay(claims, input).await,
             "relay.view" => {
                 let relay = plugin.relay(claims, input).await?;
@@ -534,6 +418,11 @@ pub fn validate_manifest(manifest: &Manifest) -> Result<()> {
     if manifest.id() != PLUGIN_ID
         || value["capabilities"] != json!(["plugin.workloads"])
         || value["httpBindings"] != json!([])
+        || value["services"]
+            != json!({"required":[{"name":"native-mail-control","version":1}],"optional":[]})
+        || value["version"] != "0.3.0"
+        || value["schemaVersion"] != 2
+        || value["readableSchema"] != json!({"min":1,"max":2})
         || value["actions"]
             .as_array()
             .is_none_or(|a| a.len() != ACTIONS.len())

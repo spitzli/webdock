@@ -67,24 +67,43 @@ async fn run() -> Result<(), Error> {
         &config,
     )
     .await?;
-    let mail = if platform.features.state("mail") != webdock_core::features::FeatureState::Disabled
-        && std::env::var("WEBDOCK_NATIVE_MAIL_SENDING_ENABLED").as_deref() == Ok("true")
-        && let Some(configuration) = &config.mail
+    let mail = if webdock_control_plane::mail::native_control_configured(
+        config.mail.as_ref(),
+        &std::env::vars().collect(),
+    ) && let Some(configuration) = &config.mail
     {
         Some(
             webdock_control_plane::mail::initialize_sender(
-                mail_dependencies,
+                mail_dependencies.clone(),
                 services.host.clone(),
                 configuration,
                 &std::env::vars().collect(),
                 None,
             )
-            .await?
-            .service(),
+            .await?,
         )
     } else {
         None
     };
+    let native_mail = match &mail {
+        Some(sender) => Some(
+            Arc::new(webdock_mail::managed_control::ManagedControl::new(
+                sender.clone(),
+                Arc::new(
+                    webdock_mail::submissions::Submissions::new(
+                        mail_dependencies,
+                        &required("DATABASE_RLS_SECRET")?,
+                        true,
+                    )
+                    .await?,
+                ),
+                services.host.clone(),
+            ))
+            .service(),
+        ),
+        None => None,
+    };
+    let mail = mail.map(|sender| sender.service());
     let shutdown = async {
         #[cfg(unix)]
         {
@@ -112,6 +131,7 @@ async fn run() -> Result<(), Error> {
                 .add_service(services.host.rpc())
                 .add_optional_service(repository)
                 .add_optional_service(mail)
+                .add_optional_service(native_mail)
                 .serve_with_incoming_shutdown(incoming, shutdown)
                 .await?;
             drop(socket);
@@ -128,6 +148,7 @@ async fn run() -> Result<(), Error> {
                 .add_service(services.host.rpc())
                 .add_optional_service(repository)
                 .add_optional_service(mail)
+                .add_optional_service(native_mail)
                 .serve_with_incoming_shutdown(
                     tokio_stream::wrappers::TcpListenerStream::new(listener),
                     shutdown,

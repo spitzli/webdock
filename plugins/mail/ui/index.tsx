@@ -1,5 +1,6 @@
 // Console UI of the mail plugin. Bundled by the Console; every call goes through the plugin action API.
 import { useState } from "react";
+import { SendForm, Outbox } from "./Send";
 import { z } from "zod";
 import { Failure, Loading, ui, usePluginMutation, usePluginQuery, usePluginReveal, type CreateProps, type PluginUI, type ResourceProps } from "@webdock/plugin-ui";
 
@@ -73,60 +74,6 @@ function Remove({ context, action, noun, feature }: { context: ResourceProps; ac
   );
 }
 
-function SendForm({ context, domain }: { context: ResourceProps; domain: Domain }) {
-  const send = usePluginMutation(context, "mail.send");
-  const [sent, setSent] = useState<string>();
-  return (
-    <form
-      className={ui.cx(ui.card, ui.cardBody)}
-      aria-label="Send a message"
-      onSubmit={(event) => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
-        setSent(undefined);
-        send.mutate({ resource_id: context.resource.id, ...data }, {
-          onSuccess: () => { setSent(data.to); form.reset(); },
-        });
-      }}
-    >
-      <h2 className={ui.sectionTitle}>Send a message</h2>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className={ui.field}>
-          From
-          <span className="flex items-center gap-2">
-            <input className={ui.input} name="from" required maxLength={64} defaultValue="hello" />
-            <span className="shrink-0 text-sm text-muted">@{domain.domain}</span>
-          </span>
-        </label>
-        <label className={ui.field}>
-          Sender name
-          <input className={ui.input} name="from_name" maxLength={80} />
-        </label>
-      </div>
-      <label className={ui.field}>
-        To
-        <input className={ui.input} name="to" required maxLength={2000} placeholder="someone@example.com, another@example.com" />
-        <span className={ui.hint}>Up to 10 addresses, separated by commas.</span>
-      </label>
-      <label className={ui.field}>
-        Subject
-        <input className={ui.input} name="subject" required maxLength={200} />
-      </label>
-      <label className={ui.field}>
-        Message
-        <textarea className={ui.cx(ui.input, "min-h-32")} name="text" required maxLength={30000} />
-      </label>
-      <div className="flex flex-wrap items-center gap-3">
-        <button className={ui.button("primary")} disabled={send.isPending || !domain.verified}>{send.isPending ? "Sending…" : "Send"}</button>
-        {!domain.verified ? <span className="text-[13px] text-muted">Verify the domain first.</span> : null}
-        {sent ? <span role="status" className="text-[13px] text-success">Sent to {sent}.</span> : null}
-        {send.error ? <span role="alert" className="text-sm text-danger">{send.error.message}</span> : null}
-      </div>
-    </form>
-  );
-}
-
 function IncomingMail({ context, domain, refresh }: { context: ResourceProps; domain: Domain; refresh: () => void }) {
   const activate = usePluginMutation(context, "incoming.activate");
   const deactivate = usePluginMutation(context, "incoming.deactivate");
@@ -160,12 +107,12 @@ function IncomingMail({ context, domain, refresh }: { context: ResourceProps; do
 function DomainPage(context: ResourceProps) {
   const query = usePluginQuery(context, "domains.view", { resource_id: context.resource.id }, domainSchema, { refetchInterval: (data) => data && ["provisioning", "suspending"].includes(data.incoming.state) ? 2000 : false });
   const verify = usePluginMutation(context, "domains.verify");
-  if (query.isPending) return <Loading>Loading domain…</Loading>;
-  if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
+  if (!query.data) return query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : <Loading>Loading domain…</Loading>;
   const domain = query.data;
   const checked = verify.data ? verifySchema.safeParse(verify.data) : undefined;
   return (
     <div className="grid gap-6">
+      {query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : null}
       <section className={ui.card} aria-label="Status">
         <div className={ui.cardBody}>
           <div className="flex flex-wrap items-center gap-3">
@@ -209,6 +156,7 @@ function DomainPage(context: ResourceProps) {
         </section>
       ) : null}
       {context.writable && domain.incoming.state === "disabled" ? <SendForm context={context} domain={domain} /> : null}
+      <Outbox context={context} />
       <section className={ui.card} aria-label="Recent messages">
         <h2 className={ui.cx(ui.sectionTitle, "px-6 py-4 max-sm:px-[18px]")}>Recent messages</h2>
         {domain.recent.length === 0 ? <p className="px-6 pb-5 text-sm text-muted max-sm:px-[18px]">Nothing sent yet.</p> : domain.recent.map((message) => (

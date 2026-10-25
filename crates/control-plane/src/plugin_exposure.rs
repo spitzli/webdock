@@ -37,6 +37,13 @@ fn route_action<'a>(manifest: &'a Value, method: &str, path: &str) -> Option<&'a
         .iter()
         .find(|a| a["name"] == route["action"])
 }
+fn api_input_limit(plugin: &str, action: &Value, read: bool) -> usize {
+    if !read && plugin == "mail" && action["name"] == "mail.send" && action["intent"] == "write" {
+        webdock_plugin_host::MAIL_ACTION_INPUT_BYTES
+    } else {
+        32768
+    }
+}
 async fn api(
     State(state): State<Arc<ServiceState>>,
     Path((plugin, project, path)): Path<(String, String, String)>,
@@ -100,6 +107,7 @@ async fn api(
                 )
                 .into_response()
             })?;
+        let input_limit = api_input_limit(&plugin, action, read);
         let action = action["name"]
             .as_str()
             .ok_or_else(|| failure(unavailable_plugin()).into_response())?
@@ -133,7 +141,7 @@ async fn api(
             }
         } else {
             let headers = request.headers().clone();
-            let body = axum::body::to_bytes(request.into_body(), 32768)
+            let body = axum::body::to_bytes(request.into_body(), input_limit)
                 .await
                 .map_err(|_| {
                     reject(
@@ -143,7 +151,7 @@ async fn api(
                     )
                     .into_response()
                 })?;
-            json_body(&body, &headers).map_err(IntoResponse::into_response)?
+            json_body_limit(&body, &headers, input_limit).map_err(IntoResponse::into_response)?
         };
         let value = endpoint
             .invoke_mcp(
@@ -423,6 +431,100 @@ async fn registry_write_ceiling(
     }
     Ok(Request::from_parts(parts, axum::body::Body::from(bytes)))
 }
+fn large_mcp_name(value: &Value, bytes: usize) -> Option<&str> {
+    let object = value.as_object()?;
+    if bytes > MAIL_ENVELOPE_BYTES
+        || object.len() != 4
+        || !["jsonrpc", "id", "method", "params"]
+            .iter()
+            .all(|k| object.contains_key(*k))
+        || value["jsonrpc"] != "2.0"
+        || value["method"] != "tools/call"
+    {
+        return None;
+    }
+    if !(value["id"]
+        .as_str()
+        .is_some_and(|id| id.encode_utf16().count() <= 128)
+        || value["id"].as_i64().is_some())
+    {
+        return None;
+    }
+    let params = value["params"].as_object()?;
+    if params.len() != 2 || !params.contains_key("name") || !params.contains_key("arguments") {
+        return None;
+    }
+    let args: ToolArguments = serde_json::from_value(params["arguments"].clone()).ok()?;
+    let input_bytes = serde_json::to_vec(&args.input).ok()?.len();
+    if !args.input.is_object()
+        || !(1..=20).contains(&args.project_id.len())
+        || !args.project_id.bytes().all(|b| b.is_ascii_digit())
+        || input_bytes > webdock_plugin_host::MAIL_ACTION_INPUT_BYTES
+        || bytes.saturating_sub(input_bytes) > 16 * 1024
+        || !args
+            .idempotency_key
+            .as_deref()
+            .is_some_and(|k| !k.is_empty() && k.encode_utf16().count() <= 128)
+    {
+        return None;
+    }
+    params["name"].as_str()
+}
+fn declared_mail_tool(definitions: &[ExposedTool], name: &str) -> bool {
+    definitions.iter().any(|tool| {
+        tool.tool.name == name && tool.plugin == "mail" && tool.action == "mail.send" && tool.write
+    })
+}
+async fn mcp_request_budget(
+    state: &ServiceState,
+    actor: &McpAuthentication,
+    resource: Resource,
+    request: Request,
+) -> Result<(Request, usize), resource_auth::ResourceFailure> {
+    if request.method() != Method::POST {
+        return Ok((request, 65536));
+    }
+    let (parts, body) = request.into_parts();
+    let too_large = || {
+        resource_auth::ResourceFailure::from(reject(
+            StatusCode::PAYLOAD_TOO_LARGE,
+            "invalid_input",
+            "Request is too large.",
+        ))
+    };
+    let bytes = axum::body::to_bytes(body, MAIL_ENVELOPE_BYTES)
+        .await
+        .map_err(|_| too_large())?;
+    let limit = if bytes.len() <= 65536 {
+        65536
+    } else {
+        if resource != Resource::Registry || !actor.authority.can_write() {
+            return Err(too_large());
+        }
+        let value =
+            webdock_plugin_protocol::release::strict_json(&bytes).map_err(|_| too_large())?;
+        let name = large_mcp_name(&value, bytes.len()).ok_or_else(too_large)?;
+        let endpoint = state
+            .plugins
+            .as_ref()
+            .ok_or_else(|| resource_auth::ResourceFailure::from(failure(unavailable_plugin())))?;
+        let views = endpoint
+            .host
+            .mcp_plugins(&actor.principal, &actor.authority)
+            .await
+            .map_err(|e| resource_auth::ResourceFailure::from(failure(e)))?;
+        let definitions =
+            tools(&views, true).map_err(|e| resource_auth::ResourceFailure::from(failure(e)))?;
+        if !declared_mail_tool(&definitions, name) {
+            return Err(too_large());
+        }
+        MAIL_ENVELOPE_BYTES
+    };
+    Ok((
+        Request::from_parts(parts, axum::body::Body::from(bytes)),
+        limit,
+    ))
+}
 async fn mcp(State(state): State<Arc<ServiceState>>, request: Request) -> Response {
     let (actor, resource) =
         match resource_auth::authenticate(&state, request.headers(), Resource::Registry, false)
@@ -449,6 +551,10 @@ async fn mcp(State(state): State<Arc<ServiceState>>, request: Request) -> Respon
                 }
             }
         };
+    let (request, body_limit) = match mcp_request_budget(&state, &actor, resource, request).await {
+        Ok(result) => result,
+        Err(error) => return error.into_response(),
+    };
     let request = if resource == Resource::Registry && !actor.authority.can_write() {
         match registry_write_ceiling(&state, request).await {
             Ok(request) => request,
@@ -474,7 +580,7 @@ async fn mcp(State(state): State<Arc<ServiceState>>, request: Request) -> Respon
             studio.host_str().expect("validated host"),
             studio.port_or_known_default().expect("validated port")
         )])
-        .with_max_request_body_bytes(65536);
+        .with_max_request_body_bytes(body_limit);
     let service = rmcp::transport::streamable_http_server::StreamableHttpService::new(
         move || Ok(handler.clone()),
         Arc::new(
@@ -516,5 +622,68 @@ mod tests {
         );
         assert!(route_action(&v.manifest, "POST", "/notes").is_none());
         assert!(route_action(&v.manifest, "GET", "/notes/extra").is_none());
+    }
+    #[test]
+    fn large_body_limits_follow_the_declared_mail_action_only() {
+        let mut v = view();
+        v.manifest["name"] = json!("mail");
+        v.manifest["actions"] =
+            json!([{"name":"mail.send","intent":"write"},{"name":"mail.status","intent":"read"}]);
+        v.manifest["api"] = json!([{"method":"POST","path":"/send","action":"mail.send"}]);
+        v.manifest["mcp"] =
+            json!([{"name":"send_email","action":"mail.send","description":"Send"}]);
+        let route = route_action(&v.manifest, "POST", "/send").unwrap();
+        let body =
+            serde_json::to_vec(&json!({"resource_id":"owned","text":"😀".repeat(30_000)})).unwrap();
+        let headers = HeaderMap::from_iter([(
+            header::CONTENT_TYPE,
+            axum::http::HeaderValue::from_static("application/json"),
+        )]);
+        assert!(json_body_limit(&body, &headers, api_input_limit("mail", route, false)).is_ok());
+        assert!(json_body_limit(&body, &headers, api_input_limit("other", route, false)).is_err());
+        assert_eq!(api_input_limit("mail", route, false), 131072);
+        assert_eq!(api_input_limit("other", route, false), 32768);
+        assert_eq!(api_input_limit("mail", route, true), 32768);
+        let defs = tools(std::slice::from_ref(&v), true).unwrap();
+        let value = json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"plugin__mail__send_email","arguments":{"projectID":"123","idempotencyKey":"same","input":{"resource_id":"owned","text":"😀".repeat(30_000)}}}});
+        let bytes = serde_json::to_vec(&value).unwrap();
+        let name = large_mcp_name(&value, bytes.len()).unwrap();
+        assert!(declared_mail_tool(&defs, name));
+        v.manifest["mcp"][0]["action"] = json!("mail.status");
+        assert!(!declared_mail_tool(&tools(&[v], true).unwrap(), name));
+        for (field, replacement) in [
+            ("id", json!(null)),
+            ("id", json!([])),
+            ("id", json!({})),
+            ("id", json!(1.5)),
+            ("id", json!("x".repeat(129))),
+            ("method", json!("tools/list")),
+        ] {
+            let mut bad = value.clone();
+            bad[field] = replacement;
+            assert!(large_mcp_name(&bad, bytes.len()).is_none());
+        }
+        for id in [json!("bounded"), json!(i64::MAX)] {
+            let mut good = value.clone();
+            good["id"] = id;
+            assert!(large_mcp_name(&good, serde_json::to_vec(&good).unwrap().len()).is_some());
+        }
+        let mut meta = value.clone();
+        meta["params"]["_meta"] = json!({"padding":"x".repeat(70_000)});
+        assert!(large_mcp_name(&meta, serde_json::to_vec(&meta).unwrap().len()).is_none());
+        let mut extra = value.clone();
+        extra["params"]["arguments"]["padding"] = json!("x");
+        assert!(large_mcp_name(&extra, bytes.len()).is_none());
+        assert!(large_mcp_name(&json!([value.clone()]), bytes.len()).is_none());
+        assert!(large_mcp_name(&value, bytes.len() + 40_000).is_none());
+        let mut padded = value.clone();
+        padded["padding"] = json!("x");
+        assert!(large_mcp_name(&padded, bytes.len()).is_none());
+        let mut bad_project = value.clone();
+        bad_project["params"]["arguments"]["projectID"] = json!("caller-project");
+        assert!(large_mcp_name(&bad_project, bytes.len()).is_none());
+        let mut small = value;
+        small["params"]["arguments"]["input"]["text"] = json!("small");
+        assert!(large_mcp_name(&small, 80_000).is_none());
     }
 }

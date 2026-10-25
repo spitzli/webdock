@@ -1,4 +1,5 @@
 //! The plugin's own database: sending domains, connected relay accounts and a short send log.
+use std::sync::Arc;
 use tokio_postgres::Client;
 use uuid::Uuid;
 
@@ -67,6 +68,18 @@ const MIGRATIONS: &[&str] = &[
     );
     ALTER TABLE mailboxes ADD COLUMN customer_id text REFERENCES customer_engines(customer_id);
     CREATE INDEX mailboxes_customer ON mailboxes(customer_id);",
+    "CREATE TABLE private_payload_key (
+        singleton boolean PRIMARY KEY CHECK (singleton),
+        sealed text NOT NULL CHECK (octet_length(sealed) <= 4096)
+    );
+    CREATE TABLE private_payloads (
+        reference uuid PRIMARY KEY,
+        customer_id text NOT NULL CHECK (customer_id ~ '^[1-9][0-9]{0,18}$'),
+        sealed text NOT NULL CHECK (octet_length(sealed) <= 50331648),
+        payload_bytes integer NOT NULL CHECK (payload_bytes BETWEEN 1 AND 26214400),
+        sha256 text NOT NULL CHECK (sha256 ~ '^[0-9a-f]{64}$')
+    );",
+
 ];
 
 pub type Error = tokio_postgres::Error;
@@ -93,18 +106,39 @@ pub struct Send {
     pub created_at: String,
 }
 
-pub struct Store(Client);
+pub struct Store(pub(crate) Client, Arc<Connection>);
+struct Connection {
+    url: String,
+    ca: Option<Vec<u8>>,
+    slots: Arc<tokio::sync::Semaphore>,
+}
+/// A dedicated transaction/connection: cancellation closes it and releases the cross-process fence.
+pub struct CustomerFence {
+    _client: Client,
+    _permit: tokio::sync::OwnedSemaphorePermit,
+}
+
 impl Store {
     pub async fn connect(url: &str) -> Result<Self, webdock_plugin_kit::Error> {
         webdock_plugin_kit::loopback(url)?;
         Ok(Self(
             webdock_plugin_kit::storage(url, "mail", MIGRATIONS).await?,
+            Arc::new(Connection {
+                url: url.into(),
+                ca: None,
+                slots: Arc::new(tokio::sync::Semaphore::new(4)),
+            }),
         ))
     }
     /// Remote metadata storage verifies the actual PostgreSQL hostname with the private CA.
     pub async fn connect_tls(url: &str, ca: &[u8]) -> Result<Self, webdock_plugin_kit::Error> {
         Ok(Self(
             webdock_plugin_kit::storage_tls(url, ca, "mail", MIGRATIONS).await?,
+            Arc::new(Connection {
+                url: url.into(),
+                ca: Some(ca.into()),
+                slots: Arc::new(tokio::sync::Semaphore::new(4)),
+            }),
         ))
     }
     /// False when the domain is already claimed, by this or any other project.
@@ -387,5 +421,40 @@ fn engine(r: &tokio_postgres::Row) -> Engine {
         state: r.get(2),
         customer_id: r.get(3),
         desired_enabled: r.get(4),
+    }
+}
+
+impl Store {
+    pub async fn customer_fence(
+        &self,
+        customer: &str,
+    ) -> Result<CustomerFence, webdock_plugin_kit::Error> {
+        if !webdock_mail_runtime::proof::valid_id(customer) {
+            return Err("invalid customer fence".into());
+        }
+        let permit = tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            self.1.slots.clone().acquire_owned(),
+        )
+        .await
+        .map_err(|_| "customer fence deadline")?
+        .map_err(|_| "customer fence unavailable")?;
+        let client =
+            webdock_plugin_kit::postgres::connect(&self.1.url, self.1.ca.as_deref()).await?;
+        client.batch_execute("BEGIN; SET LOCAL lock_timeout='5s'; SET LOCAL statement_timeout='10s'; SET LOCAL idle_in_transaction_session_timeout='60s'").await.map_err(|_| "customer fence unavailable")?;
+        client
+            .query_one(
+                "SELECT pg_advisory_xact_lock(hashtextextended($1, 704611))",
+                &[&customer],
+            )
+            .await
+            .map_err(|_| "customer fence unavailable")?;
+        Ok(CustomerFence {
+            _client: client,
+            _permit: permit,
+        })
+    }
+    pub async fn direct_allowed(&self, customer: &str) -> Result<bool, Error> {
+        Ok(self.find_engine(customer).await?.is_none() && !self.legacy_engines().await?)
     }
 }

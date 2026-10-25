@@ -23,6 +23,14 @@ use webdock_plugin_protocol::{
 };
 use webdock_plugin_runtime::{InvocationAuthority, PeerIdentity};
 
+pub const MAIL_ACTION_INPUT_BYTES: usize = 128 * 1024;
+pub(crate) fn invocation_input_limit(plugin: &str, action: &str, job: bool) -> usize {
+    if !job && plugin == "mail" && action == "mail.send" {
+        MAIL_ACTION_INPUT_BYTES
+    } else {
+        32768
+    }
+}
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AdmissionInput {
@@ -74,6 +82,7 @@ pub trait AppsAdapter: Send + Sync {
 }
 pub struct HostService {
     installation: Option<crate::installation::InstallationConfig>,
+    native_mail_control: bool,
     pub(crate) db: DatabaseConnection,
     worker: DatabaseConnection,
     signer: RlsSigner,
@@ -150,6 +159,7 @@ impl HostService {
             apps: None,
             session_authority: None,
             installation: None,
+            native_mail_control: false,
         })
     }
     pub async fn with_session_authority(
@@ -168,6 +178,10 @@ impl HostService {
             .ok_or_else(|| invalid("Session verifier is required"))?
             .mcp = Some(oauth);
         Ok(self)
+    }
+    pub fn with_native_mail_control(mut self, available: bool) -> Self {
+        self.native_mail_control = available;
+        self
     }
     pub fn with_apps(mut self, apps: Arc<dyn AppsAdapter>) -> Self {
         self.apps = Some(apps);
@@ -243,6 +257,9 @@ impl HostService {
         binding: RuntimeBinding,
     ) -> Result<RuntimeBinding> {
         let mut services = vec![("data", 1), ("http", 1), ("jobs", 1)];
+        if self.native_mail_control && metadata.manifest.id() == "mail" {
+            services.push(("native-mail-control", 1));
+        }
         if self.apps.is_some() {
             services.push(("apps", 1));
         }
@@ -381,7 +398,8 @@ impl HostService {
             || input.action.encode_utf16().count() > 64
             || input.idempotency_key.is_empty()
             || input.idempotency_key.encode_utf16().count() > 128
-            || crate::data::javascript_json(&input.input, false)?.len() > 32768
+            || crate::data::javascript_json(&input.input, false)?.len()
+                > invocation_input_limit(&input.plugin_id, &input.action, false)
         {
             return Err(invalid("Invalid plugin admission"));
         }
@@ -874,7 +892,12 @@ impl HostService {
         } else {
             crate::data::javascript_json(input, false)?.into_bytes()
         };
-        if request_bytes.len() > 32768
+        if request_bytes.len()
+            > invocation_input_limit(
+                &handle.claims.plugin_id,
+                &handle.claims.action,
+                handle.claims.job.is_some(),
+            )
             || serde_json::to_vec(configuration)
                 .map_err(|_| unavailable())?
                 .len()
@@ -1335,7 +1358,10 @@ impl HostService {
 
 #[path = "mail_policy.rs"]
 mod mail_policy;
+#[path = "native_mail.rs"]
+mod native_mail;
 pub use mail_policy::MailPolicySnapshot;
+pub use native_mail::{MailActionGuard, MailRuntimeMode, MailRuntimeProof};
 
 impl HostService {
     /// MCP discovery is operator-scoped metadata; each call still requires a current project grant.
@@ -1384,5 +1410,17 @@ impl HostService {
         tx.commit().await.map_err(db_error)?;
         auth.commit().await.map_err(db_error)?;
         Ok(views)
+    }
+}
+
+#[cfg(test)]
+mod mail_input_budget_tests {
+    #[test]
+    fn large_mail_budget_is_only_for_original_send_actions() {
+        use super::invocation_input_limit;
+        assert_eq!(invocation_input_limit("mail", "mail.send", false), 131072);
+        assert_eq!(invocation_input_limit("mail", "mail.send", true), 32768);
+        assert_eq!(invocation_input_limit("mail", "mail.status", false), 32768);
+        assert_eq!(invocation_input_limit("other", "mail.send", false), 32768);
     }
 }

@@ -31,6 +31,7 @@ impl CorePeer {
 #[derive(Clone)]
 pub struct HostClient {
     client: wire::plugin_host_client::PluginHostClient<tonic::transport::Channel>,
+    channel: tonic::transport::Channel,
 }
 impl HostClient {
     pub async fn connect_unix(
@@ -51,10 +52,15 @@ impl HostClient {
     /// Channel must use the private socket or explicitly configured mTLS connector.
     pub fn new(channel: tonic::transport::Channel) -> Self {
         Self {
+            channel: channel.clone(),
             client: wire::plugin_host_client::PluginHostClient::new(channel)
                 .max_decoding_message_size(1048576 + 1024)
                 .max_encoding_message_size(1048576 + 32768),
         }
+    }
+    /// Reuse the authenticated connector for fixed-purpose callbacks; no new credentials.
+    pub fn channel(&self) -> tonic::transport::Channel {
+        self.channel.clone()
     }
     /// Ordinary current-runtime authority over this client's authenticated callback transport.
     pub async fn authorize_runtime(
@@ -254,7 +260,9 @@ impl InvocationAuthority for RemoteAuthority {
         let claims_json = self.scope(peer, claims)?;
         let input_json = input.to_vec();
         let configuration_json = configuration.to_vec();
-        if input_json.len() > FRAME_BYTES || configuration_json.len() > DOCUMENT_BYTES {
+        if input_json.len() > crate::invocation_input_limit(claims)
+            || configuration_json.len() > DOCUMENT_BYTES
+        {
             return Err(PluginError::denied());
         }
         let result = self
