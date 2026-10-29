@@ -75,8 +75,8 @@ From a Webdock checkout with dependencies installed and the SDK built:
 node packages/plugin-cli/src/cli.js plugin create echo-demo \
   --template actions --dir /tmp/echo-demo
 cd /tmp/echo-demo
-npm install --ignore-scripts
-npm run build
+bun install --ignore-scripts
+bun run build
 ```
 
 The additive `actions` template declares one read action, `demo.echo`, with no capabilities, jobs, tables or migrations. It includes a Dockerfile and bundles the CLI's installed SDK under `vendor/plugin-sdk`, with its package metadata and license notices. A published SDK package is not required. Public transitive dependencies are installed by npm. Commit the generated lockfile and vendor directory alongside the source. The template's image digest is a placeholder which source installation replaces before approval; it is not a publishable release digest.

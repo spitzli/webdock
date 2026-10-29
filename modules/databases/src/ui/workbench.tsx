@@ -1,13 +1,12 @@
 "use client";
 import * as React from "react";
-import type { ComponentProps } from "react";
 import { resourceScope } from "@webdock/console-kit/resource-scope";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { HttpTransport, TabularisClient, TabularisWorkspace as Workspace, preloadTabularisWorkspace } from "@tabularis/web-ui";
 import "@tabularis/web-ui/workspace.css";
 import { useI18n } from "@webdock/i18n/react";
-import { useDatabaseActions } from "./actions";
+import { useDatabaseActions, type DatabaseUIActions } from "./actions";
 import { rememberDatabaseSchemas } from "./schema-preferences";
 
 const theme = () =>
@@ -36,12 +35,14 @@ function DatabaseWorkbenchState({
   bindingID,
   userID,
   managed = false,
+  actions,
 }: {
   bindingID: string;
   userID: string;
   managed?: boolean;
+  actions: Pick<DatabaseUIActions, "launchDatabase" | "launchManagedDatabase">;
 }) {
-  const { launchDatabase, launchManagedDatabase } = useDatabaseActions();
+  const { launchDatabase, launchManagedDatabase } = actions;
   const i18n = useI18n();
   const appearance = useSyncExternalStore(subscribeTheme, theme, () => "light");
   const [workspace, setWorkspace] = useState<{
@@ -119,7 +120,7 @@ function DatabaseWorkbenchState({
       active = false;
       close?.();
     };
-  }, [bindingID, userID, managed]);
+  }, [bindingID, userID, managed, launchDatabase, launchManagedDatabase]);
   if (error)
     return (
       <p className="notice error" role="alert">
@@ -141,8 +142,11 @@ function DatabaseWorkbenchState({
   );
 }
 
-export function DatabaseWorkbench(
-  props: ComponentProps<typeof DatabaseWorkbenchState>,
-) {
+/** Explicit launch boundary for native browser facades; no unrelated provisioning stubs. */
+export function DatabaseWorkbenchWithActions(props: React.ComponentProps<typeof DatabaseWorkbenchState>) {
   return <DatabaseWorkbenchState key={resourceScope(props)} {...props} />;
+}
+export function DatabaseWorkbench(props: Omit<React.ComponentProps<typeof DatabaseWorkbenchState>, "actions">) {
+  const actions = useDatabaseActions();
+  return <DatabaseWorkbenchWithActions {...props} actions={actions} />;
 }

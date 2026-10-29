@@ -77,7 +77,7 @@ webdock plugin pack --dir ./job-demo --image 'ghcr.io/spitzli/job-demo@sha256:<a
 From the Webdock checkout, run the reproducible test:
 
 ```bash
-npm run test:plugin-jobs
+bun run test:plugin-jobs
 ```
 
 It starts an owned, disposable Redis container, tests Core worker scheduling and plugin isolation/retry/cancellation, packs SDK and CLI, generates an extension outside the monorepo, builds and packs it, then runs the separate-process HTTP flow. It removes its temporary container and directories afterward. The packing test uses a clearly labeled fixture digest and never publishes to the registry.

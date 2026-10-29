@@ -113,11 +113,11 @@ These legacy product modules remain known at build time. New runtime plugins use
 From a configured checkout using [local development](/developers/local-development):
 
 ```sh
-npm run test:modules
-npm run test:unit -w @webdock/api
-npm run check -w @webdock/api
-npm run check -w @webdock/admin
-node --import tsx tools/release/generate-chart-schema.ts --check
+bun run test:modules
+bun run --filter @webdock/api test:unit
+bun run --filter @webdock/api check
+bun run --filter @webdock/admin check
+bun tools/release/generate-chart-schema.ts --check
 python3 tools/release/check-charts.py
 ```
 
