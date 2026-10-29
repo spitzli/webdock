@@ -5,17 +5,21 @@ mod completion;
 mod delivery;
 mod observations;
 struct AuthorityGuard {
-    auth: DatabaseTransaction,
-    business: DatabaseTransaction,
+    auth: Option<DatabaseTransaction>,
+    business: Option<DatabaseTransaction>,
 }
 impl AuthorityGuard {
     async fn commit(self) -> Result<()> {
-        self.business.commit().await?;
-        self.auth.commit().await?;
+        if let Some(tx) = self.business {
+            tx.commit().await?;
+        }
+        if let Some(tx) = self.auth {
+            tx.commit().await?;
+        }
         Ok(())
     }
 }
-const JOB: &str = "SELECT to_jsonb(o)||jsonb_build_object('backend_id',j.backend_id,'database_id',j.database_id,'database_action',j.action,'database_revision',j.revision,'lease_token_hash',j.lease_token_hash,'checkpoint',j.checkpoint,'migration_id',j.migration_id,'source_backend_id',j.source_backend_id) AS value FROM webdock_auth.hosting_operation o JOIN webdock_auth.hosting_database_job j ON j.operation_id=o.id";
+const JOB: &str = "SELECT to_jsonb(o)||jsonb_build_object('backend_id',j.backend_id,'database_id',j.database_id,'database_action',j.action,'database_revision',j.revision,'lease_token_hash',j.lease_token_hash,'checkpoint',j.checkpoint,'migration_id',j.migration_id,'source_backend_id',j.source_backend_id,'backup_policy_id',j.backup_policy_id,'backup_policy_revision',j.backup_policy_revision,'recovery',j.recovery) AS value FROM webdock_auth.hosting_operation o JOIN webdock_auth.hosting_database_job j ON j.operation_id=o.id";
 fn lease_conflict() -> Error {
     conflict("Database operation requires reconciliation or belongs to another agent.")
 }
@@ -76,6 +80,15 @@ impl DatabaseService {
         tx: &DatabaseTransaction,
         op: &Value,
     ) -> Result<AuthorityGuard> {
+        if !op["backup_policy_id"].is_null() {
+            self.backup_policy_authority(tx, op).await?;
+            if policy_authority_only(op) {
+                return Ok(AuthorityGuard {
+                    auth: None,
+                    business: None,
+                });
+            }
+        }
         let plugin=one(tx,"SELECT jsonb_build_object('binding',webdock_rls.plugin_setup_operation_binding($1),'allowed',webdock_rls.plugin_setup_operation_live($1)) AS value",vec![text(op,"id")?.into()]).await?;
         if !plugin["binding"].is_null() && plugin["allowed"] != true {
             return Err(denied());
@@ -83,11 +96,14 @@ impl DatabaseService {
         if !op["desired"]["consoleIdentity"].is_null() {
             return Err(denied());
         }
-        let authority = if op["desired"]["nativeAuthority"].is_null() {
-            StoredAuthority::LocalSession {}
-        } else {
-            serde_json::from_value::<StoredAuthority>(op["desired"]["nativeAuthority"].clone())
-                .map_err(|_| denied())?
+        let authority = match crate::database_authority::DatabaseAuthority::from_persisted(
+            op["desired"]["nativeAuthority"].clone(),
+        )
+        .map_err(|_| denied())?
+        {
+            crate::database_authority::DatabaseAuthority::BrowserStored(browser) => browser,
+            // MCP execution needs the unmaterialized early0056 epoch caller. No fallback.
+            crate::database_authority::DatabaseAuthority::Mcp(_) => return Err(denied()),
         };
         let (auth, principal) = self
             .verify(text(op, "subject")?, text(op, "actor_session")?, &authority)
@@ -109,7 +125,10 @@ impl DatabaseService {
         if !op["customer_id"].is_null() && access["customerID"] != op["customer_id"] {
             return Err(denied());
         }
-        Ok(AuthorityGuard { auth, business })
+        Ok(AuthorityGuard {
+            auth: Some(auth),
+            business: Some(business),
+        })
     }
     async fn mark_reconciliation(&self, tx: &DatabaseTransaction, op: &Value) -> Result<()> {
         exec(
@@ -118,6 +137,10 @@ impl DatabaseService {
             vec![text(op, "id")?.into()],
         )
         .await?;
+        if !op["backup_policy_id"].is_null() {
+            exec(tx,"UPDATE webdock_auth.hosting_database_backup_policy SET observed_at=NULL WHERE id=$1 AND revision=$2",vec![text(op,"backup_policy_id")?.into(),number(op,"backup_policy_revision")?.into()]).await?;
+            return Ok(());
+        }
         if let Some(database) = op["database_id"]
             .as_str()
             .filter(|_| op["database_action"] != "purgeSource")
@@ -188,7 +211,9 @@ impl DatabaseService {
         }
         self.qualified_agent(&tx, agent).await?;
         self.cluster_lock(&tx, agent.cluster_id()).await?;
-        exec(&tx,"WITH expired AS(UPDATE webdock_auth.hosting_operation SET status='needs-reconciliation' WHERE cluster_id=$1 AND action LIKE 'databases.%' AND status='running' AND lease_until<now() RETURNING id) UPDATE webdock_auth.hosting_database d SET state='needs-reconciliation' FROM webdock_auth.hosting_database_job j JOIN expired e ON e.id=j.operation_id WHERE d.id=j.database_id AND j.action<>'purgeSource'",vec![agent.cluster_id().into()]).await?;
+        exec(&tx,"WITH expired AS(UPDATE webdock_auth.hosting_operation SET status='needs-reconciliation' WHERE cluster_id=$1 AND action LIKE 'databases.%' AND status='running' AND lease_until<now() RETURNING id) UPDATE webdock_auth.hosting_database d SET state='needs-reconciliation' FROM webdock_auth.hosting_database_job j JOIN expired e ON e.id=j.operation_id WHERE d.id=j.database_id AND j.action NOT IN('purgeSource','backup','configureBackup')",vec![agent.cluster_id().into()]).await?;
+        self.enqueue_backup_observation(&tx, agent.cluster_id())
+            .await?;
         let Some(mut op)=optional(&tx,&format!("{JOB} WHERE o.cluster_id=$1 AND (o.status='running' OR(o.status='queued' AND NOT EXISTS(SELECT 1 FROM webdock_auth.hosting_database_job busy JOIN webdock_auth.hosting_operation bo ON bo.id=busy.operation_id WHERE(busy.backend_id IN(j.backend_id,j.source_backend_id) OR busy.source_backend_id IN(j.backend_id,j.source_backend_id)) AND bo.status IN('running','needs-reconciliation')))) ORDER BY(o.status='running') DESC,o.created_at,o.id FOR UPDATE OF o,j SKIP LOCKED LIMIT 1"),vec![agent.cluster_id().into()]).await?else{tx.commit().await?;return Ok(None)};
         let Ok(guard) = self.operation_authority(&tx, &op).await else {
             self.mark_reconciliation(&tx, &op).await?;
@@ -196,15 +221,58 @@ impl DatabaseService {
             return Ok(None);
         };
         let first = op["status"] == "queued";
+        let unissued = first
+            && op["generation"] == 0
+            && op["lease_until"].is_null()
+            && op["checkpoint"].is_null()
+            && op["lease_token_hash"].is_null()
+            && (op["desired"]["nativeIssuedSpecs"].is_null()
+                || op["desired"]["nativeIssuedSpecs"]
+                    .as_array()
+                    .is_some_and(Vec::is_empty));
+        let original = op.clone();
         if first {
-            let updated=one(&tx,"UPDATE webdock_auth.hosting_operation SET status='running',generation=generation+1,lease_until=now()+interval '300 seconds' WHERE id=$1 RETURNING jsonb_build_object('generation',generation,'lease_until',lease_until) AS value",vec![text(&op,"id")?.into()]).await?;
-            op["generation"] = updated["generation"].clone();
-            op["lease_until"] = updated["lease_until"].clone();
-            let token = self.database_lease_token(text(&op, "id")?, number(&op, "generation")?)?;
-            exec(&tx,"UPDATE webdock_auth.hosting_database_job SET lease_token_hash=$2 WHERE operation_id=$1",vec![text(&op,"id")?.into(),digest(&token).into()]).await?;
+            op["generation"] = json!(
+                number(&op, "generation")?
+                    .checked_add(1)
+                    .ok_or_else(lease_conflict)?
+            );
+            op["lease_until"] =
+                json!((chrono::Utc::now() + chrono::Duration::seconds(300)).to_rfc3339());
         }
-        let claim = self.database_claim(&tx, agent, &op, first).await?;
-        claim.validate(chrono::Utc::now())?;
+        let admitted = async {
+            let claim = self.database_claim(&tx, agent, &op, first).await?;
+            claim.validate(chrono::Utc::now())?;
+            Ok::<_, Error>(claim)
+        }
+        .await;
+        let mut claim = match admitted {
+            Ok(claim) => claim,
+            Err(error) if [400, 409].contains(&error.status) => {
+                if unissued && !original["backup_policy_id"].is_null() {
+                    // No envelope or lease was ever issued. Retire the invalid
+                    // control request, retaining the installation reservation.
+                    exec(&tx,"UPDATE webdock_auth.hosting_operation SET status='failed',lease_until=NULL,result=$2 WHERE id=$1",vec![text(&original,"id")?.into(),json!({"error":"invalid-database-contract","externalEffects":"not-issued"}).into()]).await?;
+                } else {
+                    self.mark_reconciliation(&tx, &original).await?;
+                }
+                tx.commit().await?;
+                guard.commit().await?;
+                return Ok(None);
+            }
+            Err(error) => return Err(error),
+        };
+        if first {
+            exec(&tx,"UPDATE webdock_auth.hosting_operation SET status='running',generation=$2,lease_until=$3 WHERE id=$1",vec![text(&op,"id")?.into(),number(&op,"generation")?.into(),claim.lease_until.into()]).await?;
+            exec(&tx,"UPDATE webdock_auth.hosting_database_job SET lease_token_hash=$2 WHERE operation_id=$1",vec![text(&op,"id")?.into(),digest(&claim.lease.lease_token).into()]).await?;
+        } else {
+            let renewed=one(&tx,"UPDATE webdock_auth.hosting_operation SET lease_until=CASE WHEN lease_until<now()+interval '60 seconds' THEN now()+interval '300 seconds' ELSE lease_until END WHERE id=$1 AND status='running' AND lease_until>now() RETURNING jsonb_build_object('lease_until',lease_until) AS value",vec![text(&op,"id")?.into()]).await?;
+            op["lease_until"] = renewed["lease_until"].clone();
+            claim.lease_until =
+                chrono::DateTime::parse_from_rfc3339(text(&renewed, "lease_until")?)
+                    .map_err(|_| lease_conflict())?
+                    .with_timezone(&chrono::Utc);
+        }
         if !first
             && op["lease_token_hash"].as_str() != Some(digest(&claim.lease.lease_token).as_str())
         {
@@ -368,6 +436,13 @@ impl DatabaseService {
         {
             return Err(lease_conflict());
         }
+        if let Some(policy) = &spec.backup {
+            let p=one(tx,"SELECT spec AS value FROM webdock_auth.hosting_database_backup_policy WHERE id=$1 AND revision=$2",vec![policy.id.clone().into(),policy.revision.into()]).await?;
+            if serde_json::to_value(policy).map_err(|_| invalid())? != p {
+                return Err(lease_conflict());
+            }
+            self.backup_policy_authority(tx, &op).await?;
+        }
         if let Some(database) = op["database_id"].as_str() {
             let target = one(
                 tx,
@@ -493,7 +568,48 @@ impl DatabaseService {
                 .map_err(|_| unavailable())?;
             Some(text(&secret, "password")?.to_owned())
         };
+        let backup_policy = if !op["backup_policy_id"].is_null() {
+            Some(one(tx,"SELECT to_jsonb(p) AS value FROM webdock_auth.hosting_database_backup_policy p WHERE id=$1 AND revision=$2",vec![text(op,"backup_policy_id")?.into(),number(op,"backup_policy_revision")?.into()]).await?)
+        } else {
+            None
+        };
+        let object_store = if !op["recovery"].is_null() {
+            let id = text(&op["recovery"]["source"]["destination"], "id")?;
+            let destination=one(tx,"SELECT to_jsonb(d) AS value FROM webdock_auth.hosting_database_backup_destination d WHERE id=$1",vec![id.into()]).await?;
+            Some(
+                self.cipher
+                    .open::<DatabaseObjectStoreMaterial>(
+                        text(&destination, "recovery_encrypted")?,
+                        &format!("database-backup-destination:{id}:recovery:1"),
+                    )
+                    .map_err(|_| unavailable())?,
+            )
+        } else if let Some(p) = &backup_policy {
+            let destination=one(tx,"SELECT to_jsonb(d) AS value FROM webdock_auth.hosting_database_backup_destination d WHERE id=$1",vec![text(p,"destination_id")?.into()]).await?;
+            Some(
+                self.cipher
+                    .open::<DatabaseObjectStoreMaterial>(
+                        text(&destination, "write_encrypted")?,
+                        &format!(
+                            "database-backup-destination:{}:write:1",
+                            text(p, "destination_id")?
+                        ),
+                    )
+                    .map_err(|_| unavailable())?,
+            )
+        } else {
+            None
+        };
         let mut spec:DatabaseJobSpec=serde_json::from_value(json!({"version":1,"operationID":op["id"],"agentGeneration":agent.generation(),"operationGeneration":op["generation"],"clusterID":agent.cluster_id(),"action":if action=="purgeSource"{"purge"}else{action},"phase":phase,"revision":op["database_revision"],"previousPodUID":op["checkpoint"]["previousPodUID"],"backend":{"id":b["id"],"kind":b["kind"],"namespace":format!("wd-db-{}",text(&b,"id")?),"node":b["node"],"poolID":b["pool_id"],"revision":b["revision"],"cnpgUID":b["cnpg_uid"],"resources":b["profile"],"host":b["host"],"directPort":b["direct_port"],"pooledPort":b["pooled_port"]},"database":database,"members":members,"migration":migration_spec})).map_err(|_|lease_conflict())?;
+        spec.recovery = if op["recovery"].is_null() {
+            None
+        } else {
+            Some(serde_json::from_value(op["recovery"].clone()).map_err(|_| lease_conflict())?)
+        };
+        spec.backup = backup_policy
+            .as_ref()
+            .map(|p| serde_json::from_value(p["spec"].clone()).map_err(|_| lease_conflict()))
+            .transpose()?;
         let lease = DatabaseLease {
             operation_id: text(op, "id")?.into(),
             generation: agent.generation(),
@@ -532,6 +648,7 @@ impl DatabaseService {
             material: DatabaseMaterial {
                 credentials,
                 transfer_password,
+                object_store,
             },
         })
     }
@@ -728,4 +845,46 @@ fn checkpoint_recorded(
                     && receipt["generation"] == op["generation"]
                     && op["lease_token_hash"] == token_hash))
     }))
+}
+
+fn policy_authority_only(op: &Value) -> bool {
+    // This selects a lane only; backup_policy_authority retains all UID/revision/resource fences.
+    op["action"] == "databases.configureBackup"
+        && op["database_action"] == "configureBackup"
+        && op["backup_policy_id"]
+            .as_str()
+            .is_some_and(|id| id.parse::<i64>().is_ok_and(|id| id > 0))
+        && op["backup_policy_revision"]
+            .as_i64()
+            .is_some_and(|revision| revision > 0)
+}
+
+#[cfg(test)]
+mod original_authority_tests {
+    use super::*;
+    #[test]
+    fn manual_backup_and_restore_never_bypass_original_authority_for_a_policy_id() {
+        for action in ["backup", "restore"] {
+            let op = json!({"action":format!("databases.{action}"),"database_action":action,"backup_policy_id":"101","backup_policy_revision":1});
+            assert!(
+                !policy_authority_only(&op),
+                "non-grant job requires original authority"
+            );
+        }
+    }
+    #[test]
+    fn only_bound_configuration_jobs_can_use_committed_durable_policy_lane() {
+        let op = json!({"action":"databases.configureBackup","database_action":"configureBackup","backup_policy_id":"101","backup_policy_revision":1});
+        assert!(policy_authority_only(&op));
+        for (key, value) in [
+            ("action", json!("databases.backup")),
+            ("database_action", json!("backup")),
+            ("backup_policy_id", Value::Null),
+            ("backup_policy_revision", json!(0)),
+        ] {
+            let mut invalid = op.clone();
+            invalid[key] = value;
+            assert!(!policy_authority_only(&invalid));
+        }
+    }
 }

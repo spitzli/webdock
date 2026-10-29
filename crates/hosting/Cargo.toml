@@ -9,6 +9,9 @@ license.workspace = true
 docker-test = []
 
 [dependencies]
+tempfile = "3"
+rustix = { version="1",features=["process"] }
+webdock-agent-protocol = { path = "../agent-protocol" }
 webdock-oauth = { path = "../oauth" }
 webdock-browser-session={path="../browser-session"}
 webdock-core = { path = "../core" }
@@ -38,6 +41,7 @@ getrandom = "0.2"
 unicode-normalization = "0.1"
 
 [dev-dependencies]
+webdock-object-storage = { path = "../object-storage", features = ["local-test"] }
 webdock-access={path="../access"}
 webdock-registry={path="../registry"}
 webdock-control-plane={path="../control-plane"}

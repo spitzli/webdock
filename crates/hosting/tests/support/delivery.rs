@@ -258,6 +258,7 @@ async fn scenario(f: Arc<Fixture>, case: Case) {
             database_runtime: None,
             mail_configuration_enabled: false,
             mail_runtime: None,
+            recovery_runtime: None,
             version: 1,
             installation: installation.clone(),
             agent_id: "custody-agent".into(),

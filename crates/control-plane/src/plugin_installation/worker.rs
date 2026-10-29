@@ -34,6 +34,9 @@ struct StorageTarget {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct TargetPolicy {
+    /// Explicit operator-approved binary destinations; never derived from action input.
+    #[serde(default)]
+    storage: BTreeMap<String, BTreeMap<String, webdock_plugin_http::storage::StorageBinding>>,
     runtime_domain: String,
     runtime_port: u16,
     entry_point: String,
@@ -277,6 +280,7 @@ impl InstallationWorker {
         let recipe: Recipe = decode(work.recipe.clone())?;
         guarded_origin(&policy.core.origin)?;
         self.kernel.validate(&policy)?;
+        validate_storage_bindings(&policy.storage)?;
         let reserved = [
             "manifest",
             "issuerPublicKeyHex",
@@ -452,6 +456,7 @@ impl InstallationWorker {
         spec.validate()?;
         let pin = component(&work, "certificateSha256")?.to_owned();
         let binding = RuntimeBinding {
+            storage: policy.storage,
             generation: work.runtime_generation,
             namespace,
             service: spec.service.clone(),
@@ -530,6 +535,46 @@ fn failure_condition(error: &(dyn std::error::Error + Send + Sync + 'static)) ->
     }
 }
 
+fn validate_storage_bindings(
+    storage: &BTreeMap<String, BTreeMap<String, webdock_plugin_http::storage::StorageBinding>>,
+) -> Result<(), Error> {
+    if storage.len() > 256 {
+        return Err("Too many project storage bindings".into());
+    }
+    for (project, aliases) in storage {
+        if project.is_empty()
+            || project.len() > 20
+            || !project.bytes().all(|b| b.is_ascii_digit())
+            || aliases.len() > 32
+        {
+            return Err("Invalid project storage bindings".into());
+        }
+        for (alias, binding) in aliases {
+            if alias.is_empty()
+                || alias.len() > 64
+                || !alias
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b"_-".contains(&b))
+            {
+                return Err("Invalid storage binding alias".into());
+            }
+            let object = format!(
+                "{}{}__binding_probe/object",
+                binding.origin.trim_end_matches('/'),
+                binding.path_prefix
+            );
+            webdock_plugin_http::storage::bind_storage(
+                "GET",
+                &object,
+                BTreeMap::new(),
+                binding.clone(),
+            )
+            .map_err(|_| "Invalid storage target binding")?;
+        }
+    }
+    Ok(())
+}
+
 impl KernelIdentity {
     fn validate(&self, policy: &TargetPolicy) -> Result<(), Error> {
         if private_text(&policy.core.certificate)?.trim() != self.certificate.trim()
@@ -593,6 +638,36 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn managed_policy_accepts_explicit_project_binary_bindings() {
+        let value = json!({"runtimeDomain":"plugins.example.test","runtimePort":8443,"entryPoint":"websecure",
+            "core":{"origin":"https://core.example.test","domain":"core.example.test","certificate":"/private/core.crt","privateKey":"/private/core.key","authority":"/private/ca.crt","serverCertificateSha256":"a".repeat(64)},
+            "runtimeIdentity":{"authority":"/private/ca.crt","privateKey":"/private/core.key"},"resources":{"cpuMillicores":100,"memoryBytes":268435456},"egress":[],
+            "storage":{"124":{"objects":{"origin":"https://storage.invalid","addresses":["127.0.0.1"],"ca":null,"pathPrefix":"/private/"}}}});
+        let policy = decode::<TargetPolicy>(value)
+            .expect("operator-approved project storage must survive native installation");
+        validate_storage_bindings(&policy.storage).unwrap();
+        assert_eq!(policy.storage["124"]["objects"].path_prefix, "/private/");
+        let mut origin_scope = policy.storage.clone();
+        origin_scope
+            .get_mut("124")
+            .unwrap()
+            .get_mut("objects")
+            .unwrap()
+            .path_prefix = "/".into();
+        validate_storage_bindings(&origin_scope).unwrap();
+        let mut invalid = policy.storage;
+        invalid
+            .get_mut("124")
+            .unwrap()
+            .get_mut("objects")
+            .unwrap()
+            .origin = "http://127.0.0.1".into();
+        assert!(
+            validate_storage_bindings(&invalid).is_err(),
+            "managed installs require HTTPS even for loopback fixtures"
+        );
+    }
     #[test]
     fn lifecycle_seed_plan_preserves_masters_and_never_repairs_partial_identity() {
         let empty = BTreeMap::new();

@@ -81,7 +81,11 @@ impl NativeDatabaseExecutor {
             .map_err(|_| ExecutionError::Expired)?;
         authority.guard(claim).await?;
         self.verify_configuration()?;
-        self.config.admit(&claim.spec)
+        self.config.admit(&claim.spec)?;
+        if claim.spec.backup.is_some() || claim.spec.recovery.is_some() {
+            self.verify_backup_runtime().await?;
+        }
+        Ok(())
     }
     pub(super) fn verify_configuration(&self) -> Result<()> {
         let config = DatabaseRuntimeConfig::load(&self.config_path)?;
@@ -118,7 +122,8 @@ impl NativeDatabaseExecutor {
             "ResourceQuota" => ("", "v1"),
             "NetworkPolicy" => ("networking.k8s.io", "v1"),
             "Certificate" => ("cert-manager.io", "v1"),
-            "Cluster" | "Pooler" => ("postgresql.cnpg.io", "v1"),
+            "ObjectStore" => ("barmancloud.cnpg.io", "v1"),
+            "Cluster" | "Pooler" | "Backup" | "ScheduledBackup" => ("postgresql.cnpg.io", "v1"),
             "Deployment" => ("apps", "v1"),
             _ => return Err(ExecutionError::Invalid("database resource kind")),
         };
@@ -275,6 +280,12 @@ impl NativeDatabaseExecutor {
         if claim.spec.phase == DatabaseExecutionPhase::Uncertain {
             return Err(ExecutionError::Conflict);
         }
+        if matches!(
+            claim.spec.action,
+            DatabaseAction::ConfigureBackup | DatabaseAction::Backup
+        ) {
+            return self.backup_stage(claim, authority).await;
+        }
         if claim.spec.action == DatabaseAction::Purge && claim.spec.backend.kind == "dedicated" {
             return self.purge_stage(claim, authority).await;
         }
@@ -402,7 +413,9 @@ impl NativeDatabaseExecutor {
                 || backend.revision != 1
                 || !matches!(
                     job.action,
-                    DatabaseAction::Create | DatabaseAction::PrepareMigration
+                    DatabaseAction::Create
+                        | DatabaseAction::PrepareMigration
+                        | DatabaseAction::Restore
                 )
             {
                 return Err(ExecutionError::Ownership);
@@ -436,6 +449,19 @@ impl NativeDatabaseExecutor {
             use base64::Engine;
             self.apply(json!({"apiVersion":"v1","kind":"Secret","metadata":{"name":"server-ca","namespace":backend.namespace,"labels":{"app.kubernetes.io/managed-by":"webdock","webdock.dev/database-installation":backend.id}},"type":"Opaque","data":{"ca.crt":base64::engine::general_purpose::STANDARD.encode(&self.ca)}}),claim,authority).await?;
             for object in objects.into_iter().skip(1) {
+                if object["kind"] == "Cluster" && job.recovery.is_some() {
+                    for backup in backup_manifests(
+                        job,
+                        &self.config,
+                        claim
+                            .material
+                            .object_store
+                            .as_ref()
+                            .ok_or(ExecutionError::Denied)?,
+                    )? {
+                        self.apply(backup, claim, authority).await?;
+                    }
+                }
                 self.apply(object, claim, authority).await?;
             }
             cluster = self

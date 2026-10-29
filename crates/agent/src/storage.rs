@@ -18,8 +18,12 @@ use std::{
 use webdock_core::id::RecordId;
 use webdock_supervisor::{ExecutionError, Result};
 pub mod database;
+pub mod recovery;
+pub mod recovery_io;
+pub mod recovery_pool;
 const MIN: u64 = 67_108_864;
 const MAX: u64 = 1_099_511_627_776;
+const RECOVERY_FRAME: usize = 512 * 1024;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct StorageConfig {
@@ -335,6 +339,7 @@ pub struct StoragePool {
     config_path: PathBuf,
     _lock: File,
     poisoned: bool,
+    recovery_trust: Option<(PathBuf, String, recovery_pool::RecoveryStorageTrust)>,
 }
 impl StoragePool {
     pub fn initialize(config_path: &Path) -> Result<()> {
@@ -376,6 +381,7 @@ impl StoragePool {
             config_path: config_path.into(),
             _lock: lock,
             poisoned: false,
+            recovery_trust: None,
         };
         instance.state()?;
         let marker = pool.join("service-kind.json");
@@ -434,7 +440,7 @@ impl StoragePool {
                 .into_string()
                 .map_err(|_| ExecutionError::Ownership)?;
             if name != "_pool" && !state.volumes.contains_key(&name) {
-                return Err(ExecutionError::Ownership);
+                self.validate_recovery_namespace(&name)?;
             }
         }
         Ok(state)
@@ -584,6 +590,14 @@ impl StoragePool {
         packet: &StoragePacket,
         guard: &StorageGuard,
     ) -> Result<(StorageConfig, PathBuf)> {
+        self.ensure_reserved(packet, guard, 0)
+    }
+    pub(super) fn ensure_reserved(
+        &mut self,
+        packet: &StoragePacket,
+        guard: &StorageGuard,
+        already_reserved: u64,
+    ) -> Result<(StorageConfig, PathBuf)> {
         packet.validate()?;
         guard.check()?;
         if packet.cluster_id != self.config.cluster_id
@@ -608,6 +622,9 @@ impl StoragePool {
             .values()
             .filter(|r| r.state != VolumeState::Purged)
             .try_fold(0u64, |total, r| total.checked_add(r.bytes))
+            .ok_or(ExecutionError::Runtime)?
+            .checked_add(self.recovery_reserved_bytes()?)
+            .and_then(|used| used.checked_sub(already_reserved))
             .ok_or(ExecutionError::Runtime)?;
         let available =
             rustix::fs::statvfs(&self.config.root).map_err(|_| ExecutionError::Runtime)?;
@@ -892,6 +909,40 @@ fn dispatch(
             pool.state()?;
             serde_json::to_value(pool.configuration()).map_err(|_| ExecutionError::Runtime)
         }
+        "recovery.record" | "recovery.install-ce" => {
+            let value: recovery_pool::RecoveryVolumeRequest = serde_json::from_value(request.value)
+                .map_err(|_| ExecutionError::Invalid("recovery volume"))?;
+            let guard = StorageGuard::new(Utc::now() + chrono::Duration::seconds(300), cancelled);
+            let result = if request.action == "recovery.record" {
+                pool.recovery_volume_record(&value, &guard)?
+            } else {
+                pool.install_recovery_volume(&value, &guard)?
+            };
+            serde_json::to_value(result).map_err(|_| ExecutionError::Runtime)
+        }
+        #[cfg(feature = "docker")]
+        "recovery.reserve" => {
+            recovery_pool::reservation_marker("helper", "enter", "none");
+            let result = (|| {
+                let request: recovery_pool::RecoveryReserveRequest =
+                    serde_json::from_value(request.value)
+                        .map_err(|_| ExecutionError::Invalid("recovery reservation"))?;
+                pool.reserve_recovery(&request, cancelled)
+            })();
+            recovery_pool::reservation_marker(
+                "helper",
+                "result",
+                recovery_pool::reservation_result_variant(&result),
+            );
+            serde_json::to_value(result?).map_err(|_| ExecutionError::Runtime)
+        }
+        "recovery.pool-info" => {
+            if !request.value.is_null() {
+                return Err(ExecutionError::Invalid("recovery pool info"));
+            }
+            serde_json::to_value(pool.recovery_pool_identity()?)
+                .map_err(|_| ExecutionError::Runtime)
+        }
         "capability" => {
             let nodes: Vec<String> = serde_json::from_value(request.value)
                 .map_err(|_| ExecutionError::Invalid("storage nodes"))?;
@@ -924,6 +975,39 @@ fn dispatch(
                 _ => unreachable!(),
             }
         }
+        "application.snapshot"
+        | "application.install"
+        | "application.record"
+        | "application.staging" => {
+            let packet: recovery_io::ApplicationRecoveryPacket =
+                serde_json::from_value(request.value)
+                    .map_err(|_| ExecutionError::Invalid("application recovery packet"))?;
+            packet.source.validate()?;
+            let guard = StorageGuard::new(packet.source.lease_until, cancelled);
+            let value = match request.action.as_str() {
+                "application.snapshot" => {
+                    serde_json::to_value(pool.snapshot_application(&packet, &guard)?)
+                }
+                "application.install" => {
+                    serde_json::to_value(pool.install_application(&packet, &guard)?)
+                }
+                "application.record" => {
+                    if pool.recovery_peer_enabled() {
+                        pool.recovery_source_authorized(&packet, &guard)?;
+                    }
+                    pool.volume_state(&packet.source, &guard)?;
+                    serde_json::to_value(
+                        pool.record(&packet.source.app_id)?
+                            .ok_or(ExecutionError::Ownership)?,
+                    )
+                }
+                "application.staging" => {
+                    serde_json::to_value(pool.application_recovery_staging(&packet, &guard)?)
+                }
+                _ => unreachable!(),
+            };
+            value.map_err(|_| ExecutionError::Runtime)
+        }
         _ => Err(ExecutionError::Unsupported("storage action")),
     }
 }
@@ -933,12 +1017,15 @@ async fn connection(
     shutdown: Arc<AtomicBool>,
 ) -> Result<()> {
     use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
-    if stream
+    let peer_uid = stream
         .peer_cred()
         .map_err(|_| ExecutionError::Denied)?
-        .uid()
-        != 0
-    {
+        .uid();
+    let recovery_peer = pool
+        .lock()
+        .map_err(|_| ExecutionError::Journal)?
+        .recovery_peer_enabled();
+    if peer_uid != 0 && !(peer_uid == 65532 && recovery_peer) {
         return Err(ExecutionError::Denied);
     }
     let (read, mut write) = stream.into_split();
@@ -946,16 +1033,30 @@ async fn connection(
     let mut bytes = Vec::new();
     tokio::time::timeout(
         Duration::from_secs(10),
-        (&mut reader).take(4097).read_until(b'\n', &mut bytes),
+        (&mut reader)
+            .take((RECOVERY_FRAME + 1) as u64)
+            .read_until(b'\n', &mut bytes),
     )
     .await
     .map_err(|_| ExecutionError::Expired)?
     .map_err(|_| ExecutionError::Runtime)?;
-    if bytes.len() > 4096 || !bytes.ends_with(b"\n") {
+    if bytes.len() > RECOVERY_FRAME || !bytes.ends_with(b"\n") {
         return Err(ExecutionError::Invalid("storage frame"));
     }
     let request: RpcRequest =
         serde_json::from_slice(&bytes).map_err(|_| ExecutionError::Invalid("storage request"))?;
+    let recovery_action = recovery_pool::recovery_action(&request.action);
+    if !recovery_action && bytes.len() > 4096 {
+        return Err(ExecutionError::Invalid("legacy storage frame"));
+    }
+    if peer_uid == 65532 && !(recovery_action || request.action == "info") {
+        return Err(ExecutionError::Denied);
+    }
+    let response_limit = if recovery_action {
+        RECOVERY_FRAME
+    } else {
+        8192
+    };
     if shutdown.load(Ordering::SeqCst) {
         return Err(ExecutionError::Expired);
     }
@@ -995,7 +1096,7 @@ async fn connection(
     };
     let mut bytes = serde_json::to_vec(&response).map_err(|_| ExecutionError::Runtime)?;
     bytes.push(b'\n');
-    if bytes.len() > 8192 {
+    if bytes.len() > response_limit {
         return Err(ExecutionError::Runtime);
     }
     tokio::time::timeout(Duration::from_secs(10), write.write_all(&bytes))
@@ -1033,19 +1134,41 @@ pub async fn serve_kind(
     kind: StorageKind,
     shutdown: impl std::future::Future<Output = ()>,
 ) -> Result<()> {
+    serve_kind_with_recovery(config_path, socket_path, kind, None, shutdown).await
+}
+pub async fn serve_kind_with_recovery(
+    config_path: &Path,
+    socket_path: &Path,
+    kind: StorageKind,
+    recovery_trust: Option<&Path>,
+    shutdown: impl std::future::Future<Output = ()>,
+) -> Result<()> {
     use std::os::unix::fs::FileTypeExt;
     require_root()?;
-    let pool = StoragePool::open_kind(config_path, kind)?;
+    let mut pool = StoragePool::open_kind(config_path, kind)?;
+    if let Some(path) = recovery_trust {
+        pool = pool.with_recovery_trust(path)?;
+    }
     pool.restore()?;
-    private(
-        socket_path
-            .parent()
-            .ok_or(ExecutionError::Invalid("storage socket"))?,
-        true,
-    )?;
+    let recovery_socket = recovery_trust.is_some();
+    let socket_parent = socket_path
+        .parent()
+        .ok_or(ExecutionError::Invalid("storage socket"))?;
+    if recovery_socket {
+        pool.install_recovery_socket_permissions(socket_parent)?;
+    } else {
+        private(socket_parent, true)?;
+    }
     match std::fs::symlink_metadata(socket_path) {
         Ok(meta) => {
-            if !meta.file_type().is_socket() || meta.uid() != 0 || meta.mode() & 0o077 != 0 {
+            if !meta.file_type().is_socket()
+                || meta.uid() != 0
+                || if recovery_socket {
+                    meta.gid() != 65532 || meta.mode() & 0o777 != 0o660
+                } else {
+                    meta.mode() & 0o077 != 0
+                }
+            {
                 return Err(ExecutionError::Ownership);
             }
             match tokio::net::UnixStream::connect(socket_path).await {
@@ -1063,9 +1186,12 @@ pub async fn serve_kind(
         Err(_) => return Err(ExecutionError::Runtime),
     }
     let listener = io(tokio::net::UnixListener::bind(socket_path))?;
+    if recovery_socket {
+        io(std::os::unix::fs::chown(socket_path, Some(0), Some(65532)))?;
+    }
     io(std::fs::set_permissions(
         socket_path,
-        std::fs::Permissions::from_mode(0o600),
+        std::fs::Permissions::from_mode(if recovery_socket { 0o660 } else { 0o600 }),
     ))?;
     let meta = io(std::fs::symlink_metadata(socket_path))?;
     let _socket = SocketOwner {
@@ -1098,6 +1224,84 @@ pub struct StorageClient {
     socket: PathBuf,
 }
 impl StorageClient {
+    pub async fn install_recovery_volume(
+        &self,
+        request: &recovery_pool::RecoveryVolumeRequest,
+    ) -> Result<recovery_pool::RecoveryVolumeRecord> {
+        self.call(
+            "recovery.install-ce",
+            serde_json::to_value(request).map_err(|_| ExecutionError::Ownership)?,
+        )
+        .await
+    }
+    pub async fn recovery_volume_record(
+        &self,
+        request: &recovery_pool::RecoveryVolumeRequest,
+    ) -> Result<recovery_pool::RecoveryVolumeRecord> {
+        self.call(
+            "recovery.record",
+            serde_json::to_value(request).map_err(|_| ExecutionError::Ownership)?,
+        )
+        .await
+    }
+    pub async fn reserve_recovery(
+        &self,
+        request: &recovery_pool::RecoveryReserveRequest,
+    ) -> Result<recovery_pool::RecoveryReservationReceipt> {
+        self.call(
+            "recovery.reserve",
+            serde_json::to_value(request).map_err(|_| ExecutionError::Ownership)?,
+        )
+        .await
+    }
+    pub async fn recovery_pool_identity(&self) -> Result<recovery_pool::RecoveryPoolIdentity> {
+        self.call("recovery.pool-info", serde_json::Value::Null)
+            .await
+    }
+    pub async fn snapshot_application(
+        &self,
+        packet: &recovery_io::ApplicationRecoveryPacket,
+    ) -> Result<recovery_io::ApplicationRecoveryResult> {
+        self.call(
+            "application.snapshot",
+            serde_json::to_value(packet)
+                .map_err(|_| ExecutionError::Invalid("application recovery packet"))?,
+        )
+        .await
+    }
+    pub async fn install_application(
+        &self,
+        packet: &recovery_io::ApplicationRecoveryPacket,
+    ) -> Result<recovery_io::ApplicationRecoveryResult> {
+        self.call(
+            "application.install",
+            serde_json::to_value(packet)
+                .map_err(|_| ExecutionError::Invalid("application recovery packet"))?,
+        )
+        .await
+    }
+    pub async fn application_record(
+        &self,
+        packet: &recovery_io::ApplicationRecoveryPacket,
+    ) -> Result<VolumeRecord> {
+        self.call(
+            "application.record",
+            serde_json::to_value(packet)
+                .map_err(|_| ExecutionError::Invalid("application recovery packet"))?,
+        )
+        .await
+    }
+    pub async fn application_staging(
+        &self,
+        packet: &recovery_io::ApplicationRecoveryPacket,
+    ) -> Result<PathBuf> {
+        self.call(
+            "application.staging",
+            serde_json::to_value(packet)
+                .map_err(|_| ExecutionError::Invalid("application recovery packet"))?,
+        )
+        .await
+    }
     pub fn new(socket: PathBuf) -> Self {
         Self { socket }
     }
@@ -1108,15 +1312,42 @@ impl StorageClient {
     ) -> Result<T> {
         use std::os::unix::fs::FileTypeExt;
         use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
-        private(self.socket.parent().ok_or(ExecutionError::Ownership)?, true)?;
+        let parent = self.socket.parent().ok_or(ExecutionError::Ownership)?;
         let meta = io(std::fs::symlink_metadata(&self.socket))?;
-        if !meta.file_type().is_socket() || meta.uid() != 0 || meta.mode() & 0o077 != 0 {
+        if !meta.file_type().is_socket()
+            || meta.uid() != 0
+            || io(std::fs::canonicalize(&self.socket))? != self.socket
+        {
             return Err(ExecutionError::Ownership);
         }
+        let recovery_socket = meta.gid() == 65532 && meta.mode() & 0o777 == 0o660;
+        if recovery_socket {
+            recovery_pool::recovery_socket_parent(parent, true)?;
+        } else {
+            private(parent, true)?;
+            if meta.mode() & 0o077 != 0 {
+                return Err(ExecutionError::Ownership);
+            }
+        }
+        if rustix::process::geteuid().as_raw() == 65532
+            && !(recovery_socket && (recovery_pool::recovery_action(action) || action == "info"))
+        {
+            return Err(ExecutionError::Denied);
+        }
+        let request_limit = if recovery_pool::recovery_action(action) {
+            RECOVERY_FRAME
+        } else {
+            4096
+        };
+        let response_limit = if recovery_pool::recovery_action(action) {
+            RECOVERY_FRAME
+        } else {
+            8192
+        };
         let mut request = serde_json::to_vec(&serde_json::json!({"action":action,"value":value}))
             .map_err(|_| ExecutionError::Invalid("storage request"))?;
         request.push(b'\n');
-        if request.len() > 4096 {
+        if request.len() > request_limit {
             return Err(ExecutionError::Invalid("storage frame"));
         }
         let work = async {
@@ -1135,13 +1366,13 @@ impl StorageClient {
                 .write_all(&request)
                 .await
                 .map_err(|_| ExecutionError::Runtime)?;
-            let mut reader = tokio::io::BufReader::new(stream).take(8193);
+            let mut reader = tokio::io::BufReader::new(stream).take((response_limit + 1) as u64);
             let mut bytes = Vec::new();
             reader
                 .read_until(b'\n', &mut bytes)
                 .await
                 .map_err(|_| ExecutionError::Runtime)?;
-            if bytes.len() > 8192 || !bytes.ends_with(b"\n") {
+            if bytes.len() > response_limit || !bytes.ends_with(b"\n") {
                 return Err(ExecutionError::Invalid("storage response"));
             }
             let response: RpcResponse = serde_json::from_slice(&bytes)

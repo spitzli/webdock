@@ -33,10 +33,10 @@ impl From<KeyFailure> for Error {
     }
 }
 pub struct NativeKeys {
-    dependencies: MailDependencies,
-    signer: RlsSigner,
+    pub(crate) dependencies: MailDependencies,
+    pub(crate) signer: RlsSigner,
     secret: String,
-    enabled: bool,
+    pub(crate) enabled: bool,
 }
 #[derive(Serialize)]
 pub struct KeyAccess {

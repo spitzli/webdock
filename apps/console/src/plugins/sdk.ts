@@ -1,12 +1,14 @@
 // The surface first-party plugin UIs (`plugins/<id>/ui`) import as `@webdock/plugin-ui`.
 // Every call goes through the plugin action API, so the Core gates apply exactly as for panels.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ComponentType } from "react";
+import { useContext, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import type { z } from "zod";
-import { useApi } from "../context";
+import { SessionContext, useApi } from "../context";
+import { sessionCacheScope } from "../session-cache";
 import { invokePlugin } from "./views";
 export * as ui from "../ui";
 export { Empty, Failure, Loading } from "../common";
+export { usePluginStorage, usePluginScope, storageKeySchema, storageHashSchema, STORAGE_CONTENT_TYPES, type TransferDescriptor, type BinaryTransferOptions } from "./storage";
 
 export interface PluginContext { plugin: string; projectID: string }
 export interface PluginResource { id: string; offering: string; name: string; createdVia: "operator" | "self-service" }
@@ -73,19 +75,68 @@ export function usePluginMutation(context: PluginContext, action: string, option
   });
 }
 /** One logical submission keeps its explicit key when a response is lost. */
-export interface PluginSubmission { input: Record<string, unknown>; idempotencyKey: string }
+export interface PluginSubmission { input: Record<string, unknown>; idempotencyKey: string; signal?: AbortSignal }
 export function usePluginSubmission<T>(context: PluginContext, action: string, schema: z.ZodType<T>) {
   const api = useApi();
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async ({ input, idempotencyKey }: PluginSubmission) => schema.parse(await invokePlugin(api, context.plugin, context.projectID, action, input, undefined, idempotencyKey)),
+    mutationFn: async ({ input, idempotencyKey, signal }: PluginSubmission) => schema.parse(await invokePlugin(api, context.plugin, context.projectID, action, input, signal, idempotencyKey)),
     retry: false,
     gcTime: 0,
     onSettled: () => client.invalidateQueries({ queryKey: ["plugin-ui", context.plugin, context.projectID] }),
   });
 }
-/** Reads a value once on demand, never cached: for credentials behind a reveal. */
-export function usePluginReveal(context: PluginContext, action: string) {
+/** Sensitive results belong only to the mounted caller, never a shared query/mutation cache. */
+export function usePluginReveal(context: PluginContext & { resource?: Pick<PluginResource, "id"> }, action: string) {
   const api = useApi();
-  return useMutation({ mutationFn: (input: Record<string, unknown>) => invokePlugin(api, context.plugin, context.projectID, action, input) });
+  const session = useContext(SessionContext);
+  const key = JSON.stringify([context.plugin, context.projectID, action, context.resource?.id, sessionCacheScope(session)]);
+  const scope = useMemo(() => ({ api, key }), [api, key]);
+  interface State { scope: typeof scope; data: unknown; error: Error | null; status: "idle" | "pending" | "success" | "error" }
+  const empty = (): State => ({ scope, data: undefined, error: null, status: "idle" });
+  const [state, setState] = useState<State>(empty);
+  const active = useRef<{ scope: typeof scope; controller: AbortController } | null>(null);
+  // Clear before a changed principal/project/resource can paint the old value.
+  if (state.scope !== scope) setState(empty());
+  useEffect(() => () => {
+    if (active.current?.scope === scope) {
+      const previous = active.current;
+      active.current = null;
+      previous.controller.abort();
+    }
+  }, [scope]);
+  const reset = () => {
+    const previous = active.current;
+    active.current = null;
+    previous?.controller.abort();
+    setState(empty());
+  };
+  const mutateAsync = async (input: Record<string, unknown>): Promise<unknown> => {
+    active.current?.controller.abort();
+    const request = { scope, controller: new AbortController() };
+    active.current = request;
+    setState({ scope, data: undefined, error: null, status: "pending" });
+    try {
+      const result = await invokePlugin(api, context.plugin, context.projectID, action, input, request.controller.signal);
+      if (active.current !== request) throw new DOMException("Reveal cancelled", "AbortError");
+      active.current = null;
+      setState({ scope, data: result, error: null, status: "success" });
+      return result;
+    } catch (error) {
+      const failure = error instanceof Error ? error : new Error("Could not load the private value.");
+      if (active.current === request) {
+        active.current = null;
+        setState({ scope, data: undefined, error: failure, status: "error" });
+      }
+      throw failure;
+    }
+  };
+  const visible = state.scope === scope ? state : empty();
+  return {
+    data: visible.data, error: visible.error, status: visible.status,
+    isPending: visible.status === "pending", isSuccess: visible.status === "success",
+    isError: visible.status === "error", isIdle: visible.status === "idle",
+    reset, mutateAsync,
+    mutate: (input: Record<string, unknown>) => { void mutateAsync(input).catch(() => undefined); },
+  };
 }

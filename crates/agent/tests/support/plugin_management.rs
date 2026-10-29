@@ -126,6 +126,7 @@ fn config(dir: &std::path::Path, path: std::path::PathBuf) -> AgentConfig {
         },
         database_runtime: None,
         mail_runtime: None,
+        recovery_runtime: None,
         mail_configuration_enabled: false,
         policy: Default::default(),
         workloads: false,

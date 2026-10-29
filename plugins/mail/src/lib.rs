@@ -8,6 +8,7 @@ pub mod executor;
 pub mod listener;
 mod mailboxes;
 pub mod payload;
+pub mod recovery;
 pub mod store;
 pub mod transport;
 
@@ -314,6 +315,60 @@ impl Plugin {
     }
 }
 
+#[derive(Clone, Copy)]
+enum MailActionBoundary {
+    Handler,
+    Dispatch,
+    Result,
+    RecoveryFinish,
+}
+impl MailActionBoundary {
+    fn token(self) -> &'static str {
+        match self {
+            Self::Handler => "handler_enter",
+            Self::Dispatch => "dispatch",
+            Self::Result => "result",
+            Self::RecoveryFinish => "recovery_finish",
+        }
+    }
+    fn line(self, action: &str, code: Option<ErrorCode>) -> Option<String> {
+        let action = match action {
+            "domains.create" => "domains.create",
+            "mail.send" => "mail.send",
+            "incoming.activate" => "incoming.activate",
+            "mailboxes.create" => "mailboxes.create",
+            "mailboxes.view" => "mailboxes.view",
+            "mailboxes.credentials" => "mailboxes.credentials",
+            _ => return None,
+        };
+        let code = match code {
+            None => "none",
+            Some(ErrorCode::InvalidInput) => "invalid_input",
+            Some(ErrorCode::NotSupported) => "not_supported",
+            Some(ErrorCode::PermissionDenied) => "permission_denied",
+            Some(ErrorCode::CapabilityUnavailable) => "capability_unavailable",
+            Some(ErrorCode::Conflict) => "conflict",
+            Some(ErrorCode::Unavailable) => "unavailable",
+            Some(ErrorCode::DeadlineExceeded) => "deadline_exceeded",
+            Some(ErrorCode::NotFound) => "not_found",
+        };
+        Some(format!(
+            "mail_action action={action} stage={} publicCode={code}",
+            self.token()
+        ))
+    }
+    fn enabled(value: Option<&std::ffi::OsStr>) -> bool {
+        value == Some(std::ffi::OsStr::new("1"))
+    }
+    fn emit(self, action: &str, code: Option<ErrorCode>) {
+        if Self::enabled(std::env::var_os("WEBDOCK_RECOVERY_COMPONENT_TEST").as_deref())
+            && let Some(line) = self.line(action, code)
+        {
+            use std::io::Write;
+            let _ = writeln!(std::io::stderr().lock(), "{line}");
+        }
+    }
+}
 pub struct Handler(pub Arc<Plugin>);
 #[tonic::async_trait]
 impl ActionHandler for Handler {
@@ -324,10 +379,17 @@ impl ActionHandler for Handler {
         input: Value,
         configuration: Value,
     ) -> Result<Value> {
+        MailActionBoundary::Handler.emit(&claims.action, None);
         if configuration != json!({}) {
+            MailActionBoundary::Result.emit(&claims.action, Some(ErrorCode::InvalidInput));
             return Err(invalid("Invalid mail request"));
         }
         let plugin = &self.0;
+        let recovery = plugin.store.recovery_effect().await.map_err(|_| {
+            MailActionBoundary::Result.emit(&claims.action, Some(ErrorCode::Unavailable));
+            PluginError::new(ErrorCode::Unavailable, "Mail recovery is fenced")
+        })?;
+        let result = async {
         if !plugin
             .store
             .bind_project(&claims.project_id, &claims.customer_id)
@@ -357,6 +419,7 @@ impl ActionHandler for Handler {
         if transition {
             plugin.transition(token, &input).await?;
         }
+        MailActionBoundary::Dispatch.emit(&claims.action,None);
         match claims.action.as_str() {
             "domains.create" => plugin.create_domain(claims, input).await,
             "domains.view" => plugin.view_domain(claims, input).await,
@@ -409,6 +472,20 @@ impl ActionHandler for Handler {
                 "Mail action unavailable",
             )),
         }
+        }.await;
+        MailActionBoundary::Result.emit(
+            &claims.action,
+            result.as_ref().err().map(|error| error.code),
+        );
+        let finished = recovery.finish().await;
+        MailActionBoundary::RecoveryFinish.emit(
+            &claims.action,
+            finished.as_ref().err().map(|_| ErrorCode::Unavailable),
+        );
+        finished.map_err(|_| {
+            PluginError::new(ErrorCode::Unavailable, "Mail recovery effect is uncertain")
+        })?;
+        result
     }
 }
 
@@ -435,4 +512,173 @@ pub fn validate_manifest(manifest: &Manifest) -> Result<()> {
         return Err(invalid("Invalid mail manifest"));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod system_dns_probe {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+    use std::os::unix::fs::MetadataExt;
+
+    fn os_inputs() {
+        unsafe extern "C" {
+            fn geteuid() -> u32;
+        }
+        // SAFETY: the POSIX getter takes no pointers and has no preconditions.
+        let euid = unsafe { geteuid() };
+        for (name, path, file) in [
+            ("root", "/", false),
+            ("etc", "/etc", false),
+            ("resolv_conf", "/etc/resolv.conf", true),
+            ("hosts", "/etc/hosts", true),
+            ("hostname", "/etc/hostname", true),
+        ] {
+            let metadata = std::fs::symlink_metadata(path);
+            let value = metadata.as_ref().ok();
+            let mut readable = None;
+            let mut read_errno = None;
+            let mut read_bytes = None;
+            let mut read_sha256 = None;
+            if file {
+                let read = || -> std::io::Result<Vec<u8>> {
+                    let source = std::fs::File::open(path)?;
+                    let mut bytes = Vec::new();
+                    source.take(65537).read_to_end(&mut bytes)?;
+                    Ok(bytes)
+                }();
+                readable = Some(read.is_ok());
+                match read {
+                    Ok(bytes) if bytes.len() <= 65536 => {
+                        read_bytes = Some(bytes.len());
+                        read_sha256 = Some(hex::encode(Sha256::digest(&bytes)));
+                    }
+                    Ok(_) => panic!("fixed OS input exceeds probe bound"),
+                    Err(error) => read_errno = error.raw_os_error(),
+                }
+            }
+            let file_type = value.map_or("unavailable", |m| {
+                if m.file_type().is_symlink() {
+                    "symlink"
+                } else if m.is_dir() {
+                    "directory"
+                } else if m.is_file() {
+                    "regular"
+                } else {
+                    "other"
+                }
+            });
+            println!(
+                "mail_dns_os_input {}",
+                serde_json::json!({
+                    "name":name,"currentEuid":euid,"metadataOk":metadata.is_ok(),
+                    "metadataErrno":metadata.as_ref().err().and_then(std::io::Error::raw_os_error),
+                    "fileType":file_type,"uid":value.map(MetadataExt::uid),
+                    "gid":value.map(MetadataExt::gid),"mode":value.map(|m|m.mode()&0o7777),
+                    "nlink":value.map(MetadataExt::nlink),"len":value.map(std::fs::Metadata::len),
+                    "readable":readable,"readErrno":read_errno,"readBytes":read_bytes,"readSHA256":read_sha256,
+                })
+            );
+        }
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    #[ignore = "owned constructor-only probe; no DNS lookup"]
+    async fn constructor_only() {
+        assert_eq!(
+            std::env::var("WEBDOCK_RECOVERY_COMPONENT_TEST").as_deref(),
+            Ok("1")
+        );
+        let metadata = std::env::var("WEBDOCK_DNS_OS_METADATA").as_deref() == Ok("1");
+        let expected = match std::env::var("WEBDOCK_DNS_CONSTRUCTOR_EXPECT").as_deref() {
+            Ok("ok") => Some(true),
+            Ok("deny") => Some(false),
+            Ok("observe") if metadata => None,
+            _ => panic!("fixed constructor expectation required"),
+        };
+        if metadata {
+            os_inputs();
+        }
+        let readable = std::fs::read("/etc/resolv.conf");
+        let result = super::SystemDns::new();
+        println!(
+            "mail_dns_constructor {{\"constructorOk\":{},\"readable\":{},\"readErrno\":{}}}",
+            result.is_ok(),
+            readable.is_ok(),
+            readable
+                .as_ref()
+                .err()
+                .and_then(std::io::Error::raw_os_error)
+                .map_or_else(|| "null".to_owned(), |number| number.to_string())
+        );
+        if metadata {
+            let (class, errno) = match result.as_ref().err() {
+                None => ("ok", None),
+                Some(error) => match error
+                    .downcast_ref::<hickory_resolver::ResolveError>()
+                    .and_then(hickory_resolver::ResolveError::proto)
+                    .map(hickory_resolver::proto::ProtoError::kind)
+                {
+                    Some(hickory_resolver::proto::ProtoErrorKind::Io(error)) => {
+                        ("io", error.raw_os_error())
+                    }
+                    Some(_) => ("proto_other", None),
+                    None => ("resolver_other", None),
+                },
+            };
+            println!(
+                "mail_dns_constructor_class {}",
+                serde_json::json!({"class":class,"errno":errno})
+            );
+        }
+        if let Some(expected) = expected {
+            assert_eq!(result.is_ok(), expected, "constructor outcome mismatch");
+        }
+    }
+}
+
+#[cfg(test)]
+mod action_diagnostic_tests {
+    use super::*;
+    #[test]
+    fn fixed_handler_markers_keep_body_and_finish_outcomes_separate_without_private_error_text() {
+        for value in [None, Some("0"), Some("true"), Some("01"), Some("1")] {
+            assert_eq!(
+                MailActionBoundary::enabled(value.map(std::ffi::OsStr::new)),
+                value == Some("1")
+            );
+        }
+        for action in [
+            "domains.create",
+            "mail.send",
+            "incoming.activate",
+            "mailboxes.create",
+            "mailboxes.view",
+            "mailboxes.credentials",
+        ] {
+            for stage in [
+                MailActionBoundary::Handler,
+                MailActionBoundary::Dispatch,
+                MailActionBoundary::Result,
+                MailActionBoundary::RecoveryFinish,
+            ] {
+                let line = stage.line(action, None).unwrap();
+                assert!(line.starts_with("mail_action action="));
+                assert!(!line.contains("private"));
+            }
+        }
+        let error = PluginError::new(ErrorCode::NotFound, "private-body-poison");
+        let body = MailActionBoundary::Result
+            .line("mail.send", Some(error.code))
+            .unwrap();
+        let finish = MailActionBoundary::RecoveryFinish
+            .line("mail.send", Some(ErrorCode::Unavailable))
+            .unwrap();
+        assert!(body.contains("publicCode=not_found") && finish.contains("publicCode=unavailable"));
+        assert!(!format!("{body}{finish}").contains("poison"));
+        assert!(
+            MailActionBoundary::Handler
+                .line("private-token-poison", None)
+                .is_none()
+        );
+    }
 }

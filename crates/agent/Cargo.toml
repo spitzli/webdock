@@ -8,10 +8,20 @@ license = "AGPL-3.0-only"
 
 [features]
 default = ["docker", "kubernetes"]
-docker = ["dep:bollard", "dep:reqwest", "dep:futures-util", "dep:rustls", "dep:tokio-rustls", "dep:rcgen"]
+docker = ["dep:bollard", "dep:reqwest", "dep:futures-util", "dep:rustls", "dep:tokio-rustls", "dep:rcgen", "dep:rustls-pemfile"]
+local-recovery-fixture = ["webdock-object-storage/local-test"]
 kubernetes = ["dep:reqwest", "dep:tokio-rustls", "dep:rcgen", "dep:kube", "dep:k8s-openapi", "dep:rust_decimal", "dep:serde-saphyr", "dep:ipnet", "dep:oci-spec", "dep:futures-util", "dep:humantime", "dep:tokio-postgres", "dep:tokio-postgres-rustls", "dep:rustls", "dep:rustls-pemfile"]
 
 [dependencies]
+webdock-object-storage={path="../object-storage"}
+webdock-mail-runtime={path="../mail-runtime"}
+webdock-plugin-kit={path="../plugin-kit"}
+url="2"
+tar="0.4"
+axum="0.8"
+hyper={version="1",features=["server","http1"]}
+hyper-util={version="0.1",features=["server","tokio","service"]}
+webdock-export-protocol={path="../export-protocol"}
 webdock-supervisor = { path = "../supervisor" }
 webdock-core = { path = "../core" }
 webdock-agent-protocol = { path = "../agent-protocol" }

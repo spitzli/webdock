@@ -75,7 +75,13 @@ async fn delayed_hosting_guard_cannot_extend_authority_past_lease() {
         .await
         .unwrap();
     let authority = RemoteAuthority {
+        #[cfg(feature = "docker")]
+        recovery_executor: std::sync::OnceLock::new(),
         session: Arc::new(RwLock::new(Some(Session {
+            #[cfg(feature = "docker")]
+            recovery_client: wire::recovery_control_client::RecoveryControlClient::new(
+                channel.clone(),
+            ),
             client: AgentControlClient::new(channel.clone()),
             mail_client: wire::mail_control_client::MailControlClient::new(channel.clone()),
             configuration_client:
@@ -110,6 +116,10 @@ async fn delayed_hosting_guard_cannot_extend_authority_past_lease() {
         }))),
         mail_outbox: Mutex::new(
             crate::outbox::MailOutbox::open(directory.path().join("mail.json")).unwrap(),
+        ),
+        #[cfg(feature = "docker")]
+        recovery_outbox: Mutex::new(
+            crate::outbox::RecoveryOutbox::open(directory.path().join("recovery.json")).unwrap(),
         ),
         mail_retry_at: Mutex::new(None),
         #[cfg(feature = "kubernetes")]

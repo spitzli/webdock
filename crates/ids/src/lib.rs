@@ -1,4 +1,4 @@
-//! Private, checked time/machine/generator/sequence IDs.
+//! Webdock's signed-ID and durable-checkpoint policy over Maylily packing.
 //!
 //! Packing alone does not provide uniqueness: every producer needs exclusive
 //! ownership of its identity and a durable high-water mark. See the crate README
@@ -6,6 +6,24 @@
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{fmt, str::FromStr};
+
+impl From<maylily::Error> for Error {
+    fn from(error: maylily::Error) -> Self {
+        match error {
+            maylily::Error::IdentityOverflow => Self::IdentityOverflow,
+            maylily::Error::BeforeEpoch => Self::BeforeEpoch,
+            maylily::Error::SequenceOverflow => Self::SequenceOverflow,
+            maylily::Error::ClockRollback { now_ms, last_ms } => {
+                Self::ClockRollback { now_ms, last_ms }
+            }
+            maylily::Error::InvalidId => Self::InvalidId,
+            maylily::Error::TimestampOverflow => Self::TimestampOverflow,
+            maylily::Error::InvalidRadix
+            | maylily::Error::InvalidBits
+            | maylily::Error::SystemClock => Self::InvalidLayout,
+        }
+    }
+}
 
 pub const PLATFORM_EPOCH_MS: u64 = 1_767_225_600_000;
 
@@ -130,6 +148,18 @@ impl Layout {
         self.epoch_ms + mask(self.bits[0])
     }
 
+    fn options(self, identity: Identity) -> maylily::Options {
+        maylily::Options {
+            radix: 10,
+            time_base: self.epoch_ms,
+            machine_id: identity.machine,
+            machine_bits: self.bits[1],
+            generator_id: identity.generator,
+            generator_bits: self.bits[2],
+            sequence_bits: self.bits[3],
+        }
+    }
+
     fn elapsed(self, timestamp_ms: u64) -> Result<u64, Error> {
         let elapsed = timestamp_ms
             .checked_sub(self.epoch_ms)
@@ -144,34 +174,32 @@ impl Layout {
     /// Also rejects reserved identities even when obtained by decoding a legacy ID.
     pub fn pack(self, timestamp_ms: u64, identity: Identity, sequence: u64) -> Result<Id, Error> {
         Identity::new(self, identity.machine, identity.generator)?;
-        let elapsed = self.elapsed(timestamp_ms)?;
-        if sequence > mask(self.bits[3]) {
-            return Err(Error::SequenceOverflow);
-        }
-        let value = (((elapsed << self.bits[1] | identity.machine) << self.bits[2]
-            | identity.generator)
-            << self.bits[3])
-            | sequence;
-        Ok(Id(value as i64))
+        self.elapsed(timestamp_ms)?;
+        let value = self.options(identity).pack_at(timestamp_ms, sequence)?;
+        i64::try_from(value)
+            .map(Id)
+            .map_err(|_| Error::TimestampOverflow)
     }
 
     /// Decode existing IDs, including legacy slots 0 and 1. This does not authorize
     /// generation with the decoded identity or prove which layout created an ID.
     pub fn decode(self, id: Id) -> Result<Parts, Error> {
-        let mut value = id.0 as u64;
-        if value > mask(self.bits.iter().sum()) {
+        if id.0 as u64 > mask(self.bits.iter().sum()) {
             return Err(Error::IdOutsideLayout);
         }
-        let sequence = value & mask(self.bits[3]);
-        value >>= self.bits[3];
-        let generator = value & mask(self.bits[2]);
-        value >>= self.bits[2];
-        let machine = value & mask(self.bits[1]);
-        value >>= self.bits[1];
+        let decoded = self
+            .options(Identity {
+                machine: 0,
+                generator: 0,
+            })
+            .parse(&id.to_string())?;
         Ok(Parts {
-            timestamp_ms: self.epoch_ms + value,
-            identity: Identity { machine, generator },
-            sequence,
+            timestamp_ms: decoded.timestamp_ms,
+            identity: Identity {
+                machine: decoded.machine_id,
+                generator: decoded.generator_id,
+            },
+            sequence: decoded.sequence,
         })
     }
 

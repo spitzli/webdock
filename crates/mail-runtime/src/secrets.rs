@@ -11,6 +11,19 @@ use base64::{
 use serde::{Serialize, de::DeserializeOwned};
 pub const SEALED_LIMIT: usize = 64 * 1024 * 1024;
 pub struct MailCipher(Aes256Gcm);
+/// Existing managed-private payload key derivation, shared with operator recovery.
+/// This preserves the retained plugin v1 format; no fields are re-encrypted.
+pub fn private_payload_key_from_hex(retained_hex: &str) -> Result<String> {
+    use sha2::{Digest, Sha256};
+    let key = hex::decode(retained_hex).map_err(|_| Error::Secret)?;
+    if key.len() != 32 {
+        return Err(Error::Secret);
+    }
+    let mut hash = Sha256::new();
+    hash.update(b"webdock-mail:private-payload-key:v1\0");
+    hash.update(key);
+    Ok(STANDARD.encode(hash.finalize()))
+}
 pub(crate) fn key_bytes(key: &str) -> Result<[u8; 32]> {
     if key.len() != 44 {
         return Err(Error::Secret);

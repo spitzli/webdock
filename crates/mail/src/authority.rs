@@ -29,6 +29,7 @@ pub(crate) async fn validate_pools(deps: &MailDependencies) -> Result<()> {
     Ok(())
 }
 pub(crate) async fn module(tx: &DatabaseTransaction, write: bool) -> Result<()> {
+    crate::recovery::ensure_open(tx).await?;
     one(
         tx,
         "SELECT pg_advisory_xact_lock_shared(hashtext('webdock-plugin-installation'))",
@@ -264,5 +265,6 @@ pub(crate) async fn worker(
         module(&tx, write).await?;
     }
     apply(&tx, secret, purpose.as_str()).await?;
+    crate::recovery::ensure_open(&tx).await?;
     Ok(tx)
 }

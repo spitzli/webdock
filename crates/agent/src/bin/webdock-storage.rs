@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-use webdock_agent::storage::{StorageKind, StoragePool, serve_kind};
+use webdock_agent::storage::{StorageKind, StoragePool, serve_kind_with_recovery};
 #[derive(Parser)]
 #[command(about = "Separately privileged Webdock fixed filesystem helper")]
 struct Arguments {
@@ -9,6 +9,9 @@ struct Arguments {
     /// Serve a separate PostgreSQL installation pool (UID/GID 26).
     #[arg(long)]
     database: bool,
+    /// Root-installed public signer/profile trust for isolated recovery, disabled by default.
+    #[arg(long)]
+    recovery_trust: Option<PathBuf>,
     #[command(subcommand)]
     action: Action,
 }
@@ -43,9 +46,15 @@ async fn main() -> std::process::ExitCode {
             let mut terminate =
                 tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
                     .expect("signal handler");
-            serve_kind(&arguments.config, &socket, kind, async {
-                tokio::select! {_=tokio::signal::ctrl_c()=>{},_=terminate.recv()=>{}}
-            })
+            serve_kind_with_recovery(
+                &arguments.config,
+                &socket,
+                kind,
+                arguments.recovery_trust.as_deref(),
+                async {
+                    tokio::select! {_=tokio::signal::ctrl_c()=>{},_=terminate.recv()=>{}}
+                },
+            )
             .await
         }
     };

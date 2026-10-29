@@ -277,7 +277,17 @@ impl Hooks for WebdockApp {
                 )
                 .await
                 .map_err(|_| loco_rs::Error::Message("Hosting initialization failed".into()))?
-                .with_session_authority(identity.clone(), browser.clone()),
+                .with_session_authority(identity.clone(), browser.clone())
+                .with_recovery_signer_configuration(
+                    std::env::var_os("WEBDOCK_RECOVERY_SIGNER_KEY").map(std::path::PathBuf::from),
+                    std::env::var_os("WEBDOCK_RECOVERY_SIGNER_DIRECTORY")
+                        .map(std::path::PathBuf::from),
+                )
+                .map_err(|_| {
+                    loco_rs::Error::Message(
+                        "Independent recovery signer configuration is invalid".into(),
+                    )
+                })?,
             ))
         } else {
             None

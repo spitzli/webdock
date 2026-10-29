@@ -49,20 +49,6 @@ pub(crate) fn exceeded(checked: &Value, previous: &Value, wanted: &Value) -> Opt
     }
     None
 }
-/// Limits and what the customer of `project` has allocated, under the customer's limits lock.
-pub(crate) async fn checked(tx: &DatabaseTransaction, project: &str) -> Result<Value> {
-    let row = tx
-        .query_one_raw(Statement::from_sql_and_values(
-            DbBackend::Postgres,
-            "SELECT webdock_rls.project_limits($1) AS value",
-            [project.into()],
-        ))
-        .await
-        .map_err(db_error)?
-        .ok_or_else(unavailable)?;
-    row.try_get("", "value").map_err(db_error)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -2,6 +2,7 @@
 mod invocation;
 mod manifest;
 mod policy;
+pub mod storage;
 pub use invocation::{InvocationClaims, JobIdentity, verify_invocation};
 pub use manifest::{Manifest, validate_value};
 pub use policy::{ActionPolicy, Availability};

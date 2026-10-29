@@ -90,6 +90,19 @@ pub struct DockerAdapter {
     storage: Option<(crate::storage::StorageClient, crate::storage::StorageConfig)>,
     http: reqwest::Client,
     policy: Arc<crate::policy::RuntimePolicy>,
+    app_fences: Option<Arc<crate::recovery::effect_fence::AppEffectFenceRegistry>>,
+}
+struct AppCommandGuard {
+    upstream: LeaseGuard,
+    permit: Arc<crate::recovery::effect_fence::AppEffectPermit>,
+}
+#[async_trait::async_trait]
+impl Authorizer for AppCommandGuard {
+    async fn authorize(&self, command: &Command) -> Result<()> {
+        self.permit.check()?;
+        self.upstream.check_for(command).await?;
+        self.permit.check()
+    }
 }
 impl DockerAdapter {
     /// Deliberately ignores DOCKER_HOST and context defaults; only an explicitly supplied local socket.
@@ -129,6 +142,7 @@ impl DockerAdapter {
             storage: None,
             http,
             policy: Arc::new(crate::policy::RuntimePolicy::default()),
+            app_fences: None,
         })
     }
     fn registry_ready(&self) -> Result<bool> {
@@ -152,6 +166,13 @@ impl DockerAdapter {
     }
     pub fn with_policy(mut self, policy: Arc<crate::policy::RuntimePolicy>) -> Self {
         self.policy = policy;
+        self
+    }
+    pub(crate) fn with_app_fences(
+        mut self,
+        fences: Arc<crate::recovery::effect_fence::AppEffectFenceRegistry>,
+    ) -> Self {
+        self.app_fences = Some(fences);
         self
     }
     /// Binds the local privileged helper to the explicitly connected rootful Engine node.
@@ -413,6 +434,7 @@ impl DockerAdapter {
             Err(DockerError::DockerResponseServerError {
                 status_code: 404, ..
             }) => {
+                guard.check().await?;
                 let mut stream = self.docker.create_image(
                     Some(
                         CreateImageOptionsBuilder::default()
@@ -422,12 +444,16 @@ impl DockerAdapter {
                     None,
                     credentials,
                 );
-                while stream
-                    .try_next()
-                    .await
-                    .map_err(|_| ExecutionError::Runtime)?
-                    .is_some()
-                {
+                loop {
+                    guard.check().await?;
+                    if stream
+                        .try_next()
+                        .await
+                        .map_err(|_| ExecutionError::Runtime)?
+                        .is_none()
+                    {
+                        break;
+                    }
                     guard.check().await?;
                 }
             }
@@ -594,6 +620,7 @@ impl DockerAdapter {
                 bytes,
                 command.lease_until,
             )?;
+            guard.check().await?;
             helper.retained(&packet).await?;
             Some(packet)
         } else {
@@ -965,80 +992,114 @@ impl RuntimeAdapter for DockerAdapter {
         Err(ExecutionError::Ownership)
     }
     async fn reconcile(&self, command: &Command, guard: &LeaseGuard) -> Result<ObservedState> {
-        let spec = &command.spec;
-        if matches!(command.action, Action::Retire | Action::PurgeStorage) {
-            return self.retire_or_purge(command, guard).await;
-        }
-        self.validate(spec)?;
-        container_config(spec, command.generation)?;
-        guard.check_for(command).await?;
-        self.check_expected(command).await?;
-        self.lifecycle_volume(spec).await?;
-        if let Some(existing) = self.owned(spec, &spec.name()).await? {
-            fence(&existing, spec.revision, command.generation)?;
-        }
-        if command.action == Action::Stop {
-            self.stop_owned(spec, &spec.name(), command.generation, guard, false)
-                .await?;
-            let mut observed = self.inspect(spec).await?;
-            guard.check_for(command).await?;
-            // A stop acknowledges the admitted intent revision without rewriting immutable container labels.
-            if observed.phase == Phase::Stopped {
-                observed.revision = spec.revision;
+        use crate::recovery::effect_fence::{AppCommandStamp, AppEffectAdmission};
+        let permit = match self
+            .app_fences
+            .as_ref()
+            .ok_or(ExecutionError::Fenced)?
+            .enter(
+                command.spec.resource_id.as_str(),
+                AppCommandStamp::from_command(command)?,
+            )? {
+            AppEffectAdmission::Execute(permit) => Arc::new(permit),
+            AppEffectAdmission::Verify => return self.inspect_completed(command, guard).await,
+        };
+        let guarded = LeaseGuard::new(
+            command.clone(),
+            Arc::new(AppCommandGuard {
+                upstream: guard.clone(),
+                permit: permit.clone(),
+            }),
+        );
+        let result = async {
+            let guard = &guarded;
+            let spec = &command.spec;
+            if matches!(command.action, Action::Retire | Action::PurgeStorage) {
+                return self.retire_or_purge(command, guard).await;
             }
-            return Ok(observed);
-        }
-        self.configured_container(command)?;
-        self.image(&spec.image, Some(spec.project_id.as_str()), guard)
+            self.validate(spec)?;
+            container_config(spec, command.generation)?;
+            guard.check_for(command).await?;
+            self.check_expected(command).await?;
+            self.lifecycle_volume(spec).await?;
+            if let Some(existing) = self.owned(spec, &spec.name()).await? {
+                fence(&existing, spec.revision, command.generation)?;
+            }
+            if command.action == Action::Stop {
+                self.stop_owned(spec, &spec.name(), command.generation, guard, false)
+                    .await?;
+                let mut observed = self.inspect(spec).await?;
+                guard.check_for(command).await?;
+                // A stop acknowledges the admitted intent revision without rewriting immutable container labels.
+                if observed.phase == Phase::Stopped {
+                    observed.revision = spec.revision;
+                }
+                return Ok(observed);
+            }
+            self.configured_container(command)?;
+            self.image(&spec.image, Some(spec.project_id.as_str()), guard)
+                .await?;
+            self.ensure_network(spec, guard).await?;
+            self.ensure_volume(
+                spec,
+                command.generation,
+                guard,
+                command.expected_runtime_id.is_none(),
+                command.lease_until,
+            )
             .await?;
-        self.ensure_network(spec, guard).await?;
-        self.ensure_volume(
-            spec,
-            command.generation,
-            guard,
-            command.expected_runtime_id.is_none(),
-            command.lease_until,
-        )
-        .await?;
-        let existing = self.owned(spec, &spec.name()).await?;
-        if let Some(container) = &existing {
-            fence(container, spec.revision, command.generation)?;
-            if !self.matches(container, command)? {
-                self.stop_owned(spec, &spec.name(), command.generation, guard, true)
+            let existing = self.owned(spec, &spec.name()).await?;
+            if let Some(container) = &existing {
+                fence(container, spec.revision, command.generation)?;
+                if !self.matches(container, command)? {
+                    self.stop_owned(spec, &spec.name(), command.generation, guard, true)
+                        .await?;
+                }
+            }
+            if self.owned(spec, &spec.name()).await?.is_none() {
+                guard.check().await?;
+                self.docker
+                    .create_container(
+                        Some(
+                            CreateContainerOptionsBuilder::default()
+                                .name(&spec.name())
+                                .build(),
+                        ),
+                        self.configured_container(command)?,
+                    )
+                    .await
+                    .map_err(|_| ExecutionError::Runtime)?;
+            }
+            let container = self
+                .owned(spec, &spec.name())
+                .await?
+                .ok_or(ExecutionError::Runtime)?;
+            if spec.replicas > 0 && container.state.as_ref().and_then(|s| s.running) != Some(true) {
+                guard.check().await?;
+                self.docker
+                    .start_container(&spec.name(), None::<StartContainerOptions>)
+                    .await
+                    .map_err(|_| ExecutionError::Runtime)?;
+            }
+            if spec.replicas == 0 {
+                self.stop_owned(spec, &spec.name(), command.generation, guard, false)
                     .await?;
             }
+            if apply_needs_health_wait(command.action, spec.replicas, spec.health_path.is_some()) {
+                apply_health_convergence(|| guard.check_for(command), || self.inspect(spec)).await
+            } else {
+                guard.check().await?;
+                self.inspect(spec).await
+            }
         }
-        if self.owned(spec, &spec.name()).await?.is_none() {
-            guard.check().await?;
-            self.docker
-                .create_container(
-                    Some(
-                        CreateContainerOptionsBuilder::default()
-                            .name(&spec.name())
-                            .build(),
-                    ),
-                    self.configured_container(command)?,
-                )
-                .await
-                .map_err(|_| ExecutionError::Runtime)?;
+        .await;
+        drop(guarded);
+        if result.is_ok() {
+            Arc::try_unwrap(permit)
+                .map_err(|_| ExecutionError::Journal)?
+                .confirmed()?;
         }
-        let container = self
-            .owned(spec, &spec.name())
-            .await?
-            .ok_or(ExecutionError::Runtime)?;
-        if spec.replicas > 0 && container.state.as_ref().and_then(|s| s.running) != Some(true) {
-            guard.check().await?;
-            self.docker
-                .start_container(&spec.name(), None::<StartContainerOptions>)
-                .await
-                .map_err(|_| ExecutionError::Runtime)?;
-        }
-        if spec.replicas == 0 {
-            self.stop_owned(spec, &spec.name(), command.generation, guard, false)
-                .await?;
-        }
-        guard.check().await?;
-        self.inspect(spec).await
+        result
     }
     async fn inspect_completed(
         &self,
@@ -1251,4 +1312,225 @@ pub fn verify_quota_volume(
         return Err(ExecutionError::Ownership);
     }
     Ok(())
+}
+
+fn apply_needs_health_wait(action: Action, replicas: u16, configured_health: bool) -> bool {
+    action == Action::Apply && replicas > 0 && configured_health
+}
+async fn apply_health_convergence<C, I, CF, IF>(
+    mut check: C,
+    mut inspect: I,
+) -> Result<ObservedState>
+where
+    C: FnMut() -> CF,
+    I: FnMut() -> IF,
+    CF: std::future::Future<Output = Result<()>>,
+    IF: std::future::Future<Output = Result<ObservedState>>,
+{
+    loop {
+        check().await?;
+        let observed = inspect().await?;
+        check().await?;
+        if observed.phase != Phase::Running || observed.runtime_id.is_none() {
+            return Err(ExecutionError::Runtime);
+        }
+        if observed.ready {
+            return Ok(observed);
+        }
+        // Existing Executor deadline/authority ticker owns cancellation; no new lease or timeout.
+        tokio::time::sleep(Duration::from_millis(250)).await;
+    }
+}
+#[cfg(test)]
+mod health_convergence_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+    fn state(ready: bool, phase: Phase) -> ObservedState {
+        ObservedState {
+            resource_id: "123".into(),
+            revision: 1,
+            phase,
+            ready,
+            observed_at: 1,
+            runtime_id: if phase == Phase::Absent {
+                None
+            } else {
+                Some("actual-observed-uid".into())
+            },
+            conditions: vec![Condition {
+                kind: "Ready".into(),
+                satisfied: ready,
+                reason: if ready {
+                    "HealthProbePassed"
+                } else {
+                    "HealthProbePending"
+                }
+                .into(),
+            }],
+            storage: Some(StorageObservation {
+                volume_bytes: Some(67108864),
+                retained: false,
+            }),
+        }
+    }
+    #[test]
+    fn only_active_apply_with_health_enters_convergence() {
+        assert!(apply_needs_health_wait(Action::Apply, 1, true));
+        assert!(!apply_needs_health_wait(Action::Apply, 0, true));
+        assert!(!apply_needs_health_wait(Action::Apply, 1, false));
+        assert!(!apply_needs_health_wait(Action::Stop, 1, true));
+    }
+    #[tokio::test]
+    async fn pending_then_ready_preserves_actual_observation() {
+        let calls = AtomicUsize::new(0);
+        let ready = state(true, Phase::Running);
+        let result = apply_health_convergence(
+            || async { Ok(()) },
+            || {
+                std::future::ready(Ok(if calls.fetch_add(1, Ordering::SeqCst) == 0 {
+                    state(false, Phase::Running)
+                } else {
+                    ready.clone()
+                }))
+            },
+        )
+        .await
+        .unwrap();
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert_eq!(result, ready);
+    }
+    #[tokio::test]
+    async fn guard_denial_prevents_another_inspection() {
+        let checks = AtomicUsize::new(0);
+        let calls = AtomicUsize::new(0);
+        let result = apply_health_convergence(
+            || {
+                std::future::ready(if checks.fetch_add(1, Ordering::SeqCst) >= 2 {
+                    Err(ExecutionError::Denied)
+                } else {
+                    Ok(())
+                })
+            },
+            || {
+                calls.fetch_add(1, Ordering::SeqCst);
+                std::future::ready(Ok(state(false, Phase::Running)))
+            },
+        )
+        .await;
+        assert!(matches!(result, Err(ExecutionError::Denied)));
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
+    #[tokio::test]
+    async fn stopped_or_disappeared_never_completes_successfully() {
+        for phase in [Phase::Stopped, Phase::Absent] {
+            assert!(matches!(
+                apply_health_convergence(
+                    || async { Ok(()) },
+                    || std::future::ready(Ok(state(false, phase)))
+                )
+                .await,
+                Err(ExecutionError::Runtime)
+            ));
+        }
+        assert!(matches!(
+            apply_health_convergence(
+                || async { Ok(()) },
+                || async { Err(ExecutionError::Ownership) }
+            )
+            .await,
+            Err(ExecutionError::Ownership)
+        ));
+    }
+    #[tokio::test]
+    async fn authority_change_during_probe_blocks_even_ready_result() {
+        let revoked = AtomicBool::new(false);
+        let result = apply_health_convergence(
+            || {
+                std::future::ready(if revoked.load(Ordering::SeqCst) {
+                    Err(ExecutionError::Denied)
+                } else {
+                    Ok(())
+                })
+            },
+            || {
+                revoked.store(true, Ordering::SeqCst);
+                std::future::ready(Ok(state(true, Phase::Running)))
+            },
+        )
+        .await;
+        assert!(matches!(result, Err(ExecutionError::Denied)));
+    }
+    #[tokio::test]
+    async fn application_gate_closing_during_remote_guard_denies_the_provider_boundary() {
+        use crate::recovery::effect_fence::{AppEffectFenceRegistry, AppFenceBinding};
+        struct Held {
+            entered: tokio::sync::Notify,
+            release: tokio::sync::Notify,
+        }
+        #[async_trait::async_trait]
+        impl Authorizer for Held {
+            async fn authorize(&self, _: &Command) -> Result<()> {
+                self.entered.notify_one();
+                self.release.notified().await;
+                Ok(())
+            }
+        }
+        let root = tempfile::tempdir().unwrap();
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(root.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+        let registry = AppEffectFenceRegistry::open(root.path().join("apps")).unwrap();
+        let spec:RuntimeSpec=serde_json::from_value(serde_json::json!({"version":1,"installation":"test","projectId":"124","resourceId":"123","revision":1,"image":format!("docker.io/test/image@sha256:{}","a".repeat(64)),"arguments":[],"cpuMillicores":100,"memoryBytes":67108864,"ephemeralBytes":1048576,"replicas":1,"port":8080,"healthPath":null,"volume":null})).unwrap();
+        let command = Command {
+            operation_id: "128".into(),
+            generation: 1,
+            lease_until: timestamp().unwrap() + 300,
+            authorization: "unit-only".into(),
+            action: Action::Apply,
+            spec,
+            material: None,
+            expected_runtime_id: None,
+        };
+        let held = Arc::new(Held {
+            entered: tokio::sync::Notify::new(),
+            release: tokio::sync::Notify::new(),
+        });
+        let permit = match registry
+            .enter(
+                "123",
+                crate::recovery::effect_fence::AppCommandStamp::from_command(&command).unwrap(),
+            )
+            .unwrap()
+        {
+            crate::recovery::effect_fence::AppEffectAdmission::Execute(p) => Arc::new(p),
+            crate::recovery::effect_fence::AppEffectAdmission::Verify => {
+                panic!("first command must acquire an execution permit")
+            }
+        };
+        let guarded = LeaseGuard::new(
+            command.clone(),
+            Arc::new(AppCommandGuard {
+                upstream: LeaseGuard::new(command.clone(), held.clone()),
+                permit: permit.clone(),
+            }),
+        );
+        let provider_calls = Arc::new(AtomicUsize::new(0));
+        let calls = provider_calls.clone();
+        let worker = tokio::spawn(async move {
+            guarded.check_for(&command).await?;
+            calls.fetch_add(1, Ordering::SeqCst);
+            Ok::<_, ExecutionError>(())
+        });
+        held.entered.notified().await;
+        let binding:AppFenceBinding=serde_json::from_value(serde_json::json!({"appID":"123","projectID":"124","customerID":"125","clusterID":"126","policyID":"127","policyRevision":1,"agentGeneration":1,"sourceRevision":1,"sourceUID":"a".repeat(64),"specSHA256":"b".repeat(64),"environmentSHA256":"c".repeat(64),"sourceOperationID":"128","sourceOperationGeneration":1,"sourceOperationStatus":"succeeded","sourceOperationFingerprint":"d".repeat(64),"operationID":"129","generation":1,"epoch":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","fenceFingerprint":"e".repeat(64)})).unwrap();
+        let recovery = registry
+            .close_authorized(binding, async { Ok(()) })
+            .await
+            .unwrap();
+        held.release.notify_one();
+        assert!(matches!(worker.await.unwrap(), Err(ExecutionError::Fenced)));
+        assert_eq!(provider_calls.load(Ordering::SeqCst), 0);
+        // Local future completion/drop alone cannot resolve accepted custody.
+        drop(permit);
+        assert!(recovery.drained().is_err());
+    }
 }

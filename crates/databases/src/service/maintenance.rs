@@ -64,7 +64,7 @@ impl DatabaseService {
                 let never_claimed=pending["id"]==current["operation_id"]&&pending["backend_id"]==row["backend_id"]&&pending["database_action"]=="create"&&pending["database_revision"]==1&&current["revision"]==1&&current["state"]=="needs-reconciliation"&&pending["generation"]==0&&pending["lease_until"].is_null()&&pending["lease_token_hash"].is_null()&&pending["checkpoint"].is_null()&&actual["cnpg_uid"].is_null()&&actual["revision"]==1&&actual["observed_revision"]==0&&actual["state"]=="provisioning";
                 if !never_claimed&&(actual["cnpg_uid"].is_null()||pending["checkpoint"].is_null()){return Err(conflict("Operator must inspect the unconfirmed installation before reconciliation."))}
                 if never_claimed{self.fresh_cluster(tx,cluster).await?;exec(tx,"UPDATE webdock_auth.hosting_database SET state='provisioning' WHERE id=$1",vec![id.into()]).await?;}else{
-                    let mut checkpoint=pending["checkpoint"].clone();checkpoint["phase"]=json!("observing");checkpoint["cnpgUID"]=actual["cnpg_uid"].clone();exec(tx,"UPDATE webdock_auth.hosting_database_job SET checkpoint=$2 WHERE operation_id=$1",vec![text(&pending,"id")?.into(),checkpoint.into()]).await?;
+                    let mut checkpoint=pending["checkpoint"].clone();checkpoint["phase"]=json!(reconciliation_phase(text(&pending,"database_action")?,&checkpoint));checkpoint["cnpgUID"]=actual["cnpg_uid"].clone();exec(tx,"UPDATE webdock_auth.hosting_database_job SET checkpoint=$2 WHERE operation_id=$1",vec![text(&pending,"id")?.into(),checkpoint.into()]).await?;
                 }
                 exec(tx,"UPDATE webdock_auth.hosting_operation SET status='queued',actor_session=$2,subject=$3,desired=(coalesce(desired,'{}'::jsonb)-'consoleIdentity')||jsonb_build_object('nativeAuthority',$4::jsonb) WHERE id=$1",vec![text(&pending,"id")?.into(),actor.session_id.clone().into(),actor.user_id.clone().into(),serde_json::to_value(authority).map_err(|_|invalid())?.into()]).await?;
             },
@@ -222,4 +222,38 @@ fn future(value: &Value) -> bool {
         .as_str()
         .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
         .is_some_and(|date| date > chrono::Utc::now())
+}
+
+fn reconciliation_phase(action: &str, checkpoint: &serde_json::Value) -> &'static str {
+    if action == "restore"
+        && matches!(
+            checkpoint["phase"].as_str(),
+            Some("applied" | "configuring")
+        )
+    {
+        "applied"
+    } else {
+        "observing"
+    }
+}
+#[cfg(test)]
+mod recovery_tests {
+    use super::*;
+    #[test]
+    fn unfinished_recovery_reconciles_through_configuration_before_sql_readiness() {
+        for phase in ["applied", "configuring"] {
+            assert_eq!(
+                reconciliation_phase("restore", &json!({"phase":phase})),
+                "applied"
+            );
+        }
+        assert_eq!(
+            reconciliation_phase("restore", &json!({"phase":"observing"})),
+            "observing"
+        );
+        assert_eq!(
+            reconciliation_phase("create", &json!({"phase":"applied"})),
+            "observing"
+        );
+    }
 }

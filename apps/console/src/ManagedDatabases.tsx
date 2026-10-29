@@ -1,11 +1,14 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { useI18n } from "@webdock/i18n/react";
 import { DatabaseCredentialPanelWithActions } from "@webdock/module-databases/ui/database-details";
-import { useApi } from "./context";
+import { useApi, useSession } from "./context";
+import { sessionCacheScope } from "./session-cache";
 import { Failure, Loading } from "./common";
 import * as ui from "./ui";
+import { DatabaseBackups } from "./DatabaseBackups";
+import { useBackupProjectSelection, useBackupRequestMemory, useRetireBackupResource } from "./database-backup-intents";
 import {
   acceptReviewedOffer,
   catalogSchema,
@@ -68,41 +71,81 @@ function useManagedCommand() {
     [api],
   );
 }
-export function ManagedDatabases({
-  customerID,
-  projects,
-  operator,
-}: {
+interface ManagedProps {
   customerID: string;
   projects: { id: string; name: string }[];
   operator: boolean;
-}) {
+}
+export function ManagedDatabases(props: ManagedProps) {
+  const session = useSession(), api = useApi();
+  // Identity owns unresolved effects; changing privileges only retires private views/drafts.
+  const identity = JSON.stringify([api.config.apiOrigin, session.user.id, session.session.userId, session.session.id, session.user.customerScope ?? null, session.user.acting ?? false, props.customerID]);
+  const scope = JSON.stringify([api.config.apiOrigin, sessionCacheScope(session), props.customerID, props.projects.map(p => p.id)]);
+  return <ScopedManagedDatabases key={identity} {...props} scope={scope} />;
+}
+function ScopedManagedDatabases({
+  customerID,
+  projects,
+  operator,
+  scope,
+}: ManagedProps & { scope: string }) {
   const { t } = useI18n();
   const call = useManagedCommand();
   const client = useQueryClient();
+  const retireBackupResource = useRetireBackupResource();
+  const selectBackupProject = useBackupProjectSelection();
   const [projectID, setProject] = useState(projects[0]?.id ?? "");
   const [selected, setSelected] = useState<string>();
+  const [detailOpen, setDetailOpen] = useState(false);
   const [ordering, setOrdering] = useState(false);
+  const permissionEpochRef = useRef(0), permissionScopeRef = useRef(scope);
+  useLayoutEffect(() => { permissionScopeRef.current = scope; permissionEpochRef.current++; }, [scope]);
+  const [backupReadBlocked, setBackupReadBlocked] = useState<Set<string>>(() => new Set());
+  const projectAvailable = projects.some(project => project.id === projectID);
+  const firstProject = projects[0]?.id ?? "";
+  if (!projectAvailable && projectID !== firstProject) {
+    setProject(firstProject);
+    setSelected(undefined);
+    setDetailOpen(false);
+    setOrdering(false);
+  }
+  const backupReadDenied = useCallback(() => { permissionEpochRef.current++; setBackupReadBlocked(prior => new Set(prior).add(projectID)); }, [projectID]);
+  useEffect(() => () => { void client.cancelQueries({ queryKey: ["database-management", scope] }); client.removeQueries({ queryKey: ["database-management", scope] }); }, [client, scope]);
   const permissions = useQuery({
-    queryKey: ["database-management", projectID, "permissions"],
-    queryFn: () =>
-      call({ action: "databases.permissions", projectID }, permission),
-    enabled: Boolean(projectID),
+    queryKey: ["database-management", scope, projectID, "permissions"],
+    queryFn: async () => {
+      try { return { access: await call({ action: "databases.permissions", projectID }, permission), readID: crypto.randomUUID() }; }
+      catch (error) { if (permissionScopeRef.current === scope) backupReadDenied(); throw error; }
+    },
+    enabled: Boolean(projectID) && projectAvailable,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
+  const readable = projectAvailable && permissions.isSuccess && !backupReadBlocked.has(projectID);
+  const canWrite = readable && permissions.data.access.canWrite;
+  const revalidateBackupPermissions = async () => {
+    const epoch = ++permissionEpochRef.current, oldRead = permissions.data?.readID;
+    const current = await permissions.refetch();
+    if (permissionEpochRef.current !== epoch || permissionScopeRef.current !== scope) return false;
+    const fresh = current.isSuccess && current.data.readID !== oldRead;
+    setBackupReadBlocked(prior => { const next = new Set(prior); if (fresh) next.delete(projectID); else next.add(projectID); return next; });
+    return fresh;
+  };
   const plans = useQuery({
-    queryKey: ["database-management", projectID, "plans"],
+    queryKey: ["database-management", scope, projectID, "plans"],
     queryFn: () =>
       call({ action: "databases.plans.list", projectID }, catalogSchema),
-    enabled: Boolean(projectID),
+    enabled: Boolean(projectID) && readable,
   });
   const databases = useQuery({
-    queryKey: ["database-management", projectID, "list"],
+    queryKey: ["database-management", scope, projectID, "list"],
     queryFn: () =>
       call(
         { action: "databases.list", projectID },
         z.array(databaseViewSchema),
       ),
-    enabled: Boolean(projectID),
+    enabled: Boolean(projectID) && readable,
     refetchInterval: 15000,
   });
   const refresh = () => {
@@ -114,7 +157,7 @@ export function ManagedDatabases({
     <section className="database-management mt-8 grid gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className={ui.sectionTitle}>{t("Managed databases")}</h2>
-        {permissions.data?.canWrite ? (
+        {canWrite ? (
           <button
             className={ui.button(ordering ? "secondary" : "primary")}
             onClick={() => {
@@ -130,8 +173,15 @@ export function ManagedDatabases({
         <select className={ui.input}
           value={projectID}
           onChange={(event) => {
-            setProject(event.target.value);
+            const nextProject = event.target.value;
+            if (nextProject === projectID) return;
+            selectBackupProject(customerID, nextProject);
+            void client.cancelQueries({ queryKey: ["database-management", scope] });
+            client.removeQueries({ queryKey: ["database-management", scope] });
+            setBackupReadBlocked(prior => { const next = new Set(prior); next.delete(nextProject); return next; });
+            setProject(nextProject);
             setSelected(undefined);
+            setDetailOpen(false);
             setOrdering(false);
           }}
         >
@@ -142,7 +192,7 @@ export function ManagedDatabases({
           ))}
         </select>
       </label>
-      {permissions.error ? <Failure error={permissions.error} /> : null}
+      {permissions.error ? <Failure error={permissions.error} retry={() => { void revalidateBackupPermissions(); }} /> : null}
       {plans.error ? (
         <Failure error={plans.error} retry={() => void plans.refetch()} />
       ) : null}
@@ -153,13 +203,14 @@ export function ManagedDatabases({
           )}
         </p>
       ) : null}
-      {ordering && permissions.data?.canWrite && plans.data ? (
+      {ordering && canWrite && plans.data ? (
         <DatabaseOrder
           key={projectID}
           projectID={projectID}
           plans={plans.data.plans.filter((p) => p.availability !== "disabled")}
           onAccepted={(id) => {
             setSelected(id);
+            setDetailOpen(true);
             setOrdering(false);
             refresh();
           }}
@@ -188,6 +239,8 @@ export function ManagedDatabases({
                 className={ui.cx(ui.button(), ui.rowLink)}
                 onClick={() => {
                   setSelected(database.id);
+                  if (selected && selected !== database.id) retireBackupResource();
+                  setDetailOpen(true);
                 }}
               >
                 {t("Manage database")}
@@ -202,12 +255,18 @@ export function ManagedDatabases({
         <DatabaseManagement
           key={selected}
           id={selected}
+          customerID={customerID}
+          open={detailOpen}
+          scope={scope}
           projectID={projectID}
-          operator={operator}
-          canWrite={permissions.data?.canWrite === true}
+          operator={operator && permissions.isSuccess && permissions.data.access.operator === true}
+          canWrite={canWrite}
+          readable={readable}
+          revalidateBackupPermissions={revalidateBackupPermissions}
+          backupReadDenied={backupReadDenied}
           plans={plans.data?.plans ?? []}
           close={() => {
-            setSelected(undefined);
+            setDetailOpen(false);
           }}
           refresh={refresh}
         />
@@ -374,17 +433,29 @@ function DatabaseOrder({
 }
 function DatabaseManagement({
   id,
+  customerID,
+  open,
+  scope,
   projectID,
   operator,
   canWrite,
+  readable,
+  revalidateBackupPermissions,
+  backupReadDenied,
   plans,
   close,
   refresh,
 }: {
   id: string;
+  customerID: string;
+  open: boolean;
+  scope: string;
   projectID: string;
   operator: boolean;
   canWrite: boolean;
+  readable: boolean;
+  revalidateBackupPermissions: () => Promise<boolean>;
+  backupReadDenied: () => void;
   plans: PlanEntry[];
   close: () => void;
   refresh: () => void;
@@ -393,23 +464,29 @@ function DatabaseManagement({
   const call = useManagedCommand();
   const api = useApi();
   const client = useQueryClient();
+  const backupMemory = useBackupRequestMemory(customerID, projectID, id);
   const [upgrade, setUpgrade] = useState(false);
   const [preview, setPreview] = useState<{
     kind: "delete" | "purge";
     value: z.infer<typeof previewSchema>;
   }>();
   const database = useQuery({
-    queryKey: ["database-management", id, "detail"],
+    queryKey: ["database-management", scope, id, "detail"],
     queryFn: () =>
       call({ action: "databases.get", databaseID: id }, databaseViewSchema),
-    refetchInterval: 10000,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchInterval: query => open && !query.state.error ? 10000 : false,
+    enabled: readable && open,
   });
+  useLayoutEffect(() => { if (database.error) backupReadDenied(); }, [database.error, backupReadDenied]);
   const mutate = useMutation({
     mutationFn: (command: unknown) => call(command, z.unknown()),
     onSuccess: () => {
       setPreview(undefined);
       refresh();
-      void client.invalidateQueries({ queryKey: ["database-management", id] });
+      void client.invalidateQueries({ queryKey: ["database-management", scope, id] });
     },
   });
   const prepare = useMutation({
@@ -450,10 +527,11 @@ function DatabaseManagement({
     },
     [api],
   );
+  if (!open) return null;
   if (database.isPending) return <Loading />;
   if (database.error)
     return (
-      <Failure error={database.error} retry={() => void database.refetch()} />
+      <Failure error={database.error} retry={() => { void revalidateBackupPermissions().then(valid => { if (valid) void database.refetch(); }); }} />
     );
   const d = database.data;
   const action = (name: string) => {
@@ -516,7 +594,7 @@ function DatabaseManagement({
           </div>
         ) : null}
       </dl>
-      <p className={ui.notice}>{t("Backups are not configured. No recovery window is included.")}</p>
+      <DatabaseBackups memory={backupMemory} database={d} operator={operator} canWrite={canWrite} readable={readable} revalidate={revalidateBackupPermissions} readDenied={backupReadDenied} refresh={refresh} />
       {mutate.error || prepare.error ? (
         <p role="alert" className="text-sm text-danger">
           {error((mutate.error ?? prepare.error)?.message)}

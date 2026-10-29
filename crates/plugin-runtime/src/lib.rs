@@ -2,6 +2,7 @@
 //! Authentication alone is insufficient: applications must implement live authority checks.
 mod host;
 mod pinned_tls;
+mod storage;
 mod transport;
 use ed25519_dalek::VerifyingKey;
 pub use host::{CorePeer, HostClient, RemoteAuthority};
@@ -93,6 +94,15 @@ impl InvocationAuthority for DenyAll {}
 
 #[tonic::async_trait]
 pub trait ActionHandler: Send + Sync + 'static {
+    /// Private, side-effect-free live resource check. Check current private state, ownership,
+    /// pending lifecycle and resource_epoch; do not reuse a presign result as authority.
+    async fn authorize_storage(
+        &self,
+        _authorization: &webdock_plugin_protocol::storage::StorageAuthorization,
+    ) -> Result<(), PluginError> {
+        Err(PluginError::denied())
+    }
+
     /// This future is dropped on cancellation, deadline or revoked authority.
     /// Durable external effects still require operation IDs, receipts and fencing in the host.
     async fn invoke(
@@ -363,6 +373,13 @@ fn status(error: PluginError) -> Status {
 }
 #[tonic::async_trait]
 impl PluginRuntime for Runtime {
+    async fn authorize_storage(
+        &self,
+        request: Request<wire::StorageAuthorizationRequest>,
+    ) -> Result<Response<wire::StorageAuthorizationResponse>, Status> {
+        storage::authorize(self, request).await
+    }
+
     async fn describe(
         &self,
         request: Request<wire::DescribeRequest>,
@@ -474,7 +491,7 @@ impl PluginRuntime for Runtime {
         .await
         .map_err(|_| Status::deadline_exceeded("Authority deadline exceeded"))?
         .map_err(status)?;
-        validate_value(action.get("output"), &result)
+        webdock_plugin_protocol::storage::validate_storage_result(action, &input, &result, now()?)
             .map_err(|_| Status::internal("Invalid plugin result"))?;
         let output_json =
             serde_json::to_vec(&result).map_err(|_| Status::internal("Invalid plugin result"))?;

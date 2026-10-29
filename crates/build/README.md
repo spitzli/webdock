@@ -19,6 +19,13 @@ Automatic `git-policy` approval is a durable source policy, not a fabricated bro
 
 Customer Dockerfiles run in QEMU/KVM with a digest-pinned raw root image and optional separately pinned boot files. Each invocation uses a fresh snapshot, no host filesystem shares, no network device, sanitized guest request, bounded CPU/memory/disk/log/time, whole-process-group cleanup and live lease checks. Archives reject traversal, links, sparse entries, device files, duplicate names and oversized payloads. Executable bits survive normalization; privileged file bits do not. OCI descriptors are recursively size/hash verified, and publisher writes original manifest bytes rather than reserializing them.
 
+The explicit `dockerfile-frontend` recipe additionally retains selected regular
+files from the final image rootfs. It requires bounded `.webdock/frontend.json`
+configuration, an explicitly capable pinned VM and format-2 readers. It preserves
+the original OCI archive and source evidence within the common artifact budget.
+See [frontend retention operations](../../docs/operations/build-frontend-retention.md)
+for compatibility, private library reuse and owned qualification boundaries.
+
 The local fixture was prepared from the [official Alpine 3.22.6 release](https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/x86_64/) (SHA-256 pinned in the preparation script) and signed Alpine packages. `tools/prepare-local-vm.sh --allow-disposable-local-vm` requires a fresh destination and never reads production images. It records package versions and hashes. Runtime builds cannot use the preparation network.
 
 Tests require explicit owned local database URLs and never reset shared schema or fixtures. `tests/support/hosting_flow.rs` reuses the Hosting test fixture, creates a real local Git commit, builds its claimed archive in KVM, publishes to a temporary pinned loopback registry, and stages/completes the retained hosting operation. This does not exercise a real Kubernetes deployment; that executor has separate acceptance tests.

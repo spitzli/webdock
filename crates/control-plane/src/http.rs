@@ -156,6 +156,10 @@ pub fn build_app_with_domains(
                 ]),
         )
         .layer(middleware::from_fn_with_state(state.clone(), boundary))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            crate::recovery::quarantine,
+        ))
         .with_state(state)
 }
 

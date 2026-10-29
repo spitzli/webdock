@@ -132,6 +132,10 @@ impl Plugin {
         let plugin = Arc::clone(self);
         tokio::spawn(async move {
             let _serial = plugin.provisioning.lock().await;
+            let Ok(recovery) = plugin.store.recovery_effect().await else {
+                return;
+            };
+            let mut provider_started = false;
             let outcome = async {
                 let engines = plugin.engines().map_err(|e| e.message)?;
                 let admin = plugin
@@ -147,6 +151,7 @@ impl Plugin {
                 if !engine.desired_enabled {
                     return Ok(None);
                 }
+                provider_started = true;
                 let engine_result = engines
                     .provision(&mailbox.customer_id, &admin)
                     .await
@@ -181,9 +186,13 @@ impl Plugin {
                     .map_err(|_| "mailbox provisioning failed".to_owned())
             }
             .await;
+            let provider_completed = outcome.is_ok();
             let stored = match outcome {
                 Ok(Some(account)) => plugin.store.mailbox_ready(&mailbox.id, &account).await,
-                Ok(None) => return,
+                Ok(None) => {
+                    let _ = recovery.finish().await;
+                    return;
+                }
                 Err(error) => {
                     let _ = error;
                     eprintln!("mail_plugin_mailbox: provisioning failed");
@@ -196,11 +205,26 @@ impl Plugin {
             if let Err(error) = stored {
                 let _ = error;
                 eprintln!("mail_plugin_store: mailbox state failed");
+                if provider_started {
+                    return; // Keep custody when CE completed but its private outcome was not saved.
+                }
+            }
+            if provider_started && !provider_completed {
+                eprintln!("mail_plugin_recovery_effect_uncertain");
+                return;
+            }
+            if recovery.finish().await.is_err() {
+                eprintln!("mail_plugin_recovery_effect_uncertain");
             }
         });
     }
     /// Reconcile retained engines and finish interrupted mailboxes after runtime restart.
     pub async fn resume(self: &Arc<Self>) -> std::result::Result<(), store::Error> {
+        if self.store.recovery_effect_count().await? != 0 {
+            // A restart cannot establish what a previous CE request did.
+            eprintln!("mail_plugin_recovery_effect_uncertain");
+            return Ok(());
+        }
         if self.engines.is_some() && !self.store.legacy_engines().await? {
             for engine in self.store.engines().await? {
                 self.reconcile(engine.customer_id);
@@ -282,6 +306,10 @@ impl Plugin {
         let plugin = Arc::clone(self);
         tokio::spawn(async move {
             let _serial = plugin.provisioning.lock().await;
+            let Ok(recovery) = plugin.store.recovery_effect().await else {
+                return;
+            };
+            let mut provider_started = false;
             let outcome = async {
                 let Some(engine) = plugin
                     .store
@@ -293,6 +321,7 @@ impl Plugin {
                 };
                 let engines = plugin.engines()?;
                 if !engine.desired_enabled {
+                    provider_started = true;
                     engines
                         .suspend(&customer)
                         .await
@@ -304,6 +333,7 @@ impl Plugin {
                         .map_err(store_error);
                 }
                 let admin = plugin.engine_password(&customer).await?;
+                provider_started = true;
                 if engines.provision(&customer, &admin).await.is_err() {
                     plugin
                         .store
@@ -321,6 +351,13 @@ impl Plugin {
             .await;
             if outcome.is_err() {
                 eprintln!("mail_plugin_engine: reconciliation failed");
+            }
+            if provider_started && outcome.is_err() {
+                eprintln!("mail_plugin_recovery_effect_uncertain");
+                return;
+            }
+            if recovery.finish().await.is_err() {
+                eprintln!("mail_plugin_recovery_effect_uncertain");
             }
         });
     }
@@ -472,3 +509,6 @@ impl Plugin {
         client.dkim(&id).await.ok().flatten()
     }
 }
+
+#[cfg(test)]
+mod recovery_tests;

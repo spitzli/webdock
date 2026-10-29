@@ -36,7 +36,7 @@ pub struct GuestRequest {
 }
 impl GuestRequest {
     pub fn validate(&self) -> Result<()> {
-        if self.recipe != "dockerfile" {
+        if !["dockerfile", crate::frontend::RECIPE].contains(&self.recipe.as_str()) {
             return Err(error("recipe_unavailable"));
         }
         if self.root_directory != "." {
@@ -103,6 +103,7 @@ pub struct VmImage {
     sha256: String,
     kernel: Option<(PathBuf, String)>,
     initrd: Option<(PathBuf, String)>,
+    frontend_output: bool,
 }
 fn verified_file(path: &Path, digest: &str) -> Result<u64> {
     let mut file = std::fs::OpenOptions::new()
@@ -122,6 +123,13 @@ fn verified_file(path: &Path, digest: &str) -> Result<u64> {
     Ok(m.len())
 }
 impl VmImage {
+    pub fn identity(&self) -> crate::evidence::MachineIdentity {
+        crate::evidence::MachineIdentity {
+            image_sha256: self.sha256.clone(),
+            kernel_sha256: self.kernel.as_ref().map(|(_, hash)| hash.clone()),
+            initrd_sha256: self.initrd.as_ref().map(|(_, hash)| hash.clone()),
+        }
+    }
     pub fn new(path: PathBuf, sha256: String) -> Result<Self> {
         verified_file(&path, &sha256)?;
         Ok(Self {
@@ -129,7 +137,20 @@ impl VmImage {
             sha256,
             kernel: None,
             initrd: None,
+            frontend_output: false,
         })
+    }
+    /// Explicit operator assertion about this immutable image; old pins keep Dockerfile-only admission.
+    pub fn with_frontend_output(mut self) -> Self {
+        self.frontend_output = true;
+        self
+    }
+    pub fn supported_recipes(&self) -> &'static [&'static str] {
+        if self.frontend_output {
+            &["dockerfile", crate::frontend::RECIPE]
+        } else {
+            &["dockerfile"]
+        }
     }
     /// Explicit boot artifacts are independently pinned; no caller-supplied kernel arguments.
     pub fn with_boot(
@@ -153,6 +174,9 @@ impl VmImage {
         mut lease: impl FnMut() -> Result<()>,
     ) -> Result<BuildOutput> {
         job.validate()?;
+        if !self.supported_recipes().contains(&job.recipe.as_str()) {
+            return Err(error("recipe_unavailable"));
+        }
         lease()?;
         let image_size = verified_file(&self.path, &self.sha256)?;
         if image_size > job.limits.disk_bytes {
@@ -268,42 +292,70 @@ impl VmImage {
         if !output_meta.is_file() || output_meta.len() > MAX_OUTPUT {
             return Err(error("artifact_limit"));
         }
-        let result = Archive::read(&std::fs::read(output).map_err(io)?, MAX_OUTPUT)?;
-        let status: serde_json::Value = serde_json::from_slice(
-            result
-                .files()
-                .get("status.json")
-                .ok_or_else(|| error("invalid_result"))?,
-        )
-        .map_err(|_| error("invalid_result"))?;
-        let logs = job.redact(&String::from_utf8_lossy(
-            result
-                .files()
-                .get("build.log")
-                .map(Vec::as_slice)
-                .unwrap_or_default(),
-        ));
-        if status != serde_json::json!({"success":true}) {
-            return Err(crate::Error {
-                code: "build_failed",
-                logs,
-            });
-        }
-        let image = result
-            .files()
-            .get("artifact/image.tar")
-            .ok_or_else(|| error("artifact_missing"))?;
-        let image_digest = crate::artifact::validate_oci(image)?;
-        let artifact =
-            Archive::from_files(BTreeMap::from([("image.tar".into(), image.clone())]))?.encode()?;
+        let result = decode_guest_output(job, &std::fs::read(output).map_err(io)?)?;
         lease()?;
-        Ok(BuildOutput {
-            digest: format!("sha256:{}", hex::encode(Sha256::digest(&artifact))),
-            artifact,
-            image_digest,
-            logs,
-        })
+        Ok(result)
     }
+}
+
+/// Validate the recipe-specific guest protocol before trusted evidence is constructed.
+pub fn decode_guest_output(job: &GuestRequest, bytes: &[u8]) -> Result<BuildOutput> {
+    job.validate()?;
+    if bytes.len() as u64 > MAX_OUTPUT {
+        return Err(error("artifact_limit"));
+    }
+    let result = Archive::read(bytes, MAX_OUTPUT)?;
+    let frontend = job.recipe == crate::frontend::RECIPE;
+    if result.files().keys().any(|name| {
+        !(["status.json", "build.log", "artifact/image.tar"].contains(&name.as_str())
+            || frontend && name == "artifact/frontend.tar")
+    }) {
+        return Err(error("invalid_result"));
+    }
+    let status: serde_json::Value = serde_json::from_slice(
+        result
+            .files()
+            .get("status.json")
+            .ok_or_else(|| error("invalid_result"))?,
+    )
+    .map_err(|_| error("invalid_result"))?;
+    let logs = job.redact(&String::from_utf8_lossy(
+        result
+            .files()
+            .get("build.log")
+            .map(Vec::as_slice)
+            .unwrap_or_default(),
+    ));
+    if status != serde_json::json!({"success":true}) {
+        return Err(crate::Error {
+            code: "build_failed",
+            logs,
+        });
+    }
+    let image = result
+        .files()
+        .get("artifact/image.tar")
+        .ok_or_else(|| error("artifact_missing"))?;
+    let image_digest = crate::artifact::validate_oci(image)?;
+    let mut files = BTreeMap::from([("image.tar".into(), image.clone())]);
+    if frontend {
+        let output = result
+            .files()
+            .get("artifact/frontend.tar")
+            .ok_or_else(|| error("frontend_output_missing"))?;
+        crate::frontend::validate_output(output)?;
+        files.insert("frontend.tar".into(), output.clone());
+    }
+    let artifact = Archive::from_files(files)?.encode()?;
+    if artifact.len() as u64 > MAX_OUTPUT {
+        return Err(error("artifact_limit"));
+    }
+    Ok(BuildOutput {
+        digest: format!("sha256:{}", hex::encode(Sha256::digest(&artifact))),
+        artifact,
+        image_digest,
+        logs,
+    })
 }
 pub struct BuildOutput {
     pub artifact: Vec<u8>,

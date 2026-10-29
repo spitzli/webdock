@@ -1,6 +1,8 @@
 //! Isolated build execution and retained Git deployment persistence.
 pub mod artifact;
 pub mod contracts;
+pub mod evidence;
+pub mod frontend;
 pub use contracts::BuildCeiling;
 #[cfg(feature = "service")]
 mod service;
@@ -18,6 +20,8 @@ pub mod execution;
 pub mod http;
 #[cfg(any(feature = "service", feature = "worker"))]
 pub mod publisher;
+#[cfg(any(feature = "service", feature = "worker"))]
+pub mod remote;
 #[cfg(any(feature = "service", feature = "worker"))]
 pub mod worker;
 #[derive(Debug, thiserror::Error)]

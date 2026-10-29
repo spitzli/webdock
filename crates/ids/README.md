@@ -1,10 +1,19 @@
 # Private Webdock IDs
 
-`webdock-ids` is an independently authored, non-published workspace library.
-It uses a time/machine/generator/sequence bit layout, with explicit identities,
-bounded signed-64-bit output and decimal-string JSON. No existing generator's
-implementation is embedded or called. The only production dependencies are Serde
-and thiserror, already used by this workspace.
+`webdock-ids` is a non-published compatibility and policy wrapper around the local
+`maylily` library at `/home/newt/Projekte/Personal/maylily-rs`, consumed through a
+direct Cargo path dependency with its `parse` feature. Maylily performs all bit
+packing and decoding through `Options::pack_at` and `Options::parse`. This wrapper
+retains explicit identities, bounded signed-64-bit output, decimal-string JSON,
+and durable checkpoint policy required by existing callers.
+
+Maylily's defaults use a different epoch and layout, allow arbitrary-precision
+output, and do not reserve Webdock's legacy identities. We supply every option
+explicitly and keep Webdock's existing validation. Maylily's stateful generator
+has no durable checkpoint resume API, so it cannot replace the database allocator.
+`webdock_persistence::IdAllocator` still locks its checkpoint with `SELECT ... FOR
+UPDATE`, calculates the next candidate, updates the high-water mark, and commits
+before releasing the ID. No process-local Maylily counter is used for allocation.
 
 The platform layout is immutable:
 

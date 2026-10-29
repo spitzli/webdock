@@ -7,8 +7,10 @@ license.workspace = true
 publish = false
 
 [dependencies]
+webdock-export-protocol={path="../export-protocol"}
 webdock-identity = { path = "../identity" }
 webdock-browser-session = { path = "../browser-session" }
+webdock-oauth = { path = "../oauth" }
 webdock-persistence = { path = "../persistence" }
 webdock-secrets = { path = "../secrets" }
 webdock-hosting = { path = "../hosting" }

@@ -14,7 +14,7 @@ pub(super) fn amount(v: &Value) -> Result<u64> {
         .filter(|v| *v <= 9_007_199_254_740_991)
         .ok_or_else(|| conflict("Database capacity observation is invalid."))
 }
-fn fits(
+pub(super) fn fits(
     pool: &Value,
     aggregate: &Value,
     node: &Value,
@@ -221,10 +221,17 @@ impl DatabaseService {
             return Err(conflict("Database endpoint capacity is unavailable."));
         }
         let id = self.id().await?;
-        let backend=one(tx,"INSERT INTO webdock_auth.hosting_database_backend(id,cluster_id,kind,node,pool_id,demand,profile,max_databases,logical_capacity_bytes,host,direct_port,pooled_port) VALUES($1,$2,$3,$4,$5::uuid,$6,$7,$8,$9,$10,$11,$12) RETURNING to_jsonb(hosting_database_backend) AS value",vec![id.clone().into(),cluster.into(),kind.into(),text(pool,"node")?.into(),text(pool,"poolID")?.into(),demand.into(),profile.into(),(if shared{8_i32}else{1}).into(),(if shared{8589934592_i64}else{0}).into(),format!("db-{id}.{suffix}").into(),(ports[0] as i32).into(),(ports[1] as i32).into()]).await?;
+        let returning = "to_jsonb(hosting_database_backend)||jsonb_build_object('_insert',jsonb_build_object('tableOid',tableoid::oid::text,'xmin',xmin::text))";
+        let backend=one(tx,&format!("INSERT INTO webdock_auth.hosting_database_backend(id,cluster_id,kind,node,pool_id,demand,profile,max_databases,logical_capacity_bytes,host,direct_port,pooled_port) VALUES($1,$2,$3,$4,$5::uuid,$6,$7,$8,$9,$10,$11,$12) RETURNING {returning} AS value"),vec![id.clone().into(),cluster.into(),kind.into(),text(pool,"node")?.into(),text(pool,"poolID")?.into(),demand.into(),profile.into(),(if shared{8_i32}else{1}).into(),(if shared{8589934592_i64}else{0}).into(),format!("db-{id}.{suffix}").into(),(ports[0] as i32).into(),(ports[1] as i32).into()]).await?;
+        let mut insert_ports = vec![];
         for port in ports {
-            exec(tx,"INSERT INTO webdock_auth.hosting_database_port(cluster_id,port,backend_id) VALUES($1,$2,$3)",vec![cluster.into(),(port as i32).into(),id.clone().into()]).await?;
+            insert_ports.push(one(tx,"INSERT INTO webdock_auth.hosting_database_port(cluster_id,port,backend_id) VALUES($1,$2,$3) RETURNING jsonb_build_object('id',port::text,'tableOid',tableoid::oid::text,'xmin',xmin::text) AS value",vec![cluster.into(),(port as i32).into(),id.clone().into()]).await?);
         }
+        let backend = {
+            let mut backend = backend;
+            backend["_insertPorts"] = json!(insert_ports);
+            backend
+        };
         Ok(backend)
     }
 }

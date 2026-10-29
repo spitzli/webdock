@@ -768,6 +768,8 @@ async fn management_catalog(
             .any(|p| p["poolID"] == pool_id && p["registered"] == true)
     );
     let accepted_command = json!({"action":"databases.acceptOrder","offerID":offer["id"],"projectID":project,"idempotencyKey":format!("accept-fixture-{project}")});
+    allocation_enqueue_failure_rolls_back(owner, operator, authority, &accepted_command, cluster)
+        .await;
     let accepted = service
         .execute_managed(operator, authority, accepted_command.clone())
         .await
@@ -1249,6 +1251,7 @@ async fn agent_lifecycle(
         state: DatabaseProofState::Ready,
         endpoint_ready: true,
         copy_sha256: None,
+        backup: None,
     };
     let completion = DatabaseCompletion {
         lease: claim.lease.clone(),
@@ -1382,6 +1385,326 @@ async fn agent_lifecycle(
         "module metadata scope is restored"
     );
     tx.rollback().await.unwrap();
+    if std::env::var("WEBDOCK_BACKUP_AUTHORITY_TEST").as_deref() == Ok("yes") {
+        backup_policy_authority_fixture(
+            owner, service, hosting, operator, authority, &agent, database,
+        )
+        .await;
+    }
+}
+
+async fn backup_policy_authority_fixture(
+    owner: &sea_orm::DatabaseConnection,
+    service: &DatabaseService,
+    hosting: &webdock_hosting::HostingService,
+    operator: &webdock_identity::Principal,
+    authority: &StoredAuthority,
+    agent: &webdock_hosting::AgentIdentity,
+    database: &str,
+) {
+    use webdock_databases::*;
+    let original_observation = fixture_value(
+        owner,
+        "SELECT observation AS value FROM webdock_auth.hosting_agent WHERE cluster_id=$1",
+        agent.cluster_id(),
+    )
+    .await;
+    run(owner,"UPDATE webdock_auth.hosting_agent SET observation=jsonb_set(observation,'{capabilities,databaseBackupVersion}','1') WHERE cluster_id=$1",vec![agent.cluster_id().into()]).await;
+
+    let before=fixture_value(owner,"SELECT demand AS value FROM webdock_auth.hosting_database_backend WHERE id=(SELECT backend_id FROM webdock_auth.hosting_database WHERE id=$1)",database).await;
+    let cmd = json!({"action":"databases.backupDestinations.register","endpointURL":"https://backup.fixture.invalid","region":"eu-central-1","bucket":"backup-fixture","keyRecoveryID":"110","writeCredentials":{"accessKeyId":"write-fixture","secretAccessKey":"local-fixture-write-key-material","readOnly":false},"recoveryCredentials":{"accessKeyId":"read-fixture","secretAccessKey":"local-fixture-read-key-material","readOnly":true},"idempotencyKey":format!("backup-destination-{database}")});
+    let destination = service
+        .execute_managed(operator, authority, cmd)
+        .await
+        .unwrap();
+    let grant_command = json!({"action":"databases.backupPolicies.grant","databaseID":database,"revision":1,"destinationID":destination["destinationID"],"schedule":"0 0 1 * * *","retentionDays":30,"retentionDelete":false,"idempotencyKey":format!("backup-grant-{database}")});
+    let capacity = fixture_value(
+        owner,
+        "SELECT capacity AS value FROM webdock_auth.hosting_cluster WHERE id=$1",
+        agent.cluster_id(),
+    )
+    .await;
+    run(owner,"UPDATE webdock_auth.hosting_cluster SET capacity=jsonb_set(capacity,'{ephemeralBytes}','0') WHERE id=$1",vec![agent.cluster_id().into()]).await;
+    assert_eq!(
+        service
+            .execute_managed(operator, authority, grant_command.clone())
+            .await
+            .unwrap_err()
+            .status,
+        409,
+        "backup and recovery ephemeral peak must fit"
+    );
+    run(
+        owner,
+        "UPDATE webdock_auth.hosting_cluster SET capacity=$2 WHERE id=$1",
+        vec![agent.cluster_id().into(), capacity.into()],
+    )
+    .await;
+    let granted = service
+        .execute_managed(operator, authority, grant_command)
+        .await
+        .unwrap();
+    let apply = service
+        .claim_database_operation(
+            hosting.begin_authenticated_agent(agent).await.unwrap(),
+            agent,
+        )
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(apply.spec.action, DatabaseAction::ConfigureBackup);
+    assert!(
+        !serde_json::to_string(&apply.spec)
+            .unwrap()
+            .contains("key-material")
+    );
+    assert!(apply.material.object_store.is_some());
+    assert_eq!(
+        apply.spec.backup.as_ref().unwrap().sidecar.memory_bytes,
+        268435456,
+        "native sidecars reserve the measured local minimum, rather than the OOM-killed 128 MiB profile"
+    );
+    run(owner,"UPDATE webdock_auth.hosting_operation SET lease_until=now()+interval '45 seconds' WHERE id=$1",vec![apply.spec.operation_id.clone().into()]).await;
+    let renewed = service
+        .claim_database_operation(
+            hosting.begin_authenticated_agent(agent).await.unwrap(),
+            agent,
+        )
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(
+        renewed.lease_until > chrono::Utc::now() + chrono::Duration::seconds(240),
+        "an authenticated unchanged claim renews long pending recovery work"
+    );
+    assert_eq!(
+        renewed.spec.fingerprint().unwrap(),
+        apply.spec.fingerprint().unwrap()
+    );
+    assert_eq!(renewed.lease.lease_token, apply.lease.lease_token);
+    let expiry = fixture_value(
+        owner,
+        "SELECT to_jsonb(\"expiresAt\") AS value FROM webdock_auth.session WHERE id=$1",
+        &operator.session_id,
+    )
+    .await;
+    run(
+        owner,
+        "UPDATE webdock_auth.session SET \"expiresAt\"=now()-interval '1 minute' WHERE id=$1",
+        vec![operator.session_id.clone().into()],
+    )
+    .await;
+    service
+        .guard_database_operation(
+            hosting.begin_authenticated_agent(agent).await.unwrap(),
+            agent,
+            &apply.lease,
+        )
+        .await
+        .unwrap();
+    assert!(
+        service
+            .execute_managed(
+                operator,
+                authority,
+                json!({"action":"databases.backupPolicies.get","databaseID":database})
+            )
+            .await
+            .is_err(),
+        "session is really expired"
+    );
+    run(
+        owner,
+        "UPDATE webdock_auth.session SET \"expiresAt\"=$2::text::timestamptz WHERE id=$1",
+        vec![
+            operator.session_id.clone().into(),
+            expiry.as_str().unwrap().into(),
+        ],
+    )
+    .await;
+    let revoked=service.execute_managed(operator,authority,json!({"action":"databases.backupPolicies.revoke","databaseID":database,"revision":1,"policyRevision":1,"idempotencyKey":format!("backup-revoke-{database}")})).await.unwrap();
+    assert_eq!(revoked["revocationEffective"], false);
+    assert!(
+        service
+            .guard_database_operation(
+                hosting.begin_authenticated_agent(agent).await.unwrap(),
+                agent,
+                &apply.lease
+            )
+            .await
+            .is_err()
+    );
+    let mut job = service
+        .claim_database_operation(
+            hosting.begin_authenticated_agent(agent).await.unwrap(),
+            agent,
+        )
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(job.spec.backup.as_ref().unwrap().revision, 2);
+    assert!(job.spec.backup.as_ref().unwrap().suspended);
+    for phase in [
+        DatabaseCheckpointPhase::Applied,
+        DatabaseCheckpointPhase::Configuring,
+        DatabaseCheckpointPhase::Observing,
+    ] {
+        service
+            .checkpoint_database_operation(
+                hosting.begin_authenticated_agent(agent).await.unwrap(),
+                agent,
+                DatabaseCheckpoint {
+                    lease: job.lease.clone(),
+                    phase,
+                    cnpg_uid: job.spec.backend.cnpg_uid.clone().unwrap(),
+                    ca_certificate: None,
+                    previous_pod_uid: None,
+                    migration_job_uid: None,
+                    copy_sha256: None,
+                },
+            )
+            .await
+            .unwrap();
+        if phase == DatabaseCheckpointPhase::Applied {
+            job = service
+                .claim_database_operation(
+                    hosting.begin_authenticated_agent(agent).await.unwrap(),
+                    agent,
+                )
+                .await
+                .unwrap()
+                .unwrap();
+        }
+    }
+    let observed = service
+        .claim_database_operation(
+            hosting.begin_authenticated_agent(agent).await.unwrap(),
+            agent,
+        )
+        .await
+        .unwrap()
+        .unwrap();
+    let proof = DatabaseCompletionProof {
+        installation_id: observed.spec.backend.id.clone(),
+        database_id: Some(database.into()),
+        cnpg_uid: observed.spec.backend.cnpg_uid.clone().unwrap(),
+        revision: 1,
+        state: DatabaseProofState::Ready,
+        endpoint_ready: false,
+        copy_sha256: None,
+        backup: Some(Box::new(DatabaseBackupProof {
+            policy_id: granted["policyID"].as_str().unwrap().into(),
+            revision: 2,
+            scheduled_backup_uid: "fixture-schedule-uid".into(),
+            controls: DatabaseBackupControls {
+                schedule: "0 0 1 * * *".into(),
+                wal_enabled: true,
+                retention_delete: false,
+                retention_days: 30,
+                scheduled_backup_resource_version: "1".into(),
+                cluster_resource_version: "2".into(),
+                object_store_uid: "fixture-store-uid".into(),
+                object_store_resource_version: "3".into(),
+            },
+            suspended: true,
+            backup_uid: None,
+            base_backup_id: None,
+            completed_at: None,
+        })),
+    };
+    service
+        .complete_database_operation(
+            hosting.begin_authenticated_agent(agent).await.unwrap(),
+            agent,
+            DatabaseCompletion {
+                lease: observed.lease,
+                outcome: DatabaseCompletionOutcome::Succeeded,
+                proof: Some(proof),
+            },
+        )
+        .await
+        .unwrap();
+    let status = service
+        .execute_managed(
+            operator,
+            authority,
+            json!({"action":"databases.backupPolicies.get","databaseID":database}),
+        )
+        .await
+        .unwrap();
+    assert_eq!(status["policy"]["revocationEffective"], true);
+    let managed = service
+        .execute_managed(
+            operator,
+            authority,
+            json!({"action":"databases.get","databaseID":database}),
+        )
+        .await
+        .unwrap();
+    let schema: serde_json::Value =
+        serde_json::from_str(webdock_databases::BACKUP_STATUS_SCHEMA).unwrap();
+    assert!(
+        jsonschema::validator_for(&schema)
+            .unwrap()
+            .is_valid(&managed["backup"])
+    );
+    assert_eq!(managed["backup"]["publicRecoveryAvailable"], false);
+    // Exact synthetic records only, following the existing fixture's FK-cycle cleanup.
+    let cleanup = owner.begin().await.unwrap();
+    cleanup
+        .execute_unprepared("SET LOCAL session_replication_role=replica")
+        .await
+        .unwrap();
+    for sql in [
+        "DELETE FROM webdock_auth.hosting_database_backup_audit WHERE policy_id=$1",
+        "DELETE FROM webdock_auth.hosting_database_backup_credentials WHERE policy_id=$1",
+        "DELETE FROM webdock_auth.hosting_database_backup WHERE policy_id=$1",
+        "DELETE FROM webdock_auth.hosting_database_job WHERE backup_policy_id=$1",
+        "DELETE FROM webdock_auth.hosting_database_backup_policy WHERE id=$1",
+    ] {
+        cleanup
+            .execute_raw(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                sql,
+                [granted["policyID"].as_str().unwrap().into()],
+            ))
+            .await
+            .unwrap();
+    }
+    cleanup
+        .execute_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "DELETE FROM webdock_auth.hosting_database_backup_destination WHERE id=$1",
+            [destination["destinationID"].as_str().unwrap().into()],
+        ))
+        .await
+        .unwrap();
+    for op in [&granted["operationID"], &revoked["operationID"]] {
+        cleanup
+            .execute_raw(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "DELETE FROM webdock_auth.hosting_operation WHERE id=$1",
+                [op.as_str().unwrap().into()],
+            ))
+            .await
+            .unwrap();
+    }
+    for prefix in ["backup-destination", "backup-grant", "backup-revoke"] {
+        cleanup.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"DELETE FROM webdock_auth.hosting_operation WHERE subject=$1 AND idempotency_key=$2",[operator.user_id.clone().into(),format!("{prefix}-{database}").into()])).await.unwrap();
+    }
+    cleanup.commit().await.unwrap();
+    run(
+        owner,
+        "UPDATE webdock_auth.hosting_database_backend SET demand=$2 WHERE id=$1",
+        vec![apply.spec.backend.id.into(), before.into()],
+    )
+    .await;
+    run(
+        owner,
+        "UPDATE webdock_auth.hosting_agent SET observation=$2 WHERE cluster_id=$1",
+        vec![agent.cluster_id().into(), original_observation.into()],
+    )
+    .await;
 }
 
 async fn fixture_value(
@@ -1965,6 +2288,7 @@ async fn complete_synthetic_stage(
             },
             endpoint_ready: action != DatabaseAction::Purge,
             copy_sha256: cp.copy_sha256,
+            backup: None,
         }),
     };
     if action == DatabaseAction::Migrate {
@@ -2141,4 +2465,111 @@ async fn saturated_order_and_agent_pools(
     auth.close().await.unwrap();
     business.close().await.unwrap();
     worker.close().await.unwrap();
+}
+
+// Compiled during the domain-only stage; executed only by the explicitly owned,
+// ignored PostgreSQL fixture above. No synthetic Ready metadata is needed here.
+async fn allocation_enqueue_failure_rolls_back(
+    owner: &sea_orm::DatabaseConnection,
+    actor: &webdock_identity::Principal,
+    authority: &StoredAuthority,
+    command: &serde_json::Value,
+    cluster: &str,
+) {
+    let counts_sql = "SELECT jsonb_build_object('backends',(SELECT count(*) FROM webdock_auth.hosting_database_backend WHERE cluster_id=$1),'ports',(SELECT count(*) FROM webdock_auth.hosting_database_port WHERE cluster_id=$1),'orders',(SELECT count(*) FROM webdock_auth.hosting_database_order WHERE offer_id=$3),'databases',(SELECT count(*) FROM webdock_auth.hosting_database WHERE project_id=$2),'jobs',(SELECT count(*) FROM webdock_auth.hosting_database_job j JOIN webdock_auth.hosting_database_backend b ON b.id=j.backend_id WHERE b.cluster_id=$1),'operations',(SELECT count(*) FROM webdock_auth.hosting_operation WHERE cluster_id=$1),'receipts',(SELECT count(*) FROM webdock_auth.hosting_operation WHERE subject=$4 AND idempotency_key=$5)) AS value";
+    let values = vec![
+        cluster.into(),
+        command["projectID"].as_str().unwrap().into(),
+        command["offerID"].as_str().unwrap().into(),
+        actor.user_id.clone().into(),
+        command["idempotencyKey"].as_str().unwrap().into(),
+    ];
+    async fn counts(
+        owner: &sea_orm::DatabaseConnection,
+        sql: &str,
+        values: Vec<sea_orm::Value>,
+    ) -> serde_json::Value {
+        owner
+            .query_one_raw(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                sql,
+                values,
+            ))
+            .await
+            .unwrap()
+            .unwrap()
+            .try_get("", "value")
+            .unwrap()
+    }
+    let before = counts(owner, counts_sql, values.clone()).await;
+    assert_eq!(
+        before["orders"], 0,
+        "rollback regression requires a never-accepted offer"
+    );
+    let auth_url = guarded("AUTH_DATABASE_URL");
+    let auth = Database::connect(auth_url.clone()).await.unwrap();
+    let business = Database::connect(guarded("DATABASE_URL")).await.unwrap();
+    let worker = Database::connect(guarded("WEBDOCK_PLUGIN_WORKER_DATABASE_URL"))
+        .await
+        .unwrap();
+    let secret = std::env::var("BETTER_AUTH_SECRET").unwrap();
+    let ids = Arc::new(
+        webdock_persistence::IdAllocator::connect(
+            &auth_url,
+            webdock_ids::Identity::platform(0, 2).unwrap(),
+        )
+        .await
+        .unwrap(),
+    );
+    let identity = Arc::new(
+        IdentityService::new(
+            auth.clone(),
+            CookiePolicy::new(false, secret.clone()).unwrap(),
+        )
+        .with_secret_keys(
+            SecretKeys::new(
+                BTreeMap::from([(0, secret.clone())]),
+                0,
+                Some(secret.clone()),
+            )
+            .unwrap(),
+        )
+        .with_allocator(ids.clone()),
+    );
+    let database = DatabaseService::new(
+        business.clone(),
+        auth.clone(),
+        worker.clone(),
+        identity,
+        None,
+        ids,
+        std::env::var("DATABASE_RLS_SECRET").unwrap(),
+        &secret,
+        "http://127.0.0.1:3150",
+    )
+    .await
+    .unwrap()
+    .with_management(webdock_databases::ManagementConfig {
+        cluster_id: Some(cluster.into()),
+        endpoint_domain: Some("database.example.invalid".into()),
+        public_ordering: false,
+        protected_database_id: None,
+        // Allocation succeeds first; enqueue must refuse without its signer.
+        lease_secret: None,
+    })
+    .unwrap();
+    let error = database
+        .execute_managed(actor, authority, command.clone())
+        .await
+        .unwrap_err();
+    assert_eq!(error.status, 503);
+    drop(database);
+    auth.close().await.unwrap();
+    business.close().await.unwrap();
+    worker.close().await.unwrap();
+    let after = counts(owner, counts_sql, values).await;
+    assert_eq!(
+        after, before,
+        "failed enqueue must roll back every target reservation and row"
+    );
 }

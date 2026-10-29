@@ -2,6 +2,7 @@
 FROM oven/bun:1.4.3 AS build
 WORKDIR /app
 COPY package.json bun.lock bunfig.toml ./
+COPY patches ./patches
 COPY LICENSE COMMERCIAL-LICENSING.md NOTICE /usr/share/licenses/webdock/
 COPY apps ./apps
 COPY packages ./packages

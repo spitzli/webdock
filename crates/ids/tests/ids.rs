@@ -10,6 +10,37 @@ fn identity() -> Identity {
 }
 
 #[test]
+fn durable_checkpoint_resumes_after_maylily_packed_id() {
+    let options = maylily::Options {
+        radix: 10,
+        time_base: PLATFORM_EPOCH_MS,
+        machine_id: 0,
+        machine_bits: 6,
+        generator_id: 2,
+        generator_bits: 4,
+        sequence_bits: 12,
+    };
+    let checkpoint: Id = options
+        .pack_at(PLATFORM_EPOCH_MS + 1, 17)
+        .unwrap()
+        .to_string()
+        .parse()
+        .unwrap();
+    let mut resumed = Generator::resume(Layout::PLATFORM, identity(), Some(checkpoint)).unwrap();
+    let mut committed = None;
+    let next = resumed
+        .next_at(PLATFORM_EPOCH_MS + 1, |id| {
+            committed = Some(id);
+            Ok::<_, &str>(())
+        })
+        .unwrap();
+    assert_eq!(committed, Some(next));
+    assert_eq!(next.as_i64(), checkpoint.as_i64() + 1);
+    assert_eq!(options.parse(&next.to_string()).unwrap().sequence, 18);
+    assert_eq!(Layout::PLATFORM.decode(next).unwrap().sequence, 18);
+}
+
+#[test]
 fn platform_layout_preserves_signed_boundary_and_legacy_slots() {
     let layout = Layout::PLATFORM;
     assert_eq!(layout.epoch_ms(), 1_767_225_600_000);

@@ -1,4 +1,5 @@
 //! Fixed named HTTPS policy shared by independent providers and the Core host broker.
+pub mod storage;
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::{

@@ -225,6 +225,7 @@ async fn console_drives_real_native_hosting_and_docker() {
         database_runtime: None,
         mail_configuration_enabled: false,
         mail_runtime: None,
+        recovery_runtime: None,
         policy: Default::default(),
         workloads: false,
         plugin_runtime_enabled: false,

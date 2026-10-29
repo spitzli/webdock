@@ -13,6 +13,8 @@ use webdock_identity::{IdentityService, Principal, RlsSigner};
 use webdock_persistence::IdAllocator;
 use webdock_secrets::SecretCipher;
 mod agent;
+mod authority;
+mod backups;
 mod binding;
 mod capacity;
 mod commands;
@@ -20,6 +22,10 @@ mod control;
 mod gateway;
 mod maintenance;
 mod orders;
+mod read;
+// Staged only: no production parser, route or claim can call this module.
+#[cfg(test)]
+mod restore_orders;
 mod upgrades;
 /// Separate pools preserve the restricted authentication, business, and worker boundaries.
 pub struct DatabaseService {
@@ -162,9 +168,36 @@ impl DatabaseService {
         authority: &StoredAuthority,
         live: bool,
     ) -> Result<Value> {
+        self.authorize_ceiling(
+            tx,
+            principal,
+            project,
+            customer,
+            write,
+            operator,
+            authority.read_only(),
+            live,
+        )
+        .await
+    }
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "The existing scoped authorizer also serves verified MCP reads without inventing browser authority."
+    )]
+    async fn authorize_ceiling(
+        &self,
+        tx: &DatabaseTransaction,
+        principal: &Principal,
+        project: Option<&str>,
+        customer: Option<&str>,
+        write: bool,
+        operator: bool,
+        read_only: bool,
+        live: bool,
+    ) -> Result<Value> {
         if (principal.in_read_only_preview() && (write || operator || live))
             || !principal.can_access()
-            || write && authority.read_only()
+            || write && read_only
         {
             return Err(denied());
         }
@@ -184,9 +217,7 @@ impl DatabaseService {
             if actor["operator"] != true {
                 return Err(denied());
             }
-            return Ok(
-                json!({"customerID":null,"operator":true,"canWrite":!authority.read_only()}),
-            );
+            return Ok(json!({"customerID":null,"operator":true,"canWrite":!read_only}));
         }
         let customer = if let Some(project) = project {
             tx.query_one_raw(Statement::from_sql_and_values(
@@ -313,3 +344,5 @@ fn hash(token: &str) -> Result<String> {
     Ok(hex::encode(Sha256::digest(token.as_bytes())))
 }
 const SELECTION: &str = "SELECT jsonb_build_object('id',b.id,'projectID',p.id,'customerID',p.customer_id,'name',b.name,'environment',b.environment,'engine',b.engine,'profile',g.profile) AS value FROM webdock_auth.database_binding b JOIN webdock_admin.projects p ON p.id=b.project_id LEFT JOIN webdock_auth.database_grant g ON g.binding_id=b.id AND g.subject=$1 AND g.enabled WHERE b.enabled AND p.status='active'";
+
+mod exports;

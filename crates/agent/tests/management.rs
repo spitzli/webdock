@@ -270,6 +270,7 @@ async fn outbound_unix_dispatch_revalidates_reads_and_replays_committed_work_aft
     });
     let config = AgentConfig {
         database_runtime: None,
+        recovery_runtime: None,
         mail_configuration_enabled: false,
         mail_runtime: None,
         version: 1,
@@ -468,6 +469,7 @@ async fn outbound_mtls_rotates_certificates_and_stops_after_live_enrollment_revo
     });
     let config = AgentConfig {
         database_runtime: None,
+        recovery_runtime: None,
         mail_configuration_enabled: false,
         mail_runtime: None,
         version: 1,
@@ -581,6 +583,7 @@ async fn real_docker_executor_obeys_outbound_control_leases_and_reports_observat
     });
     let config = AgentConfig {
         database_runtime: None,
+        recovery_runtime: None,
         mail_configuration_enabled: false,
         mail_runtime: None,
         version: 1,
@@ -673,6 +676,7 @@ async fn lost_terminal_completion_ack_replays_durable_outbox_before_poll_without
     });
     let config = AgentConfig {
         database_runtime: None,
+        recovery_runtime: None,
         mail_configuration_enabled: false,
         mail_runtime: None,
         version: 1,
@@ -816,6 +820,7 @@ async fn delayed_mail_guard_reply_cannot_authorize_runtime_after_lease_expiry() 
             storage_socket: None,
         },
         database_runtime: None,
+        recovery_runtime: None,
         mail_configuration_enabled: false,
         mail_runtime: None,
         policy: Default::default(),

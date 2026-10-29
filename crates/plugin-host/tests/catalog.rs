@@ -6,6 +6,13 @@ use catalog_fixture::catalog;
 
 #[test]
 fn signed_catalog_accepts_required_native_jobs_service() {
+    required_native_service("jobs");
+}
+#[test]
+fn signed_catalog_accepts_required_native_storage_service() {
+    required_native_service("storage");
+}
+fn required_native_service(service: &str) {
     use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD as B64};
     use ed25519_dalek::{Signer, SigningKey};
     use sha2::{Digest, Sha256};
@@ -26,7 +33,7 @@ fn signed_catalog_accepts_required_native_jobs_service() {
     manifest["services"]["required"]
         .as_array_mut()
         .unwrap()
-        .push(json!({"name":"jobs","version":1}));
+        .push(json!({"name":service,"version":1}));
     let raw = manifest.to_string();
     let hash = hex::encode(Sha256::digest(raw.as_bytes()));
     let payload = json!({"v":1,"registry":"https://registry.example.test","plugin_slug":"postgres","release_version":"0.1.0","kid":"trusted","manifest_sha256":hash,"assets":[{"name":"postgres-universal.json","sha256":hash,"size":raw.len()}]});

@@ -6,6 +6,58 @@ use axum::{
 use std::{convert::Infallible, time::Duration};
 use webdock_plugin_host::{RuntimeDescription, StateProbe};
 
+#[derive(Clone, Copy)]
+enum StateProbeBoundary {
+    RouteLoad,
+    GenerationCheck,
+    Connect,
+    Describe,
+    Health,
+    Reload,
+    Complete,
+}
+impl StateProbeBoundary {
+    fn token(self) -> &'static str {
+        match self {
+            Self::RouteLoad => "route_load",
+            Self::GenerationCheck => "generation_check",
+            Self::Connect => "connect",
+            Self::Describe => "describe",
+            Self::Health => "health",
+            Self::Reload => "reload",
+            Self::Complete => "complete",
+        }
+    }
+    fn enabled(value: Option<&std::ffi::OsStr>) -> bool {
+        value == Some(std::ffi::OsStr::new("1"))
+    }
+    fn enter(self) {
+        if Self::enabled(std::env::var_os("WEBDOCK_RECOVERY_COMPONENT_TEST").as_deref()) {
+            eprintln!("plugin_state_probe stage={}", self.token());
+        }
+    }
+    fn failure_line(self, error: &(dyn std::error::Error + 'static)) -> String {
+        let code = error
+            .downcast_ref::<tonic::Status>()
+            .map(|v| v.code() as i32);
+        let errno = error
+            .downcast_ref::<std::io::Error>()
+            .and_then(std::io::Error::raw_os_error);
+        let number = |v: Option<i32>| v.map_or_else(|| "null".to_owned(), |v| v.to_string());
+        format!(
+            "plugin_state_probe_failure stage={} tonicCode={} ioErrno={}",
+            self.token(),
+            number(code),
+            number(errno)
+        )
+    }
+    fn failed(self, error: &(dyn std::error::Error + 'static)) {
+        if Self::enabled(std::env::var_os("WEBDOCK_RECOVERY_COMPONENT_TEST").as_deref()) {
+            eprintln!("{}", self.failure_line(error));
+        }
+    }
+}
+
 #[async_trait::async_trait]
 impl StateProbe for PluginEndpoints {
     async fn describe(
@@ -13,38 +65,57 @@ impl StateProbe for PluginEndpoints {
         plugin: &str,
         generation: u64,
     ) -> Result<RuntimeDescription, PluginError> {
+        StateProbeBoundary::RouteLoad.enter();
         let connection = self
             .connections
             .load_generation(plugin, generation)
             .await
-            .map_err(|_| unavailable_plugin())?;
+            .map_err(|error| {
+                StateProbeBoundary::RouteLoad.failed(error.as_ref());
+                unavailable_plugin()
+            })?;
+        StateProbeBoundary::GenerationCheck.enter();
         if connection.generation != generation {
             return Err(PluginError::denied());
         }
-        let (mut client, peer) = connection
-            .connect_authenticated()
-            .await
-            .map_err(|_| unavailable_plugin())?;
+        StateProbeBoundary::Connect.enter();
+        let (mut client, peer) = connection.connect_authenticated().await.map_err(|error| {
+            StateProbeBoundary::Connect.failed(error.as_ref());
+            unavailable_plugin()
+        })?;
+        StateProbeBoundary::Describe.enter();
         let manifest = client
             .describe(webdock_plugin_runtime::wire::DescribeRequest {})
             .await
-            .map_err(|_| unavailable_plugin())?
+            .map_err(|error| {
+                StateProbeBoundary::Describe.failed(&error);
+                unavailable_plugin()
+            })?
             .into_inner()
             .manifest_json;
+        StateProbeBoundary::Health.enter();
         let health = client
             .health(webdock_plugin_runtime::wire::HealthRequest {})
             .await
-            .map_err(|_| unavailable_plugin())?
+            .map_err(|error| {
+                StateProbeBoundary::Health.failed(&error);
+                unavailable_plugin()
+            })?
             .into_inner();
+        StateProbeBoundary::Reload.enter();
         if self
             .connections
             .load_generation(plugin, generation)
             .await
-            .map_err(|_| unavailable_plugin())?
+            .map_err(|error| {
+                StateProbeBoundary::Reload.failed(error.as_ref());
+                unavailable_plugin()
+            })?
             != connection
         {
             return Err(PluginError::denied());
         }
+        StateProbeBoundary::Complete.enter();
         Ok(RuntimeDescription {
             manifest,
             plugin_id: health.plugin_id,
@@ -180,4 +251,43 @@ async fn events(
     }
     .await;
     result.unwrap_or_else(IntoResponse::into_response)
+}
+
+#[cfg(test)]
+mod state_probe_diagnostic_tests {
+    use super::StateProbeBoundary;
+    #[derive(Debug)]
+    struct Poison;
+    impl std::fmt::Display for Poison {
+        fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            panic!("error Display must not be called")
+        }
+    }
+    impl std::error::Error for Poison {}
+    #[test]
+    fn exact_flag_and_fixed_numeric_projection_never_format_sensitive_errors() {
+        use std::ffi::OsStr;
+        assert!(StateProbeBoundary::enabled(Some(OsStr::new("1"))));
+        for value in [
+            None,
+            Some(OsStr::new("0")),
+            Some(OsStr::new("true")),
+            Some(OsStr::new("01")),
+        ] {
+            assert!(!StateProbeBoundary::enabled(value));
+        }
+        assert_eq!(
+            StateProbeBoundary::Connect.failure_line(&Poison),
+            "plugin_state_probe_failure stage=connect tonicCode=null ioErrno=null"
+        );
+        assert_eq!(
+            StateProbeBoundary::Describe
+                .failure_line(&tonic::Status::permission_denied("private-token-poison")),
+            "plugin_state_probe_failure stage=describe tonicCode=7 ioErrno=null"
+        );
+        assert_eq!(
+            StateProbeBoundary::RouteLoad.failure_line(&std::io::Error::from_raw_os_error(13)),
+            "plugin_state_probe_failure stage=route_load tonicCode=null ioErrno=13"
+        );
+    }
 }

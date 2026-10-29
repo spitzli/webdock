@@ -4,6 +4,7 @@ mod database;
 mod mail;
 mod mail_configuration;
 mod plugin;
+mod recovery;
 mod workload;
 pub use plugin::PluginRuntimeBackend;
 use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend, Statement};
@@ -612,6 +613,7 @@ impl ControlPlane {
             .timeout(std::time::Duration::from_secs(30))
             .concurrency_limit_per_connection(32)
             .add_service(self.clone().database_service())
+            .add_service(self.clone().recovery_service())
             .add_service(self.clone().mail_service())
             .add_service(self.clone().mail_configuration_service())
             .add_service(self.clone().workload_service())
@@ -642,6 +644,7 @@ impl ControlPlane {
             .timeout(std::time::Duration::from_secs(30))
             .concurrency_limit_per_connection(32)
             .add_service(self.clone().database_service())
+            .add_service(self.clone().recovery_service())
             .add_service(self.clone().mail_service())
             .add_service(self.clone().mail_configuration_service())
             .add_service(self.clone().workload_service())

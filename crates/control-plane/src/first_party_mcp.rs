@@ -21,12 +21,19 @@ pub(crate) fn tools(
         Resource::Registry if state.registry.is_none() => vec![],
         Resource::Registry => registry_tools(write),
         Resource::Hosting => {
-            if state.config.features.state("hosting")
-                == webdock_core::features::FeatureState::Disabled
+            let mut definitions = if state.config.features.state("hosting")
+                != webdock_core::features::FeatureState::Disabled
             {
-                return Ok(vec![]);
+                hosting_tools(write)
+            } else {
+                vec![]
+            };
+            if state.config.features.state("databases")
+                != webdock_core::features::FeatureState::Disabled
+            {
+                definitions.extend(webdock_databases::database_read_tools());
             }
-            hosting_tools(write)
+            definitions
         }
     };
     definitions
@@ -100,6 +107,9 @@ pub(crate) async fn execute(
     args: Value,
 ) -> Result<Value, ResourceFailure> {
     if resource == Resource::Hosting {
+        if let Some(input) = crate::resource_databases::tool(name, args.clone())? {
+            return crate::resource_databases::execute(state, actor, input).await;
+        }
         let (action, _) = resource_hosting::TOOLS
             .iter()
             .find(|(_, tool)| *tool == name)
@@ -147,4 +157,63 @@ pub(crate) async fn execute(
         _ => return Err(invalid()),
     };
     resource_registry::execute(state, actor, operation).await
+}
+#[cfg(test)]
+mod database_discovery_tests {
+    use super::*;
+    fn state(features: &str) -> ServiceState {
+        ServiceState {
+            config: webdock_core::config::PlatformConfig::from_map(
+                &std::collections::HashMap::from([("WEBDOCK_FEATURES".into(), features.into())]),
+            )
+            .unwrap(),
+            db: sea_orm::DatabaseConnection::default(),
+            resource_client: None,
+            identity: None,
+            registry: None,
+            oauth: None,
+            hosting: None,
+            build: None,
+            plugins: None,
+            databases: None,
+            mail: None,
+            browser: None,
+            access: None,
+            ui: None,
+            auth_limiter: governor::RateLimiter::direct(governor::Quota::per_second(
+                std::num::NonZeroU32::new(5).unwrap(),
+            )),
+        }
+    }
+    #[test]
+    fn database_read_discovery_does_not_depend_on_hosting_activation_or_write_scope() {
+        for feature in ["enabled", "draining"] {
+            let state = state(&format!(r#"{{"databases":"{feature}"}}"#));
+            for write in [false, true] {
+                let definitions = tools(&state, Resource::Hosting, write).unwrap();
+                let names = definitions
+                    .iter()
+                    .map(|t| t.name.as_ref())
+                    .collect::<Vec<_>>();
+                assert_eq!(names.len(), 7);
+                for (_, name) in webdock_databases::DATABASE_READ_TOOLS {
+                    assert!(names.contains(name));
+                }
+            }
+        }
+        assert!(
+            tools(&state("{}"), Resource::Hosting, false)
+                .unwrap()
+                .is_empty()
+        );
+        assert!(
+            tools(
+                &state(r#"{"databases":"enabled"}"#),
+                Resource::Registry,
+                false
+            )
+            .unwrap()
+            .is_empty()
+        );
+    }
 }

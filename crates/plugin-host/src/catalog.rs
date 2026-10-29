@@ -213,10 +213,11 @@ impl Catalog {
                         ("data", 1),
                         ("http", 1),
                         ("jobs", 1),
+                        ("storage", 1),
                         ("native-mail-control", 1),
                     ]
                 } else {
-                    &[("data", 1), ("http", 1), ("jobs", 1)]
+                    &[("data", 1), ("http", 1), ("jobs", 1), ("storage", 1)]
                 })?;
             if !release.recipe.is_object()
                 || serde_json::to_vec(&release.recipe)

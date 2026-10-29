@@ -509,6 +509,7 @@ async fn run(
             storage_socket: None,
         },
         database_runtime: None,
+        recovery_runtime: None,
         mail_configuration_enabled: configure,
         mail_runtime: Some(runtime),
         policy: Default::default(),

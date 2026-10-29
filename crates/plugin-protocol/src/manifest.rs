@@ -8,6 +8,7 @@ use serde::{
 use serde_json::{Map, Value};
 use std::{collections::HashSet, fmt};
 const NAME: &str = r"^[a-z][a-z0-9_.-]*$";
+const FIELD: &str = r"^[a-z][a-zA-Z0-9_.-]*$";
 const SLUG: &str = r"^[a-z][a-z0-9-]*$";
 const SERVICES: &[&str] = &[
     "apps",
@@ -106,6 +107,16 @@ fn type_matches(v: &Value, kind: &str) -> bool {
         _ => false,
     }
 }
+fn field_name(value: &Value) -> Result<()> {
+    text(value, 1, 64, Some(FIELD))?;
+    ensure(
+        !value
+            .as_str()
+            .unwrap()
+            .split(['.', '-'])
+            .any(|p| ["__proto__", "constructor", "prototype"].contains(&p)),
+    )
+}
 fn schema(v: &Value, depth: usize) -> Result<()> {
     ensure(depth <= 3)?;
     let o = object(
@@ -138,13 +149,17 @@ fn schema(v: &Value, depth: usize) -> Result<()> {
         let props = props.as_object().ok_or_else(invalid)?;
         ensure(props.len() <= 64)?;
         for (key, value) in props {
-            text(&Value::String(key.clone()), 1, 64, Some(NAME))?;
+            field_name(&Value::String(key.clone()))?;
             schema(value, depth + 1)?;
         }
     }
     if let Some(required) = o.get("required") {
-        names(required, 0, 64, None)?;
-        for key in required.as_array().unwrap() {
+        let required = array(required, 0, 64)?;
+        unique(required, None)?;
+        for key in required {
+            field_name(key)?;
+        }
+        for key in required {
             ensure(v["properties"].get(key.as_str().unwrap()).is_some())?;
         }
     }

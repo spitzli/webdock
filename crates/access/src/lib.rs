@@ -1,5 +1,7 @@
 //! Retained tenant, invitation and account administration using live identity and signed RLS.
 mod admin;
+mod allowances;
+pub use allowances::{AllowanceAuthority, ConfigureAllowances, FiniteAllowance, HostingAllowances};
 pub mod api_tokens;
 mod contracts;
 pub mod domains;

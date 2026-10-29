@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Webdock\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-18 13:56+0200\n"
+"POT-Creation-Date: 2026-10-25 19:33+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,907 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: apps/cms-instance/src/lib/content.ts:120
+msgid "An administrator is required to remove or restore media."
+msgstr ""
+
+#: apps/cms-instance/src/lib/media.ts:53
+msgid "Upload a valid PNG, JPEG, WebP or AVIF image (maximum 10 MiB and 40 megapixels)."
+msgstr ""
+
+#: apps/cms/src/app/layout.tsx:5
+msgid "Website administration — Webdock"
+msgstr ""
+
+#: apps/cms/src/app/not-found.tsx:3 apps/cms/src/app/not-found.tsx:4
+#: apps/website/src/app/global-not-found.tsx:3
+#: apps/website/src/app/global-not-found.tsx:4
+#: legacy/auth/src/app/not-found.tsx:3 legacy/auth/src/app/not-found.tsx:4
+#: legacy/console/src/app/global-not-found.tsx:3
+#: legacy/console/src/app/global-not-found.tsx:4
+msgid "Page not found"
+msgstr ""
+
+#: apps/cms/src/app/not-found.tsx:4 apps/website/src/app/global-not-found.tsx:4
+#: legacy/auth/src/app/not-found.tsx:4
+#: legacy/console/src/app/global-not-found.tsx:4
+msgid "This page is not available. Check the address or return to the homepage."
+msgstr ""
+
+#: apps/cms/src/app/not-found.tsx:4 apps/website/src/app/global-not-found.tsx:4
+#: legacy/auth/src/app/not-found.tsx:4
+#: legacy/console/src/app/(console)/waitlist/confirmed/page.tsx:7
+#: legacy/console/src/app/global-not-found.tsx:4
+msgid "Back to homepage"
+msgstr ""
+
+#: apps/cms/src/app/page.tsx:6
+msgid "Your website has its own admin."
+msgstr ""
+
+#: apps/cms/src/app/page.tsx:7
+msgid "The shared CMS has been retired. Sign in to your website to manage its content."
+msgstr ""
+
+#: apps/cms/src/app/page.tsx:9
+msgid "Webdock admin ↗"
+msgstr ""
+
+#: apps/cms/src/app/page.tsx:10
+msgid "Spitzli Development admin ↗"
+msgstr ""
+
+#: apps/cms/src/app/page.tsx:11
+msgid "Stall Eichenbruch admin ↗"
+msgstr ""
+
+#: apps/cms/src/app/page.tsx:13
+msgid "Your existing email address and password still work."
+msgstr ""
+
+#: apps/cms/src/components/SiteSelect.tsx:8
+msgid "Site"
+msgstr ""
+
+#: apps/cms/src/components/SiteSelect.tsx:14
+msgid "All accessible sites"
+msgstr ""
+
+#: apps/website/src/app/(cms)/layout.tsx:8
+msgid "CMS — Webdock"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:7
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:10
+msgid "Legal notice — Webdock"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:8
+msgid "Webdock provider and contact details for Spitzli Development."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:17
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:17
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:17
+msgid "Webdock · Updated {date}"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:18
+#: apps/website/src/app/(frontend)/(legal)/layout.tsx:15
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:22
+#: apps/website/src/app/(frontend)/page.tsx:53
+msgid "Legal notice"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:19
+msgid "Provider of Webdock pursuant to Section 5 DDG:"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:20
+msgid "Owner: Dominik Spitzli · Sole trader"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:20
+msgid "Germany"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:21
+msgid "Contact"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:22
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:43
+#: legacy/auth/src/lib/i18n-messages.ts:153 legacy/auth/src/lib/tenants.ts:16
+#: legacy/console/src/lib/customer-fields.ts:15
+#: legacy/console/src/lib/tenants.ts:16 legacy/console/src/lib/ui-labels.ts:16
+msgid "Phone"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:24
+msgid "VAT identification number"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:25
+msgid "VAT identification number pursuant to Section 27a of the German VAT Act: DE463646700."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:26
+msgid "Webdock and Spitzli Development"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:27
+msgid "Webdock is a service of Spitzli Development. These provider details apply to Webdock’s own website and services. Independently operated customer websites are the responsibility of their respective providers."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:28
+msgid "Spitzli Development legal notice"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:5
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:8
+msgid "Vercel integration — Webdock Studio"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:6
+msgid "Connect selected Vercel projects to Webdock Studio with read-only access."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:14
+msgid "Webdock Studio · Integration guide"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:15
+msgid "Vercel, in Studio."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:16
+msgid "View hosting information alongside your Webdock project records: current production release, recent deployments, Git branch and commit, runtime settings, and domain verification."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:17
+msgid "Connect your projects"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:19
+msgid "Sign in to"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:19
+msgid "Studio → Integrations"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:19
+msgid "with an authorised platform operator account."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:20
+msgid "Choose Connect Vercel. Start here so Studio can securely associate the installation with your session."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:21
+msgid "In Vercel, select your team and the projects to share. Review the four read permissions: projects, deployments, domains and integration configuration."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:22
+msgid "Finish the installation and return to Studio. Match an active Studio project to its Vercel project in Integrations."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:23
+msgid "Open the project in Studio to view hosting details. Refresh to request the latest available status."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:25
+msgid "Access and troubleshooting"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:26
+msgid "This private integration is available to the configured team and authorised operators. It reads hosting information; it cannot deploy, change domains or read environment-variable values. If access is denied, check that the project was selected during installation. If a connection has been revoked or expired, reconnect from Studio. Vercel outages can temporarily prevent status updates."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:27
+msgid "Disconnect"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:28
+msgid "Disconnect in Studio to delete its stored access token. Also uninstall Webdock Studio in your Vercel team’s integration settings to revoke permission at Vercel. Project mappings and audit records remain; contact us if you need them removed."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:29
+#: legacy/auth/src/app/layout.tsx:45
+msgid "Support"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:30
+msgid "Email support at"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:30
+msgid "with the affected project and the visible error. Never include passwords, access tokens or environment-variable values."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:31
+msgid "Read the"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:31
+msgid "terms of use"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:31
+msgid "and the"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:31
+msgid "privacy notice"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:31
+msgid "before connecting."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/layout.tsx:9
+#: apps/website/src/app/(frontend)/page.tsx:28
+#: legacy/auth/src/app/layout.tsx:31
+#: legacy/console/src/app/(console)/layout.tsx:41
+#: packages/cms-ui/src/client.tsx:849
+msgid "Skip to content"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/layout.tsx:11
+#: apps/website/src/app/(frontend)/page.tsx:30
+#: apps/website/src/app/(frontend)/page.tsx:53
+#: legacy/console/src/components/console-auth-shell.tsx:10
+msgid "Webdock home"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/layout.tsx:15
+#: apps/website/src/app/(frontend)/page.tsx:53
+msgid "Legal"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/layout.tsx:15
+#: apps/website/src/app/(frontend)/page.tsx:53
+msgid "Terms"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/layout.tsx:15
+#: apps/website/src/app/(frontend)/page.tsx:53
+#: legacy/auth/src/app/layout.tsx:46
+#: legacy/console/src/components/console-auth-shell.tsx:16
+msgid "Privacy"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:7
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:10
+msgid "Privacy — Webdock"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:8
+msgid "How Webdock processes personal data, uses service providers and protects your rights."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:18
+msgid "Privacy notice"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:19
+msgid "This notice explains how we process personal data on Webdock’s website and in its account, Studio, hosting, database and Mail services. Customer-operated websites and applications have their own controllers and privacy notices."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:20
+msgid "1. Controller and contact"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:21
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:21
+msgid "Dominik Spitzli, trading as Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:22
+msgid "For privacy questions and requests concerning your data, contact:"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:23
+msgid "We are the controller for our website, customer relationships, accounts and service administration. When we host or handle personal data for a customer, we act on their instructions under a data-processing agreement (Article 28 GDPR). This notice does not replace that agreement."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:24
+msgid "2. Data, purposes and legal bases"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:25
+msgid "When you visit Webdock, we and our hosting providers process technical request data, including IP address, requested URL, time, browser and operating-system information, to deliver the site, diagnose errors and prevent misuse. This is based on our legitimate interest in secure, reliable operation (Article 6(1)(f) GDPR). Fonts are served locally."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:26
+msgid "For enquiries, contracts and billing, we process the contact, company, address, correspondence and contract details you provide. The bases are steps before or performance of a contract (Article 6(1)(b)), legal obligations such as accounting requirements (Article 6(1)(c)), and our legitimate interest in communicating with business contacts (Article 6(1)(f))."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:27
+msgid "For accounts and team access, we process names, email addresses, invitations, customer memberships, roles, password hashes, passkey public keys, configured second-factor data and sessions. Security-relevant actions are logged with the acting account, action and time. Data comes from you or the operator or administrator inviting you. The bases are contract performance for contracting users and our legitimate interests in managing authorised access and preventing misuse for team members."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:28
+msgid "The data required for account access and contracted services must be provided for us to supply them; optional profile information is voluntary. Where we ask for consent, processing is based on Article 6(1)(a) GDPR and you may withdraw it at any time with future effect. We do not sell personal data or make solely automated decisions with legal or similarly significant effects."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:29
+msgid "3. Projects, hosting and connected services"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:30
+msgid "Depending on the services enabled, we process project content, files, database contents, domains, configuration, access credentials, deployment and usage data, and operational logs. Authorised team members see data according to their roles. Operators access it where needed to provide support, maintain the service or investigate security incidents. Customer content is processed on the customer’s instructions; service administration relies on contract performance and our legitimate security interests."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:31
+msgid "Optional Vercel and GitHub connections provide authorisation data and information about selected projects or repositories, deployments, domains, branches and commits. Enabled build and deployment workflows also process the source code, build artefacts and configuration needed for those workflows. Access is limited by the connected account’s permissions and the selected function. Disconnecting in Webdock and revoking access at the provider are separate actions."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:32
+msgid "4. Mail"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:33
+msgid "Account invitations and security emails are sent through turboSMTP. When Mail is enabled for a customer, we process account and domain details, sender and recipient addresses, message contents and attachments, delivery events, usage and suppression records. Enabled incoming mail uses a separate Stalwart instance for that customer; outgoing-only service does not require one. Mailbox contents and forwarding are processed only for the enabled service."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:34
+msgid "For managed sending, the relay provider receives the account details needed for provisioning and the data needed to deliver messages. Customer-supplied relay accounts use the selected provider. Domain verification sends the domain name to Cloudflare’s DNS resolver. Configured customer webhooks receive delivery event data. Optional email open and click tracking is controlled by the customer administrator, who is responsible for the required recipient information and legal basis. It is separate from website analytics."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:35
+msgid "5. Cookies, preferences and website analytics"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:36
+msgid "Login and connection cookies maintain sessions and protect authentication flows. Authentication sessions normally expire after eight hours; the Vercel connection cookie lasts up to ten minutes. A language preference explicitly selected by you is stored in a cookie for up to one year; a selected colour theme remains in local storage until removed. These functions use Article 6(1)(b) or (f) GDPR and, where strictly necessary to provide a service you request, Section 25(2)(2) TDDDG. You can remove them through your browser settings; this may sign you out or reset preferences."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:37
+msgid "We use self-hosted Umami at moon.webdock.dev to measure page views, referral sources and aggregated device and country statistics. The tracker does not use cookies or identify signed-in accounts. Query strings and URL fragments are excluded, and the browser’s Do Not Track preference is respected. Session replay and heatmaps are not enabled for this website."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:38
+msgid "How Plausible processes visitor data"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:39
+msgid "6. Providers and international transfers"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:40
+msgid "We use Vercel for web application hosting, Contabo for managed server, database and incoming-mail infrastructure, turboSMTP for email delivery, and Cloudflare for DNS services. GitHub and other customer-selected providers are involved when their integrations are enabled. Neon was the previous platform database provider; retained migration copies remain subject to the retention rules below until deleted. Providers receive only the data needed for their role. We also disclose data where legally required, for example to tax advisers or competent authorities."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:41
+msgid "Some providers process data outside the EU/EEA, including in the United States. An EU hosting region does not exclude international support or network processing. Where required, transfers rely on an applicable adequacy decision, such as the EU–US Data Privacy Framework for certified recipients, or EU standard contractual clauses and any necessary additional safeguards. You can request details and copies of the safeguards relevant to your service using the contact above."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:42
+msgid "7. Retention and deletion"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:43
+msgid "We keep contact, account and contract data for as long as needed for the relationship, then delete it unless legal retention duties or unresolved claims require continued storage. Depending on the document, statutory retention periods are generally six, eight or ten years. Security and operational logs are retained for their diagnostic and security purpose; incident-related records may be retained until the matter is resolved. Backups and retained migration copies are removed as their recovery purpose and applicable retention duties end."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:44
+msgid "For the Mail API, cleanup is configured for message text and HTML after 30 days from a final outcome, metadata and events after 90 days, request logs and completed webhook attempts after 30 days, and processed or quarantined callbacks after seven days. Attachments are removed after a definitive sending outcome; content with an uncertain outcome after seven days. Active schedules and unresolved sending or duplicate-prevention records are retained while needed. Suppressions remain until removed. These periods do not govern mailbox storage, provider-side records or backups."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:45
+msgid "Suspending a service, archiving a customer or disconnecting an integration does not automatically delete stored data. Incoming-mail storage is retained on deactivation; deletion is a separate operation. Contact us to arrange deletion or export. Disconnecting Vercel removes its stored credential from the active database, but provider-side authorisations must also be revoked at Vercel."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:46
+msgid "8. Your rights"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:47
+msgid "Subject to the statutory conditions, you have rights of access, rectification, erasure, restriction and data portability. You may object to processing based on legitimate interests for reasons relating to your situation; you can object to direct marketing at any time. You may withdraw consent without affecting the lawfulness of earlier processing. We may verify your identity to protect your data."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:48
+msgid "You can complain to a supervisory authority, including the authority where you live or work, or to the State Commissioner for Data Protection of Lower Saxony:"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:7
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:10
+msgid "Terms and conditions — Webdock"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:8
+msgid "Terms for Webdock services, including consumer cancellation and withdrawal rights."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:18
+msgid "Terms and conditions"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:19
+msgid "These terms apply to Webdock services for consumers and businesses, including agreed website development, project management, hosting, databases and Mail. A consumer acts mainly outside their trade or profession. Individually agreed terms take precedence; mandatory consumer rights remain unaffected."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:20
+msgid "1. Provider and contract"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:22
+msgid "Full provider details"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:23
+msgid "The service description and accepted offer determine what is supplied, the price, payment dates, term and any service-level agreement. A contract is formed when you accept our binding offer or we confirm your order. Website descriptions alone are not binding offers. Creating an account or connecting an integration does not itself create a paid subscription. We provide the agreed terms and required consumer information in a durable form, for example by email."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:24
+msgid "2. Services and availability"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:25
+msgid "Only the functions and resources included in the accepted offer are owed. Preview or beta features are identified as such and do not expand the agreed service. We maintain and secure the services; maintenance, incidents and external providers can affect availability. A specific uptime, response time, backup schedule or recovery period applies only if agreed. This does not limit statutory rights concerning defects, security updates or non-performance."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:26
+msgid "Optional services must be enabled separately. Incoming Mail is provisioned only when explicitly activated; outgoing-only Mail does not include a mailbox. Successful handoff to a mail relay does not guarantee delivery to the recipient’s inbox. When you connect your own provider account, its contract and charges continue to apply. We remain responsible for the obligations we have agreed to perform."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:27
+msgid "3. Prices and payment"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:28
+msgid "The accepted offer states the price, currency, billing period and any usage charges. Prices offered to consumers include applicable VAT and other mandatory price components. Additional paid work or resources require your agreement. Invoices are due on the agreed date; statutory default rules apply. Changes to agreed prices require a contractual basis and cannot be imposed merely by changing this page."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:29
+msgid "4. Your responsibilities and content"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:30
+msgid "Provide accurate account and billing details, protect access credentials and grant only authorised people access. Connect only systems you are entitled to manage. Report suspected misuse promptly. Do not distribute unlawful content, malware or unsolicited advertising, infringe third-party rights, bypass access controls or deliberately disrupt services. For email, you are responsible for lawful recipient lists and any consent needed for sending or open and click tracking."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:31
+msgid "You retain your rights to your content. You grant us only the rights needed to host, process and deliver it for the agreed service. Rights to individually developed work are governed by the project agreement; third-party and open-source licences remain applicable. Keep independent copies of important data and arrange any required backups with us. Your own precautions do not release us from agreed backup obligations or statutory liability."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:32
+msgid "5. Privacy and data processing"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:33
+msgid "Our handling of personal data is described in the privacy notice. Where we process personal data on your behalf, a separate data-processing agreement is required before that processing begins. You remain responsible for the lawfulness of your content, instructions and information to affected individuals."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:33
+msgid "Read the privacy notice"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:34
+msgid "6. Term, cancellation and suspension"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:35
+msgid "The offer specifies the term and notice period. If no term is agreed for an ongoing service, it runs indefinitely and can be cancelled at any time with one month’s notice. For consumers, any tacit renewal after an initial term is indefinite and cancellable with no more than one month’s notice. Statutory rights to cancel earlier or for good cause remain unaffected. You can give notice by email to the contact above; any legally required online cancellation facility remains an additional option."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:36
+msgid "We may restrict access where proportionate and necessary because of unlawful use, a concrete security risk or a substantial contractual breach. Where feasible, we first explain the reason and allow a reasonable opportunity to remedy it; urgent protective measures may be immediate. We restore access when the reason ends. Payment-related suspension requires the statutory prerequisites."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:37
+msgid "Arrange an export of needed data before the service ends. We coordinate return or deletion under the service and data-processing agreements and applicable law. Deactivation or suspension is not deletion; retained data remains protected. Removing a Webdock connection does not automatically cancel or revoke your account with a third-party provider."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:38
+msgid "7. Defects and liability"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:39
+msgid "Statutory rights concerning defects and statutory liability apply. Please report faults with enough information for us to investigate; this does not restrict your rights. Nothing in these terms excludes liability for intent, gross negligence, injury to life, body or health, or other mandatory liability. No general exclusion of liability or blanket transfer of third-party claims to you is agreed."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:40
+msgid "8. Consumer right of withdrawal"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:41
+msgid "For service contracts concluded at a distance or away from business premises, consumers have the following right of withdrawal. Business customers do not have this statutory consumer right."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:42
+msgid "You may withdraw from the contract without giving a reason within 14 days from the day it is concluded. To withdraw, send a clear statement of your decision, for example by email or post, to Dominik Spitzli, Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany, dominik@spitzli.dev. You may use the model form below, but do not have to. Sending your statement before the deadline is sufficient."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:44
+msgid "If you withdraw, we refund all payments received from you for the contract without undue delay and no later than 14 days after receiving your withdrawal. We use the original payment method unless expressly agreed otherwise; we charge no refund fees. If you expressly requested that services begin during the withdrawal period and were properly informed, you owe a proportionate amount for the services provided up to your withdrawal compared with the full agreed service."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:45
+msgid "For a paid service, the right expires early only after full performance and only if you expressly agreed to an early start and acknowledged beforehand that full performance would end your right of withdrawal. Starting an ongoing hosting service alone does not end that right."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:46
+msgid "Model withdrawal form"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:47
+msgid "Complete and send this form only if you wish to withdraw from the contract."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:48
+msgid "To: Dominik Spitzli, Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany; dominik@spitzli.dev."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:49
+msgid ""
+"I/We (*) hereby withdraw from the contract concluded by me/us (*) for the provision of the following service: ____________________\n"
+"Ordered on: ____________________\n"
+"Name of consumer(s): ____________________\n"
+"Address of consumer(s): ____________________\n"
+"Signature of consumer(s), only if sent on paper: ____________________\n"
+"Date: ____________________\n"
+"(*) Delete as appropriate."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:50
+msgid "9. Applicable law and changes"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:51
+msgid "German law applies. For consumers, this choice does not remove mandatory protections of the country in which they habitually reside. Statutory jurisdiction rules apply. Changes to these terms do not automatically amend an existing contract; amendments require a valid agreement or legal basis. We inform you about relevant changes in advance."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/layout.tsx:12
+#: apps/website/src/cms/landing.ts:7
+msgid "Webdock — Project previews & client websites by Spitzli"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/layout.tsx:13
+#: apps/website/src/cms/landing.ts:8
+msgid "Your project. Well docked. A home for project previews and client websites by Spitzli Development — on a Webdock subdomain or your own domain."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/layout.tsx:16
+msgid "Webdock — Your project. Well docked."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/layout.tsx:16
+msgid "A place on the web. Project previews and client websites by Spitzli Development."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:20
+msgid "My project with Webdock"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:31
+msgid "Main navigation"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:31
+msgid "The idea"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:31
+#: apps/website/src/cms/landing.ts:45
+msgid "FAQ"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:31
+#: legacy/console/src/components/console-auth-shell.tsx:16
+msgid "Login"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:31
+#: apps/website/src/app/(frontend)/page.tsx:40
+msgid "Access by invitation only."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:31
+#: apps/website/src/app/(frontend)/page.tsx:40
+#: legacy/console/src/components/console-auth-shell.tsx:16
+msgid "Waitlist"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:35
+msgid "A home for projects by Spitzli"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:38
+msgid "Explore Webdock"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:44
+msgid "Every idea needs a place."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:46
+msgid "Built by Spitzli"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:49
+msgid "Something else on your mind?"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:49
+msgid "Just ask."
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:50
+#: legacy/auth/src/app/layout.tsx:39
+msgid "Open Studio"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:50
+msgid "Available"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:51
+msgid "Got something in mind?"
+msgstr ""
+
+#: apps/website/src/app/(frontend)/page.tsx:53
+msgid "A project by"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:10
+msgid ""
+"Your project.\n"
+"Well docked."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:11
+msgid "From the first preview to the finished website. Webdock gives your project a place to call home."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:12
+msgid "Let’s get you docked"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:13
+msgid "Your subdomain. Or your own domain."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:14
+msgid ""
+"From “take a look”\n"
+"to “we’re live”."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:15
+msgid "Some projects need a link to get started. Others need a lasting home. Webdock is here for both."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:17
+msgid "Share it before you ship it."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:17
+msgid "A dedicated address for your work in progress. Review it together, share feedback and make the next version better."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:18
+msgid "Your website. Your place."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:18
+msgid "No domain of your own? Your project can live on a Webdock subdomain. Easy to share, easy to find again."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:19
+msgid "Ready for what comes next."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:19
+msgid "When you’re ready for your own domain, we’ll work out the connection. The setup grows with your project."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:21
+msgid ""
+"A home online.\n"
+"A human on your side."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:22
+msgid "Webdock is run by Dominik at Spitzli Development. From the first idea to deployment, you work directly with the person building your project."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:23
+msgid ""
+"Good questions.\n"
+"Straight answers."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:25
+msgid "Your projects. One workspace."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:26 apps/website/src/lib/content.ts:8
+msgid "Webdock Studio brings websites, content, appointments and design together. Access is by invitation."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:27
+msgid ""
+"There’s a place\n"
+"for your next idea."
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:28
+msgid "Let’s talk about it"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:37
+msgid "Landing page"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:41
+msgid "SEO & contact"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:41
+msgid "Page title"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:41 apps/website/src/cms/landing.ts:42
+#: apps/website/src/cms/landing.ts:43 apps/website/src/cms/landing.ts:44
+#: legacy/auth/src/components/plan-fields.tsx:29
+#: packages/cms-ui/src/schema.ts:20
+msgid "Description"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:42
+msgid "Hero"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:42
+msgid "Heading (one line per row)"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:42 apps/website/src/cms/landing.ts:46
+msgid "Button label"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:42
+msgid "Supporting note"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:43
+msgid "Concept"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:43 apps/website/src/cms/landing.ts:44
+#: apps/website/src/cms/landing.ts:45
+msgid "Heading"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:44
+msgid "About"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:46
+msgid "Outlook & closing"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:46
+msgid "Outlook heading"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:46
+msgid "Outlook description"
+msgstr ""
+
+#: apps/website/src/cms/landing.ts:46
+msgid "Closing heading"
+msgstr ""
+
+#: apps/website/src/components/dock.tsx:4
+msgid "Illustration: a preview, a website and a custom domain connected to Webdock."
+msgstr ""
+
+#: apps/website/src/components/dock.tsx:5
+msgid "A place for your next project."
+msgstr ""
+
+#: apps/website/src/components/dock.tsx:7
+msgid "Room for ideas"
+msgstr ""
+
+#: apps/website/src/components/dock.tsx:7
+#: legacy/auth/src/app/tenants/[customerID]/usage/form.tsx:51
+#: legacy/auth/src/app/tenants/[customerID]/usage/page.tsx:31
+#: legacy/auth/src/app/tenants/[customerID]/usage/page.tsx:32
+#: legacy/auth/src/lib/i18n-labels.ts:6
+msgid "Preview"
+msgstr ""
+
+#: apps/website/src/components/dock.tsx:8
+msgid "Ready for the world"
+msgstr ""
+
+#: apps/website/src/components/dock.tsx:8
+#: legacy/auth/src/app/people/page.tsx:63
+#: legacy/console/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:124
+msgid "Website"
+msgstr ""
+
+#: apps/website/src/components/dock.tsx:11
+msgid "Example addresses. Your project gets a place of its own."
+msgstr ""
+
+#: apps/website/src/components/sso-login.tsx:7
+msgid "Sign in with Webdock"
+msgstr ""
+
+#: apps/website/src/components/theme-picker.tsx:14
+msgid "Appearance"
+msgstr ""
+
+#: apps/website/src/components/theme-picker.tsx:20
+#: packages/i18n/src/picker.tsx:22
+msgid "System"
+msgstr ""
+
+#: apps/website/src/components/theme-picker.tsx:21
+msgid "Light"
+msgstr ""
+
+#: apps/website/src/components/theme-picker.tsx:22
+msgid "Dark"
+msgstr ""
+
+#: apps/website/src/lib/cms.ts:8
+msgid "Website content"
+msgstr ""
+
+#: apps/website/src/lib/cms.ts:8
+msgid "Edit your homepage, contact details and search appearance."
+msgstr ""
+
+#: apps/website/src/lib/content.ts:3
+msgid "What is Webdock?"
+msgstr ""
+
+#: apps/website/src/lib/content.ts:3
+msgid "Webdock is the project home of Spitzli Development. It gives project previews and client websites their own address under webdock.dev. Development and personal support are handled by Spitzli."
+msgstr ""
+
+#: apps/website/src/lib/content.ts:4
+msgid "Do I need my own domain?"
+msgstr ""
+
+#: apps/website/src/lib/content.ts:4
+msgid "No. Your project can live on a subdomain such as your-project.webdock.dev. If you would like to use your own domain, we will work out the right setup for your project."
+msgstr ""
+
+#: apps/website/src/lib/content.ts:5
+msgid "How do I get a Webdock subdomain?"
+msgstr ""
+
+#: apps/website/src/lib/content.ts:5
+msgid "Contact Dominik at Spitzli Development with your project idea. We will agree on the name, technical setup and deployment together. Automated registration is not available at this stage."
+msgstr ""
+
+#: apps/website/src/lib/content.ts:6
+msgid "Are project previews public?"
+msgstr ""
+
+#: apps/website/src/lib/content.ts:6
+msgid "That depends on how each project is configured. A subdomain alone does not restrict access. If a preview needs to stay private, access protection is arranged separately."
+msgstr ""
+
+#: apps/website/src/lib/content.ts:7
+msgid "Does every project run on Vercel?"
+msgstr ""
+
+#: apps/website/src/lib/content.ts:7
+msgid "Most projects currently run on Vercel, but Webdock is not tied to a single hosting provider. The technical environment is chosen to suit each project."
+msgstr ""
+
+#: apps/website/src/lib/content.ts:8
+msgid "How do I access Webdock Studio?"
+msgstr ""
 
 #: legacy/auth/src/app/account/page.tsx:5
 #: legacy/auth/src/components/auth-forms.tsx:264
@@ -94,11 +995,12 @@ msgstr ""
 
 #: legacy/auth/src/app/admin/form.tsx:43 legacy/auth/src/app/admin/form.tsx:57
 #: legacy/auth/src/app/admin/plans/form.tsx:12
-#: legacy/auth/src/app/people/form.tsx:32 legacy/auth/src/app/tenants/form.tsx:15
+#: legacy/auth/src/app/people/form.tsx:32
+#: legacy/auth/src/app/tenants/form.tsx:15
 #: legacy/console/src/app/(console)/(portal)/tenants/[customerID]/mail/mailboxes/forms.tsx:11
 #: modules/databases/src/ui/forms.tsx:29 modules/hosting/src/ui/form.tsx:96
 #: modules/hosting/src/ui/setup-wizard.tsx:465
-#: packages/cms-ui/src/client.tsx:942
+#: packages/cms-ui/src/client.tsx:1115
 msgid "Saving…"
 msgstr ""
 
@@ -194,8 +1096,8 @@ msgid "Platform identity and Mail configuration for all tenants."
 msgstr ""
 
 #: legacy/auth/src/app/admin/page.tsx:27 legacy/auth/src/app/people/page.tsx:34
-#: legacy/auth/src/app/sites/page.tsx:50 legacy/auth/src/app/tenants/page.tsx:18
-#: packages/cms-ui/src/client.tsx:770
+#: legacy/auth/src/app/sites/page.tsx:50
+#: legacy/auth/src/app/tenants/page.tsx:18 packages/cms-ui/src/client.tsx:914
 msgid "My account"
 msgstr ""
 
@@ -378,7 +1280,8 @@ msgstr ""
 msgid "This authorization request is invalid or has expired. Return to the application and start signing in again."
 msgstr ""
 
-#: legacy/auth/src/app/consent/page.tsx:33 legacy/auth/src/lib/i18n-messages.ts:286
+#: legacy/auth/src/app/consent/page.tsx:33
+#: legacy/auth/src/lib/i18n-messages.ts:286
 #: legacy/console/src/app/(console)/(portal)/hosting/projects/[projectID]/services/page.tsx:69
 #: legacy/console/src/app/(console)/(workspace)/operations/page.tsx:25
 #: modules/hosting/src/ui/project-overview.tsx:103
@@ -442,14 +1345,7 @@ msgstr ""
 msgid "Webdock Account"
 msgstr ""
 
-#: legacy/auth/src/app/layout.tsx:31 legacy/console/src/app/(console)/layout.tsx:41
-#: apps/website/src/app/(frontend)/(legal)/layout.tsx:9
-#: apps/website/src/app/(frontend)/page.tsx:28
-#: packages/cms-ui/src/client.tsx:725
-msgid "Skip to content"
-msgstr ""
-
-#: legacy/auth/src/app/layout.tsx:36 packages/cms-ui/src/client.tsx:741
+#: legacy/auth/src/app/layout.tsx:36 packages/cms-ui/src/client.tsx:882
 msgid "Account"
 msgstr ""
 
@@ -461,46 +1357,8 @@ msgstr ""
 msgid "Connected apps"
 msgstr ""
 
-#: legacy/auth/src/app/layout.tsx:39 apps/website/src/app/(frontend)/page.tsx:50
-msgid "Open Studio"
-msgstr ""
-
 #: legacy/auth/src/app/layout.tsx:44
 msgid "Your {name} sign-in and account security."
-msgstr ""
-
-#: legacy/auth/src/app/layout.tsx:45
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:29
-msgid "Support"
-msgstr ""
-
-#: legacy/auth/src/app/layout.tsx:46
-#: legacy/console/src/components/console-auth-shell.tsx:16
-#: apps/website/src/app/(frontend)/(legal)/layout.tsx:15
-#: apps/website/src/app/(frontend)/page.tsx:53
-msgid "Privacy"
-msgstr ""
-
-#: legacy/auth/src/app/not-found.tsx:3 legacy/auth/src/app/not-found.tsx:4
-#: apps/cms/src/app/not-found.tsx:3 apps/cms/src/app/not-found.tsx:4
-#: legacy/console/src/app/global-not-found.tsx:3
-#: legacy/console/src/app/global-not-found.tsx:4
-#: apps/website/src/app/global-not-found.tsx:3
-#: apps/website/src/app/global-not-found.tsx:4
-msgid "Page not found"
-msgstr ""
-
-#: legacy/auth/src/app/not-found.tsx:4 apps/cms/src/app/not-found.tsx:4
-#: legacy/console/src/app/global-not-found.tsx:4
-#: apps/website/src/app/global-not-found.tsx:4
-msgid "This page is not available. Check the address or return to the homepage."
-msgstr ""
-
-#: legacy/auth/src/app/not-found.tsx:4 apps/cms/src/app/not-found.tsx:4
-#: legacy/console/src/app/(console)/waitlist/confirmed/page.tsx:7
-#: legacy/console/src/app/global-not-found.tsx:4
-#: apps/website/src/app/global-not-found.tsx:4
-msgid "Back to homepage"
 msgstr ""
 
 #: legacy/auth/src/app/offers/[token]/form.tsx:9
@@ -611,11 +1469,12 @@ msgstr ""
 msgid "Administrator — manage, delete and restore content"
 msgstr ""
 
-#: legacy/auth/src/app/people/page.tsx:11 legacy/auth/src/app/people/page.tsx:29
+#: legacy/auth/src/app/people/page.tsx:11
+#: legacy/auth/src/app/people/page.tsx:29
 #: legacy/auth/src/components/auth-forms.tsx:319
 #: legacy/console/src/components/navigation.tsx:50
 #: legacy/console/src/lib/console-search-server.ts:47
-#: packages/cms-ui/src/client.tsx:773
+#: packages/cms-ui/src/client.tsx:917
 msgid "People & access"
 msgstr ""
 
@@ -639,8 +1498,9 @@ msgstr ""
 msgid "Save access and send invitation"
 msgstr ""
 
-#: legacy/auth/src/app/people/page.tsx:51 legacy/auth/src/lib/i18n-messages.ts:88
-#: legacy/auth/src/lib/tenants.ts:14 legacy/console/src/lib/tenants.ts:14
+#: legacy/auth/src/app/people/page.tsx:51
+#: legacy/auth/src/lib/i18n-messages.ts:88 legacy/auth/src/lib/tenants.ts:14
+#: legacy/console/src/lib/tenants.ts:14
 msgid "Customer name"
 msgstr ""
 
@@ -652,22 +1512,18 @@ msgstr ""
 msgid "Email address"
 msgstr ""
 
-#: legacy/auth/src/app/people/page.tsx:63
-#: legacy/console/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:124
-#: apps/website/src/components/dock.tsx:8
-msgid "Website"
-msgstr ""
-
 #: legacy/auth/src/app/people/page.tsx:65
 msgid "Select a website"
 msgstr ""
 
-#: legacy/auth/src/app/people/page.tsx:73 legacy/auth/src/app/people/page.tsx:105
+#: legacy/auth/src/app/people/page.tsx:73
+#: legacy/auth/src/app/people/page.tsx:105
 #: legacy/console/src/app/(console)/(workspace)/operations/page.tsx:26
 #: legacy/console/src/app/(console)/(workspace)/operations/page.tsx:35
 #: legacy/console/src/app/(console)/(workspace)/projects/[id]/page.tsx:141
 #: legacy/console/src/app/(console)/(workspace)/projects/new/page.tsx:44
-#: legacy/console/src/lib/ui-labels.ts:10 legacy/console/src/lib/ui-labels.ts:15
+#: legacy/console/src/lib/ui-labels.ts:10
+#: legacy/console/src/lib/ui-labels.ts:15
 #: modules/hosting/src/ui/customer.tsx:250
 msgid "Customer"
 msgstr ""
@@ -713,7 +1569,7 @@ msgstr ""
 #: legacy/console/src/app/(console)/(portal)/hosting/projects/[projectID]/page.tsx:62
 #: legacy/console/src/app/(console)/(workspace)/infrastructure/page.tsx:52
 #: modules/hosting/src/ui/customer.tsx:105
-#: modules/hosting/src/ui/own-mail.tsx:147 packages/cms-ui/src/client.tsx:1040
+#: modules/hosting/src/ui/own-mail.tsx:147 packages/cms-ui/src/client.tsx:1235
 msgid "Search"
 msgstr ""
 
@@ -729,8 +1585,8 @@ msgstr ""
 msgid "Up to 100 matching accounts. Platform operators are protected from suspension here."
 msgstr ""
 
-#: legacy/auth/src/app/people/page.tsx:147 legacy/auth/src/app/tenants/page.tsx:20
-#: legacy/auth/src/lib/i18n-labels.ts:3
+#: legacy/auth/src/app/people/page.tsx:147
+#: legacy/auth/src/app/tenants/page.tsx:20 legacy/auth/src/lib/i18n-labels.ts:3
 msgid "Platform operator"
 msgstr ""
 
@@ -749,7 +1605,8 @@ msgstr ""
 msgid "Restore account"
 msgstr ""
 
-#: legacy/auth/src/app/people/page.tsx:152 legacy/console/src/lib/ui-labels.ts:5
+#: legacy/auth/src/app/people/page.tsx:152
+#: legacy/console/src/lib/ui-labels.ts:5
 msgid "Suspend account"
 msgstr ""
 
@@ -792,7 +1649,8 @@ msgstr ""
 msgid "Restore access"
 msgstr ""
 
-#: legacy/auth/src/app/people/page.tsx:193 legacy/console/src/lib/ui-labels.ts:5
+#: legacy/auth/src/app/people/page.tsx:193
+#: legacy/console/src/lib/ui-labels.ts:5
 msgid "Revoke website access"
 msgstr ""
 
@@ -851,11 +1709,13 @@ msgstr ""
 msgid "Open a website to edit its content with your Webdock account."
 msgstr ""
 
-#: legacy/auth/src/app/sites/page.tsx:31 legacy/auth/src/app/tenants/page.tsx:19
+#: legacy/auth/src/app/sites/page.tsx:31
+#: legacy/auth/src/app/tenants/page.tsx:19
 msgid "Invitation to "
 msgstr ""
 
-#: legacy/auth/src/app/sites/page.tsx:36 legacy/auth/src/app/tenants/page.tsx:19
+#: legacy/auth/src/app/sites/page.tsx:36
+#: legacy/auth/src/app/tenants/page.tsx:19
 msgid "Review invitation"
 msgstr ""
 
@@ -1480,7 +2340,8 @@ msgstr ""
 #: legacy/auth/src/lib/i18n-labels.ts:5
 #: legacy/console/src/app/(console)/(portal)/hosting/vercel/[customerID]/page.tsx:160
 #: legacy/console/src/app/(console)/(workspace)/infrastructure/[clusterID]/page.tsx:50
-#: legacy/console/src/lib/ui-labels.ts:7 modules/hosting/src/ui/own-mail.tsx:161
+#: legacy/console/src/lib/ui-labels.ts:7
+#: modules/hosting/src/ui/own-mail.tsx:161
 msgid "Verified"
 msgstr ""
 
@@ -1813,13 +2674,6 @@ msgstr ""
 msgid "Production"
 msgstr ""
 
-#: legacy/auth/src/app/tenants/[customerID]/usage/form.tsx:51
-#: legacy/auth/src/app/tenants/[customerID]/usage/page.tsx:31
-#: legacy/auth/src/app/tenants/[customerID]/usage/page.tsx:32
-#: legacy/auth/src/lib/i18n-labels.ts:6 apps/website/src/components/dock.tsx:7
-msgid "Preview"
-msgstr ""
-
 #: legacy/auth/src/app/tenants/[customerID]/usage/form.tsx:52
 msgid "Blob store ID"
 msgstr ""
@@ -1987,7 +2841,8 @@ msgstr ""
 msgid "Administrator — edit profile and invite people"
 msgstr ""
 
-#: legacy/auth/src/app/tenants/page.tsx:9 legacy/auth/src/app/tenants/page.tsx:18
+#: legacy/auth/src/app/tenants/page.tsx:9
+#: legacy/auth/src/app/tenants/page.tsx:18
 msgid "Your tenants"
 msgstr ""
 
@@ -2010,7 +2865,7 @@ msgstr ""
 
 #: legacy/auth/src/app/tenants/page.tsx:22
 #: legacy/auth/src/components/auth-forms.tsx:319
-#: packages/cms-ui/src/client.tsx:779
+#: packages/cms-ui/src/client.tsx:924
 msgid "My websites"
 msgstr ""
 
@@ -2027,7 +2882,7 @@ msgid "One account for your workspace and websites."
 msgstr ""
 
 #: legacy/auth/src/components/auth-forms.tsx:109
-#: modules/databases/src/ui/database-details.tsx:58
+#: modules/databases/src/ui/database-details.tsx:56
 msgid "Password"
 msgstr ""
 
@@ -2228,6 +3083,7 @@ msgstr ""
 #: legacy/auth/src/components/auth-forms.tsx:516
 #: modules/hosting/src/ui/setup-wizard.tsx:206
 #: modules/hosting/src/ui/setup-wizard.tsx:474
+#: packages/cms-ui/src/client.tsx:86
 msgid "Continue"
 msgstr ""
 
@@ -2465,7 +3321,7 @@ msgstr ""
 msgid "Confirm removal"
 msgstr ""
 
-#: legacy/auth/src/components/passkeys.tsx:93
+#: legacy/auth/src/components/passkeys.tsx:93 packages/cms-ui/src/client.tsx:79
 msgid "Cancel"
 msgstr ""
 
@@ -2479,7 +3335,7 @@ msgstr ""
 
 #: legacy/auth/src/components/passkeys.tsx:101
 #: modules/hosting/src/ui/environment.tsx:183
-#: packages/cms-ui/src/client.tsx:332
+#: packages/cms-ui/src/client.tsx:431
 msgid "Remove"
 msgstr ""
 
@@ -2523,13 +3379,6 @@ msgstr ""
 msgid "Unmetered"
 msgstr ""
 
-#: legacy/auth/src/components/plan-fields.tsx:29
-#: apps/website/src/cms/landing.ts:41 apps/website/src/cms/landing.ts:42
-#: apps/website/src/cms/landing.ts:43 apps/website/src/cms/landing.ts:44
-#: packages/cms-ui/src/schema.ts:20
-msgid "Description"
-msgstr ""
-
 #: legacy/auth/src/lib/i18n-feedback.ts:6
 msgid "Connection successful. {count} subaccount available."
 msgid_plural "Connection successful. {count} subaccounts available."
@@ -2554,7 +3403,7 @@ msgid "Reader"
 msgstr ""
 
 #: legacy/auth/src/lib/i18n-labels.ts:3 legacy/console/src/lib/ui-labels.ts:8
-#: modules/cms/src/ui.ts:151 packages/cms-ui/src/client.tsx:767
+#: modules/cms/src/ui.ts:151 packages/cms-ui/src/client.tsx:911
 msgid "Editor"
 msgstr ""
 
@@ -2632,7 +3481,8 @@ msgstr ""
 msgid "Denied"
 msgstr ""
 
-#: legacy/auth/src/lib/i18n-labels.ts:7 legacy/auth/src/lib/i18n-messages.ts:131
+#: legacy/auth/src/lib/i18n-labels.ts:7
+#: legacy/auth/src/lib/i18n-messages.ts:131
 msgid "Monthly"
 msgstr ""
 
@@ -2644,7 +3494,8 @@ msgstr ""
 msgid "Weekly"
 msgstr ""
 
-#: legacy/auth/src/lib/i18n-labels.ts:7 legacy/auth/src/lib/i18n-messages.ts:277
+#: legacy/auth/src/lib/i18n-labels.ts:7
+#: legacy/auth/src/lib/i18n-messages.ts:277
 msgid "Yearly"
 msgstr ""
 
@@ -3243,14 +4094,6 @@ msgstr ""
 
 #: legacy/auth/src/lib/i18n-messages.ts:152
 msgid "Pending offer not found."
-msgstr ""
-
-#: legacy/auth/src/lib/i18n-messages.ts:153 legacy/auth/src/lib/tenants.ts:16
-#: legacy/console/src/lib/customer-fields.ts:15
-#: legacy/console/src/lib/tenants.ts:16 legacy/console/src/lib/ui-labels.ts:16
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:22
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:43
-msgid "Phone"
 msgstr ""
 
 #: legacy/auth/src/lib/i18n-messages.ts:154
@@ -3985,42 +4828,6 @@ msgstr ""
 msgid "Keep at least one active verified customer owner."
 msgstr ""
 
-#: apps/cms/src/app/layout.tsx:5
-msgid "Website administration — Webdock"
-msgstr ""
-
-#: apps/cms/src/app/page.tsx:6
-msgid "Your website has its own admin."
-msgstr ""
-
-#: apps/cms/src/app/page.tsx:7
-msgid "The shared CMS has been retired. Sign in to your website to manage its content."
-msgstr ""
-
-#: apps/cms/src/app/page.tsx:9
-msgid "Webdock admin ↗"
-msgstr ""
-
-#: apps/cms/src/app/page.tsx:10
-msgid "Spitzli Development admin ↗"
-msgstr ""
-
-#: apps/cms/src/app/page.tsx:11
-msgid "Stall Eichenbruch admin ↗"
-msgstr ""
-
-#: apps/cms/src/app/page.tsx:13
-msgid "Your existing email address and password still work."
-msgstr ""
-
-#: apps/cms/src/components/SiteSelect.tsx:8
-msgid "Site"
-msgstr ""
-
-#: apps/cms/src/components/SiteSelect.tsx:14
-msgid "All accessible sites"
-msgstr ""
-
 #: legacy/console/src/app/(console)/(portal)/hosting/apps/[appID]/application.tsx:24
 #: legacy/console/src/lib/workspace-navigation.ts:35
 #: modules/hosting/src/ui/project-overview.tsx:131
@@ -4377,12 +5184,12 @@ msgid "Scale"
 msgstr ""
 
 #: legacy/console/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:347
-#: modules/hosting/src/ui/own-mail.tsx:170 packages/cms-ui/src/client.tsx:1123
+#: modules/hosting/src/ui/own-mail.tsx:170 packages/cms-ui/src/client.tsx:1318
 msgid "Previous"
 msgstr ""
 
 #: legacy/console/src/app/(console)/(portal)/hosting/clusters/[clusterID]/page.tsx:357
-#: modules/hosting/src/ui/own-mail.tsx:180 packages/cms-ui/src/client.tsx:1131
+#: modules/hosting/src/ui/own-mail.tsx:180 packages/cms-ui/src/client.tsx:1326
 msgid "Next"
 msgstr ""
 
@@ -5374,8 +6181,8 @@ msgstr ""
 #: legacy/console/src/app/(console)/(portal)/tenants/[customerID]/managed-databases/page.tsx:43
 #: legacy/console/src/app/(console)/(workspace)/operations/page.tsx:27
 #: legacy/console/src/app/(console)/(workspace)/operations/page.tsx:36
-#: legacy/console/src/lib/ui-labels.ts:10 legacy/console/src/lib/ui-labels.ts:15
-#: modules/databases/src/ui/forms.tsx:43
+#: legacy/console/src/lib/ui-labels.ts:10
+#: legacy/console/src/lib/ui-labels.ts:15 modules/databases/src/ui/forms.tsx:43
 #: modules/hosting/src/ui/customer.tsx:117
 #: modules/hosting/src/ui/customer.tsx:198
 #: modules/hosting/src/ui/customer.tsx:257
@@ -5734,26 +6541,8 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
-#: legacy/console/src/components/console-auth-shell.tsx:10
-#: apps/website/src/app/(frontend)/(legal)/layout.tsx:11
-#: apps/website/src/app/(frontend)/page.tsx:30
-#: apps/website/src/app/(frontend)/page.tsx:53
-msgid "Webdock home"
-msgstr ""
-
 #: legacy/console/src/components/console-auth-shell.tsx:15
 msgid "Account navigation"
-msgstr ""
-
-#: legacy/console/src/components/console-auth-shell.tsx:16
-#: apps/website/src/app/(frontend)/page.tsx:31
-msgid "Login"
-msgstr ""
-
-#: legacy/console/src/components/console-auth-shell.tsx:16
-#: apps/website/src/app/(frontend)/page.tsx:31
-#: apps/website/src/app/(frontend)/page.tsx:40
-msgid "Waitlist"
 msgstr ""
 
 #: legacy/console/src/components/console-controls.tsx:66
@@ -5911,7 +6700,8 @@ msgstr ""
 msgid "Account & security ↗"
 msgstr ""
 
-#: legacy/console/src/components/editor.tsx:22 packages/cms-ui/src/client.tsx:945
+#: legacy/console/src/components/editor.tsx:22
+#: packages/cms-ui/src/client.tsx:1118
 msgid "Save changes"
 msgstr ""
 
@@ -5955,7 +6745,7 @@ msgstr ""
 #: legacy/console/src/distribution/full/context.ts:16
 #: legacy/console/src/distribution/full/context.ts:35
 #: legacy/console/src/lib/console-search-server.ts:40
-#: packages/cms-ui/src/client.tsx:698
+#: packages/cms-ui/src/client.tsx:821
 msgid "Overview"
 msgstr ""
 
@@ -6033,7 +6823,7 @@ msgid "Browse data"
 msgstr ""
 
 #: legacy/console/src/distribution/full/context.ts:41
-#: modules/databases/src/ui/database-details.tsx:18
+#: modules/databases/src/ui/database-details.tsx:16
 msgid "Connection credentials"
 msgstr ""
 
@@ -7139,13 +7929,13 @@ msgstr ""
 
 #: legacy/console/src/lib/ui-labels.ts:7
 #: modules/hosting/src/ui/project-overview.tsx:67
-#: packages/cms-ui/src/client.tsx:857 packages/cms-ui/src/client.tsx:1000
-#: packages/cms-ui/src/client.tsx:1091
+#: packages/cms-ui/src/client.tsx:1020 packages/cms-ui/src/client.tsx:1191
+#: packages/cms-ui/src/client.tsx:1286
 msgid "Draft"
 msgstr ""
 
-#: legacy/console/src/lib/ui-labels.ts:7 packages/cms-ui/src/client.tsx:856
-#: packages/cms-ui/src/client.tsx:1000 packages/cms-ui/src/client.tsx:1090
+#: legacy/console/src/lib/ui-labels.ts:7 packages/cms-ui/src/client.tsx:1019
+#: packages/cms-ui/src/client.tsx:1191 packages/cms-ui/src/client.tsx:1285
 msgid "Published"
 msgstr ""
 
@@ -7201,7 +7991,8 @@ msgstr ""
 msgid "Hosting provider"
 msgstr ""
 
-#: legacy/console/src/lib/ui-labels.ts:15 modules/hosting/src/ui/app-spec.tsx:26
+#: legacy/console/src/lib/ui-labels.ts:15
+#: modules/hosting/src/ui/app-spec.tsx:26
 #: modules/hosting/src/ui/setup-source-fields.tsx:76
 msgid "Template"
 msgstr ""
@@ -7260,769 +8051,6 @@ msgstr ""
 
 #: legacy/console/src/lib/workspace-navigation.ts:35
 msgid "Unknown"
-msgstr ""
-
-#: apps/website/src/app/(cms)/layout.tsx:8
-msgid "CMS — Webdock"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:7
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:10
-msgid "Legal notice — Webdock"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:8
-msgid "Webdock provider and contact details for Spitzli Development."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:17
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:17
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:17
-msgid "Webdock · Updated {date}"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:18
-#: apps/website/src/app/(frontend)/(legal)/layout.tsx:15
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:22
-#: apps/website/src/app/(frontend)/page.tsx:53
-msgid "Legal notice"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:19
-msgid "Provider of Webdock pursuant to Section 5 DDG:"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:20
-msgid "Owner: Dominik Spitzli · Sole trader"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:20
-msgid "Germany"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:21
-msgid "Contact"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:24
-msgid "VAT identification number"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:25
-msgid "VAT identification number pursuant to Section 27a of the German VAT Act: DE463646700."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:26
-msgid "Webdock and Spitzli Development"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:27
-msgid "Webdock is a service of Spitzli Development. These provider details apply to Webdock’s own website and services. Independently operated customer websites are the responsibility of their respective providers."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/imprint/page.tsx:28
-msgid "Spitzli Development legal notice"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:5
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:8
-msgid "Vercel integration — Webdock Studio"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:6
-msgid "Connect selected Vercel projects to Webdock Studio with read-only access."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:14
-msgid "Webdock Studio · Integration guide"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:15
-msgid "Vercel, in Studio."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:16
-msgid "View hosting information alongside your Webdock project records: current production release, recent deployments, Git branch and commit, runtime settings, and domain verification."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:17
-msgid "Connect your projects"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:19
-msgid "Sign in to"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:19
-msgid "Studio → Integrations"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:19
-msgid "with an authorised platform operator account."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:20
-msgid "Choose Connect Vercel. Start here so Studio can securely associate the installation with your session."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:21
-msgid "In Vercel, select your team and the projects to share. Review the four read permissions: projects, deployments, domains and integration configuration."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:22
-msgid "Finish the installation and return to Studio. Match an active Studio project to its Vercel project in Integrations."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:23
-msgid "Open the project in Studio to view hosting details. Refresh to request the latest available status."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:25
-msgid "Access and troubleshooting"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:26
-msgid "This private integration is available to the configured team and authorised operators. It reads hosting information; it cannot deploy, change domains or read environment-variable values. If access is denied, check that the project was selected during installation. If a connection has been revoked or expired, reconnect from Studio. Vercel outages can temporarily prevent status updates."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:27
-msgid "Disconnect"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:28
-msgid "Disconnect in Studio to delete its stored access token. Also uninstall Webdock Studio in your Vercel team’s integration settings to revoke permission at Vercel. Project mappings and audit records remain; contact us if you need them removed."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:30
-msgid "Email support at"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:30
-msgid "with the affected project and the visible error. Never include passwords, access tokens or environment-variable values."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:31
-msgid "Read the"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:31
-msgid "terms of use"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:31
-msgid "and the"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:31
-msgid "privacy notice"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/integrations/vercel/page.tsx:31
-msgid "before connecting."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/layout.tsx:15
-#: apps/website/src/app/(frontend)/page.tsx:53
-msgid "Legal"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/layout.tsx:15
-#: apps/website/src/app/(frontend)/page.tsx:53
-msgid "Terms"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:7
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:10
-msgid "Privacy — Webdock"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:8
-msgid "How Webdock processes personal data, uses service providers and protects your rights."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:18
-msgid "Privacy notice"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:19
-msgid "This notice explains how we process personal data on Webdock’s website and in its account, Studio, hosting, database and Mail services. Customer-operated websites and applications have their own controllers and privacy notices."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:20
-msgid "1. Controller and contact"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:21
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:21
-msgid "Dominik Spitzli, trading as Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:22
-msgid "For privacy questions and requests concerning your data, contact:"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:23
-msgid "We are the controller for our website, customer relationships, accounts and service administration. When we host or handle personal data for a customer, we act on their instructions under a data-processing agreement (Article 28 GDPR). This notice does not replace that agreement."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:24
-msgid "2. Data, purposes and legal bases"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:25
-msgid "When you visit Webdock, we and our hosting providers process technical request data, including IP address, requested URL, time, browser and operating-system information, to deliver the site, diagnose errors and prevent misuse. This is based on our legitimate interest in secure, reliable operation (Article 6(1)(f) GDPR). Fonts are served locally."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:26
-msgid "For enquiries, contracts and billing, we process the contact, company, address, correspondence and contract details you provide. The bases are steps before or performance of a contract (Article 6(1)(b)), legal obligations such as accounting requirements (Article 6(1)(c)), and our legitimate interest in communicating with business contacts (Article 6(1)(f))."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:27
-msgid "For accounts and team access, we process names, email addresses, invitations, customer memberships, roles, password hashes, passkey public keys, configured second-factor data and sessions. Security-relevant actions are logged with the acting account, action and time. Data comes from you or the operator or administrator inviting you. The bases are contract performance for contracting users and our legitimate interests in managing authorised access and preventing misuse for team members."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:28
-msgid "The data required for account access and contracted services must be provided for us to supply them; optional profile information is voluntary. Where we ask for consent, processing is based on Article 6(1)(a) GDPR and you may withdraw it at any time with future effect. We do not sell personal data or make solely automated decisions with legal or similarly significant effects."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:29
-msgid "3. Projects, hosting and connected services"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:30
-msgid "Depending on the services enabled, we process project content, files, database contents, domains, configuration, access credentials, deployment and usage data, and operational logs. Authorised team members see data according to their roles. Operators access it where needed to provide support, maintain the service or investigate security incidents. Customer content is processed on the customer’s instructions; service administration relies on contract performance and our legitimate security interests."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:31
-msgid "Optional Vercel and GitHub connections provide authorisation data and information about selected projects or repositories, deployments, domains, branches and commits. Enabled build and deployment workflows also process the source code, build artefacts and configuration needed for those workflows. Access is limited by the connected account’s permissions and the selected function. Disconnecting in Webdock and revoking access at the provider are separate actions."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:32
-msgid "4. Mail"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:33
-msgid "Account invitations and security emails are sent through turboSMTP. When Mail is enabled for a customer, we process account and domain details, sender and recipient addresses, message contents and attachments, delivery events, usage and suppression records. Enabled incoming mail uses a separate Stalwart instance for that customer; outgoing-only service does not require one. Mailbox contents and forwarding are processed only for the enabled service."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:34
-msgid "For managed sending, the relay provider receives the account details needed for provisioning and the data needed to deliver messages. Customer-supplied relay accounts use the selected provider. Domain verification sends the domain name to Cloudflare’s DNS resolver. Configured customer webhooks receive delivery event data. Optional email open and click tracking is controlled by the customer administrator, who is responsible for the required recipient information and legal basis. It is separate from website analytics."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:35
-msgid "5. Cookies, preferences and website analytics"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:36
-msgid "Login and connection cookies maintain sessions and protect authentication flows. Authentication sessions normally expire after eight hours; the Vercel connection cookie lasts up to ten minutes. A language preference explicitly selected by you is stored in a cookie for up to one year; a selected colour theme remains in local storage until removed. These functions use Article 6(1)(b) or (f) GDPR and, where strictly necessary to provide a service you request, Section 25(2)(2) TDDDG. You can remove them through your browser settings; this may sign you out or reset preferences."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:37
-msgid "We use self-hosted Umami at moon.webdock.dev to measure page views, referral sources and aggregated device and country statistics. The tracker does not use cookies or identify signed-in accounts. Query strings and URL fragments are excluded, and the browser’s Do Not Track preference is respected. Session replay and heatmaps are not enabled for this website."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:38
-msgid "How Plausible processes visitor data"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:39
-msgid "6. Providers and international transfers"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:40
-msgid "We use Vercel for web application hosting, Contabo for managed server, database and incoming-mail infrastructure, turboSMTP for email delivery, and Cloudflare for DNS services. GitHub and other customer-selected providers are involved when their integrations are enabled. Neon was the previous platform database provider; retained migration copies remain subject to the retention rules below until deleted. Providers receive only the data needed for their role. We also disclose data where legally required, for example to tax advisers or competent authorities."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:41
-msgid "Some providers process data outside the EU/EEA, including in the United States. An EU hosting region does not exclude international support or network processing. Where required, transfers rely on an applicable adequacy decision, such as the EU–US Data Privacy Framework for certified recipients, or EU standard contractual clauses and any necessary additional safeguards. You can request details and copies of the safeguards relevant to your service using the contact above."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:42
-msgid "7. Retention and deletion"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:43
-msgid "We keep contact, account and contract data for as long as needed for the relationship, then delete it unless legal retention duties or unresolved claims require continued storage. Depending on the document, statutory retention periods are generally six, eight or ten years. Security and operational logs are retained for their diagnostic and security purpose; incident-related records may be retained until the matter is resolved. Backups and retained migration copies are removed as their recovery purpose and applicable retention duties end."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:44
-msgid "For the Mail API, cleanup is configured for message text and HTML after 30 days from a final outcome, metadata and events after 90 days, request logs and completed webhook attempts after 30 days, and processed or quarantined callbacks after seven days. Attachments are removed after a definitive sending outcome; content with an uncertain outcome after seven days. Active schedules and unresolved sending or duplicate-prevention records are retained while needed. Suppressions remain until removed. These periods do not govern mailbox storage, provider-side records or backups."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:45
-msgid "Suspending a service, archiving a customer or disconnecting an integration does not automatically delete stored data. Incoming-mail storage is retained on deactivation; deletion is a separate operation. Contact us to arrange deletion or export. Disconnecting Vercel removes its stored credential from the active database, but provider-side authorisations must also be revoked at Vercel."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:46
-msgid "8. Your rights"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:47
-msgid "Subject to the statutory conditions, you have rights of access, rectification, erasure, restriction and data portability. You may object to processing based on legitimate interests for reasons relating to your situation; you can object to direct marketing at any time. You may withdraw consent without affecting the lawfulness of earlier processing. We may verify your identity to protect your data."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/privacy/page.tsx:48
-msgid "You can complain to a supervisory authority, including the authority where you live or work, or to the State Commissioner for Data Protection of Lower Saxony:"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:7
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:10
-msgid "Terms and conditions — Webdock"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:8
-msgid "Terms for Webdock services, including consumer cancellation and withdrawal rights."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:18
-msgid "Terms and conditions"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:19
-msgid "These terms apply to Webdock services for consumers and businesses, including agreed website development, project management, hosting, databases and Mail. A consumer acts mainly outside their trade or profession. Individually agreed terms take precedence; mandatory consumer rights remain unaffected."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:20
-msgid "1. Provider and contract"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:22
-msgid "Full provider details"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:23
-msgid "The service description and accepted offer determine what is supplied, the price, payment dates, term and any service-level agreement. A contract is formed when you accept our binding offer or we confirm your order. Website descriptions alone are not binding offers. Creating an account or connecting an integration does not itself create a paid subscription. We provide the agreed terms and required consumer information in a durable form, for example by email."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:24
-msgid "2. Services and availability"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:25
-msgid "Only the functions and resources included in the accepted offer are owed. Preview or beta features are identified as such and do not expand the agreed service. We maintain and secure the services; maintenance, incidents and external providers can affect availability. A specific uptime, response time, backup schedule or recovery period applies only if agreed. This does not limit statutory rights concerning defects, security updates or non-performance."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:26
-msgid "Optional services must be enabled separately. Incoming Mail is provisioned only when explicitly activated; outgoing-only Mail does not include a mailbox. Successful handoff to a mail relay does not guarantee delivery to the recipient’s inbox. When you connect your own provider account, its contract and charges continue to apply. We remain responsible for the obligations we have agreed to perform."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:27
-msgid "3. Prices and payment"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:28
-msgid "The accepted offer states the price, currency, billing period and any usage charges. Prices offered to consumers include applicable VAT and other mandatory price components. Additional paid work or resources require your agreement. Invoices are due on the agreed date; statutory default rules apply. Changes to agreed prices require a contractual basis and cannot be imposed merely by changing this page."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:29
-msgid "4. Your responsibilities and content"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:30
-msgid "Provide accurate account and billing details, protect access credentials and grant only authorised people access. Connect only systems you are entitled to manage. Report suspected misuse promptly. Do not distribute unlawful content, malware or unsolicited advertising, infringe third-party rights, bypass access controls or deliberately disrupt services. For email, you are responsible for lawful recipient lists and any consent needed for sending or open and click tracking."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:31
-msgid "You retain your rights to your content. You grant us only the rights needed to host, process and deliver it for the agreed service. Rights to individually developed work are governed by the project agreement; third-party and open-source licences remain applicable. Keep independent copies of important data and arrange any required backups with us. Your own precautions do not release us from agreed backup obligations or statutory liability."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:32
-msgid "5. Privacy and data processing"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:33
-msgid "Our handling of personal data is described in the privacy notice. Where we process personal data on your behalf, a separate data-processing agreement is required before that processing begins. You remain responsible for the lawfulness of your content, instructions and information to affected individuals."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:33
-msgid "Read the privacy notice"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:34
-msgid "6. Term, cancellation and suspension"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:35
-msgid "The offer specifies the term and notice period. If no term is agreed for an ongoing service, it runs indefinitely and can be cancelled at any time with one month’s notice. For consumers, any tacit renewal after an initial term is indefinite and cancellable with no more than one month’s notice. Statutory rights to cancel earlier or for good cause remain unaffected. You can give notice by email to the contact above; any legally required online cancellation facility remains an additional option."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:36
-msgid "We may restrict access where proportionate and necessary because of unlawful use, a concrete security risk or a substantial contractual breach. Where feasible, we first explain the reason and allow a reasonable opportunity to remedy it; urgent protective measures may be immediate. We restore access when the reason ends. Payment-related suspension requires the statutory prerequisites."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:37
-msgid "Arrange an export of needed data before the service ends. We coordinate return or deletion under the service and data-processing agreements and applicable law. Deactivation or suspension is not deletion; retained data remains protected. Removing a Webdock connection does not automatically cancel or revoke your account with a third-party provider."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:38
-msgid "7. Defects and liability"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:39
-msgid "Statutory rights concerning defects and statutory liability apply. Please report faults with enough information for us to investigate; this does not restrict your rights. Nothing in these terms excludes liability for intent, gross negligence, injury to life, body or health, or other mandatory liability. No general exclusion of liability or blanket transfer of third-party claims to you is agreed."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:40
-msgid "8. Consumer right of withdrawal"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:41
-msgid "For service contracts concluded at a distance or away from business premises, consumers have the following right of withdrawal. Business customers do not have this statutory consumer right."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:42
-msgid "You may withdraw from the contract without giving a reason within 14 days from the day it is concluded. To withdraw, send a clear statement of your decision, for example by email or post, to Dominik Spitzli, Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany, dominik@spitzli.dev. You may use the model form below, but do not have to. Sending your statement before the deadline is sufficient."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:44
-msgid "If you withdraw, we refund all payments received from you for the contract without undue delay and no later than 14 days after receiving your withdrawal. We use the original payment method unless expressly agreed otherwise; we charge no refund fees. If you expressly requested that services begin during the withdrawal period and were properly informed, you owe a proportionate amount for the services provided up to your withdrawal compared with the full agreed service."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:45
-msgid "For a paid service, the right expires early only after full performance and only if you expressly agreed to an early start and acknowledged beforehand that full performance would end your right of withdrawal. Starting an ongoing hosting service alone does not end that right."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:46
-msgid "Model withdrawal form"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:47
-msgid "Complete and send this form only if you wish to withdraw from the contract."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:48
-msgid "To: Dominik Spitzli, Spitzli Development, Emsoldstrasse 40, 26180 Rastede, Germany; dominik@spitzli.dev."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:49
-msgid ""
-"I/We (*) hereby withdraw from the contract concluded by me/us (*) for the provision of the following service: ____________________\n"
-"Ordered on: ____________________\n"
-"Name of consumer(s): ____________________\n"
-"Address of consumer(s): ____________________\n"
-"Signature of consumer(s), only if sent on paper: ____________________\n"
-"Date: ____________________\n"
-"(*) Delete as appropriate."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:50
-msgid "9. Applicable law and changes"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/(legal)/terms/page.tsx:51
-msgid "German law applies. For consumers, this choice does not remove mandatory protections of the country in which they habitually reside. Statutory jurisdiction rules apply. Changes to these terms do not automatically amend an existing contract; amendments require a valid agreement or legal basis. We inform you about relevant changes in advance."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/layout.tsx:12
-#: apps/website/src/cms/landing.ts:7
-msgid "Webdock — Project previews & client websites by Spitzli"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/layout.tsx:13
-#: apps/website/src/cms/landing.ts:8
-msgid "Your project. Well docked. A home for project previews and client websites by Spitzli Development — on a Webdock subdomain or your own domain."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/layout.tsx:16
-msgid "Webdock — Your project. Well docked."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/layout.tsx:16
-msgid "A place on the web. Project previews and client websites by Spitzli Development."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/page.tsx:20
-msgid "My project with Webdock"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/page.tsx:31
-msgid "Main navigation"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/page.tsx:31
-msgid "The idea"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/page.tsx:31
-#: apps/website/src/cms/landing.ts:45
-msgid "FAQ"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/page.tsx:31
-#: apps/website/src/app/(frontend)/page.tsx:40
-msgid "Access by invitation only."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/page.tsx:35
-msgid "A home for projects by Spitzli"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/page.tsx:38
-msgid "Explore Webdock"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/page.tsx:44
-msgid "Every idea needs a place."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/page.tsx:46
-msgid "Built by Spitzli"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/page.tsx:49
-msgid "Something else on your mind?"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/page.tsx:49
-msgid "Just ask."
-msgstr ""
-
-#: apps/website/src/app/(frontend)/page.tsx:50
-msgid "Available"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/page.tsx:51
-msgid "Got something in mind?"
-msgstr ""
-
-#: apps/website/src/app/(frontend)/page.tsx:53
-msgid "A project by"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:10
-msgid ""
-"Your project.\n"
-"Well docked."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:11
-msgid "From the first preview to the finished website. Webdock gives your project a place to call home."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:12
-msgid "Let’s get you docked"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:13
-msgid "Your subdomain. Or your own domain."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:14
-msgid ""
-"From “take a look”\n"
-"to “we’re live”."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:15
-msgid "Some projects need a link to get started. Others need a lasting home. Webdock is here for both."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:17
-msgid "Share it before you ship it."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:17
-msgid "A dedicated address for your work in progress. Review it together, share feedback and make the next version better."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:18
-msgid "Your website. Your place."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:18
-msgid "No domain of your own? Your project can live on a Webdock subdomain. Easy to share, easy to find again."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:19
-msgid "Ready for what comes next."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:19
-msgid "When you’re ready for your own domain, we’ll work out the connection. The setup grows with your project."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:21
-msgid ""
-"A home online.\n"
-"A human on your side."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:22
-msgid "Webdock is run by Dominik at Spitzli Development. From the first idea to deployment, you work directly with the person building your project."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:23
-msgid ""
-"Good questions.\n"
-"Straight answers."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:25
-msgid "Your projects. One workspace."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:26 apps/website/src/lib/content.ts:8
-msgid "Webdock Studio brings websites, content, appointments and design together. Access is by invitation."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:27
-msgid ""
-"There’s a place\n"
-"for your next idea."
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:28
-msgid "Let’s talk about it"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:37
-msgid "Landing page"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:41
-msgid "SEO & contact"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:41
-msgid "Page title"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:42
-msgid "Hero"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:42
-msgid "Heading (one line per row)"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:42 apps/website/src/cms/landing.ts:46
-msgid "Button label"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:42
-msgid "Supporting note"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:43
-msgid "Concept"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:43 apps/website/src/cms/landing.ts:44
-#: apps/website/src/cms/landing.ts:45
-msgid "Heading"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:44
-msgid "About"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:46
-msgid "Outlook & closing"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:46
-msgid "Outlook heading"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:46
-msgid "Outlook description"
-msgstr ""
-
-#: apps/website/src/cms/landing.ts:46
-msgid "Closing heading"
-msgstr ""
-
-#: apps/website/src/components/dock.tsx:4
-msgid "Illustration: a preview, a website and a custom domain connected to Webdock."
-msgstr ""
-
-#: apps/website/src/components/dock.tsx:5
-msgid "A place for your next project."
-msgstr ""
-
-#: apps/website/src/components/dock.tsx:7
-msgid "Room for ideas"
-msgstr ""
-
-#: apps/website/src/components/dock.tsx:8
-msgid "Ready for the world"
-msgstr ""
-
-#: apps/website/src/components/dock.tsx:11
-msgid "Example addresses. Your project gets a place of its own."
-msgstr ""
-
-#: apps/website/src/components/sso-login.tsx:7
-msgid "Sign in with Webdock"
-msgstr ""
-
-#: apps/website/src/components/theme-picker.tsx:14
-msgid "Appearance"
-msgstr ""
-
-#: apps/website/src/components/theme-picker.tsx:20
-#: packages/i18n/src/picker.tsx:22
-msgid "System"
-msgstr ""
-
-#: apps/website/src/components/theme-picker.tsx:21
-msgid "Light"
-msgstr ""
-
-#: apps/website/src/components/theme-picker.tsx:22
-msgid "Dark"
-msgstr ""
-
-#: apps/website/src/lib/cms.ts:8
-msgid "Website content"
-msgstr ""
-
-#: apps/website/src/lib/cms.ts:8
-msgid "Edit your homepage, contact details and search appearance."
-msgstr ""
-
-#: apps/website/src/lib/content.ts:3
-msgid "What is Webdock?"
-msgstr ""
-
-#: apps/website/src/lib/content.ts:3
-msgid "Webdock is the project home of Spitzli Development. It gives project previews and client websites their own address under webdock.dev. Development and personal support are handled by Spitzli."
-msgstr ""
-
-#: apps/website/src/lib/content.ts:4
-msgid "Do I need my own domain?"
-msgstr ""
-
-#: apps/website/src/lib/content.ts:4
-msgid "No. Your project can live on a subdomain such as your-project.webdock.dev. If you would like to use your own domain, we will work out the right setup for your project."
-msgstr ""
-
-#: apps/website/src/lib/content.ts:5
-msgid "How do I get a Webdock subdomain?"
-msgstr ""
-
-#: apps/website/src/lib/content.ts:5
-msgid "Contact Dominik at Spitzli Development with your project idea. We will agree on the name, technical setup and deployment together. Automated registration is not available at this stage."
-msgstr ""
-
-#: apps/website/src/lib/content.ts:6
-msgid "Are project previews public?"
-msgstr ""
-
-#: apps/website/src/lib/content.ts:6
-msgid "That depends on how each project is configured. A subdomain alone does not restrict access. If a preview needs to stay private, access protection is arranged separately."
-msgstr ""
-
-#: apps/website/src/lib/content.ts:7
-msgid "Does every project run on Vercel?"
-msgstr ""
-
-#: apps/website/src/lib/content.ts:7
-msgid "Most projects currently run on Vercel, but Webdock is not tied to a single hosting provider. The technical environment is chosen to suit each project."
-msgstr ""
-
-#: apps/website/src/lib/content.ts:8
-msgid "How do I access Webdock Studio?"
 msgstr ""
 
 #: modules/cms/src/ui.ts:18
@@ -8089,7 +8117,7 @@ msgstr ""
 msgid "Manage the demo daily promotion and discount."
 msgstr ""
 
-#: modules/cms/src/ui.ts:63 packages/cms-ui/src/client.tsx:1094
+#: modules/cms/src/ui.ts:63 packages/cms-ui/src/client.tsx:1289
 msgid "Content"
 msgstr ""
 
@@ -8173,58 +8201,58 @@ msgstr ""
 msgid "Edit contact details for the demo checkout."
 msgstr ""
 
-#: modules/databases/src/ui/database-details.tsx:21
+#: modules/databases/src/ui/database-details.tsx:19
 msgid "Use the direct port for migrations and the pooled port for application connections. Always verify TLS."
 msgstr ""
 
-#: modules/databases/src/ui/database-details.tsx:25
+#: modules/databases/src/ui/database-details.tsx:23
 msgid "Application schema"
 msgstr ""
 
-#: modules/databases/src/ui/database-details.tsx:32
+#: modules/databases/src/ui/database-details.tsx:30
 msgid "Host"
 msgstr ""
 
-#: modules/databases/src/ui/database-details.tsx:36
+#: modules/databases/src/ui/database-details.tsx:34
 #: modules/hosting/src/ui/service-bindings.tsx:96
 #: modules/hosting/src/ui/setup-service-fields.tsx:40
 msgid "Database"
 msgstr ""
 
-#: modules/databases/src/ui/database-details.tsx:40
+#: modules/databases/src/ui/database-details.tsx:38
 msgid "Direct / pooled port"
 msgstr ""
 
-#: modules/databases/src/ui/database-details.tsx:50
+#: modules/databases/src/ui/database-details.tsx:48
 msgid "Application role"
 msgstr ""
 
-#: modules/databases/src/ui/database-details.tsx:51
+#: modules/databases/src/ui/database-details.tsx:49
 msgid "Migration role"
 msgstr ""
 
-#: modules/databases/src/ui/database-details.tsx:54
+#: modules/databases/src/ui/database-details.tsx:52
 msgid "Username"
 msgstr ""
 
-#: modules/databases/src/ui/database-details.tsx:75
+#: modules/databases/src/ui/database-details.tsx:73
 msgid "Copy password"
 msgstr ""
 
-#: modules/databases/src/ui/database-details.tsx:98
+#: modules/databases/src/ui/database-details.tsx:96
 msgid "Download CA certificate"
 msgstr ""
 
-#: modules/databases/src/ui/database-details.tsx:105
+#: modules/databases/src/ui/database-details.tsx:103
 msgid "Hide credentials"
 msgstr ""
 
-#: modules/databases/src/ui/database-details.tsx:121
+#: modules/databases/src/ui/database-details.tsx:119
 #: modules/databases/src/ui/databases.tsx:87
 msgid "Loading…"
 msgstr ""
 
-#: modules/databases/src/ui/database-details.tsx:121
+#: modules/databases/src/ui/database-details.tsx:119
 msgid "Reveal credentials"
 msgstr ""
 
@@ -8322,7 +8350,7 @@ msgstr ""
 msgid "Database permission"
 msgstr ""
 
-#: modules/databases/src/ui/forms.tsx:111 packages/cms-ui/src/client.tsx:768
+#: modules/databases/src/ui/forms.tsx:111 packages/cms-ui/src/client.tsx:912
 msgid "Read only"
 msgstr ""
 
@@ -8962,7 +8990,7 @@ msgid "Remove conflicting manual variables, save, then retry setup. Provisioned 
 msgstr ""
 
 #: modules/hosting/src/ui/setup-environment-repair.tsx:69
-#: packages/cms-ui/src/client.tsx:1000
+#: packages/cms-ui/src/client.tsx:1191
 msgid "Saved"
 msgstr ""
 
@@ -9309,7 +9337,7 @@ msgid "Refresh"
 msgstr ""
 
 #: modules/hosting/src/ui/setup-wizard.tsx:453
-#: packages/cms-ui/src/client.tsx:944
+#: packages/cms-ui/src/client.tsx:1117
 msgid "Save draft"
 msgstr ""
 
@@ -9420,285 +9448,329 @@ msgstr ""
 msgid "Delivery delayed"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:30
+#: packages/cms-ui/src/client.tsx:117
 msgid "Your session ended. Reload to sign in again."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:84
+#: packages/cms-ui/src/client.tsx:180
 msgid "Could not load choices. Try again."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:131
+#: packages/cms-ui/src/client.tsx:227
 msgid "Selected item {id}"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:135
+#: packages/cms-ui/src/client.tsx:231
 msgid "Remove selected {field}"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:150
+#: packages/cms-ui/src/client.tsx:246
 msgid "Search {field}"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:158
+#: packages/cms-ui/src/client.tsx:254
 msgid "Find an image"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:158
+#: packages/cms-ui/src/client.tsx:254
 msgid "Find an item"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:185
+#: packages/cms-ui/src/client.tsx:281
 msgid "Previous choices"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:193
+#: packages/cms-ui/src/client.tsx:289
 msgid "Next choices"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:198
+#: packages/cms-ui/src/client.tsx:294
 msgid "Existing linked items are preserved. New choices shown from {collection}."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:269 packages/cms-ui/src/client.tsx:1118
+#: packages/cms-ui/src/client.tsx:366 packages/cms-ui/src/client.tsx:1313
 msgid "{count} item"
 msgid_plural "{count} items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: packages/cms-ui/src/client.tsx:290 packages/cms-ui/src/client.tsx:1085
+#: packages/cms-ui/src/client.tsx:387 packages/cms-ui/src/client.tsx:1280
 msgid "Item {number}"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:311
+#: packages/cms-ui/src/client.tsx:408
 msgid "Move up"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:320
+#: packages/cms-ui/src/client.tsx:417
 msgid "Move down"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:327
+#: packages/cms-ui/src/client.tsx:425
 msgid "Remove this item from the page? Save to apply the change."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:341
+#: packages/cms-ui/src/client.tsx:440
 msgid "Add a section"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:354
+#: packages/cms-ui/src/client.tsx:453
 msgid "Choose a section…"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:367
+#: packages/cms-ui/src/client.tsx:466
 msgid "Add item"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:393
+#: packages/cms-ui/src/client.tsx:492
 msgid "This formatted content is preserved. An administrator can edit it in Advanced tools."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:400
+#: packages/cms-ui/src/client.tsx:499
 msgid "{field} · managed separately"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:401
+#: packages/cms-ui/src/client.tsx:500
 msgid "This field is preserved when you save. Use Advanced tools if it needs changing."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:442
+#: packages/cms-ui/src/client.tsx:541
 msgid "Choose…"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:635
+#: packages/cms-ui/src/client.tsx:754
 msgid "You have unsaved changes. Leave without saving?"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:685
+#: packages/cms-ui/src/client.tsx:808
 msgid "The change could not be saved."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:743
+#: packages/cms-ui/src/client.tsx:886
 msgid "Content areas"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:763
+#: packages/cms-ui/src/client.tsx:907
 msgid "Platform administrator"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:765
+#: packages/cms-ui/src/client.tsx:909
 msgid "Administrator"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:775
+#: packages/cms-ui/src/client.tsx:919
 msgid "Advanced tools"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:784
+#: packages/cms-ui/src/client.tsx:931
 msgid "Your website, in your hands."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:785
+#: packages/cms-ui/src/client.tsx:934
 msgid "View website ↗"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:794
+#: packages/cms-ui/src/client.tsx:945
 msgid "New {type}"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:798
+#: packages/cms-ui/src/client.tsx:949
 msgid "Keep your website up to date."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:801
+#: packages/cms-ui/src/client.tsx:953
 msgid "Content language"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:812
+#: packages/cms-ui/src/client.tsx:966
 msgid "English"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:812
+#: packages/cms-ui/src/client.tsx:966
 msgid "German"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:827
+#: packages/cms-ui/src/client.tsx:982
 msgid "Reload"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:836
+#: packages/cms-ui/src/client.tsx:987
+msgid "This save may have completed. Check the content list before trying again."
+msgstr ""
+
+#: packages/cms-ui/src/client.tsx:991
+msgid "Check saved content"
+msgstr ""
+
+#: packages/cms-ui/src/client.tsx:999
 msgid "Opening your content…"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:848
+#: packages/cms-ui/src/client.tsx:1011
 msgid "Back to {type}"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:853
+#: packages/cms-ui/src/client.tsx:1016
 msgid "Unsaved changes"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:858
+#: packages/cms-ui/src/client.tsx:1021
 msgid "Live content"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:862
+#: packages/cms-ui/src/client.tsx:1025
 msgid "You have read-only access. Contact your administrator to request editing rights."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:874 packages/cms-ui/src/client.tsx:1093
+#: packages/cms-ui/src/client.tsx:1037 packages/cms-ui/src/client.tsx:1288
 msgid "Image"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:883 packages/cms-ui/src/client.tsx:1056
+#: packages/cms-ui/src/client.tsx:1046 packages/cms-ui/src/client.tsx:1251
 msgid "Upload image"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:883
+#: packages/cms-ui/src/client.tsx:1046
 msgid "Replace image"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:899
+#: packages/cms-ui/src/client.tsx:1056
+msgid "To change this image, upload a new image in Media, then select it in your content. You can edit this image’s description below."
+msgstr ""
+
+#: packages/cms-ui/src/client.tsx:1062
 msgid "Content sections"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:925
+#: packages/cms-ui/src/client.tsx:1088
 msgid "Ready to save?"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:926
+#: packages/cms-ui/src/client.tsx:1089
 msgid "Your content is up to date."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:930
+#: packages/cms-ui/src/client.tsx:1093
 msgid "Save a draft first, then publish when ready."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:931
+#: packages/cms-ui/src/client.tsx:1094
 msgid "Saving changes updates the live website."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:956
+#: packages/cms-ui/src/client.tsx:1129
 msgid "Publish this content to the website?"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:961
+#: packages/cms-ui/src/client.tsx:1135
 msgid "Publish"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:969
+#: packages/cms-ui/src/client.tsx:1140
+msgid "Unpublish this language from the website? Your saved draft and history will be kept."
+msgstr ""
+
+#: packages/cms-ui/src/client.tsx:1140
+msgid "Unpublish this content from the website? Your saved draft and history will be kept."
+msgstr ""
+
+#: packages/cms-ui/src/client.tsx:1141
+msgid "Unpublish"
+msgstr ""
+
+#: packages/cms-ui/src/client.tsx:1142
+msgid "Save your draft before unpublishing."
+msgstr ""
+
+#: packages/cms-ui/src/client.tsx:1154
 msgid "Preview saved draft ↗"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:977
+#: packages/cms-ui/src/client.tsx:1167
 msgid "View live ↗"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:995
+#: packages/cms-ui/src/client.tsx:1186
 msgid "Version history"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1009
+#: packages/cms-ui/src/client.tsx:1201
 msgid "Restore this version? This replaces the current content."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1014
+#: packages/cms-ui/src/client.tsx:1207
 msgid "Restore"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1024
+#: packages/cms-ui/src/client.tsx:1217
+msgid "Remove this image"
+msgstr ""
+
+#: packages/cms-ui/src/client.tsx:1217
 msgid "Delete this content"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1025
+#: packages/cms-ui/src/client.tsx:1218
+msgid "This removes the image from the media library. Content using it may stop displaying the image. Its file is retained until an operator purges it."
+msgstr ""
+
+#: packages/cms-ui/src/client.tsx:1218
 msgid "This removes the record. Images may still be used by other content."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1030
+#: packages/cms-ui/src/client.tsx:1224
+msgid "Remove this image from the library? Its file will be retained until an operator purges it."
+msgstr ""
+
+#: packages/cms-ui/src/client.tsx:1224
 msgid "Permanently delete this record?"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1033
+#: packages/cms-ui/src/client.tsx:1228
+msgid "Remove image"
+msgstr ""
+
+#: packages/cms-ui/src/client.tsx:1228
 msgid "Delete permanently"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1043
+#: packages/cms-ui/src/client.tsx:1238
 msgid "Find {type}"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1056
+#: packages/cms-ui/src/client.tsx:1251
 msgid "Create new"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1080
+#: packages/cms-ui/src/client.tsx:1275
 msgid "{type} #{id}"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1107
+#: packages/cms-ui/src/client.tsx:1302
 msgid "No matching content"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1108
+#: packages/cms-ui/src/client.tsx:1303
 msgid "Make room for your next idea."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1112
+#: packages/cms-ui/src/client.tsx:1307
 msgid "Try another search."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1113
+#: packages/cms-ui/src/client.tsx:1308
 msgid "Create your first item to get started."
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1117
+#: packages/cms-ui/src/client.tsx:1312
 msgid "Content pages"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1137
+#: packages/cms-ui/src/client.tsx:1332
 msgid "CMS by Webdock"
 msgstr ""
 
-#: packages/cms-ui/src/client.tsx:1137
+#: packages/cms-ui/src/client.tsx:1332
 msgid "Content and access, kept in your control."
 msgstr ""
 
@@ -9734,135 +9806,155 @@ msgstr ""
 msgid "Unknown content block."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:30
+#: packages/cms-ui/src/server.ts:38
 msgid "Invalid record."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:36
+#: packages/cms-ui/src/server.ts:44
 #: packages/i18n/src/legacy-message-aliases.ts:96
 msgid "Invalid page."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:56
+#: packages/cms-ui/src/server.ts:88
 msgid "The upload is too large."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:75
+#: packages/cms-ui/src/server.ts:110 packages/cms-ui/src/server.ts:128
+msgid "Content is too large."
+msgstr ""
+
+#: packages/cms-ui/src/server.ts:113
 #: packages/i18n/src/legacy-message-aliases.ts:88
 msgid "Invalid form data."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:88
+#: packages/cms-ui/src/server.ts:126
 msgid "Use JSON or a file upload."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:90
-msgid "Content is too large."
-msgstr ""
-
-#: packages/cms-ui/src/server.ts:94
+#: packages/cms-ui/src/server.ts:132
 #: packages/i18n/src/legacy-message-aliases.ts:119
 msgid "Invalid JSON."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:119
+#: packages/cms-ui/src/server.ts:158
 msgid "Reload the CMS and try again."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:123
+#: packages/cms-ui/src/server.ts:162
 msgid "Sign in to open the CMS."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:128
+#: packages/cms-ui/src/server.ts:167
 msgid "Your role can view content but cannot change it."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:133 packages/cms-ui/src/server.ts:269
+#: packages/cms-ui/src/server.ts:172 packages/cms-ui/src/server.ts:346
 msgid "An administrator is required to delete content."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:142
+#: packages/cms-ui/src/server.ts:181
 #: packages/i18n/src/legacy-message-aliases.ts:81
 msgid "Invalid request."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:148
+#: packages/cms-ui/src/server.ts:187
 msgid "Choose a supported language."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:173
+#: packages/cms-ui/src/server.ts:214
 msgid "This content area is not available."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:176
+#: packages/cms-ui/src/server.ts:220
 msgid "Content configuration is unavailable."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:214
+#: packages/cms-ui/src/server.ts:266
 msgid "Version history is not enabled for this content."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:266
+#: packages/cms-ui/src/server.ts:343
 msgid "Unknown content action."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:273
+#: packages/cms-ui/src/server.ts:350
 msgid "This content does not support drafts."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:276
+#: packages/cms-ui/src/server.ts:353
 msgid "An administrator is required to restore versions."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:280
+#: packages/cms-ui/src/server.ts:357
 msgid "Website settings cannot be deleted."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:285
+#: packages/cms-ui/src/server.ts:362
 msgid "New records are created by the website in this content area."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:289
+#: packages/cms-ui/src/server.ts:366
 msgid "Select an existing record."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:295
+#: packages/cms-ui/src/server.ts:370
+msgid "Existing images cannot be replaced. Upload a new image in Media, then select it in your content."
+msgstr ""
+
+#: packages/cms-ui/src/server.ts:379
 msgid "Content writes require transaction support."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:313
+#: packages/cms-ui/src/server.ts:398
 msgid "This content changed since you opened it. Reload before saving."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:342
+#: packages/cms-ui/src/server.ts:409
+msgid "Media removal is unavailable until the retention migration has run."
+msgstr ""
+
+#: packages/cms-ui/src/server.ts:446
 msgid "This version belongs to a different record."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:372
+#: packages/cms-ui/src/server.ts:493
 msgid "This file is not allowed or is too large."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:411
+#: packages/cms-ui/src/server.ts:544
+msgid "Your role cannot unpublish this content."
+msgstr ""
+
+#: packages/cms-ui/src/server.ts:580
+msgid "Image removed. Its file is retained until an operator purges it."
+msgstr ""
+
+#: packages/cms-ui/src/server.ts:582
 msgid "Content deleted."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:413
+#: packages/cms-ui/src/server.ts:584
 msgid "Draft saved."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:415
+#: packages/cms-ui/src/server.ts:586
+msgid "Unpublished."
+msgstr ""
+
+#: packages/cms-ui/src/server.ts:588
 msgid "Published."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:416
+#: packages/cms-ui/src/server.ts:589
 msgid "Changes saved."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:438
+#: packages/cms-ui/src/server.ts:611
 msgid "Another edit was saved at the same time. Reload before trying again."
 msgstr ""
 
-#: packages/cms-ui/src/server.ts:445
+#: packages/cms-ui/src/server.ts:619
 msgid "The CMS could not complete this request. Your changes were not confirmed."
 msgstr ""
 
@@ -10330,55 +10422,4 @@ msgstr ""
 
 #: packages/i18n/src/picker.tsx:23
 msgid "Changing language…"
-msgstr ""
-
-msgid "Unpublished."
-msgstr ""
-
-msgid "Unpublish this language from the website? Your saved draft and history will be kept."
-msgstr ""
-
-msgid "Unpublish this content from the website? Your saved draft and history will be kept."
-msgstr ""
-
-msgid "Existing images cannot be replaced. Upload a new image in Media, then select it in your content."
-msgstr ""
-
-msgid "To change this image, upload a new image in Media, then select it in your content. You can edit this image’s description below."
-msgstr ""
-
-msgid "Your role cannot unpublish this content."
-msgstr ""
-
-msgid "Upload a valid PNG, JPEG, WebP or AVIF image (maximum 10 MiB and 40 megapixels)."
-msgstr ""
-
-msgid "This save may have completed. Check the content list before trying again."
-msgstr ""
-
-msgid "Check saved content"
-msgstr ""
-
-msgid "Save your draft before unpublishing."
-msgstr ""
-
-msgid "Remove this image"
-msgstr ""
-
-msgid "Remove image"
-msgstr ""
-
-msgid "This removes the image from the media library. Content using it may stop displaying the image. Its file is retained until an operator purges it."
-msgstr ""
-
-msgid "Remove this image from the library? Its file will be retained until an operator purges it."
-msgstr ""
-
-msgid "Image removed. Its file is retained until an operator purges it."
-msgstr ""
-
-msgid "Media removal is unavailable until the retention migration has run."
-msgstr ""
-
-msgid "An administrator is required to remove or restore media."
 msgstr ""

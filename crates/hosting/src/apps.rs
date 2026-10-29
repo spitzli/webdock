@@ -102,6 +102,15 @@ impl HostingService {
             );
             return Ok((value, target));
         }
+        if row.as_ref().is_some_and(|r| r["status"] == "quarantined")
+            && !read
+            && !["apps.delete", "apps.purgeStorage"].contains(&action)
+        {
+            return Err(error(
+                409,
+                "Restored application is quarantined. A separate operator recovery cutover is required.",
+            ));
+        }
         if ["apps.deletion", "apps.storageDeletion"].contains(&action) {
             let row = row.as_ref().unwrap();
             if action == "apps.storageDeletion" && row["status"] != "deleted" {
@@ -140,6 +149,9 @@ impl HostingService {
             .replay(tx, actor, field(cmd, "idempotencyKey")?, cmd)
             .await?;
         if let Some(prior) = prior {
+            if !read && let Some(row) = &row {
+                Self::ensure_app_effect_allowed(tx, field(row, "id")?, Some(&prior)).await?;
+            }
             return Ok((
                 if ["apps.prepare", "apps.reconcile"].contains(&action)
                     || (action == "apps.delete" && prior["app_id"].is_null())
@@ -150,6 +162,9 @@ impl HostingService {
                 },
                 target,
             ));
+        }
+        if !read && let Some(row) = &row {
+            Self::ensure_app_effect_allowed(tx, field(row, "id")?, None).await?;
         }
         if action == "apps.prepare" {
             if numeric(

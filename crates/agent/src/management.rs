@@ -14,6 +14,8 @@ pub enum AgentError {
     MailPending,
     #[error("Mail configuration delivery remains pending")]
     ConfigurationPending,
+    #[error("Recovery delivery remains pending")]
+    RecoveryPending,
     #[error("Hosting delivery remains pending")]
     HostingPending,
     #[error("Plugin runtime delivery remains pending")]
@@ -38,6 +40,8 @@ mod guard_tests;
 mod mail;
 pub use mail::mail_claim;
 mod mail_configuration;
+#[cfg(feature = "docker")]
+mod recovery;
 pub use mail_configuration::configuration_claim;
 
 use crate::config::{AgentConfig, ControlEndpoint, IdentityState, private_directory, read_private};
@@ -126,6 +130,8 @@ impl Credentials {
 }
 #[derive(Clone)]
 struct Session {
+    #[cfg(feature = "docker")]
+    recovery_client: wire::recovery_control_client::RecoveryControlClient<Channel>,
     client: AgentControlClient<Channel>,
     mail_client: wire::mail_control_client::MailControlClient<Channel>,
     configuration_client:
@@ -191,6 +197,10 @@ fn accepted(ack: wire::Ack) -> Result<()> {
     }
 }
 struct RemoteAuthority {
+    #[cfg(feature = "docker")]
+    recovery_executor: std::sync::OnceLock<Arc<crate::recovery::NativeRecoveryExecutor>>,
+    #[cfg(feature = "docker")]
+    recovery_outbox: Mutex<crate::outbox::RecoveryOutbox>,
     #[cfg(feature = "kubernetes")]
     plugin_outbox: Mutex<crate::outbox::PluginRuntimeOutbox>,
     #[cfg(feature = "kubernetes")]
@@ -293,6 +303,8 @@ impl Authorizer for RemoteAuthority {
 }
 
 pub struct Daemon {
+    #[cfg(feature = "docker")]
+    recovery_runtime: Option<Arc<crate::recovery::NativeRecoveryExecutor>>,
     #[cfg(feature = "kubernetes")]
     plugin_runtime: Option<Arc<dyn crate::plugin_runtime::PluginRuntimeExecutor>>,
     config: AgentConfig,
@@ -318,6 +330,12 @@ impl Daemon {
         let outbox =
             crate::outbox::ReceiptOutbox::open(config.state_directory.join("receipt-outbox.json"))?;
         let authority = Arc::new(RemoteAuthority {
+            #[cfg(feature = "docker")]
+            recovery_executor: std::sync::OnceLock::new(),
+            #[cfg(feature = "docker")]
+            recovery_outbox: Mutex::new(crate::outbox::RecoveryOutbox::open(
+                config.state_directory.join("recovery-outbox.json"),
+            )?),
             #[cfg(feature = "kubernetes")]
             plugin_outbox: Mutex::new(crate::outbox::PluginRuntimeOutbox::open(
                 config.state_directory.join("plugin-runtime-outbox.json"),
@@ -347,6 +365,8 @@ impl Daemon {
         });
         let executor = Executor::new(journal, authority.clone(), adapter.clone());
         Ok(Self {
+            #[cfg(feature = "docker")]
+            recovery_runtime: None,
             #[cfg(feature = "kubernetes")]
             plugin_runtime: None,
             config,
@@ -373,13 +393,18 @@ impl Daemon {
                 initializer_image,
                 storage_socket,
             } => {
+                let app_fences =
+                    Arc::new(crate::recovery::effect_fence::AppEffectFenceRegistry::open(
+                        config.state_directory.join("app-effects"),
+                    )?);
                 let adapter = crate::docker::DockerAdapter::connect(
                     socket,
                     config.installation.clone(),
                     initializer_image.clone(),
                 )
                 .await?
-                .with_policy(policy.clone());
+                .with_policy(policy.clone())
+                .with_app_fences(app_fences.clone());
                 let adapter = Arc::new(if let Some(socket) = storage_socket {
                     adapter.with_storage_socket(socket.clone()).await?
                 } else {
@@ -402,6 +427,25 @@ impl Daemon {
                     None
                 };
                 let mut daemon = Self::with_adapter(config, adapter)?;
+                if let Some(path) = &daemon.config.recovery_runtime {
+                    let runtime = Arc::new(
+                        crate::recovery::NativeRecoveryExecutor::open_with_app_fences(
+                            path.clone(),
+                            app_fences,
+                        )
+                        .await?,
+                    );
+                    #[cfg(feature = "kubernetes")]
+                    if let Some(workloads) = &mut daemon.workload_runtime {
+                        Arc::get_mut(workloads).ok_or(AgentError::Configuration("Recovery workload effect fence must be installed before sharing the executor"))?.set_mail_fence(runtime.mail_effect_fence());
+                    }
+                    daemon
+                        .authority
+                        .recovery_executor
+                        .set(runtime.clone())
+                        .map_err(|_| AgentError::State)?;
+                    daemon.recovery_runtime = Some(runtime);
+                }
                 if let Some(runtime) = mail {
                     let runtime = Arc::new(runtime);
                     daemon.mail_runtime = Some(runtime.clone());
@@ -472,6 +516,21 @@ impl Daemon {
                     .map(|runtime| Arc::new(runtime) as Arc<dyn crate::database::DatabaseRuntime>);
                 daemon.workload_runtime = workload_runtime;
                 daemon.plugin_runtime = plugin_runtime;
+                #[cfg(feature = "docker")]
+                if let Some(path) = &daemon.config.recovery_runtime {
+                    let runtime = Arc::new(
+                        crate::recovery::NativeRecoveryExecutor::open(path.clone()).await?,
+                    );
+                    if let Some(workloads) = &mut daemon.workload_runtime {
+                        Arc::get_mut(workloads).ok_or(AgentError::Configuration("Recovery workload effect fence must be installed before sharing the executor"))?.set_mail_fence(runtime.mail_effect_fence());
+                    }
+                    daemon
+                        .authority
+                        .recovery_executor
+                        .set(runtime.clone())
+                        .map_err(|_| AgentError::State)?;
+                    daemon.recovery_runtime = Some(runtime);
+                }
                 Ok(daemon)
             }
             #[cfg(not(all(feature = "docker", feature = "kubernetes")))]
@@ -528,6 +587,12 @@ impl Daemon {
             .max_decoding_message_size(wire::MAX_MESSAGE_BYTES)
             .max_encoding_message_size(wire::MAX_MESSAGE_BYTES);
         let session = Session {
+            #[cfg(feature = "docker")]
+            recovery_client: wire::recovery_control_client::RecoveryControlClient::new(
+                channel.clone(),
+            )
+            .max_decoding_message_size(wire::MAX_MESSAGE_BYTES)
+            .max_encoding_message_size(wire::MAX_MESSAGE_BYTES),
             client,
             configuration_client:
                 wire::mail_configuration_control_client::MailConfigurationControlClient::new(
@@ -686,6 +751,10 @@ impl Daemon {
                 None
             };
             let mut value = serde_json::json!({"sequence":sequence,"generation":self.config.generation,"observedAt":chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis,true),"version":snapshot.version,"nodes":snapshot.nodes,"runtimeKind":snapshot.runtime_kind,"capacity":{"apps":0,"cpuMillicores":0,"memoryBytes":0,"volumeBytes":0,"ephemeralBytes":0,"replicasPerApp":0,"concurrentDeployments":0},"capabilities":{"networkIsolation":false,"restrictedPods":false,"storage":false,"ingress":false,"provisioningGuardVersion":1}});
+            #[cfg(feature = "docker")]
+            if let Some(runtime) = &self.recovery_runtime {
+                value["capabilities"]["nativeRecovery"] = runtime.capabilities()?;
+            }
             if let Some(runtime) = &self.mail_runtime
                 && let Some(capabilities) =
                     tokio::time::timeout(Duration::from_secs(10), runtime.capabilities())
@@ -793,6 +862,16 @@ impl Daemon {
         };
         let work = async {
             let mut worked = false;
+            #[cfg(feature = "docker")]
+            if self.recovery_runtime.is_some() {
+                // Recovery snapshots carry large bounded transfer futures; keep them off the
+                // ordinary dispatch stack even when the recovery domain is disabled.
+                match Box::pin(self.process_recovery()).await {
+                    Ok(recovery_work) => worked |= recovery_work,
+                    Err(AgentError::RecoveryPending) => worked = true,
+                    Err(error) => return Err(error),
+                }
+            }
             if let Some(command) = dispatch.command {
                 self.process(command).await?;
                 worked = true;
@@ -1071,6 +1150,21 @@ fn error_code(error: &ExecutionError) -> &'static str {
 /// Offline validation checks private files, client validity and TLS key/certificate parsing.
 pub fn validate_configuration(config: &AgentConfig) -> Result<()> {
     config.validate()?;
+    #[cfg(feature = "docker")]
+    if let Some(path) = &config.recovery_runtime {
+        let recovery = crate::recovery::config::RecoveryRuntimeConfig::load(path)?;
+        if recovery.installation != config.installation {
+            return Err(AgentError::Configuration(
+                "Recovery runtime installation differs from enrolled agent",
+            ));
+        }
+    }
+    #[cfg(not(feature = "docker"))]
+    if config.recovery_runtime.is_some() {
+        return Err(AgentError::Configuration(
+            "Recovery runtime is not included in this build",
+        ));
+    }
     if let Some(path) = &config.mail_runtime {
         #[cfg(any(feature = "docker", feature = "kubernetes"))]
         {
@@ -1138,4 +1232,62 @@ pub fn validate_configuration(config: &AgentConfig) -> Result<()> {
     }
     crate::policy::RuntimePolicy::load(config.policy.clone())?;
     Ok(())
+}
+#[cfg(all(test, feature = "docker"))]
+mod recovery_validation_tests {
+    use super::*;
+    #[test]
+    fn offline_agent_validation_rejects_invalid_recovery_profile_before_daemon_start() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = tempfile::tempdir().unwrap();
+        std::fs::set_permissions(root.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+        let mut config:AgentConfig=serde_json::from_value(serde_json::json!({"version":1,"installation":"unit","agentId":"unit-agent","generation":1,"stateDirectory":root.path(),"control":{"kind":"unix","path":root.path().join("control.sock")},"runtime":{"kind":"docker","socket":root.path().join("engine.sock"),"initializerImage":null}})).unwrap();
+        validate_configuration(&config).unwrap();
+        let path = root.path().join("recovery.json");
+        std::fs::write(&path, b"{}").unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        config.recovery_runtime = Some(path);
+        assert!(
+            validate_configuration(&config).is_err(),
+            "CLI only checked file presence, not the referenced recovery profile"
+        );
+    }
+    #[cfg(feature = "local-recovery-fixture")]
+    #[test]
+    fn offline_recovery_validation_preserves_valid_profile_and_rejects_foreign_installation() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = tempfile::tempdir().unwrap();
+        std::fs::set_permissions(root.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+        for (name, bytes) in [
+            (
+                "reader",
+                br#"{"accessKeyId":"unit-reader","secretAccessKey":"unit-reader-only"}"#.as_slice(),
+            ),
+            (
+                "writer",
+                br#"{"accessKeyId":"unit-writer","secretAccessKey":"unit-writer-only"}"#.as_slice(),
+            ),
+            ("identity", b"unit-key-not-used-for-encryption"),
+            ("signers", b"unit-signers-not-used-for-signing"),
+        ] {
+            let p = root.path().join(name);
+            std::fs::write(&p, bytes).unwrap();
+            std::fs::set_permissions(p, std::fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        let runtime = serde_json::json!({"version":1,"installation":"unit","projectId":"123","resourceId":"124","revision":1,"image":format!("docker.io/test/ntfy@sha256:{}","a".repeat(64)),"arguments":["serve"],"cpuMillicores":100,"memoryBytes":67108864,"ephemeralBytes":1048576,"replicas":1,"port":8080,"healthPath":null,"volume":{"mountPath":"/data","sizeBytes":67108864}});
+        let mut profile = serde_json::json!({"version":1,"installation":"unit","dockerSocket":root.path().join("engine.sock"),"storageSocket":root.path().join("storage.sock"),"stagingDirectory":root.path(),"custodyDirectory":root.path(),"replayDirectory":root.path(),"coreSigners":root.path().join("signers"),"operatorSigners":root.path().join("signers"),"targets":[],"profiles":[{"id":"ntfy-unit","profile":"ntfy-sqlite-offline-v1","keyCustodyID":"operator-unit","destination":{"id":"unit","endpoint":"http://127.0.0.1:9000","region":"local","bucket":"unit","namespace":"unit"},"writeCredentials":root.path().join("writer"),"restoreCredentials":root.path().join("reader"),"ageRecipient":"unit-unused","ageIdentity":root.path().join("identity"),"independentFiles":{},"source":{"kind":"ntfy","runtimeID":"a".repeat(64),"runtime":runtime}}]});
+        let path = root.path().join("recovery.json");
+        std::fs::write(&path, serde_json::to_vec(&profile).unwrap()).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let config:AgentConfig=serde_json::from_value(serde_json::json!({"version":1,"installation":"unit","agentId":"unit-agent","generation":1,"stateDirectory":root.path(),"control":{"kind":"unix","path":root.path().join("control.sock")},"runtime":{"kind":"docker","socket":root.path().join("engine.sock"),"initializerImage":null},"recoveryRuntime":path})).unwrap();
+        validate_configuration(&config).unwrap();
+        profile["installation"] = serde_json::json!("foreign");
+        std::fs::write(&path, serde_json::to_vec(&profile).unwrap()).unwrap();
+        assert!(matches!(
+            validate_configuration(&config),
+            Err(AgentError::Configuration(
+                "Recovery runtime installation differs from enrolled agent"
+            ))
+        ));
+    }
 }

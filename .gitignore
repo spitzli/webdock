@@ -32,3 +32,10 @@ legacy/control-plane/dist-core/
 
 # Process core dumps
 core.[0-9]*
+
+# Python bytecode is local cache, never source.
+__pycache__/
+*.py[cod]
+
+# An old local snapshot is excluded; the selected Maylily dependency is external.
+/crates/maylily/

@@ -66,9 +66,18 @@ impl AccessService {
     }
     pub(crate) async fn current_actor(&self, principal: &Principal) -> Result<Principal> {
         let tx = self.auth.begin().await?;
+        let current = self.current_actor_in(&tx, principal).await?;
+        tx.commit().await?;
+        Ok(current)
+    }
+    pub(crate) async fn current_actor_in(
+        &self,
+        tx: &DatabaseTransaction,
+        principal: &Principal,
+    ) -> Result<Principal> {
         let current = self
             .identity
-            .authenticate_session_in(&tx, &principal.user_id, &principal.session_id)
+            .authenticate_session_in(tx, &principal.user_id, &principal.session_id)
             .await?
             .ok_or(Error::Unauthorized)?;
         if !current.can_access()
@@ -77,8 +86,17 @@ impl AccessService {
         {
             return Err(Error::Unauthorized);
         }
-        tx.commit().await?;
         Ok(current)
+    }
+    pub(crate) async fn fenced_session_domain(
+        &self,
+        identified: &Principal,
+    ) -> Result<(DatabaseTransaction, DatabaseTransaction, Principal)> {
+        let tx = self.signer.begin(&self.business, identified).await?;
+        lock_session_context(&tx, &identified.session_id).await?;
+        let auth = self.auth.begin().await?;
+        let current = self.current_actor_in(&auth, identified).await?;
+        Ok((tx, auth, current))
     }
     pub(crate) async fn actor(&self, cookie: &str) -> Result<Principal> {
         let actor = self
@@ -953,6 +971,17 @@ async fn live(tx: &DatabaseTransaction) -> Result<()> {
     } else {
         Err(Error::Unauthorized)
     }
+}
+/// Shared with native preview writers: acquire before retained auth and customer locks.
+/// Other native domains can participate using this exact namespace/salt without an edge to Access.
+pub(crate) async fn lock_session_context(tx: &DatabaseTransaction, session: &str) -> Result<()> {
+    tx.query_one_raw(Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        "SELECT pg_advisory_xact_lock(hashtextextended($1,0))",
+        [format!("native-session-context:{session}").into()],
+    ))
+    .await?;
+    Ok(())
 }
 pub(crate) async fn operator(tx: &DatabaseTransaction) -> Result<()> {
     if tx

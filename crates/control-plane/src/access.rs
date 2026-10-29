@@ -15,6 +15,9 @@ use std::sync::Arc;
 use webdock_access::{AccessCommand, AccessService, TenantCommand};
 use webdock_identity::Principal;
 
+#[path = "access_allowances.rs"]
+mod allowances;
+
 pub fn protocol_path(path: &str) -> bool {
     ["/api/access", "/api/tenant", "/api/invitation"]
         .iter()
@@ -39,6 +42,7 @@ pub fn routes() -> Router<Arc<ServiceState>> {
             );
     }
     routes
+        .merge(allowances::routes())
         .route(
             "/api/console/tenant/{id}/projects",
             get(projects).post(create_project),

@@ -265,7 +265,7 @@ impl BuildCommand {
                     || repository_id.chars().any(char::is_control)
                     || *revision < 0
                     || *revision == i32::MAX
-                    || recipe != "dockerfile"
+                    || !["dockerfile", crate::frontend::RECIPE].contains(&recipe.as_str())
                 {
                     return Err(error("source_unavailable"));
                 }

@@ -26,6 +26,10 @@ pub(super) fn statements(job: &DatabaseJobSpec) -> Result<SqlStatements> {
     let app = format!("wd_app_{id}");
     let marker = format!("webdock:database:{id}");
     let roles=[&owner,&migration,&app].iter().map(|role|format!("DO $webdock$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='{role}') THEN CREATE ROLE \"{role}\" NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; COMMENT ON ROLE \"{role}\" IS '{marker}'; ELSIF (SELECT pg_catalog.shobj_description(oid,'pg_authid') FROM pg_catalog.pg_roles WHERE rolname='{role}') IS DISTINCT FROM '{marker}' THEN RAISE EXCEPTION 'Database role ownership conflict'; END IF; END $webdock$;")).collect::<Vec<_>>().join("\n");
+    let export_disable = super::exports::ExportRole::new(id, name, &job.backend.kind)
+        .map_err(|_| ExecutionError::Ownership)?
+        .map(|role| role.disable)
+        .unwrap_or_default();
     Ok(SqlStatements {
         roles,
         create: format!("CREATE DATABASE \"{name}\" OWNER \"{owner}\";"),
@@ -41,7 +45,7 @@ pub(super) fn statements(job: &DatabaseJobSpec) -> Result<SqlStatements> {
             database.connection_limit, database.connection_limit
         ),
         disable: format!(
-            "ALTER ROLE \"{migration}\" NOLOGIN; ALTER ROLE \"{app}\" NOLOGIN; SELECT pg_catalog.pg_terminate_backend(pid) FROM pg_catalog.pg_stat_activity WHERE usename IN ('{migration}','{app}') AND pid<>pg_catalog.pg_backend_pid();"
+            "ALTER ROLE \"{migration}\" NOLOGIN; ALTER ROLE \"{app}\" NOLOGIN; SELECT pg_catalog.pg_terminate_backend(pid) FROM pg_catalog.pg_stat_activity WHERE usename IN ('{migration}','{app}') AND pid<>pg_catalog.pg_backend_pid();{export_disable}"
         ),
     })
 }
@@ -204,6 +208,81 @@ impl NativeDatabaseExecutor {
             Err(ExecutionError::Ownership)
         }
     }
+    pub(super) async fn configure_export(
+        &self,
+        claim: &DatabaseClaim,
+        authority: &dyn DatabaseAuthority,
+    ) -> Result<()> {
+        let d = claim
+            .spec
+            .database
+            .as_ref()
+            .ok_or(ExecutionError::Ownership)?;
+        if let Some(role) =
+            super::exports::ExportRole::new(&d.id, &d.name, &claim.spec.backend.kind)
+                .map_err(|_| ExecutionError::Ownership)?
+        {
+            self.sql(claim, authority, "postgres", &role.create).await?;
+            self.sql(claim, authority, &d.name, &role.grants).await?;
+        }
+        Ok(())
+    }
+    pub(super) async fn enable_export(
+        &self,
+        claim: &DatabaseClaim,
+        authority: &dyn DatabaseAuthority,
+    ) -> Result<()> {
+        let d = claim
+            .spec
+            .database
+            .as_ref()
+            .ok_or(ExecutionError::Ownership)?;
+        if let Some(role) =
+            super::exports::ExportRole::new(&d.id, &d.name, &claim.spec.backend.kind)
+                .map_err(|_| ExecutionError::Ownership)?
+        {
+            self.sql(claim, authority, "postgres", &role.enable).await?;
+        }
+        Ok(())
+    }
+    pub(super) async fn recovered_export_password(
+        &self,
+        claim: &DatabaseClaim,
+        authority: &dyn DatabaseAuthority,
+    ) -> Result<()> {
+        let d = claim
+            .spec
+            .database
+            .as_ref()
+            .ok_or(ExecutionError::Ownership)?;
+        let credentials = claim
+            .material
+            .credentials
+            .as_ref()
+            .ok_or(ExecutionError::Denied)?;
+        if let Some(role) =
+            super::exports::ExportRole::new(&d.id, &d.name, &claim.spec.backend.kind)
+                .map_err(|_| ExecutionError::Ownership)?
+        {
+            let password =
+                super::exports::ExportRole::password(&d.id, &credentials.application_password)
+                    .map_err(|_| ExecutionError::Denied)?;
+            self.psql(
+                claim,
+                authority,
+                "postgres",
+                &format!("{password}\n{password}\n"),
+                &[
+                    "-c".into(),
+                    "SET password_encryption='scram-sha-256'".into(),
+                    "-c".into(),
+                    format!("\\password {}", role.name),
+                ],
+            )
+            .await?;
+        }
+        Ok(())
+    }
     pub(super) async fn passwords(
         &self,
         claim: &DatabaseClaim,
@@ -219,16 +298,27 @@ impl NativeDatabaseExecutor {
             .credentials
             .as_ref()
             .ok_or(ExecutionError::Denied)?;
-        for (role, password) in [
+        let mut passwords = vec![
             (
                 format!("wd_migrate_{}", d.id),
-                &credentials.migration_password,
+                credentials.migration_password.clone(),
             ),
             (
                 format!("wd_app_{}", d.id),
-                &credentials.application_password,
+                credentials.application_password.clone(),
             ),
-        ] {
+        ];
+        if let Some(role) =
+            super::exports::ExportRole::new(&d.id, &d.name, &claim.spec.backend.kind)
+                .map_err(|_| ExecutionError::Ownership)?
+        {
+            passwords.push((
+                role.name,
+                super::exports::ExportRole::password(&d.id, &credentials.application_password)
+                    .map_err(|_| ExecutionError::Denied)?,
+            ));
+        }
+        for (role, password) in passwords {
             // psql/libpq generates the SCRAM verifier; plaintext is only stdin, never SQL, argv, logs or a persisted command.
             self.psql(
                 claim,

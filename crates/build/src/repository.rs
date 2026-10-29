@@ -110,7 +110,7 @@ impl RepositoryBinding {
         }
         Ok(descriptor)
     }
-    fn fingerprint(&self, policy: &RepositoryPolicySnapshot) -> Result<String> {
+    pub(crate) fn fingerprint(&self, policy: &RepositoryPolicySnapshot) -> Result<String> {
         let mut hash = Sha256::new();
         hash.update(
             serde_json::to_vec(self).map_err(|_| error("invalid_repository_configuration"))?,
@@ -169,7 +169,7 @@ impl RepositoryBinding {
 pub struct RepositoryAdmission {
     worker: DatabaseConnection,
     secret: String,
-    host: Arc<HostService>,
+    pub(crate) host: Arc<HostService>,
     issuer: Arc<SigningKey>,
     bindings: Arc<dyn RepositoryBindings>,
     authority: Option<Arc<super::session::SessionVerifier>>,
@@ -191,6 +191,8 @@ struct Domain {
     worker_generation: Option<i32>,
     worker_hash: Option<String>,
     actor_authority: Option<Value>,
+    archive_authority: Option<Value>,
+    deadline: Option<i64>,
 }
 impl RepositoryAdmission {
     pub async fn new(
@@ -226,7 +228,7 @@ impl RepositoryAdmission {
         ));
         Ok(self)
     }
-    async fn tx(&self, git: bool) -> Result<DatabaseTransaction> {
+    pub(crate) async fn tx(&self, git: bool) -> Result<DatabaseTransaction> {
         let tx = self.worker.begin().await.map_err(db_error)?;
         let purpose = if git {
             "git-worker"
@@ -242,6 +244,50 @@ impl RepositoryAdmission {
     }
     async fn domain(&self, source: &RepositoryRef<'_>) -> Result<Domain> {
         match &source.authority {
+            RepositoryContext::PluginJob { proof } => {
+                let proof = self
+                    .host
+                    .validate_export_job(
+                        &proof
+                            .snapshot()
+                            .map_err(|_| error("repository_authority_revoked"))?,
+                    )
+                    .await
+                    .map_err(|_| error("repository_authority_revoked"))?;
+                let c = proof.claims();
+                if c.customer_id != source.customer_id || c.project_id != source.project_id {
+                    return Err(error("repository_scope_changed"));
+                }
+                let tx = self.tx(true).await?;
+                let row = BuildService::source(&tx, &source.source_id, &source.project_id).await?;
+                if row["revision"] != source.source_revision
+                    || row["connection_generation"] != source.connection_generation
+                {
+                    return Err(error("repository_scope_changed"));
+                }
+                let job = c
+                    .job
+                    .as_ref()
+                    .ok_or_else(|| error("repository_authority_revoked"))?;
+                tx.commit().await.map_err(db_error)?;
+                Ok(Domain {
+                    kind: "plugin-job",
+                    subject: proof.subject().into(),
+                    session: Some(proof.session().into()),
+                    id: Some(c.id.clone()),
+                    generation: Some(i32::from(job.attempt)),
+                    worker: None,
+                    worker_generation: None,
+                    worker_hash: None,
+                    actor_authority: None,
+                    archive_authority: Some(
+                        proof
+                            .snapshot()
+                            .map_err(|_| error("repository_authority_revoked"))?,
+                    ),
+                    deadline: Some(c.exp),
+                })
+            }
             RepositoryContext::Session {
                 principal,
                 tx,
@@ -268,6 +314,8 @@ impl RepositoryAdmission {
                         .map(serde_json::to_value)
                         .transpose()
                         .map_err(|_| error("invalid_authority"))?,
+                    archive_authority: None,
+                    deadline: None,
                 })
             }
             RepositoryContext::Build {
@@ -297,6 +345,8 @@ impl RepositoryAdmission {
                     worker_generation: Some(worker.generation),
                     worker_hash: Some(worker.hash.clone()),
                     actor_authority: None,
+                    archive_authority: None,
+                    deadline: None,
                 })
             }
             RepositoryContext::Release {
@@ -332,11 +382,13 @@ impl RepositoryAdmission {
                         .get("approvedAuthority")
                         .filter(|v| !v.is_null())
                         .cloned(),
+                    archive_authority: None,
+                    deadline: None,
                 })
             }
         }
     }
-    async fn policy(
+    pub(crate) async fn policy(
         &self,
         plugin: &str,
         project: &str,
@@ -409,13 +461,13 @@ impl RepositoryAdmission {
             request_sha256: protocol::sha256(&input),
             configuration_sha256: protocol::sha256(&configuration),
             iat: now,
-            exp: now + 60,
+            exp: domain.deadline.unwrap_or(now + 60).min(now + 60),
         };
         let token = claims
             .sign(&self.issuer)
             .map_err(|_| error("repository_signing_unavailable"))?;
         let tx = self.tx(false).await?;
-        execute(&tx,"INSERT INTO webdock_auth.repository_lease(id,plugin_id,customer_id,project_id,source_id,generation,source_revision,connection_generation,grant_revision,configuration_revision,action,descriptor_sha256,binding_sha256,request_sha256,configuration_sha256,input_json,configuration_json,authority_kind,actor_subject,actor_session,authority_id,authority_generation,worker_id,worker_generation,worker_credential_hash,issued_at,expires_at,actor_authority) VALUES($1::uuid,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,to_timestamp($26),to_timestamp($27),$28)",vec![claims.id.clone().into(),plugin.into(),source.customer_id.clone().into(),source.project_id.clone().into(),source.source_id.clone().into(),(claims.generation as i64).into(),source.source_revision.into(),source.connection_generation.into(),(claims.grant_revision as i64).into(),(claims.configuration_revision as i64).into(),match action{Action::Resolve=>"resolve",Action::Archive=>"archive",Action::Check=>"check"}.into(),claims.descriptor_sha256.clone().into(),binding.fingerprint(&policy)?.into(),claims.request_sha256.clone().into(),claims.configuration_sha256.clone().into(),String::from_utf8(input.clone()).unwrap().into(),String::from_utf8(configuration.clone()).unwrap().into(),domain.kind.into(),domain.subject.into(),domain.session.into(),domain.id.into(),domain.generation.into(),domain.worker.into(),domain.worker_generation.into(),domain.worker_hash.into(),(now as f64).into(),((now+60) as f64).into(),domain.actor_authority.into()]).await?;
+        execute(&tx,"INSERT INTO webdock_auth.repository_lease(id,plugin_id,customer_id,project_id,source_id,generation,source_revision,connection_generation,grant_revision,configuration_revision,action,descriptor_sha256,binding_sha256,request_sha256,configuration_sha256,input_json,configuration_json,authority_kind,actor_subject,actor_session,authority_id,authority_generation,worker_id,worker_generation,worker_credential_hash,issued_at,expires_at,actor_authority,archive_authority) VALUES($1::uuid,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,to_timestamp($26),to_timestamp($27),$28,$29)",vec![claims.id.clone().into(),plugin.into(),source.customer_id.clone().into(),source.project_id.clone().into(),source.source_id.clone().into(),(claims.generation as i64).into(),source.source_revision.into(),source.connection_generation.into(),(claims.grant_revision as i64).into(),(claims.configuration_revision as i64).into(),match action{Action::Resolve=>"resolve",Action::Archive=>"archive",Action::Check=>"check"}.into(),claims.descriptor_sha256.clone().into(),binding.fingerprint(&policy)?.into(),claims.request_sha256.clone().into(),claims.configuration_sha256.clone().into(),String::from_utf8(input.clone()).unwrap().into(),String::from_utf8(configuration.clone()).unwrap().into(),domain.kind.into(),domain.subject.into(),domain.session.into(),domain.id.into(),domain.generation.into(),domain.worker.into(),domain.worker_generation.into(),domain.worker_hash.into(),(now as f64).into(),(claims.exp as f64).into(),domain.actor_authority.into(),domain.archive_authority.into()]).await?;
         let active = rows(
             &tx,
             "SELECT coalesce(webdock_rls.repository_domain_live($1::uuid),'null'::jsonb) AS value",
@@ -476,6 +528,12 @@ impl RepositoryAdmission {
             return Err(error("repository_authority_revoked"));
         }
         tx.commit().await.map_err(db_error)?;
+        if row["authority_kind"] == "plugin-job" {
+            self.host
+                .validate_export_job(&row["archive_authority"])
+                .await
+                .map_err(|_| error("repository_authority_revoked"))?;
+        }
         let authority_guard = if let Some(value) =
             row.get("actor_authority").filter(|v| !v.is_null())
         {

@@ -56,6 +56,7 @@ impl HostingService {
     ) -> Result<Command> {
         let tx = self.agent_tx(agent).await?;
         let op = Self::operation(&tx, agent, id, false).await?;
+        Self::ensure_app_effect_allowed(&tx, field(&op, "app_id")?, None).await?;
         let browser_guard = self.operation_browser_guard(&op).await?;
         Self::lease(&op, generation as i64)?;
         if !self
@@ -298,6 +299,7 @@ impl HostingService {
         }
         let receipt = json!({"requestSha256":fingerprint,"errorCode":code});
         if ["needs-reconciliation", "failed"].contains(&op["status"].as_str().unwrap_or("")) {
+            Self::ensure_app_effect_allowed(&tx, field(&op, "app_id")?, Some(&op)).await?;
             if op["result"]["runtimeReceipt"] != receipt {
                 return Err(error(409, "Runtime failure receipt changed."));
             }
@@ -312,6 +314,7 @@ impl HostingService {
             tx.commit().await.map_err(db_error)?;
             return Ok(result);
         }
+        Self::ensure_app_effect_allowed(&tx, field(&op, "app_id")?, None).await?;
         let browser_guard = self.operation_browser_guard(&op).await?;
         Self::lease(&op, command.generation as i64)?;
         let result=self.complete_with_runtime(&tx,agent,&json!({"id":command.operation_id,"generation":command.generation,"outcome":"failed","error":code}),true,browser_guard.as_ref()).await?;
@@ -394,6 +397,7 @@ impl HostingService {
             return Err(error(403, "Runtime command authority changed."));
         }
         if op["status"] == "succeeded" {
+            Self::ensure_app_effect_allowed(&tx, field(&op, "app_id")?, Some(&op)).await?;
             if op["result"]["nativeRuntimeReceipt"] != receipt {
                 return Err(error(
                     409,
@@ -412,6 +416,7 @@ impl HostingService {
                 json!({"id":command.operation_id,"status":"succeeded","appID":command.spec.resource_id.to_string()}),
             );
         }
+        Self::ensure_app_effect_allowed(&tx, field(&op, "app_id")?, None).await?;
         let browser_guard = self.operation_browser_guard(&op).await?;
         Self::lease(&op, command.generation as i64)?;
         if !self

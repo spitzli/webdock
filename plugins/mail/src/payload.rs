@@ -6,14 +6,7 @@ use std::sync::Arc;
 use webdock_mail_runtime::{Error, PrivatePayloadStore, Result, SavedPayload, secrets::MailCipher};
 
 pub fn payload_key(retained_hex: &str) -> Result<String> {
-    let key = hex::decode(retained_hex).map_err(|_| Error::Secret)?;
-    if key.len() != 32 {
-        return Err(Error::Secret);
-    }
-    let mut hash = Sha256::new();
-    hash.update(b"webdock-mail:private-payload-key:v1\0");
-    hash.update(key);
-    Ok(base64::engine::general_purpose::STANDARD.encode(hash.finalize()))
+    webdock_mail_runtime::secrets::private_payload_key_from_hex(retained_hex)
 }
 fn purpose(customer: &str, reference: &str) -> Result<String> {
     if !webdock_mail_runtime::proof::valid_id(customer)
@@ -37,7 +30,18 @@ impl PgPrivatePayloadStore {
     pub async fn new(store: Arc<Store>, retained_hex: &str) -> Result<Self> {
         let cipher = MailCipher::new(&payload_key(retained_hex)?)?;
         let sealed = cipher.seal(&"webdock-private-payload-v1", "payload-store")?;
-        store.0.execute("INSERT INTO private_payload_key(singleton,sealed) VALUES(true,$1) ON CONFLICT DO NOTHING", &[&sealed]).await.map_err(|_| Error::Storage)?;
+        if store
+            .0
+            .query_opt(
+                "SELECT singleton FROM private_payload_key WHERE singleton",
+                &[],
+            )
+            .await
+            .map_err(|_| Error::Storage)?
+            .is_none()
+        {
+            store.0.execute("INSERT INTO private_payload_key(singleton,sealed) VALUES(true,$1) ON CONFLICT DO NOTHING", &[&sealed]).await.map_err(|_| Error::Storage)?;
+        }
         let row = store
             .0
             .query_one(

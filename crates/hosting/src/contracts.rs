@@ -327,6 +327,36 @@ fn normalize_numbers(value: &mut Value) {
 mod plugin_runtime_observation_tests {
     use super::*;
     #[test]
+    fn application_effect_guard_is_explicit_and_strict_without_changing_old_observations() {
+        let old = json!({"sequence":1,"generation":1,"observedAt":"2026-10-26T20:00:00.000Z","version":"fixture","nodes":[],"runtimeKind":"docker","capacity":{"apps":0,"cpuMillicores":0,"memoryBytes":0,"volumeBytes":0,"ephemeralBytes":0,"replicasPerApp":0,"concurrentDeployments":0},"capabilities":{"networkIsolation":false,"restrictedPods":false,"storage":false,"ingress":false,"nativeRecovery":{"version":2,"profiles":[],"targets":[]}}});
+        let original_bytes = serde_json::to_vec(&old).unwrap();
+        observation(&old).unwrap();
+        assert_eq!(serde_json::to_vec(&old).unwrap(), original_bytes);
+        let mut current = old.clone();
+        current["capabilities"]["nativeRecovery"]["appEffectFenceVersion"] = json!(1);
+        observation(&current).unwrap();
+        for invalid in [json!(0), json!(2), json!("1"), Value::Null] {
+            current["capabilities"]["nativeRecovery"]["appEffectFenceVersion"] = invalid;
+            assert!(observation(&current).is_err());
+        }
+        let mut unknown = old.clone();
+        unknown["capabilities"]["nativeRecovery"]["arbitraryAppGuard"] = json!(1);
+        assert!(observation(&unknown).is_err());
+        assert!(
+            old["capabilities"]["nativeRecovery"]
+                .get("appEffectFenceVersion")
+                .is_none()
+        );
+    }
+    #[test]
+    fn recovery_target_observation_binds_actual_pool_identity_without_allowing_extra_fields() {
+        let mut value = json!({"sequence":1,"generation":1,"observedAt":"2026-10-25T20:00:00.000Z","version":"fixture","nodes":[],"runtimeKind":"docker","capacity":{"apps":0,"cpuMillicores":0,"memoryBytes":0,"volumeBytes":0,"ephemeralBytes":0,"replicasPerApp":0,"concurrentDeployments":0},"capabilities":{"networkIsolation":false,"restrictedPods":false,"storage":false,"ingress":false,"nativeRecovery":{"version":1,"profiles":[],"targets":[{"id":"owned","profile":"mail-installation-v1","sha256":"a".repeat(64),"nonce":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","capacityBytes":67108864,"runtime":null,"storageIdentity":{"configuration":{"root":"/owned/pool","node":"owned-node","clusterID":"123","poolID":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","capacityBytes":1073741824,"reserveBytes":67108864},"poolUID":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb:2049:123","revision":"c".repeat(64)}}]}}});
+        observation(&value).unwrap();
+        value["capabilities"]["nativeRecovery"]["targets"][0]["storageIdentity"]["forgedOwnership"] =
+            json!(true);
+        assert!(observation(&value).is_err());
+    }
+    #[test]
     fn optional_plugin_runtime_capability_is_versioned_without_relaxing_observation_shape() {
         let mut value = json!({"sequence":1,"generation":1,"observedAt":"2026-10-23T20:00:00.000Z","version":"fixture","nodes":[],"runtimeKind":"kubernetes","capacity":{"apps":0,"cpuMillicores":0,"memoryBytes":0,"volumeBytes":0,"ephemeralBytes":0,"replicasPerApp":0,"concurrentDeployments":0},"capabilities":{"networkIsolation":false,"restrictedPods":false,"storage":false,"ingress":false}});
         observation(&value).unwrap();

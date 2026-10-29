@@ -1,5 +1,7 @@
 //! Trusted build-service SPI. Caller owns the worker transaction; no browser principal is synthesized.
 use super::*;
+const GIT_ENVIRONMENT_SOURCE: &str = "SELECT to_jsonb(s) AS value FROM webdock_auth.git_source s WHERE id=$1 AND recipe IN ('dockerfile','dockerfile-frontend') FOR SHARE";
+const GIT_PUBLICATION_SOURCE: &str = "SELECT to_jsonb(h) AS value FROM webdock_auth.git_source s JOIN webdock_auth.hosting_project h ON h.project_id=s.project_id WHERE s.id=$1 AND s.recipe IN ('dockerfile','dockerfile-frontend')";
 impl HostingService {
     #[expect(
         clippy::too_many_arguments,
@@ -56,7 +58,10 @@ impl HostingService {
         tx: &DatabaseTransaction,
         source_id: &str,
     ) -> Result<(String, i64)> {
-        let source=rows(tx,"SELECT to_jsonb(s) AS value FROM webdock_auth.git_source s WHERE id=$1 AND recipe='dockerfile' FOR SHARE",vec![source_id.into()]).await?.pop().ok_or_else(||error(404,"Git source is unavailable."))?;
+        let source = rows(tx, GIT_ENVIRONMENT_SOURCE, vec![source_id.into()])
+            .await?
+            .pop()
+            .ok_or_else(|| error(404, "Git source is unavailable."))?;
         let app = Self::app(tx, field(&source, "target_id")?).await?;
         if app["project_id"] != source["project_id"] || app["status"] == "deleted" {
             return Err(error(404, "Git target is unavailable."));
@@ -258,7 +263,10 @@ impl HostingService {
         tx: &DatabaseTransaction,
         source_id: &str,
     ) -> Result<()> {
-        let row=rows(tx,"SELECT to_jsonb(h) AS value FROM webdock_auth.git_source s JOIN webdock_auth.hosting_project h ON h.project_id=s.project_id WHERE s.id=$1 AND s.recipe='dockerfile'",vec![source_id.into()]).await?.pop().ok_or_else(||error(404,"Git hosting target is unavailable."))?;
+        let row = rows(tx, GIT_PUBLICATION_SOURCE, vec![source_id.into()])
+            .await?
+            .pop()
+            .ok_or_else(|| error(404, "Git hosting target is unavailable."))?;
         let snapshot = Self::cluster_view(tx, field(&row, "cluster_id")?).await?;
         if snapshot["workloadReady"] != true
             || snapshot["observation"]["capabilities"]["registryVersion"] != 1
@@ -335,6 +343,54 @@ fn snapshot_hash(
 #[cfg(test)]
 mod compatibility {
     use super::*;
+    #[tokio::test]
+    #[ignore = "minimal owned PostgreSQL query fixture; no native bootstrap"]
+    async fn frontend_source_environment_query() {
+        assert_recipe_query(GIT_ENVIRONMENT_SOURCE, "environment snapshot").await;
+    }
+    #[tokio::test]
+    #[ignore = "minimal owned PostgreSQL query fixture; no native bootstrap"]
+    async fn frontend_source_publication_query() {
+        assert_recipe_query(GIT_PUBLICATION_SOURCE, "publication readiness").await;
+    }
+    async fn assert_recipe_query(query: &str, boundary: &str) {
+        let url =
+            std::env::var("WEBDOCK_GIT_RECIPE_DATABASE_URL").expect("explicit owned query fixture");
+        let db = sea_orm::Database::connect(url).await.unwrap();
+        let tx = db.begin().await.unwrap();
+        for (id, recipe) in [
+            ("100", "dockerfile"),
+            ("101", "dockerfile-frontend"),
+            ("102", "vercel"),
+            ("103", "unknown"),
+        ] {
+            execute(
+                &tx,
+                "INSERT INTO webdock_auth.git_source(id,project_id,recipe) VALUES($1,'200',$2)",
+                vec![id.into(), recipe.into()],
+            )
+            .await
+            .unwrap();
+        }
+        execute(
+            &tx,
+            "INSERT INTO webdock_auth.hosting_project(project_id,cluster_id) VALUES('200','300')",
+            vec![],
+        )
+        .await
+        .unwrap();
+        for (id, expected) in [
+            ("100", true),
+            ("101", true),
+            ("102", false),
+            ("103", false),
+            ("999", false),
+        ] {
+            let actual = rows(&tx, query, vec![id.into()]).await.unwrap();
+            assert_eq!(!actual.is_empty(), expected, "{boundary} source {id}");
+        }
+        tx.rollback().await.unwrap();
+    }
     #[test]
     fn retained_node_snapshot_vectors() {
         let environment = std::collections::BTreeMap::new();

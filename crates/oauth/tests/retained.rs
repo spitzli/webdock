@@ -23,6 +23,88 @@ fn code(location: &str) -> String {
         .1
         .into_owned()
 }
+
+// Only called by the ignored, genuinely issued OAuth fixture below. No fabricated
+// session or role is used to exercise MCP locking, reload or transaction lifetime.
+async fn mcp_identity_before_access<T>(
+    db: &sea_orm::DatabaseConnection,
+    owner: &sea_orm::DatabaseConnection,
+    subject: &str,
+    token_hash: &str,
+    new_expiry: Option<i64>,
+    verify: impl std::future::Future<Output = webdock_oauth::Result<T>>,
+) -> T {
+    let identity = db.begin().await.unwrap();
+    identity
+        .query_one_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "SELECT id FROM webdock_auth.\"user\" WHERE id=$1 FOR UPDATE",
+            [subject.into()],
+        ))
+        .await
+        .unwrap()
+        .unwrap();
+    let identity_pid: i32 = identity
+        .query_one_raw(Statement::from_string(
+            DbBackend::Postgres,
+            "SELECT pg_backend_pid() AS pid",
+        ))
+        .await
+        .unwrap()
+        .unwrap()
+        .try_get("", "pid")
+        .unwrap();
+    tokio::pin!(verify);
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        loop {
+            let observed = owner.query_one_raw(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "SELECT EXISTS(SELECT 1 FROM pg_stat_activity a WHERE a.datname=current_database() AND $1::integer=ANY(pg_blocking_pids(a.pid))) AS blocked",
+                [identity_pid.into()],
+            ));
+            tokio::select! {
+                _ = &mut verify => panic!("MCP verification must wait for native identity"),
+                row = observed => {
+                    if row.unwrap().unwrap().try_get::<bool>("", "blocked").unwrap() {
+                        break;
+                    }
+                }
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+    }).await.expect("MCP identity lock must be observed");
+    let probe = owner.begin().await.unwrap();
+    let available = probe
+        .query_one_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "SELECT id FROM webdock_auth.\"oauthAccessToken\" WHERE token=$1 FOR UPDATE NOWAIT",
+            [token_hash.into()],
+        ))
+        .await;
+    assert!(
+        available.unwrap().is_some(),
+        "MCP must not hold the access row while waiting for native identity"
+    );
+    if let Some(expiry) = new_expiry {
+        probe
+            .execute_raw(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "UPDATE webdock_auth.\"oauthAccessToken\" SET \"expiresAt\"=$2 WHERE token=$1",
+                [
+                    token_hash.into(),
+                    chrono::DateTime::from_timestamp(expiry, 0).unwrap().into(),
+                ],
+            ))
+            .await
+            .unwrap();
+    }
+    probe.commit().await.unwrap();
+    identity.commit().await.unwrap();
+    tokio::time::timeout(std::time::Duration::from_secs(5), verify)
+        .await
+        .expect("MCP verification must finish after identity release")
+        .unwrap()
+}
 #[tokio::test]
 #[ignore = "requires owned retained-schema restricted PostgreSQL fixture"]
 async fn real_oidc_pkce_consent_refresh_and_mcp_authority() {
@@ -322,18 +404,52 @@ async fn real_oidc_pkce_consent_refresh_and_mcp_authority() {
             .await
             .is_ok()
     );
-    let mcp = oauth
-        .authorize_mcp_reference(&credentials(), &access.access_token, "webdock:read")
-        .await
-        .unwrap();
+    let mcp_credentials = credentials();
+    let hash = legacy_token_hash(&access.access_token);
+    let reloaded_expiry = active["exp"].as_i64().unwrap() - 1;
+    let mcp = mcp_identity_before_access(
+        &db,
+        &offline,
+        &id,
+        &hash,
+        Some(reloaded_expiry),
+        oauth.authorize_mcp_reference(&mcp_credentials, &access.access_token, "webdock:read"),
+    )
+    .await;
+    assert_eq!(mcp.authority.expires_at(), reloaded_expiry);
     assert!(!mcp.authority.can_write());
     let stored = serde_json::to_string(&mcp.authority).unwrap();
     assert!(!stored.contains(&access.access_token));
     let transaction = db.begin().await.unwrap();
-    oauth
-        .revalidate_mcp_authority_in(&transaction, &mcp.authority)
-        .await
-        .unwrap();
+    mcp_identity_before_access(
+        &db,
+        &offline,
+        &id,
+        &hash,
+        None,
+        oauth.revalidate_mcp_authority_in(&transaction, &mcp.authority),
+    )
+    .await;
+    let probe = offline.begin().await.unwrap();
+    let held = probe
+        .query_one_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "SELECT id FROM webdock_auth.\"oauthAccessToken\" WHERE token=$1 FOR UPDATE NOWAIT",
+            [hash.into()],
+        ))
+        .await;
+    let Err(sea_orm::DbErr::Query(sea_orm::RuntimeErr::SqlxError(error))) = held else {
+        panic!("The actual MCP verification transaction must retain its access lock");
+    };
+    assert_eq!(
+        error
+            .as_database_error()
+            .and_then(|error| error.code())
+            .as_deref(),
+        Some("55P03"),
+        "Only lock_not_available proves retention; other database failures do not"
+    );
+    probe.rollback().await.unwrap();
     transaction.commit().await.unwrap();
     let mut tampered = serde_json::to_value(&mcp.authority).unwrap();
     tampered["subject"] = serde_json::json!("other-subject");

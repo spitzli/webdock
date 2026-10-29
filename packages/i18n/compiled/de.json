@@ -377,6 +377,9 @@
   "A mapped tracking domain belonging to this tenant is required.": [
     "Eine zugeordnete Tracking-Domain dieses Mandanten ist erforderlich."
   ],
+  "A new grant enables the daily schedule and WAL archiving.": [
+    "Eine neue Genehmigung aktiviert den täglichen Zeitplan und die WAL-Archivierung."
+  ],
   "A pending invitation already exists. Resend it, or cancel it before choosing another role.": [
     "Eine offene Einladung besteht bereits. Sende sie erneut oder widerrufe sie, bevor du eine andere Rolle auswählst."
   ],
@@ -466,6 +469,9 @@
   ],
   "Accepted messages": [
     "Angenommene Nachrichten"
+  ],
+  "Accepted operation": [
+    "Angenommener Vorgang"
   ],
   "Accepted orders start billing only after confirmed provisioning. Invoice handling remains manual.": [
     "Die Abrechnung bestätigter Bestellungen beginnt erst nach nachgewiesener Bereitstellung. Die Rechnungsstellung erfolgt weiterhin manuell."
@@ -842,6 +848,9 @@
   "Allocated resources, reservations and measured usage are tracked separately.": [
     "Zugewiesene Ressourcen, Reservierungen und gemessene Nutzung werden getrennt erfasst."
   ],
+  "Allow WAL archiving": [
+    "WAL-Archivierung erlauben"
+  ],
   "Allow access": [
     "Zugriff erlauben"
   ],
@@ -850,6 +859,9 @@
   ],
   "Allow changes in the selected area": [
     "Änderungen im ausgewählten Bereich erlauben"
+  ],
+  "Allow deletion under the retention policy": [
+    "Löschung gemäß Aufbewahrungsrichtlinie erlauben"
   ],
   "Allow new purchases": [
     "Neue Käufe erlauben"
@@ -1099,6 +1111,9 @@
   ],
   "Apply": [
     "Anwenden"
+  ],
+  "Apply backup policy": [
+    "Backup-Richtlinie anwenden"
   ],
   "Apply filters": [
     "Filter anwenden"
@@ -1364,17 +1379,59 @@
   "Back to {type}": [
     "Zurück zu {type}"
   ],
+  "Back up now": [
+    "Jetzt sichern"
+  ],
   "Background": [
     "Hintergrund"
   ],
   "Backup TODO": [
     "Backups: noch offen"
   ],
+  "Backup authority is no longer available. Sign in again or request current operator access.": [
+    "Die Backup-Berechtigung ist nicht mehr verfügbar. Erneut anmelden oder aktuelle Betreiberberechtigung anfordern."
+  ],
   "Backup codes aren't enabled": [
     "Wiederherstellungscodes sind nicht aktiviert."
   ],
+  "Backup configuration observed": [
+    "Backup-Konfiguration bestätigt"
+  ],
+  "Backup configuration pending observation": [
+    "Backup-Konfiguration wartet auf Bestätigung"
+  ],
+  "Backup grant revocation is pending observation. WAL and retention permissions remain separate.": [
+    "Widerruf der Backup-Berechtigung wartet auf Bestätigung. WAL- und Aufbewahrungsberechtigungen bleiben unabhängig."
+  ],
+  "Backup grant revocation observed. WAL and retention permissions remain separate.": [
+    "Widerruf der Backup-Berechtigung bestätigt. WAL- und Aufbewahrungsberechtigungen bleiben unabhängig."
+  ],
+  "Backup observation unavailable. Refresh before making changes.": [
+    "Backup-Beobachtung nicht verfügbar. Vor Änderungen aktualisieren."
+  ],
+  "Backup policy": [
+    "Backup-Richtlinie"
+  ],
+  "Backup policy settings": [
+    "Einstellungen der Backup-Richtlinie"
+  ],
+  "Backup request accepted. Waiting for agent observation.": [
+    "Backup-Auftrag angenommen. Bestätigung durch den Agent steht aus."
+  ],
+  "Backup request conflicts with current state. Refresh before trying again.": [
+    "Der Backup-Auftrag steht im Konflikt mit dem aktuellen Zustand. Vor einem erneuten Versuch aktualisieren."
+  ],
+  "Backup schedule suspension observed": [
+    "Aussetzung des Backup-Zeitplans bestätigt"
+  ],
+  "Backup suspension pending observation": [
+    "Backup-Aussetzung wartet auf Bestätigung"
+  ],
   "Backups": [
     "Datensicherungen"
+  ],
+  "Backups are not configured": [
+    "Backups sind nicht eingerichtet"
   ],
   "Backups are not configured. No recovery window is included.": [
     "Backups sind nicht eingerichtet. Ein Wiederherstellungszeitraum ist nicht enthalten."
@@ -1703,6 +1760,9 @@
   "Change": [
     "Änderung"
   ],
+  "Change backup policy": [
+    "Backup-Richtlinie ändern"
+  ],
   "Change in progress": [
     "Änderung läuft"
   ],
@@ -1765,6 +1825,9 @@
   ],
   "Check sending status": [
     "Versandstatus prüfen"
+  ],
+  "Check the backup request fields. Refresh before trying again.": [
+    "Die Felder des Backup-Auftrags prüfen. Vor einem erneuten Versuch aktualisieren."
   ],
   "Check the database configuration fields.": [
     "Bitte prüfe die Angaben zur Datenbank."
@@ -3078,6 +3141,9 @@
   "Daily recipients": [
     "Empfänger pro Tag"
   ],
+  "Daily schedule": [
+    "Täglicher Zeitplan"
+  ],
   "Dark": [
     "Dunkel"
   ],
@@ -3314,6 +3380,9 @@
   ],
   "Design pages freely and preview drafts live.": [
     "Seiten frei gestalten und Entwürfe live ansehen."
+  ],
+  "Desired controls": [
+    "Gewünschte Einstellungen"
   ],
   "Desktop": [
     "Desktop"
@@ -4305,6 +4374,9 @@
   "Grant access": [
     "Zugriff gewähren"
   ],
+  "Grant backup policy": [
+    "Backup-Richtlinie genehmigen"
+  ],
   "Grant mailbox access": [
     "Postfachzugriff gewähren"
   ],
@@ -4328,6 +4400,9 @@
   ],
   "HTTP status (0 = unfinished)": [
     "HTTP-Status (0 = nicht abgeschlossen)"
+  ],
+  "HTTPS S3 endpoint": [
+    "HTTPS-S3-Endpunkt"
   ],
   "HTTPS not checked": [
     "HTTPS nicht geprüft"
@@ -4370,6 +4445,12 @@
   ],
   "Hide value": [
     "Wert verbergen"
+  ],
+  "Historical completed backups": [
+    "Historisch abgeschlossene Backups"
+  ],
+  "Historical last completed backup": [
+    "Zuletzt historisch abgeschlossenes Backup"
   ],
   "History for record ": [
     "Verlauf für Eintrag "
@@ -6087,6 +6168,9 @@
   "No addresses saved.": [
     "Keine Adressen hinterlegt."
   ],
+  "No agent observation is available.": [
+    "Es liegt keine Beobachtung durch einen Agent vor."
+  ],
   "No applications deployed yet.": [
     "Noch keine Anwendungen bereitgestellt."
   ],
@@ -6462,6 +6546,9 @@
   "Objects": [
     "Objekte"
   ],
+  "Observed controls": [
+    "Beobachtete Einstellungen"
+  ],
   "Observed state": [
     "Gemeldeter Zustand"
   ],
@@ -6743,6 +6830,9 @@
   ],
   "Operator registry": [
     "Plattformverwaltung"
+  ],
+  "Operator restore requires a separately reviewed recovery order. This Console flow is not available yet.": [
+    "Die Wiederherstellung durch Betreiber erfordert einen separat geprüften Wiederherstellungsauftrag. Dieser Ablauf ist in der Console noch nicht verfügbar."
   ],
   "Operator review of agreements and explicit manual releases.": [
     "Vereinbarungen prüfen und manuelle Freigaben ausdrücklich erteilen."
@@ -7260,6 +7350,9 @@
   "Previous choices": [
     "Vorherige Auswahlmöglichkeiten"
   ],
+  "Previous observations — not current confirmation": [
+    "Frühere Beobachtungen – keine aktuelle Bestätigung"
+  ],
   "Previous repositories": [
     "Vorherige Repositorys"
   ],
@@ -7292,6 +7385,9 @@
   ],
   "Private": [
     "Privat"
+  ],
+  "Private bucket": [
+    "Privater Bucket"
   ],
   "Private offer created.": [
     "Privates Angebot erstellt."
@@ -7464,6 +7560,9 @@
   "Provide both names, accept the provider policy, and configure the assigned sending IP.": [
     "Gib beide Namen an, akzeptiere die Anbieterrichtlinie und konfiguriere die zugewiesene Versand-IP."
   ],
+  "Provide separate writer and read-only recovery credentials. Credentials are sent once and cleared from this form. A recovery key reference does not establish key escrow.": [
+    "Separate Schreib- und schreibgeschützte Wiederherstellungszugangsdaten angeben. Sie werden einmal gesendet und aus diesem Formular gelöscht. Eine Wiederherstellungsschlüsselreferenz belegt keine Schlüsselhinterlegung."
+  ],
   "Provider": [
     "Anbieter"
   ],
@@ -7538,6 +7637,9 @@
   ],
   "Public ordering requires a separate product release decision.": [
     "Öffentliche Bestellungen erfordern eine gesonderte Produktfreigabe."
+  ],
+  "Public recovery is unavailable. No recovery window or RPO/RTO commitment is included.": [
+    "Öffentliche Wiederherstellung ist nicht verfügbar. Ein Wiederherstellungszeitraum oder eine RPO-/RTO-Zusage ist nicht enthalten."
   ],
   "Publication": [
     "Veröffentlichung"
@@ -7622,6 +7724,9 @@
   ],
   "RAM (bytes)": [
     "Arbeitsspeicher (Bytes)"
+  ],
+  "Re-enter identical credentials and retry registration": [
+    "Dieselben Zugangsdaten erneut eingeben und Registrierung wiederholen"
   ],
   "Read access": [
     "Lesezugriff"
@@ -7770,8 +7875,14 @@
   "Recorded status": [
     "Gespeicherter Status"
   ],
+  "Recovery access key": [
+    "Wiederherstellungszugriffsschlüssel"
+  ],
   "Recovery code": [
     "Wiederherstellungscode"
+  ],
+  "Recovery secret key": [
+    "Geheimer Wiederherstellungsschlüssel"
   ],
   "Recurring module operation in addition to Website Plus, following project-specific setup. External calendar integration and payment processing are excluded.": [
     "Laufender Modulbetrieb zusätzlich zu Website Plus, nach projektspezifischer Einrichtung. Keine externe Kalenderintegration oder Zahlungsverarbeitung enthalten."
@@ -7802,6 +7913,9 @@
   ],
   "Refresh available services": [
     "Verfügbare Dienste aktualisieren"
+  ],
+  "Refresh backup status": [
+    "Backup-Status aktualisieren"
   ],
   "Refresh connection": [
     "Verbindung aktualisieren"
@@ -7854,11 +7968,17 @@
   "Register a cluster": [
     "Cluster registrieren"
   ],
+  "Register backup destination": [
+    "Backup-Ziel registrieren"
+  ],
   "Register cluster": [
     "Cluster registrieren"
   ],
   "Register database": [
     "Datenbank registrieren"
+  ],
+  "Register destination": [
+    "Ziel registrieren"
   ],
   "Register sender domain": [
     "Versanddomain registrieren"
@@ -7871,6 +7991,9 @@
   ],
   "Registered clients": [
     "Registrierte Clients"
+  ],
+  "Registered destination ID": [
+    "ID des registrierten Ziels"
   ],
   "Registering…": [
     "Wird registriert…"
@@ -8076,6 +8199,9 @@
   "Request pages": [
     "Anfragenseiten"
   ],
+  "Request reference": [
+    "Auftragsreferenz"
+  ],
   "Request rollback": [
     "Rollback anfordern"
   ],
@@ -8175,8 +8301,14 @@
   "Restore account": [
     "Konto wiederherstellen"
   ],
+  "Restore database": [
+    "Datenbank wiederherstellen"
+  ],
   "Restore original homepage": [
     "Ursprüngliche Startseite wiederherstellen"
+  ],
+  "Restore point": [
+    "Wiederherstellungspunkt"
   ],
   "Restore record": [
     "Datensatz wiederherstellen"
@@ -8214,11 +8346,20 @@
   "Retained migration sources": [
     "Aufbewahrte Migrationsquellen"
   ],
+  "Retained recovery key reference": [
+    "Referenz des separat aufbewahrten Wiederherstellungsschlüssels"
+  ],
   "Retained until": [
     "Aufbewahrt bis"
   ],
   "Retention and disconnection": [
     "Speicherdauer und Trennung der Verbindung"
+  ],
+  "Retention days": [
+    "Aufbewahrungstage"
+  ],
+  "Retention deletion permission": [
+    "Löschberechtigung nach Aufbewahrungsregel"
   ],
   "Retention has not expired.": [
     "Die Aufbewahrungsfrist ist noch nicht abgelaufen."
@@ -8229,8 +8370,14 @@
   "Retry Mail operation": [
     "E-Mail-Änderung erneut ausführen"
   ],
+  "Retry same request": [
+    "Denselben Auftrag wiederholen"
+  ],
   "Retry setup": [
     "Einrichtung erneut versuchen"
+  ],
+  "Retry the original unchanged request. Re-enter the identical credentials for a destination registration.": [
+    "Den ursprünglichen Auftrag unverändert wiederholen. Bei der Zielregistrierung dieselben Zugangsdaten erneut eingeben."
   ],
   "Return this record to your active workspace.": [
     "Diesen Datensatz in deinen aktiven Arbeitsbereich zurückholen."
@@ -8322,6 +8469,9 @@
   "Revoke agent": [
     "Agent-Zugang widerrufen"
   ],
+  "Revoke backup grant": [
+    "Backup-Berechtigung widerrufen"
+  ],
   "Revoke credential": [
     "Zugangsdaten widerrufen"
   ],
@@ -8330,6 +8480,9 @@
   ],
   "Revoke offer": [
     "Angebot widerrufen"
+  ],
+  "Revoke the backup grant? Recurrence stops only after agent observation. WAL and retention deletion permissions are unchanged.": [
+    "Backup-Berechtigung widerrufen? Die Wiederholung stoppt erst nach Bestätigung durch den Agent. WAL- und Aufbewahrungslöschberechtigungen bleiben unverändert."
   ],
   "Revoke the existing agent before replacement.": [
     "Vor dem Austausch den bestehenden Agent-Zugang widerrufen."
@@ -8423,6 +8576,9 @@
   ],
   "Runtime proxy secret": [
     "Proxy-Geheimnis der Instanz"
+  ],
+  "S3 region": [
+    "S3-Region"
   ],
   "SEO & contact": [
     "Suchmaschinen und Kontakt"
@@ -8615,6 +8771,9 @@
   ],
   "Schedule": [
     "Versandtermin"
+  ],
+  "Schedule suspension, WAL archiving and retention deletion are independent. Stop the schedule before disabling WAL.": [
+    "Zeitplanaussetzung, WAL-Archivierung und Aufbewahrungslöschung sind unabhängig. Vor dem Deaktivieren von WAL den Zeitplan stoppen."
   ],
   "Scheduled": [
     "Geplant"
@@ -9042,6 +9201,9 @@
   "Shared CPU and memory; measured logical storage allowance.": [
     "Gemeinsam genutzte CPU und RAM; gemessenes logisches Speicherkontingent."
   ],
+  "Shared PostgreSQL backup, restore and clone are unavailable.": [
+    "Backup, Wiederherstellung und Klonen für Shared PostgreSQL sind nicht verfügbar."
+  ],
   "Shared platform cluster": [
     "Gemeinsam genutztes Plattform-Cluster"
   ],
@@ -9176,6 +9338,9 @@
   ],
   "Site builder": [
     "Site-Builder"
+  ],
+  "Six fields: 0 minute hour * * *. Provider schedule timezone applies.": [
+    "Sechs Felder: 0 Minute Stunde * * *. Es gilt die Zeitzone des Anbieterzeitplans."
   ],
   "Size": [
     "Größe"
@@ -9455,6 +9620,9 @@
   ],
   "Suspend incoming Mail": [
     "Mailempfang pausieren"
+  ],
+  "Suspend scheduled backups": [
+    "Geplante Backups aussetzen"
   ],
   "Suspended": [
     "Gesperrt"
@@ -9768,6 +9936,9 @@
   "The isolated schema used by this deployed CMS.": [
     "Das isolierte Schema, das dieses bereitgestellte CMS verwendet."
   ],
+  "The latest 100 recorded completions are shown. A completed backup alone does not establish a recovery window.": [
+    "Die letzten 100 aufgezeichneten Abschlüsse werden angezeigt. Ein abgeschlossenes Backup allein belegt keinen Wiederherstellungszeitraum."
+  ],
   "The linked Vercel project could not be found.": [
     "Das verknüpfte Vercel-Projekt wurde nicht gefunden."
   ],
@@ -9890,6 +10061,9 @@
   ],
   "The response is too large.": [
     "Antwort zu groß."
+  ],
+  "The response was lost. The request may have been accepted. Retry only the identical request with its retained reference.": [
+    "Die Antwort ging verloren. Der Auftrag wurde möglicherweise angenommen. Nur denselben Auftrag mit seiner beibehaltenen Referenz wiederholen."
   ],
   "The result is unknown. Check Drafts and Sent before composing this message again.": [
     "Das Ergebnis ist unklar. Prüfe Entwürfe und Gesendet, bevor du diese Nachricht erneut verfasst."
@@ -11106,6 +11280,9 @@
   "Voucher": [
     "Gutschein"
   ],
+  "WAL archiving": [
+    "WAL-Archivierung"
+  ],
   "Wait at least five minutes and inspect the provider state. Confirm the exact pending domain to allow a new operation.": [
     "Warte mindestens fünf Minuten und prüfe den Zustand beim Anbieter. Bestätige die genaue ausstehende Domain, um einen neuen Auftrag zu erlauben."
   ],
@@ -11495,6 +11672,12 @@
   ],
   "Write scope": [
     "Schreibberechtigung"
+  ],
+  "Writer access key": [
+    "Schreibzugriffsschlüssel"
+  ],
+  "Writer secret key": [
+    "Geheimer Schreibschlüssel"
   ],
   "X": [
     "X"

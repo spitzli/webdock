@@ -92,6 +92,8 @@ pub struct DatabaseCompletionProof {
     pub endpoint_ready: bool,
     #[serde(rename = "copySHA256")]
     pub copy_sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub backup: Option<Box<DatabaseBackupProof>>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -116,6 +118,11 @@ impl DatabaseCompletion {
             return Err(invalid());
         }
         if let Some(p) = &self.proof
+            && let Some(backup) = &p.backup
+        {
+            backup.validate()?;
+        }
+        if let Some(p) = &self.proof
             && (!record(&p.installation_id)
                 || p.database_id.as_ref().is_some_and(|s| !record(s))
                 || !uid(&p.cnpg_uid)
@@ -138,6 +145,9 @@ pub enum DatabaseAction {
     Delete,
     Purge,
     Resize,
+    ConfigureBackup,
+    Backup,
+    Restore,
     PrepareMigration,
     Migrate,
 }
@@ -232,6 +242,10 @@ pub struct DatabaseJobSpec {
     pub database: Option<DatabaseTargetSpec>,
     pub members: Vec<DatabaseMemberSpec>,
     pub migration: Option<DatabaseMigrationSpec>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub backup: Option<DatabaseBackupPolicySpec>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recovery: Option<DatabaseRecoverySpec>,
 }
 impl DatabaseJobSpec {
     pub fn fingerprint(&self) -> Result<String> {
@@ -253,6 +267,8 @@ pub struct DatabaseCredentials {
 pub struct DatabaseMaterial {
     pub credentials: Option<DatabaseCredentials>,
     pub transfer_password: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub object_store: Option<DatabaseObjectStoreMaterial>,
 }
 /// Not Serialize: transport must deliberately separate safe spec and ephemeral material.
 pub struct DatabaseClaim {
@@ -264,6 +280,9 @@ pub struct DatabaseClaim {
 impl DatabaseClaim {
     /// Retained HTTPS agent wire, only at an authenticated transport boundary. Never persist this value.
     pub fn retained_payload(&self) -> Result<Value> {
+        if self.spec.backup.is_some() || self.spec.recovery.is_some() {
+            return Err(invalid());
+        }
         let mut value = serde_json::to_value(&self.spec).map_err(|_| invalid())?;
         let object = value.as_object_mut().ok_or_else(invalid)?;
         object.remove("agentGeneration");
@@ -288,6 +307,237 @@ impl DatabaseClaim {
             value.as_object_mut().unwrap().remove("migration");
         }
         Ok(value)
+    }
+}
+/// Immutable archive identity. Credentials and recovery key bytes are transported separately.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DatabaseBackupDestination {
+    pub id: String,
+    #[serde(rename = "endpointURL")]
+    pub endpoint_url: String,
+    pub region: String,
+    pub bucket: String,
+    pub archive_path: String,
+    pub server_name: String,
+    #[serde(rename = "credentialID")]
+    pub credential_id: String,
+    pub credential_revision: i32,
+    #[serde(rename = "recoveryCredentialID")]
+    pub recovery_credential_id: String,
+    pub recovery_credential_revision: i32,
+    #[serde(rename = "keyRecoveryID")]
+    pub key_recovery_id: String,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DatabaseBackupResources {
+    pub cpu_millicores: u64,
+    pub memory_bytes: u64,
+    pub ephemeral_bytes: u64,
+}
+impl DatabaseBackupResources {
+    pub fn validate(&self) -> Result<()> {
+        if !(100..=64000).contains(&self.cpu_millicores)
+            || !(134217728..=1099511627776).contains(&self.memory_bytes)
+            || !(134217728..=1099511627776).contains(&self.ephemeral_bytes)
+        {
+            return Err(invalid());
+        }
+        Ok(())
+    }
+}
+/// A Core grant, never a renewable browser/session authority. Revocation suspends recurrence;
+/// stopping WAL and authorizing retention deletion are independent operator decisions.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DatabaseBackupPolicySpec {
+    pub id: String,
+    #[serde(rename = "installationID")]
+    pub installation_id: String,
+    #[serde(rename = "customerID")]
+    pub customer_id: String,
+    #[serde(rename = "projectID")]
+    pub project_id: String,
+    #[serde(rename = "sourceCnpgUID")]
+    pub source_cnpg_uid: String,
+    pub revision: i32,
+    pub resource_revision: i32,
+    pub destination: DatabaseBackupDestination,
+    pub schedule: String,
+    pub suspended: bool,
+    pub wal_enabled: bool,
+    pub retention_days: u32,
+    pub retention_delete: bool,
+    pub sidecar: DatabaseBackupResources,
+    pub recovery_job: DatabaseBackupResources,
+}
+impl DatabaseBackupPolicySpec {
+    pub fn validate(&self) -> Result<()> {
+        let d = &self.destination;
+        if [
+            &self.id,
+            &self.installation_id,
+            &self.customer_id,
+            &self.project_id,
+            &d.id,
+            &d.credential_id,
+            &d.recovery_credential_id,
+            &d.key_recovery_id,
+        ]
+        .iter()
+        .any(|v| !record(v))
+            || !uid(&self.source_cnpg_uid)
+            || self.revision <= 0
+            || self.resource_revision <= 0
+            || d.credential_revision <= 0
+            || d.recovery_credential_revision <= 0
+            || d.credential_id == d.recovery_credential_id
+            || d.archive_path
+                != format!(
+                    "postgresql/{}/{}/{}/{}",
+                    self.customer_id, self.project_id, self.installation_id, self.id
+                )
+            || d.server_name != format!("wd-{}-{}", self.installation_id, self.id)
+            || (!self.wal_enabled && !self.suspended)
+            || !(1..=3650).contains(&self.retention_days)
+            || !(3..=63).contains(&d.bucket.len())
+            || !d
+                .bucket
+                .bytes()
+                .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+            || d.bucket.starts_with('-')
+            || d.bucket.ends_with('-')
+            || d.region.is_empty()
+            || d.region.len() > 63
+            || !d
+                .region
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b == b'-')
+        {
+            return Err(invalid());
+        }
+        if !daily_schedule(&self.schedule) {
+            return Err(invalid());
+        }
+        let authority = d
+            .endpoint_url
+            .strip_prefix("https://")
+            .ok_or_else(invalid)?;
+        let host = authority.strip_suffix('/').unwrap_or(authority);
+        if host.is_empty()
+            || host.len() > 253
+            || d.endpoint_url.len() > 512
+            || !host
+                .bytes()
+                .all(|v| v.is_ascii_alphanumeric() || matches!(v, b'-' | b'.' | b':'))
+            || host.split(':').count() > 2
+            || host
+                .split_once(':')
+                .is_some_and(|(_, p)| p.parse::<u16>().ok().is_none_or(|v| v == 0))
+        {
+            return Err(invalid());
+        }
+        self.sidecar.validate()?;
+        self.recovery_job.validate()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DatabaseRecoverySpec {
+    pub source: DatabaseBackupPolicySpec,
+    #[serde(rename = "sourceDatabaseID")]
+    pub source_database_id: String,
+    pub base_backup_id: String,
+    pub target_time: chrono::DateTime<chrono::Utc>,
+    pub timeline: u32,
+    pub credential_revision: i32,
+    #[serde(rename = "verificationSHA256")]
+    pub verification_sha256: String,
+}
+/// Ephemeral; no Debug, and never part of a persisted job fingerprint.
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DatabaseObjectStoreMaterial {
+    pub access_key_id: String,
+    pub secret_access_key: String,
+    pub read_only: bool,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DatabaseBackupProof {
+    #[serde(rename = "policyID")]
+    pub policy_id: String,
+    pub revision: i32,
+    #[serde(rename = "scheduledBackupUID")]
+    pub scheduled_backup_uid: String,
+    pub suspended: bool,
+    pub controls: DatabaseBackupControls,
+    #[serde(rename = "backupUID")]
+    pub backup_uid: Option<String>,
+    pub base_backup_id: Option<String>,
+    pub completed_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DatabaseBackupControls {
+    pub schedule: String,
+    pub wal_enabled: bool,
+    pub retention_delete: bool,
+    pub retention_days: u32,
+    pub scheduled_backup_resource_version: String,
+    pub cluster_resource_version: String,
+    #[serde(rename = "objectStoreUID")]
+    pub object_store_uid: String,
+    pub object_store_resource_version: String,
+}
+
+fn daily_schedule(schedule: &str) -> bool {
+    let fields = schedule.split(' ').collect::<Vec<_>>();
+    fields.len() == 6
+        && fields[0] == "0"
+        && fields[3..] == ["*", "*", "*"]
+        && fields[1].parse::<u8>().is_ok_and(|v| v <= 59)
+        && fields[2].parse::<u8>().is_ok_and(|v| v <= 23)
+}
+impl DatabaseBackupProof {
+    pub fn validate(&self) -> Result<()> {
+        if !record(&self.policy_id)
+            || self.revision <= 0
+            || !uid(&self.scheduled_backup_uid)
+            || !uid(&self.controls.object_store_uid)
+            || [
+                &self.controls.scheduled_backup_resource_version,
+                &self.controls.cluster_resource_version,
+                &self.controls.object_store_resource_version,
+            ]
+            .iter()
+            .any(|v| !uid(v))
+            || !daily_schedule(&self.controls.schedule)
+            || !(1..=3650).contains(&self.controls.retention_days)
+            || self.backup_uid.as_ref().is_some_and(|s| !uid(s))
+            || self.base_backup_id.as_ref().is_some_and(|s| {
+                s.len() != 15
+                    || s.bytes().enumerate().any(|(i, v)| {
+                        if i == 8 {
+                            v != b'T'
+                        } else {
+                            !v.is_ascii_digit()
+                        }
+                    })
+            })
+            || [
+                self.backup_uid.is_some(),
+                self.base_backup_id.is_some(),
+                self.completed_at.is_some(),
+            ]
+            .iter()
+            .any(|v| *v != self.backup_uid.is_some())
+        {
+            return Err(invalid());
+        }
+        Ok(())
     }
 }
 fn record(s: &str) -> bool {
@@ -395,6 +645,56 @@ impl DatabaseJobSpec {
         } else if self.action == DatabaseAction::Migrate {
             return Err(invalid());
         }
+        if let Some(p) = &self.backup {
+            p.validate()?;
+            if !matches!(
+                self.action,
+                DatabaseAction::ConfigureBackup | DatabaseAction::Backup
+            ) || b.kind != "dedicated"
+                || p.installation_id != b.id
+                || Some(&p.source_cnpg_uid) != b.cnpg_uid.as_ref()
+                || self.members.len() != 1
+                || self.members[0].project_id != p.project_id
+                || (self.action == DatabaseAction::Backup && (p.suspended || !p.wal_enabled))
+            {
+                return Err(invalid());
+            }
+        } else if matches!(
+            self.action,
+            DatabaseAction::ConfigureBackup | DatabaseAction::Backup
+        ) {
+            return Err(invalid());
+        }
+        if let Some(r) = &self.recovery {
+            r.source.validate()?;
+            if self.action != DatabaseAction::Restore
+                || self.backup.is_some()
+                || b.kind != "dedicated"
+                || b.id == r.source.installation_id
+                || !record(&r.source_database_id)
+                || r.credential_revision <= 0
+                || r.timeline == 0
+                || !hex64(&r.verification_sha256)
+                || r.base_backup_id.len() != 15
+                || r.base_backup_id.bytes().enumerate().any(|(i, v)| {
+                    if i == 8 {
+                        v != b'T'
+                    } else {
+                        !v.is_ascii_digit()
+                    }
+                })
+                || self
+                    .database
+                    .as_ref()
+                    .is_none_or(|d| d.credential_revision != r.credential_revision)
+                || self.members.len() != 1
+                || self.members[0].project_id != r.source.project_id
+            {
+                return Err(invalid());
+            }
+        } else if self.action == DatabaseAction::Restore {
+            return Err(invalid());
+        }
         Ok(())
     }
 }
@@ -409,6 +709,20 @@ impl DatabaseClaim {
         if self.lease.operation_id != self.spec.operation_id
             || self.lease.generation != self.spec.agent_generation
             || !(1..=300000).contains(&remaining)
+        {
+            return Err(invalid());
+        }
+        if self.material.object_store.is_some()
+            != (self.spec.backup.is_some() || self.spec.recovery.is_some())
+        {
+            return Err(invalid());
+        }
+        if let Some(s) = &self.material.object_store
+            && (s.read_only != self.spec.recovery.is_some()
+                || !(3..=128).contains(&s.access_key_id.len())
+                || !(16..=512).contains(&s.secret_access_key.len())
+                || s.access_key_id.chars().any(char::is_control)
+                || s.secret_access_key.chars().any(char::is_control))
         {
             return Err(invalid());
         }
@@ -504,6 +818,7 @@ mod tests {
                     migration_password: "b".repeat(43),
                 }),
                 transfer_password: None,
+                object_store: None,
             },
         };
         claim.validate(now).unwrap();

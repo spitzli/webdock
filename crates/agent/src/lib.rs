@@ -17,6 +17,8 @@ pub mod storage;
 
 mod logs;
 
+#[cfg(feature = "docker")]
+pub mod recovery;
 pub mod registry;
 
 #[cfg(feature = "kubernetes")]

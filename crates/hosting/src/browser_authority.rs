@@ -59,7 +59,7 @@ impl HostingService {
         self.browser_authority = Some(Arc::new(BrowserVerifier { identity, browser }));
         self
     }
-    async fn browser_guard(
+    pub(super) async fn browser_guard(
         &self,
         subject: &str,
         session: &str,

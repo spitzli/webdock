@@ -639,3 +639,394 @@ async fn direct_shutdown_drops_resume_before_server_drain_finishes() {
     release.send(()).unwrap();
     task.await.unwrap().unwrap();
 }
+
+// Local listener lifetime calibration only: no real Core installation, metadata DB or provider.
+// In particular this does not qualify the concrete ManagedTransport or Core RuntimeConnection.
+#[test]
+fn lifetime_diagnostics_are_exact_flag_static_enums_only() {
+    use super::LifetimeEvent::*;
+    let events = [
+        Sigterm,
+        Sigint,
+        SignalApiError,
+        SignalStreamClosed,
+        ServerOk,
+        ServerErr,
+        RequestedShutdown,
+        DispatcherStopped,
+    ];
+    let tokens = [
+        "SIGTERM",
+        "SIGINT",
+        "signal_api_error",
+        "signal_stream_closed",
+        "server_ok",
+        "server_err",
+        "requested_shutdown",
+        "dispatcher_stopped",
+    ];
+    for (event, token) in events.into_iter().zip(tokens) {
+        for flag in [
+            None,
+            Some("0"),
+            Some("true"),
+            Some("01"),
+            Some("private-poison"),
+        ] {
+            assert!(event.line(flag.map(std::ffi::OsStr::new)).is_none());
+        }
+        assert_eq!(
+            event.line(Some(std::ffi::OsStr::new("1"))),
+            Some(format!("mail_lifetime event={token}\n"))
+        );
+    }
+}
+struct LifetimeDeniedControl(AtomicUsize);
+#[tonic::async_trait]
+impl webdock_mail_runtime::SendControl for LifetimeDeniedControl {
+    async fn call(
+        &self,
+        _: serde_json::Value,
+    ) -> Result<serde_json::Value, webdock_mail_runtime::ControlError> {
+        self.0.fetch_add(1, Ordering::SeqCst);
+        Err(webdock_mail_runtime::ControlError { status: 403 })
+    }
+}
+struct LifetimeDeniedPayloads;
+#[tonic::async_trait]
+impl webdock_mail_runtime::PrivatePayloadStore for LifetimeDeniedPayloads {
+    async fn put(
+        &self,
+        _: &str,
+        _: &str,
+        _: &[u8],
+    ) -> webdock_mail_runtime::Result<webdock_mail_runtime::SavedPayload> {
+        panic!("lifetime calibration must never write a payload")
+    }
+    async fn get(&self, _: &str, _: &str) -> webdock_mail_runtime::Result<Vec<u8>> {
+        panic!("lifetime calibration must never read a payload")
+    }
+    async fn remove(&self, _: &str, _: &str) -> webdock_mail_runtime::Result<()> {
+        panic!("lifetime calibration must never remove a payload")
+    }
+}
+struct LifetimeDeniedTransport;
+#[tonic::async_trait]
+impl webdock_mail_runtime::dispatch::DispatchTransport for LifetimeDeniedTransport {
+    fn can_submit(&self, _: &webdock_mail_runtime::outbox::SendLease) -> bool {
+        panic!("lifetime calibration must never prepare a provider send")
+    }
+    async fn submit(
+        &self,
+        _: &webdock_mail_runtime::outbox::SendLease,
+        _: &serde_json::Value,
+        _: &webdock_mail_runtime::message::DispatchMessage,
+        _: &webdock_mail_runtime::message::PreparedMessage,
+    ) -> webdock_mail_runtime::outbox::Receipt {
+        panic!("lifetime calibration must never send to a provider")
+    }
+}
+struct LifetimeDeniedActions;
+#[tonic::async_trait]
+impl webdock_plugin_runtime::ActionHandler for LifetimeDeniedActions {
+    async fn invoke(
+        &self,
+        _: &webdock_plugin_protocol::InvocationClaims,
+        _: &str,
+        _: serde_json::Value,
+        _: serde_json::Value,
+    ) -> Result<serde_json::Value, webdock_plugin_protocol::PluginError> {
+        panic!("lifetime calibration must never invoke a customer action")
+    }
+}
+struct LifetimeServer {
+    stop: Option<oneshot::Sender<()>>,
+    task: tokio::task::JoinHandle<Result<(), crate::Error>>,
+}
+impl Drop for LifetimeServer {
+    fn drop(&mut self) {
+        if let Some(stop) = self.stop.take() {
+            let _ = stop.send(());
+        }
+        self.task.abort();
+    }
+}
+impl LifetimeServer {
+    async fn finish(&mut self) -> bool {
+        if let Some(stop) = self.stop.take() {
+            let _ = stop.send(());
+        }
+        match tokio::time::timeout(Duration::from_secs(3), &mut self.task).await {
+            Ok(result) => matches!(result, Ok(Ok(()))),
+            Err(_) => {
+                self.task.abort();
+                let _ = (&mut self.task).await;
+                false
+            }
+        }
+    }
+}
+#[derive(Clone)]
+struct LifetimeTls {
+    origin: String,
+    root: PathBuf,
+    pin: String,
+}
+impl LifetimeTls {
+    async fn channel(&self, role: &str) -> tonic::transport::Channel {
+        let material = webdock_plugin_runtime::PinnedMutualTls {
+            certificate: webdock_plugin_kit::read_file(
+                &self.root.join(format!("{role}.crt")),
+                false,
+            )
+            .unwrap(),
+            private_key: webdock_plugin_kit::read_file(
+                &self.root.join(format!("{role}.key")),
+                true,
+            )
+            .unwrap(),
+            authority: webdock_plugin_kit::read_file(&self.root.join("ca.crt"), false).unwrap(),
+            server_certificate_sha256: self.pin.clone(),
+        };
+        let connected = tokio::time::timeout(
+            Duration::from_secs(3),
+            webdock_plugin_runtime::pinned_mtls_authenticated(
+                self.origin.clone(),
+                "localhost".into(),
+                material,
+            ),
+        )
+        .await;
+        assert!(
+            matches!(&connected, Ok(Ok(_))),
+            "local pinned client connection failed"
+        );
+        connected.unwrap().unwrap().0
+    }
+    async fn rpc(&self) {
+        let mut client =
+            wire::plugin_runtime_client::PluginRuntimeClient::new(self.channel("core").await);
+        let result = tokio::time::timeout(Duration::from_secs(3), async {
+            let description = client.describe(wire::DescribeRequest {}).await;
+            assert!(description.is_ok(), "local Core Describe denied");
+            assert_eq!(
+                description.unwrap().into_inner().manifest_json,
+                webdock_plugin_protocol::Manifest::parse(include_bytes!("../manifest.json"))
+                    .unwrap()
+                    .as_bytes()
+            );
+            let health = client.health(wire::HealthRequest {}).await;
+            assert!(health.is_ok(), "local Core Health denied");
+            let health = health.unwrap().into_inner();
+            assert_eq!(
+                (
+                    health.plugin_id.as_str(),
+                    health.generation,
+                    health.protocol_version
+                ),
+                ("mail", 2, 1)
+            );
+        })
+        .await;
+        assert!(result.is_ok(), "local fresh Core RPC deadline");
+    }
+}
+
+#[tokio::test]
+async fn actual_delivery_listener_survives_gateway_401_and_authorization_transition() {
+    use std::os::unix::fs::PermissionsExt;
+    use tower::ServiceExt;
+    use webdock_plugin_runtime::{CorePeer, MutualTls, RemoteAuthority, Runtime};
+    let mut f = Fixture::new().await;
+    let mut ca_params = rcgen::CertificateParams::new(Vec::<String>::new()).unwrap();
+    ca_params
+        .distinguished_name
+        .push(rcgen::DnType::CommonName, "Owned Mail fixture CA");
+    ca_params.is_ca = rcgen::IsCa::Ca(rcgen::BasicConstraints::Unconstrained);
+    ca_params.key_usages = vec![
+        rcgen::KeyUsagePurpose::KeyCertSign,
+        rcgen::KeyUsagePurpose::DigitalSignature,
+    ];
+    let ca_key = rcgen::KeyPair::generate().unwrap();
+    let ca = ca_params.self_signed(&ca_key).unwrap();
+    let issuer = rcgen::Issuer::new(ca_params, ca_key);
+    let mut pins = std::collections::BTreeMap::new();
+    let mut runtime_identity = None;
+    for role in ["runtime", "core", "gateway"] {
+        let mut params = rcgen::CertificateParams::new(vec!["localhost".into()]).unwrap();
+        params.distinguished_name.push(
+            rcgen::DnType::CommonName,
+            format!("Owned Mail fixture {role}"),
+        );
+        params.extended_key_usages = vec![
+            rcgen::ExtendedKeyUsagePurpose::ServerAuth,
+            rcgen::ExtendedKeyUsagePurpose::ClientAuth,
+        ];
+        let key = rcgen::KeyPair::generate().unwrap();
+        let cert = params.signed_by(&key, &issuer).unwrap();
+        pins.insert(role, webdock_mail_protocol::sha256(cert.der()));
+        for (suffix, bytes) in [
+            ("crt", cert.pem().into_bytes()),
+            ("key", key.serialize_pem().into_bytes()),
+        ] {
+            let path = f.directory.join(format!("{role}.{suffix}"));
+            std::fs::write(&path, bytes).unwrap();
+            std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        if role == "runtime" {
+            runtime_identity = Some(tonic::transport::Identity::from_pem(
+                cert.pem(),
+                key.serialize_pem(),
+            ));
+        }
+    }
+    let ca_path = f.directory.join("ca.crt");
+    std::fs::write(&ca_path, ca.pem()).unwrap();
+    std::fs::set_permissions(ca_path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    assert_ne!(pins["core"], pins["gateway"]);
+    let authority = RemoteAuthority::new(
+        f.client.clone(),
+        "mail".into(),
+        2,
+        vec![CorePeer::MutualTls {
+            certificate_sha256: pins["core"].clone(),
+        }],
+    )
+    .unwrap();
+    let runtime = Runtime::new(
+        webdock_plugin_protocol::Manifest::parse(include_bytes!("../manifest.json")).unwrap(),
+        2,
+        ed25519_dalek::SigningKey::from_bytes(&[71; 32]).verifying_key(),
+        Arc::new(authority),
+        Arc::new(LifetimeDeniedActions),
+    )
+    .unwrap();
+    let control = Arc::new(LifetimeDeniedControl(AtomicUsize::new(0)));
+    let payloads = Arc::new(LifetimeDeniedPayloads);
+    let router = webdock_mail::listener::native_routes(
+        webdock_mail_runtime::send_api::SendApi::new(control.clone(), payloads.clone()).router(),
+        vec![CorePeer::MutualTls {
+            certificate_sha256: pins["gateway"].clone(),
+        }],
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let tls = LifetimeTls {
+        origin: format!("https://{}", listener.local_addr().unwrap()),
+        root: f.directory.clone(),
+        pin: pins["runtime"].clone(),
+    };
+    let material = MutualTls {
+        identity: runtime_identity.unwrap(),
+        peer_ca: tonic::transport::Certificate::from_pem(ca.pem()),
+    };
+    let (stop, stopped) = oneshot::channel();
+    let (resumed, mut resumes) = mpsc::unbounded_channel();
+    let client = f.client.clone();
+    let worker_control = control.clone();
+    let mut server =
+        LifetimeServer {
+            stop: Some(stop),
+            task: tokio::spawn(super::serve_delivery(
+                |drain| async move {
+                    Ok(webdock_mail::listener::serve_mtls(
+                        runtime,
+                        router,
+                        listener,
+                        material,
+                        async {
+                            let _ = drain.await;
+                        },
+                    )
+                    .await?)
+                },
+                async {
+                    let _ = stopped.await;
+                },
+                client,
+                "mail",
+                2,
+                move || {
+                    let _ = resumed.send(());
+                    std::future::ready(Ok::<(), ()>(()))
+                },
+                Some(super::Dispatcher {
+                    control: worker_control,
+                    payloads,
+                    transport: Box::new(LifetimeDeniedTransport),
+                }),
+            )),
+        };
+    // Catch assertion unwinds in this task, then always signal and reap both owned local servers.
+    let host_mode = f.host.mode.clone();
+    let alive = server.task.abort_handle();
+    let scenario = tokio::spawn(async move {
+        let live = |stage: &'static str| {
+            let server_live = !alive.is_finished();
+            eprintln!("mail_listener_lifetime stage={stage} serverLive={server_live}");
+            assert!(server_live, "local listener ended at {stage}");
+        };
+        live("started");
+        let channel = tls.channel("gateway").await;
+        let request = axum::http::Request::builder()
+            .method("GET")
+            .uri("/v1/emails/1")
+            .body(tonic::body::Body::empty())
+            .unwrap();
+        let reply = tokio::time::timeout(Duration::from_secs(3), channel.oneshot(request)).await;
+        assert!(matches!(&reply, Ok(Ok(_))), "local gateway request failed");
+        let reply = reply.unwrap().unwrap();
+        assert_eq!(reply.status(), axum::http::StatusCode::UNAUTHORIZED);
+        live("gateway_401");
+        assert_eq!(
+            control.0.load(Ordering::SeqCst),
+            0,
+            "401 must precede control effects"
+        );
+        tls.rpc().await;
+        live("inactive_fresh_rpc");
+        assert!(
+            resumes.try_recv().is_err(),
+            "inactive authorization must not resume"
+        );
+        live("inactive_authorization");
+        host_mode.store(1, Ordering::SeqCst);
+        assert!(
+            tokio::time::timeout(Duration::from_secs(3), resumes.recv())
+                .await
+                .is_ok(),
+            "local active authorization did not resume"
+        );
+        live("active_resume");
+        let polled = tokio::time::timeout(Duration::from_secs(1), async {
+            while control.0.load(Ordering::SeqCst) == 0 {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await;
+        assert!(
+            polled.is_ok(),
+            "SomeDispatcher worker was not polled after resume"
+        );
+        tls.rpc().await;
+        live("active_fresh_rpc");
+    });
+    let mut scenario = scenario;
+    let result = tokio::time::timeout(Duration::from_secs(10), &mut scenario).await;
+    let scenario_ok = match result {
+        Ok(result) => result.is_ok(),
+        Err(_) => {
+            scenario.abort();
+            let _ = scenario.await;
+            false
+        }
+    };
+    let clean = server.finish().await;
+    f.task.abort();
+    let _ = (&mut f.task).await;
+    assert!(
+        scenario_ok,
+        "local prelude failed or exceeded its deadline; stage markers identify boundary"
+    );
+    assert!(clean, "local listener did not stop and reap cleanly");
+    eprintln!("mail_listener_lifetime stage=explicit_shutdown_complete scope=unit_only");
+}

@@ -198,6 +198,7 @@ fn changed(mut delivery: wire::DatabaseDelivery, fingerprint: bool) -> wire::Dat
                     state: DatabaseProofState::Ready,
                     endpoint_ready: true,
                     copy_sha256: None,
+                    backup: None,
                 });
                 value.completion_json = serde_json::to_vec(&data).unwrap();
             }
@@ -344,6 +345,7 @@ async fn case(name: String, owner: DatabaseConnection, mode: Failure) {
             storage_socket: None,
         },
         database_runtime: None,
+        recovery_runtime: None,
         mail_configuration_enabled: false,
         mail_runtime: None,
         policy: Default::default(),
@@ -424,6 +426,7 @@ async fn case(name: String, owner: DatabaseConnection, mode: Failure) {
                                 state: DatabaseProofState::Ready,
                                 endpoint_ready: true,
                                 copy_sha256: None,
+                                backup: None,
                             }),
                         })
                         .unwrap(),

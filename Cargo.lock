@@ -1351,6 +1351,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "217698eaf96b4a3f0bc4f3662aaa55bdf913cd54d7204591faa790070c6d0853"
 
 [[package]]
+name = "crc-fast"
+version = "1.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e75b2483e97a5a7da73ac68a05b629f9c53cff58d8ed1c77866079e18b00dba5"
+dependencies = [
+ "digest 0.10.7",
+ "spin 0.10.1",
+]
+
+[[package]]
 name = "crc32fast"
 version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2127,7 +2137,7 @@ checksum = "5e139bc46ca777eb5efaf62df0ab8cc5fd400866427e56c68b22e414e53bd3be"
 dependencies = [
  "futures-core",
  "futures-sink",
- "spin",
+ "spin 0.9.9",
 ]
 
 [[package]]
@@ -3273,6 +3283,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b4baf93f58d4425749ca49a51c50ebab072c5df6994d08fed93541c331481dc"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3627,7 +3646,7 @@ version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20870f649af7073d53e38067b2a84312175d56ea15217e1b15bc83506ec50afb"
 dependencies = [
- "spin",
+ "spin 0.9.9",
 ]
 
 [[package]]
@@ -3910,6 +3929,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
 
 [[package]]
+name = "maylily"
+version = "0.1.0"
+dependencies = [
+ "num-bigint 0.5.1",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "md-5"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4039,7 +4066,7 @@ dependencies = [
  "httparse",
  "memchr",
  "mime",
- "spin",
+ "spin 0.9.9",
  "version_check",
 ]
 
@@ -4317,6 +4344,45 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7216bd11cbda54ccabcab84d523dc93b858ec75ecfb3a7d89513fa22464da396"
 dependencies = [
  "objc2-core-foundation",
+]
+
+[[package]]
+name = "object_store"
+version = "0.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f1796bc93603f78c5760a69f2d58badc9618d22adade0a95385bb2adbae4eb94"
+dependencies = [
+ "async-trait",
+ "base64 0.23.1",
+ "bytes",
+ "chrono",
+ "crc-fast",
+ "form_urlencoded",
+ "futures-channel",
+ "futures-core",
+ "futures-util",
+ "http",
+ "http-body-util",
+ "humantime",
+ "hyper",
+ "itertools 0.15.0",
+ "md-5",
+ "parking_lot",
+ "percent-encoding",
+ "quick-xml",
+ "rand 0.10.3",
+ "reqwest 0.13.5",
+ "ring",
+ "rustls-pki-types",
+ "serde",
+ "serde_json",
+ "serde_urlencoded",
+ "thiserror 2.0.21",
+ "tokio",
+ "tracing",
+ "url",
+ "wasm-bindgen-futures",
+ "web-time",
 ]
 
 [[package]]
@@ -5559,6 +5625,7 @@ dependencies = [
  "bytes",
  "futures-core",
  "futures-util",
+ "h2",
  "http",
  "http-body",
  "http-body-util",
@@ -6637,6 +6704,12 @@ checksum = "3763264f6b73151db08c50ff20d7d8a0b8796e021cdea7ceedad07b80155fa0e"
 dependencies = [
  "lock_api",
 ]
+
+[[package]]
+name = "spin"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "023a211cb3138dbc438680b32560ad89f699977624c9f8dbb95a47d5b4c07dd3"
 
 [[package]]
 name = "spinning_top"
@@ -8203,6 +8276,7 @@ name = "webdock-agent"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "axum",
  "base64 0.22.1",
  "bollard",
  "chrono",
@@ -8210,6 +8284,8 @@ dependencies = [
  "fs2",
  "futures-util",
  "humantime",
+ "hyper",
+ "hyper-util",
  "ipnet",
  "k8s-openapi",
  "kube",
@@ -8225,6 +8301,7 @@ dependencies = [
  "serde-saphyr",
  "serde_json",
  "sha2 0.10.9",
+ "tar",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
@@ -8236,9 +8313,14 @@ dependencies = [
  "tonic-prost",
  "tracing",
  "tracing-subscriber",
+ "url",
  "uuid",
  "webdock-agent-protocol",
  "webdock-core",
+ "webdock-export-protocol",
+ "webdock-mail-runtime",
+ "webdock-object-storage",
+ "webdock-plugin-kit",
  "webdock-plugin-protocol",
  "webdock-supervisor",
  "x509-parser 0.18.1",
@@ -8345,6 +8427,7 @@ dependencies = [
  "getrandom 0.2.17",
  "hex",
  "hmac 0.12.1",
+ "jsonschema",
  "libc",
  "oci-client",
  "reqwest 0.13.5",
@@ -8362,9 +8445,11 @@ dependencies = [
  "url",
  "uuid",
  "webdock-browser-session",
+ "webdock-export-protocol",
  "webdock-hosting",
  "webdock-identity",
  "webdock-ids",
+ "webdock-object-storage",
  "webdock-persistence",
  "webdock-plugin-host",
  "webdock-plugin-runtime",
@@ -8389,6 +8474,7 @@ dependencies = [
  "rcgen",
  "rmcp",
  "rustix",
+ "rustls",
  "sea-orm",
  "sea-orm-migration",
  "serde",
@@ -8409,12 +8495,14 @@ dependencies = [
  "url",
  "uuid",
  "webdock-access",
+ "webdock-agent",
  "webdock-agent-control",
  "webdock-agent-protocol",
  "webdock-browser-session",
  "webdock-build",
  "webdock-core",
  "webdock-databases",
+ "webdock-export-protocol",
  "webdock-hosting",
  "webdock-identity",
  "webdock-ids",
@@ -8498,12 +8586,31 @@ dependencies = [
  "url",
  "webdock-agent-protocol",
  "webdock-browser-session",
+ "webdock-export-protocol",
  "webdock-hosting",
  "webdock-identity",
  "webdock-ids",
+ "webdock-oauth",
  "webdock-persistence",
  "webdock-secrets",
  "x509-parser 0.18.1",
+]
+
+[[package]]
+name = "webdock-export-protocol"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "hex",
+ "hmac 0.12.1",
+ "prost",
+ "prost-build",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tonic",
+ "tonic-prost",
+ "tonic-prost-build",
 ]
 
 [[package]]
@@ -8551,6 +8658,7 @@ dependencies = [
  "webdock-identity",
  "webdock-ids",
  "webdock-oauth",
+ "webdock-object-storage",
  "webdock-persistence",
  "webdock-plugin-host",
  "webdock-plugin-runtime",
@@ -8595,6 +8703,7 @@ dependencies = [
 name = "webdock-ids"
 version = "0.1.0"
 dependencies = [
+ "maylily",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
@@ -8762,6 +8871,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "webdock-object-storage"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "bytes",
+ "futures-util",
+ "hex",
+ "object_store",
+ "reqwest 0.13.5",
+ "rustls",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "url",
+ "uuid",
+]
+
+[[package]]
 name = "webdock-persistence"
 version = "0.1.0"
 dependencies = [
@@ -8812,6 +8942,7 @@ dependencies = [
  "webdock-browser-session",
  "webdock-control-plane",
  "webdock-core",
+ "webdock-export-protocol",
  "webdock-hosting",
  "webdock-identity",
  "webdock-ids",

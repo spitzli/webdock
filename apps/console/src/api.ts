@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { binaryGuard, checkedTransfer, hashStorageBlob, UploadUncertainError, type BinaryTransferOptions, type TransferDescriptor } from "./plugins/storage";
 const origin = z.url().refine((value) => {
   const url = new URL(value);
   return (
@@ -102,6 +103,45 @@ export class ApiClient {
     public config: RuntimeConfig,
     private fetcher: typeof fetch = fetch,
   ) {}
+  async uploadBinary(input: TransferDescriptor, file: Blob, options: BinaryTransferOptions): Promise<{ bytes: number; sha256: string; etag?: string | null | undefined }> {
+    const descriptor = checkedTransfer(input, "PUT");
+    if (file.size !== descriptor.exactBytes) throw new Error("Upload size differs from the selected file.");
+    const guard = binaryGuard(options, descriptor.expiresAt * 1000);
+    let attempted = false;
+    try {
+      const hash = await guard.wait(hashStorageBlob(file, { signal: guard.signal, isCurrent: options.isCurrent }));
+      if (hash !== descriptor.expectedSha256) throw new Error("Upload SHA-256 differs from the selected file.");
+      const url = this.binaryURL(descriptor), fetcher = this.fetcher;
+      guard.check(); attempted = true;
+      const response = await guard.wait(fetcher(url, { method: "PUT", body: file, signal: guard.signal, credentials: "include", cache: "no-store", redirect: "error", headers: { "Content-Type": descriptor.attachment.contentType, Accept: "application/json" } }));
+      if (!response.ok) throw new ApiError(response.status, errorMessage(response.status, false));
+      const bytes = await readBinaryResponse(response, 4096, guard, false);
+      const receipt = z.object({ bytes: z.number().int().min(0), sha256: z.string(), etag: z.string().nullable().optional() }).strict().parse(JSON.parse(new TextDecoder().decode(bytes)));
+      if (receipt.bytes !== descriptor.exactBytes || receipt.sha256 !== hash) throw new Error("Upload receipt differs from the selected file.");
+      guard.check(); return receipt;
+    } catch (error) { if (attempted) throw new UploadUncertainError(); throw error; }
+    finally { guard.dispose(); }
+  }
+  async downloadBinary(input: TransferDescriptor, options: BinaryTransferOptions): Promise<Blob> {
+    const descriptor = checkedTransfer(input, "GET"), guard = binaryGuard(options, descriptor.expiresAt * 1000);
+    try {
+      const fetcher = this.fetcher;
+      guard.check();
+      const response = await guard.wait(fetcher(this.binaryURL(descriptor), { method: "GET", signal: guard.signal, credentials: "include", cache: "no-store", redirect: "error", headers: { Accept: descriptor.attachment.contentType } }));
+      if (!response.ok) throw new ApiError(response.status, errorMessage(response.status, false));
+      const contentType = response.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase();
+      if (contentType !== descriptor.attachment.contentType || ![null, "identity"].includes(response.headers.get("content-encoding"))) throw new Error("Unsupported binary response.");
+      const bytes = await readBinaryResponse(response, descriptor.exactBytes, guard, true);
+      const blob = new Blob([bytes], { type: descriptor.attachment.contentType });
+      if (descriptor.expectedSha256 && await guard.wait(hashStorageBlob(blob, { signal: guard.signal, isCurrent: options.isCurrent })) !== descriptor.expectedSha256) throw new Error("Download SHA-256 verification failed.");
+      guard.check(); return blob;
+    } finally { guard.dispose(); }
+  }
+  private binaryURL(descriptor: TransferDescriptor): URL {
+    const base = new URL(runtimeConfigSchema.parse(this.config).apiOrigin), url = new URL(descriptor.path, base);
+    if (url.origin !== base.origin || url.pathname !== descriptor.path || url.search || url.hash) throw new Error("Invalid binary API path.");
+    return url;
+  }
   async request<T>(
     path: string,
     schema: z.ZodType<T>,
@@ -158,6 +198,25 @@ export class ApiClient {
       auth,
     );
   }
+}
+async function readBinaryResponse(response: Response, maximum: number, guard: ReturnType<typeof binaryGuard>, exact: boolean): Promise<Uint8Array<ArrayBuffer>> {
+  const length = response.headers.get("content-length");
+  if (length !== null && (!/^(0|[1-9][0-9]*)$/.test(length) || !Number.isSafeInteger(Number(length)) || (exact ? Number(length) !== maximum : Number(length) > maximum))) throw new Error("Binary response size mismatch.");
+  const reader = response.body?.getReader();
+  if (!reader) { if (exact && maximum !== 0) throw new Error("Binary response is incomplete."); return new Uint8Array(0); }
+  const chunks: Uint8Array[] = []; let size = 0;
+  try {
+    for (;;) {
+      guard.check();
+      const part = await guard.wait(reader.read()); if (part.done) break;
+      size += part.value.byteLength; if (size > maximum) throw new Error("Binary response exceeds its declared size.");
+      chunks.push(part.value);
+    }
+    if (exact && size !== maximum) throw new Error("Binary response is incomplete.");
+    const bytes = new Uint8Array(size); let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+    guard.check(); return bytes;
+  } finally { void reader.cancel().catch(() => undefined); reader.releaseLock(); }
 }
 export async function loadRuntimeConfig(): Promise<RuntimeConfig> {
   const response = await fetch("/console-config.json", {

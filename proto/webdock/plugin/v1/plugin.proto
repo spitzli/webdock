@@ -7,6 +7,8 @@ service PluginRuntime {
   rpc Describe(DescribeRequest) returns (DescribeResponse);
   rpc Health(HealthRequest) returns (HealthResponse);
   rpc Invoke(InvokeRequest) returns (InvokeResponse);
+  // Private active-resource revalidation; never returns provider URLs or user data.
+  rpc AuthorizeStorage(StorageAuthorizationRequest) returns (StorageAuthorizationResponse);
   rpc RunJob(RunJobRequest) returns (RunJobResponse);
   rpc WatchOperation(WatchOperationRequest) returns (stream OperationEvent);
 }
@@ -26,6 +28,8 @@ message InvokeRequest {
   bytes configuration_json = 4;
 }
 message InvokeResponse { bytes output_json = 1; }
+message StorageAuthorizationRequest { bytes authorization_json = 1; }
+message StorageAuthorizationResponse { bool active = 1; }
 message RunJobRequest {
   string invocation_token = 1;
   string name = 2;

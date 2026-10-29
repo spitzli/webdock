@@ -11,9 +11,9 @@ import {
   Navigate,
   RouterProvider,
 } from "@tanstack/react-router";
-import { ApiClient, ApiError, loadRuntimeConfig, sessionSchema } from "./api";
-import { ApiContext, SessionContext, useApi, useSession } from "./context";
-import { Account, ResetPassword, SignIn } from "./Auth";
+import { ApiClient, ApiError, loadRuntimeConfig } from "./api";
+import { ApiContext, useSession } from "./context";
+import { Account, ResetPassword } from "./Auth";
 import { PageFailure, PageProgress } from "./AuthFrame";
 const AccountApp = lazy(() =>
   import("./AccountUI").then((module) => ({ default: module.AccountApp })),
@@ -89,7 +89,8 @@ import {
   isCollection,
 } from "./Registry";
 import { Empty, Failure, Loading } from "./common";
-import { useSessionCacheIsolation } from "./session-cache";
+import { ConsoleSessionGate } from "./ConsoleSessionGate";
+import { DatabaseBackupIntentProvider } from "./database-backup-intents";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -101,47 +102,7 @@ const queryClient = new QueryClient({
     mutations: { retry: false },
   },
 });
-function SessionGate() {
-  const api = useApi();
-  const session = useQuery({
-    queryKey: ["session"],
-    queryFn: ({ signal }) => api.get("/v1/auth/session", sessionSchema, signal),
-    staleTime: 0,
-    refetchInterval: 60000,
-  });
-  const cacheReady = useSessionCacheIsolation(
-    session.isError ? null : session.data?.data,
-    session.dataUpdatedAt,
-  );
-  if (!cacheReady) return <PageProgress product="Console">Opening your workspace…</PageProgress>;
-  if (window.location.pathname === "/reset-password") return <ResetPassword />;
-  if (
-    window.location.pathname === "/login" &&
-    new URLSearchParams(window.location.search).has("error")
-  )
-    return <SignIn />;
-  if (session.isPending || (!session.isFetchedAfterMount && !session.isError))
-    return <PageProgress product="Console">Opening your workspace…</PageProgress>;
-  if (session.isError)
-    return session.error instanceof ApiError && session.error.status === 401 ? (
-      <SignIn />
-    ) : (
-      <PageFailure
-        product="Console"
-        title="Workspace unavailable"
-        error={session.error}
-        retry={() => {
-          void session.refetch();
-        }}
-      />
-    );
-  if (!session.data.data) return <SignIn />;
-  return (
-    <SessionContext.Provider value={session.data.data}>
-      <Shell />
-    </SessionContext.Provider>
-  );
-}
+function SessionGate() { return <ConsoleSessionGate><Shell /></ConsoleSessionGate>; }
 /** Route-level guidance complements the server's authorization; it grants no access. */
 function OperatorOnly({ children }: { children: ReactNode }) {
   const session = useSession();
@@ -586,7 +547,7 @@ function Bootstrap() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Bootstrap />
+      <DatabaseBackupIntentProvider><Bootstrap /></DatabaseBackupIntentProvider>
     </QueryClientProvider>
   );
 }

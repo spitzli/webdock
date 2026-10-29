@@ -21,6 +21,8 @@ pub struct Outcome {
 }
 pub struct WorkloadExecutor {
     client: Client,
+    #[cfg(feature = "docker")]
+    mail_fence: Option<crate::recovery::effect_fence::MailEffectFence>,
 }
 fn resource(kind: &str) -> Option<ApiResource> {
     let (api_version, kind) = kind.rsplit_once('/')?;
@@ -128,7 +130,40 @@ fn failure(message: impl std::fmt::Display) -> String {
 }
 impl WorkloadExecutor {
     pub fn new(client: Client) -> Self {
-        Self { client }
+        Self {
+            client,
+            #[cfg(feature = "docker")]
+            mail_fence: None,
+        }
+    }
+    #[cfg(feature = "docker")]
+    pub fn with_mail_fence(
+        mut self,
+        fence: crate::recovery::effect_fence::MailEffectFence,
+    ) -> Self {
+        self.mail_fence = Some(fence);
+        self
+    }
+    #[cfg(feature = "docker")]
+    pub fn set_mail_fence(&mut self, fence: crate::recovery::effect_fence::MailEffectFence) {
+        self.mail_fence = Some(fence);
+    }
+    #[cfg(feature = "docker")]
+    async fn mail_effect(
+        &self,
+        plugin: &str,
+        effect: Value,
+    ) -> Result<Option<crate::recovery::effect_fence::MailEffectPermit>, String> {
+        if plugin == "mail"
+            && let Some(fence) = &self.mail_fence
+        {
+            return fence
+                .enter_effect(effect)
+                .await
+                .map(Some)
+                .map_err(|_| "Mail recovery source effect is fenced".into());
+        }
+        Ok(None)
     }
     /// Objects must carry the namespace and owner labels Core pinned; anything else is refused.
     fn check(plugin: &str, unit: &str, namespace: &str, objects: &[Value]) -> Result<(), String> {
@@ -181,9 +216,17 @@ impl WorkloadExecutor {
                     }},
                 }))
                 .map_err(failure)?;
+                #[cfg(feature = "docker")]
+                let effect = self
+                    .mail_effect(plugin, json!({"namespace":namespace,"method":"POST"}))
+                    .await?;
                 api.create(&PostParams::default(), &object)
                     .await
                     .map_err(failure)?;
+                #[cfg(feature = "docker")]
+                if let Some(effect) = effect {
+                    effect.confirmed().map_err(failure)?;
+                }
                 Ok(())
             }
         }
@@ -212,16 +255,36 @@ impl WorkloadExecutor {
         }
         found
     }
-    async fn delete(&self, namespace: &str, kind: &str, name: &str) -> Result<(), String> {
+    async fn delete(
+        &self,
+        _plugin: &str,
+        namespace: &str,
+        kind: &str,
+        name: &str,
+    ) -> Result<(), String> {
         let resource = resource(kind).ok_or("unknown kind")?;
         let api: Api<DynamicObject> =
             Api::namespaced_with(self.client.clone(), namespace, &resource);
-        match api.delete(name, &DeleteParams::background()).await {
+        #[cfg(feature = "docker")]
+        let effect = self
+            .mail_effect(
+                _plugin,
+                json!({"namespace":namespace,"kind":kind,"name":name,"method":"DELETE"}),
+            )
+            .await?;
+        let result = match api.delete(name, &DeleteParams::background()).await {
             Ok(_) => Ok(()),
             Err(kube::Error::Api(status)) if status.code == 404 => Ok(()),
             Err(error) => Err(failure(error)),
+        };
+        result?;
+        #[cfg(feature = "docker")]
+        if let Some(effect) = effect {
+            effect.confirmed().map_err(failure)?;
         }
+        Ok(())
     }
+
     pub async fn handle(
         &self,
         plugin: &str,
@@ -233,7 +296,7 @@ impl WorkloadExecutor {
         if removing {
             let existing = self.existing(namespace, plugin, unit).await;
             for (kind, name) in &existing {
-                if let Err(error) = self.delete(namespace, kind, name).await {
+                if let Err(error) = self.delete(plugin, namespace, kind, name).await {
                     return Outcome {
                         observed: json!({"ready": false}),
                         error: Some(error),
@@ -293,6 +356,8 @@ impl WorkloadExecutor {
             let resource = resource(&kind).ok_or("unknown kind")?;
             let api: Api<DynamicObject> =
                 Api::namespaced_with(self.client.clone(), namespace, &resource);
+            #[cfg(feature = "docker")]
+            let effect = self.mail_effect(plugin,json!({"namespace":namespace,"kind":kind,"name":name,"method":"PATCH","intentSha256":crate::recovery::config::fingerprint(object).map_err(failure)?})).await?;
             api.patch(
                 &name,
                 &PatchParams::apply(MANAGER).force(),
@@ -300,11 +365,15 @@ impl WorkloadExecutor {
             )
             .await
             .map_err(|e| failure(format!("{kind} {name}: {e}")))?;
+            #[cfg(feature = "docker")]
+            if let Some(effect) = effect {
+                effect.confirmed().map_err(failure)?;
+            }
             wanted.push((kind, name));
         }
         for (kind, name) in self.existing(namespace, plugin, unit).await {
             if !wanted.contains(&(kind.clone(), name.clone())) {
-                self.delete(namespace, &kind, &name).await?;
+                self.delete(plugin, namespace, &kind, &name).await?;
             }
         }
         self.observe(namespace, plugin, unit, &wanted).await
@@ -430,6 +499,169 @@ impl WorkloadExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "docker")]
+    #[tokio::test]
+    async fn captured_workload_released_after_fence_uses_real_executor_guard_before_provider_patch()
+    {
+        use std::sync::{
+            Arc,
+            atomic::{AtomicUsize, Ordering},
+        };
+        async fn provider(
+            axum::extract::State(count): axum::extract::State<Arc<AtomicUsize>>,
+            request: axum::extract::Request,
+        ) -> axum::Json<Value> {
+            let patch = request.method() == axum::http::Method::PATCH;
+            let namespace = request.uri().path() == "/api/v1/namespaces/wd-mail-c42";
+            axum::body::to_bytes(request.into_body(), 65536)
+                .await
+                .unwrap();
+            axum::Json(if patch {
+                count.fetch_add(1, Ordering::SeqCst);
+                json!({"apiVersion":"apps/v1","kind":"Deployment","metadata":{"name":"engine","namespace":"wd-mail-c42"},"spec":{"replicas":1}})
+            } else if namespace {
+                json!({"apiVersion":"v1","kind":"Namespace","metadata":{"name":"wd-mail-c42","labels":{"webdock.dev/managed-by":"webdock","webdock.dev/plugin":"mail"}}})
+            } else {
+                json!({"apiVersion":"v1","kind":"List","metadata":{},"items":[]})
+            })
+        }
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let patches = Arc::new(AtomicUsize::new(0));
+        let router = axum::Router::new()
+            .fallback(provider)
+            .with_state(patches.clone());
+        let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+        let client = Client::try_from(kube::Config::new(
+            format!("http://{address}").parse().unwrap(),
+        ))
+        .unwrap();
+        let gate = crate::recovery::effect_fence::MailEffectFence::default();
+        let executor = WorkloadExecutor::new(client.clone()).with_mail_fence(gate.clone());
+        let old = json!({"apiVersion":"apps/v1","kind":"Deployment","metadata":{"name":"engine","namespace":"wd-mail-c42","labels":{"webdock.dev/managed-by":"webdock","webdock.dev/plugin":"mail","webdock.dev/unit":"engine-c42"}},"spec":{"replicas":1}});
+        let (release, held) = tokio::sync::oneshot::channel();
+        let captured = old.clone();
+        let worker = tokio::spawn(async move {
+            held.await.unwrap();
+            executor
+                .apply("mail", "engine-c42", "wd-mail-c42", &[captured])
+                .await
+        });
+        let _drained = gate.close_and_drain().await.unwrap();
+        release.send(()).unwrap();
+        assert!(worker.await.unwrap().is_err());
+        assert_eq!(patches.load(Ordering::SeqCst), 0);
+        // A genuinely legacy executor has no guard. Its effect remains possible;
+        // Core54 must keep that registered participant undrained until owned stop.
+        let legacy = WorkloadExecutor::new(client);
+        let _ = legacy
+            .apply("mail", "engine-c42", "wd-mail-c42", &[old])
+            .await;
+        assert_eq!(patches.load(Ordering::SeqCst), 1);
+        server.abort();
+        let _ = server.await;
+    }
+    #[cfg(feature = "docker")]
+    #[tokio::test]
+    async fn lost_remote_patch_response_survives_cancellation_and_blocks_drain_after_restart() {
+        use std::sync::{
+            Arc,
+            atomic::{AtomicUsize, Ordering},
+        };
+        struct Held {
+            submitted: tokio::sync::Notify,
+            release: tokio::sync::Notify,
+            applied: AtomicUsize,
+        }
+        async fn accepted_effect(accepted: Arc<Held>, complete: tokio::sync::oneshot::Sender<()>) {
+            accepted.submitted.notify_one();
+            if tokio::time::timeout(
+                std::time::Duration::from_secs(10),
+                accepted.release.notified(),
+            )
+            .await
+            .is_ok()
+            {
+                accepted.applied.fetch_add(1, Ordering::SeqCst);
+            }
+            let _ = complete.send(());
+        }
+        async fn provider(
+            axum::extract::State(state): axum::extract::State<Arc<Held>>,
+            request: axum::extract::Request,
+        ) -> axum::Json<Value> {
+            let patch = request.method() == axum::http::Method::PATCH;
+            let namespace = request.uri().path() == "/api/v1/namespaces/wd-mail-c42";
+            axum::body::to_bytes(request.into_body(), 65536)
+                .await
+                .unwrap();
+            if patch {
+                let accepted = state.clone();
+                let (complete, done) = tokio::sync::oneshot::channel();
+                // The provider owns accepted work independently of an HTTP client that disappears.
+                tokio::spawn(accepted_effect(accepted, complete));
+                let _ = done.await;
+            }
+            axum::Json(if namespace {
+                json!({"apiVersion":"v1","kind":"Namespace","metadata":{"name":"wd-mail-c42","labels":{"webdock.dev/managed-by":"webdock"}}})
+            } else {
+                json!({"apiVersion":"apps/v1","kind":"Deployment","metadata":{"name":"engine","namespace":"wd-mail-c42"},"spec":{"replicas":1}})
+            })
+        }
+        let state = Arc::new(Held {
+            submitted: tokio::sync::Notify::new(),
+            release: tokio::sync::Notify::new(),
+            applied: AtomicUsize::new(0),
+        });
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let router = axum::Router::new()
+            .fallback(provider)
+            .with_state(state.clone());
+        let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+        let directory = tempfile::tempdir().unwrap();
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(directory.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+        let path = directory.path().join("effects.json");
+        let gate = crate::recovery::effect_fence::MailEffectFence::open(&path).unwrap();
+        let client = Client::try_from(kube::Config::new(
+            format!("http://{address}").parse().unwrap(),
+        ))
+        .unwrap();
+        let executor = WorkloadExecutor::new(client).with_mail_fence(gate.clone());
+        let old = json!({"apiVersion":"apps/v1","kind":"Deployment","metadata":{"name":"engine","namespace":"wd-mail-c42","labels":{"webdock.dev/managed-by":"webdock","webdock.dev/plugin":"mail","webdock.dev/unit":"engine-c42"}},"spec":{"replicas":1}});
+        let worker = tokio::spawn(async move {
+            executor
+                .apply("mail", "engine-c42", "wd-mail-c42", &[old])
+                .await
+        });
+        tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            state.submitted.notified(),
+        )
+        .await
+        .unwrap();
+        worker.abort();
+        let _ = worker.await;
+        assert!(
+            gate.close_and_drain().await.is_err(),
+            "local future cancellation cannot drain a held remote PATCH"
+        );
+        state.release.notify_one();
+        tokio::time::timeout(std::time::Duration::from_secs(5), async {
+            while state.applied.load(Ordering::SeqCst) == 0 {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert_eq!(state.applied.load(Ordering::SeqCst), 1);
+        drop(gate);
+        let restarted = crate::recovery::effect_fence::MailEffectFence::open(&path).unwrap();
+        assert!(restarted.close_and_drain().await.is_err());
+        server.abort();
+        let _ = server.await;
+    }
     fn service(namespace: &str, unit: &str) -> Value {
         json!({"apiVersion":"v1","kind":"Service","metadata":{"name":"web","namespace":namespace,
                "labels":{"webdock.dev/managed-by":"webdock","webdock.dev/plugin":"hosting","webdock.dev/unit":unit}}})

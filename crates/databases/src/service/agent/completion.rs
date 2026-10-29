@@ -64,6 +64,17 @@ impl DatabaseService {
         let proof = data.proof.as_ref().ok_or_else(lease_conflict)?;
         let backend=one(&tx,"SELECT to_jsonb(b) AS value FROM webdock_auth.hosting_database_backend b WHERE id=$1 FOR UPDATE",vec![text(&op,"backend_id")?.into()]).await?;
         let action = text(&op, "database_action")?;
+        if !op["backup_policy_id"].is_null() {
+            self.complete_backup_proof(&tx, &op, proof, &backend)
+                .await?;
+            let response = json!({"accepted":true});
+            exec(&tx,"UPDATE webdock_auth.hosting_operation SET status='succeeded',result=$2 WHERE id=$1",vec![text(&op,"id")?.into(),serde_json::to_value(proof).map_err(|_|invalid())?.into()]).await?;
+            self.record_database_completion(&tx, &op, agent, &data, &response)
+                .await?;
+            tx.commit().await?;
+            guard.commit().await?;
+            return Ok(response);
+        }
         let expected = match action {
             "pause" => DatabaseProofState::Paused,
             "delete" => DatabaseProofState::Retained,
@@ -82,6 +93,11 @@ impl DatabaseService {
             || proof.revision != number(&op, "database_revision")?
             || proof.state != expected
             || (expected == DatabaseProofState::Ready && !proof.endpoint_ready)
+        {
+            return Err(lease_conflict());
+        }
+        if action == "restore"
+            && proof.copy_sha256.as_deref() != op["recovery"]["verificationSHA256"].as_str()
         {
             return Err(lease_conflict());
         }
@@ -141,6 +157,7 @@ impl DatabaseService {
                 }
                 let target=optional(&tx,"UPDATE webdock_auth.hosting_database SET state=$3,observed_revision=revision,observed_at=now(),confirmed_credential_revision=CASE WHEN $3='ready' THEN credential_revision ELSE confirmed_credential_revision END,confirmed_credentials_encrypted=CASE WHEN $3='ready' THEN credentials_encrypted ELSE confirmed_credentials_encrypted END,retained_until=CASE WHEN $3='retained' THEN now()+interval '7 days' ELSE retained_until END WHERE id=$1 AND revision=$2 RETURNING jsonb_build_object('orderID',order_id) AS value",vec![database.into(),number(&op,"database_revision")?.into(),state.into()]).await?.ok_or_else(lease_conflict)?;
                 if state == "ready" {
+                    self.retain_backup_credentials(&tx, database).await?;
                     exec(&tx,"UPDATE webdock_auth.hosting_database_order SET billing_started_at=coalesce(billing_started_at,now()) WHERE id=$1",vec![text(&target,"orderID")?.into()]).await?;
                 }
                 if state == "retained" {

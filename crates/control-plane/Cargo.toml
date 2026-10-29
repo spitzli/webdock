@@ -7,6 +7,7 @@ license.workspace = true
 default-run = "webdock-control-plane"
 
 [dependencies]
+webdock-export-protocol={path="../export-protocol"}
 rmcp={version="=3.5.1",default-features=false,features=["server","transport-streamable-http-server"]}
 webdock-build={path="../build"}
 webdock-plugin-host={path="../plugin-host"}
@@ -57,6 +58,8 @@ governor = "0.10.4"
 clap = { version = "4", features = ["derive"] }
 
 [dev-dependencies]
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+webdock-agent = { path = "../agent", default-features = false, features = ["docker"] }
 webdock-plugin-kit = { path = "../plugin-kit" }
 tokio-postgres = "0.7"
 serde-saphyr = "0.0.29"

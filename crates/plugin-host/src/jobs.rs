@@ -102,8 +102,13 @@ impl HostService {
         self.checked_binding(metadata, binding)
     }
     async fn finish_unclaimed_job(&self, row: &Value) -> Result<bool> {
+        // An expired create lease can hide an external resource; never dispatch another attempt.
+        let uncertain_create = row["provenance"]["session_context"]["resourceAction"]["effect"]
+            == "create"
+            && integer(row, "attempts")? > 0;
         if row["cancel_requested"] != true
             && integer(row, "attempts")? < integer(row, "max_attempts")?
+            && !uncertain_create
         {
             return Ok(false);
         }
@@ -111,8 +116,8 @@ impl HostService {
         fence(&tx, false).await?;
         Self::lock_job_metadata(&tx, row).await?;
         let updated=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
-            "UPDATE webdock_auth.plugin_job_execution SET status=CASE WHEN cancel_requested THEN 'cancelled' ELSE 'failed' END,condition=CASE WHEN cancel_requested THEN 'cancelled' ELSE 'attempts_exhausted' END,claim_token=NULL,lease_until=NULL WHERE id=$1 AND (status='pending' OR status='running' AND lease_until<=clock_timestamp()) AND (cancel_requested OR attempts>=max_attempts) RETURNING invocation_id",
-            [string(row,"id")?.into()])).await.map_err(db_error)?;
+            "UPDATE webdock_auth.plugin_job_execution SET status=CASE WHEN cancel_requested THEN 'cancelled' ELSE 'failed' END,condition=CASE WHEN cancel_requested THEN 'cancelled' WHEN $2 THEN 'attempt_failed' ELSE 'attempts_exhausted' END,claim_token=NULL,lease_until=NULL WHERE id=$1 AND (status='pending' OR status='running' AND lease_until<=clock_timestamp()) AND (cancel_requested OR attempts>=max_attempts OR $2) RETURNING invocation_id",
+            [string(row,"id")?.into(),uncertain_create.into()])).await.map_err(db_error)?;
         if let Some(updated) = &updated {
             let invocation: Option<uuid::Uuid> =
                 updated.try_get("", "invocation_id").map_err(db_error)?;
@@ -520,7 +525,7 @@ impl HostService {
         }
         let discovery = self.controller().await?;
         let row=discovery.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
-            "SELECT to_jsonb(j) AS job FROM webdock_auth.plugin_job_execution j WHERE status IN ('pending','running') AND (status='pending' OR lease_until<=clock_timestamp()) AND ($1::text IS NULL OR plugin_id=$1) ORDER BY available_at,id LIMIT 1",[plugin.into()])).await.map_err(db_error)?;
+            "SELECT to_jsonb(j) AS job FROM webdock_auth.plugin_job_execution j WHERE status IN ('pending','running') AND (status='pending' OR lease_until<=clock_timestamp()) AND ($1::text IS NULL OR plugin_id=$1) AND (provenance #>> '{session_context,resourceAction,effect}' IS DISTINCT FROM 'delete' OR EXISTS(SELECT 1 FROM webdock_auth.plugin_invocation a WHERE a.id::text=j.provenance->>'id' AND a.session_context->>'resourceDeleteJob'=j.id)) ORDER BY available_at,id LIMIT 1",[plugin.into()])).await.map_err(db_error)?;
         discovery.commit().await.map_err(db_error)?;
         let Some(row) = row else {
             return Ok(None);
@@ -592,6 +597,7 @@ impl HostService {
                 token: signed,
                 configuration: context.configuration.clone(),
                 input: fresh["payload"].clone(),
+                replay_result: None,
             },
         };
         context.commit(self).await?;
@@ -615,7 +621,22 @@ impl HostService {
         }
         let result = match result {
             Ok(v) => match canonical_json(&v) {
-                Ok(encoded) if encoded.len() <= 32768 => Ok(v),
+                Ok(encoded) if encoded.len() <= 32768 => self_service::record_result(
+                    &context.tx,
+                    &lease.invocation.claims.id,
+                    &row["provenance"],
+                    &v,
+                    true,
+                )
+                .await
+                .map(|()| {
+                    if row["provenance"]["session_context"]["resourceAction"]["effect"] == "create"
+                    {
+                        json!({"resource":{"id":v["resource"]["id"],"name":v["resource"]["name"]}})
+                    } else {
+                        v
+                    }
+                }),
                 _ => Err(invalid("Invalid job result")),
             },
             v => v,
@@ -627,7 +648,9 @@ impl HostService {
             }
             Err(e)
                 if [ErrorCode::Unavailable, ErrorCode::DeadlineExceeded].contains(&e.code)
-                    && integer(&row, "attempts")? < integer(&row, "max_attempts")? =>
+                    && integer(&row, "attempts")? < integer(&row, "max_attempts")?
+                    && row["provenance"]["session_context"]["resourceAction"]["effect"]
+                        != "create" =>
             {
                 (
                     "pending",

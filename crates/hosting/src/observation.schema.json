@@ -177,7 +177,10 @@
         },
         "pluginRuntimeVersion": {
           "type": "number",
-          "enum": [1, 2]
+          "enum": [
+            1,
+            2
+          ]
         },
         "serviceBindingsVersion": {
           "type": "number",
@@ -350,6 +353,254 @@
         "registryVersion": {
           "type": "number",
           "const": 1
+        },
+        "databaseBackupVersion": {
+          "type": "integer",
+          "const": 1
+        },
+        "nativeRecovery": {
+          "type": "object",
+          "properties": {
+            "appEffectFenceVersion": {
+              "type": "integer",
+              "const": 1
+            },
+            "version": {
+              "enum": [
+                1,
+                2
+              ]
+            },
+            "profiles": {
+              "type": "array",
+              "maxItems": 8,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                  },
+                  "profile": {
+                    "enum": [
+                      "mail-installation-v1",
+                      "ntfy-sqlite-offline-v1"
+                    ]
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "keyCustodyID": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                  },
+                  "productionQualified": {
+                    "const": false
+                  },
+                  "storageIdentity": {
+                    "$ref": "#/$defs/recoveryPoolIdentity"
+                  }
+                },
+                "required": [
+                  "id",
+                  "profile",
+                  "sha256",
+                  "keyCustodyID",
+                  "productionQualified"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "targets": {
+              "type": "array",
+              "maxItems": 16,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                  },
+                  "profile": {
+                    "enum": [
+                      "mail-installation-v1",
+                      "ntfy-sqlite-offline-v1"
+                    ]
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "nonce": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "capacityBytes": {
+                    "type": "integer",
+                    "minimum": 67108864,
+                    "maximum": 68719476736
+                  },
+                  "runtime": {
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  "storageIdentity": {
+                    "$ref": "#/$defs/recoveryPoolIdentity"
+                  },
+                  "volumePlan": {
+                    "type": "object",
+                    "maxProperties": 102,
+                    "propertyNames": {
+                      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                    },
+                    "additionalProperties": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "role": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "role": {
+                              "enum": [
+                                "core-ledger-postgres",
+                                "private-mail-postgres",
+                                "incoming-ce"
+                              ]
+                            },
+                            "originalCustomerID": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]{0,18}$"
+                            }
+                          },
+                          "required": [
+                            "role"
+                          ],
+                          "allOf": [
+                            {
+                              "if": {
+                                "properties": {
+                                  "role": {
+                                    "const": "incoming-ce"
+                                  }
+                                }
+                              },
+                              "then": {
+                                "required": [
+                                  "originalCustomerID"
+                                ]
+                              },
+                              "else": {
+                                "not": {
+                                  "required": [
+                                    "originalCustomerID"
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "bytes": {
+                          "type": "integer",
+                          "minimum": 67108864,
+                          "maximum": 68719476736
+                        },
+                        "image": {
+                          "type": "string",
+                          "pattern": "^.+@sha256:[a-f0-9]{64}$"
+                        },
+                        "uid": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 65535
+                        },
+                        "gid": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 65535
+                        },
+                        "cpuMillicores": {
+                          "type": "integer",
+                          "minimum": 100,
+                          "maximum": 8000
+                        },
+                        "memoryBytes": {
+                          "type": "integer",
+                          "minimum": 134217728,
+                          "maximum": 8589934592
+                        },
+                        "tmpBytes": {
+                          "type": "integer",
+                          "minimum": 1048576,
+                          "maximum": 1073741824
+                        }
+                      },
+                      "required": [
+                        "role",
+                        "bytes",
+                        "image",
+                        "uid",
+                        "gid",
+                        "cpuMillicores",
+                        "memoryBytes",
+                        "tmpBytes"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "profile",
+                  "sha256",
+                  "nonce",
+                  "capacityBytes",
+                  "runtime"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "version",
+            "profiles",
+            "targets"
+          ],
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "version": {
+                    "const": 2
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "profiles": {
+                    "items": {
+                      "required": [
+                        "storageIdentity"
+                      ]
+                    }
+                  },
+                  "targets": {
+                    "items": {
+                      "required": [
+                        "storageIdentity"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          ]
         }
       },
       "required": [
@@ -370,5 +621,70 @@
     "capacity",
     "capabilities"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "recoveryPoolIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "configuration": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "root": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048,
+              "pattern": "^/"
+            },
+            "node": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253
+            },
+            "clusterID": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            },
+            "poolID": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "capacityBytes": {
+              "type": "integer",
+              "minimum": 67108864,
+              "maximum": 1099511627776
+            },
+            "reserveBytes": {
+              "type": "integer",
+              "minimum": 67108864,
+              "maximum": 1099511627776
+            }
+          },
+          "required": [
+            "root",
+            "node",
+            "clusterID",
+            "poolID",
+            "capacityBytes",
+            "reserveBytes"
+          ]
+        },
+        "poolUID": {
+          "type": "string",
+          "pattern": "^[a-f0-9-]{36}:[0-9]+:[0-9]+$",
+          "maxLength": 128
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "configuration",
+        "poolUID",
+        "revision"
+      ]
+    }
+  }
 }

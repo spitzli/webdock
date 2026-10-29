@@ -236,6 +236,17 @@ impl FencedControl {
 #[async_trait::async_trait]
 impl SendControl for FencedControl {
     async fn call(&self, input: Value) -> Result<Value, ControlError> {
+        let _recovery = if matches!(input["action"].as_str(), Some("send.admit" | "send.begin")) {
+            Some(
+                self.policy
+                    .store
+                    .recovery_guard()
+                    .await
+                    .map_err(|_| ControlError::unavailable())?,
+            )
+        } else {
+            None
+        };
         if input["action"] == "send.admit" {
             let customer = self
                 .inner
@@ -427,49 +438,59 @@ impl DispatchTransport for ManagedTransport {
         message: &DispatchMessage,
         prepared: &PreparedMessage,
     ) -> Receipt {
-        let Ok(token) = self.verify(job, authorization, message, prepared) else {
+        let Ok(recovery) = self.policy.store.recovery_effect().await else {
             return Receipt::Unknown {};
         };
-        // Core handoff already committed. Recheck private reservation/policy before one-use authority.
-        let Ok(_fence) = self.policy.store.customer_fence(&job.customer_id).await else {
-            return Receipt::Unknown {};
-        };
-        if !matches!(self.policy.preflight(job).await, Ok(true)) {
-            return Receipt::Unknown {};
+        let receipt = async {
+            let Ok(token) = self.verify(job, authorization, message, prepared) else {
+                return Receipt::Unknown {};
+            };
+            // Core handoff already committed. Recheck private reservation/policy before one-use authority.
+            let Ok(_fence) = self.policy.store.customer_fence(&job.customer_id).await else {
+                return Receipt::Unknown {};
+            };
+            if !matches!(self.policy.preflight(job).await, Ok(true)) {
+                return Receipt::Unknown {};
+            }
+            let response = tokio::time::timeout(
+                Duration::from_secs(15),
+                self.authority
+                    .clone()
+                    .begin_attempt(LeaseProof { lease_token: token }),
+            )
+            .await;
+            let Ok(Ok(response)) = response else {
+                return Receipt::Unknown {};
+            };
+            let response = response.into_inner();
+            if !response.admitted || response.private_configuration_json.len() > 65536 {
+                return Receipt::Unknown {};
+            }
+            let Ok(marker) = serde_json::from_slice::<Marker>(&response.private_configuration_json)
+            else {
+                return Receipt::Unknown {};
+            };
+            let Ok(selected) = self.policy.selected(job, &marker).await else {
+                return Receipt::Unknown {};
+            };
+            // The canonical handoff now blocks incoming transitions; release private DB connection before I/O.
+            drop(_fence);
+            let route = match &selected {
+                Selected::Platform(platform) => crate::transport::Route::Platform(platform),
+                Selected::Own { key, secret } => crate::transport::Route::Own {
+                    key: key.clone(),
+                    secret: secret.clone(),
+                },
+            };
+            self.sender
+                .submit_prepared(route, job, message, prepared)
+                .await
         }
-        let response = tokio::time::timeout(
-            Duration::from_secs(15),
-            self.authority
-                .clone()
-                .begin_attempt(LeaseProof { lease_token: token }),
-        )
         .await;
-        let Ok(Ok(response)) = response else {
-            return Receipt::Unknown {};
-        };
-        let response = response.into_inner();
-        if !response.admitted || response.private_configuration_json.len() > 65536 {
+        if recovery.finish().await.is_err() {
             return Receipt::Unknown {};
         }
-        let Ok(marker) = serde_json::from_slice::<Marker>(&response.private_configuration_json)
-        else {
-            return Receipt::Unknown {};
-        };
-        let Ok(selected) = self.policy.selected(job, &marker).await else {
-            return Receipt::Unknown {};
-        };
-        // The canonical handoff now blocks incoming transitions; release private DB connection before I/O.
-        drop(_fence);
-        let route = match &selected {
-            Selected::Platform(platform) => crate::transport::Route::Platform(platform),
-            Selected::Own { key, secret } => crate::transport::Route::Own {
-                key: key.clone(),
-                secret: secret.clone(),
-            },
-        };
-        self.sender
-            .submit_prepared(route, job, message, prepared)
-            .await
+        receipt
     }
 }
 

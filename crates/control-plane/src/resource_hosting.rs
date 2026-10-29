@@ -67,6 +67,9 @@ pub(crate) async fn execute(
     actor: &McpAuthentication,
     input: Value,
 ) -> Result<Value, ResourceFailure> {
+    if crate::resource_databases::is_database(&input) {
+        return crate::resource_databases::execute(state, actor, input).await;
+    }
     let action = input
         .get("action")
         .and_then(Value::as_str)
@@ -191,6 +194,15 @@ fn command(
     headers: &HeaderMap,
     bytes: &[u8],
 ) -> Result<Value, ResourceFailure> {
+    if path.first() == Some(&"databases") {
+        if !bytes.is_empty() {
+            return Err(public_error(
+                StatusCode::BAD_REQUEST,
+                "Database GET requests have no body.",
+            ));
+        }
+        return crate::resource_databases::command(method, &path[1..], raw_query);
+    }
     if method == Method::POST && path == ["commands"] {
         let input = read_json(headers, bytes)?;
         if !input
@@ -266,4 +278,51 @@ async fn handle(
     }
     .await;
     result.unwrap_or_else(IntoResponse::into_response)
+}
+
+#[cfg(test)]
+mod database_read_tests {
+    use super::*;
+    #[test]
+    fn database_rest_paths_use_native_database_read_contract_before_hosting() {
+        let read = command(
+            &Method::GET,
+            &["databases", "projects", "101", "databases"],
+            Some("limit=2&cursor=102"),
+            &HeaderMap::new(),
+            &[],
+        );
+        assert_eq!(
+            read.unwrap_or_else(|_| panic!("database route rejected")),
+            json!({"action":"databases.list","projectID":"101","limit":2,"cursor":"102"})
+        );
+        for raw in [
+            "limit=101",
+            "cursor=-1",
+            "limit=2&limit=3",
+            "authority=x",
+            "action=databases.backup",
+        ] {
+            assert!(
+                command(
+                    &Method::GET,
+                    &["databases", "projects", "101", "databases"],
+                    Some(raw),
+                    &HeaderMap::new(),
+                    &[]
+                )
+                .is_err()
+            );
+        }
+        assert!(
+            command(
+                &Method::POST,
+                &["databases", "101", "restore"],
+                None,
+                &HeaderMap::new(),
+                &[]
+            )
+            .is_err()
+        );
+    }
 }

@@ -3,6 +3,69 @@ use std::{
     time::{Duration, Instant},
 };
 use webdock_build::execution::{MAX_LOG, run_bounded};
+
+#[test]
+fn frontend_requires_explicit_pinned_vm_capability_and_guest_output_matches_recipe() {
+    use sha2::{Digest, Sha256};
+    use std::collections::BTreeMap;
+    use webdock_build::{
+        artifact::Archive,
+        execution::{GuestRequest, Limits, VmImage, decode_guest_output},
+    };
+    let request = GuestRequest {
+        recipe: "dockerfile-frontend".into(),
+        root_directory: ".".into(),
+        build_environment: BTreeMap::new(),
+        limits: Limits {
+            cpu: 2,
+            memory_mi_b: 2048,
+            disk_bytes: 24 * 1024 * 1024 * 1024,
+            duration_seconds: 180,
+        },
+    };
+    request.validate().unwrap();
+    let image_file = tempfile::NamedTempFile::new().unwrap();
+    std::fs::write(image_file.path(), b"not executed").unwrap();
+    let image = VmImage::new(
+        image_file.path().into(),
+        hex::encode(Sha256::digest(b"not executed")),
+    )
+    .unwrap();
+    assert_eq!(image.supported_recipes(), &["dockerfile"]);
+    let scratch = tempfile::tempdir().unwrap();
+    assert_eq!(
+        image
+            .execute(&request, b"", scratch.path(), || panic!(
+                "must reject before lease or QEMU"
+            ))
+            .err()
+            .unwrap()
+            .code,
+        "recipe_unavailable"
+    );
+    let image = image.with_frontend_output();
+    assert_eq!(
+        image.supported_recipes(),
+        &["dockerfile", "dockerfile-frontend"]
+    );
+    let output = Archive::from_files(BTreeMap::from([
+        ("status.json".into(), b"{\"success\":true}".to_vec()),
+        (
+            "artifact/image.tar".into(),
+            b"unimportant: reject unexpected companion first".to_vec(),
+        ),
+        ("artifact/frontend.tar".into(), b"unexpected".to_vec()),
+    ]))
+    .unwrap()
+    .encode()
+    .unwrap();
+    let mut plain = request.clone();
+    plain.recipe = "dockerfile".into();
+    assert_eq!(
+        decode_guest_output(&plain, &output).err().unwrap().code,
+        "invalid_result"
+    );
+}
 #[test]
 fn host_watchdog_kills_process_and_bounds_output() {
     let mut sleeper = Command::new("/bin/sleep");

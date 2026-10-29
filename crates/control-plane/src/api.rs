@@ -34,12 +34,15 @@ fn access_failure(error: webdock_access::Error) -> ApiFailure {
     crate::access::failure(error)
 }
 /// The token's member as an actor, its workspace, and whether it may write.
-struct Bearer {
-    actor: auth::AuthenticatedActor,
-    customer: String,
-    can_write: bool,
+pub(super) struct Bearer {
+    pub(super) actor: auth::AuthenticatedActor,
+    pub(super) customer: String,
+    pub(super) can_write: bool,
 }
-async fn bearer(state: &ServiceState, headers: &HeaderMap) -> Result<Bearer, ApiFailure> {
+pub(super) async fn bearer(
+    state: &ServiceState,
+    headers: &HeaderMap,
+) -> Result<Bearer, ApiFailure> {
     let unauthorized = || {
         reject(
             StatusCode::UNAUTHORIZED,
@@ -161,7 +164,7 @@ async fn action(
         }))
         .map_err(|_| reject(StatusCode::BAD_REQUEST, "invalid_input", "Send plugin, action and input."))?;
         let output = endpoints(&state)?
-            .invoke_as(&bearer.actor, input, bearer.can_write)
+            .invoke_api(&bearer.actor, input, bearer.can_write, hex::encode(Sha256::digest(headers.get(header::AUTHORIZATION).and_then(|v|v.to_str().ok()).and_then(|v|v.strip_prefix("Bearer ")).ok_or_else(|| failure(PluginError::denied()))?.as_bytes())))
             .await
             .map_err(failure)?;
         Ok(Json(output).into_response())
@@ -211,7 +214,7 @@ async fn tokens(
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct NewToken {
     name: String,
-    can_write: bool,
+    pub(super) can_write: bool,
     days: i64,
 }
 async fn create_token(

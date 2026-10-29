@@ -54,7 +54,7 @@ impl ManagedCommand {
             jsonschema::options()
                 .should_validate_formats(true)
                 .build(
-                    &serde_json::from_str(include_str!("managed-command.schema.json"))
+                    &serde_json::from_str(crate::MANAGED_COMMAND_SCHEMA)
                         .expect("retained command schema"),
                 )
                 .expect("valid managed schema")
@@ -98,10 +98,12 @@ impl ManagedCommand {
     }
     pub fn is_read(&self) -> bool {
         [
+            "databases.backupPolicies.get",
             "databases.projects.list",
             "databases.migrations.list",
             "databases.migrationPurgePreview",
             "databases.permissions",
+            "databases.operations.get",
             "databases.list",
             "databases.get",
             "databases.plans.list",
@@ -115,8 +117,8 @@ impl ManagedCommand {
 pub(crate) fn validate_plan(plan: &Value) -> Result<()> {
     static PLAN: OnceLock<jsonschema::Validator> = OnceLock::new();
     let validator = PLAN.get_or_init(|| {
-        let schema: Value = serde_json::from_str(include_str!("managed-command.schema.json"))
-            .expect("retained schema");
+        let schema: Value =
+            serde_json::from_str(crate::MANAGED_COMMAND_SCHEMA).expect("retained schema");
         let plan = schema["oneOf"]
             .as_array()
             .expect("command union")

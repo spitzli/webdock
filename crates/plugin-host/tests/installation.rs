@@ -547,6 +547,7 @@ async fn restricted_install_replay_fencing_promotion_and_retained_retry() {
         host_aliases: vec![],
     };
     let binding = RuntimeBinding {
+        storage: Default::default(),
         generation: 1,
         namespace: spec.namespace.clone(),
         service: "runtime".into(),

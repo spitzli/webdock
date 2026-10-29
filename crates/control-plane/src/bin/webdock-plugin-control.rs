@@ -120,6 +120,11 @@ async fn run() -> Result<(), Error> {
     let mut server = tonic::transport::Server::builder()
         .concurrency_limit_per_connection(32)
         .timeout(std::time::Duration::from_secs(35));
+    let exports = services.host.clone().export_service(
+        services
+            .exports
+            .unwrap_or_else(|| Arc::new(webdock_plugin_host::UnconfiguredExportSources)),
+    );
     let repository = services
         .repository
         .map(|repository| repository.authority_service());
@@ -130,6 +135,7 @@ async fn run() -> Result<(), Error> {
             server
                 .add_service(services.host.rpc())
                 .add_optional_service(repository)
+                .add_service(exports)
                 .add_optional_service(mail)
                 .add_optional_service(native_mail)
                 .serve_with_incoming_shutdown(incoming, shutdown)
@@ -147,6 +153,7 @@ async fn run() -> Result<(), Error> {
                 )?
                 .add_service(services.host.rpc())
                 .add_optional_service(repository)
+                .add_service(exports)
                 .add_optional_service(mail)
                 .add_optional_service(native_mail)
                 .serve_with_incoming_shutdown(

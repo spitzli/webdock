@@ -21,6 +21,7 @@
     "payload": "4.0.0-canary.37",
     "@payloadcms/next": "4.0.0-canary.37",
     "@payloadcms/db-postgres": "4.0.0-canary.37",
+    "@payloadcms/storage-s3": "4.0.0-canary.37",
     "sharp": "0.35.5",
     "graphql": "16.14.2",
     "@webdock/cms-ui": "*",

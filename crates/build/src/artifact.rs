@@ -9,6 +9,31 @@ use std::{
 pub const MAX_SOURCE: u64 = 128 * 1024 * 1024;
 pub const MAX_OUTPUT: u64 = 512 * 1024 * 1024;
 pub const MAX_ENTRIES: usize = 50_000;
+pub const SUPPORTED_FORMATS: &[u8] = &[0, 1, 2];
+pub(crate) fn storage_format(key: &str, digest: &str) -> Result<u8> {
+    let hash = digest
+        .strip_prefix("sha256:")
+        .filter(|hash| {
+            hash.len() == 64
+                && hash
+                    .bytes()
+                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        })
+        .ok_or_else(|| error("invalid_artifact"))?;
+    let name = key
+        .rsplit('/')
+        .next()
+        .ok_or_else(|| error("invalid_artifact"))?;
+    if name == format!("{hash}.tar") {
+        Ok(0)
+    } else if name == format!("{hash}.e1.tar") {
+        Ok(1)
+    } else if name == format!("{hash}.e2.tar") {
+        Ok(2)
+    } else {
+        Err(error("artifact_digest_mismatch"))
+    }
+}
 pub struct Archive {
     files: BTreeMap<String, Vec<u8>>,
     executable: BTreeSet<String>,
@@ -320,8 +345,31 @@ pub struct StoredArtifact {
     pub(crate) digest: String,
     pub(crate) image_digest: String,
     pub(crate) size: u64,
+    pub(crate) remote: Option<webdock_object_storage::ObjectReceipt>,
 }
 impl StoredArtifact {
+    pub fn format_version(&self) -> Result<u8> {
+        storage_format(&self.key, &self.digest)
+    }
+    pub fn remote_storage(&self) -> Option<&webdock_object_storage::ObjectReceipt> {
+        self.remote.as_ref()
+    }
+    pub(crate) fn validate_remote(&self) -> Result<()> {
+        if let Some(remote) = &self.remote {
+            let (scope, _) = self
+                .key
+                .rsplit_once('/')
+                .ok_or_else(|| error("invalid_artifact"))?;
+            remote
+                .validate(scope, MAX_OUTPUT)
+                .map_err(|_| error("artifact_scope_mismatch"))?;
+            if self.digest != format!("sha256:{}", remote.sha256) || self.size != remote.size_bytes
+            {
+                return Err(error("artifact_digest_mismatch"));
+            }
+        }
+        Ok(())
+    }
     pub fn storage_key(&self) -> &str {
         &self.key
     }
@@ -372,17 +420,17 @@ impl ArtifactStore {
             return Err(error("artifact_limit"));
         }
         let archive = Archive::read(bytes, MAX_OUTPUT)?;
-        if archive.files.len() != 1 {
-            return Err(error("invalid_artifact"));
-        }
-        let image_digest = validate_oci(
-            archive
-                .files
-                .get("image.tar")
-                .ok_or_else(|| error("artifact_missing"))?,
-        )?;
+        let image_digest =
+            crate::evidence::validate_for_store(&archive, customer, build, generation)?;
         let hash = hex::encode(Sha256::digest(bytes));
-        let key = format!("{customer}/{build}/{generation}/{hash}.tar");
+        let suffix = if archive.files.len() == 1 {
+            "tar"
+        } else if archive.files.contains_key("frontend.tar") {
+            "e2.tar"
+        } else {
+            "e1.tar"
+        };
+        let key = format!("{customer}/{build}/{generation}/{hash}.{suffix}");
         let mut dir = self.root.clone();
         use std::os::unix::fs::{DirBuilderExt, MetadataExt, OpenOptionsExt};
         for component in [customer, build, &generation.to_string()] {
@@ -448,11 +496,13 @@ impl ArtifactStore {
             digest: format!("sha256:{hash}"),
             image_digest,
             size: bytes.len() as u64,
+            remote: None,
         })
     }
     pub fn read(&self, artifact: &StoredArtifact) -> Result<Vec<u8>> {
         use std::os::unix::fs::OpenOptionsExt;
         safe_path(&artifact.key)?;
+        artifact.validate_remote()?;
         let mut cursor = self.root.clone();
         for component in Path::new(&artifact.key).components() {
             cursor.push(component);
@@ -481,12 +531,25 @@ impl ArtifactStore {
             return Err(error("artifact_digest_mismatch"));
         }
         let archive = Archive::read(&bytes, MAX_OUTPUT)?;
-        if validate_oci(
-            archive
-                .files
-                .get("image.tar")
-                .ok_or_else(|| error("artifact_missing"))?,
-        )? != artifact.image_digest
+        let content_format = if archive.files.len() == 1 {
+            0
+        } else if archive.files.contains_key("frontend.tar") {
+            2
+        } else {
+            1
+        };
+        if artifact.format_version()? != content_format {
+            return Err(error("artifact_format_mismatch"));
+        }
+        let scope = artifact.key.split('/').collect::<Vec<_>>();
+        if scope.len() != 4 {
+            return Err(error("invalid_artifact"));
+        }
+        let generation = scope[2]
+            .parse::<i32>()
+            .map_err(|_| error("invalid_artifact"))?;
+        if crate::evidence::validate_for_store(&archive, scope[0], scope[1], generation)?
+            != artifact.image_digest
         {
             return Err(error("artifact_digest_mismatch"));
         }
@@ -510,7 +573,9 @@ impl ArtifactStore {
         crate::contracts::id(parts[1])?;
         crate::contracts::id(parts[2])?;
         let hash = parts[3]
-            .strip_suffix(".tar")
+            .strip_suffix(".e2.tar")
+            .or_else(|| parts[3].strip_suffix(".e1.tar"))
+            .or_else(|| parts[3].strip_suffix(".tar"))
             .filter(|h| {
                 h.len() == 64
                     && h.bytes()
@@ -525,6 +590,7 @@ impl ArtifactStore {
             digest,
             size,
             image_digest,
+            remote: None,
         };
         self.read(&artifact)?;
         Ok(artifact)

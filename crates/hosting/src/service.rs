@@ -36,6 +36,7 @@ pub struct HostingService {
     environment: Environment,
     ids: Arc<IdAllocator>,
     browser_authority: Option<Arc<browser_authority::BrowserVerifier>>,
+    recovery_signer: Option<crate::RecoverySigner>,
 }
 // Internal actor is either a live browser principal or a persisted, validated Git release.
 struct HostingActor {
@@ -76,7 +77,42 @@ impl AgentIdentity {
         self.generation
     }
 }
-fn db_error(_: sea_orm::DbErr) -> crate::HostingError {
+fn recovery_sqlstate(code: Option<std::borrow::Cow<'_, str>>) -> Option<String> {
+    code.filter(|value| {
+        value.len() == 5
+            && value
+                .bytes()
+                .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+    })
+    .map(|value| value.into_owned())
+}
+fn recovery_db_observation(error: &sea_orm::DbErr) -> (&'static str, Option<String>) {
+    use sea_orm::{DbErr, RuntimeErr};
+    let class = match error {
+        DbErr::Query(_) => "query",
+        DbErr::Exec(_) => "execute",
+        DbErr::Conn(_) => "connection",
+        DbErr::Type(_) => "decode",
+        _ => "other",
+    };
+    let code = match error {
+        DbErr::Query(RuntimeErr::SqlxError(error))
+        | DbErr::Exec(RuntimeErr::SqlxError(error))
+        | DbErr::Conn(RuntimeErr::SqlxError(error)) => {
+            error.as_database_error().and_then(|value| value.code())
+        }
+        _ => None,
+    };
+    (class, recovery_sqlstate(code))
+}
+fn db_error(cause: sea_orm::DbErr) -> crate::HostingError {
+    if std::env::var("WEBDOCK_RECOVERY_COMPONENT_TEST").as_deref() == Ok("1") {
+        let (class, state) = recovery_db_observation(&cause);
+        eprintln!(
+            "recovery_component database_failure class={class} sqlstate={}",
+            state.as_deref().unwrap_or("unavailable")
+        );
+    }
     error(
         503,
         "Hosting is unavailable. Check the current state before retrying.",
@@ -184,6 +220,7 @@ impl HostingService {
             environment: Environment::new(environment_secret)?,
             ids,
             browser_authority: None,
+            recovery_signer: None,
         })
     }
     async fn id(&self) -> Result<String> {
@@ -489,3 +526,123 @@ pub use delivery::{DeliveryCommand, DeliveryDisposition};
 
 #[path = "completion_deadline.rs"]
 mod completion_deadline;
+#[path = "recovery.rs"]
+mod recovery;
+
+#[cfg(test)]
+mod provider_compatibility_tests {
+    // These are source/query guards against making customer/Git authorization depend
+    // on operator-only cluster visibility. Real RLS/API acceptance remains separate.
+    #[test]
+    fn customer_and_git_authorization_keep_the_stored_provider_without_cluster_dependency() {
+        let source = include_str!("service.rs");
+        let authorization = source
+            .split("    async fn authorize(")
+            .nth(1)
+            .unwrap()
+            .split("    async fn lock(")
+            .next()
+            .unwrap();
+        assert!(!authorization.contains("project_provider("));
+        assert!(!authorization.contains("webdock_auth.hosting_cluster"));
+        assert!(authorization.contains("Self::authorize_git("));
+        assert!(authorization.contains("LEFT JOIN webdock_auth.hosting_project h"));
+    }
+    #[test]
+    fn project_read_models_do_not_infer_providers_from_rls_hidden_cluster_details() {
+        let source = include_str!("management.rs");
+        let projects = source
+            .split("\"projects.list\" =>")
+            .nth(1)
+            .unwrap()
+            .split("\"limits.get\"")
+            .next()
+            .unwrap();
+        assert!(projects.contains("'provider',h.provider"));
+        assert!(!projects.contains("runtime_kind"));
+    }
+    #[test]
+    fn normal_native_project_write_preserves_raw_provider_and_validates_actual_driver() {
+        let source = include_str!("management.rs");
+        let project = source
+            .split("\"projects.create\" | \"projects.update\" =>")
+            .nth(1)
+            .unwrap()
+            .split("\"clusters.register\" =>")
+            .next()
+            .unwrap();
+        assert!(project.contains("Self::cluster_view(tx, cluster).await?"));
+        assert!(
+            project.contains("(provider == \"docker\") != (state[\"runtimeKind\"] == \"docker\")")
+        );
+        assert!(project.contains("access.customer.clone().into(),provider.into(),cluster.into()"));
+        assert!(!project.contains("canonical_provider"));
+    }
+    #[test]
+    fn actual_runtime_validation_uses_the_existing_scoped_definer() {
+        let source = include_str!("capacity.rs");
+        let cluster = source
+            .split("async fn cluster_view(")
+            .nth(1)
+            .unwrap()
+            .split("async fn check_demand(")
+            .next()
+            .unwrap();
+        assert!(cluster.contains("webdock_rls.hosting_runtime_kind($1)"));
+        assert!(!cluster.contains("FROM webdock_auth.hosting_cluster"));
+    }
+    #[test]
+    fn recovery_quota_lookup_keeps_stored_backend_without_a_cluster_projection() {
+        let source = include_str!("recovery.rs");
+        assert!(
+            source
+                .contains("SELECT provider FROM webdock_auth.hosting_project WHERE project_id=$1")
+        );
+        assert!(!source.contains("Self::project_provider("));
+    }
+    #[test]
+    fn registered_runtime_migration_already_supports_raw_docker() {
+        let migration = include_str!("../../persistence/migrations/0008_hosting_runtime.sql");
+        assert!(migration.contains("CHECK(provider IN ('k3s','docker','vercel'))"));
+        assert!(migration.contains(
+            "provider IN ('k3s','docker') AND cluster_id IS NOT NULL AND namespace IS NOT NULL"
+        ));
+        assert!(migration.contains("SECURITY DEFINER"));
+        assert!(migration.contains("webdock_rls.capacity_cluster_allowed(cluster_id)"));
+    }
+}
+
+#[cfg(test)]
+mod recovery_db_diagnostic_tests {
+    use super::*;
+    #[test]
+    fn only_sqlstate_and_closed_error_classes_are_observable() {
+        assert_eq!(
+            recovery_sqlstate(Some("42703".into())),
+            Some("42703".into())
+        );
+        for value in [
+            "private-secret",
+            "42703\n",
+            "postgresql://secret",
+            "abcde",
+            "",
+        ] {
+            assert!(recovery_sqlstate(Some(value.into())).is_none());
+        }
+        assert_eq!(
+            recovery_db_observation(&sea_orm::DbErr::Type("secret-must-not-leave".into())),
+            ("decode", None)
+        );
+        let query = sea_orm::DbErr::Query(sea_orm::RuntimeErr::SqlxError(Arc::new(
+            sea_orm::sqlx::Error::ColumnNotFound("secret-must-not-leave".into()),
+        )));
+        assert_eq!(recovery_db_observation(&query), ("query", None));
+        assert_eq!(db_error(query).status, 503);
+        assert!(
+            !db_error(sea_orm::DbErr::Custom("secret-must-not-leave".into()))
+                .message
+                .contains("secret-must-not-leave")
+        );
+    }
+}

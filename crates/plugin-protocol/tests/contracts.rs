@@ -601,3 +601,24 @@ fn workloads_are_declared_kinds_with_the_capability() {
         assert!(!parses(&v), "{capabilities} {workloads}");
     }
 }
+
+#[test]
+fn schema_fields_support_descriptor_camel_case_without_widening_action_names() {
+    let mut v = fixture();
+    v["actions"][0]["output"] = json!({"type":"object","properties":{"expiresAt":{"type":"integer"},"exactBytes":{"type":"integer"},"expectedSha256":{"type":"string"},"attachment":{"type":"object","properties":{"contentType":{"type":"string"}},"required":["contentType"]}},"required":["expiresAt","exactBytes"]});
+    assert!(Manifest::parse(&serde_json::to_vec(&v).unwrap()).is_ok());
+    for key in [
+        "constructor",
+        "prototype",
+        "__proto__",
+        "ExpiresAt",
+        "a.constructor",
+        "a.__proto__.b",
+    ] {
+        let mut bad = v.clone();
+        bad["actions"][0]["output"] = json!({"type":"object","properties":{key:{"type":"string"}}});
+        assert!(Manifest::parse(&serde_json::to_vec(&bad).unwrap()).is_err());
+    }
+    v["actions"][0]["name"] = json!("downloadObject");
+    assert!(Manifest::parse(&serde_json::to_vec(&v).unwrap()).is_err());
+}

@@ -92,6 +92,42 @@
     {
       "file": "0024_mail_configuration.sql",
       "sha256": "ba5d7f982e24ce44b458b9888bad4385c14593e2defc06049b205e02ab2f569d"
+    },
+    {
+      "file": "0046_remote_build_artifacts.sql",
+      "sha256": "f8e7ad73e06b020e589c19fb37788f15a69ff1126c570b597daab2680d61489f"
+    },
+    {
+      "file": "0047_resource_create_reservations.sql",
+      "sha256": "d7e0c08e1e7753b9536ff74345a80105a98c71527ff7e61e87ef638dc7e43290"
+    },
+    {
+      "file": "0048_database_backups.sql",
+      "sha256": "8c6a28a667069797c2f589730020b7914b2d5f5a0cd04fb4825981bb89750092"
+    },
+    {
+      "file": "0049_plugin_storage_transfers.sql",
+      "sha256": "0555989ae9843d8007deb92e283b5c023512529bb60d829fb0d336bda4485f9f"
+    },
+    {
+      "file": "0050_archive_source_leases.sql",
+      "sha256": "2d3e22026c7ad792234ecce7f5a286a856eac681a22af504c23351d2de86a714"
+    },
+    {
+      "file": "0051_database_backup_transitions.sql",
+      "sha256": "a4f16036e77bd2617f61cecc7c7881bb1abfceb920a16309e092770094ed7767"
+    },
+    {
+      "file": "0052_native_recovery.sql",
+      "sha256": "c472a56bf4e5f90bc023778985f3191b56626e6b149c70d5c2439059816b0c20"
+    },
+    {
+      "file": "0053_frontend_output_retention.sql",
+      "sha256": "3ef35e7f191b15c7b9aa3d007a59247e587fcc2ecb081c72a84441c9f13a458c"
+    },
+    {
+      "file": "0055_native_operator_allowances.sql",
+      "sha256": "ab0179714067579917bd3eacd4065101d2d06f721457b6424f941f90642e47de"
     }
   ]
 }

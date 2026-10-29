@@ -102,13 +102,29 @@ impl NativeDatabaseExecutor {
             .await?
             .ok_or(ExecutionError::Ownership)?;
         self.owned(&cluster, job)?;
-        let uid = cluster.metadata.uid.ok_or(ExecutionError::Ownership)?;
+        let uid = cluster
+            .metadata
+            .uid
+            .clone()
+            .ok_or(ExecutionError::Ownership)?;
         if cluster.data["status"]["readyInstances"] != 1 && job.action != DatabaseAction::Restart {
             return Ok(DatabaseStep::Pending);
         }
         self.verify_storage(claim, authority).await?;
         self.checkpoint(claim, authority, DatabaseCheckpointPhase::Configuring, &uid)
             .await?;
+        if job.action == DatabaseAction::Restore {
+            self.configure_recovery(claim, authority).await?;
+            self.configure_export(claim, authority).await?;
+            self.recovered_export_password(claim, authority).await?;
+            self.enable_export(claim, authority).await?;
+            self.patch_cluster(
+                claim,
+                authority,
+                json!({"spec":{"postgresql":{"pg_hba":self.config.hba(job)?}}}),
+            )
+            .await?;
+        }
         match job.action {
             DatabaseAction::Create | DatabaseAction::RotateCredentials | DatabaseAction::Resume
                 if job.database.is_some() =>
@@ -130,6 +146,15 @@ impl NativeDatabaseExecutor {
                     .await?;
                 self.sql(claim, authority, &database.name, &statements.schema)
                     .await?;
+                if job.action == DatabaseAction::RotateCredentials
+                    && let Some(role) =
+                        super::exports::ExportRole::new(&database.id, &database.name, &b.kind)
+                            .map_err(|_| ExecutionError::Ownership)?
+                {
+                    self.sql(claim, authority, "postgres", &role.disable)
+                        .await?;
+                }
+                self.configure_export(claim, authority).await?;
                 self.patch_cluster(
                     claim,
                     authority,
@@ -139,6 +164,7 @@ impl NativeDatabaseExecutor {
                 self.passwords(claim, authority).await?;
                 self.sql(claim, authority, "postgres", &statements.enable)
                     .await?;
+                self.enable_export(claim, authority).await?;
             }
             DatabaseAction::Pause | DatabaseAction::Delete if job.database.is_some() => {
                 if !self.database_exists(claim, authority).await? {
@@ -195,20 +221,37 @@ impl NativeDatabaseExecutor {
             }
             DatabaseAction::Resize if job.database.is_some() => {
                 let d = job.database.as_ref().unwrap();
+                let existing_quota = self
+                    .get("ResourceQuota", "database-budget", Some(&b.namespace))
+                    .await?
+                    .ok_or(ExecutionError::Ownership)?;
+                self.owned(&existing_quota, job)?;
+                if existing_quota
+                    .metadata
+                    .labels
+                    .as_ref()
+                    .is_some_and(|labels| labels.contains_key("webdock.dev/backup-policy"))
+                {
+                    self.verify_backup_runtime().await?;
+                }
                 // Resource changes can immediately replace the primary Pod; finish SQL first.
                 self.sql(claim,authority,"postgres",&format!("ALTER ROLE \"wd_migrate_{}\" CONNECTION LIMIT {}; ALTER ROLE \"wd_app_{}\" CONNECTION LIMIT {};",d.id,d.connection_limit,d.id,d.connection_limit)).await?;
                 if b.kind == "dedicated" {
                     let objects = backend_manifests(job, &self.config)?;
-                    self.apply(
-                        objects
-                            .iter()
-                            .find(|o| o["kind"] == "ResourceQuota")
-                            .ok_or(ExecutionError::Runtime)?
-                            .clone(),
-                        claim,
-                        authority,
-                    )
-                    .await?;
+                    let quota = self
+                        .get("ResourceQuota", "database-budget", Some(&b.namespace))
+                        .await?
+                        .ok_or(ExecutionError::Ownership)?;
+                    self.owned(&quota, job)?;
+                    let current =
+                        serde_json::to_value(&cluster).map_err(|_| ExecutionError::Runtime)?;
+                    let quota = resize_quota(
+                        job,
+                        &self.config,
+                        &current,
+                        &serde_json::to_value(&quota).map_err(|_| ExecutionError::Runtime)?,
+                    )?;
+                    self.apply(quota, claim, authority).await?;
                     let resources = objects
                         .iter()
                         .find(|o| o["kind"] == "Cluster")
@@ -254,7 +297,8 @@ impl NativeDatabaseExecutor {
                     }
                 }
             }
-            DatabaseAction::Create | DatabaseAction::PrepareMigration => {}
+            DatabaseAction::Create | DatabaseAction::PrepareMigration | DatabaseAction::Restore => {
+            }
             _ => return Err(ExecutionError::Unsupported("database maintenance action")),
         }
         if !matches!(
@@ -338,6 +382,7 @@ impl NativeDatabaseExecutor {
                 },
                 endpoint_ready: b.kind == "shared-pool",
                 copy_sha256: None,
+                backup: None,
             }));
         }
         if job.action == DatabaseAction::Purge {
@@ -352,6 +397,7 @@ impl NativeDatabaseExecutor {
                 state: DatabaseProofState::Purged,
                 endpoint_ready: true,
                 copy_sha256: None,
+                backup: None,
             }));
         }
         let Some(pod) = self.get("Pod", "postgres-1", Some(&b.namespace)).await? else {
@@ -452,10 +498,15 @@ impl NativeDatabaseExecutor {
             revision: job.revision,
             state: DatabaseProofState::Ready,
             endpoint_ready: true,
-            copy_sha256: None,
+            copy_sha256: if job.recovery.is_some() {
+                Some(self.recovery_digest(claim, authority).await?)
+            } else {
+                None
+            },
+            backup: None,
         }))
     }
-    async fn verify_logins(
+    pub(super) async fn verify_logins(
         &self,
         claim: &DatabaseClaim,
         authority: &dyn DatabaseAuthority,
@@ -481,25 +532,37 @@ impl NativeDatabaseExecutor {
         .map_err(|_| ExecutionError::Runtime)?
         .with_root_certificates(roots)
         .with_no_client_auth();
-        for (role, password, port) in [
+        let mut logins = vec![
             (
                 format!("wd_migrate_{}", d.id),
-                &credentials.migration_password,
+                credentials.migration_password.clone(),
                 claim.spec.backend.direct_port,
             ),
             (
                 format!("wd_app_{}", d.id),
-                &credentials.application_password,
+                credentials.application_password.clone(),
                 claim.spec.backend.pooled_port,
             ),
-        ] {
+        ];
+        if let Some(export) =
+            super::exports::ExportRole::new(&d.id, &d.name, &claim.spec.backend.kind)
+                .map_err(|_| ExecutionError::Ownership)?
+        {
+            logins.push((
+                export.name,
+                super::exports::ExportRole::password(&d.id, &credentials.application_password)
+                    .map_err(|_| ExecutionError::Denied)?,
+                claim.spec.backend.direct_port,
+            ));
+        }
+        for (role, password, port) in logins {
             let mut config = tokio_postgres::Config::new();
             config
                 .host(&claim.spec.backend.host)
                 .port(port)
                 .dbname(&d.name)
                 .user(&role)
-                .password(password)
+                .password(&password)
                 .ssl_mode(tokio_postgres::config::SslMode::Require)
                 .connect_timeout(std::time::Duration::from_secs(3));
             let tls = tokio_postgres_rustls::MakeRustlsConnect::new(tls.clone());
@@ -509,15 +572,27 @@ impl NativeDatabaseExecutor {
                     .await
                     .map_err(|_| ExecutionError::Runtime)?;
                 tokio::pin!(connection);
-                let query = client.query_one(
-                    "SELECT current_user::text,pg_catalog.current_database()::text",
-                    &[],
-                );
-                tokio::pin!(query);
-                let row = tokio::select! {row=&mut query=>row.map_err(|_|ExecutionError::Runtime)?,_=&mut connection=>return Err(ExecutionError::Runtime)};
-                if row.get::<_, String>(0) != role || row.get::<_, String>(1) != d.name {
-                    return Err(ExecutionError::Ownership);
-                }
+                let validation = async {
+                    let row=client.query_one("SELECT current_user::text,pg_catalog.current_database()::text,has_schema_privilege(current_user,'app','USAGE')",&[]).await.map_err(|_|ExecutionError::Runtime)?;
+                    if row.get::<_, String>(0) != role
+                        || row.get::<_, String>(1) != d.name
+                        || !row.get::<_, bool>(2)
+                    {
+                        return Err(ExecutionError::Ownership);
+                    }
+                    if role.starts_with("wd_export_") {
+                        let row=client.query_one("SELECT NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname=current_user AND (rolsuper OR rolcreaterole OR rolcreatedb OR rolreplication OR rolbypassrls OR rolinherit)) AND NOT EXISTS(SELECT 1 FROM pg_auth_members WHERE member=current_user::regrole) AND NOT has_database_privilege(current_user,current_database(),'CREATE,TEMP') AND NOT has_schema_privilege(current_user,'app','CREATE') AND NOT EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='app' AND c.relkind IN('r','p','v','m','f') AND (has_table_privilege(current_user,c.oid,'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR has_any_column_privilege(current_user,c.oid,'INSERT,UPDATE,REFERENCES'))) AND NOT EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='app' AND c.relkind='S' AND has_sequence_privilege(current_user,c.oid,'USAGE,UPDATE'))",&[]).await.map_err(|_|ExecutionError::Runtime)?;
+                        row.get::<_, bool>(0)
+                            .then_some(())
+                            .ok_or(ExecutionError::Ownership)?;
+                    }
+                    if claim.spec.recovery.is_some() && role.starts_with("wd_migrate_") {
+                        client.batch_execute(&format!("BEGIN; CREATE TABLE app.wd_restore_probe_{}(value integer); INSERT INTO app.wd_restore_probe_{} VALUES(1); ROLLBACK;",claim.spec.operation_id,claim.spec.operation_id)).await.map_err(|_|ExecutionError::Runtime)?;
+                    }
+                    Ok(())
+                };
+                tokio::pin!(validation);
+                tokio::select! {result=&mut validation=>result?,_=&mut connection=>return Err(ExecutionError::Runtime)};
                 Ok(())
             };
             match self
@@ -772,9 +847,102 @@ impl NativeDatabaseExecutor {
                     state: DatabaseProofState::Purged,
                     endpoint_ready: false,
                     copy_sha256: None,
+                    backup: None,
                 }))
             }
             DatabaseExecutionPhase::Uncertain => Err(ExecutionError::Conflict),
         }
+    }
+}
+
+fn resize_quota(
+    job: &DatabaseJobSpec,
+    config: &DatabaseRuntimeConfig,
+    current: &serde_json::Value,
+    quota: &serde_json::Value,
+) -> Result<serde_json::Value> {
+    let mut result = backend_manifests(job, config)?
+        .into_iter()
+        .find(|object| object["kind"] == "ResourceQuota")
+        .ok_or(ExecutionError::Runtime)?;
+    let main = &current["spec"]["resources"]["requests"];
+    let hard = quota["spec"]["hard"]
+        .as_object()
+        .ok_or(ExecutionError::Ownership)?;
+    result["spec"]["hard"] = serde_json::Value::Object(hard.clone());
+    for (dimension, cpu, new, marker) in [
+        (
+            "cpu",
+            true,
+            job.backend.resources.cpu_millicores,
+            "webdock.dev/quota-main-cpu-millicores",
+        ),
+        (
+            "memory",
+            false,
+            job.backend.resources.memory_bytes,
+            "webdock.dev/quota-main-memory-bytes",
+        ),
+    ] {
+        let live = crate::kubernetes::parse_quantity(
+            main[dimension].as_str().ok_or(ExecutionError::Ownership)?,
+            cpu,
+        )?;
+        let old = match quota["metadata"]["annotations"].get(marker) {
+            Some(value) => value
+                .as_str()
+                .and_then(|v| v.parse::<u64>().ok())
+                .ok_or(ExecutionError::Ownership)?,
+            None => live,
+        };
+        if old != live
+            && (old != new
+                || quota["metadata"]["annotations"]["webdock.dev/database-operation"]
+                    != job.operation_id)
+        {
+            return Err(ExecutionError::Ownership);
+        }
+        let delta = new.checked_sub(old).ok_or(ExecutionError::Ownership)?;
+        for kind in ["requests", "limits"] {
+            let name = format!("{kind}.{dimension}");
+            let before = crate::kubernetes::parse_quantity(
+                hard.get(&name)
+                    .and_then(serde_json::Value::as_str)
+                    .ok_or(ExecutionError::Ownership)?,
+                cpu,
+            )?;
+            let after = before.checked_add(delta).ok_or(ExecutionError::Runtime)?;
+            result["spec"]["hard"][name] = if cpu {
+                json!(format!("{after}m"))
+            } else {
+                json!(after.to_string())
+            };
+        }
+        result["metadata"]["annotations"][marker] = json!(new.to_string());
+    }
+    result["metadata"]["annotations"]["webdock.dev/database-operation"] = json!(job.operation_id);
+    Ok(result)
+}
+#[cfg(test)]
+mod resize_tests {
+    use super::*;
+    #[test]
+    fn resize_keeps_backup_and_restore_headroom_instead_of_replacing_it_with_ordinary_quota() {
+        let job:DatabaseJobSpec=serde_json::from_value(json!({"version":1,"operationID":"101","agentGeneration":1,"operationGeneration":1,"clusterID":"789","action":"resize","phase":"configure","revision":2,"backend":{"id":"456","kind":"dedicated","namespace":"wd-db-456","node":"fixture-node","poolID":"123e4567-e89b-42d3-a456-426614174000","revision":2,"cnpgUID":"owned-uid","resources":{"cpuMillicores":1000,"memoryBytes":1073741824,"volumeBytes":1610612736},"host":"db-456.example.test","directPort":32000,"pooledPort":32001},"database":{"id":"123","kind":"dedicated","name":"db_123","revision":2,"credentialRevision":1,"connectionLimit":10},"members":[{"id":"123","projectID":"321","databaseName":"db_123","enabled":true}]})).unwrap();
+        let config:DatabaseRuntimeConfig=serde_json::from_value(json!({"image":format!("ghcr.io/cloudnative-pg/postgresql:18.6@sha256:{}","a".repeat(64)),"poolerImage":format!("ghcr.io/cloudnative-pg/pgbouncer:1.26@sha256:{}","b".repeat(64)),"issuer":"test-ca","apiCIDRs":["10.43.0.1/32"],"podCIDRs":["10.42.0.0/16"],"storageSocket":"/run/webdock-postgres-storage/test.sock","caFile":"/private/ca.crt"})).unwrap();
+        let current = json!({"spec":{"resources":{"requests":{"cpu":"500m","memory":"1Gi"},"limits":{"cpu":"500m","memory":"1Gi"}}}});
+        let existing = json!({"metadata":{"labels":{"webdock.dev/database-installation":"456","webdock.dev/backup-policy":"777"}},"spec":{"hard":{"requests.cpu":"1300m","limits.cpu":"1300m","requests.memory":"2415919104","limits.memory":"2415919104","requests.ephemeral-storage":"1342177280","limits.ephemeral-storage":"1342177280","requests.storage":"1610612736","pods":"4","persistentvolumeclaims":"1"}}});
+        let quota = resize_quota(&job, &config, &current, &existing).unwrap();
+        assert_eq!(quota["spec"]["hard"]["requests.cpu"], "1800m");
+        assert_eq!(quota["spec"]["hard"]["requests.memory"], "2415919104");
+        assert_eq!(
+            quota["spec"]["hard"]["requests.ephemeral-storage"],
+            "1342177280"
+        );
+        let retry = resize_quota(&job, &config, &current, &quota).unwrap();
+        assert_eq!(
+            retry["spec"]["hard"], quota["spec"]["hard"],
+            "retry after quota commit but before Cluster patch must not add the resize delta twice"
+        );
     }
 }

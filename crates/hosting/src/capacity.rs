@@ -215,3 +215,46 @@ impl HostingService {
         Ok(limits)
     }
 }
+
+#[cfg(test)]
+mod stored_provider_tests {
+    use super::*;
+    #[test]
+    fn per_provider_allocations_use_stored_values_without_cluster_visibility() {
+        let source = include_str!("capacity.rs")
+            .split("#[cfg(test)]")
+            .next()
+            .unwrap();
+        assert!(source.contains("jsonb_build_object('provider',h.provider) AS value FROM webdock_auth.hosting_reservation"));
+        assert!(!source.contains("LEFT JOIN webdock_auth.hosting_cluster"));
+        assert!(!source.contains("native_provider::"));
+        assert!(source.contains("scope != format!(\"provider:{provider}\")"));
+    }
+    #[test]
+    fn true_backend_scopes_count_active_reserved_and_uncertain_without_cross_provider_reassignment()
+    {
+        let mut allocations = Vec::new();
+        for provider in ["k3s", "docker", "vercel"] {
+            for (status, operation, bytes) in [
+                ("active", "succeeded", 10),
+                ("reserved", "queued", 20),
+                ("reserved", "needs-reconciliation", 30),
+            ] {
+                allocations.push(json!({"provider":provider,"status":status,"operationStatus":operation,"demand":{"apps":1,"cpuMillicores":100,"memoryBytes":134217728,"ephemeralBytes":1048576,"volumeBytes":bytes,"replicasPerApp":1,"concurrentDeployments":1}}));
+            }
+        }
+        for provider in ["k3s", "docker", "vercel"] {
+            let matching = allocations
+                .iter()
+                .filter(|r| r["provider"] == provider)
+                .cloned()
+                .collect::<Vec<_>>();
+            let total = contracts::totals(&matching).unwrap();
+            assert_eq!(total["volumeBytes"], 60);
+            assert_eq!(total["apps"], 3);
+            assert_eq!(total["concurrentDeployments"], 2);
+            assert_eq!(total["cpuMillicores"], 300);
+        }
+        assert_eq!(contracts::totals(&allocations).unwrap()["volumeBytes"], 180);
+    }
+}

@@ -1,6 +1,7 @@
 //! Persisted plugin admission and host services on retained signed RLS policies.
 mod authority;
 pub mod catalog;
+pub use authority::builtins::BuiltinModule;
 pub use authority::installation;
 pub use authority::jobs::JobLease;
 pub use catalog::{Catalog, CatalogDescriptor, CatalogTargetDescriptor};
@@ -17,6 +18,7 @@ pub mod http;
 pub mod provisioning;
 mod scope;
 mod session_authority;
+pub mod storage;
 pub use authority::limits::{CustomerPlanInput, PlanInput};
 pub use authority::workloads;
 pub use authority::{
@@ -53,3 +55,5 @@ fn slug(value: &str) -> bool {
 
 mod rpc;
 pub use rpc::HostRpc;
+
+pub use authority::exports::{ExportJob, ExportRpc, ExportSources, UnconfiguredExportSources};

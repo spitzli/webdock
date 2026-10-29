@@ -48,5 +48,10 @@
     "nodemailer": "10.0.13",
     "dompurify": "3.4.16"
   },
-  "license": "AGPL-3.0-only"
+  "license": "AGPL-3.0-only",
+  "patchedDependencies": {
+    "drizzle-orm@0.45.2": "patches/drizzle-orm@0.45.2.patch",
+    "@payloadcms/storage-s3@4.0.0-canary.37": "patches/@payloadcms%2Fstorage-s3@4.0.0-canary.37.patch",
+    "@payloadcms/plugin-cloud-storage@4.0.0-canary.37": "patches/@payloadcms%2Fplugin-cloud-storage@4.0.0-canary.37.patch"
+  }
 }

@@ -106,6 +106,7 @@ impl DatabaseRuntime for DatabaseFixture {
                 state: DatabaseProofState::Ready,
                 endpoint_ready: true,
                 copy_sha256: None,
+                backup: None,
             }))
         }
     }
@@ -132,6 +133,7 @@ fn database_command(phase: DatabaseExecutionPhase) -> wire::DatabaseCommand {
                 migration_password: "b".repeat(43),
             }),
             transfer_password: None,
+            object_store: None,
         })
         .unwrap(),
     }
@@ -189,6 +191,7 @@ async fn database_checkpoint_and_completion_replay_exactly_after_daemon_restart(
             storage_socket: None,
         },
         database_runtime: None,
+        recovery_runtime: None,
         mail_configuration_enabled: false,
         mail_runtime: None,
         policy: Default::default(),
@@ -317,6 +320,7 @@ async fn delayed_database_guard_cannot_enter_runtime_after_lease_expiry() {
             storage_socket: None,
         },
         database_runtime: None,
+        recovery_runtime: None,
         mail_configuration_enabled: false,
         mail_runtime: None,
         policy: Default::default(),

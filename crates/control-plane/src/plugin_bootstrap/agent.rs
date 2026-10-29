@@ -11,7 +11,47 @@ struct AgentInput {
     country: String,
     region: String,
     location_evidence: String,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "present_runtime_kind"
+    )]
+    runtime_kind: Option<RuntimeKind>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "present_runtime_profile"
+    )]
+    runtime_profile: Option<RuntimeProfile>,
     transport: Transport,
+}
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+enum RuntimeKind {
+    Kubernetes,
+    Docker,
+}
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+enum RuntimeProfile {
+    #[serde(rename = "local-recovery-fixture-v1")]
+    LocalRecoveryFixtureV1,
+}
+fn present_runtime_kind<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> std::result::Result<Option<RuntimeKind>, D::Error> {
+    match String::deserialize(d)?.as_str() {
+        "kubernetes" => Ok(Some(RuntimeKind::Kubernetes)),
+        "docker" => Ok(Some(RuntimeKind::Docker)),
+        _ => Err(serde::de::Error::custom("Invalid reviewed runtime kind")),
+    }
+}
+fn present_runtime_profile<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> std::result::Result<Option<RuntimeProfile>, D::Error> {
+    match String::deserialize(d)?.as_str() {
+        "local-recovery-fixture-v1" => Ok(Some(RuntimeProfile::LocalRecoveryFixtureV1)),
+        _ => Err(serde::de::Error::custom("Invalid reviewed runtime profile")),
+    }
 }
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
@@ -46,6 +86,13 @@ struct ReviewedTransport {
     certificate: Option<String>,
 }
 impl AgentInput {
+    fn runtime_kind(&self) -> &'static str {
+        if self.runtime_kind == Some(RuntimeKind::Docker) {
+            "docker"
+        } else {
+            "kubernetes"
+        }
+    }
     fn review(&mut self) -> Result<ReviewedTransport> {
         self.country.make_ascii_lowercase();
         if !slug(&self.platform_id, 24)
@@ -62,6 +109,12 @@ impl AgentInput {
             || !self.country.bytes().all(|b| b.is_ascii_lowercase())
         {
             return Err(SetupError::Input);
+        }
+        match (self.runtime_kind, self.runtime_profile) {
+            (None | Some(RuntimeKind::Kubernetes), None) => {}
+            (Some(RuntimeKind::Docker), Some(RuntimeProfile::LocalRecoveryFixtureV1))
+                if matches!(self.transport, Transport::Unix { .. }) => {}
+            _ => return Err(SetupError::Input),
         }
         match &self.transport {
             Transport::Unix { uid } => Ok(ReviewedTransport {
@@ -116,7 +169,7 @@ async fn existing(
         ("region", "eu"),
         ("location_evidence", &input.location_evidence),
         ("ownership", "platform"),
-        ("runtime_kind", "kubernetes"),
+        ("runtime_kind", input.runtime_kind()),
         ("runtime_installation", &input.platform_id),
         ("verification_evidence", &input.location_evidence),
         ("credential_hash", &hash),
@@ -214,7 +267,7 @@ pub async fn enroll_agent(
     getrandom::getrandom(&mut credential).map_err(|_| SetupError::Database)?;
     let credential = URL_SAFE_NO_PAD.encode(credential);
     let hash = sha(credential.as_bytes());
-    offline.tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.hosting_cluster(id,name,provider,country,region,location_evidence,generation,verified,verification_evidence,ownership,runtime_kind,runtime_installation) VALUES($1,$2,'k3s',$3,'eu',$4,1,true,$4,'platform','kubernetes',$5)",[cluster_id.clone().into(),input.name.clone().into(),input.country.clone().into(),input.location_evidence.clone().into(),input.platform_id.clone().into()])).await.map_err(|_|SetupError::Database)?;
+    offline.tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.hosting_cluster(id,name,provider,country,region,location_evidence,generation,verified,verification_evidence,ownership,runtime_kind,runtime_installation) VALUES($1,$2,'k3s',$3,'eu',$4,1,true,$4,'platform',$6,$5)",[cluster_id.clone().into(),input.name.clone().into(),input.country.clone().into(),input.location_evidence.clone().into(),input.platform_id.clone().into(),input.runtime_kind().into()])).await.map_err(|_|SetupError::Database)?;
     offline.tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.hosting_agent(cluster_id,credential_hash,generation) VALUES($1,$2,1)",[cluster_id.clone().into(),hash.clone().into()])).await.map_err(|_|SetupError::Database)?;
     offline.tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.agent_transport_enrollment(installation,agent_id,generation,cluster_id,credential_hash,transport,unix_uid,certificate_sha256) VALUES($1,$2,1,$3,$4,$5,$6,$7)",[input.platform_id.clone().into(),input.agent_id.clone().into(),cluster_id.clone().into(),hash.into(),transport.kind.into(),transport.uid.into(),transport.certificate.into()])).await.map_err(|_|SetupError::Database)?;
     let output = EnrollmentOutput {
@@ -240,6 +293,86 @@ mod tests {
     use super::*;
     fn reviewed(transport: serde_json::Value) -> AgentInput {
         serde_json::from_value(json!({"platformID":"owned-platform","agentID":"owned-agent","name":"EU cluster","country":"de","region":"eu","locationEvidence":"Reviewed local fixture","transport":transport})).unwrap()
+    }
+    #[test]
+    fn explicit_local_docker_input_is_supported_without_changing_omitted_legacy_bytes() {
+        let legacy = reviewed(json!({"kind":"unix","uid":0}));
+        let bytes = serde_json::to_vec(&legacy).unwrap();
+        let expected=br#"{"platformID":"owned-platform","agentID":"owned-agent","name":"EU cluster","country":"de","region":"eu","locationEvidence":"Reviewed local fixture","transport":{"kind":"unix","uid":0}}"#;
+        assert_eq!(bytes, expected);
+        let old: serde_json::Value = serde_json::from_slice(expected).unwrap();
+        assert_eq!(sha(encode(&json!({"target":"127.0.0.1:5432/owned_core","input":legacy,"certificateSha256":null})).unwrap()),sha(encode(&json!({"target":"127.0.0.1:5432/owned_core","input":old,"certificateSha256":null})).unwrap()));
+        let mut docker = old.clone();
+        docker["runtimeKind"] = json!("docker");
+        docker["runtimeProfile"] = json!("local-recovery-fixture-v1");
+        let mut parsed: AgentInput =
+            serde_json::from_value(docker.clone()).expect("explicit reviewed local Docker input");
+        parsed.review().unwrap();
+        for changes in [
+            json!({"runtimeKind":{"docker":null},"runtimeProfile":"local-recovery-fixture-v1"}),
+            json!({"runtimeKind":"docker","runtimeProfile":{"local-recovery-fixture-v1":null}}),
+            json!({"runtimeKind":null}),
+            json!({"runtimeKind":"remote"}),
+            json!({"runtimeKind":"docker"}),
+            json!({"runtimeProfile":"local-recovery-fixture-v1"}),
+            json!({"runtimeKind":"kubernetes","runtimeProfile":"local-recovery-fixture-v1"}),
+            json!({"runtimeKind":"docker","runtimeProfile":null}),
+            json!({"runtimeKind":"docker","runtimeProfile":"production"}),
+        ] {
+            let mut value = old.clone();
+            value
+                .as_object_mut()
+                .unwrap()
+                .extend(changes.as_object().unwrap().clone());
+            assert!(
+                serde_json::from_value::<AgentInput>(value)
+                    .map(|mut input| input.review().is_err())
+                    .unwrap_or(true)
+            );
+        }
+        docker["transport"] =
+            json!({"kind":"mtls","certificate":"/must-not-read-unrelated-certificate"});
+        assert!(
+            serde_json::from_value::<AgentInput>(docker)
+                .map(|mut input| input.review().is_err())
+                .unwrap_or(true)
+        );
+    }
+    #[test]
+    fn local_docker_rejects_mtls_before_opening_an_unrelated_certificate() {
+        use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+        let directory = tempfile::tempdir().unwrap();
+        std::fs::set_permissions(directory.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+        let certificate = directory.path().join("must-not-open-certificate");
+        assert!(
+            std::process::Command::new("/usr/bin/mkfifo")
+                .arg(&certificate)
+                .status()
+                .unwrap()
+                .success()
+        );
+        let mut value =
+            serde_json::to_value(reviewed(json!({"kind":"mtls","certificate":certificate})))
+                .unwrap();
+        value["runtimeKind"] = json!("docker");
+        value["runtimeProfile"] = json!("local-recovery-fixture-v1");
+        let mut input: AgentInput = serde_json::from_value(value).unwrap();
+        let (send, receive) = std::sync::mpsc::channel();
+        let thread = std::thread::spawn(move || send.send(input.review().is_err()).unwrap());
+        let outcome = receive.recv_timeout(std::time::Duration::from_secs(2));
+        if outcome.is_err() {
+            // Release a defective reader so even the failed regression remains bounded.
+            let writer = std::fs::OpenOptions::new()
+                .write(true)
+                .custom_flags(rustix::fs::OFlags::NONBLOCK.bits() as i32)
+                .open(&certificate);
+            drop(writer);
+        }
+        thread.join().unwrap();
+        assert!(
+            matches!(outcome, Ok(true)),
+            "Docker must deny before opening the unrelated FIFO certificate"
+        );
     }
     #[test]
     fn enrollment_checks_actual_current_client_leaf_instead_of_accepting_a_claimed_pin() {

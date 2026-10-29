@@ -3,6 +3,7 @@ pub mod auth;
 pub mod config;
 pub mod db;
 pub mod http;
+mod recovery;
 pub mod registry;
 
 pub mod hosting;
@@ -28,7 +29,10 @@ pub mod plugins;
 pub mod bootstrap;
 pub mod plugin_bootstrap;
 pub mod resource_auth;
+mod resource_databases;
 mod resource_hosting;
 mod resource_registry;
 
 mod first_party_mcp;
+
+pub mod plugin_exports;

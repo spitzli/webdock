@@ -124,3 +124,55 @@ schemas or shared data. Network tests use owned loopback HTTP/TLS servers and ma
 no provider requests. They verify pinned TLS, rejected untrusted certificates,
 redirect handling, response limits, exact path/query rules, and grant revocation
 during an actual HTTP exchange.
+
+## Private binary storage tickets
+
+Storage service v1 keeps provider plans on the private RPC and in sealed Core rows.
+Plans and live `StorageAuthorization` callbacks require `resourceEpoch`. Public
+transfer descriptors retain camelCase (`expiresAt`, `exactBytes`, `expectedSha256`,
+`attachment.contentType`); schema property/required names allow lower-leading
+camelCase, while action/capability/slug rules and prototype-path restrictions stay
+strict. Producers describe the complete public descriptor in their action output.
+
+The kernel admits at most four concurrent transfers, each at most 512 MiB, using
+unlinked private files (2 GiB total) and 64 KiB delivery chunks. Plans expire within
+300 seconds. Staging, provider I/O, blocked delivery queues and final consumption
+recheck real source/current authority; blocked senders stop on expiry, revocation,
+or receiver disconnect and drop their file and capacity permit. A claimed upload
+is never reusable after cancellation or an uncertain provider outcome.
+
+Only object GET/PUT targets are accepted. Even an origin-wide `pathPrefix: "/"`
+requires a bucket and nonempty object key. Queries allow canonical, unique SigV4
+parameters, SHA-256 checksum signing parameters, GET `versionId`, and matching
+`x-id=GetObject`/`PutObject`. Administrative subresources and multipart parameters
+are rejected; this kernel has no multipart reservation/receipt protocol. Query
+names cannot use percent encoding or alternative casing. Signed PUT
+`if-none-match: *` and GET `if-match: "<etag>"` are forwarded; their names must be in
+`X-Amz-SignedHeaders`. Content type and supplied SHA-256 headers/query values must
+match the verified plan. Other provider headers are denied.
+
+Private plan JSON remains capped at 12 KiB and URLs at 8192 bytes. Only the TLS
+leaf is retained (maximum 4096 DER bytes). The complete private envelope is bounded
+before encryption (24,520 plaintext bytes; 32 KiB sealed) and before insertion using
+PostgreSQL's actual jsonb size. Migration **0049** allows **64 KiB** of storage-ticket
+context outside the existing configuration allowance, while the original authority
+outside `storageTransfer` stays at **16 KiB**. Ordinary invocations keep the 16 KiB
+limit. Storage rows cannot authenticate as signed invocation tokens, and their
+ordinary 59-second row expiry does not replace the plan deadline or live authority.
+
+Core configuration enables the kernel with
+`"storage": {"stagingDirectory":"/absolute/private/directory"}` (owned mode 0700).
+The native installer's private target policy accepts explicit
+`storage[projectID][alias]` bindings with `origin`, pinned `addresses`, optional PEM
+`ca`, and `pathPrefix`. These are copied into managed enrollment and included in
+current binding/admission fences. No project-default fallback is inferred. Managed
+bindings require HTTPS, including local fixtures using a controlled private CA.
+
+Local verification uses `cargo test` for the four plugin crates and control-plane,
+the ignored `storage_authority` and `storage_minio` suites, and
+`python3 crates/plugin-host/tests/support/storage_producer.py`. The latter builds
+an isolated fixture crate, uses the actual Storage producer Engine/AWS SDK and live
+private epoch checks, creates fresh PostgreSQL plus exact plugin-owned MinIO
+resources, tests a 3 MiB conditional PUT/GET and overwrite rejection, and removes
+only those resources. It consumes the parent's private loopback backend fixture;
+it never stops MinIO, prints signed plans, or exercises Wasabi/production.

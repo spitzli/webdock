@@ -9,6 +9,7 @@ license.workspace = true
 test-transport = []
 
 [dependencies]
+webdock-export-protocol={path="../export-protocol"}
 webdock-plugin-http={path="../plugin-http"}
 webdock-browser-session={path="../browser-session"}
 webdock-oauth={path="../oauth"}
@@ -20,7 +21,7 @@ webdock-persistence = { path = "../persistence" }
 webdock-agent-protocol = { path = "../agent-protocol" }
 webdock-hosting = { path = "../hosting" }
 webdock-secrets = { path = "../secrets" }
-sea-orm.workspace = true
+sea-orm = { workspace = true, features = ["with-uuid"] }
 serde.workspace = true
 serde_json = { workspace = true, features = ["preserve_order"] }
 chrono.workspace = true

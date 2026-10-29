@@ -20,6 +20,8 @@ const PASSWORD: &str = "private-initial-operator-password-123";
 const AUTH: &str = "https://auth.example.test";
 const STUDIO: &str = "https://studio.example.test";
 const CONSOLE: &str = "https://console.example.test";
+#[path = "support/plugin_builtins.rs"]
+mod plugin_builtins;
 fn docker() -> Command {
     let mut command = Command::new("docker");
     command.args(["--host", "unix:///var/run/docker.sock"]);

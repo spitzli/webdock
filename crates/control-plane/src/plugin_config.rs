@@ -15,6 +15,10 @@ pub fn installation_secret() -> Result<String, ConfigurationError> {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PluginConfig {
+    #[serde(default)]
+    pub export_sources: bool,
+    #[serde(default)]
+    pub storage: Option<StorageGatewayConfig>,
     pub host_bindings: PathBuf,
     pub invocation_signing_key: PathBuf,
     pub connections: PathBuf,
@@ -27,6 +31,11 @@ pub struct PluginConfig {
     pub mail: Option<MailConfig>,
     #[serde(default)]
     pub mcp_client: Option<McpClientConfig>,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StorageGatewayConfig {
+    pub staging_directory: PathBuf,
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -60,7 +69,7 @@ pub enum ControlListener {
         authority: PathBuf,
     },
 }
-#[derive(Clone, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Deserialize, serde::Serialize, PartialEq, Eq)]
 #[serde(
     tag = "kind",
     rename_all = "camelCase",
@@ -80,7 +89,7 @@ pub enum RuntimeTransport {
         server_certificate_sha256: String,
     },
 }
-#[derive(Clone, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Deserialize, serde::Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RuntimeConnection {
     pub generation: u64,

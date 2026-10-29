@@ -135,3 +135,40 @@ fn inheritance_and_standalone_policy_drift_fail() {
             .is_empty()
     );
 }
+
+#[test]
+fn export_protocol_and_byte_transport_are_shared_but_cannot_pull_domain_implementations() {
+    let fixture = tempfile::tempdir().unwrap();
+    let root = fixture.path();
+    std::fs::write(
+        root.join("Cargo.toml"),
+        "[workspace]\nmembers=[\"crates/*\"]\nexclude=[\"plugins/consumer\"]\nresolver=\"3\"\n",
+    )
+    .unwrap();
+    write(root, "crates/core-domain", "");
+    write(root, "crates/webdock-export-protocol", "");
+    write(root, "crates/webdock-object-storage", "");
+    write(
+        root,
+        "plugins/consumer",
+        "[workspace]\n[dependencies]\nwebdock-export-protocol={path=\"../../crates/webdock-export-protocol\"}\nwebdock-object-storage={path=\"../../crates/webdock-object-storage\"}",
+    );
+    lock(&root.join("Cargo.toml"));
+    lock(&root.join("plugins/consumer/Cargo.toml"));
+    let manifests = architecture::workspace_manifests(root).unwrap();
+    let graph = architecture::graph(root, &manifests).unwrap();
+    assert!(architecture::violations(&graph).is_empty());
+    write(
+        root,
+        "crates/webdock-object-storage",
+        "[dependencies]\ncore-domain={path=\"../core-domain\"}",
+    );
+    lock(&root.join("Cargo.toml"));
+    lock(&root.join("plugins/consumer/Cargo.toml"));
+    let graph = architecture::graph(root, &manifests).unwrap();
+    assert!(
+        architecture::violations(&graph)
+            .iter()
+            .any(|finding| finding.contains("webdock-object-storage -> core-domain"))
+    );
+}

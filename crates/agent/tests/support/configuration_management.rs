@@ -170,6 +170,7 @@ fn config(directory: &std::path::Path, socket: std::path::PathBuf, enabled: bool
             storage_socket: None,
         },
         mail_runtime: Some(runtime),
+        recovery_runtime: None,
         mail_configuration_enabled: enabled,
         database_runtime: None,
         policy: Default::default(),

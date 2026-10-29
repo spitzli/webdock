@@ -128,6 +128,52 @@ fn rust_checks(manifests: &[PathBuf]) -> Vec<Check> {
         &[
             "test",
             "-p",
+            "webdock-object-storage",
+            "--test",
+            "transfers",
+            "--features",
+            "local-test",
+            "--locked",
+        ],
+    ));
+    checks.push(Check::new(
+        "cargo",
+        &[
+            "test",
+            "-p",
+            "webdock-build",
+            "--test",
+            "artifact",
+            "--test",
+            "contracts",
+            "--test",
+            "execution",
+            "--test",
+            "remote_artifacts",
+            "--no-default-features",
+            "--features",
+            "worker",
+            "--locked",
+        ],
+    ));
+    checks.push(Check::new(
+        "python3",
+        &[
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tools/tests",
+            "-p",
+            "test_*storage*.py",
+        ],
+    ));
+    checks.push(Check::new(
+        "cargo",
+        &[
+            "test",
+            "-p",
             "webdock-agent-protocol",
             "--tests",
             "--locked",
@@ -608,6 +654,24 @@ mod tests {
                 .iter()
                 .any(|arg| arg == "--include-ignored" || arg == "--ignored")
         }));
+    }
+    #[test]
+    fn s3_and_artifact_regressions_run_without_live_storage() {
+        let checks = plan(Scope::Rust, &[]);
+        for (package, suite) in [
+            ("webdock-object-storage", "transfers"),
+            ("webdock-build", "remote_artifacts"),
+        ] {
+            assert!(
+                checks.iter().any(|check| {
+                    check.args.first().is_some_and(|arg| arg == "test")
+                        && check.args.iter().any(|arg| arg == package)
+                        && check.args.windows(2).any(|pair| pair == ["--test", suite])
+                        && !check.args.iter().any(|arg| arg == "--include-ignored")
+                }),
+                "missing offline {package}/{suite} regressions"
+            );
+        }
     }
     #[test]
     fn unknown_scope_is_not_silently_replaced() {

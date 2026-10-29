@@ -34,6 +34,21 @@ pub trait PluginRuntimeExecutor: Send + Sync {
         authority: &dyn PluginRuntimeAuthority,
     ) -> Result<PluginRuntimeCompletion>;
 }
+// Recovery preserves this owner; an API-default owner named "unknown" cannot be trusted.
+const RUNTIME_FIELD_MANAGER: &str = "webdock-plugin-runtime";
+fn runtime_create_params() -> PostParams {
+    PostParams {
+        field_manager: Some(RUNTIME_FIELD_MANAGER.into()),
+        ..Default::default()
+    }
+}
+fn runtime_patch_params() -> PatchParams {
+    PatchParams {
+        field_manager: Some(RUNTIME_FIELD_MANAGER.into()),
+        ..Default::default()
+    }
+}
+
 pub struct KubernetesPluginRuntime {
     client: Client,
     installation: String,
@@ -190,7 +205,7 @@ impl KubernetesPluginRuntime {
             }
             return self
                 .guarded(claim, authority, async {
-                    api.patch(name, &PatchParams::default(), &Patch::Merge(&patch))
+                    api.patch(name, &runtime_patch_params(), &Patch::Merge(&patch))
                         .await
                         .map_err(|_| ExecutionError::Runtime)
                 })
@@ -202,7 +217,7 @@ impl KubernetesPluginRuntime {
         let object: DynamicObject =
             serde_json::from_value(desired.clone()).map_err(|_| ExecutionError::Runtime)?;
         self.guarded(claim, authority, async {
-            api.create(&PostParams::default(), &object)
+            api.create(&runtime_create_params(), &object)
                 .await
                 .map_err(|_| ExecutionError::Runtime)
         })
@@ -499,6 +514,18 @@ mod tests {
     fn runtime() -> KubernetesPluginRuntime {
         let config = kube::Config::new("http://127.0.0.1:1".parse().unwrap());
         KubernetesPluginRuntime::new(Client::try_from(config).unwrap(), "fixture".into())
+    }
+    #[test]
+    fn created_and_scaled_runtime_has_an_explicit_stable_replica_owner() {
+        assert_eq!(
+            runtime_create_params().field_manager.as_deref(),
+            Some("webdock-plugin-runtime")
+        );
+        assert_eq!(
+            runtime_patch_params().field_manager.as_deref(),
+            Some("webdock-plugin-runtime")
+        );
+        assert!(!runtime_patch_params().force);
     }
     #[tokio::test]
     async fn delayed_permit_cannot_start_mutation_after_expiration() {

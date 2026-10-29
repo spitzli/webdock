@@ -22,6 +22,9 @@ pub enum PeerEnrollment {
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RuntimeBinding {
+    /// Operator-approved binary origins, project -> alias -> pinned binding.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub storage: BTreeMap<String, BTreeMap<String, webdock_plugin_http::storage::StorageBinding>>,
     pub generation: u64,
     pub namespace: String,
     pub service: String,
@@ -136,6 +139,7 @@ mod tests {
         let cert = parameters.self_signed(&key).unwrap();
         let fingerprint = hex::encode(Sha256::digest(cert.der()));
         let binding = RuntimeBinding {
+            storage: BTreeMap::new(),
             generation: 1,
             namespace: "fixture".into(),
             service: "plugin".into(),

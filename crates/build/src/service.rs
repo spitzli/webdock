@@ -27,6 +27,9 @@ pub struct RepositoryRef<'a> {
 }
 #[derive(Clone)]
 pub(crate) enum RepositoryContext<'a> {
+    PluginJob {
+        proof: Box<webdock_plugin_host::ExportJob>,
+    },
     Session {
         principal: &'a Principal,
         tx: &'a DatabaseTransaction,
@@ -205,7 +208,7 @@ impl BuildService {
         execute(&tx,"SELECT set_config('lock_timeout','5s',true),set_config('statement_timeout','10s',true)",vec![]).await?;
         Ok(tx)
     }
-    async fn module(tx: &DatabaseTransaction, continuation: bool) -> Result<()> {
+    pub(crate) async fn module(tx: &DatabaseTransaction, continuation: bool) -> Result<()> {
         execute(
             tx,
             "SELECT pg_advisory_xact_lock_shared(hashtext('webdock-plugin-installation'))",
@@ -238,20 +241,22 @@ impl BuildService {
         }
         Ok(r)
     }
-    async fn source(tx: &DatabaseTransaction, id: &str, project: &str) -> Result<Value> {
+    pub(crate) async fn source(tx: &DatabaseTransaction, id: &str, project: &str) -> Result<Value> {
         rows(tx,"SELECT to_jsonb(s)||jsonb_build_object('connection_generation',c.generation,'connection_state',c.state,'installation_id',c.installation_id,'repository_plugin_id',c.repository_plugin_id,'metadata',r.metadata) AS value FROM webdock_auth.git_source s JOIN webdock_auth.git_connection c ON c.id=s.connection_id JOIN webdock_auth.git_repository r ON r.connection_id=s.connection_id AND r.repository_id=s.repository_id WHERE s.id=$1 AND s.project_id=$2 FOR UPDATE OF s",vec![id.into(),project.into()]).await?.pop().ok_or_else(||error("source_unavailable"))
     }
     fn active(source: &Value) -> Result<()> {
         if source["enabled"] != true
             || source["connection_state"] != "active"
-            || source["recipe"] != "dockerfile"
+            || !source["recipe"]
+                .as_str()
+                .is_some_and(|r| ["dockerfile", crate::frontend::RECIPE].contains(&r))
             || source["build_provider"] != "isolated"
         {
             return Err(error("source_unavailable"));
         }
         Ok(())
     }
-    fn repository<'a>(
+    pub(crate) fn repository<'a>(
         source: &Value,
         authority: RepositoryContext<'a>,
     ) -> Result<RepositoryRef<'a>> {
@@ -661,6 +666,22 @@ impl BuildService {
         Ok(row)
     }
     pub async fn claim_build(&self, worker: &WorkerIdentity) -> Result<Option<Value>> {
+        self.claim_build_compatible(worker, &["dockerfile".into()])
+            .await
+    }
+    pub async fn claim_build_compatible(
+        &self,
+        worker: &WorkerIdentity,
+        recipes: &[String],
+    ) -> Result<Option<Value>> {
+        if recipes.is_empty()
+            || recipes.len() > 2
+            || recipes
+                .iter()
+                .any(|r| !["dockerfile", crate::frontend::RECIPE].contains(&r.as_str()))
+        {
+            return Err(error("invalid_build_recipes"));
+        }
         let tx = self.worker_tx().await?;
         let identity = Self::verify(&tx, worker).await?;
         if identity["isolation"] != "microvm" {
@@ -684,7 +705,7 @@ impl BuildService {
             tx.commit().await.map_err(db_error)?;
             return Ok(None);
         }
-        let build=rows(&tx,"SELECT to_jsonb(b) AS value FROM webdock_auth.git_build b JOIN webdock_auth.git_source s ON s.id=b.source_id JOIN webdock_auth.git_connection c ON c.id=s.connection_id WHERE (b.status='queued' OR b.status='running' AND b.lease_until<now()) AND s.enabled AND s.recipe='dockerfile' AND s.build_provider='isolated' AND c.state='active' AND b.source_revision=s.revision AND b.connection_generation=c.generation ORDER BY b.created_at,b.id FOR UPDATE OF b SKIP LOCKED LIMIT 1",vec![]).await?.pop();
+        let build=rows(&tx,"SELECT to_jsonb(b) AS value FROM webdock_auth.git_build b JOIN webdock_auth.git_source s ON s.id=b.source_id JOIN webdock_auth.git_connection c ON c.id=s.connection_id WHERE (b.status='queued' OR b.status='running' AND b.lease_until<now()) AND s.enabled AND $1::jsonb ? s.recipe AND s.build_provider='isolated' AND c.state='active' AND b.source_revision=s.revision AND b.connection_generation=c.generation ORDER BY b.created_at,b.id FOR UPDATE OF b SKIP LOCKED LIMIT 1",vec![json!(recipes).into()]).await?.pop();
         let Some(build) = build else {
             tx.commit().await.map_err(db_error)?;
             return Ok(None);
@@ -711,7 +732,7 @@ impl BuildService {
             .await
             .map_err(hosting)?;
         let request = crate::execution::GuestRequest {
-            recipe: "dockerfile".into(),
+            recipe: field(&source, "recipe")?.into(),
             root_directory: field(&source, "root_directory")?.into(),
             build_environment: environment,
             limits: crate::execution::Limits {
@@ -808,7 +829,14 @@ impl BuildService {
         }
         let tx = self.worker_tx().await?;
         Self::verify(&tx, worker).await?;
-        let receipt=hex::encode(Sha256::digest(serde_json::to_vec(&json!({"artifact":artifact.map(|a|json!([a.key,a.digest,a.image_digest,a.size])),"logs":logs,"failure":failure})).unwrap()));
+        if let Some(artifact) = artifact {
+            artifact.validate_remote()?;
+        }
+        let mut completion = json!({"artifact":artifact.map(|a|json!([a.key,a.digest,a.image_digest,a.size])),"logs":logs,"failure":failure});
+        if let Some(remote) = artifact.and_then(StoredArtifact::remote_storage) {
+            completion["remoteStorage"] = json!(remote);
+        }
+        let receipt = hex::encode(Sha256::digest(serde_json::to_vec(&completion).unwrap()));
         let prior=rows(&tx,"SELECT to_jsonb(b) AS value FROM webdock_auth.git_build b WHERE id=$1 AND worker_id=$2 AND worker_generation=$3 AND generation=$4 FOR UPDATE",vec![build_id.into(),worker.id.clone().into(),worker.generation.into(),generation.into()]).await?.pop().ok_or_else(||error("build_lease_lost"))?;
         if matches!(prior["status"].as_str(), Some("succeeded" | "failed")) {
             if prior["completion_hash"] != receipt {
@@ -843,9 +871,12 @@ impl BuildService {
             if !artifact.key.starts_with(&expected) {
                 return Err(error("artifact_scope_mismatch"));
             }
+            if (s["recipe"] == crate::frontend::RECIPE) != (artifact.format_version()? == 2) {
+                return Err(error("artifact_format_mismatch"));
+            }
             let aid = self.id().await?;
             let rid = self.id().await?;
-            execute(&tx,"INSERT INTO webdock_auth.git_artifact(id,build_id,customer_id,project_id,kind,digest,storage_key,size_bytes,image_digest) VALUES($1,$2,$3,$4,'oci',$5,$6,$7,$8)",vec![aid.clone().into(),build_id.into(),field(&b,"customer_id")?.into(),field(&b,"project_id")?.into(),artifact.digest.clone().into(),artifact.key.clone().into(),(artifact.size as i64).into(),artifact.image_digest.clone().into()]).await?;
+            execute(&tx,"INSERT INTO webdock_auth.git_artifact(id,build_id,customer_id,project_id,kind,digest,storage_key,size_bytes,image_digest,remote_storage) VALUES($1,$2,$3,$4,'oci',$5,$6,$7,$8,$9)",vec![aid.clone().into(),build_id.into(),field(&b,"customer_id")?.into(),field(&b,"project_id")?.into(),artifact.digest.clone().into(),artifact.key.clone().into(),(artifact.size as i64).into(),artifact.image_digest.clone().into(),artifact.remote.as_ref().map(|r|serde_json::to_value(r).unwrap()).into()]).await?;
             execute(&tx,"INSERT INTO webdock_auth.git_release(id,customer_id,project_id,artifact_id,source_id,source_revision,connection_generation,environment_revision,subject,environment_identity,publication_target) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",vec![rid.clone().into(),field(&b,"customer_id")?.into(),field(&b,"project_id")?.into(),aid.into(),field(&b,"source_id")?.into(),(b["source_revision"].as_i64().unwrap() as i32).into(),(b["connection_generation"].as_i64().unwrap() as i32).into(),(b["environment_revision"].as_i64().unwrap() as i32).into(),field(&b,"subject")?.into(),b["environment_identity"].as_str().into(),json!({"recipe":"dockerfile","targetID":s["target_id"],"healthPath":s["health_path"]}).into()]).await?;
             if s["auto_publish"] == true && s["latest_build_id"] == build_id {
                 let authority = rows(
@@ -907,10 +938,80 @@ impl BuildService {
 }
 impl BuildService {
     pub async fn claim_release(&self, worker: &WorkerIdentity) -> Result<Option<Value>> {
+        self.claim_release_compatible(worker, &[], None, crate::artifact::SUPPORTED_FORMATS)
+            .await
+    }
+    /// Compiled callers support this reader's formats; wire callers advertise their own set.
+    pub async fn claim_release_with_storage(
+        &self,
+        worker: &WorkerIdentity,
+        bindings: &[String],
+        publication_projects: &std::collections::BTreeMap<String, String>,
+    ) -> Result<Option<Value>> {
+        self.claim_release_compatible(
+            worker,
+            bindings,
+            Some(publication_projects),
+            crate::artifact::SUPPORTED_FORMATS,
+        )
+        .await
+    }
+    pub async fn claim_release_compatible(
+        &self,
+        worker: &WorkerIdentity,
+        bindings: &[String],
+        publication_projects: Option<&std::collections::BTreeMap<String, String>>,
+        formats: &[u8],
+    ) -> Result<Option<Value>> {
+        if formats.is_empty()
+            || formats.len() > crate::artifact::SUPPORTED_FORMATS.len()
+            || formats
+                .iter()
+                .any(|format| !crate::artifact::SUPPORTED_FORMATS.contains(format))
+        {
+            return Err(error("invalid_artifact_formats"));
+        }
+        if publication_projects.is_none() && !bindings.is_empty() {
+            return Err(error("invalid_publication_projects"));
+        }
+        if let Some(projects) = publication_projects {
+            if projects.len() > 128 {
+                return Err(error("invalid_publication_projects"));
+            }
+            for (project, repository) in projects {
+                crate::contracts::id(project)?;
+                if repository.is_empty()
+                    || repository.len() > 512
+                    || repository.chars().any(char::is_control)
+                {
+                    return Err(error("invalid_publication_projects"));
+                }
+            }
+        }
+        self.claim_release_inner(worker, bindings, publication_projects, formats)
+            .await
+    }
+    async fn claim_release_inner(
+        &self,
+        worker: &WorkerIdentity,
+        bindings: &[String],
+        publication_projects: Option<&std::collections::BTreeMap<String, String>>,
+        formats: &[u8],
+    ) -> Result<Option<Value>> {
+        if bindings.len() > 16
+            || bindings.iter().any(|b| {
+                b.len() != 64
+                    || !b
+                        .bytes()
+                        .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
+            })
+        {
+            return Err(error("invalid_artifact_bindings"));
+        }
         let tx = self.worker_tx().await?;
         Self::verify(&tx, worker).await?;
         execute(&tx,"UPDATE webdock_auth.git_release SET status='needs-reconciliation',revision=revision+1 WHERE status='deploying' AND lease_until<now()",vec![]).await?;
-        let release=rows(&tx,"SELECT to_jsonb(r)||jsonb_build_object('storage_key',a.storage_key,'digest',a.digest,'image_digest',a.image_digest,'size_bytes',a.size_bytes,'build_id',a.build_id) AS value FROM webdock_auth.git_release r JOIN webdock_auth.git_artifact a ON a.id=r.artifact_id JOIN webdock_auth.git_build b ON b.id=a.build_id JOIN webdock_auth.git_source s ON s.id=r.source_id JOIN webdock_auth.git_connection c ON c.id=s.connection_id WHERE r.status='queued' AND a.retained AND a.kind='oci' AND a.image_digest IS NOT NULL AND b.worker_id=$1 AND b.worker_generation=$2 AND s.enabled AND s.desired_release_id=r.id AND s.revision=r.source_revision AND s.environment_revision=r.environment_revision AND c.generation=r.connection_generation AND c.state='active' AND NOT EXISTS(SELECT 1 FROM webdock_auth.git_release busy WHERE busy.source_id=r.source_id AND busy.status IN ('deploying','needs-reconciliation')) ORDER BY r.created_at,r.id FOR UPDATE OF r,s SKIP LOCKED LIMIT 1",vec![worker.id.clone().into(),worker.generation.into()]).await?.pop();
+        let release=rows(&tx,"SELECT to_jsonb(r)||jsonb_build_object('storage_key',a.storage_key,'digest',a.digest,'image_digest',a.image_digest,'size_bytes',a.size_bytes,'build_id',a.build_id,'remote_storage',a.remote_storage) AS value FROM webdock_auth.git_release r JOIN webdock_auth.git_artifact a ON a.id=r.artifact_id JOIN webdock_auth.git_build b ON b.id=a.build_id JOIN webdock_auth.git_source s ON s.id=r.source_id JOIN webdock_auth.git_connection c ON c.id=s.connection_id WHERE r.status='queued' AND a.retained AND a.kind='oci' AND a.image_digest IS NOT NULL AND (($6::bool AND a.storage_key ~ '/[a-f0-9]{64}[.]tar$') OR ($7::bool AND a.storage_key ~ '/[a-f0-9]{64}[.]e1[.]tar$') OR ($8::bool AND a.storage_key ~ '/[a-f0-9]{64}[.]e2[.]tar$')) AND ((a.remote_storage IS NULL AND b.worker_id=$1 AND b.worker_generation=$2) OR (a.remote_storage IS NOT NULL AND $3::jsonb ? (a.remote_storage->>'binding'))) AND ($4::jsonb IS NULL OR ($4::jsonb->>r.project_id)=($5::text||'/customers/'||r.customer_id||'/projects/'||r.project_id)) AND s.enabled AND s.desired_release_id=r.id AND s.revision=r.source_revision AND s.environment_revision=r.environment_revision AND c.generation=r.connection_generation AND c.state='active' AND NOT EXISTS(SELECT 1 FROM webdock_auth.git_release busy WHERE busy.source_id=r.source_id AND busy.status IN ('deploying','needs-reconciliation')) ORDER BY r.created_at,r.id FOR UPDATE OF r,s SKIP LOCKED LIMIT 1",vec![worker.id.clone().into(),worker.generation.into(),json!(bindings).into(),publication_projects.map(|p|json!(p)).into(),self.registry.clone().into(),formats.contains(&0).into(),formats.contains(&1).into(),formats.contains(&2).into()]).await?.pop();
         let Some(mut r) = release else {
             tx.commit().await.map_err(db_error)?;
             return Ok(None);
@@ -977,7 +1078,7 @@ impl BuildService {
         generation: i32,
     ) -> Result<Value> {
         Self::verify(tx, worker).await?;
-        let r=rows(tx,"SELECT to_jsonb(r)||jsonb_build_object('image_digest',a.image_digest,'build_id',a.build_id,'storage_key',a.storage_key,'digest',a.digest,'size_bytes',a.size_bytes) AS value FROM webdock_auth.git_release r JOIN webdock_auth.git_artifact a ON a.id=r.artifact_id WHERE r.id=$1 AND r.worker_id=$2 AND r.worker_generation=$3 AND r.generation=$4 AND r.status='deploying' AND r.lease_until>now() AND a.retained FOR UPDATE OF r",vec![id.into(),worker.id.clone().into(),worker.generation.into(),generation.into()]).await?.pop().ok_or_else(||error("release_lease_lost"))?;
+        let r=rows(tx,"SELECT to_jsonb(r)||jsonb_build_object('image_digest',a.image_digest,'build_id',a.build_id,'storage_key',a.storage_key,'digest',a.digest,'size_bytes',a.size_bytes,'remote_storage',a.remote_storage) AS value FROM webdock_auth.git_release r JOIN webdock_auth.git_artifact a ON a.id=r.artifact_id WHERE r.id=$1 AND r.worker_id=$2 AND r.worker_generation=$3 AND r.generation=$4 AND r.status='deploying' AND r.lease_until>now() AND a.retained FOR UPDATE OF r",vec![id.into(),worker.id.clone().into(),worker.generation.into(),generation.into()]).await?.pop().ok_or_else(||error("release_lease_lost"))?;
         let authority = rows(
             tx,
             "SELECT coalesce(webdock_rls.git_release_authority($1),'null'::jsonb) AS value",
@@ -1025,7 +1126,7 @@ impl BuildService {
         tx.commit().await.map_err(db_error)?;
         session::commit(authority_guard).await?;
         Ok(
-            json!({"releaseID":id,"repository":repository,"imageDigest":r["image_digest"],"storageKey":r["storage_key"],"digest":r["digest"],"sizeBytes":r["size_bytes"]}),
+            json!({"releaseID":id,"repository":repository,"imageDigest":r["image_digest"],"storageKey":r["storage_key"],"digest":r["digest"],"sizeBytes":r["size_bytes"],"remoteStorage":r["remote_storage"]}),
         )
     }
     pub async fn publish_image(
@@ -1504,3 +1605,6 @@ pub(crate) mod repository;
 
 #[path = "session.rs"]
 mod session;
+
+#[path = "export.rs"]
+mod export;

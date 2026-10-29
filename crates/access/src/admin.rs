@@ -269,7 +269,10 @@ impl AccessService {
         if !actor.is_operator() {
             return Err(Error::Forbidden);
         }
-        let tx = self.domain(&actor).await?;
+        let (tx, auth, actor) = self.fenced_session_domain(&actor).await?;
+        if !actor.is_operator() {
+            return Err(Error::Forbidden);
+        }
         operator(&tx).await?;
         let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT c.name,t.organization_id FROM webdock_admin.customers c JOIN webdock_auth.tenant_customer t ON t.customer_id=c.id WHERE c.id=$1 AND c.status='active' FOR SHARE OF c",[id(customer)?.into()])).await?.ok_or(Error::NotFound)?;
         let org: String = row.try_get("", "organization_id")?;
@@ -290,6 +293,7 @@ impl AccessService {
         )
         .await?;
         tx.commit().await?;
+        auth.commit().await?;
         self.current_preview_as(&actor).await
     }
     pub async fn exit_preview(&self, cookie: &str) -> Result<Value> {
@@ -302,7 +306,10 @@ impl AccessService {
             return Err(Error::Forbidden);
         }
         // Root is rechecked even while operator() is intentionally false during a preview.
-        let tx = self.signer.begin(&self.business, &actor).await?;
+        let (tx, auth, actor) = self.fenced_session_domain(&actor).await?;
+        if actor.role() != "operator" {
+            return Err(Error::Forbidden);
+        }
         let root: bool = tx
             .query_one_raw(Statement::from_string(
                 DbBackend::Postgres,
@@ -327,6 +334,7 @@ impl AccessService {
             .await?;
         }
         tx.commit().await?;
+        auth.commit().await?;
         Ok(json!({"customerID":customer,"message":"Customer preview ended."}))
     }
 }

@@ -158,6 +158,24 @@ async fn command(
             return crate::build::execute(&state, &actor, input).await;
         }
         let service = state.hosting.as_ref().ok_or_else(unavailable)?;
+        if action.starts_with("recovery.") {
+            if actor.read_only() {
+                return Err(reject(
+                    StatusCode::FORBIDDEN,
+                    "permission_denied",
+                    "Recovery requires platform operator authority.",
+                ));
+            }
+            let authority = serde_json::from_value(
+                serde_json::to_value(&actor.authority).map_err(|_| unavailable())?,
+            )
+            .map_err(|_| unavailable())?;
+            let value = service
+                .recovery_command(&actor.principal, &authority, input)
+                .await
+                .map_err(failure)?;
+            return Ok(Json(value).into_response());
+        }
         let value = service
             .execute_with_ceiling(
                 &actor.principal,

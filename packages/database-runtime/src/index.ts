@@ -59,7 +59,7 @@ export function currentDatabaseScope(): DatabaseScope | undefined {
 export function verifiedPostgresConfig(
   url: string,
   ca?: string,
-): pg.PoolConfig {
+): { connectionString: string; ssl: { ca?: string; rejectUnauthorized: true } } {
   const parsed = new URL(url);
   if (!["postgres:", "postgresql:"].includes(parsed.protocol))
     throw new Error("Expected a PostgreSQL URL");

@@ -80,6 +80,7 @@ const MIGRATIONS: &[&str] = &[
         sha256 text NOT NULL CHECK (sha256 ~ '^[0-9a-f]{64}$')
     );",
 
+    include_str!("recovery.sql"),
 ];
 
 pub type Error = tokio_postgres::Error;
@@ -111,6 +112,7 @@ struct Connection {
     url: String,
     ca: Option<Vec<u8>>,
     slots: Arc<tokio::sync::Semaphore>,
+    recovery_slots: Arc<tokio::sync::Semaphore>,
 }
 /// A dedicated transaction/connection: cancellation closes it and releases the cross-process fence.
 pub struct CustomerFence {
@@ -127,6 +129,7 @@ impl Store {
                 url: url.into(),
                 ca: None,
                 slots: Arc::new(tokio::sync::Semaphore::new(4)),
+                recovery_slots: Arc::new(tokio::sync::Semaphore::new(64)),
             }),
         ))
     }
@@ -138,6 +141,7 @@ impl Store {
                 url: url.into(),
                 ca: Some(ca.into()),
                 slots: Arc::new(tokio::sync::Semaphore::new(4)),
+                recovery_slots: Arc::new(tokio::sync::Semaphore::new(64)),
             }),
         ))
     }
@@ -330,8 +334,8 @@ impl Store {
     }
     pub async fn engine_state(&self, customer: &str, state: &str) -> Result<(), Error> {
         self.0
-            .execute(
-                "UPDATE customer_engines SET state=$2 WHERE customer_id=$1 AND desired_enabled=($2<>'suspended')",
+            .query_one(
+                "UPDATE customer_engines SET state=$2 WHERE customer_id=$1 AND desired_enabled=($2<>'suspended') RETURNING customer_id",
                 &[&customer, &state],
             )
             .await?;
@@ -381,8 +385,8 @@ impl Store {
     }
     pub async fn mailbox_ready(&self, id: &Uuid, account: &str) -> Result<(), Error> {
         self.0
-            .execute(
-                "UPDATE mailboxes SET state='ready',account_id=$2,error=NULL WHERE id=$1",
+            .query_one(
+                "UPDATE mailboxes SET state='ready',account_id=$2,error=NULL WHERE id=$1 RETURNING id",
                 &[id, &account],
             )
             .await?;
@@ -425,6 +429,12 @@ fn engine(r: &tokio_postgres::Row) -> Engine {
 }
 
 impl Store {
+    pub(crate) fn recovery_slots(&self) -> Arc<tokio::sync::Semaphore> {
+        self.1.recovery_slots.clone()
+    }
+    pub(crate) async fn private_connection(&self) -> Result<Client, webdock_plugin_kit::Error> {
+        webdock_plugin_kit::postgres::connect(&self.1.url, self.1.ca.as_deref()).await
+    }
     pub async fn customer_fence(
         &self,
         customer: &str,

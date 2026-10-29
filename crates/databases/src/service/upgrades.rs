@@ -243,6 +243,16 @@ impl DatabaseService {
         }
         let profile = json!({"cpuMillicores":plan["cpuMillicores"],"memoryBytes":plan["memoryBytes"],"volumeBytes":plan["volumeBytes"]});
         exec(tx,"UPDATE webdock_auth.hosting_database_backend SET demand=$2,profile=$3,revision=revision+1,state='updating' WHERE id=$1",vec![text(backend,"id")?.into(),demand.into(),profile.into()]).await?;
+        one(
+            tx,
+            "SELECT webdock_rls.resize_database_backup_policy($1,$2,$3) AS value",
+            vec![
+                text(backend, "id")?.into(),
+                number(backend, "revision")?.into(),
+                (number(backend, "revision")? + 1).into(),
+            ],
+        )
+        .await?;
         Ok(())
     }
 }

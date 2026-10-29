@@ -712,6 +712,24 @@
           "minLength": 16,
           "maxLength": 128,
           "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "targetTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "timeline": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483646
+        },
+        "verificationSHA256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "credentialRevision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483646
         }
       },
       "required": [
@@ -722,7 +740,11 @@
         "restorePointID",
         "targetOrderID",
         "revision",
-        "idempotencyKey"
+        "idempotencyKey",
+        "targetTime",
+        "timeline",
+        "verificationSHA256",
+        "credentialRevision"
       ],
       "additionalProperties": false
     },
@@ -1037,6 +1059,279 @@
         "poolID",
         "profile",
         "idempotencyKey"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "const": "databases.backupPolicies.get"
+        },
+        "databaseID": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        }
+      },
+      "required": [
+        "action",
+        "databaseID"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "const": "databases.backupPolicies.grant"
+        },
+        "databaseID": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "destinationID": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483646
+        },
+        "schedule": {
+          "type": "string",
+          "pattern": "^0 [0-5]?[0-9] (?:[01]?[0-9]|2[0-3]) \\* \\* \\*$"
+        },
+        "retentionDays": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3650
+        },
+        "retentionDelete": {
+          "type": "boolean"
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        }
+      },
+      "required": [
+        "action",
+        "databaseID",
+        "destinationID",
+        "revision",
+        "schedule",
+        "retentionDays",
+        "retentionDelete",
+        "idempotencyKey"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "const": "databases.backupPolicies.revoke"
+        },
+        "databaseID": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483646
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "policyRevision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483646
+        }
+      },
+      "required": [
+        "action",
+        "databaseID",
+        "revision",
+        "idempotencyKey",
+        "policyRevision"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "const": "databases.backupDestinations.register"
+        },
+        "endpointURL": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "region": {
+          "type": "string",
+          "maxLength": 63
+        },
+        "bucket": {
+          "type": "string",
+          "maxLength": 63
+        },
+        "keyRecoveryID": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "writeCredentials": {
+          "type": "object",
+          "properties": {
+            "accessKeyId": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 128
+            },
+            "secretAccessKey": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 512
+            },
+            "readOnly": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "accessKeyId",
+            "secretAccessKey",
+            "readOnly"
+          ],
+          "additionalProperties": false
+        },
+        "recoveryCredentials": {
+          "type": "object",
+          "properties": {
+            "accessKeyId": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 128
+            },
+            "secretAccessKey": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 512
+            },
+            "readOnly": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "accessKeyId",
+            "secretAccessKey",
+            "readOnly"
+          ],
+          "additionalProperties": false
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        }
+      },
+      "required": [
+        "action",
+        "endpointURL",
+        "region",
+        "bucket",
+        "keyRecoveryID",
+        "writeCredentials",
+        "recoveryCredentials",
+        "idempotencyKey"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "const": "databases.backupPolicies.update"
+        },
+        "databaseID": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483646
+        },
+        "schedule": {
+          "type": "string",
+          "pattern": "^0 [0-5]?[0-9] (?:[01]?[0-9]|2[0-3]) \\* \\* \\*$"
+        },
+        "retentionDays": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3650
+        },
+        "retentionDelete": {
+          "type": "boolean"
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "policyRevision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483646
+        },
+        "suspended": {
+          "type": "boolean"
+        },
+        "walEnabled": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "action",
+        "databaseID",
+        "revision",
+        "schedule",
+        "retentionDays",
+        "retentionDelete",
+        "idempotencyKey",
+        "policyRevision",
+        "suspended",
+        "walEnabled"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "const": "databases.operations.get"
+        },
+        "databaseID": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "operationID": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        }
+      },
+      "required": [
+        "action",
+        "databaseID",
+        "operationID"
       ],
       "additionalProperties": false
     }

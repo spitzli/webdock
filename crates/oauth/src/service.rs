@@ -730,6 +730,15 @@ impl OAuthService {
                 .inspect_legacy_jwt(tx, token, caller, allow_preview)
                 .await;
         }
+        let access = if let Some(row) = access {
+            let Some(current) = Self::lock_access_record(tx, row).await? else {
+                // A discovered row that disappeared/replaced must never use JWT fallback.
+                return Ok(json!({"active":false}));
+            };
+            Some(current)
+        } else {
+            None
+        };
         self.inspect_token_record(
             tx,
             access,
@@ -738,6 +747,67 @@ impl OAuthService {
             allow_preview,
         )
         .await
+    }
+    /// Discover without a token lock; reload in refresh-compatible ownership order.
+    /// Inactive discovery stays inactive, and missing/replaced discovery cannot authorize.
+    async fn lock_access_record(
+        tx: &DatabaseTransaction,
+        row: sea_orm::QueryResult,
+    ) -> Result<Option<sea_orm::QueryResult>> {
+        if row
+            .try_get::<Option<DateTime<Utc>>>("", "revoked")?
+            .is_some()
+            || row.try_get::<DateTime<Utc>>("", "expiresAt")? <= Utc::now()
+        {
+            return Ok(Some(row));
+        }
+        let id: String = row.try_get("", "id")?;
+        let hash: String = row.try_get("", "token")?;
+        let client: String = row.try_get("", "clientId")?;
+        let subject: Option<String> = row.try_get("", "userId")?;
+        let session: Option<String> = row.try_get("", "sessionId")?;
+        // Refresh takes client/identity before token rows; retain these locks until commit.
+        tx.query_one_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "SELECT id FROM webdock_auth.\"oauthClient\" WHERE \"clientId\"=$1 FOR SHARE",
+            [client.clone().into()],
+        ))
+        .await?;
+        if let Some(subject) = &subject {
+            tx.query_one_raw(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "SELECT id FROM webdock_auth.\"user\" WHERE id=$1 FOR SHARE",
+                [subject.clone().into()],
+            ))
+            .await?;
+            if let Some(session) = &session {
+                tx.query_one_raw(Statement::from_sql_and_values(
+                    DbBackend::Postgres,
+                    "SELECT id FROM webdock_auth.session WHERE id=$1 AND \"userId\"=$2 FOR SHARE",
+                    [session.clone().into(), subject.clone().into()],
+                ))
+                .await?;
+            }
+        }
+        let Some(current) = tx
+            .query_one_raw(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "SELECT * FROM webdock_auth.\"oauthAccessToken\" WHERE id=$1 AND token=$2 FOR SHARE",
+                [id.clone().into(), hash.clone().into()],
+            ))
+            .await?
+        else {
+            return Ok(None);
+        };
+        if current.try_get::<String>("", "id")? != id
+            || current.try_get::<String>("", "token")? != hash
+            || current.try_get::<String>("", "clientId")? != client
+            || current.try_get::<Option<String>>("", "userId")? != subject
+            || current.try_get::<Option<String>>("", "sessionId")? != session
+        {
+            return Ok(None);
+        }
+        Ok(Some(current))
     }
     async fn inspect_token_record(
         &self,

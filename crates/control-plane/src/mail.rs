@@ -316,6 +316,29 @@ pub async fn initialize_sender(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn configured_transport_adoption_accepts_only_a_customer_selection() {
+        assert!(
+            serde_json::from_value::<super::Command>(
+                serde_json::json!({"action":"adoptConfiguredNativeSending","customerID":"123"})
+            )
+            .is_ok()
+        );
+        for field in [
+            "credentials",
+            "provider",
+            "pluginID",
+            "region",
+            "revision",
+            "operator",
+        ] {
+            let mut body =
+                serde_json::json!({"action":"adoptConfiguredNativeSending","customerID":"123"});
+            body[field] = serde_json::json!("private-poison");
+            assert!(serde_json::from_value::<super::Command>(body).is_err());
+        }
+    }
+
     use super::*;
     #[test]
     fn incoming_configuration_execution_is_a_separate_explicit_opt_in() {
@@ -618,6 +641,8 @@ pub struct MailEndpoints {
     pub queue: Option<Arc<Submissions>>,
     pub sender: Option<Arc<Sending>>,
     credentials: GatewayCredentials,
+    operator_transports:
+        std::collections::BTreeMap<String, webdock_mail::transport_adoption::ConfiguredTransport>,
 }
 impl MailEndpoints {
     pub fn new(service: Arc<WebmailService>, secret: &str) -> Result<Self, &'static str> {
@@ -627,6 +652,7 @@ impl MailEndpoints {
             keys: None,
             queue: None,
             sender: None,
+            operator_transports: Default::default(),
             credentials: GatewayCredentials::new(Some(secret), None)?,
         })
     }
@@ -640,6 +666,7 @@ impl MailEndpoints {
             keys: Some(keys),
             queue: None,
             sender: None,
+            operator_transports: Default::default(),
             credentials: GatewayCredentials::new(None, Some(worker_secret))?,
         })
     }
@@ -660,6 +687,21 @@ impl MailEndpoints {
         self.queue = Some(queue);
         self
     }
+    pub fn with_operator_transports(
+        mut self,
+        accounts: Vec<webdock_mail::transport_adoption::ConfiguredTransport>,
+    ) -> Result<Self, &'static str> {
+        for account in accounts {
+            if self
+                .operator_transports
+                .insert(account.customer().to_owned(), account)
+                .is_some()
+            {
+                return Err("Duplicate operator transport");
+            }
+        }
+        Ok(self)
+    }
     pub fn with_sender(mut self, sender: Arc<Sending>) -> Self {
         self.sender = Some(sender);
         self
@@ -672,6 +714,7 @@ impl MailEndpoints {
             keys: None,
             queue: None,
             sender: None,
+            operator_transports: Default::default(),
             credentials: GatewayCredentials {
                 browser: None,
                 worker: None,
@@ -772,6 +815,11 @@ fn input<T: serde::de::DeserializeOwned>(
 #[derive(Deserialize)]
 #[serde(tag = "action", deny_unknown_fields)]
 enum Command {
+    #[serde(rename = "adoptConfiguredNativeSending")]
+    AdoptTransport {
+        #[serde(rename = "customerID")]
+        customer_id: String,
+    },
     #[serde(rename = "getTenantMailService")]
     Service {
         #[serde(rename = "customerID")]
@@ -812,6 +860,7 @@ enum Command {
 impl Command {
     fn operation(&self) -> OperationKind {
         match self {
+            Self::AdoptTransport { .. } => OperationKind::Provision,
             Self::Service { .. } | Self::Mailboxes { .. } | Self::Launch { .. } => {
                 OperationKind::Read
             }
@@ -869,6 +918,26 @@ async fn command(
             })?;
         let endpoint = state.mail.as_ref().ok_or_else(unavailable)?;
         let response = match command {
+            Command::AdoptTransport { customer_id } => {
+                if !actor.principal.is_operator() {
+                    return Err(reject(
+                        StatusCode::FORBIDDEN,
+                        "mail_unavailable",
+                        "Mail access is unavailable.",
+                    ));
+                }
+                let configured = endpoint
+                    .operator_transports
+                    .get(&customer_id)
+                    .ok_or_else(unavailable)?;
+                endpoint
+                    .sending()?
+                    .adopt_configured_transport(&actor.principal, &actor.authority, configured)
+                    .await
+                    .map_err(failure)?;
+                data(serde_json::json!({"ready":true}))
+            }
+
             Command::Service { customer_id } => data(
                 endpoint
                     .incoming()?

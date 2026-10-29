@@ -106,6 +106,8 @@ const SHARED: &[&str] = &[
     "webdock-plugin-http",
     "webdock-plugin-kit",
     "webdock-repository-protocol",
+    "webdock-export-protocol",
+    "webdock-object-storage",
     "webdock-mail-protocol",
     "webdock-mail-message",
     "webdock-mail-runtime",

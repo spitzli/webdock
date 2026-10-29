@@ -93,24 +93,44 @@ async fn feature_allowed(
     let row = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT EXISTS(SELECT 1 FROM webdock_auth.plugin_feature_policy p WHERE p.plugin_id=$1 AND p.feature_id=$2 AND (p.mode='everyone' OR (p.mode='selected' AND EXISTS(SELECT 1 FROM webdock_auth.plugin_feature_customer c WHERE c.plugin_id=$1 AND c.feature_id=$2 AND c.customer_id=$3)))) AS allowed",[plugin.into(),feature.into(),customer.into()])).await.map_err(db_error)?.ok_or_else(PluginError::denied)?;
     row.try_get("", "allowed").map_err(db_error)
 }
-/// A create must leave room under the plan's count for its offering. Checked once, at admission:
-/// by revalidation the plugin may already have made it.
-pub(crate) async fn room(
+/// Reserve before committing admission; expiry or revocation cannot prove an external create failed.
+pub(crate) async fn reserve(
     tx: &DatabaseTransaction,
     action: &Value,
     plugin: &str,
-    project: &str,
-) -> Result<()> {
+    invocation: &str,
+) -> Result<Option<Value>> {
     if action["resource"] == "create"
         && let Some(offering) = action["offering"].as_str()
     {
-        let checked = super::limits::checked(tx, project).await?;
-        let wanted = json!({ format!("{plugin}.{offering}"): 1 });
-        if let Some(message) = super::limits::exceeded(&checked, &json!({}), &wanted) {
-            return Err(conflict(&message));
+        let row = tx
+            .query_one_raw(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "SELECT webdock_rls.reserve_plugin_resource($1::uuid) AS exceeded",
+                [invocation.into()],
+            ))
+            .await
+            .map_err(db_error)?
+            .ok_or_else(unavailable)?;
+        if let Some(checked) = row
+            .try_get::<Option<Value>>("", "exceeded")
+            .map_err(db_error)?
+        {
+            if let Some(replay) = checked.get("replay") {
+                return Ok(Some(replay.clone()));
+            }
+            if checked["conflict"] == true {
+                return Err(conflict(
+                    "Create operation conflicts with its retained reservation",
+                ));
+            }
+            let wanted = json!({ format!("{plugin}.{offering}"): 1 });
+            return Err(conflict(
+                &super::limits::exceeded(&checked, &json!({}), &wanted).ok_or_else(unavailable)?,
+            ));
         }
     }
-    Ok(())
+    Ok(None)
 }
 /// Feature ids this customer may use themselves right now.
 pub(crate) async fn usable_features(
@@ -147,6 +167,78 @@ fn valid_resource(id: &str, name: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || b"_.:-".contains(&b))
         && (1..=160).contains(&name.chars().count())
 }
+/// Shared by synchronous results and the live durable job completion transaction.
+pub(crate) async fn record_result(
+    tx: &DatabaseTransaction,
+    invocation_id: &str,
+    source: &Value,
+    output: &Value,
+    job: bool,
+) -> Result<()> {
+    let context = &source["session_context"];
+    let action = &context["resourceAction"];
+    // An enqueue acknowledgement proves neither creation nor deletion has finished.
+    if !job
+        && matches!(action["effect"].as_str(), Some("create" | "delete"))
+        && output.get("resource").is_none()
+        && let Some(id) = output["id"].as_str()
+    {
+        let queued = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
+            "SELECT id FROM webdock_auth.plugin_job_execution WHERE id=$1 AND plugin_id=$2 AND customer_id=$3 AND project_id=$4 AND provenance->>'operation_id'=$5 AND provenance->>'request_hash'=$6 AND provenance->'session_context'->'resourceAction'=$7 AND provenance #>> '{session_context,resourceCreate,invocationID}' IS NOT DISTINCT FROM $8 AND provenance #>> '{session_context,resourceID}' IS NOT DISTINCT FROM $9",
+            [id.into(), string(source,"plugin_id")?.into(), string(source,"customer_id")?.into(), string(source,"project_id")?.into(), string(source,"operation_id")?.into(), string(source,"request_hash")?.into(), action.clone().into(), context["resourceCreate"]["invocationID"].as_str().map(str::to_owned).into(), context["resourceID"].as_str().map(str::to_owned).into()]))
+            .await.map_err(db_error)?;
+        if queued.is_some() {
+            if action["effect"] == "delete" {
+                // Only the action's acknowledged job is allowed to execute the deletion.
+                let changed = tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,
+                    "UPDATE webdock_auth.plugin_invocation v SET session_context=jsonb_set(v.session_context,'{resourceDeleteJob}',to_jsonb($1::text)) FROM webdock_auth.plugin_job_execution j WHERE j.id=$1 AND v.id::text=j.provenance->>'id' AND (v.session_context->>'resourceDeleteJob' IS NULL OR v.session_context->>'resourceDeleteJob'=$1)",
+                    [id.into()])).await.map_err(db_error)?.rows_affected();
+                if changed != 1 {
+                    return Err(conflict(
+                        "Delete job conflicts with its retained acknowledgement",
+                    ));
+                }
+            }
+            return Ok(());
+        }
+    }
+    let (resource, name) = match action["effect"].as_str() {
+        Some("create") => {
+            let resource = &output["resource"];
+            match (resource["id"].as_str(), resource["name"].as_str()) {
+                (Some(id), Some(name)) if valid_resource(id, name) => (id, name),
+                _ => return Err(invalid("Plugin output must name the created resource")),
+            }
+        }
+        Some("delete") => {
+            let id = context["resourceID"]
+                .as_str()
+                .ok_or_else(PluginError::denied)?;
+            (id, id)
+        }
+        _ => return Ok(()),
+    };
+    let row = tx
+        .query_one_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "SELECT webdock_rls.record_plugin_resource($1::uuid,$2,$3,$4) AS recorded",
+            [
+                invocation_id.into(),
+                resource.into(),
+                name.into(),
+                (context["operator"] == true).into(),
+            ],
+        ))
+        .await
+        .map_err(db_error)?
+        .ok_or_else(unavailable)?;
+    if !row.try_get::<bool>("", "recorded").map_err(db_error)? {
+        return Err(conflict(
+            "Resource result conflicts with its create reservation or ownership",
+        ));
+    }
+    Ok(())
+}
 impl HostService {
     /// Index the resource a finished create names, or drop the one a delete acted on. Customer,
     /// project and offering come from the persisted invocation, never from plugin output.
@@ -155,52 +247,16 @@ impl HostService {
         // a policy change or token expiry since then must not let the index drift from reality.
         let tx = self.controller().await?;
         let row = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT to_jsonb(v) AS invocation FROM webdock_auth.plugin_invocation v WHERE id=$1::uuid AND kind='action' AND revoked_at IS NULL AND plugin_id=$2 AND project_id=$3 AND name=$4 AND runtime_generation=$5",[handle.claims.id.clone().into(),handle.claims.plugin_id.clone().into(),handle.claims.project_id.clone().into(),handle.claims.action.clone().into(),(handle.claims.generation as i64).into()])).await.map_err(db_error)?.ok_or_else(PluginError::denied)?;
-        let invocation: Value = row.try_get("", "invocation").map_err(db_error)?;
-        let metadata = self
-            .metadata(
-                &tx,
-                &handle.claims.plugin_id,
-                Some(&handle.claims.project_id),
-            )
-            .await?;
-        let action = metadata
-            .manifest
-            .action(&handle.claims.action)
-            .ok_or_else(PluginError::denied)?;
-        let context = &invocation["session_context"];
-        let (resource, name) = match action["resource"].as_str() {
-            Some("create") => {
-                let resource = &output["resource"];
-                match (resource["id"].as_str(), resource["name"].as_str()) {
-                    (Some(id), Some(name)) if valid_resource(id, name) => (id, name),
-                    _ => return Err(invalid("Plugin output must name the created resource")),
-                }
-            }
-            Some("delete") => {
-                let id = context["resourceID"]
-                    .as_str()
-                    .ok_or_else(PluginError::denied)?;
-                (id, id)
-            }
-            _ => return Ok(()),
-        };
-        let row = tx
-            .query_one_raw(Statement::from_sql_and_values(
-                DbBackend::Postgres,
-                "SELECT webdock_rls.record_plugin_resource($1::uuid,$2,$3,$4) AS recorded",
-                [
-                    handle.claims.id.clone().into(),
-                    resource.into(),
-                    name.into(),
-                    (context["operator"] == true).into(),
-                ],
-            ))
-            .await
-            .map_err(db_error)?
-            .ok_or_else(unavailable)?;
-        if !row.try_get::<bool>("", "recorded").map_err(db_error)? {
-            return Err(conflict("Resource id is already in use"));
+        let mut invocation: Value = row.try_get("", "invocation").map_err(db_error)?;
+        if invocation["session_context"]["resourceAction"].is_null() {
+            let row = tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,
+                "SELECT jsonb_build_object('effect',a->'resource','offering',a->'offering') AS action FROM webdock_auth.plugin_runtime rt JOIN webdock_auth.plugin_release r ON r.plugin_id=rt.plugin_id AND r.version=rt.version, jsonb_array_elements(r.manifest_bytes::jsonb->'actions') a WHERE rt.plugin_id=$1 AND rt.generation=$2 AND a->>'name'=$3",
+                [handle.claims.plugin_id.clone().into(), (handle.claims.generation as i64).into(), handle.claims.action.clone().into()]))
+                .await.map_err(db_error)?.ok_or_else(PluginError::denied)?;
+            invocation["session_context"]["resourceAction"] =
+                row.try_get("", "action").map_err(db_error)?;
         }
+        record_result(&tx, &handle.claims.id, &invocation, output, false).await?;
         tx.commit().await.map_err(db_error)
     }
 }

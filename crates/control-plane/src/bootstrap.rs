@@ -51,11 +51,18 @@ pub struct OperatorInput {
     pub auth_origin: String,
     pub studio_origin: String,
     pub console_origin: String,
+    #[serde(default, deserialize_with = "optional_initial_mail_enabled")]
+    pub initial_mail_enabled: Option<bool>,
 }
 fn optional_password<'de, D: serde::Deserializer<'de>>(
     d: D,
 ) -> std::result::Result<Option<String>, D::Error> {
     String::deserialize(d).map(Some)
+}
+fn optional_initial_mail_enabled<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<Option<bool>, D::Error> {
+    bool::deserialize(deserializer).map(Some)
 }
 struct ReviewedInput {
     email: String,
@@ -64,6 +71,7 @@ struct ReviewedInput {
     auth_origin: String,
     studio_origin: String,
     console_origin: String,
+    initial_mail_enabled: Option<bool>,
 }
 fn canonical(value: &str, local: bool) -> Result<String> {
     let origin =
@@ -134,6 +142,7 @@ impl OperatorInput {
             auth_origin,
             studio_origin,
             console_origin,
+            initial_mail_enabled: self.initial_mail_enabled,
         })
     }
 }
@@ -154,6 +163,8 @@ struct Specification<'a> {
     #[serde(rename = "requirePKCE")]
     require_pkce: bool,
     token_endpoint_auth_method: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    initial_mail_enabled: Option<bool>,
 }
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -372,6 +383,22 @@ impl Allocated {
         })
     }
 }
+fn specification(input: &ReviewedInput) -> Specification<'_> {
+    Specification {
+        version: 1,
+        email: &input.email,
+        name: &input.name,
+        auth_origin: &input.auth_origin,
+        studio_origin: &input.studio_origin,
+        console_origin: &input.console_origin,
+        redirect_uri: format!("{}/api/sso/callback", input.studio_origin),
+        logout_uri: format!("{}/login", input.studio_origin),
+        scopes: ["openid", "profile", "email"],
+        require_pkce: true,
+        token_endpoint_auth_method: "client_secret_post",
+        initial_mail_enabled: input.initial_mail_enabled,
+    }
+}
 fn token() -> Result<String> {
     let mut raw = [0u8; 48];
     getrandom::getrandom(&mut raw).map_err(|_| BootstrapError::Database)?;
@@ -385,7 +412,21 @@ async fn provision(
 ) -> Result<Secrets> {
     execute(tx,"LOCK TABLE webdock_auth.\"user\",webdock_auth.account,webdock_auth.\"oauthClient\",webdock_auth.app_binding,webdock_admin.users,webdock_auth.jwks,webdock_auth.platform_settings,webdock_auth.access_event IN SHARE ROW EXCLUSIVE MODE",vec![]).await?;
     if exists(tx,"SELECT 1 FROM webdock_auth.\"user\" WHERE role='operator' UNION ALL SELECT 1 FROM webdock_admin.users WHERE role='operator' UNION ALL SELECT 1 FROM webdock_auth.access_event WHERE action IN ('operator.bootstrap','console.bootstrap') LIMIT 1",vec![]).await?||exists(tx,"SELECT 1 FROM webdock_auth.\"user\" WHERE lower(email)=lower($1) UNION ALL SELECT 1 FROM webdock_admin.users WHERE lower(email)=lower($1) LIMIT 1",vec![input.email.clone().into()]).await?||exists(tx,"SELECT 1 FROM webdock_auth.\"oauthClient\" UNION ALL SELECT 1 FROM webdock_auth.app_binding UNION ALL SELECT 1 FROM webdock_auth.jwks LIMIT 1",vec![]).await? {return Err(BootstrapError::Existing);}
+    if let Some(enabled) = input.initial_mail_enabled
+        && exists(tx,"SELECT 1 FROM webdock_auth.platform_settings WHERE id=true AND settings ? 'mailEnabled' AND settings->'mailEnabled' IS DISTINCT FROM $1::jsonb",vec![serde_json::json!(enabled).into()]).await?
+    {
+        return Err(BootstrapError::Existing);
+    }
     let ids = Allocated::new(ids).await?;
+    let specification = specification(&input);
+    let checksum = hex::encode(Sha256::digest(
+        serde_json::to_vec(&specification).map_err(|_| BootstrapError::Input)?,
+    ));
+    let mut metadata = serde_json::to_value(&specification).map_err(|_| BootstrapError::Input)?;
+    metadata["checksum"] = serde_json::json!(checksum);
+    metadata["operatorID"] = serde_json::json!(ids.user);
+    let metadata =
+        serde_json::json!({"webdock_binding":ids.binding,"webdock_initial_setup":metadata});
     let password = input.password;
     let hash = tokio::task::spawn_blocking(move || webdock_identity::hash_password(&password))
         .await
@@ -395,27 +436,6 @@ async fn provision(
     execute(tx,"INSERT INTO webdock_auth.\"user\"(id,name,email,\"emailVerified\",role,\"twoFactorEnabled\",\"mustChangePassword\") VALUES($1,$2,$3,true,'operator',false,true)",vec![ids.user.clone().into(),input.name.clone().into(),input.email.clone().into()]).await?;
     execute(tx,"INSERT INTO webdock_auth.account(id,\"accountId\",\"providerId\",\"userId\",password,\"updatedAt\") VALUES($1,$2,'credential',$2,$3,now())",vec![ids.account.into(),ids.user.clone().into(),hash.into()]).await?;
     execute(tx,"INSERT INTO webdock_admin.users(id,name,email,role,auth_subject) VALUES($1,$2,$3,'operator',$4)",vec![ids.portal.clone().into(),input.name.clone().into(),input.email.clone().into(),ids.user.clone().into()]).await?;
-    let specification = Specification {
-        version: 1,
-        email: &input.email,
-        name: &input.name,
-        auth_origin: &input.auth_origin,
-        studio_origin: &input.studio_origin,
-        console_origin: &input.console_origin,
-        redirect_uri: format!("{}/api/sso/callback", input.studio_origin),
-        logout_uri: format!("{}/login", input.studio_origin),
-        scopes: ["openid", "profile", "email"],
-        require_pkce: true,
-        token_endpoint_auth_method: "client_secret_post",
-    };
-    let checksum = hex::encode(Sha256::digest(
-        serde_json::to_vec(&specification).map_err(|_| BootstrapError::Input)?,
-    ));
-    let mut metadata = serde_json::to_value(&specification).map_err(|_| BootstrapError::Input)?;
-    metadata["checksum"] = serde_json::json!(checksum);
-    metadata["operatorID"] = serde_json::json!(ids.user);
-    let metadata =
-        serde_json::json!({"webdock_binding":ids.binding,"webdock_initial_setup":metadata});
     // The native Console and retained Studio protocol origin are both explicitly reviewed inputs.
     let redirects = serde_json::json!([
         format!("{}/api/sso/callback", input.studio_origin),
@@ -427,7 +447,11 @@ async fn provision(
     ]);
     execute(tx,"INSERT INTO webdock_auth.\"oauthClient\"(id,\"clientId\",\"clientSecret\",disabled,\"skipConsent\",\"enableEndSession\",scopes,\"clientCredentialsScopes\",\"userId\",\"createdAt\",\"updatedAt\",name,\"redirectUris\",\"postLogoutRedirectUris\",\"tokenEndpointAuthMethod\",\"applicationType\",\"grantTypes\",\"responseTypes\",\"requirePKCE\",\"subjectType\",metadata) VALUES($1,$2,$3,false,true,true,'[\"openid\",\"profile\",\"email\"]'::jsonb,'[]'::jsonb,$4,now(),now(),'Webdock Console',$5,$6,'client_secret_post',$7,'[\"authorization_code\"]'::jsonb,'[\"code\"]'::jsonb,true,'public',$8)",vec![ids.client_row.into(),ids.client.clone().into(),webdock_oauth::legacy_token_hash(&client_secret).into(),ids.user.clone().into(),redirects.into(),logouts.into(),if input.studio_origin.starts_with("http:"){"native"}else{"web"}.into(),metadata.into()]).await?;
     execute(tx,"INSERT INTO webdock_auth.app_binding(id,client_id,label,organization_id,enabled) VALUES($1,$2,'Webdock Console',NULL,true)",vec![ids.binding.clone().into(),ids.client.clone().into()]).await?;
-    execute(tx,"INSERT INTO webdock_auth.platform_settings(id,settings) VALUES(true,jsonb_build_object('supportEmail',$1::text,'cmsEnabled',false)) ON CONFLICT(id) DO UPDATE SET settings=EXCLUDED.settings || webdock_auth.platform_settings.settings",vec![input.email.into()]).await?;
+    let mut defaults = serde_json::json!({"supportEmail":input.email,"cmsEnabled":false});
+    if let Some(enabled) = input.initial_mail_enabled {
+        defaults["mailEnabled"] = serde_json::json!(enabled);
+    }
+    execute(tx,"INSERT INTO webdock_auth.platform_settings(id,settings) VALUES(true,$1) ON CONFLICT(id) DO UPDATE SET settings=EXCLUDED.settings || webdock_auth.platform_settings.settings",vec![defaults.into()]).await?;
     execute(tx,"INSERT INTO webdock_auth.access_event(id,actor_id,action,target_id,outcome) VALUES($1,$3,'operator.bootstrap',$3,'succeeded'),($2,$3,'console.bootstrap',$4,'succeeded')",vec![ids.operator_audit.into(),ids.client_audit.into(),ids.user.clone().into(),ids.client.clone().into()]).await?;
     let keys = webdock_identity::SecretKeys::new(
         BTreeMap::from([(1, secret.into())]),
@@ -587,6 +611,62 @@ mod tests {
             )]),
         }
     }
+    #[test]
+    fn reviewed_initial_mail_opt_in_is_boolean_and_absence_stays_compatible() {
+        let base = serde_json::json!({"email":"operator@example.test","name":"Operator",
+            "password":"owned-initial-password-123","authOrigin":"https://auth.example.test",
+            "studioOrigin":"https://studio.example.test","consoleOrigin":"https://console.example.test"});
+        let environment = HashMap::from([
+            ("BETTER_AUTH_URL".into(), "https://auth.example.test".into()),
+            (
+                "WEBDOCK_STUDIO_ORIGIN".into(),
+                "https://studio.example.test".into(),
+            ),
+            (
+                "WEBDOCK_CONSOLE_ORIGIN".into(),
+                "https://console.example.test".into(),
+            ),
+        ]);
+        let reviewed = serde_json::from_value::<OperatorInput>(base.clone())
+            .unwrap()
+            .review(&environment, false)
+            .unwrap();
+        let prior = serde_json::to_string(&specification(&reviewed)).unwrap();
+        assert_eq!(
+            prior,
+            r#"{"version":1,"email":"operator@example.test","name":"Operator","authOrigin":"https://auth.example.test","studioOrigin":"https://studio.example.test","consoleOrigin":"https://console.example.test","redirectURI":"https://studio.example.test/api/sso/callback","logoutURI":"https://studio.example.test/login","scopes":["openid","profile","email"],"requirePKCE":true,"tokenEndpointAuthMethod":"client_secret_post"}"#
+        );
+        for enabled in [false, true] {
+            let mut body = base.clone();
+            body["initialMailEnabled"] = serde_json::json!(enabled);
+            let reviewed = serde_json::from_value::<OperatorInput>(body)
+                .unwrap()
+                .review(&environment, false)
+                .unwrap();
+            let next = serde_json::to_string(&specification(&reviewed)).unwrap();
+            assert_ne!(
+                Sha256::digest(prior.as_bytes()),
+                Sha256::digest(next.as_bytes())
+            );
+            assert_eq!(
+                serde_json::from_str::<serde_json::Value>(&next).unwrap()["initialMailEnabled"],
+                enabled
+            );
+        }
+        let mut enabled = base.clone();
+        enabled["initialMailEnabled"] = serde_json::json!(true);
+        assert!(serde_json::from_value::<OperatorInput>(enabled).is_ok());
+        for invalid in [
+            serde_json::Value::Null,
+            serde_json::json!("true"),
+            serde_json::json!(1),
+        ] {
+            let mut body = base.clone();
+            body["initialMailEnabled"] = invalid;
+            assert!(serde_json::from_value::<OperatorInput>(body).is_err());
+        }
+    }
+
     #[test]
     fn output_is_exclusive_private_and_removed_only_before_commit_begins() {
         let dir = tempfile::tempdir().unwrap();

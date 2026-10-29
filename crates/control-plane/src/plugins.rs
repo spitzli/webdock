@@ -18,9 +18,170 @@ use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use webdock_plugin_host::{AdmissionInput, HostService};
 use webdock_plugin_protocol::{ErrorCode, Manifest, PluginError};
+#[path = "plugin_builtins.rs"]
+mod builtins;
 #[path = "plugin_jobs.rs"]
 mod jobs;
+#[path = "plugin_storage.rs"]
+mod storage;
+#[derive(Clone, Copy)]
+enum InvokeBoundary {
+    View,
+    Route,
+    Admit,
+    Replay,
+    Connect,
+    Authenticate,
+    Health,
+    Describe,
+    Invoke,
+    Decode,
+    Reload,
+    Revalidate,
+    Resource,
+    Result,
+    Revoke,
+    Complete,
+}
+impl InvokeBoundary {
+    fn token(self) -> &'static str {
+        match self {
+            Self::View => "view",
+            Self::Route => "route",
+            Self::Admit => "admit",
+            Self::Replay => "replay",
+            Self::Connect => "connect",
+            Self::Authenticate => "authenticate",
+            Self::Health => "health",
+            Self::Describe => "describe",
+            Self::Invoke => "invoke",
+            Self::Decode => "decode",
+            Self::Reload => "reload",
+            Self::Revalidate => "revalidate",
+            Self::Resource => "resource",
+            Self::Result => "result",
+            Self::Revoke => "revoke",
+            Self::Complete => "complete",
+        }
+    }
+}
+fn invoke_code(code: ErrorCode) -> &'static str {
+    match code {
+        ErrorCode::InvalidInput => "invalid_input",
+        ErrorCode::NotSupported => "not_supported",
+        ErrorCode::PermissionDenied => "permission_denied",
+        ErrorCode::CapabilityUnavailable => "capability_unavailable",
+        ErrorCode::Conflict => "conflict",
+        ErrorCode::Unavailable => "unavailable",
+        ErrorCode::DeadlineExceeded => "deadline_exceeded",
+        ErrorCode::NotFound => "not_found",
+    }
+}
+struct InvokeTrace {
+    action: Option<&'static str>,
+}
+impl InvokeTrace {
+    fn new(plugin: &str, action: &str) -> Self {
+        Self {
+            action: if plugin == "mail" {
+                match action {
+                    "domains.create" => Some("domains.create"),
+                    "mail.send" => Some("mail.send"),
+                    "incoming.activate" => Some("incoming.activate"),
+                    "mailboxes.create" => Some("mailboxes.create"),
+                    "mailboxes.view" => Some("mailboxes.view"),
+                    "mailboxes.credentials" => Some("mailboxes.credentials"),
+                    _ => None,
+                }
+            } else {
+                None
+            },
+        }
+    }
+    fn enabled(value: Option<&std::ffi::OsStr>) -> bool {
+        value == Some(std::ffi::OsStr::new("1"))
+    }
+    fn line(
+        &self,
+        stage: InvokeBoundary,
+        event: &'static str,
+        code: Option<ErrorCode>,
+        tonic: Option<i32>,
+        errno: Option<i32>,
+    ) -> Option<String> {
+        let action = self.action?;
+        let number = |v: Option<i32>| v.map_or_else(|| "null".to_owned(), |v| v.to_string());
+        Some(format!(
+            "plugin_invoke action={action} stage={} event={event} publicCode={} tonicCode={} ioErrno={}",
+            stage.token(),
+            code.map_or("none", invoke_code),
+            number(tonic),
+            number(errno)
+        ))
+    }
+    fn emit(
+        &self,
+        stage: InvokeBoundary,
+        event: &'static str,
+        code: Option<ErrorCode>,
+        tonic: Option<i32>,
+        errno: Option<i32>,
+    ) {
+        if Self::enabled(std::env::var_os("WEBDOCK_RECOVERY_COMPONENT_TEST").as_deref())
+            && let Some(line) = self.line(stage, event, code, tonic, errno)
+        {
+            use std::io::Write;
+            let _ = writeln!(std::io::stderr().lock(), "{line}");
+        }
+    }
+    fn enter(&self, stage: InvokeBoundary) {
+        self.emit(stage, "enter", None, None, None)
+    }
+    fn host(&self, stage: InvokeBoundary, error: &PluginError) {
+        self.emit(stage, "error", Some(error.code), None, None)
+    }
+    fn rpc(&self, stage: InvokeBoundary, error: &tonic::Status) {
+        self.emit(stage, "error", None, Some(error.code() as i32), None)
+    }
+    fn transport_numbers(error: &(dyn std::error::Error + 'static)) -> (Option<i32>, Option<i32>) {
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let (mut code, mut errno) = (None, None);
+            let mut current = Some(error);
+            for _ in 0..8 {
+                let Some(error) = current else { break };
+                if code.is_none() {
+                    code = error
+                        .downcast_ref::<tonic::Status>()
+                        .map(|e| e.code() as i32);
+                }
+                if errno.is_none() {
+                    errno = error
+                        .downcast_ref::<std::io::Error>()
+                        .and_then(std::io::Error::raw_os_error);
+                }
+                current = error
+                    .downcast_ref::<std::io::Error>()
+                    .and_then(|e| e.get_ref().map(|e| e as &(dyn std::error::Error + 'static)))
+                    .or_else(|| error.source());
+            }
+            (code, errno)
+        }))
+        .unwrap_or((None, None))
+    }
+    fn transport(&self, stage: InvokeBoundary, error: &(dyn std::error::Error + 'static)) {
+        let (code, errno) = Self::transport_numbers(error);
+        self.emit(stage, "error", None, code, errno)
+    }
+
+    fn outcome<T>(&self, stage: InvokeBoundary, result: &Result<T, PluginError>) {
+        match result {
+            Ok(_) => self.emit(stage, "ok", None, None, None),
+            Err(error) => self.host(stage, error),
+        }
+    }
+}
 pub struct PluginEndpoints {
+    pub exports: Option<Arc<dyn webdock_plugin_host::ExportSources>>,
     pub host: Arc<HostService>,
     pub connections: RuntimeConnections,
     pub repository: Option<Arc<webdock_build::RepositoryAdmission>>,
@@ -33,6 +194,7 @@ impl PluginEndpoints {
         repository: Option<Arc<webdock_build::RepositoryAdmission>>,
     ) -> Self {
         Self {
+            exports: None,
             host,
             connections,
             repository,
@@ -53,28 +215,67 @@ impl PluginEndpoints {
         input: AdmissionInput,
         can_write: bool,
     ) -> Result<Value, PluginError> {
+        self.invoke_as_storage(actor, input, can_write, None).await
+    }
+    pub async fn invoke_api(
+        &self,
+        actor: &auth::AuthenticatedActor,
+        input: AdmissionInput,
+        can_write: bool,
+        api_hash: String,
+    ) -> Result<Value, PluginError> {
+        self.invoke_as_storage(actor, input, can_write, Some(api_hash))
+            .await
+    }
+    async fn invoke_as_storage(
+        &self,
+        actor: &auth::AuthenticatedActor,
+        input: AdmissionInput,
+        can_write: bool,
+        api_hash: Option<String>,
+    ) -> Result<Value, PluginError> {
+        let trace = InvokeTrace::new(&input.plugin_id, &input.action);
+        trace.enter(InvokeBoundary::View);
         let view = self
             .host
             .project_plugins_with_authority(&actor.principal, &input.project_id, &actor.authority)
-            .await?
+            .await
+            .inspect_err(|e| trace.host(InvokeBoundary::View, e))?
             .into_iter()
             .find(|v| v.manifest["name"] == input.plugin_id)
             .ok_or_else(|| PluginError::new(ErrorCode::NotFound, "Plugin is unavailable"))?;
+        trace.enter(InvokeBoundary::Route);
         let connection = self
             .connections
             .load_generation(&input.plugin_id, view.generation)
             .await
-            .map_err(|_| unavailable_plugin())?;
+            .map_err(|e| {
+                trace.transport(InvokeBoundary::Route, e.as_ref());
+                unavailable_plugin()
+            })?;
         if connection.generation != view.generation {
             return Err(PluginError::denied());
         }
         let plugin = input.plugin_id.clone();
+        trace.enter(InvokeBoundary::Admit);
         let admitted = self
             .host
             .admit_with_authority(&actor.principal, input, can_write, &actor.authority)
-            .await?;
-        self.invoke_admitted(plugin, view, connection, admitted)
             .await
+            .inspect_err(|e| trace.host(InvokeBoundary::Admit, e))?;
+        self.invoke_admitted(
+            plugin,
+            view,
+            connection,
+            admitted,
+            if api_hash.is_some() {
+                "/v1/api/storage"
+            } else {
+                "/api/console/plugins/storage"
+            },
+            api_hash,
+        )
+        .await
     }
     pub async fn invoke_mcp(
         &self,
@@ -106,8 +307,15 @@ impl PluginEndpoints {
                 &actor.authority,
             )
             .await?;
-        self.invoke_admitted(plugin, view, connection, admitted)
-            .await
+        self.invoke_admitted(
+            plugin,
+            view,
+            connection,
+            admitted,
+            "/v1/plugins/storage",
+            None,
+        )
+        .await
     }
     async fn invoke_admitted(
         &self,
@@ -115,18 +323,35 @@ impl PluginEndpoints {
         view: webdock_plugin_host::PluginView,
         connection: crate::plugin_config::RuntimeConnection,
         admitted: webdock_plugin_host::AdmittedInvocation,
+        storage_path: &str,
+        source_api_hash: Option<String>,
     ) -> Result<Value, PluginError> {
+        let trace = InvokeTrace::new(&plugin, &admitted.claims.action);
         let result = async {
+            trace.enter(InvokeBoundary::Replay);
+            if let Some(result) = &admitted.replay_result {
+                return Ok(result.clone());
+            }
             let payload = serde_json::to_vec(&admitted.input).map_err(|_| PluginError::denied())?;
-            let (mut client, peer) = connection
-                .connect_authenticated()
+            trace.enter(InvokeBoundary::Connect);
+            let (mut client, peer) = connection.connect_authenticated().await.map_err(|e| {
+                trace.transport(InvokeBoundary::Connect, e.as_ref());
+                unavailable_plugin()
+            })?;
+            trace.enter(InvokeBoundary::Authenticate);
+            let handle = self
+                .host
+                .authenticate(peer, &admitted.token)
                 .await
-                .map_err(|_| unavailable_plugin())?;
-            let handle = self.host.authenticate(peer, &admitted.token).await?;
+                .inspect_err(|e| trace.host(InvokeBoundary::Authenticate, e))?;
+            trace.enter(InvokeBoundary::Health);
             let health = client
                 .health(webdock_plugin_runtime::wire::HealthRequest {})
                 .await
-                .map_err(|_| unavailable_plugin())?
+                .map_err(|e| {
+                    trace.rpc(InvokeBoundary::Health, &e);
+                    unavailable_plugin()
+                })?
                 .into_inner();
             if health.plugin_id != plugin
                 || health.version != view.manifest["version"].as_str().unwrap_or("")
@@ -135,10 +360,14 @@ impl PluginEndpoints {
             {
                 return Err(PluginError::denied());
             }
+            trace.enter(InvokeBoundary::Describe);
             let described = client
                 .describe(webdock_plugin_runtime::wire::DescribeRequest {})
                 .await
-                .map_err(|_| unavailable_plugin())?
+                .map_err(|e| {
+                    trace.rpc(InvokeBoundary::Describe, &e);
+                    unavailable_plugin()
+                })?
                 .into_inner();
             if hex::encode(Sha256::digest(&described.manifest_json)) != view.manifest_sha256 {
                 return Err(PluginError::denied());
@@ -151,6 +380,7 @@ impl PluginEndpoints {
             {
                 client = client.max_encoding_message_size(224 * 1024);
             }
+            trace.enter(InvokeBoundary::Invoke);
             let reply = client
                 .invoke(webdock_plugin_runtime::wire::InvokeRequest {
                     invocation_token: admitted.token.clone(),
@@ -160,68 +390,105 @@ impl PluginEndpoints {
                         .map_err(|_| unavailable_plugin())?,
                 })
                 .await
-                .map_err(|status| match status.code() {
-                    tonic::Code::PermissionDenied | tonic::Code::Unauthenticated => {
-                        PluginError::denied()
-                    }
-                    tonic::Code::InvalidArgument => PluginError::new(
-                        ErrorCode::InvalidInput,
-                        webdock_plugin_protocol::public_message(
-                            ErrorCode::InvalidInput,
-                            status.message(),
-                        )
-                        .unwrap_or_else(|| "Plugin request is invalid".into()),
-                    ),
-                    tonic::Code::Aborted => PluginError::new(
-                        ErrorCode::Conflict,
-                        webdock_plugin_protocol::public_message(
-                            ErrorCode::Conflict,
-                            status.message(),
-                        )
-                        .unwrap_or_else(|| "Plugin operation conflict".into()),
-                    ),
-                    tonic::Code::Unimplemented => PluginError::new(
-                        ErrorCode::CapabilityUnavailable,
-                        "Plugin capability unavailable",
-                    ),
-                    _ => unavailable_plugin(),
+                .map_err(|status| {
+                    trace.rpc(InvokeBoundary::Invoke, &status);
+                    invocation_failure(status)
                 })?
                 .into_inner();
+            trace.enter(InvokeBoundary::Decode);
             if reply.output_json.len() > 65536 {
                 return Err(unavailable_plugin());
             }
             let result =
                 serde_json::from_slice(&reply.output_json).map_err(|_| unavailable_plugin())?;
+            let result = if manifest
+                .action(&admitted.claims.action)
+                .is_some_and(|a| a.get("storage").is_some())
+            {
+                let plan: webdock_plugin_protocol::storage::StoragePlan =
+                    serde_json::from_value(result).map_err(|_| PluginError::denied())?;
+                let mut descriptor = self
+                    .host
+                    .retain_storage_plan_with_api(
+                        &handle,
+                        plan,
+                        storage::transport_hash(&connection)?,
+                        source_api_hash.clone(),
+                    )
+                    .await?;
+                descriptor.path = format!("{storage_path}/{}", descriptor.id);
+                serde_json::to_value(descriptor).map_err(|_| unavailable_plugin())?
+            } else {
+                result
+            };
             webdock_plugin_protocol::validate_value(
                 manifest
                     .action(&admitted.claims.action)
                     .and_then(|a| a.get("output")),
                 &result,
             )?;
+            trace.enter(InvokeBoundary::Reload);
             if self
                 .connections
                 .load_generation(&plugin, view.generation)
                 .await
-                .map_err(|_| unavailable_plugin())?
+                .map_err(|e| {
+                    trace.transport(InvokeBoundary::Reload, e.as_ref());
+                    unavailable_plugin()
+                })?
                 != connection
             {
                 return Err(PluginError::denied());
             }
-            self.host.revalidate(&handle).await?;
+            trace.enter(InvokeBoundary::Revalidate);
+            self.host
+                .revalidate(&handle)
+                .await
+                .inspect_err(|e| trace.host(InvokeBoundary::Revalidate, e))?;
             // Create/delete actions update the Core resource index before the token is revoked.
             if manifest
                 .action(&admitted.claims.action)
                 .is_some_and(|a| a.get("resource").is_some_and(|r| r != "use"))
             {
-                self.host.record_resource(&handle, &result).await?;
+                trace.enter(InvokeBoundary::Resource);
+                self.host
+                    .record_resource(&handle, &result)
+                    .await
+                    .inspect_err(|e| trace.host(InvokeBoundary::Resource, e))?;
             }
             Ok(result)
         }
         .await;
-        self.host.revoke_issued(&admitted.token).await?;
+        trace.outcome(InvokeBoundary::Result, &result);
+        trace.enter(InvokeBoundary::Revoke);
+        let revoked = self.host.revoke_issued(&admitted.token).await;
+        trace.outcome(InvokeBoundary::Revoke, &revoked);
+        revoked?;
+        trace.enter(InvokeBoundary::Complete);
         result
     }
 }
+fn invocation_failure(status: tonic::Status) -> PluginError {
+    match status.code() {
+        tonic::Code::PermissionDenied | tonic::Code::Unauthenticated => PluginError::denied(),
+        tonic::Code::InvalidArgument => PluginError::new(
+            ErrorCode::InvalidInput,
+            webdock_plugin_protocol::public_message(ErrorCode::InvalidInput, status.message())
+                .unwrap_or_else(|| "Plugin request is invalid".into()),
+        ),
+        tonic::Code::Aborted => PluginError::new(
+            ErrorCode::Conflict,
+            webdock_plugin_protocol::public_message(ErrorCode::Conflict, status.message())
+                .unwrap_or_else(|| "Plugin operation conflict".into()),
+        ),
+        tonic::Code::Unimplemented => PluginError::new(
+            ErrorCode::CapabilityUnavailable,
+            "Plugin capability unavailable",
+        ),
+        _ => unavailable_plugin(),
+    }
+}
+
 fn unavailable_plugin() -> PluginError {
     PluginError::new(ErrorCode::Unavailable, "Plugin runtime is unavailable")
 }
@@ -328,9 +595,11 @@ fn invoke_input(body: &[u8], headers: &HeaderMap) -> Result<AdmissionInput, ApiF
 pub fn routes() -> Router<Arc<ServiceState>> {
     Router::new()
         .merge(api::routes())
+        .merge(storage::routes())
         .merge(exposure::routes())
         .merge(operations::routes())
         .merge(installation::routes())
+        .merge(builtins::routes())
         .route("/api/console/plugins", get(list))
         .route("/api/console/plugins/invoke", post(invoke))
         .route("/api/console/plugins/installed", get(installed).post(admin))
@@ -693,6 +962,28 @@ impl PluginEndpoints {
             Some(value) => value.clone(),
             None => fallback,
         };
+        let export_database = if config.export_sources {
+            let encryption = std::env::var("WEBDOCK_HOSTING_ENCRYPTION_KEY")
+                .or_else(|_| std::env::var("BETTER_AUTH_SECRET"))
+                .or_else(|_| std::env::var("WEBDOCK_AUTH_SECRET"))?;
+            let gateway = std::env::var("WEBDOCK_DATABASE_GATEWAY_ORIGIN")?;
+            Some(Arc::new(
+                webdock_databases::DatabaseService::new(
+                    dependencies.business.clone(),
+                    dependencies.auth.clone(),
+                    dependencies.worker.clone(),
+                    dependencies.identity.clone(),
+                    dependencies.browser.clone(),
+                    dependencies.ids.clone(),
+                    dependencies.rls_secret.clone(),
+                    &encryption,
+                    &gateway,
+                )
+                .await?,
+            ))
+        } else {
+            None
+        };
         let mut host = HostService::new(
             dependencies.business,
             dependencies.worker.clone(),
@@ -713,6 +1004,13 @@ impl PluginEndpoints {
             config.mail.as_ref(),
             &std::env::vars().collect(),
         ));
+        if let Some(storage) = &config.storage {
+            host = host.with_storage_gateway(Arc::new(
+                webdock_plugin_host::storage::StorageGateway::new(
+                    storage.staging_directory.clone(),
+                )?,
+            ));
+        }
         if let Some(catalog) = &config.installation_catalog {
             host = host.with_installation(
                 Arc::new(webdock_plugin_host::Catalog::load(catalog)?),
@@ -745,10 +1043,17 @@ impl PluginEndpoints {
         if let Some(managed) = managed {
             connections = connections.with_managed(managed);
         }
+        let exports = export_database.map(|databases| {
+            Arc::new(crate::plugin_exports::Sources {
+                databases,
+                repository: repository.clone(),
+            }) as Arc<dyn webdock_plugin_host::ExportSources>
+        });
         Ok(Self {
             host,
             connections,
             repository,
+            exports,
             mcp_client: config.mcp_client.clone(),
         })
     }
@@ -1034,5 +1339,122 @@ mod mail_input_tests {
         }
         let body=serde_json::to_vec(&json!({"pluginID":"mail","projectID":"123","action":"mail.send","idempotencyKey":"same","input":{"text":"x".repeat(131073)}})).unwrap();
         assert!(invoke_input(&body, &headers()).is_err());
+    }
+}
+
+#[cfg(test)]
+mod invoke_diagnostic_tests {
+    use super::*;
+    #[test]
+    fn real_tonic_and_http_mapping_remains_unchanged_and_keeps_numeric_distinction() {
+        for code in [
+            tonic::Code::PermissionDenied,
+            tonic::Code::Unauthenticated,
+            tonic::Code::InvalidArgument,
+            tonic::Code::Aborted,
+            tonic::Code::Unimplemented,
+            tonic::Code::NotFound,
+            tonic::Code::Unavailable,
+            tonic::Code::DeadlineExceeded,
+            tonic::Code::Internal,
+        ] {
+            let status = tonic::Status::new(code, "private-token-poison");
+            let error = invocation_failure(status);
+            let expected = match code {
+                tonic::Code::PermissionDenied | tonic::Code::Unauthenticated => 403,
+                tonic::Code::InvalidArgument => 400,
+                tonic::Code::Aborted => 409,
+                _ => 503,
+            };
+            assert_eq!(failure(error).into_response().status().as_u16(), expected);
+            let line = InvokeTrace::new("mail", "domains.create")
+                .line(
+                    InvokeBoundary::Invoke,
+                    "error",
+                    None,
+                    Some(code as i32),
+                    None,
+                )
+                .unwrap();
+            assert!(line.contains(&format!("tonicCode={}", code as i32)));
+            assert!(!line.contains("poison"));
+        }
+        for code in [
+            ErrorCode::NotSupported,
+            ErrorCode::CapabilityUnavailable,
+            ErrorCode::Unavailable,
+            ErrorCode::DeadlineExceeded,
+        ] {
+            assert_eq!(
+                failure(PluginError::new(code, "private-poison"))
+                    .into_response()
+                    .status(),
+                StatusCode::SERVICE_UNAVAILABLE
+            );
+        }
+    }
+    #[test]
+    fn typed_transport_walk_retains_nested_tonic_and_errno_without_formatting() {
+        struct Poison;
+        impl std::fmt::Debug for Poison {
+            fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                panic!("must not debug private error")
+            }
+        }
+        impl std::fmt::Display for Poison {
+            fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                panic!("must not display private error")
+            }
+        }
+        impl std::error::Error for Poison {}
+        assert_eq!(InvokeTrace::transport_numbers(&Poison), (None, None));
+        let wrapped = std::io::Error::other(tonic::Status::unavailable("private-poison"));
+        assert_eq!(InvokeTrace::transport_numbers(&wrapped), (Some(14), None));
+        assert_eq!(
+            InvokeTrace::transport_numbers(&std::io::Error::from_raw_os_error(13)),
+            (None, Some(13))
+        );
+    }
+    #[test]
+    fn exact_flag_and_fixed_actions_never_format_private_errors() {
+        for value in [None, Some("0"), Some("true"), Some("01"), Some("1")] {
+            assert_eq!(
+                InvokeTrace::enabled(value.map(std::ffi::OsStr::new)),
+                value == Some("1")
+            );
+        }
+        assert!(
+            InvokeTrace::new("mail", "private-poison")
+                .line(InvokeBoundary::View, "enter", None, None, None)
+                .is_none()
+        );
+        assert!(
+            InvokeTrace::new("other", "mail.send")
+                .line(InvokeBoundary::View, "enter", None, None, None)
+                .is_none()
+        );
+        let primary = PluginError::new(ErrorCode::NotFound, "private-primary-poison");
+        let revoke = PluginError::new(ErrorCode::Unavailable, "private-revoke-poison");
+        let trace = InvokeTrace::new("mail", "mail.send");
+        let a = trace
+            .line(
+                InvokeBoundary::Result,
+                "error",
+                Some(primary.code),
+                None,
+                None,
+            )
+            .unwrap();
+        let b = trace
+            .line(
+                InvokeBoundary::Revoke,
+                "error",
+                Some(revoke.code),
+                None,
+                None,
+            )
+            .unwrap();
+        assert!(a.contains("publicCode=not_found") && b.contains("publicCode=unavailable"));
+        assert!(!format!("{a}{b}").contains("poison"));
     }
 }

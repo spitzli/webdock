@@ -37,33 +37,25 @@ impl DatabaseService {
         let command = ManagedCommand::parse(input)?;
         let read = command.is_read();
         let cmd = command.into_value();
-        // Agent callbacks acquire worker → authentication → business. Reserve the
-        // order worker first as well; no signed authority is installed until the
-        // caller and customer have been checked below.
+        // Retain the existing ordinary-order worker before the session fence/auth.
+        // Atomic restore's additional early epoch admission remains unactivated.
         let order_worker = if cmd["action"] == "databases.acceptOrder" {
             Some(self.worker.begin().await?)
         } else {
             None
         };
-        let auth = self.auth.begin().await?;
-        let current = webdock_browser_session::revalidate_stored_authority(
-            &self.identity,
-            &auth,
-            self.browser.as_deref(),
-            &principal.user_id,
-            &principal.session_id,
-            authority,
-        )
-        .await
-        .map_err(|_| denied())?;
-        let tx = self.begin_actor(&current).await?;
+        let (tx, guard) = self.retain_browser(principal, authority).await?;
+        let current = guard.principal();
+        if !read && guard.read_only() {
+            return Err(denied());
+        }
         self.installed(&tx, !read).await?;
         let result = if cmd["action"] == "databases.acceptOrder" {
             let project = text(&cmd, "projectID")?;
             let access = self
                 .authorize_mode(
                     &tx,
-                    &current,
+                    current,
                     Some(project),
                     None,
                     true,
@@ -88,11 +80,11 @@ impl DatabaseService {
             let worker = order_worker.ok_or_else(unavailable)?;
             self.apply_worker_scope(&worker,json!({"kind":"system","purpose":"database-order","clusterID":cluster,"customerID":access["customerID"],"subject":current.user_id,"sessionID":current.session_id})).await?;
             let result = self
-                .accept_order(&worker, &current, authority, &cmd, &access, &cluster)
+                .accept_order(&worker, current, authority, &cmd, &access, &cluster)
                 .await?;
             self.authorize_mode(
                 &tx,
-                &current,
+                current,
                 Some(project),
                 None,
                 true,
@@ -101,13 +93,13 @@ impl DatabaseService {
                 true,
             )
             .await?;
+            guard.verify(self).await?;
             worker.commit().await?;
             result
         } else {
-            self.control_command(&tx, &current, authority, &cmd).await?
+            self.control_command(&tx, current, authority, &cmd).await?
         };
-        tx.commit().await?;
-        auth.commit().await?;
+        guard.finish(self, tx).await?;
         Ok(result)
     }
     async fn control_command(
@@ -119,6 +111,12 @@ impl DatabaseService {
     ) -> Result<Value> {
         let action = text(cmd, "action")?;
         match action {
+            "databases.backupPolicies.grant"
+            | "databases.backupPolicies.update"
+            | "databases.backupPolicies.get"
+            | "databases.backupPolicies.revoke"
+            | "databases.backupDestinations.register"
+            | "databases.backup" => self.backup_command(tx, actor, authority, cmd).await,
             "databases.projects.list" => {
                 let customer = text(cmd, "customerID")?;
                 self.authorize_mode(
@@ -170,6 +168,12 @@ impl DatabaseService {
                     result.push(self.managed_view(tx, text(&id, "id")?).await?)
                 }
                 Ok(Value::Array(result))
+            }
+            "databases.operations.get" => {
+                let id = text(cmd, "databaseID")?;
+                self.control_access(tx, actor, authority, id, false, false, false)
+                    .await?;
+                self.read_operation(tx, id, text(cmd, "operationID")?).await
             }
             "databases.get" => {
                 let id = text(cmd, "databaseID")?;
@@ -324,7 +328,8 @@ impl DatabaseService {
                     .await?;
                 Ok(result)
             }
-            "databases.backup" | "databases.restore" | "databases.clone" => {
+            "databases.restore" => self.restore_backup(tx, actor, authority, cmd).await,
+            "databases.clone" => {
                 let id = cmd
                     .get("databaseID")
                     .or_else(|| cmd.get("sourceDatabaseID"))
@@ -457,9 +462,9 @@ impl DatabaseService {
         let row=one(tx,"SELECT to_jsonb(d)||jsonb_build_object('plan',p.plan,'host',b.host,'direct_port',b.direct_port,'pooled_port',b.pooled_port,'endpoint_ready',b.endpoint_ready,'cancellation_requested_at',o.cancellation_requested_at) AS value FROM webdock_auth.hosting_database d JOIN webdock_auth.hosting_database_plan p ON p.id=d.plan_revision_id JOIN webdock_auth.hosting_database_backend b ON b.id=d.backend_id JOIN webdock_auth.hosting_database_order o ON o.id=d.order_id WHERE d.id=$1",vec![id.into()]).await?;
         crate::management::validate_plan(&row["plan"])?;
         let p = &row["plan"];
-        Ok(
-            json!({"id":row["id"],"projectID":row["project_id"],"name":row["name"],"revision":row["revision"],"observedRevision":row["observed_revision"],"state":row["state"],"planRevisionID":row["plan_revision_id"],"kind":row["kind"],"postgresMajor":p["postgresMajor"],"cpuMillicores":p["cpuMillicores"],"memoryBytes":p["memoryBytes"],"volumeBytes":p["volumeBytes"],"logicalStorageAllowanceBytes":p["logicalStorageAllowanceBytes"],"storageEnforcement":if row["kind"]=="shared"{"measured-logical"}else{"bounded-filesystem"},"databaseName":row["database_name"],"endpoint":if row["endpoint_ready"]==true||(row["state"]=="paused"&&number(&row,"confirmed_credential_revision")?>0){json!({"host":row["host"],"directPort":row["direct_port"],"pooledPort":row["pooled_port"]})}else{Value::Null},"backup":{"status":"not-configured","lastSuccessAt":null,"recoverableUntil":null,"lastRestoreTestAt":null},"operationID":row["operation_id"],"observedAt":iso(&row["observed_at"])? ,"usage":row["usage"],"cancellationRequestedAt":iso(&row["cancellation_requested_at"])?}),
-        )
+        let mut value = json!({"id":row["id"],"projectID":row["project_id"],"name":row["name"],"revision":row["revision"],"observedRevision":row["observed_revision"],"state":row["state"],"planRevisionID":row["plan_revision_id"],"kind":row["kind"],"postgresMajor":p["postgresMajor"],"cpuMillicores":p["cpuMillicores"],"memoryBytes":p["memoryBytes"],"volumeBytes":p["volumeBytes"],"logicalStorageAllowanceBytes":p["logicalStorageAllowanceBytes"],"storageEnforcement":if row["kind"]=="shared"{"measured-logical"}else{"bounded-filesystem"},"databaseName":row["database_name"],"endpoint":if row["endpoint_ready"]==true||(row["state"]=="paused"&&number(&row,"confirmed_credential_revision")?>0){json!({"host":row["host"],"directPort":row["direct_port"],"pooledPort":row["pooled_port"]})}else{Value::Null},"backup":{"status":"not-configured","lastSuccessAt":null,"recoverableUntil":null,"lastRestoreTestAt":null},"operationID":row["operation_id"],"observedAt":iso(&row["observed_at"])? ,"usage":row["usage"],"cancellationRequestedAt":iso(&row["cancellation_requested_at"])?});
+        value["backup"] = self.backup_view(tx, id).await?;
+        Ok(value)
     }
     pub(super) fn plan_available(&self, row: &Value, customer: &str, operator: bool) -> Result<()> {
         if row["availability"] == "disabled" || (row["availability"] == "pilot" && !operator) {
@@ -568,4 +573,20 @@ pub(super) fn iso(value: &Value) -> Result<Value> {
             .with_timezone(&chrono::Utc)
             .to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
     ))
+}
+
+#[cfg(test)]
+mod retained_browser_tests {
+    use super::super::authority::browser_failure as managed_authentication_error;
+    #[test]
+    fn managed_database_failure_is_transient_not_definitive_original_authority_loss() {
+        let error = managed_authentication_error(webdock_browser_session::Error::Database(
+            sea_orm::DbErr::Custom("isolated transient test only".into()),
+        ));
+        assert_eq!(error.status, 503);
+        assert_eq!(
+            managed_authentication_error(webdock_browser_session::Error::Unauthorized).status,
+            404
+        );
+    }
 }

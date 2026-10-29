@@ -331,6 +331,9 @@ impl HostingService {
             "guard" => {
                 keys(&input, &["id", "generation"], &[])?;
                 let op = Self::operation(&tx, agent, field(&input, "id")?, false).await?;
+                if !is_read_action(field(&op, "action")?) {
+                    Self::ensure_app_effect_allowed(&tx, field(&op, "app_id")?, None).await?;
+                }
                 Self::lease(&op, numeric(&input, "generation")?)?;
                 if !self
                     .accepted_authority_with_guard(&tx, &op, before_guard.as_ref())
@@ -412,6 +415,9 @@ impl HostingService {
         let Some(op)=rows(tx,"SELECT to_jsonb(o) AS value FROM webdock_auth.hosting_operation o WHERE o.cluster_id=$1 AND o.status='queued' AND o.action LIKE 'apps.%' AND o.desired IS NOT NULL AND (($2::integer=0 AND o.action NOT IN ('apps.inspect','apps.metrics')) OR ($2=2 AND o.action IN ('apps.logs','apps.inspect','apps.metrics') AND o.desired->>'expectedUID' IS NOT NULL) OR ($2=1 AND o.desired->>'action' IN ('apply','delete','purge-storage') AND NOT (o.desired ?| ARRAY['serviceBindingsVersion']) AND (o.desired->>'action'<>'apply' OR o.action='apps.stop' OR NOT (o.desired ? 'environmentVersion') OR $3::boolean) AND (COALESCE((o.desired->'spec'->>'volumeBytes')::bigint,0)=0 OR ($4::boolean AND (o.desired->>'action'<>'apply' OR $5::boolean))) AND (o.desired->'spec'->>'replicas')::integer BETWEEN 0 AND 20 AND ((SELECT runtime_kind FROM webdock_auth.hosting_cluster c WHERE c.id=o.cluster_id)<>'docker' OR (o.desired->'spec'->>'replicas')::integer<=1) AND length(o.desired->'spec'->>'image')<=512 AND o.desired->'spec'->>'image' ~ '^[a-z0-9]+([.-][a-z0-9]+)*(:[0-9]{1,5})?/([a-z0-9]+([._-][a-z0-9]+)*/)*[a-z0-9]+([._-][a-z0-9]+)*@sha256:[a-f0-9]{64}$' AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements_text(o.desired->'spec'->'args') arg WHERE octet_length(arg)>2048))) AND NOT EXISTS(SELECT 1 FROM webdock_auth.hosting_operation busy WHERE busy.project_id=o.project_id AND (busy.status='running' OR(busy.status='needs-reconciliation' AND o.action NOT IN ('apps.logs','apps.inspect','apps.metrics')))) ORDER BY o.created_at,o.id FOR UPDATE SKIP LOCKED LIMIT 1",vec![agent.cluster.clone().into(),mode.into(),(agent_state["observation"]["capabilities"]["environment"]==true).into(),(agent_state["observation"]["capabilities"]["storageVersion"]==1).into(),(agent_state["observation"]["capabilities"]["storage"]==true).into()]).await?.pop()else{return Ok(Value::Null)};
         if mode != 2 && op["desired"].get("serviceBindingsVersion").is_some() {
             return Ok(Value::Null);
+        }
+        if mode != 2 && !is_read_action(field(&op, "action")?) {
+            Self::ensure_app_effect_allowed(tx, field(&op, "app_id")?, None).await?;
         }
         if mode != 2
             && op["desired"]["storageVersion"] == 1
@@ -510,7 +516,13 @@ impl HostingService {
             return Err(error(409, "Operation lease changed."));
         }
         if op["status"] == "succeeded" && outcome == "succeeded" {
+            if !is_read_action(field(&op, "action")?) {
+                Self::ensure_app_effect_allowed(tx, field(&op, "app_id")?, Some(&op)).await?;
+            }
             return Ok(json!({"id":id,"status":"succeeded"}));
+        }
+        if !is_read_action(field(&op, "action")?) {
+            Self::ensure_app_effect_allowed(tx, field(&op, "app_id")?, None).await?;
         }
         Self::lease(&op, numeric(input, "generation")?)?;
         if !self
@@ -522,6 +534,12 @@ impl HostingService {
         let app_id = field(&op, "app_id")?;
         let action = field(&op, "action")?;
         if outcome == "failed" {
+            if std::env::var("WEBDOCK_RECOVERY_COMPONENT_TEST").as_deref() == Ok("1") {
+                eprintln!(
+                    "recovery_component execution_failure code={}",
+                    recovery_execution_class(&input["error"])
+                );
+            }
             let logging = action == "apps.logs";
             let message = if logging {
                 "The application logs could not be read."
@@ -770,4 +788,49 @@ fn proof_input(value: &Value) -> Result<()> {
         }
     }
     Ok(())
+}
+
+fn recovery_execution_class(value: &Value) -> &'static str {
+    [
+        "authorization_denied",
+        "lease_expired",
+        "generation_fenced",
+        "operation_conflict",
+        "ownership_conflict",
+        "capability_unavailable",
+        "invalid_command",
+        "journal_unavailable",
+        "runtime_unavailable",
+    ]
+    .into_iter()
+    .find(|code| Some(*code) == value.as_str())
+    .unwrap_or("unknown")
+}
+#[cfg(test)]
+mod recovery_execution_diagnostic_tests {
+    use super::*;
+    #[test]
+    fn completion_codes_are_static_and_never_echo_unknown_material() {
+        for code in [
+            "authorization_denied",
+            "lease_expired",
+            "generation_fenced",
+            "operation_conflict",
+            "ownership_conflict",
+            "capability_unavailable",
+            "invalid_command",
+            "journal_unavailable",
+            "runtime_unavailable",
+        ] {
+            assert_eq!(recovery_execution_class(&json!(code)), code);
+        }
+        for value in [
+            Value::Null,
+            json!("secret-must-not-leave"),
+            json!("runtime_unavailable\nsecret"),
+            json!({"error":"secret"}),
+        ] {
+            assert_eq!(recovery_execution_class(&value), "unknown");
+        }
+    }
 }

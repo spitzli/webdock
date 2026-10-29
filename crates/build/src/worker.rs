@@ -9,6 +9,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 use std::{
     collections::BTreeMap,
     io::{Read, Write},
@@ -89,6 +90,37 @@ impl ControlClient {
             .await
             .map_err(|_| error("control_request_failed"))?;
         if !response.status().is_success() {
+            if response.status() == reqwest::StatusCode::BAD_REQUEST
+                && path
+                    .split('?')
+                    .next()
+                    .is_some_and(|p| p.ends_with("/archive"))
+            {
+                let mut bytes = Vec::new();
+                while let Some(chunk) = response
+                    .chunk()
+                    .await
+                    .map_err(|_| error("control_request_failed"))?
+                {
+                    if bytes.len() + chunk.len() > 1024 {
+                        return Err(error("control_request_failed"));
+                    }
+                    bytes.extend_from_slice(&chunk);
+                }
+                let body: Value = serde_json::from_slice(&bytes).unwrap_or(Value::Null);
+                if matches!(
+                    body["error"].as_str(),
+                    Some(
+                        "source_limit"
+                            | "archive_limit"
+                            | "archive_entry_limit"
+                            | "repository_archive_limit"
+                    )
+                ) {
+                    return Err(error("source_limit"));
+                }
+                return Err(error("control_request_failed"));
+            }
             return Err(error(match response.status().as_u16() {
                 401 | 403 => "worker_revoked",
                 409 => "lease_changed",
@@ -113,6 +145,7 @@ impl ControlClient {
     }
     pub async fn post(&self, endpoint: &str, body: &Value) -> Result<Value> {
         if ![
+            "capabilities",
             "claim",
             "complete",
             "release-claim",
@@ -291,6 +324,9 @@ pub struct Worker {
     scratch: PathBuf,
     outbox: Outbox,
     publishers: BTreeMap<String, (String, Arc<RegistryPublisher>)>,
+    remote_stores: BTreeMap<String, crate::remote::RemoteArtifacts>,
+    upload_binding: Option<String>,
+    evidence_signer: Option<Arc<ed25519_dalek::SigningKey>>,
 }
 impl Worker {
     pub fn new(
@@ -326,7 +362,15 @@ impl Worker {
             scratch,
             outbox,
             publishers: BTreeMap::new(),
+            remote_stores: BTreeMap::new(),
+            upload_binding: None,
+            evidence_signer: None,
         })
+    }
+    /// Operator-selected evidence key stays in the trusted worker, outside guest requests.
+    pub fn with_evidence_signer(mut self, key: ed25519_dalek::SigningKey) -> Self {
+        self.evidence_signer = Some(Arc::new(key));
+        self
     }
     pub fn with_publisher(
         mut self,
@@ -339,9 +383,68 @@ impl Worker {
             .insert(project, (repository, Arc::new(publisher)));
         Ok(self)
     }
+    pub fn with_artifact_store(
+        mut self,
+        store: crate::remote::RemoteArtifacts,
+        upload: bool,
+    ) -> Result<Self> {
+        let binding = store.binding().to_owned();
+        if self.remote_stores.contains_key(&binding) || (upload && self.upload_binding.is_some()) {
+            return Err(error("invalid_artifact_bindings"));
+        }
+        if upload {
+            self.upload_binding = Some(binding.clone());
+        }
+        self.remote_stores.insert(binding, store);
+        Ok(self)
+    }
+    async fn transfer_with_lease<T>(
+        &self,
+        kind: &str,
+        id: &str,
+        generation: i32,
+        transfer: impl std::future::Future<Output = Result<T>>,
+    ) -> Result<T> {
+        tokio::pin!(transfer);
+        let mut interval = tokio::time::interval(Duration::from_secs(2));
+        loop {
+            tokio::select! {
+                result = &mut transfer => {
+                    self.control.guard(kind, id, generation).await?;
+                    return result;
+                },
+                _ = interval.tick() => self.control.guard(kind, id, generation).await?,
+            }
+        }
+    }
     pub async fn build_once(&self) -> Result<bool> {
         self.outbox.flush(&self.control).await?;
-        let job = self.control.post("claim", &json!({})).await?;
+        let frontend = self
+            .image
+            .supported_recipes()
+            .contains(&crate::frontend::RECIPE);
+        if self.upload_binding.is_some() || self.evidence_signer.is_some() || frontend {
+            let capabilities = self.control.post("capabilities", &json!({})).await?;
+            if !capabilities["artifactFormats"]
+                .as_array()
+                .is_some_and(|formats| formats.contains(&json!(if frontend { 2 } else { 1 })))
+            {
+                return Err(error("artifact_format_unavailable"));
+            }
+            if frontend
+                && !capabilities["buildRecipes"]
+                    .as_array()
+                    .is_some_and(|recipes| recipes.contains(&json!(crate::frontend::RECIPE)))
+            {
+                return Err(error("recipe_unavailable"));
+            }
+        }
+        let claim = if frontend {
+            json!({"recipes": self.image.supported_recipes()})
+        } else {
+            json!({})
+        };
+        let job = self.control.post("claim", &claim).await?;
         if job.is_null() {
             return Ok(false);
         }
@@ -355,12 +458,28 @@ impl Worker {
         let request: GuestRequest =
             serde_json::from_value(job["request"].clone()).map_err(|_| error("invalid_job"))?;
         request.validate()?;
+        if !self
+            .image
+            .supported_recipes()
+            .contains(&request.recipe.as_str())
+        {
+            return Err(error("recipe_unavailable"));
+        }
         if deadline(&job)? - chrono::Utc::now().timestamp()
             < request.limits.duration_seconds as i64 + 60
         {
             return Err(error("lease_too_short"));
         }
-        let source = self.control.archive(&id, generation).await?;
+        let source = match self.control.archive(&id, generation).await {
+            Ok(source) => Arc::new(source),
+            Err(e) if matches!(e.code, "source_limit" | "control_response_limit") => {
+                self.control.guard_build(&id, generation).await?;
+                self.outbox.put("complete", json!({"buildID":id,"generation":generation,"status":"failed","failureCode":"BUILD_FAILED","logs":"Retained source preparation exceeded its finite limit."}))?;
+                self.outbox.flush(&self.control).await?;
+                return Ok(true);
+            }
+            Err(e) => return Err(e),
+        };
         self.control.guard_build(&id, generation).await?;
         let control = self.control.clone();
         let build = id.clone();
@@ -368,19 +487,72 @@ impl Worker {
         let scratch = self.scratch.clone();
         let runtime = tokio::runtime::Handle::current();
         let redactor = request.clone();
-        let built = tokio::task::spawn_blocking(move || {
-            image.execute(&request, &source, &scratch, || {
-                runtime.block_on(control.guard_build(&build, generation))
+        let evidence = crate::evidence::BuildEvidence {
+            customer_id: customer.clone(),
+            project_id: string(&job, "projectID")?.into(),
+            build_id: id.clone(),
+            generation,
+            source_commit: string(&job, "sourceSHA")?.into(),
+            recipe: request.recipe.clone(),
+            root_directory: request.root_directory.clone(),
+            machine: self.image.identity(),
+        };
+        let guest_source = source.clone();
+        let capture_evidence = self.upload_binding.is_some()
+            || self.evidence_signer.is_some()
+            || request.recipe == crate::frontend::RECIPE;
+        let evidence_signer = self.evidence_signer.clone();
+        let built =
+            tokio::task::spawn_blocking(move || -> Result<crate::execution::BuildOutput> {
+                let mut output = image.execute(&request, &guest_source, &scratch, || {
+                    runtime.block_on(control.guard_build(&build, generation))
+                })?;
+                if capture_evidence {
+                    runtime.block_on(control.guard_build(&build, generation))?;
+                    output.artifact = crate::evidence::assemble(
+                        &output.artifact,
+                        &guest_source,
+                        &evidence,
+                        evidence_signer.as_deref(),
+                    )
+                    .map_err(|mut error| {
+                        error.logs = format!(
+                            "Retained source/evidence preparation failed ({}).\n{}",
+                            error.code, output.logs
+                        );
+                        error
+                    })?;
+                    output.digest =
+                        format!("sha256:{}", hex::encode(Sha256::digest(&output.artifact)));
+                }
+                Ok(output)
             })
-        })
-        .await
-        .map_err(|_| error("build_execution_failed"))?;
-        let body = match built {
-            Ok(output) => {
-                let artifact = self
-                    .store
-                    .put(&customer, &id, generation, &output.artifact)?;
-                json!({"buildID":id,"generation":generation,"status":"succeeded","logs":output.logs,"artifact":{"kind":"oci","digest":artifact.digest(),"storageKey":artifact.storage_key(),"sizeBytes":artifact.size(),"imageDigest":artifact.image_digest()}})
+            .await
+            .map_err(|_| error("build_execution_failed"))?;
+        let prepared = built.and_then(|output| {
+            self.store
+                .put(&customer, &id, generation, &output.artifact)
+                .map(|artifact| (output, artifact))
+                .map_err(|mut e| {
+                    e.logs = format!("Local retained artifact preparation failed ({}).", e.code);
+                    e
+                })
+        });
+        let body = match prepared {
+            Ok((output, mut artifact)) => {
+                self.control.guard_build(&id, generation).await?;
+                if let Some(binding) = &self.upload_binding {
+                    let remote = &self.remote_stores[binding];
+                    artifact = self
+                        .transfer_with_lease(
+                            "builds",
+                            &id,
+                            generation,
+                            remote.persist(&self.store, &artifact),
+                        )
+                        .await?;
+                }
+                json!({"buildID":id,"generation":generation,"status":"succeeded","logs":output.logs,"artifact":{"kind":"oci","digest":artifact.digest(),"storageKey":artifact.storage_key(),"sizeBytes":artifact.size(),"imageDigest":artifact.image_digest(),"remoteStorage":artifact.remote_storage()}})
             }
             Err(e)
                 if matches!(
@@ -400,7 +572,19 @@ impl Worker {
     }
     pub async fn publish_once(&self) -> Result<bool> {
         self.outbox.flush(&self.control).await?;
-        let release = self.control.post("release-claim", &json!({})).await?;
+        let bindings: Vec<_> = self.remote_stores.keys().collect();
+        let projects: BTreeMap<_, _> = self
+            .publishers
+            .iter()
+            .map(|(project, (repository, _))| (project, repository))
+            .collect();
+        let release = self
+            .control
+            .post(
+                "release-claim",
+                &json!({"artifactStoreBindings":bindings,"publicationProjects":projects,"artifactFormats":crate::artifact::SUPPORTED_FORMATS}),
+            )
+            .await?;
         if release.is_null() {
             return Ok(false);
         }
@@ -422,15 +606,39 @@ impl Worker {
                 return Err(error("registry_scope_mismatch"));
             }
             let record = &release["artifact"];
-            let artifact = self.store.load(
-                string(record, "storageKey")?.into(),
-                string(record, "digest")?.into(),
-                record["sizeBytes"]
-                    .as_u64()
-                    .filter(|s| *s <= MAX_OUTPUT)
-                    .ok_or_else(|| error("invalid_artifact"))?,
-                string(record, "imageDigest")?.into(),
-            )?;
+            let size = record["sizeBytes"]
+                .as_u64()
+                .filter(|s| *s <= MAX_OUTPUT)
+                .ok_or_else(|| error("invalid_artifact"))?;
+            let key = string(record, "storageKey")?.to_owned();
+            let digest = string(record, "digest")?.to_owned();
+            let image_digest = string(record, "imageDigest")?.to_owned();
+            let artifact = if record["remoteStorage"].is_null() {
+                self.store.load(key, digest, size, image_digest)?
+            } else {
+                let remote: webdock_object_storage::ObjectReceipt =
+                    serde_json::from_value(record["remoteStorage"].clone())
+                        .map_err(|_| error("invalid_artifact"))?;
+                let backend = self
+                    .remote_stores
+                    .get(&remote.binding)
+                    .ok_or_else(|| error("artifact_backend_mismatch"))?;
+                let artifact = crate::artifact::StoredArtifact {
+                    key,
+                    digest,
+                    size,
+                    image_digest,
+                    remote: Some(remote),
+                };
+                self.control.guard_release(&id, generation).await?;
+                self.transfer_with_lease(
+                    "releases",
+                    &id,
+                    generation,
+                    backend.restore(&self.store, &artifact),
+                )
+                .await?
+            };
             struct Guard<'a> {
                 client: &'a ControlClient,
                 id: &'a str,
@@ -510,6 +718,8 @@ pub struct WorkerConfig {
     #[serde(rename = "imageSHA256")]
     image_sha256: String,
     #[serde(default)]
+    frontend_output: bool,
+    #[serde(default)]
     kernel: Option<PathBuf>,
     #[serde(default, rename = "kernelSHA256")]
     kernel_sha256: Option<String>,
@@ -529,6 +739,18 @@ pub struct WorkerConfig {
     registry_projects: BTreeMap<String, RegistryPolicy>,
     #[serde(default = "store_limit")]
     artifact_store_limit: u64,
+    #[serde(default)]
+    artifact_stores: Vec<ArtifactStorage>,
+    #[serde(default)]
+    artifact_upload_store: Option<String>,
+    #[serde(default)]
+    artifact_signing_key_file: Option<PathBuf>,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ArtifactStorage {
+    storage: webdock_object_storage::S3Config,
+    credential_file: PathBuf,
 }
 fn store_limit() -> u64 {
     20 * 1024 * 1024 * 1024
@@ -546,6 +768,15 @@ struct RegistrySecret {
     password: String,
 }
 fn private_file(path: &Path, limit: u64) -> Result<Vec<u8>> {
+    configured_file(path, limit, false)
+}
+fn secret_file(path: &Path, limit: u64) -> Result<Vec<u8>> {
+    configured_file(path, limit, true)
+}
+fn configured_file(path: &Path, limit: u64, secret: bool) -> Result<Vec<u8>> {
+    configured_file_as(path, limit, secret, 0)
+}
+fn configured_file_as(path: &Path, limit: u64, secret: bool, owner: u32) -> Result<Vec<u8>> {
     if !path.is_absolute() {
         return Err(error("untrusted_configuration"));
     }
@@ -556,8 +787,8 @@ fn private_file(path: &Path, limit: u64) -> Result<Vec<u8>> {
         .map_err(io)?;
     let meta = file.metadata().map_err(io)?;
     if !meta.is_file()
-        || meta.uid() != 0
-        || meta.mode() & 0o022 != 0
+        || meta.uid() != owner
+        || meta.mode() & if secret { 0o077 } else { 0o022 } != 0
         || meta.nlink() != 1
         || meta.len() > limit
     {
@@ -570,6 +801,7 @@ fn private_file(path: &Path, limit: u64) -> Result<Vec<u8>> {
     }
     Ok(bytes)
 }
+
 impl WorkerConfig {
     pub fn load(path: &Path) -> Result<Self> {
         serde_json::from_slice(&private_file(path, 65536)?)
@@ -590,7 +822,7 @@ impl WorkerConfig {
         {
             return Err(error("worker_evidence_required"));
         }
-        let credential = String::from_utf8(private_file(&self.credential_file, 256)?)
+        let credential = String::from_utf8(secret_file(&self.credential_file, 256)?)
             .map_err(|_| error("invalid_credential"))?
             .trim()
             .to_owned();
@@ -600,6 +832,9 @@ impl WorkerConfig {
             return Err(error("untrusted_image"));
         }
         let mut image = VmImage::new(self.image, self.image_sha256)?;
+        if self.frontend_output {
+            image = image.with_frontend_output();
+        }
         match (
             self.kernel,
             self.kernel_sha256,
@@ -626,6 +861,43 @@ impl WorkerConfig {
         let store = ArtifactStore::open(self.artifact_root, self.artifact_store_limit)?;
         let outbox = Outbox::open(self.state_root)?;
         let mut worker = Worker::new(control, image, store, self.scratch_root, outbox)?;
+        if let Some(path) = self.artifact_signing_key_file {
+            let key = String::from_utf8(secret_file(&path, 256)?)
+                .map_err(|_| error("invalid_artifact_signing_key"))?;
+            let bytes: [u8; 32] = hex::decode(key.trim())
+                .map_err(|_| error("invalid_artifact_signing_key"))?
+                .try_into()
+                .map_err(|_| error("invalid_artifact_signing_key"))?;
+            worker = worker.with_evidence_signer(ed25519_dalek::SigningKey::from_bytes(&bytes));
+        }
+        if self.artifact_stores.len() > 16 {
+            return Err(error("invalid_artifact_bindings"));
+        }
+        let mut ids = std::collections::BTreeSet::new();
+        for artifact_store in self.artifact_stores {
+            if !ids.insert(artifact_store.storage.id.clone()) {
+                return Err(error("invalid_artifact_bindings"));
+            }
+            let meta = artifact_store
+                .credential_file
+                .symlink_metadata()
+                .map_err(io)?;
+            if meta.mode() & 0o077 != 0 {
+                return Err(error("untrusted_configuration"));
+            }
+            let credentials =
+                serde_json::from_slice(&secret_file(&artifact_store.credential_file, 8192)?)
+                    .map_err(|_| error("invalid_artifact_credentials"))?;
+            let upload =
+                self.artifact_upload_store.as_deref() == Some(artifact_store.storage.id.as_str());
+            let store = webdock_object_storage::Store::s3(artifact_store.storage, credentials)
+                .map_err(|_| error("invalid_artifact_configuration"))?;
+            worker =
+                worker.with_artifact_store(crate::remote::RemoteArtifacts::new(store), upload)?;
+        }
+        if self.artifact_upload_store.is_some() && worker.upload_binding.is_none() {
+            return Err(error("invalid_artifact_bindings"));
+        }
         for (project, policy) in self.registry_projects {
             crate::contracts::id(&project)?;
             let prefix = policy
@@ -640,7 +912,7 @@ impl WorkerConfig {
                 return Err(error("invalid_registry_policy"));
             }
             let auth: RegistrySecret =
-                serde_json::from_slice(&private_file(&policy.credential_file, 16384)?)
+                serde_json::from_slice(&secret_file(&policy.credential_file, 16384)?)
                     .map_err(|_| error("invalid_registry_credential"))?;
             if auth.username.is_empty() || auth.password.is_empty() {
                 return Err(error("invalid_registry_credential"));
@@ -652,5 +924,254 @@ impl WorkerConfig {
             worker = worker.with_publisher(project, policy.repository, publisher)?;
         }
         Ok(worker)
+    }
+}
+
+#[cfg(all(test, feature = "local-registry-test"))]
+mod transfer_tests {
+    use super::*;
+    use sha2::{Digest, Sha256};
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+
+    #[tokio::test]
+    async fn evidence_worker_requires_server_capability_before_claiming_a_build() {
+        use axum::{Json, Router, routing::post};
+        let claims = Arc::new(AtomicUsize::new(0));
+        let count = claims.clone();
+        let router = Router::new()
+            .route(
+                "/capabilities",
+                post(|| async { Json(json!({"artifactFormats":[0]})) }),
+            )
+            .route(
+                "/claim",
+                post(move || {
+                    let count = count.clone();
+                    async move {
+                        count.fetch_add(1, Ordering::SeqCst);
+                        Json(Value::Null)
+                    }
+                }),
+            );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+        let local = tempfile::tempdir().unwrap();
+        let scratch = tempfile::tempdir().unwrap();
+        let state = tempfile::tempdir().unwrap();
+        for directory in [&local, &scratch, &state] {
+            std::fs::set_permissions(directory.path(), std::fs::Permissions::from_mode(0o700))
+                .unwrap();
+        }
+        let image = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(image.path(), b"must not execute").unwrap();
+        let hash = hex::encode(Sha256::digest(b"must not execute"));
+        let worker = Worker::new(
+            ControlClient::loopback_test(&format!("http://{address}"), "a".repeat(43)).unwrap(),
+            VmImage::new(image.path().into(), hash).unwrap(),
+            ArtifactStore::open(local.path().into(), MAX_OUTPUT).unwrap(),
+            scratch.path().into(),
+            Outbox::open(state.path().into()).unwrap(),
+        )
+        .unwrap()
+        .with_evidence_signer(ed25519_dalek::SigningKey::from_bytes(&[1; 32]));
+        assert_eq!(
+            worker.build_once().await.unwrap_err().code,
+            "artifact_format_unavailable"
+        );
+        assert_eq!(claims.load(Ordering::SeqCst), 0);
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn pinned_guest_recipe_advertisement_and_source_limit_failure_are_durable() {
+        use axum::{
+            Json, Router,
+            routing::{get, post},
+        };
+        let claims = Arc::new(std::sync::Mutex::new(Vec::<Value>::new()));
+        let completions = Arc::new(std::sync::Mutex::new(Vec::<Value>::new()));
+        let seen = claims.clone();
+        let completed = completions.clone();
+        let router = Router::new()
+            .route("/capabilities", post(|| async { Json(json!({"artifactFormats":[0,1,2],"buildRecipes":["dockerfile","dockerfile-frontend"]})) }))
+            .route("/claim", post(move |Json(body): Json<Value>| {
+                seen.lock().unwrap().push(body);
+                async { Json(json!({"buildID":"100","customerID":"200","projectID":"300","sourceSHA":"a".repeat(40),"generation":1,"leaseUntil":(chrono::Utc::now()+chrono::Duration::minutes(27)).to_rfc3339(),"request":{"recipe":"dockerfile","rootDirectory":".","buildEnvironment":{},"limits":{"cpu":2,"memoryMiB":2048,"diskBytes":24000000000_u64,"durationSeconds":180}}})) }
+            }))
+            .route("/builds/100/archive", get(|| async { (axum::http::StatusCode::BAD_REQUEST, Json(json!({"error":"archive_limit"}))) }))
+            .route("/builds/100/lease", get(|| async { Json(json!({"active":true})) }))
+            .route("/complete", post(move |Json(body): Json<Value>| {
+                completed.lock().unwrap().push(body);
+                async { Json(json!({"status":"failed"})) }
+            }));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+        for frontend in [false, true] {
+            let local = tempfile::tempdir().unwrap();
+            let scratch = tempfile::tempdir().unwrap();
+            let state = tempfile::tempdir().unwrap();
+            for dir in [&local, &scratch, &state] {
+                std::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(0o700))
+                    .unwrap();
+            }
+            let file = tempfile::NamedTempFile::new().unwrap();
+            std::fs::write(file.path(), b"never execute").unwrap();
+            let mut image = VmImage::new(
+                file.path().into(),
+                hex::encode(Sha256::digest(b"never execute")),
+            )
+            .unwrap();
+            if frontend {
+                image = image.with_frontend_output();
+            }
+            let worker = Worker::new(
+                ControlClient::loopback_test(&format!("http://{address}"), "a".repeat(43)).unwrap(),
+                image,
+                ArtifactStore::open(local.path().into(), MAX_OUTPUT).unwrap(),
+                scratch.path().into(),
+                Outbox::open(state.path().into()).unwrap(),
+            )
+            .unwrap();
+            assert!(worker.build_once().await.unwrap());
+            assert!(!worker.outbox.has_pending());
+            assert!(scratch.path().read_dir().unwrap().next().is_none());
+        }
+        assert_eq!(
+            *claims.lock().unwrap(),
+            vec![
+                json!({}),
+                json!({"recipes":["dockerfile","dockerfile-frontend"]})
+            ]
+        );
+        let completed = completions.lock().unwrap();
+        assert_eq!(completed.len(), 2);
+        for body in completed.iter() {
+            assert_eq!(body["status"], "failed");
+            assert_eq!(body["failureCode"], "BUILD_FAILED");
+            assert!(body.get("artifact").is_none());
+        }
+        server.abort();
+    }
+
+    struct Cancelled(Arc<AtomicBool>);
+    impl Drop for Cancelled {
+        fn drop(&mut self) {
+            self.0.store(true, Ordering::SeqCst);
+        }
+    }
+
+    #[tokio::test]
+    async fn revocation_during_a_transfer_cancels_it_without_a_completion() {
+        let revoked = Arc::new(AtomicBool::new(false));
+        let state = revoked.clone();
+        let allowed = Arc::new(AtomicUsize::new(0));
+        let checks = allowed.clone();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let router = axum::Router::new().route(
+            "/builds/100/lease",
+            axum::routing::get(move || {
+                let state = state.clone();
+                let checks = checks.clone();
+                async move {
+                    if state.load(Ordering::SeqCst) {
+                        (axum::http::StatusCode::FORBIDDEN, axum::Json(json!({})))
+                    } else {
+                        checks.fetch_add(1, Ordering::SeqCst);
+                        (
+                            axum::http::StatusCode::OK,
+                            axum::Json(json!({"active":true})),
+                        )
+                    }
+                }
+            }),
+        );
+        let server = tokio::spawn(async move {
+            axum::serve(listener, router).await.unwrap();
+        });
+        let image = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(image.path(), b"not executed by this transport test").unwrap();
+        let hash = hex::encode(Sha256::digest(std::fs::read(image.path()).unwrap()));
+        let local = tempfile::tempdir().unwrap();
+        let scratch = tempfile::tempdir().unwrap();
+        let state = tempfile::tempdir().unwrap();
+        for directory in [&local, &scratch, &state] {
+            std::fs::set_permissions(directory.path(), std::fs::Permissions::from_mode(0o700))
+                .unwrap();
+        }
+        let worker = Worker::new(
+            ControlClient::loopback_test(&format!("http://{address}"), "a".repeat(43)).unwrap(),
+            VmImage::new(image.path().into(), hash).unwrap(),
+            ArtifactStore::open(local.path().into(), MAX_OUTPUT).unwrap(),
+            scratch.path().into(),
+            Outbox::open(state.path().into()).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            worker
+                .transfer_with_lease("builds", "100", 1, async { Ok(7) })
+                .await
+                .unwrap(),
+            7
+        );
+        allowed.store(0, Ordering::SeqCst);
+        let (started, received) = tokio::sync::oneshot::channel();
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let flag = cancelled.clone();
+        let transfer = async {
+            let _cancelled = Cancelled(flag);
+            started.send(()).unwrap();
+            std::future::pending::<Result<()>>().await
+        };
+        let revoke = tokio::spawn(async move {
+            received.await.unwrap();
+            while allowed.load(Ordering::SeqCst) == 0 {
+                tokio::task::yield_now().await;
+            }
+            tokio::time::sleep(Duration::from_millis(50)).await;
+            revoked.store(true, Ordering::SeqCst);
+        });
+        let result = tokio::time::timeout(
+            Duration::from_secs(5),
+            worker.transfer_with_lease("builds", "100", 1, transfer),
+        )
+        .await
+        .unwrap();
+        assert_eq!(result.unwrap_err().code, "worker_revoked");
+        assert!(cancelled.load(Ordering::SeqCst));
+        assert!(!worker.outbox.has_pending());
+        revoke.await.unwrap();
+        server.abort();
+    }
+}
+
+#[cfg(test)]
+mod file_tests {
+    use super::*;
+    #[test]
+    fn secret_configuration_rejects_public_files_symlinks_and_hardlinks() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("credentials");
+        std::fs::write(&path, b"private fixture").unwrap();
+        let owner = path.metadata().unwrap().uid();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
+        assert!(
+            configured_file_as(&path, 256, false, owner).is_ok(),
+            "non-secret readonly operator configuration remains supported"
+        );
+        assert!(configured_file_as(&path, 256, true, owner).is_err());
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        assert_eq!(
+            configured_file_as(&path, 256, true, owner).unwrap(),
+            b"private fixture"
+        );
+        assert!(configured_file_as(&path, 2, true, owner).is_err());
+        let link = directory.path().join("link");
+        std::os::unix::fs::symlink(&path, &link).unwrap();
+        assert!(configured_file_as(&link, 256, true, owner).is_err());
+        std::fs::hard_link(&path, directory.path().join("hardlink")).unwrap();
+        assert!(configured_file_as(&path, 256, true, owner).is_err());
     }
 }

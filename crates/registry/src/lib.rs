@@ -62,6 +62,16 @@ impl From<sea_orm::DbErr> for RegistryError {
                 "The customer's plan allows no more projects. Raise its project limit first.",
             );
         }
+        if let sea_orm::DbErr::Query(sea_orm::RuntimeErr::SqlxError(e))
+        | sea_orm::DbErr::Exec(sea_orm::RuntimeErr::SqlxError(e)) = &error
+            && e.as_database_error()
+                .and_then(|e| e.code())
+                .is_some_and(|code| code == "WD051")
+        {
+            return Self::Conflict(
+                "Suspend PostgreSQL recurrence, WAL and retention and wait for native observation before archival.",
+            );
+        }
         Self::Database(error)
     }
 }

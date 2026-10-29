@@ -47,6 +47,8 @@ pub struct AdmittedInvocation {
     pub token: String,
     pub configuration: Value,
     pub input: Value,
+    /// Already authorized retained public result; callers must return it without runtime dispatch.
+    pub replay_result: Option<Value>,
 }
 pub struct InvocationHandle {
     pub(crate) peer: PeerIdentity,
@@ -83,6 +85,7 @@ pub trait AppsAdapter: Send + Sync {
 pub struct HostService {
     installation: Option<crate::installation::InstallationConfig>,
     native_mail_control: bool,
+    storage_gateway: Option<Arc<crate::storage::StorageGateway>>,
     pub(crate) db: DatabaseConnection,
     worker: DatabaseConnection,
     signer: RlsSigner,
@@ -160,6 +163,7 @@ impl HostService {
             session_authority: None,
             installation: None,
             native_mail_control: false,
+            storage_gateway: None,
         })
     }
     pub async fn with_session_authority(
@@ -260,6 +264,9 @@ impl HostService {
         if self.native_mail_control && metadata.manifest.id() == "mail" {
             services.push(("native-mail-control", 1));
         }
+        if self.storage_gateway.is_some() {
+            services.push(("storage", 1));
+        }
         if self.apps.is_some() {
             services.push(("apps", 1));
         }
@@ -300,6 +307,8 @@ impl HostService {
                 "plugin.jobs.cancel",
             ]
             .contains(&capability)
+                && !(self.storage_gateway.is_some()
+                    && ["plugin.storage.read", "plugin.storage.write"].contains(&capability))
                 && !(self.apps.is_some()
                     && [
                         "plugin.apps.read",
@@ -494,7 +503,6 @@ impl HostService {
             resource.as_deref(),
         )
         .await?;
-        self_service::room(&tx, action, &input.plugin_id, &input.project_id).await?;
         validate_value(action.get("input"), &input.input)?;
         let mut configuration = metadata.configuration["configuration"]
             .as_object()
@@ -546,8 +554,10 @@ impl HostService {
             exp: now + 60,
         };
         let snapshot = Self::admission_snapshot(&metadata, &binding, &configuration)?;
-        let stored_scope = json!({"kind":"session","authProvider":"better-auth","subject":actor.user_id,"sessionID":actor.session_id,"nativeAdmission":snapshot,"customerScope":actor.customer_scope(),"authority":authority,"operator":operator,"resourceID":resource});
+        let stored_scope = json!({"kind":"session","authProvider":"better-auth","subject":actor.user_id,"sessionID":actor.session_id,"nativeAdmission":snapshot,"customerScope":actor.customer_scope(),"authority":authority,"operator":operator,"resourceID":resource,"resourceAction":{"effect":action["resource"],"offering":action["offering"]}});
         tx.execute_raw(Statement::from_sql_and_values(DbBackend::Postgres,"INSERT INTO webdock_auth.plugin_invocation(id,plugin_id,customer_id,project_id,runtime_generation,grant_revision,kind,name,intent,actor_id,session_id,operation_id,capabilities,created_at,expires_at,session_context,request_hash) VALUES($1::uuid,$2,$3,$4,$5,$6,'action',$7,$8,$9,$10,$11,$12,to_timestamp($13)-interval '60 seconds',to_timestamp($13),$14,$15)",[claims.id.clone().into(),input.plugin_id.into(),customer.into(),input.project_id.clone().into(),(claims.generation as i64).into(),integer(&metadata.grant,"revision")?.into(),claims.action.clone().into(),string(action,"intent")?.into(),actor.user_id.clone().into(),actor.session_id.clone().into(),operation.into(),action["capabilities"].clone().into(),claims.exp.into(),stored_scope.into(),request_hash.into()])).await.map_err(db_error)?;
+        let replay_result =
+            self_service::reserve(&tx, action, &claims.plugin_id, &claims.id).await?;
         Self::project(&session, &input.project_id, write).await?;
         if let (Some(auth_tx), Some(authority)) = (&auth_tx, authority) {
             self.session_authority
@@ -571,6 +581,7 @@ impl HostService {
             token,
             configuration,
             input: input.input,
+            replay_result,
         })
     }
     pub async fn authenticate(&self, peer: PeerIdentity, token: &str) -> Result<InvocationHandle> {
@@ -616,6 +627,7 @@ impl HostService {
         let actor = string(&row, "actor_id")?.to_owned();
         let session = string(&row, "session_id")?.to_owned();
         if claims.job.is_some()
+            || row["session_context"].get("storageTransfer").is_some()
             || row["kind"] != "action"
             || row["plugin_id"] != claims.plugin_id
             || row["project_id"] != claims.project_id
@@ -1080,6 +1092,8 @@ pub(crate) async fn fence(tx: &DatabaseTransaction, exclusive: bool) -> Result<(
 }
 #[path = "admin.rs"]
 mod admin;
+#[path = "builtins.rs"]
+pub mod builtins;
 #[path = "controller.rs"]
 mod controller;
 #[path = "installation.rs"]
@@ -1424,3 +1438,9 @@ mod mail_input_budget_tests {
         assert_eq!(invocation_input_limit("other", "mail.send", false), 32768);
     }
 }
+
+#[path = "storage_admission.rs"]
+pub(crate) mod storage_admission;
+
+#[path = "exports.rs"]
+pub mod exports;

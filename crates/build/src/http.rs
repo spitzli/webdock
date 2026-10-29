@@ -19,6 +19,8 @@ struct Artifact {
     storage_key: String,
     size_bytes: u64,
     image_digest: String,
+    #[serde(default)]
+    remote_storage: Option<webdock_object_storage::ObjectReceipt>,
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -39,6 +41,28 @@ struct Release {
     #[serde(rename = "releaseID")]
     release_id: String,
     generation: i32,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ReleaseClaim {
+    #[serde(default)]
+    artifact_store_bindings: Vec<String>,
+    #[serde(default)]
+    publication_projects: Option<std::collections::BTreeMap<String, String>>,
+    #[serde(default = "legacy_formats")]
+    artifact_formats: Vec<u8>,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct BuildClaim {
+    #[serde(default = "legacy_recipes")]
+    recipes: Vec<String>,
+}
+fn legacy_recipes() -> Vec<String> {
+    vec!["dockerfile".into()]
+}
+fn legacy_formats() -> Vec<u8> {
+    vec![0]
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -178,12 +202,16 @@ async fn dispatch(service: &BuildService, request: Request) -> Result<Response> 
         .map_err(|_| error("request_limit"))?;
     let input: Value = serde_json::from_slice(&bytes).map_err(|_| error("invalid_json"))?;
     let output = match endpoint.as_str() {
-        "claim" => {
+        "capabilities" => {
             if input != json!({}) {
                 return Err(error("invalid_command"));
             }
+            json!({"artifactFormats":crate::artifact::SUPPORTED_FORMATS,"buildRecipes":["dockerfile",crate::frontend::RECIPE]})
+        }
+        "claim" => {
+            let claim: BuildClaim = parse(input)?;
             service
-                .claim_build(&worker)
+                .claim_build_compatible(&worker, &claim.recipes)
                 .await?
                 .map(|mut job| {
                     let request = job["request"].clone();
@@ -226,17 +254,16 @@ async fn dispatch(service: &BuildService, request: Request) -> Result<Response> 
                     for id in &p[..3] {
                         crate::contracts::id(id)?;
                     }
-                    if p[1] != value.build_id
-                        || p[2] != value.generation.to_string()
-                        || p[3] != format!("{}.tar", &a.digest[7..])
-                    {
+                    if p[1] != value.build_id || p[2] != value.generation.to_string() {
                         return Err(error("artifact_scope_mismatch"));
                     }
+                    crate::artifact::storage_format(&a.storage_key, &a.digest)?;
                     Ok(StoredArtifact {
                         key: a.storage_key,
                         digest: a.digest,
                         size: a.size_bytes,
                         image_digest: a.image_digest,
+                        remote: a.remote_storage,
                     })
                 })
                 .transpose()?;
@@ -260,10 +287,19 @@ async fn dispatch(service: &BuildService, request: Request) -> Result<Response> 
                 .await?
         }
         "release-claim" => {
-            if input != json!({}) {
-                return Err(error("invalid_command"));
+            let claim: ReleaseClaim = parse(input)?;
+            if claim.publication_projects.is_none() && !claim.artifact_store_bindings.is_empty() {
+                return Err(error("invalid_publication_projects"));
             }
-            service.claim_release(&worker).await?.map(|r|json!({"releaseID":r["id"],"customerID":r["customer_id"],"projectID":r["project_id"],"buildID":r["build_id"],"generation":r["generation"],"leaseUntil":r["lease_until"],"artifact":{"kind":"oci","digest":r["digest"],"storageKey":r["storage_key"],"sizeBytes":r["size_bytes"],"imageDigest":r["image_digest"]}})).unwrap_or(Value::Null)
+            let release = service
+                .claim_release_compatible(
+                    &worker,
+                    &claim.artifact_store_bindings,
+                    claim.publication_projects.as_ref(),
+                    &claim.artifact_formats,
+                )
+                .await?;
+            release.map(|r|json!({"releaseID":r["id"],"customerID":r["customer_id"],"projectID":r["project_id"],"buildID":r["build_id"],"generation":r["generation"],"leaseUntil":r["lease_until"],"artifact":{"kind":"oci","digest":r["digest"],"storageKey":r["storage_key"],"sizeBytes":r["size_bytes"],"imageDigest":r["image_digest"],"remoteStorage":r["remote_storage"]}})).unwrap_or(Value::Null)
         }
         "release-prepare" => {
             let r: Release = parse(input)?;
@@ -319,4 +355,22 @@ async fn dispatch(service: &BuildService, request: Request) -> Result<Response> 
         _ => return Err(error("endpoint_unavailable")),
     };
     Ok(response(output, 200))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn old_wire_claims_keep_only_legacy_capabilities() {
+        let build: BuildClaim = parse(json!({})).unwrap();
+        assert_eq!(build.recipes, ["dockerfile"]);
+        let release: ReleaseClaim = parse(json!({})).unwrap();
+        assert_eq!(release.artifact_formats, [0]);
+        let build: BuildClaim = parse(json!({"recipes":["dockerfile-frontend"]})).unwrap();
+        assert_eq!(build.recipes, ["dockerfile-frontend"]);
+        let release: ReleaseClaim = parse(json!({"artifactFormats":[0,1,2]})).unwrap();
+        assert_eq!(release.artifact_formats, [0, 1, 2]);
+        assert!(parse::<BuildClaim>(json!({"recipe":"dockerfile-frontend"})).is_err());
+        assert!(parse::<ReleaseClaim>(json!({"artifactFormat":2})).is_err());
+    }
 }

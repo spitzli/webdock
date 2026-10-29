@@ -32,6 +32,10 @@ impl McpAuthority {
     pub fn session_id(&self) -> &str {
         &self.session_id
     }
+    /// Original Unix expiry; use only with verified authority and a retained guard.
+    pub fn expires_at(&self) -> i64 {
+        self.expires_at
+    }
 }
 /// Request-owned authentication transaction; retain until the domain commits.
 /// Never cache this guard: it holds row locks and a database connection.
@@ -167,9 +171,12 @@ impl OAuthService {
         let row = tx
             .query_one_raw(Statement::from_sql_and_values(
                 DbBackend::Postgres,
-                "SELECT * FROM webdock_auth.\"oauthAccessToken\" WHERE token=$1 FOR SHARE",
+                "SELECT * FROM webdock_auth.\"oauthAccessToken\" WHERE token=$1",
                 [hash.clone().into()],
             ))
+            .await?
+            .ok_or(Error::AccessDenied)?;
+        let row = Self::lock_access_record(&tx, row)
             .await?
             .ok_or(Error::AccessDenied)?;
         let authority = McpAuthority {
@@ -234,7 +241,20 @@ impl OAuthService {
             return Err(Error::AccessDenied);
         }
         let _caller = load_client(tx, &authority.caller_id).await?;
-        let row=tx.query_one_raw(Statement::from_sql_and_values(DbBackend::Postgres,"SELECT * FROM webdock_auth.\"oauthAccessToken\" WHERE id=$1 AND token=$2 FOR SHARE",[authority.access_id.clone().into(),authority.token_hash.clone().into()])).await?.ok_or(Error::AccessDenied)?;
+        let row = tx
+            .query_one_raw(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "SELECT * FROM webdock_auth.\"oauthAccessToken\" WHERE id=$1 AND token=$2",
+                [
+                    authority.access_id.clone().into(),
+                    authority.token_hash.clone().into(),
+                ],
+            ))
+            .await?
+            .ok_or(Error::AccessDenied)?;
+        let row = Self::lock_access_record(tx, row)
+            .await?
+            .ok_or(Error::AccessDenied)?;
         if record_hash(&row)? != authority.record_hash {
             return Err(Error::AccessDenied);
         }

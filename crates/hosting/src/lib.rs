@@ -15,8 +15,10 @@ pub(crate) fn error(status: u16, message: &str) -> HostingError {
 mod entities;
 mod environment;
 mod read_view;
+mod recovery_signing;
 mod service;
 pub use read_view::{LogOutput, ReadOutput, ReadStatus, ReadView};
+pub use recovery_signing::RecoverySigner;
 pub use service::{AgentIdentity, HostingCeiling, HostingService, canonical_command};
 
 pub use service::{DeliveryCommand, DeliveryDisposition};

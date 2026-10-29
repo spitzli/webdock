@@ -28,6 +28,7 @@ pub type ReceiptOutbox = MessageOutbox<Receipt, { 128 * 1024 }>;
 pub type MailConfigurationOutbox =
     MessageOutbox<webdock_agent_protocol::MailConfigurationDelivery, { 1024 * 1024 }>;
 pub type MailOutbox = MessageOutbox<webdock_agent_protocol::MailDelivery, { 64 * 1024 }>;
+pub type RecoveryOutbox = MessageOutbox<webdock_agent_protocol::RecoveryDelivery, { 512 * 1024 }>;
 pub type DatabaseOutbox = MessageOutbox<
     webdock_agent_protocol::DatabaseDelivery,
     { webdock_agent_protocol::MAX_MESSAGE_BYTES },

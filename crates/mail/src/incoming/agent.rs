@@ -110,6 +110,7 @@ impl IncomingAgent {
         })
     }
     async fn scope(&self, tx: &DatabaseTransaction, agent: &AgentIdentity) -> Result<()> {
+        crate::recovery::ensure_open(tx).await?;
         let row = one(
             tx,
             "SELECT webdock_rls.worker(ARRAY['agent']::text[],$1) AS allowed",

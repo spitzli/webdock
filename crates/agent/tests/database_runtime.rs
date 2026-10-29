@@ -22,7 +22,7 @@ fn native_database_objects_preserve_cnpg_names_resources_roles_and_storage() {
     assert_eq!(
         cluster["spec"]["postgresql"]["pg_hba"],
         serde_json::json!([
-            "hostssl db_123 wd_migrate_123,wd_app_123 all scram-sha-256",
+            "hostssl db_123 wd_migrate_123,wd_app_123,wd_export_123 all scram-sha-256",
             "host all all all reject"
         ])
     );
@@ -62,7 +62,7 @@ fn platform_database_maintenance_and_storage_routes_are_operator_bound() {
     let cluster = objects.iter().find(|o| o["kind"] == "Cluster").unwrap();
     assert_eq!(
         cluster["spec"]["postgresql"]["pg_hba"][0],
-        "hostssl db_123 wd_migrate_123,wd_app_123,webdock_runtime all scram-sha-256"
+        "hostssl db_123 wd_migrate_123,wd_app_123,wd_export_123,webdock_runtime all scram-sha-256"
     );
     job.action = DatabaseAction::RotateCredentials;
     assert!(config.admit(&job).is_err());
@@ -107,6 +107,7 @@ async fn database_execution_denies_before_touching_an_unreachable_cluster() {
                 migration_password: "b".repeat(43),
             }),
             transfer_password: None,
+            object_store: None,
         },
     };
     assert!(matches!(
@@ -315,7 +316,7 @@ async fn disposable_database_apply_preserves_physical_uid_and_checkpoint_fence()
     let task_client = client.clone();
     let task_root = root.clone();
     let test=tokio::spawn(async move {
-        let mut claim=DatabaseClaim{spec,lease:DatabaseLease{operation_id:"101".into(),generation:1,lease_token:"a".repeat(64)},lease_until:chrono::Utc::now()+chrono::Duration::seconds(300),material:DatabaseMaterial{credentials:Some(DatabaseCredentials{application_password:"a".repeat(43),migration_password:"b".repeat(43)}),transfer_password:None}};
+        let mut claim=DatabaseClaim{spec,lease:DatabaseLease{operation_id:"101".into(),generation:1,lease_token:"a".repeat(64)},lease_until:chrono::Utc::now()+chrono::Duration::seconds(300),material:DatabaseMaterial{credentials:Some(DatabaseCredentials{application_password:"a".repeat(43),migration_password:"b".repeat(43)}),transfer_password:None,object_store: None,}};
         assert!(matches!(executor.execute(&claim,authority.as_ref()).await.unwrap(),DatabaseStep::Pending));
         let uid=authority.checkpoints.lock().await[0].cnpg_uid.clone();assert_eq!(authority.checkpoints.lock().await[0].phase,DatabaseCheckpointPhase::Applied);
         let resource=ApiResource::from_gvk(&GroupVersionKind::gvk("postgresql.cnpg.io","v1","Cluster"));let clusters:Api<DynamicObject>=Api::namespaced_with(task_client,&claim.spec.backend.namespace,&resource);
@@ -453,6 +454,7 @@ fn database_dispatch_rejects_tampering_expiry_and_enrollment_mismatch() {
                 migration_password: "b".repeat(43),
             }),
             transfer_password: None,
+            object_store: None,
         })
         .unwrap(),
     };
@@ -467,4 +469,109 @@ fn database_dispatch_rejects_tampering_expiry_and_enrollment_mismatch() {
     let mut bad = wire.clone();
     bad.material_json = vec![b' '; 65537];
     assert!(database_claim(&bad, 1).is_err());
+}
+
+#[test]
+fn backup_manifest_requires_operator_pins_and_keeps_retention_off_on_revoke() {
+    let mut value = serde_json::to_value(job()).unwrap();
+    value["action"] = serde_json::json!("configureBackup");
+    value["backend"]["cnpgUID"] = serde_json::json!("fixture-source-uid");
+    value["backup"] = serde_json::json!({"id":"1001","installationID":"456","customerID":"1002","projectID":"321","sourceCnpgUID":"fixture-source-uid","revision":2,"resourceRevision":1,"destination":{"id":"1003","endpointURL":"https://s3.example.invalid","region":"eu-central-1","bucket":"fixture-backup","archivePath":"postgresql/1002/321/456/1001","serverName":"wd-456-1001","credentialID":"1004","credentialRevision":1,"recoveryCredentialID":"1005","recoveryCredentialRevision":1,"keyRecoveryID":"1006"},"schedule":"0 0 1 * * *","suspended":true,"walEnabled":true,"retentionDays":30,"retentionDelete":false,"sidecar":{"cpuMillicores":100,"memoryBytes":134217728,"ephemeralBytes":268435456},"recoveryJob":{"cpuMillicores":500,"memoryBytes":536870912,"ephemeralBytes":536870912}});
+    let job: DatabaseJobSpec = serde_json::from_value(value).unwrap();
+    let material = DatabaseObjectStoreMaterial {
+        access_key_id: "fixture-write".into(),
+        secret_access_key: "private-fixture-key-only".into(),
+        read_only: false,
+    };
+    assert!(webdock_agent::database::backup_manifests(&job, &config(), &material).is_err());
+    let mut c = serde_json::to_value(config()).unwrap();
+    c["backup"] = serde_json::json!({"pluginImage":format!("localhost/fixture-plugin@sha256:{}","a".repeat(64)),"sidecarImage":format!("localhost/fixture-sidecar@sha256:{}","b".repeat(64)),"endpoints":["https://s3.example.invalid"],"egressCIDRs":["192.0.2.10/32"]});
+    let endpoint_ca = rcgen::generate_simple_self_signed(vec!["s3.example.invalid".into()])
+        .unwrap()
+        .cert
+        .pem();
+    c["backup"]["endpointCACertificate"] = serde_json::json!(endpoint_ca);
+    let c: DatabaseRuntimeConfig = serde_json::from_value(c).unwrap();
+    let mut private_trust = c.clone();
+    private_trust
+        .backup
+        .as_mut()
+        .unwrap()
+        .endpoint_ca_certificate = Some(format!(
+        "{}{}",
+        endpoint_ca,
+        rcgen::KeyPair::generate().unwrap().serialize_pem()
+    ));
+    assert!(
+        private_trust.validate().is_err(),
+        "public endpoint CA configuration must reject private key material"
+    );
+    let objects = webdock_agent::database::backup_manifests(&job, &c, &material).unwrap();
+    let store = objects.iter().find(|o| o["kind"] == "ObjectStore").unwrap();
+    assert!(store["spec"]["configuration"].get("serverName").is_none());
+    assert!(store["spec"]["retentionPolicy"].is_null());
+    assert_eq!(
+        store["spec"]["configuration"]["endpointCA"],
+        serde_json::json!({"name":"s3-ca-1003","key":"ca.crt"})
+    );
+    let ca = objects
+        .iter()
+        .find(|o| o["metadata"]["name"] == "s3-ca-1003")
+        .unwrap();
+    use base64::Engine;
+    assert_eq!(
+        base64::engine::general_purpose::STANDARD
+            .decode(ca["data"]["ca.crt"].as_str().unwrap())
+            .unwrap(),
+        endpoint_ca.as_bytes()
+    );
+    let schedule = objects
+        .iter()
+        .find(|o| o["kind"] == "ScheduledBackup")
+        .unwrap();
+    assert_eq!(schedule["spec"]["suspend"], true);
+    let cluster = objects.iter().find(|o| o["kind"] == "Cluster").unwrap();
+    assert_eq!(
+        cluster["spec"]["plugins"][0]["parameters"]["serverName"],
+        "wd-456-1001"
+    );
+    assert_eq!(cluster["spec"]["plugins"][0]["isWALArchiver"], true);
+    let quota = objects
+        .iter()
+        .find(|o| o["kind"] == "ResourceQuota")
+        .unwrap();
+    assert_eq!(quota["spec"]["hard"]["requests.cpu"], "1300m");
+}
+#[test]
+fn recovery_manifest_uses_read_only_source_and_exact_base_time_and_timeline() {
+    let mut value = serde_json::to_value(job()).unwrap();
+    let policy = serde_json::json!({"id":"1001","installationID":"999","customerID":"1002","projectID":"321","sourceCnpgUID":"fixture-source-uid","revision":2,"resourceRevision":1,"destination":{"id":"1003","endpointURL":"https://s3.example.invalid","region":"eu-central-1","bucket":"fixture-backup","archivePath":"postgresql/1002/321/999/1001","serverName":"wd-999-1001","credentialID":"1004","credentialRevision":1,"recoveryCredentialID":"1005","recoveryCredentialRevision":1,"keyRecoveryID":"1006"},"schedule":"0 0 1 * * *","suspended":true,"walEnabled":true,"retentionDays":30,"retentionDelete":true,"sidecar":{"cpuMillicores":100,"memoryBytes":134217728,"ephemeralBytes":268435456},"recoveryJob":{"cpuMillicores":500,"memoryBytes":536870912,"ephemeralBytes":536870912}});
+    value["action"] = serde_json::json!("restore");
+    value["recovery"] = serde_json::json!({"source":policy,"sourceDatabaseID":"1007","baseBackupId":"20261025T010203","targetTime":"2026-10-25T02:00:00Z","timeline":1,"credentialRevision":1,"verificationSHA256":"a".repeat(64)});
+    let job: DatabaseJobSpec = serde_json::from_value(value).unwrap();
+    let mut c = serde_json::to_value(config()).unwrap();
+    c["backup"] = serde_json::json!({"pluginImage":format!("localhost/fixture-plugin@sha256:{}","a".repeat(64)),"sidecarImage":format!("localhost/fixture-sidecar@sha256:{}","b".repeat(64)),"endpoints":["https://s3.example.invalid"],"egressCIDRs":["192.0.2.10/32"]});
+    let c: DatabaseRuntimeConfig = serde_json::from_value(c).unwrap();
+    let objects = backend_manifests(&job, &c).unwrap();
+    let cluster = objects.iter().find(|o| o["kind"] == "Cluster").unwrap();
+    assert_eq!(
+        cluster["spec"]["bootstrap"]["recovery"]["recoveryTarget"],
+        serde_json::json!({"backupID":"20261025T010203","targetTime":"2026-10-25T02:00:00+00:00","targetTLI":"1"})
+    );
+    assert!(cluster["spec"].get("plugins").is_none());
+    assert_eq!(
+        cluster["spec"]["externalClusters"][0]["plugin"]["parameters"]["serverName"],
+        "wd-999-1001"
+    );
+    let material = DatabaseObjectStoreMaterial {
+        access_key_id: "fixture-read".into(),
+        secret_access_key: "fixture-read-secret-only".into(),
+        read_only: true,
+    };
+    let objects = webdock_agent::database::backup_manifests(&job, &c, &material).unwrap();
+    assert!(!objects.iter().any(|o| o["kind"] == "ScheduledBackup"));
+    assert!(
+        objects.iter().find(|o| o["kind"] == "ObjectStore").unwrap()["spec"]["retentionPolicy"]
+            .is_null()
+    );
 }

@@ -1,9 +1,16 @@
 //! Fixed PostgreSQL profiles and operator-owned placement. No tenant images, SQL or YAML.
+mod backup;
 mod executor;
+#[allow(
+    dead_code,
+    reason = "Shared export helper includes SQL DROP; native dedicated purge removes the whole owned installation."
+)]
+mod exports;
 mod lifecycle;
 mod manifests;
 mod observations;
 mod sql;
+pub use backup::{DatabaseBackupRuntimeConfig, backup_manifests};
 pub use executor::{
     DatabaseAuthority, DatabaseRuntime, DatabaseStep, DenyDatabaseAuthority, NativeDatabaseExecutor,
 };
@@ -50,6 +57,8 @@ pub struct DatabaseRuntimeConfig {
     pub platform_auxiliary_databases: BTreeMap<String, Vec<AuxiliaryDatabase>>,
     #[serde(default)]
     pub additional_storage_pools: Vec<DatabaseStorageRoute>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub backup: Option<DatabaseBackupRuntimeConfig>,
 }
 fn invalid() -> ExecutionError {
     ExecutionError::Invalid("database operator configuration")
@@ -118,6 +127,9 @@ impl DatabaseRuntimeConfig {
             || !self.ca_file.is_absolute()
         {
             return Err(invalid());
+        }
+        if let Some(backup) = &self.backup {
+            backup.validate()?;
         }
         for cidrs in [&self.api_cidrs, &self.pod_cidrs] {
             if cidrs.is_empty() || cidrs.len() > 20 {
@@ -268,6 +280,19 @@ impl DatabaseRuntimeConfig {
         {
             return Err(ExecutionError::Denied);
         }
+        if job.backup.is_some() || job.recovery.is_some() {
+            let config = self.backup.as_ref().ok_or(ExecutionError::Denied)?;
+            let p = job
+                .backup
+                .as_ref()
+                .or_else(|| job.recovery.as_ref().map(|r| &r.source))
+                .ok_or(ExecutionError::Denied)?;
+            if !config.endpoints.contains(&p.destination.endpoint_url)
+                || (job.backup.is_some() && p.resource_revision != job.backend.revision)
+            {
+                return Err(ExecutionError::Denied);
+            }
+        }
         Ok(())
     }
     pub fn storage_route(&self, node: &str, pool: &str) -> Result<&Path> {
@@ -304,6 +329,12 @@ impl DatabaseRuntimeConfig {
                 format!("wd_migrate_{}", member.id),
                 format!("wd_app_{}", member.id),
             ];
+            if let Some(export) =
+                exports::ExportRole::new(&member.id, &member.database_name, &job.backend.kind)
+                    .map_err(|_| ExecutionError::Ownership)?
+            {
+                roles.push(export.name);
+            }
             if let Some(extra) = self.platform_databases.get(&member.id) {
                 if job.backend.kind != "dedicated" {
                     return Err(ExecutionError::Ownership);

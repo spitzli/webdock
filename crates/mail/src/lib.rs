@@ -28,3 +28,6 @@ pub mod webmail_send_api;
 
 pub use webdock_mail_runtime::{Error, Result};
 pub mod managed_control;
+mod recovery;
+
+pub mod transport_adoption;

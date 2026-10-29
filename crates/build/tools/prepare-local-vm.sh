@@ -19,7 +19,7 @@ docker import "$build_fixture_output/alpine.tar.gz" "$build_fixture_tag" >/dev/n
 # apk verifies signatures using the official keys in the checksummed root filesystem.
 # Networking exists only during trusted package preparation, never during customer builds.
 docker run --name "$build_fixture_container" --network bridge "$build_fixture_tag" /bin/sh -ec \
-  'apk add --no-cache linux-virt=6.12.113-r0 buildkit=0.21.1-r5 buildctl=0.21.1-r5 runc=1.3.4-r1; apk info -v; buildctl --version' \
+  'apk add --no-cache linux-virt=6.12.114-r0 buildkit=0.21.1-r5 buildctl=0.21.1-r5 runc=1.3.4-r1; apk info -v; buildctl --version' \
   > "$build_fixture_output/packages.txt"
 docker export "$build_fixture_container" --output "$build_fixture_output/rootfs.tar"
 mkdir "$build_fixture_output/rootfs"
@@ -27,7 +27,7 @@ tar --extract --file "$build_fixture_output/rootfs.tar" --directory "$build_fixt
 cd "$build_fixture_root"
 rustup target add x86_64-unknown-linux-musl
 cargo build --release -p webdock-build --no-default-features --bin webdock-build-guest --target x86_64-unknown-linux-musl
-install -m 755 target/x86_64-unknown-linux-musl/release/webdock-build-guest "$build_fixture_output/rootfs/usr/bin/webdock-build-guest"
+install -m 755 "${CARGO_TARGET_DIR:-target}/x86_64-unknown-linux-musl/release/webdock-build-guest" "$build_fixture_output/rootfs/usr/bin/webdock-build-guest"
 install -m 755 crates/build/tools/vm-init.sh "$build_fixture_output/rootfs/init"
 truncate --size 2G "$build_fixture_output/base.raw"
 mkfs.ext4 -q -F -d "$build_fixture_output/rootfs" "$build_fixture_output/base.raw"

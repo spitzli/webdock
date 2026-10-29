@@ -22,6 +22,8 @@ pub struct AgentConfig {
     #[serde(default)]
     pub mail_runtime: Option<PathBuf>,
     #[serde(default)]
+    pub recovery_runtime: Option<PathBuf>,
+    #[serde(default)]
     pub mail_configuration_enabled: bool,
     #[serde(default)]
     pub policy: crate::policy::RuntimePolicyConfig,
@@ -139,6 +141,14 @@ impl AgentConfig {
             ));
         }
         if let Some(path) = &self.mail_runtime {
+            read_private(path, 1024 * 1024)?;
+        }
+        if let Some(path) = &self.recovery_runtime {
+            if !cfg!(feature = "docker") {
+                return Err(AgentError::Configuration(
+                    "Qualified recovery targets require the explicitly isolated native Docker backend",
+                ));
+            }
             read_private(path, 1024 * 1024)?;
         }
         if self.plugin_runtime_enabled

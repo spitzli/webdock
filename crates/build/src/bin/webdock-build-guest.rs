@@ -25,15 +25,33 @@ fn build() -> webdock_build::Result<Vec<u8>> {
     let job: GuestRequest = serde_json::from_slice(&archive.files()["job.json"]).unwrap();
     job.validate()?;
     let root = work.path().join("source").join(&job.root_directory);
+    let frontend = if job.recipe == webdock_build::frontend::RECIPE {
+        Some(
+            webdock_build::frontend::FrontendConfig::from_source(
+                &archive,
+                &format!(
+                    "source{}",
+                    if job.root_directory == "." {
+                        String::new()
+                    } else {
+                        format!("/{}", job.root_directory)
+                    }
+                ),
+            )?
+            .0,
+        )
+    } else {
+        None
+    };
     let output = work.path().join("image.tar");
+    let rootfs = work.path().join("rootfs");
     let mut command = Command::new("/usr/bin/buildctl");
     command
         .args(["build", "--frontend", "dockerfile.v0", "--local"])
         .arg(format!("context={}", root.display()))
         .arg("--local")
-        .arg(format!("dockerfile={}", root.display()))
-        .arg("--output")
-        .arg(format!("type=oci,dest={}", output.display()));
+        .arg(format!("dockerfile={}", root.display()));
+    webdock_build::frontend::configure_exporters(&mut command, &job.recipe, &output, &rootfs)?;
     for (k, v) in &job.build_environment {
         command.arg("--opt").arg(format!("build-arg:{k}={v}"));
     }
@@ -61,11 +79,37 @@ fn build() -> webdock_build::Result<Vec<u8>> {
         ("build.log".into(), logs.into_bytes()),
     ]);
     if success {
+        if std::fs::metadata(&output)
+            .map_err(|_| webdock_build::Error {
+                code: "artifact_missing",
+                logs: String::new(),
+            })?
+            .len()
+            > MAX_OUTPUT
+        {
+            return Err(webdock_build::Error {
+                code: "artifact_limit",
+                logs: String::new(),
+            });
+        }
         let bytes = std::fs::read(output).unwrap();
         webdock_build::artifact::validate_oci(&bytes)?;
+        if let Some(config) = frontend {
+            files.insert(
+                "artifact/frontend.tar".into(),
+                config.pack(&rootfs, MAX_OUTPUT.saturating_sub(bytes.len() as u64))?,
+            );
+        }
         files.insert("artifact/image.tar".into(), bytes);
     }
-    Archive::from_files(files)?.encode()
+    let result = Archive::from_files(files)?.encode()?;
+    if result.len() as u64 > MAX_OUTPUT {
+        return Err(webdock_build::Error {
+            code: "artifact_limit",
+            logs: String::new(),
+        });
+    }
+    Ok(result)
 }
 fn main() {
     // Refuse host execution even if mistakenly installed on the control-plane node.

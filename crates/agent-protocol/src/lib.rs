@@ -19,6 +19,7 @@ pub use identity::{
 pub mod database;
 pub mod mail;
 pub mod mail_configuration;
+pub mod recovery;
 
 /// Bounded application/database frames, including public CA material.
 pub const MAX_MESSAGE_BYTES: usize = 512 * 1024;

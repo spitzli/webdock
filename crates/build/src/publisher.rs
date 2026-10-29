@@ -54,14 +54,17 @@ impl RegistryPublisher {
     }
     #[cfg(feature = "local-registry-test")]
     pub fn loopback_test(address: std::net::SocketAddr) -> Result<Self> {
+        Self::loopback_test_authenticated(address, RegistryAuth::Anonymous)
+    }
+    #[cfg(feature = "local-registry-test")]
+    pub fn loopback_test_authenticated(
+        address: std::net::SocketAddr,
+        auth: RegistryAuth,
+    ) -> Result<Self> {
         if !address.ip().is_loopback() {
             return Err(error("loopback_required"));
         }
-        Self::configured(
-            address.to_string(),
-            RegistryAuth::Anonymous,
-            ClientProtocol::Http,
-        )
+        Self::configured(address.to_string(), auth, ClientProtocol::Http)
     }
     /// The repository is derived exclusively from admitted customer/project IDs. Every remote write
     /// is guarded; a failure after prepare is ambiguous and must enter durable reconciliation.
@@ -82,6 +85,13 @@ impl RegistryPublisher {
         }
         let bytes = store.read(artifact)?;
         let outer = Archive::read(&bytes, MAX_OUTPUT)?;
+        if let Some(bytes) = outer.files().get("provenance.json") {
+            let provenance: crate::evidence::Provenance =
+                serde_json::from_slice(bytes).map_err(|_| error("invalid_artifact_evidence"))?;
+            if provenance.build.project_id != project {
+                return Err(error("artifact_evidence_scope_mismatch"));
+            }
+        }
         let image = Archive::read(
             outer
                 .files()

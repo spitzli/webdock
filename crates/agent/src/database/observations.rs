@@ -13,6 +13,8 @@ use kube::{
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DatabaseCapabilities {
     pub database_version: u8,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub database_backup_version: Option<u8>,
     pub database_pools: Vec<DatabasePoolObservation>,
     pub database_node_ports: Vec<i32>,
 }
@@ -141,7 +143,7 @@ fn pool_observation(
     Ok(observation)
 }
 impl NativeDatabaseExecutor {
-    async fn admission_ready(&self, name: &str) -> Result<bool> {
+    pub(super) async fn admission_ready(&self, name: &str) -> Result<bool> {
         let mut objects = Vec::new();
         for kind in [
             "ValidatingAdmissionPolicy",
@@ -277,6 +279,13 @@ impl NativeDatabaseExecutor {
             .collect();
         Ok(Some(DatabaseCapabilities {
             database_version: 1,
+            database_backup_version: if self.config.backup.is_some()
+                && self.verify_backup_runtime().await.is_ok()
+            {
+                Some(1)
+            } else {
+                None
+            },
             database_pools: pools,
             database_node_ports: ports,
         }))
