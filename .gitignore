@@ -39,3 +39,7 @@ __pycache__/
 
 # An old local snapshot is excluded; the selected Maylily dependency is external.
 /crates/maylily/
+
+# Rebuild intermediates are local; graph/report/source manifest are committed.
+/graphify-out/cache/
+/graphify-out/.graphify*
